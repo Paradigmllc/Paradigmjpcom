@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   getSupabase: vi.fn(),
   queue: vi.fn(),
   release: vi.fn(),
+  syncDemo: vi.fn(),
 }))
 
 vi.mock("next/server", async (importOriginal) => ({
@@ -29,6 +30,7 @@ vi.mock("@/lib/sales/demo-private-access", async (importOriginal) => ({
   activateTemporaryUnlistedDemo: mocks.activate,
 }))
 vi.mock("@/lib/sales/routing", () => ({ demoSiteUrl: () => "https://demo.paradigmjp.com" }))
+vi.mock("@/lib/sales/demo-twenty-sync", () => ({ syncDemoCandidateToTwenty: mocks.syncDemo }))
 
 import { GET, PATCH, POST, PUT } from "./route"
 
@@ -100,6 +102,7 @@ beforeEach(() => {
     status: "queued",
   }))
   mocks.activate.mockResolvedValue({ urlSlug: "example-demo", expiresAt: "2026-07-21T00:00:00.000Z", review: { status: "private_proposal", assets: [] } })
+  mocks.syncDemo.mockResolvedValue({ ok: true, configured: true, companyId: "twenty-company-1", homeSynced: true })
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
@@ -217,6 +220,52 @@ describe("demo batch route without PostgREST relationship metadata", () => {
         previewUrl: "https://demo.paradigmjp.com/example-demo",
         expiresAt: "2026-07-21T00:00:00.000Z",
       }],
+    })
+    expect(mocks.syncDemo).not.toHaveBeenCalled()
+  })
+
+  it("syncs issued high-quality demo candidates to Twenty when requested", async () => {
+    const jobs = fluentQuery({
+      data: [{
+        id: jobId,
+        company_id: companyId,
+        status: "completed",
+        input_payload: { locale: "ja" },
+        result_payload: { slug: "example-demo", source_policy: "reviewed_manifest", quality_report: { passed: true, score: 96 } },
+      }],
+      error: null,
+    })
+    const companies = fluentQuery({ data: [{ id: companyId, meta: { demo_source_manifest: validManifest() } }], error: null })
+    const update = fluentQuery({ data: null, error: null })
+    const sb = { from: vi.fn().mockReturnValueOnce(jobs).mockReturnValueOnce(companies).mockReturnValueOnce(update) }
+    mocks.getSupabase.mockReturnValue(sb)
+
+    const response = await PUT(new NextRequest("https://paradigmjp.com/api/sales/demo-site/batch", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jobIds: [jobId], ttlDays: 7, syncTwenty: true }),
+    }))
+    const body = await response.json()
+
+    expect(response.status, JSON.stringify(body)).toBe(200)
+    expect(mocks.syncDemo).toHaveBeenCalledWith({
+      companyId,
+      jobId,
+      previewUrl: "https://demo.paradigmjp.com/example-demo",
+      expiresAt: "2026-07-21T00:00:00.000Z",
+      slug: "example-demo",
+      qualityScore: 96,
+      sourcePolicy: "reviewed_manifest",
+    })
+    expect(body).toMatchObject({
+      ok: true,
+      twentySync: {
+        requested: 1,
+        synced: 1,
+        failed: 0,
+        results: [{ ok: true, twentyCompanyId: "twenty-company-1" }],
+      },
+      issued: [{ twenty: { ok: true, twentyCompanyId: "twenty-company-1" } }],
     })
   })
 })

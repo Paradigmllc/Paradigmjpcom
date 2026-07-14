@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { DatabaseZap, Globe2, Play, RefreshCw, RotateCcw } from "lucide-react"
+import { BadgeCheck, DatabaseZap, Globe2, Play, RefreshCw, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import { chunkDemoBatch, DEMO_BATCH_MAX_ITEMS } from "@/lib/sales/demo-batch-wave"
 
@@ -77,6 +77,7 @@ export function DemoBatchQueueConsole() {
   const [json, setJson] = useState(EXAMPLE)
   const [jobs, setJobs] = useState<DemoBatchJob[]>([])
   const [issuedUrls, setIssuedUrls] = useState<string[]>([])
+  const [twentySynced, setTwentySynced] = useState(0)
   const [waveId, setWaveId] = useState<string | null>(null)
   const [summary, setSummary] = useState<DemoBatchWaveSummary | null>(null)
   const [busy, setBusy] = useState(false)
@@ -126,14 +127,17 @@ export function DemoBatchQueueConsole() {
     setBusy(true)
     try {
       const urls: string[] = []
+      let synced = 0
       for (const jobIdChunk of chunkDemoBatch(jobIds, 100)) {
-        const response = await fetch("/api/sales/demo-site/batch", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobIds: jobIdChunk, ttlDays: 7 }) })
-        const payload = await response.json() as { ok?: boolean; issued?: Array<{ ok?: boolean; previewUrl?: string }>; error?: string }
+        const response = await fetch("/api/sales/demo-site/batch", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobIds: jobIdChunk, ttlDays: 7, syncTwenty: true }) })
+        const payload = await response.json() as { ok?: boolean; issued?: Array<{ ok?: boolean; previewUrl?: string }>; twentySync?: { synced?: number; failed?: number }; error?: string }
         if (!response.ok || !payload.ok) throw new Error(payload.error ?? "URL発行に失敗しました")
         urls.push(...(payload.issued ?? []).flatMap((item) => item.ok && item.previewUrl ? [item.previewUrl] : []))
+        synced += payload.twentySync?.synced ?? 0
       }
       setIssuedUrls(urls)
-      toast.success(`${urls.length}件の7日限定URLを発行しました`)
+      setTwentySynced(synced)
+      toast.success(`${urls.length}件の7日限定URLを発行し、Twentyへ${synced}件同期しました`)
     } catch (error) {
       console.error("[demo-batch-console] issue failed:", error)
       toast.error(error instanceof Error ? error.message : "URL発行に失敗しました")
@@ -178,14 +182,14 @@ export function DemoBatchQueueConsole() {
         <button type="button" disabled={busy} onClick={() => void refresh(waveId)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-5 text-sm font-bold disabled:opacity-50"><RefreshCw className="h-4 w-4" />状態を更新</button>
         <button type="button" disabled={busy} onClick={() => void runWaveAction("drain")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50 px-5 text-sm font-bold text-indigo-900 disabled:opacity-50"><Play className="h-4 w-4" />停止中なら再開</button>
         <button type="button" disabled={busy || !waveId || !summary?.failed} onClick={() => void runWaveAction("retry_failed")} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 text-sm font-bold text-amber-950 disabled:opacity-50"><RotateCcw className="h-4 w-4" />失敗分を再試行</button>
-        <button type="button" disabled={busy} onClick={issueCompleted} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 text-sm font-bold text-emerald-900 disabled:opacity-50"><Globe2 className="h-4 w-4" />完了分の7日限定URL発行</button>
+        <button type="button" disabled={busy} onClick={issueCompleted} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 text-sm font-bold text-emerald-900 disabled:opacity-50"><Globe2 className="h-4 w-4" />URL発行＋Twenty同期</button>
       </div>
       {summary && <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4" aria-live="polite">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><p className="text-sm font-bold text-indigo-950">生成wave {waveId ? waveId.slice(0, 8) : "直近"}</p><p className="text-xs text-indigo-900">{summary.finished}/{summary.total}処理済み・品質合格{summary.qualityPassed}・失敗{summary.failed}</p></div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full bg-indigo-700 transition-[width] duration-500" style={{ width: `${progress}%` }} /></div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-5"><WaveMetric label="待機" value={summary.queued} /><WaveMetric label="生成中" value={summary.running} /><WaveMetric label="完了" value={summary.completed} /><WaveMetric label="品質合格" value={summary.qualityPassed} /><WaveMetric label="失敗" value={summary.failed} /></div>
       </div>}
-      {issuedUrls.length > 0 && <div className="mt-5 rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-bold text-emerald-950">今回発行した期限付き未公開URL（企業名のみ・7日で失効）</p><textarea readOnly value={issuedUrls.join("\n")} className="mt-3 min-h-28 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs leading-6 text-emerald-950" /></div>}
+      {issuedUrls.length > 0 && <div className="mt-5 rounded-2xl bg-emerald-50 p-4"><p className="flex items-center gap-2 text-sm font-bold text-emerald-950"><BadgeCheck className="h-4 w-4" />今回発行した期限付き未公開URL（企業名のみ・7日で失効） / Twenty同期 {twentySynced}件</p><textarea readOnly value={issuedUrls.join("\n")} className="mt-3 min-h-28 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs leading-6 text-emerald-950" /></div>}
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
         {jobs.length === 0 ? <p className="p-6 text-sm text-slate-500">「状態を更新」で直近の生成ジョブを表示します。</p> : jobs.map((job) => {
           const company = Array.isArray(job.sales_companies) ? job.sales_companies[0] : job.sales_companies

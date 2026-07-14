@@ -15,6 +15,7 @@ import {
 import { demoSiteUrl } from "@/lib/sales/routing"
 import { DEMO_QUALITY_THRESHOLD } from "@/lib/sales/demo-quality-gate"
 import { queueReviewedDemoItem } from "@/lib/sales/demo-batch-queue"
+import { syncDemoCandidateToTwenty } from "@/lib/sales/demo-twenty-sync"
 import {
   DEMO_BATCH_DISPLAY_LIMIT,
   DEMO_BATCH_ENQUEUE_CONCURRENCY,
@@ -39,7 +40,11 @@ const itemSchema = z.object({
 })
 
 const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(DEMO_BATCH_MAX_ITEMS) })
-const issueSchema = z.object({ jobIds: z.array(z.uuid()).min(1).max(100), ttlDays: z.number().int().min(1).max(7).default(7) })
+const issueSchema = z.object({
+  jobIds: z.array(z.uuid()).min(1).max(100),
+  ttlDays: z.number().int().min(1).max(7).default(7),
+  syncTwenty: z.boolean().default(false),
+})
 const drainSchema = z.object({
   limit: z.number().int().min(1).max(3).default(3),
   drainId: z.string().uuid().optional(),
@@ -206,9 +211,68 @@ export async function PUT(request: NextRequest) {
       }
       const update = await sb.from(DB_TABLES.SALES_ENRICHMENT_JOBS).update({ result_payload: nextResult }).eq("id", row.id)
       if (update.error) console.error("[demo-batch] preview audit update failed:", update.error.message)
-      issued.push({ jobId: row.id, ok: true, slug, previewUrl, expiresAt: access.expiresAt })
+      issued.push({
+        jobId: row.id,
+        companyId: row.company_id,
+        ok: true,
+        slug,
+        previewUrl,
+        expiresAt: access.expiresAt,
+        qualityScore: typeof qualityReport.score === "number" ? qualityReport.score : null,
+        sourcePolicy: typeof row.result_payload?.source_policy === "string" ? row.result_payload.source_policy : null,
+      })
     }
-    return NextResponse.json({ ok: issued.some((item) => item.ok), issued }, { headers: { "Cache-Control": "private, no-store" } })
+    if (!parsed.data.syncTwenty) {
+      return NextResponse.json({ ok: issued.some((item) => item.ok), issued, twentySync: null }, { headers: { "Cache-Control": "private, no-store" } })
+    }
+
+    const syncable = issued.filter((item) =>
+      item.ok === true
+      && typeof item.companyId === "string"
+      && typeof item.jobId === "string"
+      && typeof item.previewUrl === "string"
+      && typeof item.expiresAt === "string"
+      && typeof item.slug === "string",
+    )
+    const syncResults = await mapWithConcurrency(syncable, 3, async (item) => {
+      const result = await syncDemoCandidateToTwenty({
+        companyId: item.companyId as string,
+        jobId: item.jobId as string,
+        previewUrl: item.previewUrl as string,
+        expiresAt: item.expiresAt as string,
+        slug: item.slug as string,
+        qualityScore: typeof item.qualityScore === "number" ? item.qualityScore : null,
+        sourcePolicy: typeof item.sourcePolicy === "string" ? item.sourcePolicy : null,
+      })
+      return {
+        jobId: item.jobId,
+        ok: result.ok,
+        configured: result.configured,
+        twentyCompanyId: result.companyId ?? null,
+        error: result.error ?? null,
+      }
+    })
+    const syncByJobId = new Map(syncResults.map((item) => [item.jobId, item]))
+    const enrichedIssued = issued.map((item) => ({
+      ...item,
+      twenty: typeof item.jobId === "string" ? syncByJobId.get(item.jobId) ?? null : null,
+    }))
+    const synced = syncResults.filter((item) => item.ok).length
+    const failed = syncResults.length - synced
+    return NextResponse.json({
+      ok: issued.some((item) => item.ok) && failed === 0,
+      issued: enrichedIssued,
+      twentySync: {
+        requested: syncable.length,
+        synced,
+        failed,
+        results: syncResults,
+      },
+      sendingEnabled: false,
+    }, {
+      status: failed === 0 ? 200 : 207,
+      headers: { "Cache-Control": "private, no-store" },
+    })
   } catch (error) {
     console.error("[demo-batch] preview issue failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "preview issue failed" }, { status: 500 })
