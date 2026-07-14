@@ -2,16 +2,16 @@
 
 import { ArrowRight, ArrowUpRight, MapPin, Scissors } from "lucide-react"
 import { FaInstagram } from "react-icons/fa6"
-import type { DemoMultiPageData, DemoPremiumMedia } from "@/lib/sales/demo-site-types"
+import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, demoHeadlineText, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import {
-  PremiumV3Media,
   PremiumV3MediaCarousel,
   PremiumV3Reveal,
   PremiumV3Stagger,
   PremiumV3StaggerItem,
   PremiumV3TextLines,
 } from "./PremiumV3Primitives"
+import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
 
 export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
@@ -73,7 +73,7 @@ export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
       </section>
 
       <section className="grid bg-[var(--demo-surface-alt)] lg:grid-cols-[.45fr_.55fr]">
-        <BeautyMediaMosaic media={visualSet.slice(0, 4)} label="サロンの風景" compact />
+        <BeautyMediaMosaic media={visualSet.slice(0, 4)} label="サロンの風景" height="compact" />
         <div className="flex items-center px-5 py-20 sm:px-10 sm:py-28 lg:px-16">
           <div className="w-full max-w-2xl">
             <PremiumV3Reveal motionStyle={motionStyle} className="border-b border-[var(--demo-line)] pb-8"><p className="text-xs font-bold tracking-[.22em] text-[var(--demo-accent)]">{data.presentation?.servicesEyebrow ?? "メニュー"}</p><h2 className={`${demoHeadlineClass(data.presentation?.servicesHeading ?? data.pages.services.title)} mt-6 whitespace-pre-line font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{data.presentation?.servicesHeading ?? data.pages.services.title}</h2><p className="mt-6 text-sm leading-8 text-[var(--demo-muted)]">{data.pages.services.subtitle}</p></PremiumV3Reveal>
@@ -90,23 +90,6 @@ export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
       {faq.length > 0 && <section className="border-y border-[var(--demo-line)] px-5 py-20 sm:px-10 sm:py-24 lg:px-16"><div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.55fr_1.45fr]"><PremiumV3Reveal motionStyle={motionStyle}><p className="text-xs font-bold tracking-[.22em] text-[var(--demo-accent)]">よくある質問</p><h2 className={`${demoHeadlineClass("ご予約・ご来店の前に")} mt-5 font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>ご予約・ご来店の前に。</h2></PremiumV3Reveal><div className="border-t border-[var(--demo-line)]">{faq.map((item) => <details key={item.id} className="group border-b border-[var(--demo-line)]"><summary className="grid cursor-pointer list-none grid-cols-[1fr_auto] items-center gap-5 py-6 text-base font-medium marker:hidden sm:text-lg"><span>{item.heading}</span><span className="text-2xl font-light transition group-open:rotate-45">＋</span></summary><p className="max-w-3xl pb-7 text-sm leading-8 text-[var(--demo-muted)]">{item.body}</p></details>)}</div></div></section>}
 
       <section className="bg-[var(--demo-ink)] px-5 py-20 text-white sm:px-10 sm:py-24 lg:px-16"><PremiumV3Reveal motionStyle={motionStyle} className="mx-auto grid max-w-6xl gap-9 lg:grid-cols-[1fr_auto] lg:items-end"><div><p className="text-xs font-bold tracking-[.22em] text-white/52">ご予約・アクセス</p><h2 className={`${demoHeadlineClass(home.cta.title)} mt-5 max-w-[15em] font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{home.cta.title}</h2><p className="mt-6 max-w-xl text-base leading-8 text-white/68">{home.cta.subtitle}</p></div><div className="flex flex-col gap-3 sm:flex-row lg:flex-col">{instagram && <a href={instagram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-3 bg-white px-8 text-sm font-bold text-black"><FaInstagram />Instagram</a>}<a href={mapHref} {...(isExternalMap ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-12 items-center justify-center gap-3 border border-white/35 px-8 text-sm font-bold"><MapPin className="h-4 w-4" />所在地・アクセス</a></div></PremiumV3Reveal></section>
-    </div>
-  )
-}
-
-function BeautyMediaMosaic({ media, label, priority = false, compact = false }: { media: DemoPremiumMedia[]; label: string; priority?: boolean; compact?: boolean }) {
-  return (
-    <div className={`relative flex items-center overflow-hidden bg-[var(--demo-ink)] ${compact ? "min-h-[520px] lg:min-h-[760px]" : "min-h-[520px] lg:min-h-[680px]"}`} role="group" aria-label={label}>
-      <div className={`grid w-full grid-cols-2 gap-2 p-5 sm:p-8 ${compact ? "lg:grid-cols-2 lg:p-12" : "lg:grid-cols-3 lg:p-10"}`}>
-        {media.map((item, index) => (
-          <figure key={item.src} className={`group relative aspect-square overflow-hidden bg-white/8 ${!compact && index >= 4 ? "hidden lg:block" : ""}`}>
-            <PremiumV3Media media={item} priority={priority && index === 0} className="absolute inset-0" sizes={compact ? "(max-width:1024px) 46vw, 22vw" : "(max-width:1024px) 46vw, 16vw"} />
-            <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
-            <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/62 to-transparent px-3 pb-3 pt-8 text-[10px] leading-5 text-white/72">{item.alt}</figcaption>
-          </figure>
-        ))}
-      </div>
-      <span className="absolute bottom-3 right-5 text-[9px] font-bold tracking-[.24em] text-white/40">{compact ? "SALON DETAILS" : "INSIDE THE SALON"}</span>
     </div>
   )
 }

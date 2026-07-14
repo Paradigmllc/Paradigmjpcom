@@ -17,7 +17,7 @@ export function DemoPremiumV3BeautyServices({ data }: { data: DemoMultiPageData 
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)] [font-feature-settings:'palt']">
-      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow="サロンメニュー" media={hero} recipe={data.designRecipe} variant={direction.hero} />
+      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow="サロンメニュー" media={hero} mediaGallery={media} recipe={data.designRecipe} variant={direction.hero} />
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">

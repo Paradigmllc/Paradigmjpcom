@@ -4,6 +4,7 @@ import type { DemoDesignRecipe, DemoPremiumMedia } from "@/lib/sales/demo-site-t
 import { demoHeadlineClass, demoHeadlineText, type DemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Parallax, PremiumV3Reveal, PremiumV3TextLines } from "./PremiumV3Motion"
 import { PremiumV3Media } from "./PremiumV3Media"
+import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
 
 export { PremiumV3MediaCarousel } from "./PremiumV3Carousel"
 export { PremiumV3Media } from "./PremiumV3Media"
@@ -14,6 +15,7 @@ export function PremiumV3PageHero({
   subtitle,
   eyebrow,
   media,
+  mediaGallery,
   recipe,
   variant,
 }: {
@@ -21,12 +23,14 @@ export function PremiumV3PageHero({
   subtitle: string
   eyebrow: string
   media: DemoPremiumMedia
+  mediaGallery?: DemoPremiumMedia[]
   recipe?: DemoDesignRecipe
   variant?: DemoArtDirection["hero"]
 }) {
   const split = variant ? variant !== "cinematic" : recipe?.rhythmVariant === 1 || recipe?.rhythmVariant === 3
   const motionStyle = recipe?.motionVariant
   const balancedTitle = demoHeadlineText(title)
+  const useBeautyMosaic = variant === "editorial-split" && Boolean(mediaGallery && mediaGallery.length >= 3)
 
   if (split) {
     return (
@@ -38,10 +42,9 @@ export function PremiumV3PageHero({
             <p className="mt-8 max-w-xl border-l border-[var(--demo-line)] pl-5 text-base leading-8 text-[var(--demo-muted)] sm:text-lg">{subtitle}</p>
           </PremiumV3Reveal>
         </div>
-        <div className="group relative min-h-[420px] overflow-hidden lg:min-h-[500px]">
-          <PremiumV3Parallax className="absolute -inset-y-14 inset-x-0"><PremiumV3Media media={media} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 56vw" /></PremiumV3Parallax>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-        </div>
+        {useBeautyMosaic
+          ? <BeautyMediaMosaic media={mediaGallery!} priority label={`${title}のサロン写真`} height="page" />
+          : <div className="group relative min-h-[420px] overflow-hidden lg:min-h-[500px]"><PremiumV3Parallax className="absolute -inset-y-14 inset-x-0"><PremiumV3Media media={media} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 56vw" /></PremiumV3Parallax><div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" /></div>}
       </header>
     )
   }
