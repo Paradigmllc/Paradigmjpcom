@@ -26,6 +26,19 @@
 - TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、全Vitest **153 files / 693 tests pass**、`git diff --check` pass。従来残っていた日本語代表文面の長さ不一致と、`core.autocrlf=true`でshellがCRLFになる4テストも、内容追記と`.gitattributes`の`*.sh eol=lf`固定で解消した。
 - 正式PR merge、`npm run release:prod`、本番79社の再監査・3社修復、公式収集元の登録/preview/承認/ingest、非送信pilot、人手品質判定、Twenty表示とexternal send 0件の最終監査が終わるまで「実務稼働開始済み」としない。
 
+## CURRENT STATUS - 2026-07-14 SMB DEMO V6本文品質回帰の修復（本番反映・PC/mobile実画面QA完了 / 外部送信0）
+
+### 「品質100」でも本文が悪化した原因をrendererと品質ゲートで修正
+- ノン美容室の実画面中段で、`登録公式URL`、404確認、取得日、電話番号、同一注意文が長文本文へ混入し、文字数だけが増えた状態を確認した。DeepSeek自体の限界ではなく、短文を補う決定論フォールバックがsource-health evidenceを顧客向けコピーへ流し込み、Premium V3編集が生成時と読込時に非冪等で重複付与していたことが原因。
+- evidenceを文・連絡先・source metadataへ分解し、URL、電話番号、404、取得/更新日、source運用文を編集用factから除外。短い生成本文はHome / About / Services / Works固有の編集文で補い、Home / About / Servicesは重複のない3章、Worksは4章以上へ固定した。footer / FAQも同じcurationを通す。
+- 品質ゲートを`2026-07-14.8`へ更新し、customer-facing本文のsource metadata漏洩と同一文反復をhard blocker化。Premium V3のWorks enrichmentは何度読んでも同じ結果になるよう冪等化し、既に保存された旧注意文も読込時に除去する。iframe待機中は白紙ではなく企業名付きloading surfaceを表示する。
+
+### Release / real-company verification
+- PR **#220 / #222 / #223**、最終main **592e06d813805e5c9d3d2d048adfbf89d776b062**。最終`npm run release:prod` deployment **gvztx157j47qir85yhozkefg**は、DB **87/87**、Cloudflare / Traefik / Realtime / Twenty、Sales health HTTP 200 JSON `ok:true`を含むpost-deploy gateまでpass。
+- 関連最大 **8 files / 41 tests**、追加の冪等/legacy回帰 **2 files / 21 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages** pass。
+- 同じ実企業「ノン美容室」を本番で再生成し、**68.30秒 / quality 100 / blocker 0 / warning 0 / private_review**。URLは`https://demo.paradigmjp.com/ノン美容室`。PC実DOMはHome 2,096文字 / About 2,054 / Services 2,116 / Works 1,718 / Contact 841、全ページ横overflow 0。Worksは6 scene、source metadata 0、旧注意文 0、サービス要約は1回だけ。ContactはGoogle Maps 1、form 1、入力6項目。
+- mobile 390pxはHome 2,057文字・9,259px、Contact 841文字・4,616px、いずれも横overflow 0。hero、drawer、地図、フォームの実表示を確認した。候補追加、Twenty同期、メール、電話、郵送、ポータルDM、フォーム送信などの外部送信は実行していない。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry候補factoryのoperator approval hardening（本番反映・公開QA完了 / 外部送信0）
 
 ### 収集元・候補・Twentyの境界を人間の明示承認へ変更
