@@ -1,3 +1,14 @@
+## CURRENT STATUS - 2026-07-15 SMB DEMO合格候補のTwenty可視化（実装・検証完了 / release前 / 外部送信0）
+
+### Twentyで必ず確認できる未送信DEMO候補同期
+- `/ja/admin/demo-assets`の生成waveで、品質合格済みDEMOの7日限定URLを発行する操作を「URL発行＋Twenty同期」へ変更した。発行済みDEMOはTwenty企業へ`DEMO生成済み / 要確認 / 未送信`、`7日限定DEMO URL`、品質スコア、失効日時、根拠数、次アクション`DEMOを目視確認（未送信）`として同期される。
+- Twenty同期は合格済み`demo_generate` jobだけが対象。URL発行時に`syncTwenty: true`を明示し、read-backでdemo URL、lead status、next action、summary一致を確認する。不一致ならAPIは207で返し、成功扱いにしない。
+- Twentyへの書き込みはCRM確認用のみ。Opportunity、レポート、初回文面、メール、SNS、電話、郵送、ポータルDM、フォーム送信は作成・実行しない。Sales DB側にも`demo_site.url`と`twenty.demoUrl`を保存し、後続監査で追跡できる。
+
+### Verification
+- TypeScript `npx tsc --noEmit` pass、対象ESLint pass、対象Vitest `src/app/api/sales/demo-site/batch/route.test.ts` **1 file / 6 tests pass**、production build **408/408 pages** pass、`git diff --check` pass。
+- 実Twenty本番書き込みはまだ実行していない。release後に合格済みDEMOを1件選び、管理画面の`URL発行＋Twenty同期`からTwenty read-back済みの未送信DEMO候補として表示されることを確認する。
+
 ## CURRENT STATUS - 2026-07-15 エキテン中心SMB DEMO実務運用の高速化（本番release完了 / エキテン貼り付け量産入口稼働 / 外部送信0）
 
 ### 1件ずつ入力する運用を廃止する貼り付け抽出
