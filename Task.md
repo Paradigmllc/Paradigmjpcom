@@ -6,6 +6,10 @@
 - 画像はoperatorが元ページを確認し、人物・透かしを除外して3点以上選択した場合だけ `reviewed_manifest` 化。スナップショット外URLを拒否し、`private_proposal` として登録するため、権利確認前のクリーン公開URLと外部送信は既存ゲートで停止する。
 - 承認済み候補は既存の最大3件並列one-shot drainへ自動接続し、同一企業・同一manifestは既存結果を再利用。11ページPremium V3、品質94点、hard blocker 0の既存基準を緩めず、メール・電話・郵便・SNS・ポータルDM・フォーム送信・Twenty同期は接続していない。
 - ローカル検証: ポータル抽出・HP判定・素材審査・API認証・自動drain・再利用を含む全Vitest **125 files / 571 tests pass**、TypeScript、全ESLint、quality guard **0 errors / 60 warnings**、production build **408/408 pages**、`git diff --check` pass。
+- PR **#170**をmainへmergeし、正式`npm run release:prod`のdeployment **lvckkb5hj4ybr5m30abkcaie**を完走。DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON `ok:true`、post-deploy smokeを含む全ゲートpass。本番ポータルAPIは未認証HTTP 401で存在と認証境界を確認し、候補投入・DEMO生成・外部送信は実行していない。
+- 全DEMOページ最上部へPreview Toolbarを追加。PC 100% / tablet 820px / mobile 390pxを同一オリジンiframeで切り替え、実際のレスポンシブbreakpointを検品できる。注意事項だけを閉じるInfo、全画面表示、toolbar全体を閉じるXを実装。非公開URLは「削除」と誤認させず、一般公開・検索登録なし＋実際の失効日を表示する。
+- signed private URLの有効期間をUI・private access API・batch API・serviceの4層で最大7日に統一し、8日以上はDB書き込み前にfail-closed。公開showcaseは期限を偽装せず「検索登録なし・正式公開前」と表示する。
+- Preview Toolbar検証: interaction / notice / 7日上限を含む **3 files / 11 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 60 warnings**、production build **408/408 pages** pass。実務判定は、候補URL投入→審査→品質gate付きDEMO生成→7日期限URL発行までpilot運用可能。ポータル自動送信と無審査の数千件投入は未接続のため、full-scale送信運用はまだ開始不可。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
 

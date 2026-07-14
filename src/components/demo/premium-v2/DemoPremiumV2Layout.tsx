@@ -44,11 +44,6 @@ export function DemoPremiumV2Layout({
 
   return (
     <div className="min-h-dvh bg-[#f4f1e9] text-[#171713] antialiased" style={{ "--demo-accent": accent } as React.CSSProperties}>
-      {privatePreview && (
-        <div className="border-b border-black/10 bg-[#e8dfcf] px-4 py-2 text-center text-[10px] font-semibold tracking-[.1em] text-black/65 sm:text-xs">
-          非公開プレビュー · 公式サイトではありません · {new Date(privatePreview.expiresAt).toLocaleDateString("ja-JP")}まで
-        </div>
-      )}
       <nav className="sticky top-0 z-50 border-b border-black/10 bg-[#f4f1e9]/92 backdrop-blur-xl" aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[76px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
           <a href={basePath} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
@@ -81,7 +76,7 @@ export function DemoPremiumV2Layout({
       </nav>
 
       {menuOpen && (
-        <div className={`fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-[#171713] px-5 py-10 text-white sm:px-10 ${privatePreview ? "top-[109px]" : "top-[77px]"}`}>
+        <div className="fixed inset-x-0 bottom-0 top-[77px] z-40 overflow-y-auto bg-[#171713] px-5 py-10 text-white sm:px-10">
           <div className="mx-auto max-w-2xl">
             {navLinks.map((link, index) => (
               <a key={link.href} href={link.href} className="flex items-center justify-between border-b border-white/15 py-5 font-premium-serif text-3xl">

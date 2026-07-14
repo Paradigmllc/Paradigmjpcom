@@ -26,7 +26,7 @@ const assetSchema = z.object({
 })
 
 const activateSchema = z.object({
-  ttlDays: z.number().int().min(1).max(30),
+  ttlDays: z.number().int().min(1).max(7),
   locale: z.enum(["ja", "en"]).default("ja"),
   assets: z.array(assetSchema).min(1).max(20),
 })

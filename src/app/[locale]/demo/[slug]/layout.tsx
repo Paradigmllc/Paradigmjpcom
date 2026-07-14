@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
+import { DemoPreviewToolbar } from "@/components/demo/DemoPreviewToolbar"
 import { DemoPremiumV2Layout } from "@/components/demo/premium-v2/DemoPremiumV2Layout"
 import { DemoPremiumV3Layout } from "@/components/demo/premium-v3/DemoPremiumV3Layout"
 import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
@@ -101,7 +102,9 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
 
   return (
     <>
-      {siteLayout}
+      <DemoPreviewToolbar companyName={companyName} expiresAt={demoData?.privatePreview?.expiresAt}>
+        {siteLayout}
+      </DemoPreviewToolbar>
       {isAdmin && demoData && (
         <>
           {demoData.quality && (

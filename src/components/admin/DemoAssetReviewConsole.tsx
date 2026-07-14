@@ -21,7 +21,7 @@ const EMPTY_ASSET: DemoReviewedAsset = {
 
 export function DemoAssetReviewConsole() {
   const [slug, setSlug] = useState("")
-  const [ttlDays, setTtlDays] = useState(14)
+  const [ttlDays, setTtlDays] = useState(7)
   const [assets, setAssets] = useState<DemoReviewedAsset[]>([{ ...EMPTY_ASSET, id: crypto.randomUUID() }])
   const [previewUrl, setPreviewUrl] = useState("")
   const [expiresAt, setExpiresAt] = useState("")
@@ -82,8 +82,8 @@ export function DemoAssetReviewConsole() {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <label className="block text-sm font-semibold" htmlFor="demo-slug">デモslug</label>
             <input id="demo-slug" value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="oikawa-yogashiten-private-review" className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-slate-950" />
-            <label className="mt-5 block text-sm font-semibold" htmlFor="ttl-days">有効日数（最大30日）</label>
-            <input id="ttl-days" type="number" min={1} max={30} value={ttlDays} onChange={(event) => setTtlDays(Number(event.target.value))} className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-slate-950" />
+            <label className="mt-5 block text-sm font-semibold" htmlFor="ttl-days">有効日数（最大7日）</label>
+            <input id="ttl-days" type="number" min={1} max={7} value={ttlDays} onChange={(event) => setTtlDays(Number(event.target.value))} className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-slate-950" />
             <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-xs leading-6 text-amber-950"><strong>自動ブロック:</strong> HTTPSでないURL、出所不明、許諾なしの人物・透かし、blocked指定素材。</div>
             <button type="button" disabled={busy} onClick={issuePreview} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-50"><KeyRound className="h-4 w-4" />{busy ? "処理中…" : "審査して非公開URLを発行"}</button>
             <button type="button" disabled={busy} onClick={revokePreview} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-200 text-sm font-bold text-red-700 disabled:opacity-50"><Trash2 className="h-4 w-4" />URLを失効</button>

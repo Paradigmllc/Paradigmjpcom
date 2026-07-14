@@ -32,7 +32,7 @@ const itemSchema = z.object({
 })
 
 const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(100) })
-const issueSchema = z.object({ jobIds: z.array(z.uuid()).min(1).max(100), ttlDays: z.number().int().min(1).max(30).default(14) })
+const issueSchema = z.object({ jobIds: z.array(z.uuid()).min(1).max(100), ttlDays: z.number().int().min(1).max(7).default(7) })
 const drainSchema = z.object({
   limit: z.number().int().min(1).max(3).default(3),
   drainId: z.string().uuid().optional(),
