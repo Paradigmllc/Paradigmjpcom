@@ -1281,3 +1281,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 実Chrome公開QA: `/ja`（国内Web制作ヒーロー、30万円〜、画像3点、横溢れ0、Package導線なし）、`/ja/pricing`（¥300,000 / ¥600,000 / ¥1,000,000）、`/ja/services`、`/ja/faq`、`/ja/blog`、`/ja/contact?intent=japan-entry`（旧クエリでも国内フォーム）を確認。JAページ内に`Japan Entry` / `$12,000` / `$0/month`の混入なし。
 - 最終US/Shopify pilot run `993f3fbb-c464-4655-b72a-03de7da5fef8`は、候補20・確認10・Shopify一致10・実フォーム8・適格/昇格7・Twenty同期7・失敗0。7社すべてでTwenty company IDを保存し、フォームURLと機会スコア75を保持した。enrichment job 0、outreach run 0、artifact 0、diagnosis 0を確認した。
 - ただし`SalesCompany` insert後、既存DB triggerがlist-only企業にも空のevent-driven pipelineを6本（48 queued steps）作成したため、即時に全run/stepを`cancelled`へ変更。送信・文面・レポート生成前であり外部送信0を維持した。promotion metaへ`skip_enrichment=true` / `list_only=true`を固定し、DB trigger側も`source=multi_source_domains`を二重に除外する。Twenty company同期だけを許可する。
+
+## CURRENT STATUS - 2026-07-14 Japan Entry候補リスト量産（旧レポート経路分離・本番完了）
+
+- list-only企業の二重ガードを本番反映。DB insert triggerは`source=multi_source_domains`または`meta.skip_enrichment=true`を除外し、Twenty pullも`list_only/skip_enrichment`企業のpipeline生成を拒否する。PR #168 / #171 / #173 / #176をmainへmergeし、最終deployment `uwgurtnm1vxqqmlokdh8e828`の正式`release:prod`がDB 83/83、quality guard 0 errors、Sales health JSON `ok:true`、Twenty HTTP 200、Twenty worker restart 0、公開smokeを含め全gate pass。
+- スクリーンショット監査で、旧`upsertCompanyByDomain`が未生成レポートURLを先に作り、`syncCompanyKarteToTwenty`がlist-only追加にも「診断レポートURL」「カルテ生成中 / 未対応」「取得ステータス」を流用していたことを確認。list-only専用`syncListLeadToTwenty`へ分離し、promotionでは`generate_report_url=false` / `pipeline_status=pending`を固定。Twenty pullから旧report/statusが戻る経路も遮断した。
+- Twenty 2.14現行schemaへCRM metadata SQLを更新し、廃止済み`fieldMetadata.isCustom`依存を削除。Companies table viewを`Japan Entry 候補`へ変更し、表示列をName / Domain / 国 / 候補ステータス / 技術 / 機会スコア / SMBスコア / 収集経路 / 確認済みフォームに限定。旧レポート・商談・取得・資料・デモ列は候補一覧から非表示。
+- TwentyのSELECT optionはapplication manifestが起動時に復元するため、新規`oss_form_factory`値を使わず既存互換値`codex_verification`を採用し、候補根拠本文で`OSSフォーム適格収集`を明示。最初のUS/CA cleanup runは不正enumを7件fail-closed停止し、Opportunity / report / message / send 0を維持してから修正した。
+- 旧値を持っていた既存候補と再試行で確認された候補を含む13社を本番クリーンアップ。Supabaseは13/13で`report_url=null`、`pipeline_status=pending`、`list_only=true`、`skip_enrichment=true`。Twentyも13/13で確認済みフォーム、国、Shopify、機会スコア75、SMBスコア58、`フォーム確認済み / Twenty登録済み / 未送信`を保持し、旧report URL 0、旧sales status 0。
+- 最終非送信pilot run `b02dbf4d-5a3e-4565-a224-e70cfb69e84f`（US/Shopify）は候補20・確認10・実フォーム合格7・昇格7・Twenty同期7・失敗0。開始後のpipeline run 0、pipeline step 0、enrichment job 0、artifact 0、diagnosis 0、outreach run 0、report URL 0をDBで確認した。
+- ローカル回帰検証はlist-only/Twenty関連Vitest 5 files / 16 testsと最終互換修正3 files / 12 tests、TypeScript、対象ESLint、`git diff --check`がpass。レポート/Opportunity Brief生成と動画機能は削除せず、興味返信後の価値提供フェーズ専用として初回候補リスト経路から切り離す。
