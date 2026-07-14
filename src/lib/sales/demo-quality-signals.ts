@@ -76,7 +76,7 @@ function hasRepeatedEditorialFragment(value: unknown): boolean {
     const counts = new Map<string, number>()
     for (const fragment of text.split(/[。．.!！?？]+/u)) {
       const normalized = fragment.replace(/\s+/gu, " ").trim().toLocaleLowerCase()
-      if (normalized.length < 36) continue
+      if (normalized.length < 24) continue
       const count = (counts.get(normalized) ?? 0) + 1
       if (count >= 2) return true
       counts.set(normalized, count)
