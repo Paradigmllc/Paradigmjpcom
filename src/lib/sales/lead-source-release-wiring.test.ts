@@ -22,4 +22,17 @@ describe("lead source preflight release wiring", () => {
     expect(doctor).toContain("sales_claim_lead_source_preflight_records")
     expect(doctor).toContain("preflight_checked_at >= now() - interval '7 days'")
   })
+
+  it("applies country source-pack provenance through the formal release path", () => {
+    const deploy = read("scripts/sales-os-no-login-deploy.mjs")
+    const doctor = read("scripts/release-doctor.mjs")
+
+    expect(deploy).toContain("20260715140000_lead_source_country_packs.sql")
+    expect(deploy).toContain("applyLeadSourceCountryPacksMigration")
+    expect(deploy).toContain("await applyLeadSourceCountryPacksMigration(envs)")
+    expect(doctor).toContain("source_pack_query_sha256")
+    expect(doctor).toContain("sales_lead_inventory_runs_no_delivery_check")
+    expect(doctor).toContain("European Commission CORDIS")
+    expect(doctor).toContain("bounded, attributed and no-delivery")
+  })
 })

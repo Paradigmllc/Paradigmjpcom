@@ -187,6 +187,10 @@ export function evaluateLeadQualityGate(input: {
     smbScore = Math.max(smbScore, 95)
     smbEvidence.push(`annual_revenue_usd:${sourceRecord.annual_revenue_usd}`)
   }
+  if (sourceRecord.is_sme === true && sourceRecord.source.trust_tier >= 3) {
+    smbScore = Math.max(smbScore, 98)
+    smbEvidence.push(`official_sme_flag:${sourceRecord.source.name}`)
+  }
   const smbMarker = SMB_MARKER_RE.exec(homepage.visibleText.slice(0, 20_000))?.[0]
   if (smbMarker && sourceRecord.source.trust_tier >= 2) {
     smbScore = Math.max(smbScore, 82)
