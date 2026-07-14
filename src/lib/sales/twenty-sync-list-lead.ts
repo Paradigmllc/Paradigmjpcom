@@ -173,6 +173,21 @@ function actualLink(value: unknown): string {
   return typeof url === "string" ? url : ""
 }
 
+function canonicalLink(value: string): string {
+  if (!value) return ""
+  try {
+    const url = new URL(value)
+    url.hash = ""
+    url.hostname = url.hostname.toLowerCase()
+    if ((url.protocol === "https:" && url.port === "443") || (url.protocol === "http:" && url.port === "80")) url.port = ""
+    if (url.pathname !== "/") url.pathname = url.pathname.replace(/\/+$/, "")
+    return url.toString()
+  } catch (error) {
+    console.error("[twenty-list-lead] invalid link during read-back comparison:", error)
+    return value.trim()
+  }
+}
+
 export function listLeadTwentyReadbackIssues(
   company: TwentyRecord | null,
   expectedCompanyId: string,
@@ -182,7 +197,7 @@ export function listLeadTwentyReadbackIssues(
   const issues: string[] = []
   if (company.id !== expectedCompanyId) issues.push("company_id_mismatch")
   if (company.paradigmCountryName !== expectedText(payload, "paradigmCountryName")) issues.push("country_mismatch")
-  if (actualLink(company.paradigmFormUrl) !== expectedLink(payload, "paradigmFormUrl")) issues.push("form_url_mismatch")
+  if (canonicalLink(actualLink(company.paradigmFormUrl)) !== canonicalLink(expectedLink(payload, "paradigmFormUrl"))) issues.push("form_url_mismatch")
   if (company.paradigmLeadStatus !== expectedText(payload, "paradigmLeadStatus")) issues.push("lead_status_mismatch")
   if (company.paradigmNextAction !== expectedText(payload, "paradigmNextAction")) issues.push("next_action_mismatch")
   const expectedSummary = record(payload.paradigmKarteSummary).markdown

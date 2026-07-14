@@ -176,4 +176,58 @@ describe("listLeadTwentyPayload", () => {
       paradigmDemoUrl: { primaryLinkUrl: "" },
     }, "twenty-2", payload)).toEqual([])
   })
+
+  it("accepts Twenty trailing-slash normalization but rejects a different form path", () => {
+    const payload = listLeadTwentyPayload({
+      id: "company-readback-normalized",
+      company_name: "Coronis Computing",
+      domain: "coronis.es",
+      target_country: "ES",
+      source: "evidence_first_sources",
+      tech_stack: null,
+      meta: {
+        contact_form_url: "https://coronis.es/es/contacto/",
+        lead_candidate: { score: { opportunityScore: 71, smbScore: 98 } },
+      },
+    })
+    const base = {
+      id: "twenty-normalized",
+      paradigmCountryName: payload.paradigmCountryName as string,
+      paradigmLeadStatus: payload.paradigmLeadStatus as string,
+      paradigmNextAction: payload.paradigmNextAction as string,
+      paradigmKarteSummary: payload.paradigmKarteSummary as { markdown: string },
+      paradigmReportUrl: { primaryLinkUrl: "" },
+      paradigmSalesMaterialUrl: { primaryLinkUrl: "" },
+      paradigmDemoUrl: { primaryLinkUrl: "" },
+    }
+
+    expect(listLeadTwentyReadbackIssues({
+      ...base,
+      paradigmFormUrl: { primaryLinkUrl: "https://coronis.es/es/contacto" },
+    }, "twenty-normalized", payload)).toEqual([])
+    expect(listLeadTwentyReadbackIssues({
+      ...base,
+      paradigmFormUrl: { primaryLinkUrl: "https://coronis.es/es/otra" },
+    }, "twenty-normalized", payload)).toContain("form_url_mismatch")
+  })
+
+  it("keeps every production inventory market visible in Twenty", () => {
+    const expected = new Map([
+      ["IT", "イタリア"], ["NL", "オランダ"], ["BE", "ベルギー"], ["CH", "スイス"],
+      ["AT", "オーストリア"], ["IE", "アイルランド"], ["DK", "デンマーク"], ["FI", "フィンランド"],
+      ["NO", "ノルウェー"], ["SE", "スウェーデン"],
+    ])
+    for (const [country, label] of expected) {
+      const payload = listLeadTwentyPayload({
+        id: `company-${country}`,
+        company_name: `Example ${country}`,
+        domain: `example.${country.toLowerCase()}`,
+        target_country: country,
+        source: "evidence_first_sources",
+        tech_stack: null,
+        meta: { contact_form_url: `https://example.${country.toLowerCase()}/contact`, lead_candidate: { score: {} } },
+      })
+      expect(payload.paradigmCountryName).toBe(label)
+    }
+  })
 })

@@ -78,7 +78,7 @@ describe("twentyCompanyHomePayload", () => {
     expect(sourceSelectValue("Apollo")).toBe("apollo");
     expect(sourceSelectValue("qa_japan_entry_batch")).toBeNull();
     expect(countrySelectValue("US")).toBe("米国");
-    expect(countrySelectValue("NL")).toBeNull();
+    expect(countrySelectValue("NL")).toBe("オランダ");
     expect(countrySelectValue("BR")).toBeNull();
   });
 

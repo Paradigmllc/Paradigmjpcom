@@ -2,7 +2,9 @@ import crypto from "node:crypto"
 import type { SalesCrmSelectOption, SalesCrmViewField } from "@/lib/sales/crm-field-config"
 
 export const SELECT_FIELD_KEYS = new Set(["country", "region", "industry", "source", "sales_status"])
-export const TWENTY_TEXT_ONLY_FIELD_KEYS = new Set(["region"])
+// Country must remain free text. Twenty restores application-owned SELECT
+// options on restart, which would silently blank newly supported markets.
+export const TWENTY_TEXT_ONLY_FIELD_KEYS = new Set(["country", "region"])
 
 interface TwentyOption {
   id: string

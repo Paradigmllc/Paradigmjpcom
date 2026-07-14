@@ -1,3 +1,15 @@
+## CURRENT STATUS - 2026-07-15 検証済み候補をTwentyで確認する非送信経路（修正実装完了 / release前）
+
+### 本番パイロットと個別レビュー
+- 収集在庫を生のままTwentyへ入れず、既存の`evidence_first_sources`候補ファクトリーでDE / IT / ESを各100候補・25件実サイト検証した。3 runは全てcompleted、合計75件確認、実フォーム合格4件、Twenty同期0のレビュー待ちで停止した。
+- 4件を個別確認し、microresist.deはニュース記事上のフォーム、multichannelsystems.comはHarvard Bioscience傘下表示のためSMB専用条件外として人間レビューでreject。coronis.esとvinidea.itは公式CORDIS SME・営利企業・EC/SaaS offer fit・同一origin一般問い合わせフォームを確認してapproveした。
+- VINIDEAはTwenty同期成功。CORONISはTwenty read-backが末尾スラッシュ正規化差を`form_url_mismatch`として検出しrollback。本番送信、初回文面、レポート、Opportunity、enrichment jobは起動していない。
+
+### Twenty表示修正
+- `paradigmCountryName`をTwenty再起動時のSELECT option復元に依存しないTEXTへ変更し、inventory対象のIT / NL / BE / CH / AT / IE / DK / FI / NO / SEを日本語表示・Twenty pull逆変換へ追加した。既存のCRM field master migrationはrelease時の冪等upsertで`country.field_type=text`へ更新する。
+- フォームURL read-backはscheme / host / default port / hash / path末尾スラッシュを正規化して比較する。別パスは引き続き`form_url_mismatch`でfail-closed停止する。
+- 対象Vitest 3 files / 17 tests、全Vitest 162 files / 746 tests、TypeScript、対象ESLint、quality guard 0 errors / 61 existing warnings、production build 408/408 pages、`git diff --check`がpass。正式release後にCRM metadataを再適用し、CORONIS再同期、VINIDEA国名repair、Twenty REST / Supabase / 副作用0を再照合する。
+
 ## CURRENT STATUS - 2026-07-15 SMB DEMO合格候補のTwenty可視化（本番release完了 / Twenty確認入口稼働 / 外部送信0）
 
 ### Twentyで必ず確認できる未送信DEMO候補同期
