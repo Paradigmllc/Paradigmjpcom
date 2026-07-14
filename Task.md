@@ -1,10 +1,12 @@
-## CURRENT STATUS - 2026-07-14 SMB DEMO企業名URL 404修正（ローカル検証完了・本番反映前）
+## CURRENT STATUS - 2026-07-14 SMB DEMO企業名URL 404修正（本番反映・CookieなしQA完了）
 
 ### 期限付き未公開URLをCookie不要のクリーンURLへ統一
 - `https://demo.paradigmjp.com/{企業名}`を新しいブラウザで直接開くと、HTTP 200でも`Demo Not Found`を描画する不整合を確認。原因は、管理画面が初回だけtoken queryでCookieを発行するURLを返す一方、営業用にはqueryなしの企業名URLだけを使う設計だったこと。
 - `temporary_unlisted` access modeを追加。企業名だけのURLをCookieなしで最大7日閲覧でき、`preview_expires_at`を過ぎると自動的に404へ戻る。`is_published=false`、`private_review`、noindex、審査済みasset manifest、送信停止は維持する。企業名slugは推測可能なため「完全非公開」とは表示せず、「検索非掲載・正式公開前・期限付き」と明記する。
 - URL発行API、最大100件batch、管理画面、公開fetch、失効API、DB制約、正式release migrationを同じaccess modeへ統一。新規発行URLは`https://demo.paradigmjp.com/{企業名}`のみでtoken queryを含まない。
-- ローカル検証: 関連Vitest **3 files / 12 tests pass**、TypeScript、変更対象ESLint、script syntax、`git diff --check` pass。候補収集、Twenty同期、フォーム送信、外部送信は実行していない。本番migration・既存「ノン美容室」の7日期限再発行・CookieなしブラウザQAは未実施。
+- PR #201 / merge commit `bc487280` / deployment `rfjqy05yxh1u88xuwcwf8lgk` で正式リリース完了。`SMB demo temporary unlisted access migration`、84/84 DB table verification、post-deploy release doctorがpass。
+- 既存「ノン美容室」を`temporary_unlisted`で7日間再発行し、期限は`2026-07-21T07:36:11.903Z`。新規タブで`https://demo.paradigmjp.com/ノン美容室`を直接開き、タイトル、プレビューバー、端末切替、失効表示、実素材6件の描画を確認。root / about / services / works / faq / contactはCookieなしでHTTP 200、`Demo Not Found`なし、noindexを確認。
+- ローカル検証: 関連Vitest **3 files / 12 tests pass**、TypeScript、変更対象ESLint、script syntax、`git diff --check`、production build pass。候補収集、Twenty同期、フォーム送信、外部送信は実行していない。
 
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（下層画像品質の最終追補・再リリース前）
 
