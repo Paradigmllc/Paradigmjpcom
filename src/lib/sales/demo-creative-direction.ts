@@ -49,12 +49,13 @@ const SIGNATURE_MOTIFS = ["hairline", "numbered-index", "framed-media", "offset-
 
 export function buildDemoCreativeDirection(
   template: DemoTemplate,
-  page: Pick<DemoMultiPageData, "companyName" | "industry">,
+  page: Pick<DemoMultiPageData, "companyName" | "industry"> & Partial<Pick<DemoMultiPageData, "premium">>,
   candidateIndex: number,
   generated?: DeepSeekArtDirection,
 ): DemoCreativeDirection {
+  let direction: DemoCreativeDirection
   if (generated?.template_id === template.id) {
-    return {
+    direction = {
       source: "deepseek",
       concept: generated.concept,
       typographyStyle: generated.typography_style,
@@ -66,14 +67,24 @@ export function buildDemoCreativeDirection(
       motion: generated.motion,
       signatureMotif: generated.signature_motif,
     }
+  } else {
+    const fallback = FALLBACKS[candidateIndex % FALLBACKS.length] ?? FALLBACKS[0]
+    direction = {
+      source: "deterministic",
+      concept: `${page.companyName} ${String(page.industry ?? "business")} ${template.id}`,
+      ...fallback,
+    }
   }
 
-  const fallback = FALLBACKS[candidateIndex % FALLBACKS.length] ?? FALLBACKS[0]
-  return {
-    source: "deterministic",
-    concept: `${page.companyName} ${String(page.industry ?? "business")} ${template.id}`,
-    ...fallback,
-  }
+  const primaryMedia = page.premium?.heroMedia[0]
+  const needsMosaic = primaryMedia?.kind === "image"
+    && (typeof primaryMedia.width !== "number"
+      || typeof primaryMedia.height !== "number"
+      || primaryMedia.width < 1_200
+      || primaryMedia.height < 720)
+  return needsMosaic && candidateIndex === 0
+    ? { ...direction, heroComposition: "mosaic" }
+    : direction
 }
 
 export function visualGrammar(value: DemoCreativeDirection): Record<string, string> {
