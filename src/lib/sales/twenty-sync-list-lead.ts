@@ -38,13 +38,48 @@ function finiteScore(value: unknown): number | null {
     : null
 }
 
-function technologyNames(techStack: unknown): string[] {
+const TECHNOLOGY_LABELS: Record<string, string> = {
+  "apple-pay": "Apple Pay",
+  "aws-cloudfront": "AWS CloudFront",
+  cloudflare: "Cloudflare",
+  contentful: "Contentful",
+  express: "Express",
+  "google-analytics": "Google Analytics",
+  hcaptcha: "hCaptcha",
+  java: "Java",
+  recaptcha: "reCAPTCHA",
+  shopify: "Shopify",
+  "shopify-jp-detection": "Shopify (JP detection)",
+  "shopify-payments": "Shopify Payments",
+  zendesk: "Zendesk",
+}
+
+function labelTechnology(value: string): string {
+  const slug = value.trim().toLowerCase()
+  return TECHNOLOGY_LABELS[slug] ?? slug.split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function technologyNames(techStack: unknown, meta: Record<string, unknown>): string[] {
   const detections = record(techStack).detections
-  if (!Array.isArray(detections)) return []
-  return [...new Set(detections
-    .map((item) => record(item).name)
+  const detectedNames = Array.isArray(detections) ? detections.map((item) => record(item).name) : []
+  const candidateSlugs = record(record(record(meta.lead_candidate).score).details).detectedTechnologies
+  const fallbackNames = Array.isArray(candidateSlugs) ? candidateSlugs : []
+  return [...new Set((detectedNames.length > 0 ? detectedNames : fallbackNames)
     .filter((name): name is string => typeof name === "string" && name.trim().length > 0)
-    .map((name) => name.trim()))]
+    .map((name) => detectedNames.length > 0 ? name.trim() : labelTechnology(name)))]
+}
+
+function hasCurrentListLeadSummary(value: unknown): boolean {
+  if (typeof value !== "string") return false
+  const hasCurrentEmptyState = value.includes("レポート・文面・Opportunity・送信は未生成")
+  const hasCurrentDraftState = value.includes("初回文面: DeepSeek V4 Pro生成済み / 人間レビュー待ち / 未送信")
+    && value.includes("--- ここまで / 外部送信 0件 ---")
+  return value.startsWith("Japan Entry候補（OSSフォーム適格収集 / 未送信）\n")
+    && (hasCurrentEmptyState || hasCurrentDraftState)
+    && !/(?:Report URL:|無料API\/OSS取得データ|全ソース詳細)/u.test(value)
 }
 
 export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, unknown> {
@@ -52,7 +87,7 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
   const formUrl = typeof meta.contact_form_url === "string" ? meta.contact_form_url : null
   const candidate = record(meta.lead_candidate)
   const score = record(candidate.score)
-  const technologies = technologyNames(company.tech_stack)
+  const technologies = technologyNames(company.tech_stack, meta)
   const opportunityScore = finiteScore(score.opportunityScore)
   const smbScore = finiteScore(score.smbScore)
   const draft = record(meta.initial_form_draft)
@@ -112,12 +147,10 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
 export function listLeadSyncDriftReasons(company: ListLeadCompany): string[] {
   const meta = record(company.meta)
   const twenty = record(meta.twenty)
-  const payload = listLeadTwentyPayload(company)
-  const canonicalSummary = record(payload.paradigmKarteSummary).markdown
   const reasons: string[] = []
   if (meta.list_only !== true || meta.skip_enrichment !== true) reasons.push("list_only_guard_missing")
   if (typeof twenty.id !== "string" || twenty.id.trim().length === 0) reasons.push("twenty_id_missing")
-  if (twenty.summary !== canonicalSummary) reasons.push("twenty_summary_drift")
+  if (!hasCurrentListLeadSummary(twenty.summary)) reasons.push("twenty_summary_drift")
   if (twenty.salesStatus !== null && twenty.salesStatus !== undefined && twenty.salesStatus !== "") reasons.push("legacy_sales_status")
   if (company.report_url !== undefined && company.report_url !== null) reasons.push("legacy_report_url")
   if (company.pipeline_status !== undefined && company.pipeline_status !== "pending") reasons.push("pipeline_status_drift")
