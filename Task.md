@@ -14,6 +14,8 @@
 - 運用後監査で、候補factoryとは別の旧経路`sales-pipeline-watchdog -> runTwentySyncTick -> pullTwentyCompaniesToSupabase(autoRunPipeline=true)`が、旧Our Placeレコードに対して約1分ごとに失敗Pipelineを生成していることを検出。step生成時点で制約違反停止し、文面・レポート・送信には到達していなかった。
 - Twenty pullをデータ同期専用へ縮小。Pipeline自動生成オプション、旧`twenty-pipeline-intake.ts`、毎分同期からのPipeline起動、旧レポート再生成tick、Twenty新規取込時のレポートURL先行生成を削除。明示選択会社向け`/api/sales/pipeline-runs`は維持し、Twenty同期だけではPipeline・レポートを作れない。
 - ローカル検証: 関連Vitest 2 files / 8 tests、TypeScript、対象ESLint、quality guard 0 errors / 59既存warnings、production build 408/408、`git diff --check` pass。
+- PR **#180**をmainへmergeし、正式`npm run release:prod`のdeployment **shzc92ojvjtlxvndlkuyfx12**を完走。DB 83/83、Sales health JSON `ok:true`、Twenty HTTP 200 / worker restart 0、公開smokeを含む全ゲートpass。
+- 本番で旧障害と同じ`include_twenty_sync=true` tickを明示実行し、Twenty 48社を同期しても新規Pipeline run 0。続く130秒・14回の監視でも新規run 0を確認し、以前約1分ごとに増えていたOur Place failed runの停止を実証した。
 
 ## CURRENT STATUS - 2026-07-14 Houzz・エキテン・ジモティー候補→SMB DEMO量産レーン（本番反映・実ブラウザQA完了 / 外部送信0）
 
