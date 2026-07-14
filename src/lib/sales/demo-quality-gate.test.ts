@@ -160,6 +160,19 @@ describe("demo quality gate", () => {
     expect(quality.hardBlockers).toContain("repeated_customer_copy")
   })
 
+  it("blocks a home page that repeats its hero as the editorial introduction", () => {
+    const page = fixture()
+    page.premium!.intro.title = page.pages.home.hero.title
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toContain("repeated_home_narrative")
+  })
+
   it("accepts a registry-verified corporate demo without forcing an SNS account", () => {
     const basePage = fixture()
     basePage.industry = "construction"

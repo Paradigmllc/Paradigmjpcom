@@ -11,7 +11,7 @@ const BRAND_SYSTEMS: Record<string, DemoBrandSystem[]> = {
     { id: "quiet-kissa", displayFont: '"Noto Serif JP", "Yu Mincho", serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 500, surface: "#f6f3ed", surfaceAlt: "#ded8cc", ink: "#17191a", muted: "#5f625f", line: "rgba(23,25,26,.16)", heroTone: "welcoming", imageTreatment: "natural", shape: "soft" },
   ],
   beauty_salon: [
-    { id: "salon-air", displayFont: '"Shippori Mincho", "Noto Serif JP", serif', bodyFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', headingWeight: 400, surface: "#f8f3f2", surfaceAlt: "#eadedc", ink: "#211b1d", muted: "#716468", line: "rgba(33,27,29,.15)", heroTone: "editorial", imageTreatment: "natural", shape: "rounded" },
+    { id: "salon-editorial", displayFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', bodyFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', headingWeight: 500, surface: "#faf8f6", surfaceAlt: "#ece7e2", ink: "#1e1b1a", muted: "#6d6661", line: "rgba(30,27,26,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
   ],
   dental: [
     { id: "clinical-calm", displayFont: '"Outfit", "Noto Sans JP", sans-serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 600, surface: "#f5f8f8", surfaceAlt: "#dfe9e8", ink: "#102123", muted: "#53696b", line: "rgba(16,33,35,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
@@ -38,6 +38,10 @@ function hash(input: string): number {
 }
 
 export function resolveDemoBrandSystem(page: DemoMultiPageData, recipe = page.designRecipe): DemoBrandSystem {
+  // Previously generated salon demos persisted the serif-heavy `salon-air`
+  // token set. Always migrate them to the current balanced art direction at
+  // read time so a renderer release improves existing proposals immediately.
+  if (page.industry === "beauty_salon") return BRAND_SYSTEMS.beauty_salon[0]
   if (page.brandSystem) return page.brandSystem
   const systems = BRAND_SYSTEMS[String(page.industry)] ?? BRAND_SYSTEMS.default
   return systems[hash(`${page.companyId}:${recipe?.templateId ?? "default"}`) % systems.length]

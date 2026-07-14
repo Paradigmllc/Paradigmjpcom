@@ -1,6 +1,7 @@
 "use client"
 
 import type { DemoDesignRecipe, DemoPremiumMedia } from "@/lib/sales/demo-site-types"
+import { demoHeadlineClass, type DemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Parallax, PremiumV3Reveal, PremiumV3TextLines } from "./PremiumV3Motion"
 import { PremiumV3Media } from "./PremiumV3Media"
 
@@ -14,14 +15,16 @@ export function PremiumV3PageHero({
   eyebrow,
   media,
   recipe,
+  variant,
 }: {
   title: string
   subtitle: string
   eyebrow: string
   media: DemoPremiumMedia
   recipe?: DemoDesignRecipe
+  variant?: DemoArtDirection["hero"]
 }) {
-  const split = recipe?.rhythmVariant === 1 || recipe?.rhythmVariant === 3
+  const split = variant ? variant !== "cinematic" : recipe?.rhythmVariant === 1 || recipe?.rhythmVariant === 3
   const motionStyle = recipe?.motionVariant
 
   if (split) {
@@ -30,7 +33,7 @@ export function PremiumV3PageHero({
         <div className="flex items-end px-5 pb-14 pt-28 sm:px-10 sm:pb-18 lg:px-16 lg:pb-20">
           <PremiumV3Reveal motionStyle={motionStyle}>
             <p className="text-[10px] font-bold uppercase tracking-[.32em] text-[var(--demo-muted)] sm:text-xs">{eyebrow}</p>
-            <h1 className="mt-6 max-w-3xl text-[clamp(2.7rem,5.2vw,5rem)] font-[var(--demo-heading-weight)] leading-[1.02] tracking-[-.035em] text-balance [font-family:var(--demo-font-display)]"><PremiumV3TextLines text={title} /></h1>
+            <h1 className={`${demoHeadlineClass(title, "hero")} mt-6 max-w-[15em] font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)]`}><PremiumV3TextLines text={title} /></h1>
             <p className="mt-8 max-w-xl border-l border-[var(--demo-line)] pl-5 text-base leading-8 text-[var(--demo-muted)] sm:text-lg">{subtitle}</p>
           </PremiumV3Reveal>
         </div>
@@ -49,7 +52,7 @@ export function PremiumV3PageHero({
       <div className="absolute inset-0 bg-gradient-to-t from-black/42 via-transparent to-black/15" />
       <PremiumV3Reveal motionStyle={motionStyle} className="relative mx-auto w-full max-w-[1500px] px-5 pb-14 pt-28 sm:px-10 sm:pb-18 lg:px-16 lg:pb-20">
         <p className="text-[10px] font-bold uppercase tracking-[.32em] text-white/68 sm:text-xs">{eyebrow}</p>
-        <h1 className="mt-6 max-w-4xl text-[clamp(2.7rem,5.2vw,5.2rem)] font-[var(--demo-heading-weight)] leading-[1.01] tracking-[-.035em] text-balance [font-family:var(--demo-font-display)]"><PremiumV3TextLines text={title} /></h1>
+        <h1 className={`${demoHeadlineClass(title, "hero")} mt-6 max-w-[15em] font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)]`}><PremiumV3TextLines text={title} /></h1>
         <p className="mt-7 max-w-2xl border-l border-white/45 pl-5 text-base leading-8 text-white/78 sm:text-lg">{subtitle}</p>
       </PremiumV3Reveal>
     </header>

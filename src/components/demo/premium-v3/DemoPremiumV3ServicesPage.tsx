@@ -2,9 +2,13 @@
 
 import { ArrowUpRight, Check } from "lucide-react"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
+import { resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal } from "./PremiumV3Primitives"
+import { DemoPremiumV3BeautyServices } from "./DemoPremiumV3BeautyServices"
 
 export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData }) {
+  if (data.industry === "beauty_salon") return <DemoPremiumV3BeautyServices data={data} />
+
   const premium = data.premium!
   const services = data.pages.services
   const media = premium.gallery.length > 0 ? premium.gallery : premium.heroMedia
@@ -13,10 +17,11 @@ export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData })
   const isExternalCta = /^https?:\/\//u.test(ctaHref)
   const motionStyle = data.designRecipe?.motionVariant
   const faq = data.pages.faq?.sections.slice(0, 4) ?? []
+  const direction = resolveDemoArtDirection(data)
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
-      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow={data.presentation?.servicesEyebrow ?? "SERVICES"} media={hero} recipe={data.designRecipe} />
+      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow={data.presentation?.servicesEyebrow ?? "サービス"} media={hero} recipe={data.designRecipe} variant={direction.hero} />
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto max-w-7xl">
           <PremiumV3Reveal motionStyle={motionStyle} className="grid gap-8 border-b border-[var(--demo-line)] pb-10 lg:grid-cols-[1fr_.62fr] lg:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Lineup</p><h2 className="mt-5 text-4xl tracking-[-.035em] sm:text-6xl [font-family:var(--demo-font-display)]">{data.presentation?.servicesHeading ?? services.title}</h2></div><p className="text-sm leading-8 text-[var(--demo-muted)]">{services.subtitle} 掲載されていない内容や現在の提供状況は、公式情報をご確認ください。</p></PremiumV3Reveal>

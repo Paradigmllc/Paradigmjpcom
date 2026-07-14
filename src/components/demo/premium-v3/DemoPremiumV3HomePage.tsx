@@ -4,8 +4,11 @@ import { ArrowRight, ArrowUpRight, MapPin } from "lucide-react"
 import { FaInstagram } from "react-icons/fa6"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { PremiumV3KineticRail, PremiumV3Media, PremiumV3MediaCarousel, PremiumV3Parallax, PremiumV3Reveal, PremiumV3Stagger, PremiumV3StaggerItem, PremiumV3TextLines } from "./PremiumV3Primitives"
+import { DemoPremiumV3BeautyHome } from "./DemoPremiumV3BeautyHome"
 
 export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
+  if (data.industry === "beauty_salon") return <DemoPremiumV3BeautyHome data={data} />
+
   const premium = data.premium!
   const home = data.pages.home
   const basePath = `/${data.slug}`
