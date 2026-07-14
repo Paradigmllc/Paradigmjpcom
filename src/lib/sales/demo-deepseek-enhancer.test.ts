@@ -3,6 +3,7 @@ import {
   DEMO_COPY_MAX_TOKENS,
   DEMO_COPY_TIMEOUT_MS,
   extractVerifiedPublicFacts,
+  inspectDemoCopyCompleteness,
 } from "./demo-deepseek-enhancer"
 import { buildJapaneseUserPrompt } from "./demo-deepseek-prompts"
 import type { DemoTemplate } from "./demo-templates/registry"
@@ -91,6 +92,31 @@ describe("DeepSeek prompt cache layout", () => {
     expect(parsed?.about?.chapters).toHaveLength(1)
     expect(parsed?.services?.guidance).toHaveLength(1)
     expect(parsed?.works?.sections[0]?.title).toBe("店内の風景")
+  })
+
+  it("reports structural and length failures without logging customer copy", () => {
+    const shortNarrative = { eyebrow: "STORY", title: "短い章", body: "短い本文", points: [] }
+    const parsed = parseDeepSeekOutput(JSON.stringify({
+      home: { hero_title: "見出し", hero_subtitle: "本文", features: [], narrative_modules: [shortNarrative] },
+      about: { story: "事業紹介", mission: "使命", values: [], chapters: [shortNarrative] },
+      services: { services: [], process: [], guidance: [shortNarrative] },
+      works: { sections: [{ title: "風景", body: "短い本文", note: "" }] },
+      contact: {},
+      art_directions: [],
+    }), "ja")!
+    const report = inspectDemoCopyCompleteness(parsed, ["prism", "apex", "aether"], "ja")
+
+    expect(report.passed).toBe(false)
+    expect(report.reasons).toEqual(expect.arrayContaining([
+      "home_features_incomplete",
+      "home_narratives_incomplete",
+      "home_narratives_short",
+      "works_sections_incomplete",
+      "works_sections_short",
+      "art_direction_count_mismatch",
+    ]))
+    expect(report.counts).toEqual(expect.objectContaining({ homeNarratives: 1, worksSections: 1 }))
+    expect(JSON.stringify(report)).not.toContain("短い章")
   })
 })
 

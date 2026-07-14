@@ -35,6 +35,79 @@ import {
 export const DEMO_COPY_MAX_TOKENS = 12_288;
 export const DEMO_COPY_TIMEOUT_MS = 180_000;
 
+type ParsedDeepSeekOutput = NonNullable<ReturnType<typeof parseDeepSeekOutput>>
+
+export interface DemoCopyCompletenessReport {
+  passed: boolean
+  reasons: string[]
+  counts: {
+    homeFeatures: number
+    homeNarratives: number
+    aboutValues: number
+    aboutChapters: number
+    services: number
+    processSteps: number
+    serviceGuidance: number
+    worksSections: number
+    artDirections: number
+  }
+  bodyLengths: {
+    homeNarratives: number[]
+    aboutChapters: number[]
+    serviceGuidance: number[]
+    worksSections: number[]
+  }
+}
+
+export function inspectDemoCopyCompleteness(
+  parsed: ParsedDeepSeekOutput,
+  expectedTemplateIds: readonly string[],
+  locale: ReportLocale,
+): DemoCopyCompletenessReport {
+  const narrativeMinimum = locale === "ja" ? 120 : 450
+  const worksMinimum = locale === "ja" ? 120 : 320
+  const bodyLengths = {
+    homeNarratives: parsed.home?.narrative_modules.map((item) => item.body.trim().length) ?? [],
+    aboutChapters: parsed.about?.chapters.map((item) => item.body.trim().length) ?? [],
+    serviceGuidance: parsed.services?.guidance.map((item) => item.body.trim().length) ?? [],
+    worksSections: parsed.works?.sections.map((item) => item.body.trim().length) ?? [],
+  }
+  const counts = {
+    homeFeatures: parsed.home?.features.length ?? 0,
+    homeNarratives: bodyLengths.homeNarratives.length,
+    aboutValues: parsed.about?.values.length ?? 0,
+    aboutChapters: bodyLengths.aboutChapters.length,
+    services: parsed.services?.services.length ?? 0,
+    processSteps: parsed.services?.process.length ?? 0,
+    serviceGuidance: bodyLengths.serviceGuidance.length,
+    worksSections: bodyLengths.worksSections.length,
+    artDirections: parsed.artDirections.length,
+  }
+  const expectedIds = new Set(expectedTemplateIds)
+  const actualIds = parsed.artDirections.map((direction) => direction.template_id)
+  const reasons = [
+    ...(!parsed.home?.hero_title?.trim() ? ["home_hero_missing"] : []),
+    ...(counts.homeFeatures < 3 ? ["home_features_incomplete"] : []),
+    ...(!parsed.about?.story?.trim() ? ["about_story_missing"] : []),
+    ...(!parsed.about?.mission?.trim() ? ["about_mission_missing"] : []),
+    ...(counts.aboutValues < 4 ? ["about_values_incomplete"] : []),
+    ...(counts.services < 3 ? ["services_incomplete"] : []),
+    ...(counts.processSteps < 4 ? ["process_incomplete"] : []),
+    ...(counts.homeNarratives < 3 ? ["home_narratives_incomplete"] : []),
+    ...(bodyLengths.homeNarratives.some((length) => length < narrativeMinimum) ? ["home_narratives_short"] : []),
+    ...(counts.aboutChapters < 3 ? ["about_chapters_incomplete"] : []),
+    ...(bodyLengths.aboutChapters.some((length) => length < narrativeMinimum) ? ["about_chapters_short"] : []),
+    ...(counts.serviceGuidance < 3 ? ["service_guidance_incomplete"] : []),
+    ...(bodyLengths.serviceGuidance.some((length) => length < narrativeMinimum) ? ["service_guidance_short"] : []),
+    ...(counts.worksSections < 4 ? ["works_sections_incomplete"] : []),
+    ...(bodyLengths.worksSections.some((length) => length < worksMinimum) ? ["works_sections_short"] : []),
+    ...(actualIds.length !== expectedIds.size ? ["art_direction_count_mismatch"] : []),
+    ...(new Set(actualIds).size !== expectedIds.size ? ["art_direction_duplicate"] : []),
+    ...(actualIds.some((id) => !expectedIds.has(id)) ? ["art_direction_template_mismatch"] : []),
+  ]
+  return { passed: reasons.length === 0, reasons, counts, bodyLengths }
+}
+
 export type {
   DeepSeekAboutEnhancement,
   DeepSeekContactEnhancement,
@@ -94,30 +167,9 @@ export async function enhanceDemoWithDeepSeek(
 
   const parsed = parseDeepSeekOutput(result.text, locale);
   if (!parsed) return null;
-  const expectedTemplateIds = new Set(templates.map((template) => template.id));
-  const narrativeMinimum = locale === "ja" ? 120 : 450
-  const worksMinimum = locale === "ja" ? 120 : 320
-  const completeNarrative = (items: Array<{ body: string }> | undefined) => (
-    (items?.length ?? 0) >= 3 && items!.every((item) => item.body.trim().length >= narrativeMinimum)
-  )
-  if (
-    !parsed.home?.hero_title?.trim()
-    || (parsed.home.features?.length ?? 0) < 3
-    || !parsed.about?.story?.trim()
-    || !parsed.about?.mission?.trim()
-    || (parsed.about?.values?.length ?? 0) < 4
-    || (parsed.services?.services?.length ?? 0) < 3
-    || (parsed.services?.process?.length ?? 0) < 4
-    || !completeNarrative(parsed.home?.narrative_modules)
-    || !completeNarrative(parsed.about?.chapters)
-    || !completeNarrative(parsed.services?.guidance)
-    || (parsed.works?.sections?.length ?? 0) < 4
-    || parsed.works!.sections.some((section) => section.body.trim().length < worksMinimum)
-    || parsed.artDirections.length !== expectedTemplateIds.size
-    || new Set(parsed.artDirections.map((direction) => direction.template_id)).size !== expectedTemplateIds.size
-    || parsed.artDirections.some((direction) => !expectedTemplateIds.has(direction.template_id))
-  ) {
-    console.error("[deepseek-enhancer] output failed full-site copy completeness checks");
+  const completeness = inspectDemoCopyCompleteness(parsed, templates.map((template) => template.id), locale)
+  if (!completeness.passed) {
+    console.error("[deepseek-enhancer] output failed full-site copy completeness checks:", JSON.stringify(completeness));
     return null;
   }
 
