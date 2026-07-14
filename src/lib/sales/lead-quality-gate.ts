@@ -1,0 +1,238 @@
+import { load } from "cheerio"
+import { getProxyFetchOptions } from "./proxy-agent"
+import { normalizePublicDomain } from "./japan-entry-score"
+import { passesPublicDnsCheck } from "./japan-entry-score-service"
+import type { CandidateCountrySignal } from "./lead-candidate-scoring"
+import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
+import type { TechItem } from "./sources/wappalyzer"
+
+export interface HomepageQualityProfile {
+  url: string
+  html: string
+  title: string
+  description: string
+  organizationNames: string[]
+  organizationTypes: string[]
+  visibleText: string
+}
+
+export interface LeadQualityGate {
+  status: "passed" | "review_required" | "rejected"
+  reasons: string[]
+  identity: { passed: boolean; score: number; sourceName: string; siteNames: string[] }
+  country: { passed: boolean; target: string; signals: CandidateCountrySignal[] }
+  business: { passed: boolean; isForProfit: boolean | null; excludedType: string | null }
+  smb: { passed: boolean; score: number; evidence: string[] }
+  offerFit: { passed: boolean; score: number; evidence: string[] }
+  source: { passed: boolean; sourceId: string; sourcePageUrl: string; trustTier: number }
+}
+
+type SourceWithConfig = LeadSourceRecord & { source: LeadSourceConfig }
+
+const LEGAL_TOKENS = new Set(["inc", "incorporated", "llc", "ltd", "limited", "plc", "corp", "corporation", "company", "co", "pty", "gmbh", "group", "holdings", "the"])
+const EXCLUDED_BUSINESS_RE = /non[ -]?profit|charity|foundation|government|municipal|university|college|school|museum|news(?:paper)?|magazine|publisher|publication|media company|real estate agency|recruit(?:ment|ing)|job board/i
+const ENTERPRISE_RE = /publicly traded|stock exchange|investor relations|annual report|fortune 500|global offices|over \d{3,} employees/i
+const SMB_MARKER_RE = /founder-led|founded by|family-owned|family owned|independent business|independently owned|small team|boutique|owner-operated|私たちの小さなチーム/i
+const SAAS_STRONG_RE = /software as a service|saas|cloud platform|api documentation/i
+const SAAS_PRODUCT_RE = /software|platform|dashboard|workspace|automation|developer tool|business application/i
+const SAAS_CONVERSION_RE = /pricing|free trial|request a demo|book a demo|subscription plan/i
+const COMMERCE_RE = /add to cart|buy now|shop now|shipping|returns|checkout|product catalog|online store/i
+const MAX_HOMEPAGE_BYTES = 1_500_000
+
+function unique(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.replace(/\s+/g, " ").trim()).filter(Boolean))].slice(0, 20)
+}
+
+async function readLimitedText(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return ""
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let total = 0
+  let text = ""
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) {
+      await reader.cancel()
+      throw new Error(`Homepage exceeds ${maxBytes} byte limit`)
+    }
+    text += decoder.decode(value, { stream: true })
+  }
+  return text + decoder.decode()
+}
+
+function jsonLdOrganizations(html: string): { names: string[]; types: string[] } {
+  const $ = load(html)
+  const names: string[] = []
+  const types: string[] = []
+  $("script[type='application/ld+json']").each((_index, element) => {
+    try {
+      const parsed = JSON.parse($(element).text()) as unknown
+      const queue: unknown[] = [parsed]
+      while (queue.length > 0) {
+        const value = queue.shift()
+        if (Array.isArray(value)) {
+          queue.push(...value)
+          continue
+        }
+        if (!value || typeof value !== "object") continue
+        const record = value as Record<string, unknown>
+        const rawType = record["@type"]
+        const recordTypes = Array.isArray(rawType) ? rawType.filter((item): item is string => typeof item === "string") : typeof rawType === "string" ? [rawType] : []
+        if (recordTypes.some((type) => /organization|corporation|business|store|softwareapplication|product/i.test(type))) {
+          if (typeof record.name === "string") names.push(record.name)
+          types.push(...recordTypes)
+        }
+        queue.push(...Object.values(record).filter((item) => item && typeof item === "object"))
+      }
+    } catch (error) {
+      console.warn("[lead-quality-gate] invalid JSON-LD skipped:", error)
+    }
+  })
+  return { names: unique(names), types: unique(types) }
+}
+
+export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000): Promise<HomepageQualityProfile> {
+  const signal = AbortSignal.timeout(timeoutMs)
+  let current = new URL(url)
+  let response: Response | null = null
+  for (let redirect = 0; redirect <= 5; redirect++) {
+    if (!["http:", "https:"].includes(current.protocol) || !normalizePublicDomain(current.hostname)) throw new Error("Homepage URL must use a public HTTP(S) domain")
+    if (!(await passesPublicDnsCheck(current.hostname))) throw new Error("Homepage URL did not pass the public DNS safety check")
+    response = await fetch(current, getProxyFetchOptions({
+      redirect: "manual",
+      signal,
+      headers: { "User-Agent": "ParadigmLeadQuality/1.0 (+https://paradigmjp.com)" },
+    }))
+    if (response.status < 300 || response.status >= 400) break
+    const location = response.headers.get("location")
+    if (!location) throw new Error(`Homepage redirect ${response.status} omitted Location`)
+    current = new URL(location, current)
+    response = null
+  }
+  if (!response) throw new Error("Homepage exceeded five redirects")
+  if (!response.ok) throw new Error(`Homepage returned HTTP ${response.status}`)
+  const contentType = response.headers.get("content-type") ?? ""
+  if (contentType && !contentType.includes("text/html")) throw new Error(`Homepage is not HTML: ${contentType}`)
+  const contentLength = Number(response.headers.get("content-length") ?? 0)
+  if (contentLength > MAX_HOMEPAGE_BYTES) throw new Error(`Homepage exceeds ${MAX_HOMEPAGE_BYTES} byte limit`)
+  const html = await readLimitedText(response, MAX_HOMEPAGE_BYTES)
+  const $ = load(html)
+  const structured = jsonLdOrganizations(html)
+  const title = $("title").first().text().replace(/\s+/g, " ").trim()
+  const description = ($("meta[name='description']").attr("content") ?? $("meta[property='og:description']").attr("content") ?? "").replace(/\s+/g, " ").trim()
+  const siteNames = [
+    $("meta[property='og:site_name']").attr("content") ?? "",
+    $("meta[name='application-name']").attr("content") ?? "",
+  ]
+  $("script,style,noscript,template,svg").remove()
+  const visibleText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 60_000)
+  return {
+    url: current.toString(),
+    html,
+    title,
+    description,
+    organizationNames: unique([...structured.names, ...siteNames, title.split(/[|–—-]/)[0] ?? ""]),
+    organizationTypes: structured.types,
+    visibleText,
+  }
+}
+
+function tokens(value: string): string[] {
+  return value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, " ").split(/\s+/).filter((token) => token.length >= 2 && !LEGAL_TOKENS.has(token))
+}
+
+function identitySimilarity(sourceName: string, siteName: string, domain: string): number {
+  const source = new Set(tokens(sourceName))
+  const site = new Set(tokens(siteName))
+  const domainToken = domain.split(".")[0]?.replace(/[^a-z0-9]/gi, "").toLowerCase() ?? ""
+  if (source.size === 0 || site.size === 0) return 0
+  const overlap = [...source].filter((token) => site.has(token)).length
+  const union = new Set([...source, ...site]).size
+  const jaccard = union > 0 ? overlap / union : 0
+  const compactSource = [...source].join("")
+  const compactSite = [...site].join("")
+  const contains = compactSource.length >= 4 && (compactSite.includes(compactSource) || compactSource.includes(compactSite)) ? 0.9 : 0
+  const domainMatch = domainToken.length >= 4 && (compactSource.includes(domainToken) || domainToken.includes(compactSource)) ? 0.85 : 0
+  return Math.max(jaccard, contains, domainMatch)
+}
+
+export function evaluateLeadQualityGate(input: {
+  sourceRecord: SourceWithConfig
+  homepage: HomepageQualityProfile
+  countrySignals: CandidateCountrySignal[]
+  detections: TechItem[]
+  enterpriseLike: boolean
+}): LeadQualityGate {
+  const { sourceRecord, homepage } = input
+  const identityScore = homepage.organizationNames.reduce((best, name) => Math.max(best, identitySimilarity(sourceRecord.company_name, name, sourceRecord.domain)), 0)
+  const identityPassed = identityScore >= 0.45
+  const strongCountrySignals = input.countrySignals.filter((signal) => signal.signalType !== "request_scope" && signal.confidence >= 70)
+  const countryPassed = sourceRecord.country_code === sourceRecord.source.country_code && strongCountrySignals.length > 0
+  const businessText = `${sourceRecord.business_type ?? ""} ${homepage.title} ${homepage.description} ${homepage.organizationTypes.join(" ")}`
+  const excludedType = EXCLUDED_BUSINESS_RE.exec(businessText)?.[0] ?? null
+  const isForProfit = sourceRecord.is_for_profit
+  const businessPassed = isForProfit !== false && excludedType === null
+  const enterpriseText = `${homepage.title} ${homepage.description} ${homepage.visibleText.slice(0, 12_000)}`
+  const enterprise = input.enterpriseLike || ENTERPRISE_RE.test(enterpriseText)
+
+  const smbEvidence: string[] = []
+  let smbScore = 0
+  if (sourceRecord.employee_count !== null && sourceRecord.employee_count >= 2 && sourceRecord.employee_count <= 249) {
+    smbScore = 100
+    smbEvidence.push(`employee_count:${sourceRecord.employee_count}`)
+  }
+  if (sourceRecord.annual_revenue_usd !== null && sourceRecord.annual_revenue_usd > 0 && sourceRecord.annual_revenue_usd <= 50_000_000) {
+    smbScore = Math.max(smbScore, 95)
+    smbEvidence.push(`annual_revenue_usd:${sourceRecord.annual_revenue_usd}`)
+  }
+  const smbMarker = SMB_MARKER_RE.exec(homepage.visibleText.slice(0, 20_000))?.[0]
+  if (smbMarker && sourceRecord.source.trust_tier >= 2) {
+    smbScore = Math.max(smbScore, 82)
+    smbEvidence.push(`site_marker:${smbMarker}`)
+  }
+  if (enterprise) {
+    smbScore = 0
+    smbEvidence.push("enterprise_signal")
+  }
+  const smbPassed = smbScore >= 80
+
+  const offerEvidence: string[] = []
+  const commerceTech = input.detections.filter((item) => item.category === "EC" || item.category === "Payment")
+  const saasText = `${homepage.title} ${homepage.description} ${homepage.visibleText.slice(0, 20_000)}`
+  const strongSaasSignal = SAAS_STRONG_RE.exec(saasText)?.[0]
+  const productSignal = SAAS_PRODUCT_RE.exec(saasText)?.[0]
+  const conversionSignal = SAAS_CONVERSION_RE.exec(saasText)?.[0]
+  const saasSignal = strongSaasSignal ?? (productSignal && conversionSignal ? `${productSignal}+${conversionSignal}` : null)
+  const commerceSignal = COMMERCE_RE.exec(homepage.visibleText.slice(0, 20_000))?.[0]
+  if (commerceTech.length > 0) offerEvidence.push(`commerce_tech:${commerceTech.map((item) => item.name).join(",")}`)
+  if (saasSignal) offerEvidence.push(`saas_signal:${saasSignal}`)
+  if (commerceSignal) offerEvidence.push(`commerce_signal:${commerceSignal}`)
+  const offerScore = Math.min(100, (commerceTech.length > 0 ? 70 : 0) + (saasSignal ? 70 : 0) + (commerceSignal ? 30 : 0))
+  const offerPassed = offerScore >= 70
+  const sourcePassed = Boolean(sourceRecord.id && sourceRecord.company_name && sourceRecord.source_page_url && sourceRecord.source.trust_tier >= 2)
+
+  const rejectedReasons: string[] = []
+  if (!sourcePassed) rejectedReasons.push("invalid_source_evidence")
+  if (!identityPassed) rejectedReasons.push("identity_mismatch")
+  if (sourceRecord.country_code !== sourceRecord.source.country_code) rejectedReasons.push("source_country_mismatch")
+  if (!businessPassed) rejectedReasons.push(isForProfit === false ? "non_profit" : `excluded_business:${excludedType}`)
+  if (enterprise) rejectedReasons.push("enterprise_signal")
+  const reviewReasons: string[] = []
+  if (!countryPassed && sourceRecord.country_code === sourceRecord.source.country_code) reviewReasons.push("country_site_signal_missing")
+  if (!smbPassed && !enterprise) reviewReasons.push("smb_evidence_missing")
+  if (!offerPassed) reviewReasons.push("japan_entry_offer_fit_missing")
+  const status = rejectedReasons.length > 0 ? "rejected" : reviewReasons.length > 0 ? "review_required" : "passed"
+
+  return {
+    status,
+    reasons: status === "rejected" ? rejectedReasons : reviewReasons,
+    identity: { passed: identityPassed, score: Math.round(identityScore * 100), sourceName: sourceRecord.company_name, siteNames: homepage.organizationNames },
+    country: { passed: countryPassed, target: sourceRecord.country_code, signals: strongCountrySignals },
+    business: { passed: businessPassed, isForProfit, excludedType },
+    smb: { passed: smbPassed, score: smbScore, evidence: smbEvidence },
+    offerFit: { passed: offerPassed, score: offerScore, evidence: offerEvidence },
+    source: { passed: sourcePassed, sourceId: sourceRecord.source_config_id, sourcePageUrl: sourceRecord.source_page_url, trustTier: sourceRecord.source.trust_tier },
+  }
+}

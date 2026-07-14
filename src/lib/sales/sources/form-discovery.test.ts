@@ -32,7 +32,7 @@ describe("form-discovery", () => {
           })
         }
         if (url === "https://example.com/contact") {
-          return new Response('<form><input name="email" /><textarea name="message"></textarea></form>', {
+          return new Response('<h1>Contact us</h1><form><input type="email" name="email" /><textarea name="message"></textarea><button type="submit">Send</button></form>', {
             status: 200,
             headers: { "content-type": "text/html" },
           })
@@ -44,7 +44,7 @@ describe("form-discovery", () => {
     const result = await discoverFormUrl({ homeUrl: "example.com", region: "jp" })
 
     expect(result.formUrl).toBe("https://example.com/contact")
-    expect(result.method).toBe("regex")
+    expect(result.method).toBe("dom")
     expect(result.verification).toBe("form")
     expect(result.confidence).toBeGreaterThanOrEqual(80)
   })
@@ -74,7 +74,7 @@ describe("form-discovery", () => {
           return new Response(JSON.stringify({ form_url: "https://example.com/contact-us" }), { status: 200 })
         }
         if (url === "https://example.com/contact-us") {
-          return new Response('<form><input name="email" /></form>', { status: 200, headers: { "content-type": "text/html" } })
+          return new Response('<h1>Contact us</h1><form><input type="email" name="email" /><textarea name="message"></textarea><button type="submit">Send</button></form>', { status: 200, headers: { "content-type": "text/html" } })
         }
         return new Response("", { status: 404 })
       }),
@@ -104,7 +104,7 @@ describe("form-discovery", () => {
           return new Response(JSON.stringify({ form_url: "https://evil.example.net/contact" }), { status: 200 })
         }
         if (url === "https://example.com/contact") {
-          return new Response('<form><input name="email"><textarea name="message"></textarea></form>', {
+          return new Response('<h1>Contact us</h1><form><input type="email" name="email"><textarea name="message"></textarea><button type="submit">Send</button></form>', {
             status: 200,
             headers: { "content-type": "text/html" },
           })
@@ -140,7 +140,7 @@ describe("form-discovery", () => {
       const url = String(input)
       if (url === "https://example.com") return new Response('<a href="/contact">Contact</a>', { status: 200, headers: { "content-type": "text/html" } })
       if (url === "https://example.com/contact") return new Response("Contact our sales team.", { status: 200, headers: { "content-type": "text/html" } })
-      if (url === "https://example.com/request-a-demo") return new Response('<form><input name="email" /></form>', { status: 200, headers: { "content-type": "text/html" } })
+      if (url === "https://example.com/request-a-demo") return new Response('<h1>Request a demo</h1><form><input type="email" name="email" /><textarea name="message"></textarea><button type="submit">Send</button></form>', { status: 200, headers: { "content-type": "text/html" } })
       return new Response("", { status: 404 })
     }))
 

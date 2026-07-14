@@ -20,11 +20,23 @@ const input = {
   countryCode: "US",
   syncTwenty: true,
   candidateId: "candidate-1",
+  companyName: "Example LLC",
   domain: "example.com",
+  sourcePageUrl: "https://directory.example/companies/example",
+  qualityGate: {
+    status: "passed" as const,
+    reasons: [],
+    identity: { passed: true, score: 100, sourceName: "Example LLC", siteNames: ["Example"] },
+    country: { passed: true, target: "US", signals: [] },
+    business: { passed: true, isForProfit: true, excludedType: null },
+    smb: { passed: true, score: 100, evidence: ["employee_count:20"] },
+    offerFit: { passed: true, score: 100, evidence: ["commerce_tech:Shopify"] },
+    source: { passed: true, sourceId: "source-1", sourcePageUrl: "https://directory.example/companies/example", trustTier: 3 },
+  },
   score: { stackFitScore: 80, smbScore: 58, freshnessScore: 74, geoConfidence: 80, contactabilityScore: 70, websiteAbsenceScore: 0, opportunityScore: 72, falsePositiveRisk: 12, details: {} },
   detections: [{ name: "Shopify", category: "Ecommerce", confidence: 95 }],
-  form: { formUrl: "https://example.com/contact", method: "regex" as const, verification: "form" as const, confidence: 88, candidates: ["https://example.com/contact"], traceMs: 10 },
-  source: "multi_source_domains",
+  form: { formUrl: "https://example.com/contact", method: "dom" as const, verification: "form" as const, confidence: 94, inspection: { status: "form" as const, reason: "verified_contact_fields" as const, fields: ["email", "message", "submit"] as Array<"email" | "message" | "submit">, formCount: 1, action: "https://example.com/contact", sameOrigin: true, trustedProvider: false }, candidates: ["https://example.com/contact"], traceMs: 10 },
+  source: "evidence_first_sources",
 }
 
 beforeEach(() => {

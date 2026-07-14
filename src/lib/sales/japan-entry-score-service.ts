@@ -24,19 +24,27 @@ import {
 const HOMEPAGE_TIMEOUT_MS = 8_000
 const SOURCE_TIMEOUT_MS = 18_000
 
-function isPrivateAddress(address: string): boolean {
+export function isPrivateAddress(address: string): boolean {
   if (isIP(address) === 4) {
     const octets = address.split(".").map(Number)
     return octets[0] === 0 || octets[0] === 10 || octets[0] === 127 ||
+      (octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127) ||
       (octets[0] === 169 && octets[1] === 254) ||
       (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
-      (octets[0] === 192 && octets[1] === 168)
+      (octets[0] === 192 && octets[1] === 0) ||
+      (octets[0] === 192 && octets[1] === 168) ||
+      (octets[0] === 198 && (octets[1] === 18 || octets[1] === 19)) ||
+      (octets[0] === 198 && octets[1] === 51 && octets[2] === 100) ||
+      (octets[0] === 203 && octets[1] === 0 && octets[2] === 113) ||
+      octets[0] >= 224
   }
   const normalized = address.toLowerCase()
-  return normalized === "::1" || normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("fe80") || normalized.startsWith("::ffff:10.") || normalized.startsWith("::ffff:192.168.")
+  const mappedIpv4 = normalized.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)?.[1]
+  if (mappedIpv4) return isPrivateAddress(mappedIpv4)
+  return normalized === "::" || normalized === "::1" || normalized.startsWith("fc") || normalized.startsWith("fd") || /^fe[89ab]/.test(normalized) || normalized.startsWith("ff") || normalized.startsWith("2001:db8")
 }
 
-async function passesPublicDnsCheck(domain: string): Promise<boolean> {
+export async function passesPublicDnsCheck(domain: string): Promise<boolean> {
   try {
     const addresses = await lookup(domain, { all: true, verbatim: true })
     return addresses.length > 0 && addresses.every((entry) => !isPrivateAddress(entry.address))

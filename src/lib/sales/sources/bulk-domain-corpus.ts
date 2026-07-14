@@ -1,6 +1,5 @@
 import { fetchZoneDomains } from "./czds-zone-files"
 import { fetchPassiveDomainFeeds } from "./passive-domain-feeds"
-import { fetchTrancoTopDomains } from "./tranco-top-domains"
 
 export interface BulkDomainCorpusResult {
   ok: boolean
@@ -26,8 +25,8 @@ function appendDomains(
 
 /**
  * Builds a bounded corpus without search engines or per-domain archive queries.
- * Zone files and operator feeds take priority; Tranco is the zero-config,
- * reproducible fallback. Technology and country are verified after acquisition.
+ * Secondary inventory only. Production lead collection uses evidence-bearing
+ * company source records; zone files and operator feeds may support audits.
  */
 export async function fetchBulkDomainCorpus(pattern: string, limit: number): Promise<BulkDomainCorpusResult> {
   const boundedLimit = Math.max(1, Math.min(limit, 100_000))
@@ -47,23 +46,9 @@ export async function fetchBulkDomainCorpus(pattern: string, limit: number): Pro
     failures.push(...feed.failures)
   }
 
-  if (sourceByDomain.size < boundedLimit) {
-    const tranco = await fetchTrancoTopDomains(pattern, boundedLimit - sourceByDomain.size)
-    appendDomains(sourceByDomain, tranco.domains, "tranco_top_domains", boundedLimit)
-    sourceStats.push({
-      source: "tranco_top_domains",
-      pattern,
-      fetched: tranco.domains.length,
-      total: tranco.total,
-      ok: tranco.ok,
-      error: tranco.error,
-    })
-    if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco returned no domains" })
-  }
-
   const domains = [...sourceByDomain.keys()].slice(0, boundedLimit)
   if (domains.length === 0 && failures.length === 0) {
-    failures.push({ key: `bulk_domain_corpus:${pattern}`, reason: "Zone files, passive feeds, and Tranco returned zero domains" })
+    failures.push({ key: `bulk_domain_corpus:${pattern}`, reason: "Zone files and approved passive feeds returned zero domains" })
   }
   return {
     ok: domains.length > 0,

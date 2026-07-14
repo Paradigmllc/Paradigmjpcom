@@ -218,7 +218,7 @@ async function fetchSegmentDomains(pattern: string, limit: number) {
     domains: corpus.domains,
     sourceStats: corpus.sourceStats,
     failures: corpus.failures,
-    fallbackUsed: corpus.sourceStats.some((stat) => stat.source === "tranco_top_domains"),
+    fallbackUsed: corpus.sourceStats.some((stat) => stat.source === "passive_domain_feed_url"),
     sourceLabel: "bulk_domain_corpus",
   }
 }

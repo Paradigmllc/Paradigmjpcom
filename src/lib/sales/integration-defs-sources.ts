@@ -144,10 +144,10 @@ export const SOURCE_DEFS: SalesIntegrationDefinition[] = [
   },
   {
     slug: "public_web_corpora",
-    displayName: "Tranco / Zone files / Passive feeds",
+    displayName: "Approved company directories / Zone files",
     category: "list_source",
     deployment: "api",
-    role: "Trancoと承認済みzone/domain feedを母集団にし、DNSと対象サイトの限定検証で企業候補を判定する。",
+    role: "公的名簿・輸出事業者・業界団体・出展者名簿を主母集団にし、zone/domain feedは二次監査に限定する。",
     requiredEnv: [],
     optionalEnv: ["PASSIVE_DOMAIN_FEED_URLS", "CZDS_ZONE_FILE_URLS", "MASSDNS_BIN"],
     balance: "none",

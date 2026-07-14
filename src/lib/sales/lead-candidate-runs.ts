@@ -1,71 +1,30 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { salesScopeFromCountry } from "./locale-scope"
 import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-list"
 import { ensureLeadCandidateRunDomainsFetched } from "./lead-candidate-acquisition"
-import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
 import { persistRunItemFailure } from "./lead-candidate-failure-persistence"
-import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
-import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
+import { clampScore } from "./lead-candidate-scoring"
 import {
-  clampScore,
-  inferCountrySignals,
-  scoreCandidate,
-  technologySlug,
-  type CandidateCountrySignal,
-  type CandidateLane,
-  type CandidateScore,
-} from "./lead-candidate-scoring"
-import { detectTechStack, type TechItem } from "./sources/wappalyzer"
-import { discoverFormUrl } from "./sources/form-discovery"
-import { mergeTechItems, techFromCname } from "./passive-inventory-utils"
+  EVIDENCE_FIRST_SOURCE,
+  verifyLeadCandidateItem,
+  type LeadCandidateRunItemRow,
+  type LeadCandidateRunRow,
+} from "./lead-candidate-verification"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
-const SOURCE = "multi_source_domains"
+const SOURCE = EVIDENCE_FIRST_SOURCE
 const MAX_FETCH_LIMIT = 10_000
 const MAX_VERIFY_LIMIT = 5_000
 const DEFAULT_VERIFY_BATCH = 120
 const MAX_VERIFY_CONCURRENCY = 8
 
-interface CandidateRow {
-  id: string
-  domain: string
-  root_url: string | null
-  lane: CandidateLane
-  source_slug: string
-}
-
-interface RunRow {
-  id: string
-  country_code: string
-  technology: string | null
-  requested_limit: number
-  verify_limit: number
-  promote: boolean
-  min_opportunity_score: number
-  min_smb_score: number
-  require_verified_form: boolean
-  min_form_confidence: number
-  sync_twenty: boolean
-  fetched_count: number
-  upserted_count: number
-  cursor?: JsonRecord
-}
-
-interface RunItemRow {
-  id: string
-  run_id: string
-  candidate_id: string | null
-  domain: string
-  root_url: string | null
-  attempts: number
-  meta?: JsonRecord | null
-}
+const TERMINAL_ITEM_STATUSES = ["scored", "form_missing", "promoted", "review_required", "rejected", "failed", "skipped"] as const
 
 export interface DurableCandidateIngestInput {
   countryCode: string
+  sourceConfigIds?: string[]
   technology?: string | null
   limit?: number
   verifyLimit?: number
@@ -114,6 +73,19 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "lead candidate run failed"
 }
 
+export async function assertEvidenceFirstLeadCandidateRun(runId: string): Promise<void> {
+  const sb = getSb()
+  const result = await sb
+    .from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS)
+    .select("source_slug, require_source_evidence")
+    .eq("id", runId)
+    .single()
+  if (result.error) throw new Error(result.error.message)
+  if (result.data?.source_slug !== SOURCE || result.data?.require_source_evidence !== true) {
+    throw new Error("Legacy lead candidate runs cannot be processed; create a new evidence-first run")
+  }
+}
+
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = []
   let cursor = 0
@@ -132,8 +104,11 @@ function normalizeInput(input: DurableCandidateIngestInput) {
   const countryCode = input.countryCode.trim().toUpperCase()
   const limit = Math.min(Math.max(input.limit ?? 1000, 1), MAX_FETCH_LIMIT)
   const verifyLimit = Math.min(Math.max(input.verifyLimit ?? Math.min(limit, DEFAULT_VERIFY_BATCH), 0), Math.min(limit, MAX_VERIFY_LIMIT))
+  const sourceConfigIds = [...new Set(input.sourceConfigIds ?? [])]
+  if (sourceConfigIds.length === 0) throw new Error(`No evidence-bearing lead source is configured for ${countryCode}`)
   return {
     countryCode,
+    sourceConfigIds,
     technology: input.technology?.trim() || null,
     limit,
     verifyLimit,
@@ -147,7 +122,7 @@ function normalizeInput(input: DurableCandidateIngestInput) {
   }
 }
 
-async function createRun(input: ReturnType<typeof normalizeInput>): Promise<RunRow> {
+async function createRun(input: ReturnType<typeof normalizeInput>): Promise<LeadCandidateRunRow> {
   const sb = getSb()
   const { data, error } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).insert({
     source_slug: SOURCE,
@@ -163,10 +138,12 @@ async function createRun(input: ReturnType<typeof normalizeInput>): Promise<RunR
     require_verified_form: input.requireVerifiedForm,
     min_form_confidence: input.minFormConfidence,
     sync_twenty: input.syncTwenty,
+    source_config_ids: input.sourceConfigIds,
+    require_source_evidence: true,
     heartbeat_at: nowIso(),
-  }).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, fetched_count, upserted_count").single()
+  }).select("id, source_slug, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, source_config_ids, require_source_evidence, fetched_count, upserted_count").single()
   if (error) throw new Error(error.message)
-  return data as RunRow
+  return data as LeadCandidateRunRow
 }
 
 async function updateRun(runId: string, patch: JsonRecord): Promise<void> {
@@ -178,80 +155,19 @@ export async function markLeadCandidateRunFailed(runId: string, error: unknown):
   await updateRun(runId, { status: "failed", error_message: errorMessage(error), completed_at: nowIso() })
 }
 
-async function saveEvidence(input: {
-  candidate: CandidateRow
-  runId: string
-  observedUrl: string
-  rawEvidence: JsonRecord
-  signatureHits: TechItem[]
-  countrySignals: CandidateCountrySignal[]
-  score: CandidateScore
-}): Promise<void> {
-  const sb = getSb()
-  const observedAt = nowIso()
-  const observation = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_OBSERVATIONS).insert({
-    candidate_id: input.candidate.id,
-    source_slug: SOURCE,
-    observed_url: input.observedUrl,
-    observed_at: observedAt,
-    raw_evidence: { ...input.rawEvidence, run_id: input.runId },
-    signature_hits: input.signatureHits,
-  })
-  if (observation.error) throw new Error(observation.error.message)
-  if (input.countrySignals.length > 0) {
-    const country = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_COUNTRY_SIGNALS).insert(input.countrySignals.map((signal) => ({
-      candidate_id: input.candidate.id,
-      country_code: signal.countryCode,
-      signal_type: signal.signalType,
-      confidence: signal.confidence,
-      evidence: signal.evidence,
-      observed_at: observedAt,
-    })))
-    if (country.error) throw new Error(country.error.message)
-  }
-  if (input.signatureHits.length > 0) {
-    const tech = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_TECH_DETECTIONS).upsert(input.signatureHits.map((item) => ({
-      candidate_id: input.candidate.id,
-      technology_name: item.name,
-      technology_slug: technologySlug(item.name),
-      category: item.category,
-      confidence: item.confidence ?? 0,
-      evidence_url: input.observedUrl,
-      evidence_type: "homepage",
-      source_slug: SOURCE,
-      detected_at: observedAt,
-    })), { onConflict: "candidate_id,technology_slug,source_slug,evidence_type", ignoreDuplicates: false })
-    if (tech.error) throw new Error(tech.error.message)
-  }
-  const score = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_SCORES).upsert({
-    candidate_id: input.candidate.id,
-    stack_fit_score: input.score.stackFitScore,
-    smb_score: input.score.smbScore,
-    freshness_score: input.score.freshnessScore,
-    geo_confidence: input.score.geoConfidence,
-    contactability_score: input.score.contactabilityScore,
-    website_absence_score: input.score.websiteAbsenceScore,
-    opportunity_score: input.score.opportunityScore,
-    false_positive_risk: input.score.falsePositiveRisk,
-    details: input.score.details,
-    scored_at: observedAt,
-  }, { onConflict: "candidate_id", ignoreDuplicates: false })
-  if (score.error) throw new Error(score.error.message)
-  const { data: currentCandidate } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).select("observation_count").eq("id", input.candidate.id).single()
-  const currentCount = (currentCandidate as { observation_count?: number } | null)?.observation_count ?? 0
-  const candidateUpdate = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).update({ status: "scored", observation_count: currentCount + 1, last_seen_at: observedAt }).eq("id", input.candidate.id)
-  if (candidateUpdate.error) throw new Error(candidateUpdate.error.message)
-}
-
 async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; failures: Array<{ key: string; reason: string }> }> {
   const sb = getSb()
-  const [discoveredRes, scoredRes, formMissingRes, promotedRes, failedRes, matched, formsChecked, formsQualified, twentySynced, runRes] = await Promise.all([
+  const [discoveredRes, scoredRes, formMissingRes, promotedRes, reviewRes, rejectedRes, skippedRes, failedRes, matched, sourceQualified, formsChecked, formsQualified, twentySynced, runRes] = await Promise.all([
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "discovered"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "scored"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "form_missing"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "promoted"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "review_required"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "rejected"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "skipped"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "failed"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("tech_matched", true),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("quality_status", "passed"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).not("form_checked_at", "is", null),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("form_verified", true),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("twenty_synced", true),
@@ -262,16 +178,22 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; fail
   counts.set("scored", scoredRes.count ?? 0)
   counts.set("form_missing", formMissingRes.count ?? 0)
   counts.set("promoted", promotedRes.count ?? 0)
+  counts.set("review_required", reviewRes.count ?? 0)
+  counts.set("rejected", rejectedRes.count ?? 0)
+  counts.set("skipped", skippedRes.count ?? 0)
   counts.set("failed", failedRes.count ?? 0)
   if (runRes.error) throw new Error(runRes.error.message)
-  const verified = (counts.get("scored") ?? 0) + (counts.get("form_missing") ?? 0) + (counts.get("promoted") ?? 0)
+  const verified = TERMINAL_ITEM_STATUSES.reduce((sum, status) => sum + (counts.get(status) ?? 0), 0)
   const hasMore = (counts.get("discovered") ?? 0) > 0 && verified < Number(runRes.data.verify_limit ?? 0)
   const status = hasMore ? "running" : (counts.get("failed") ?? 0) > 0 ? "partial" : "completed"
   await updateRun(runId, {
     status,
     verified_count: verified,
     matched_technology_count: matched.count ?? 0,
-    scored_count: (counts.get("scored") ?? 0) + (counts.get("form_missing") ?? 0),
+    scored_count: (counts.get("scored") ?? 0) + (counts.get("form_missing") ?? 0) + (counts.get("promoted") ?? 0),
+    source_qualified_count: sourceQualified.count ?? 0,
+    quality_rejected_count: counts.get("rejected") ?? 0,
+    review_required_count: counts.get("review_required") ?? 0,
     promoted_count: counts.get("promoted") ?? 0,
     jobs_enqueued_count: 0,
     forms_checked_count: formsChecked.count ?? 0,
@@ -287,100 +209,14 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; fail
   }
 }
 
-async function processItem(run: RunRow, item: RunItemRow) {
-  const sb = getSb()
-  const candidateRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).select("id, domain, root_url, lane, source_slug").eq("id", item.candidate_id).single()
-  if (candidateRes.error) throw new Error(candidateRes.error.message)
-  const candidate = candidateRes.data as CandidateRow
-  if (!isCustomerFacingBusinessDomain(candidate.domain)) {
-    const skipped = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({
-      status: "skipped",
-      attempts: item.attempts + 1,
-      tech_matched: false,
-      job_enqueued: false,
-      form_verified: false,
-      twenty_synced: false,
-      error_message: "Hosted platform or internal domain is not a customer-facing CRM identity",
-      processed_at: nowIso(),
-    }).eq("id", item.id)
-    if (skipped.error) throw new Error(skipped.error.message)
-    return { techMatched: false, promoted: false, twentySynced: false }
-  }
-  const rootUrl = candidate.root_url ?? item.root_url ?? `https://${candidate.domain}`
-  const passive = item.meta?.passive_evidence && typeof item.meta.passive_evidence === "object" && !Array.isArray(item.meta.passive_evidence)
-    ? item.meta.passive_evidence as JsonRecord
-    : null
-  const passiveTech = Array.isArray(passive?.technologies) ? passive.technologies as TechItem[] : []
-  const passiveSignals = Array.isArray(passive?.countrySignals) ? passive.countrySignals as CandidateCountrySignal[] : []
-  const rawPassive = passive?.raw && typeof passive.raw === "object" && !Array.isArray(passive.raw) ? passive.raw as JsonRecord : null
-  const activeDetection = rawPassive?.skip_active_verification === true
-    ? { tech: passiveTech, server: null as string | null, evidenceText: typeof rawPassive.common_crawl_text_sample === "string" ? rawPassive.common_crawl_text_sample : null }
-    : await detectTechStack(rootUrl)
-  const passiveCname = typeof passive?.cnameTarget === "string" ? passive.cnameTarget : null
-  const hostedTech = techFromCname(passiveCname)
-  const detection = {
-    ...activeDetection,
-    tech: mergeTechItems(passiveTech, hostedTech, activeDetection.tech),
-  }
-  const hasStrongPassiveCountry = passiveSignals.some((signal) => signal.confidence >= 60 && signal.signalType !== "request_scope")
-  const countrySignals = hasStrongPassiveCountry
-    ? passiveSignals
-    : inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: detection.evidenceText })
-  const requestedSlug = run.technology ? technologySlug(run.technology) : null
-  const techMatched = requestedSlug ? detection.tech.some((tech) => technologySlug(tech.name) === requestedSlug) : detection.tech.length > 0
-  const form = await discoverFormUrl({
-    homeUrl: rootUrl,
-    region: salesScopeFromCountry({ targetCountry: run.country_code }).region,
-    enableLlm: false,
-    enableCrawl4Ai: false,
-    timeoutMs: 5_000,
-  })
-  const qualification = decideFormQualification(form, run.min_form_confidence)
-  const score = scoreCandidate({ requestedTechnology: run.technology, detections: detection.tech, countrySignals, lane: "tech_footprint", hasWebsite: true, hasContactSignal: qualification.qualified, source: SOURCE, isEnterpriseLike: isEnterpriseLikeStack(detection.tech) })
-  await saveEvidence({ candidate, runId: run.id, observedUrl: rootUrl, rawEvidence: { server: detection.server, country_code: run.country_code, requested_technology: run.technology, passive_evidence: passive, form_discovery: form, form_qualification: qualification }, signatureHits: detection.tech, countrySignals, score })
-  let companyId: string | null = null
-  let twentySynced = false
-  let twentyCompanyId: string | null = null
-  let status = "scored"
-  const eligibleByScore = score.opportunityScore >= run.min_opportunity_score && score.smbScore >= run.min_smb_score && techMatched
-  const eligibleByForm = !run.require_verified_form || qualification.qualified
-  if (run.promote && eligibleByScore && eligibleByForm) {
-    const promotion = await promoteFormQualifiedCandidate({ runId: run.id, countryCode: run.country_code, syncTwenty: run.sync_twenty, candidateId: candidate.id, domain: candidate.domain, score, detections: detection.tech, form, source: SOURCE })
-    if (!promotion.promoted) throw new Error(promotion.error ?? "promotion failed")
-    companyId = promotion.companyId ?? null
-    twentySynced = promotion.twentySynced
-    twentyCompanyId = promotion.twentyCompanyId ?? null
-    status = "promoted"
-  } else if (run.promote && eligibleByScore && !eligibleByForm) {
-    status = "form_missing"
-  }
-  const update = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({
-    status,
-    attempts: item.attempts + 1,
-    tech_matched: techMatched,
-    job_enqueued: false,
-    opportunity_score: score.opportunityScore,
-    company_id: companyId,
-    form_url: form.verification === "form" ? form.formUrl : null,
-    form_method: form.method,
-    form_confidence: form.confidence,
-    form_verified: qualification.qualified,
-    form_checked_at: nowIso(),
-    form_qualification_reason: qualification.reason,
-    twenty_synced: twentySynced,
-    twenty_company_id: twentyCompanyId,
-    error_message: null,
-    processed_at: nowIso(),
-  }).eq("id", item.id)
-  if (update.error) throw new Error(update.error.message)
-  return { techMatched, promoted: status === "promoted", twentySynced }
-}
-
 export async function processLeadCandidateRun(runId: string, options: { batchSize?: number; maxBatches?: number } = {}) {
   const sb = getSb()
-  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, fetched_count, upserted_count, cursor").eq("id", runId).single()
+  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, source_slug, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, source_config_ids, require_source_evidence, fetched_count, upserted_count, cursor").eq("id", runId).single()
   if (runRes.error) throw new Error(runRes.error.message)
-  const run = runRes.data as RunRow
+  const run = runRes.data as LeadCandidateRunRow
+  if (run.source_slug !== SOURCE || run.require_source_evidence !== true) {
+    throw new Error("Legacy lead candidate runs cannot be processed; create a new evidence-first run")
+  }
   const acquisition = await ensureLeadCandidateRunDomainsFetched(run)
   if (acquisition.upserted === 0) {
     await updateRun(run.id, { status: "failed", failure_count: Math.max(acquisition.failures.length, 1), completed_at: nowIso() })
@@ -394,17 +230,17 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
   let processed = 0
   let twentySynced = 0
   for (let batch = 0; batch < maxBatches; batch++) {
-    const verified = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).in("status", ["scored", "form_missing", "promoted"])
+    const verified = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).in("status", [...TERMINAL_ITEM_STATUSES])
     const alreadyVerified = verified.count ?? 0
     if (alreadyVerified >= run.verify_limit) break
     const remaining = Math.max(1, run.verify_limit - alreadyVerified)
     const res = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id, run_id, candidate_id, domain, root_url, attempts, meta").eq("run_id", runId).eq("status", "discovered").order("created_at", { ascending: true }).limit(Math.min(batchSize, remaining))
     if (res.error) throw new Error(res.error.message)
-    const items = (res.data ?? []) as RunItemRow[]
+    const items = (res.data ?? []) as LeadCandidateRunItemRow[]
     if (items.length === 0) break
     const results = await mapLimit(items, MAX_VERIFY_CONCURRENCY, async (item) => {
       try {
-        return await processItem(run, item)
+        return await verifyLeadCandidateItem(run, item)
       } catch (error) {
         const message = error instanceof Error ? error.message : "candidate verification failed"
         console.error("[lead-candidate-runs] item failed:", item.domain, error)

@@ -391,6 +391,8 @@ function printSummaryAndExit(ok, missing, errored) {
         "sales_lead_candidate_scores": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
         "sales_lead_candidate_runs": "supabase/migrations/migration_048_sales_lead_candidate_runs.sql",
         "sales_lead_candidate_run_items": "supabase/migrations/migration_048_sales_lead_candidate_runs.sql",
+        "sales_lead_source_configs": "supabase/migrations/20260715082148_high_quality_lead_sources.sql",
+        "sales_lead_source_records": "supabase/migrations/20260715082148_high_quality_lead_sources.sql",
         "prospects": "supabase/migrations/migration_061_release_table_parity.sql",
         "prospect_patterns": "supabase/migrations/migration_061_release_table_parity.sql",
         "agency_companies": "supabase/migrations/migration_061_release_table_parity.sql",

@@ -312,24 +312,41 @@ function checkStaticReleaseRules() {
     fail("Initial form drafts require RLS, a never-sent DB constraint, and release wiring")
   }
 
-  const passiveFactoryPath = "src/lib/sales/lead-candidate-domain-sources.ts"
-  const passiveFactory = fs.existsSync(passiveFactoryPath)
-    ? fs.readFileSync(passiveFactoryPath, "utf8")
+  const leadSourcesMigrationPath = "supabase/migrations/20260715082148_high_quality_lead_sources.sql"
+  const leadSourcesMigration = fs.existsSync(leadSourcesMigrationPath)
+    ? fs.readFileSync(leadSourcesMigrationPath, "utf8")
     : ""
   if (
-    passiveFactory.includes("fetchPassiveInventoryDomains")
-    && passiveFactory.includes("fetchBulkDomainCorpus")
-    && !passiveFactory.includes("fetchCommonCrawlDomains")
-    && !passiveFactory.includes("fetchCrtshDomains")
-    && !passiveFactory.includes("Searx")
-    && !passiveFactory.includes("BrowserFootprint")
+    leadSourcesMigration.includes("sales_lead_source_configs")
+    && leadSourcesMigration.includes("sales_lead_source_records")
+    && leadSourcesMigration.includes("ENABLE ROW LEVEL SECURITY")
+    && leadSourcesMigration.includes("TO service_role")
+    && leadSourcesMigration.includes("require_source_evidence")
+    && noLoginDeploy.includes("20260715082148_high_quality_lead_sources.sql")
+    && noLoginDeploy.includes("applyHighQualityLeadSourcesMigration")
+  ) {
+    pass("Evidence-first lead sources have RLS, fail-closed run gates, and release wiring")
+  } else {
+    fail("Evidence-first lead sources require RLS, fail-closed run gates, and release wiring")
+  }
+
+  const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
+  const evidenceFactory = fs.existsSync(evidenceFactoryPath)
+    ? fs.readFileSync(evidenceFactoryPath, "utf8")
+    : ""
+  if (
+    evidenceFactory.includes("fetchLeadSourceCandidateRecords")
+    && evidenceFactory.includes("source_record")
+    && !evidenceFactory.includes("fetchBulkDomainCorpus")
+    && !evidenceFactory.includes("fetchTrancoTopDomains")
+    && !fs.existsSync("src/lib/sales/sources/tranco-top-domains.ts")
     && !fs.existsSync("src/app/api/sales/browser-search/route.ts")
     && !fs.existsSync("src/app/api/sales/lead-candidates/common-crawl/route.ts")
     && !fs.existsSync("src/lib/sales/searxng-source.ts")
   ) {
-    pass("lead factory uses passive corpora with no search-engine or proxy dependency")
+    pass("lead factory requires evidence-bearing company sources and excludes popularity/search corpora")
   } else {
-    fail("lead factory must use passive corpora and exclude legacy SearXNG/browser search")
+    fail("lead factory must require evidence-bearing company sources and exclude Tranco/SearXNG/browser search")
   }
 
   const demoQualityMigrationPath = "supabase/migrations/20260712233619_demo_quality_gate.sql"

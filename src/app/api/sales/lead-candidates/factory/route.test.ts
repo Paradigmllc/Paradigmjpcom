@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   notify: vi.fn(),
   getCrmConfig: vi.fn(),
   applyMetadata: vi.fn(),
+  readiness: vi.fn(),
 }))
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
@@ -14,6 +15,7 @@ vi.mock("@/lib/sales/lead-candidate-runs", () => ({ ingestLeadCandidatesDurable:
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 vi.mock("@/lib/sales/crm-field-config", () => ({ getSalesCrmFieldConfig: mocks.getCrmConfig }))
 vi.mock("@/lib/sales/twenty-crm-metadata", () => ({ applyTwentyCrmMetadata: mocks.applyMetadata }))
+vi.mock("@/lib/sales/lead-source-records", () => ({ getLeadSourceReadiness: mocks.readiness }))
 
 import { POST } from "./route"
 
@@ -23,6 +25,7 @@ beforeEach(() => {
   mocks.notify.mockResolvedValue({ ok: true })
   mocks.getCrmConfig.mockResolvedValue({ fields: [], options: [] })
   mocks.applyMetadata.mockResolvedValue({ configured: true, appliedFields: 16, selectFields: 4, error: null })
+  mocks.readiness.mockImplementation(async (countryCodes: string[]) => Object.fromEntries(countryCodes.map((countryCode) => [countryCode, { sourceIds: [`source-${countryCode}`], recordCount: 100 }])))
   mocks.ingest.mockImplementation(async ({ countryCode }: { countryCode: string }) => ({
     ok: true,
     runId: `run-${countryCode}`,
@@ -43,6 +46,7 @@ describe("form-qualified lead factory route", () => {
     expect(mocks.ingest).toHaveBeenCalledTimes(2)
     expect(mocks.ingest).toHaveBeenCalledWith(expect.objectContaining({
       countryCode: "US",
+      sourceConfigIds: ["source-US"],
       verifyLimit: 50,
       promote: true,
       requireVerifiedForm: true,
@@ -63,6 +67,18 @@ describe("form-qualified lead factory route", () => {
     }))
 
     expect(response.status).toBe(503)
+    expect(mocks.ingest).not.toHaveBeenCalled()
+  })
+
+  it("fails closed before Twenty setup when a country has no evidence-bearing source records", async () => {
+    mocks.readiness.mockResolvedValue({ US: { sourceIds: [], recordCount: 0 } })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/lead-candidates/factory", {
+      method: "POST",
+      body: JSON.stringify({ countryCodes: ["US"] }),
+    }))
+
+    expect(response.status).toBe(409)
+    expect(mocks.applyMetadata).not.toHaveBeenCalled()
     expect(mocks.ingest).not.toHaveBeenCalled()
   })
 
