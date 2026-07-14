@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { demoHeadlineClass, hasRepeatedHomeNarrative, resolveDemoArtDirection } from "./demo-art-direction"
+import { demoHeadlineClass, demoHeadlineText, hasRepeatedHomeNarrative, resolveDemoArtDirection } from "./demo-art-direction"
 import type { DemoMultiPageData } from "./demo-site-types"
 
 describe("demo art direction", () => {
@@ -19,9 +19,14 @@ describe("demo art direction", () => {
     const long = demoHeadlineClass("横浜・港北で四十二年、地域に寄り添いながら一人ひとりの髪を丁寧に整える美容室", "hero")
     const short = demoHeadlineClass("髪を、整える。", "hero")
 
-    expect(long).toContain("4.15rem")
-    expect(long).toContain("leading-[1.16]")
+    expect(long).toContain("3.2rem")
+    expect(long).toContain("leading-[1.18]")
     expect(short).toContain("5rem")
+  })
+
+  it("balances a long Japanese title at meaningful punctuation", () => {
+    expect(demoHeadlineText("横浜・港北で42年、地域に寄り添う美容室"))
+      .toBe("横浜・港北で42年、\n地域に寄り添う美容室")
   })
 
   it("detects a repeated hero and intro title", () => {

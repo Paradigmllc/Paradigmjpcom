@@ -1,11 +1,12 @@
-## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（実装・ローカル検証完了 / 本番QA待ち）
+## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（初回本番QA反映・画像解像度追補のローカル検証完了）
 
 ### テンプレ感・タイポグラフィ・美容室下層ページの構造修正
 - 「ノン美容室」の実ブラウザ指摘をrenderer起因として修正。美容室を飲食・法人と同じ全面写真＋巨大明朝＋英字labelの文法から分離し、Zen Kaku Gothic中心の専用brand system、editorial split hero、日本語microcopy、長文見出しの文字数連動scale上限を追加した。既存payloadの旧`salon-air`も読込時に`salon-editorial`へ移行するため、再生成なしで現行デモへ反映できる。
 - 美容室Homeを専用構成へ置換。企業固有hero、所在地／予約導線、価値観、メニュー、スタイルcarousel、FAQ、CTAを別々の視覚文法で構成し、hero文とintro文が一致する場合は確認済みvalue情報へ自動差し替えする。Aboutはmissionの三重表示を解消し、全下層heroも業種別split/cinematicを固定した。
 - Servicesは巨大写真の左右交互テンプレから画像付きcatalogueへ、Worksは交互sectionから不均等lookbook gridへ変更。ContactのGoogle Maps／送信停止form、Framer Motion、Embla carousel、reduced-motion対応は維持し、新規依存は追加していない。
-- 品質ゲートを`2026-07-14.4`へ更新。hero titleとeditorial intro、intro bodyとAbout storyの完全重複を`repeated_home_narrative`でfail-closedにし、長い日本語heroは最大4.15rem・line-height 1.16へ抑える回帰testを追加した。
+- 品質ゲートを`2026-07-14.4`へ更新。hero titleとeditorial intro、intro bodyとAbout storyの完全重複を`repeated_home_narrative`でfail-closedにし、長い日本語heroは最大3.2rem・line-height 1.18へ抑える回帰testを追加した。
 - ローカル検証: デモ関連 **3 files / 16 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。全Vitestは **132/134 files・605/610 tests pass**で、変更外の既知5件（日本語代表メッセージ191文字の旧期待1件、CRLF依存backup shell 4件）のみ不一致。外部送信、候補収集、Twenty同期、フォーム送信は実行していない。
+- PR **#192**をmainへmergeし、正式deployment **ta2vq6vhnjly4lmb007tqzok**とpost-deploy gateを完走。直後の「ノン美容室」実ブラウザQAで、旧全面写真よりタイポグラフィは改善した一方、heroが67.968pxで語中改行し、審査済みエキテン画像の実体が159px角なのに764px幅へ拡大されていた問題を検出した。合格扱いせず、長文heroを最大3.2remへ縮小して句読点で意味単位改行し、hero／メニュー／lookbook／carouselを小画像mosaic・compact表示へ変更。追補後の関連 **3 files / 17 tests pass**、TypeScript、変更対象ESLint、production build **408/408 pages**。最終本番QAまでは候補追加と外部送信を停止する。
 
 ## CURRENT STATUS - 2026-07-14 Premium V3モーションシステム強化（本番反映・実ブラウザQA完了）
 
