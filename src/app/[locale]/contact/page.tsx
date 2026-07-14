@@ -31,10 +31,11 @@ interface Props {
   searchParams: Promise<{ intent?: string }>
 }
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const { intent } = await searchParams
-  const isJapanEntry = locale !== "ja" || intent === "japan-entry"
+  // The domestic Japanese site always uses the Web-production contact flow.
+  // An old intent query must not switch /ja back to the international offer.
+  const isJapanEntry = locale !== "ja"
   if (isJapanEntry) {
     const title = locale === "ja" ? "Japan Entryパッケージの適合審査" : `Apply for the ${JAPAN_ENTRY_TITLE}`
     const description = locale === "ja"
@@ -75,11 +76,11 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   }
 }
 
-export default async function ContactPage({ params, searchParams }: Props) {
+export default async function ContactPage({ params }: Props) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "contactPage" })
-  const { intent } = await searchParams
-  const isJapanEntry = locale !== "ja" || intent === "japan-entry"
+  // Keep /ja domestic even when an old campaign link includes intent=japan-entry.
+  const isJapanEntry = locale !== "ja"
   const isJapanese = locale === "ja"
   const entryCopy = isJapanese
       ? {

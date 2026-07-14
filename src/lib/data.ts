@@ -124,9 +124,9 @@ const SERVICES_EN: readonly Service[] = [
 const PRICING_JA = {
   web: {
     plans: [
-      { name: "ライトプラン", price: "298,000", period: "〜", desc: "小規模サイト（5ページ以内）", features: ["トップページ+4ページ", "レスポンシブ対応", "SEO基本対策", "お問い合わせフォーム", "公開後1ヶ月サポート"], popular: false },
-      { name: "スタンダード", price: "598,000", period: "〜", desc: "中規模サイト（10ページ以内）", features: ["トップページ+9ページ", "CMS導入（WordPress）", "SEO内部対策", "アニメーション実装", "写真撮影代行", "公開後3ヶ月サポート"], popular: true },
-      { name: "プレミアム", price: "980,000", period: "〜", desc: "本格的なコーポレートサイト", features: ["ページ数は要件定義で確定", "Next.js/カスタム開発", "デザインカンプ3案", "多言語対応", "アクセス解析設定", "公開後6ヶ月サポート"], popular: false },
+      { name: "ライトプラン", price: "300,000", period: "〜", desc: "小規模サイト（5ページ以内）", features: ["トップページ+4ページ", "レスポンシブ対応", "SEO基本対策", "お問い合わせフォーム", "公開後1ヶ月サポート"], popular: false },
+      { name: "スタンダード", price: "600,000", period: "〜", desc: "中規模サイト（10ページ以内）", features: ["トップページ+9ページ", "CMS導入（WordPress）", "SEO内部対策", "アニメーション実装", "素材整理・導入支援", "公開後3ヶ月サポート"], popular: true },
+      { name: "プレミアム", price: "1,000,000", period: "〜", desc: "本格的なコーポレートサイト", features: ["ページ数は要件定義で確定", "Next.js/カスタム開発", "デザインシステム設計", "多言語対応", "アクセス解析設定", "公開後6ヶ月サポート"], popular: false },
     ] as readonly Plan[],
     monthly: "保守運用: 月額 19,800円〜（更新代行/SSL管理/バックアップ/障害対応）",
   },
