@@ -20,6 +20,8 @@ const source: LeadSourceConfig = {
   last_previewed_at: "2026-07-14T00:00:00.000Z",
   pilot_approved_by: "Sato",
   pilot_approved_at: "2026-07-14T00:00:00.000Z",
+  last_preflight: {},
+  last_preflighted_at: null,
   last_status: "ready",
   last_error: null,
   last_record_count: 1,

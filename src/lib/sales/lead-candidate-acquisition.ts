@@ -1,6 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { fetchLeadSourceCandidateRecords } from "./lead-source-records"
+import { fetchLeadSourceCandidateRecords } from "./lead-source-selection"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>

@@ -4,7 +4,10 @@ const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }))
 
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: () => ({ from: mocks.from, rpc: mocks.rpc }) }))
 
-import { fetchLeadSourceCandidateRecords, parseLeadSourcePayload, type LeadSourceConfig } from "./lead-source-records"
+import { parseLeadSourcePayload, type LeadSourceConfig } from "./lead-source-records"
+import { fetchLeadSourceCandidateRecords, getLeadSourceReadiness } from "./lead-source-selection"
+
+let sourceRows: LeadSourceConfig[] = []
 
 function config(patch: Partial<LeadSourceConfig> = {}): LeadSourceConfig {
   return {
@@ -25,6 +28,8 @@ function config(patch: Partial<LeadSourceConfig> = {}): LeadSourceConfig {
     last_previewed_at: "2026-07-14T00:00:00.000Z",
     pilot_approved_by: null,
     pilot_approved_at: null,
+    last_preflight: {},
+    last_preflighted_at: null,
     last_status: "ready",
     last_error: null,
     last_record_count: 0,
@@ -87,11 +92,13 @@ describe("parseLeadSourcePayload", () => {
 describe("fetchLeadSourceCandidateRecords", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    sourceRows = [config()]
     const sourceQuery: Record<string, unknown> = {}
     sourceQuery.select = vi.fn(() => sourceQuery)
     sourceQuery.in = vi.fn(() => sourceQuery)
     sourceQuery.eq = vi.fn(() => sourceQuery)
-    sourceQuery.then = (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: [config()], error: null }))
+    sourceQuery.order = vi.fn(() => sourceQuery)
+    sourceQuery.then = (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: sourceRows, error: null }))
     mocks.from.mockReturnValue(sourceQuery)
     mocks.rpc.mockResolvedValue({
       data: [
@@ -113,5 +120,18 @@ describe("fetchLeadSourceCandidateRecords", () => {
     })
     expect(records.map((record) => record.domain)).toEqual(["acme.example", "bright.example"])
     expect(records.every((record) => record.source.id === "source-1")).toBe(true)
+  })
+
+  it("keeps a source out of readiness until website preflight is complete and fresh", async () => {
+    const notReady = await getLeadSourceReadiness(["AU"])
+    sourceRows = [config({
+      last_record_count: 2,
+      last_preflight: { total: 2, pending: 0, checking: 0, eligible: 2, retryable: 0, rejected: 0, reasonCounts: {}, completed: true, checkedAt: new Date().toISOString() },
+      last_preflighted_at: new Date().toISOString(),
+    })]
+    const ready = await getLeadSourceReadiness(["AU"])
+
+    expect(notReady.AU).toMatchObject({ sourceIds: [], recordCount: 0 })
+    expect(ready.AU).toMatchObject({ sourceIds: ["source-1"], recordCount: 2 })
   })
 })

@@ -34,7 +34,21 @@ interface LeadSource {
   last_error: string | null
   last_record_count: number
   record_count: number
+  eligible_record_count: number
   last_ingested_at: string | null
+  last_preflighted_at: string | null
+  last_preflight?: PreflightSummary
+}
+
+interface PreflightSummary {
+  total?: number
+  pending?: number
+  checking?: number
+  eligible?: number
+  retryable?: number
+  rejected?: number
+  reasonCounts?: Record<string, number>
+  completed?: boolean
 }
 
 interface LeadSourceManagerProps {
@@ -58,6 +72,7 @@ export function LeadSourceManager({ operatorName }: LeadSourceManagerProps) {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [preflightProgress, setPreflightProgress] = useState<Record<string, PreflightSummary>>({})
   const [name, setName] = useState("")
   const [countryCode, setCountryCode] = useState("US")
   const [sourceType, setSourceType] = useState("official_directory")
@@ -182,6 +197,53 @@ export function LeadSourceManager({ operatorName }: LeadSourceManagerProps) {
     }
   }
 
+  async function preflight(source: LeadSource) {
+    if (!operatorName.trim()) return toast.error("操作者名を入力してください")
+    const pending = source.last_preflight?.pending ?? source.record_count
+    const retryable = source.last_preflight?.retryable ?? 0
+    let mode: "pending" | "retryable" | "all" | "continue" = pending > 0 ? "pending" : retryable > 0 ? "retryable" : "all"
+    setBusyId(source.id)
+    try {
+      for (let chunk = 0; chunk < 200; chunk += 1) {
+        const response = await fetch(`/api/sales/lead-sources/${source.id}/preflight`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ operatorName: operatorName.trim(), mode }),
+        })
+        const payload = await response.json() as { ok?: boolean; remaining?: number; summary?: PreflightSummary; error?: string }
+        if (!response.ok || !payload.ok || !payload.summary) throw new Error(payload.error ?? "候補サイトを事前検査できませんでした")
+        setPreflightProgress((current) => ({ ...current, [source.id]: payload.summary ?? {} }))
+        if ((payload.remaining ?? 0) === 0) {
+          toast.success(`事前検査完了: 利用可${payload.summary.eligible ?? 0} / 一時障害${payload.summary.retryable ?? 0} / 除外${payload.summary.rejected ?? 0}`)
+          await refresh()
+          return
+        }
+        mode = "continue"
+      }
+      throw new Error("1回の操作上限10,000件に達しました。残件は再度実行してください")
+    } catch (error) {
+      console.error("[lead-source-manager] preflight failed:", error)
+      toast.error(error instanceof Error ? error.message : "候補サイトを事前検査できませんでした")
+    } finally {
+      setBusyId(null)
+      setPreflightProgress((current) => {
+        const next = { ...current }
+        delete next[source.id]
+        return next
+      })
+    }
+  }
+
+  function preflightLabel(source: LeadSource): string {
+    const progress = preflightProgress[source.id]
+    if (progress) return `検査中 ${progress.eligible ?? 0}/${progress.total ?? source.record_count}`
+    const pending = source.last_preflight?.pending ?? source.record_count
+    const retryable = source.last_preflight?.retryable ?? 0
+    if (pending > 0) return `未検査${pending}件を検査`
+    if (retryable > 0) return `一時障害${retryable}件を再検査`
+    return "全件を再検査"
+  }
+
   return <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2"><DatabaseZap className="h-5 w-5" />証拠付き収集元</CardTitle>
@@ -202,10 +264,11 @@ export function LeadSourceManager({ operatorName }: LeadSourceManagerProps) {
 
       {loading ? <p className="py-8 text-center text-sm text-slate-500">収集元を読み込み中...</p> : loadError ? <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{loadError}</p> : sources.length === 0 ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">有効な収集元がありません。量産ランはfail-closedで開始できません。</p> : <div className="grid gap-3 lg:grid-cols-2">{sources.map((source) => <article key={source.id} className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-slate-950">{source.name}</p><a className="mt-1 block max-w-md truncate text-xs text-indigo-700 underline" href={source.source_url} target="_blank" rel="noopener noreferrer" title={source.source_url}>{source.country_code} · {source.source_type} · {source.source_format}</a></div><div className="flex flex-wrap gap-2"><Badge variant={source.active ? "default" : "outline"}>{source.active ? "有効" : "停止"}</Badge><Badge variant={source.approval_status === "approved" ? "default" : source.approval_status === "suspended" ? "destructive" : "outline"}>{source.approval_status}</Badge><Badge variant={source.last_status === "ready" ? "secondary" : source.last_status === "failed" ? "destructive" : "outline"}>{source.last_status}</Badge></div></div>
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4"><span>保存 {source.record_count}</span><span>Tier {source.trust_tier}</span><span>{source.terms_checked ? "規約確認済" : "規約未確認"}</span><span>{source.pilot_approved_at ? "量産承認済" : "パイロット未承認"}</span></div>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4"><span>保存 {source.record_count}</span><span>利用可 {source.eligible_record_count}</span><span>Tier {source.trust_tier}</span><span>{source.pilot_approved_at ? "量産承認済" : "パイロット未承認"}</span></div>
         {source.last_previewed_at && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-700"><p>直近プレビュー: 採用 {source.last_preview.accepted ?? 0} / 除外 {source.last_preview.rejected ?? 0} / 採用率 {source.last_preview.acceptanceRate ?? 0}%</p>{(source.last_preview.sample ?? []).length > 0 && <p className="mt-1 truncate">例: {(source.last_preview.sample ?? []).map((item) => `${item.company_name} (${item.domain})`).join("、")}</p>}</div>}
+        {(source.last_preflight?.total ?? 0) > 0 && <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700"><p>サイト事前検査: 利用可 {source.last_preflight?.eligible ?? 0} / 一時障害 {source.last_preflight?.retryable ?? 0} / 除外 {source.last_preflight?.rejected ?? 0} / 未検査 {source.last_preflight?.pending ?? 0}</p>{Object.keys(source.last_preflight?.reasonCounts ?? {}).length > 0 && <p className="mt-1 text-slate-500">理由: {Object.entries(source.last_preflight?.reasonCounts ?? {}).map(([reason, count]) => `${reason} ${count}`).join("、")}</p>}</div>}
         {source.last_error && <p className="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">{source.last_error}</p>}
-        <div className="mt-4 flex flex-wrap gap-2">{!source.terms_checked && <Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { termsChecked: true })}><ShieldCheck className="h-4 w-4" />規約確認済みにする</Button>}<Button size="sm" variant="outline" disabled={busyId !== null || !source.terms_checked} onClick={() => void preview(source)}>{busyId === source.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}候補保存なしでプレビュー</Button>{source.approval_status !== "approved" ? <Button size="sm" variant="outline" disabled={busyId !== null || !source.last_previewed_at} onClick={() => void patchSource(source, { approvalStatus: "approved" })}>収集元を承認</Button> : <><Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { active: !source.active })}>{source.active ? "収集元を一時停止" : "収集元を有効化"}</Button><Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { approvalStatus: "suspended" })}>承認を停止</Button></>}<Button size="sm" variant="outline" disabled={busyId !== null || source.approval_status !== "approved" || !source.active} onClick={() => void ingest(source)}>承認データを取込</Button></div>
+        <div className="mt-4 flex flex-wrap gap-2">{!source.terms_checked && <Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { termsChecked: true })}><ShieldCheck className="h-4 w-4" />規約確認済みにする</Button>}<Button size="sm" variant="outline" disabled={busyId !== null || !source.terms_checked} onClick={() => void preview(source)}>{busyId === source.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}候補保存なしでプレビュー</Button>{source.approval_status !== "approved" ? <Button size="sm" variant="outline" disabled={busyId !== null || !source.last_previewed_at} onClick={() => void patchSource(source, { approvalStatus: "approved" })}>収集元を承認</Button> : <><Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { active: !source.active })}>{source.active ? "収集元を一時停止" : "収集元を有効化"}</Button><Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { approvalStatus: "suspended" })}>承認を停止</Button></>}<Button size="sm" variant="outline" disabled={busyId !== null || source.approval_status !== "approved" || !source.active} onClick={() => void ingest(source)}>承認データを取込</Button><Button size="sm" disabled={busyId !== null || source.approval_status !== "approved" || !source.active || source.record_count === 0} onClick={() => void preflight(source)}>{busyId === source.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}{preflightLabel(source)}</Button></div>
       </article>)}</div>}
     </CardContent>
   </Card>

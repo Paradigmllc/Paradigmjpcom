@@ -1,3 +1,16 @@
+## CURRENT STATUS - 2026-07-15 Lead Source website preflight強化（実装・検証完了 / 本番release前 / 外部送信0）
+
+### 数千件を504なしで検査するfail-closed経路
+- 前回pilotの失敗2件を本番DBで確認し、`starschema.com`は恒久的なDNS不達、`bluepathlabs.com`は現在DNS・HTTPS 200が回復した一時障害と特定した。従来は両方ともcandidate runの`failed`へ入って失敗率を押し上げていた。
+- `sales_lead_source_records`へ`pending / checking / eligible / retryable / rejected`の事前検査状態、理由、時刻、試行回数、客観evidenceを追加。public DNS / private-reserved IP / HTTPS redirect / HTTP status / HTML content-typeを検査し、7日以内の`eligible`かつsource全件検査完了時だけclaimできるDB制約へ変更した。
+- 1 API requestは50件・同時10件まで、DBの`FOR UPDATE SKIP LOCKED` claimと15分stale recoveryで処理する。管理GUIが最大10,000件までchunkを継続し、未検査だけ・一時障害だけ・全件再検査を選び分けるため、長時間単一requestによる504と同一候補の重複検査を避ける。件数と上位除外理由はDB集計をAPI / GUIへ即時表示する。
+- 再ingestまたは再検査で候補集合が変わると既存のpilot量産承認を自動解除する。文面生成、Opportunity、レポート、Twenty同期、フォーム送信は事前検査から起動しない。
+
+### Verification / remaining gate
+- 新migrationは本番DB上の単一transactionで`BEGIN -> 全DDL/RPC -> ROLLBACK`し、既存schema互換とSQL実行を副作用なしで確認した。対象Vitest **4 files / 18 tests**、全Vitest **155 files / 711 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check`がpass。
+- `lead-source-records.ts`は530行へ増えた時点で候補readiness / atomic selectionを`lead-source-selection.ts`へ分離し452行へ戻した。新規依存は追加していない。
+- 残作業はcommit / push / PR / `npm run release:prod`、本番source 9件の事前検査、外部送信0の再pilot。失敗率20%以下かつ人間確認が終わるまでbatch量産承認は行わない。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働開始（非送信pilot稼働 / batch品質ゲート未承認 / 外部送信0）
 
 ### 本番実測

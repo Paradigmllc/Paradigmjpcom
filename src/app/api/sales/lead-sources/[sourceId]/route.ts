@@ -67,6 +67,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ sourc
       patch.last_record_count = 0
       patch.last_preview = {}
       patch.last_previewed_at = null
+      patch.last_preflight = {}
+      patch.last_preflighted_at = null
       patch.approval_status = "draft"
       patch.active = false
       patch.approved_by = null
