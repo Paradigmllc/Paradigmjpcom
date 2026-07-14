@@ -7,6 +7,13 @@
 - 管理画面は大企業除外数、意思決定者未確認数、審査可能数、生成投入数を分離表示。除外候補も監査証跡として候補DBに保存するが、営業対象リスト・DEMO生成・外部送信へは昇格させない。メール、電話、郵送、SNS、ポータルDM、フォーム送信は引き続き0。
 - 検証: ポータルURL制約、HTTP独自HP、現行／旧スナップショット再判定、SMB／大企業／意思決定者ゲート、素材manifest、API認証・自動drainを含む関連Vitest **4 files / 22 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check` pass。全体Vitestは既存の日本語代表メッセージ191文字に対する200文字超テスト1件だけが今回変更外で不一致（バックアップscript 5件はworktreeのCRLFを一時正規化して5/5 pass）。
 
+## CURRENT STATUS - 2026-07-14 Japan Entry候補リスト実運用開始・旧Twenty自動Pipeline削除
+
+- 本番Wave 1/2としてShopify候補をUS/GB/AU/CA/SG/AEの6市場で各100件、合計600件取得。各市場40件、合計240件を実検証し、US 7 / GB 9 / AU 10 / CA 4 / SG 5 / AE 9の合計44件を品質ゲート通過後にTwentyへ同期。全6runで失敗0、外部outreach run 0。
+- 運用後監査で、候補factoryとは別の旧経路`sales-pipeline-watchdog -> runTwentySyncTick -> pullTwentyCompaniesToSupabase(autoRunPipeline=true)`が、旧Our Placeレコードに対して約1分ごとに失敗Pipelineを生成していることを検出。step生成時点で制約違反停止し、文面・レポート・送信には到達していなかった。
+- Twenty pullをデータ同期専用へ縮小。Pipeline自動生成オプション、旧`twenty-pipeline-intake.ts`、毎分同期からのPipeline起動、旧レポート再生成tick、Twenty新規取込時のレポートURL先行生成を削除。明示選択会社向け`/api/sales/pipeline-runs`は維持し、Twenty同期だけではPipeline・レポートを作れない。
+- ローカル検証: 関連Vitest 2 files / 8 tests、TypeScript、対象ESLint、quality guard 0 errors / 59既存warnings、production build 408/408、`git diff --check` pass。
+
 ## CURRENT STATUS - 2026-07-14 Houzz・エキテン・ジモティー候補→SMB DEMO量産レーン（本番反映・実ブラウザQA完了 / 外部送信0）
 
 ### 2026-07-14 Portal sourced SMB demo factory

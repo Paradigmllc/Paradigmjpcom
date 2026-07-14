@@ -2,7 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
 import { startPassiveInventoryFallback } from "./passive-inventory-runner"
-import { runEnrichmentEventDrain, runTwentySyncTick, runReportRegeneratorTick } from "./enrichment-worker"
+import { runEnrichmentEventDrain, runTwentySyncTick } from "./enrichment-worker"
 
 const STALE_RUN_MS = 5 * 60_000
 const MAX_RESTARTS_PER_TICK = 3
@@ -11,7 +11,6 @@ export interface SalesPipelineEventDrainOptions {
   enrichmentLimit?: number
   recoverStaleRuns?: boolean
   includeTwentySync?: boolean
-  includeReportRegenerator?: boolean
 }
 
 export interface SalesPipelineEventDrainResult {
@@ -23,7 +22,6 @@ export interface SalesPipelineEventDrainResult {
   restartedPipelineRuns: number
   twentySyncScanned: number
   twentySyncUpserted: number
-  reportsRegenerated: number
 }
 
 interface CandidateRunRow {
@@ -101,7 +99,6 @@ async function tick(options: SalesPipelineEventDrainOptions = {}): Promise<Sales
     restartedPipelines = await restartStaleSalesPipelineRuns(3)
   }
   const twenty = options.includeTwentySync === true ? await runTwentySyncTick() : { scanned: 0, upserted: 0 }
-  const reports = options.includeReportRegenerator === true ? await runReportRegeneratorTick() : 0
   const result = {
     enrichmentProcessed: enrichment.processed,
     enrichmentCompleted: enrichment.completed,
@@ -111,7 +108,6 @@ async function tick(options: SalesPipelineEventDrainOptions = {}): Promise<Sales
     restartedPipelineRuns: restartedPipelines,
     twentySyncScanned: twenty.scanned,
     twentySyncUpserted: twenty.upserted,
-    reportsRegenerated: reports,
   }
   if (Object.values(result).some((value) => value > 0)) {
     console.warn("[sales-pipeline-watchdog] event drain", {
