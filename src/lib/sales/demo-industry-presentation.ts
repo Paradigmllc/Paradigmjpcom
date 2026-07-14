@@ -32,12 +32,12 @@ const PROFILES: Record<string, PresentationProfile> = {
   },
   beauty_salon: {
     nav: { home: "ホーム", about: "私たちについて", services: "メニュー", works: "スタイル", faq: "よくある質問", contact: "ご予約・アクセス" },
-    featureEyebrow: "BEAUTY & CARE",
-    featureHeading: "自分らしさを、\n丁寧に整える。",
-    servicesEyebrow: "MENU",
-    servicesHeading: "ご案内しているメニュー。",
-    galleryEyebrow: "STYLE",
-    galleryHeading: (name) => `${name}のスタイル。`,
+    featureEyebrow: "サロンの考え方",
+    featureHeading: "髪を整える時間まで、\n心地よく。",
+    servicesEyebrow: "メニュー",
+    servicesHeading: "髪と日常を整える、\nサロンメニュー。",
+    galleryEyebrow: "スタイル",
+    galleryHeading: (name) => `${name}で生まれるスタイル。`,
     sceneHeadings: ["スタイル", "施術の時間", "サロン空間", "ディテール"],
     contactTitle: "ご予約・アクセス",
     contactSubtitle: "所在地と正式なご予約・お問い合わせ方法をご案内します。",
@@ -126,6 +126,32 @@ function socialNewsPage(page: DemoMultiPageData): DemoContentPage {
   }
 }
 
+function normalizedCopy(value: string | undefined): string {
+  return (value ?? "").replace(/[\s、。！？・／/「」『』（）()]/gu, "").toLowerCase()
+}
+
+function distinctPremiumIntro(page: DemoMultiPageData, profile: PresentationProfile) {
+  if (!page.premium) return page.premium
+  const intro = page.premium.intro
+  const repeatsHero = normalizedCopy(intro.title) === normalizedCopy(page.pages.home.hero.title)
+  const repeatsStory = normalizedCopy(intro.body) === normalizedCopy(page.pages.about.story)
+  const valueSummary = page.pages.about.values
+    .slice(0, 2)
+    .map((value) => value.description.trim())
+    .filter(Boolean)
+    .join("\n")
+
+  return {
+    ...page.premium,
+    intro: {
+      ...intro,
+      eyebrow: repeatsHero ? profile.featureEyebrow : intro.eyebrow,
+      title: repeatsHero ? profile.featureHeading : intro.title,
+      body: repeatsStory && valueSummary ? valueSummary : intro.body,
+    },
+  }
+}
+
 /**
  * Adds a deterministic editorial layer after the single company-level LLM call.
  * It changes information architecture and labels without inventing business facts.
@@ -145,6 +171,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
 
   return {
     ...page,
+    premium: distinctPremiumIntro(page, profile),
     meta: {
       ...page.meta,
       proposalNotice: "提案用デモ · 公式サイトではありません",

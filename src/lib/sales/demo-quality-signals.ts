@@ -1,4 +1,5 @@
 import type { DemoMultiPageData, DemoQualityReport } from "./demo-site-types"
+import { hasRepeatedHomeNarrative } from "./demo-art-direction"
 
 const DRAFT_PATTERNS = [
   /掲載構成案/u,
@@ -80,6 +81,7 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
 
   if (DRAFT_PATTERNS.some((pattern) => pattern.test(copy))) blockers.push("customer_facing_draft_copy")
   if (duplicateLongCopy(page)) blockers.push("repeated_customer_copy")
+  if (hasRepeatedHomeNarrative(page)) blockers.push("repeated_home_narrative")
   if (!page.meta.proposalNotice || !page.meta.footerDescription || navLabels.length < 6) {
     blockers.push("presentation_metadata_incomplete")
   }
@@ -113,6 +115,7 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
     - (warnings.includes("news_content_thin") ? 4 : 0)
     - (warnings.includes("fixed_page_content_thin") ? 7 : 0)
     - (blockers.includes("repeated_customer_copy") ? 10 : 0)
+    - (blockers.includes("repeated_home_narrative") ? 10 : 0)
     - (blockers.filter((item) => item.startsWith("page_content_thin:")).length * 4)
     - (warnings.filter((item) => item.startsWith("page_content_near_minimum:")).length * 1))
   const trustSafety = Math.max(0, 25

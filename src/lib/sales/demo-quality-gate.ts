@@ -9,7 +9,7 @@ import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 import { analyzeDemoQualitySignals } from "./demo-quality-signals"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.3"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.4"
 export const DEMO_QUALITY_THRESHOLD = 94
 
 const FABRICATION_PATTERNS = [
