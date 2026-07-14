@@ -132,6 +132,34 @@ describe("demo quality gate", () => {
     expect(summary.designFingerprint).not.toBe(summary.structuralFingerprint)
   })
 
+  it("does not mistake reused reviewed-media captions for duplicated body copy", () => {
+    const basePage = fixture()
+    const caption = "エキテン公式店舗掲載画像をブラウザで目視確認。人物・透かしなし。非公開提案デモ限定。"
+    basePage.premium!.heroMedia = basePage.premium!.heroMedia.map((media) => ({ ...media, caption }))
+    basePage.premium!.gallery = basePage.premium!.gallery.map((media) => ({ ...media, caption }))
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, basePage)
+    const page = upgradeDemoToPremiumV3(basePage, recipe)
+    const quality = evaluateDemoQuality(page, page.designRecipe ?? recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.hardBlockers).not.toContain("repeated_customer_copy")
+  })
+
+  it("still blocks genuinely repeated long body copy", () => {
+    const page = fixture()
+    const repeated = "同じ長い本文を複数の独立したセクションへ繰り返し掲載すると、読み手には薄いテンプレートとして見えてしまいます。"
+    page.pages.works!.sections = [1, 2, 3].map((index) => ({ id: `duplicate-${index}`, heading: `内容${index}`, body: repeated }))
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.hardBlockers).toContain("repeated_customer_copy")
+  })
+
   it("accepts a registry-verified corporate demo without forcing an SNS account", () => {
     const basePage = fixture()
     basePage.industry = "construction"

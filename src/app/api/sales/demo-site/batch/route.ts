@@ -6,13 +6,13 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 import { demoSourceManifestSchema, validateDemoSourceManifest } from "@/lib/sales/demo-source-policy"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { INDUSTRIES } from "@/lib/sales/types"
-import { activatePublicUnlistedDemo } from "@/lib/sales/demo-private-access"
+import { activateSignedPrivateDemo } from "@/lib/sales/demo-private-access"
 import {
   claimDemoBatchDrain,
   dispatchDemoBatchDrain,
   releaseDemoBatchDrain,
 } from "@/lib/sales/demo-batch-drain"
-import { buildDemoUrl } from "@/lib/sales/routing"
+import { demoSiteUrl } from "@/lib/sales/routing"
 import { DEMO_QUALITY_THRESHOLD } from "@/lib/sales/demo-quality-gate"
 import { queueReviewedDemoItem } from "@/lib/sales/demo-batch-queue"
 
@@ -158,19 +158,22 @@ export async function PUT(request: NextRequest) {
         issued.push({ jobId: row.id, ok: false, error: errorMessage })
         continue
       }
-      await activatePublicUnlistedDemo({ slug, assets: sourceReview.manifest.assets })
+      const access = await activateSignedPrivateDemo({
+        slug,
+        ttlDays: parsed.data.ttlDays,
+        assets: sourceReview.manifest.assets,
+      })
       const locale = row.input_payload?.locale === "en" ? "en" : "ja"
-      const cleanUrl = buildDemoUrl(locale, slug)
+      const previewUrl = `${demoSiteUrl()}/api/demo-preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(access.token)}&locale=${locale}`
       const nextResult = {
         ...row.result_payload,
-        canonical_url: cleanUrl,
-        published_at: new Date().toISOString(),
-        publication_status: "published",
+        preview_expires_at: access.expiresAt,
+        publication_status: "private_review",
         sending_enabled: false,
       }
       const update = await sb.from(DB_TABLES.SALES_ENRICHMENT_JOBS).update({ result_payload: nextResult }).eq("id", row.id)
       if (update.error) console.error("[demo-batch] preview audit update failed:", update.error.message)
-      issued.push({ jobId: row.id, ok: true, slug, cleanUrl })
+      issued.push({ jobId: row.id, ok: true, slug, previewUrl, expiresAt: access.expiresAt })
     }
     return NextResponse.json({ ok: issued.some((item) => item.ok), issued }, { headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {

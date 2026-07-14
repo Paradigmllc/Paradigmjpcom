@@ -1,3 +1,13 @@
+## CURRENT STATUS - 2026-07-14 エキテン実候補→Premium V3本番デモの実務pilot（生成・QA完了 / 外部送信0）
+
+### 2026-07-14 ノン美容室の実素材デモ生成と量産ゲート修正
+- Houzzを先行確認したが、画像・経営者直結・独立HPなしを同時に満たす候補は0。エキテンで横浜市港北区の「ノン美容室」を選定した。女性店長1人、地域営業42年、2席、公式プロフィール47写真、登録Business Siteは2026-07-14時点404をブラウザ確認し、大企業シグナル0、SMB適合100、`ready_for_review`で候補DBへ1件保存した。
+- エキテン公式店舗の店内写真6点を目視し、人物・透かしなし、`private_proposal`、`collectionPolicy=no_automated_fetch`のreviewed manifestとして本番生成へ投入。初回は同一の素材審査メモを画像ごとに再利用したため`repeated_customer_copy`で70点・公開停止し、メモを本文と誤認しないよう品質判定を修正した。本文そのものを3回繰り返す回帰ケースは引き続きfail-closed。
+- 再生成結果は3候補、選定`prism`、品質 **100/100**、4軸各25、hard blocker 0、warning 0。7日で失効する署名付き非公開URLを発行し、`is_published=false` / `private_proposal` / 画像6点 / 外部送信0を維持する。
+- 本番実ブラウザQAはHome + About / Services / Works / FAQ / Contact / News / Recruit / Privacy / Terms / Commerceの **11/11ページ**。下層main DOMは1,112〜2,972文字相当、見出し3〜13、画像0〜10、ContactのGoogle Mapsと送信停止フォーム、PC / tablet / mobile切替、mobile header/menuボタン、2026-07-21失効表示を確認した。
+- バッチ画面で`ttlDays: 7`を受けながら無期限クリーン公開を試みていた不整合を修正。完了ジョブはmanifestの審査済み素材から署名付き非公開URLを一括発行し、実際の失効日時を返す。UI文言も「7日限定URL」へ統一し、token実値はDBへ保存しない。
+- ローカル検証: 対象Vitest **2 files / 13 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check` pass。メール、電話、郵送、SNS、ポータルDM、フォーム営業、Twenty同期は実行していない。
+
 ## CURRENT STATUS - 2026-07-14 ポータル候補のSMB意思決定ゲート・持続可能な一括収集（本番反映 / 外部送信0）
 
 ### 2026-07-14 Houzz・エキテン・ジモティーの経営者直結候補選定
