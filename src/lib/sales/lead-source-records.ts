@@ -35,12 +35,29 @@ export interface LeadSourceConfig {
   field_mapping: JsonRecord
   active: boolean
   terms_checked: boolean
+  approval_status: "draft" | "approved" | "suspended"
+  approved_by: string | null
+  approved_at: string | null
+  last_preview: JsonRecord
+  last_previewed_at: string | null
+  pilot_approved_by: string | null
+  pilot_approved_at: string | null
   last_status: string
   last_error: string | null
   last_record_count: number
   last_ingested_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface LeadSourcePreview {
+  sourceId: string
+  rawCount: number
+  accepted: number
+  rejected: number
+  acceptanceRate: number
+  sample: Array<Pick<NormalizedSourceRecord, "company_name" | "domain" | "source_page_url" | "business_type" | "employee_count">>
+  previewedAt: string
 }
 
 export interface LeadSourceRecord {
@@ -58,6 +75,8 @@ export interface LeadSourceRecord {
   is_for_profit: boolean | null
   evidence: JsonRecord
   observed_at: string
+  last_selected_at?: string | null
+  selection_count?: number
 }
 
 export interface NormalizedSourceRecord {
@@ -282,6 +301,40 @@ export async function listLeadSourceConfigs(): Promise<Array<LeadSourceConfig & 
   return ((configs.data ?? []) as LeadSourceConfig[]).map((config) => ({ ...config, record_count: config.last_record_count }))
 }
 
+export async function previewLeadSourceConfig(sourceId: string): Promise<LeadSourcePreview> {
+  const sb = getSb()
+  const result = await sb.from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS).select("*").eq("id", sourceId).single()
+  if (result.error) throw new Error(result.error.message)
+  const config = result.data as LeadSourceConfig
+  if (!config.terms_checked) throw new Error("Source terms and robots policy must be confirmed before preview")
+  const text = await fetchSourceText(config)
+  const parsed = parseLeadSourcePayload(text, config)
+  const accepted = parsed.records.length
+  const previewedAt = new Date().toISOString()
+  const preview: LeadSourcePreview = {
+    sourceId,
+    rawCount: parsed.rawCount,
+    accepted,
+    rejected: Math.max(0, parsed.rawCount - accepted),
+    acceptanceRate: parsed.rawCount > 0 ? Math.round((accepted / parsed.rawCount) * 10_000) / 100 : 0,
+    sample: parsed.records.slice(0, 5).map((record) => ({
+      company_name: record.company_name,
+      domain: record.domain,
+      source_page_url: record.source_page_url,
+      business_type: record.business_type,
+      employee_count: record.employee_count,
+    })),
+    previewedAt,
+  }
+  const updated = await sb.from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS).update({
+    last_preview: preview,
+    last_previewed_at: previewedAt,
+    last_error: accepted > 0 ? null : "Preview returned no valid company name + public website records",
+  }).eq("id", sourceId)
+  if (updated.error) throw new Error(updated.error.message)
+  return preview
+}
+
 export async function ingestLeadSourceConfig(sourceId: string): Promise<{ sourceId: string; accepted: number; rejected: number }> {
   const sb = getSb()
   const result = await sb.from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS).select("*").eq("id", sourceId).single()
@@ -289,6 +342,7 @@ export async function ingestLeadSourceConfig(sourceId: string): Promise<{ source
   const config = result.data as LeadSourceConfig
   if (!config.active) throw new Error("Inactive source cannot be ingested")
   if (!config.terms_checked) throw new Error("Source terms and robots policy must be confirmed before ingestion")
+  if (config.approval_status !== "approved") throw new Error("Source must be previewed and approved before ingestion")
   if (config.last_status === "running" && Date.now() - Date.parse(config.updated_at) < INGESTION_LOCK_MS) {
     throw new Error("Lead source ingestion is already running")
   }
@@ -330,11 +384,22 @@ export async function ingestLeadSourceConfig(sourceId: string): Promise<{ source
   }
 }
 
-export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Record<string, { sourceIds: string[]; recordCount: number }>> {
+export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Record<string, {
+  sourceIds: string[]
+  scaleReadySourceIds: string[]
+  recordCount: number
+  scaleReadyRecordCount: number
+}>> {
   const configs = await listLeadSourceConfigs()
   return Object.fromEntries(countryCodes.map((countryCode) => {
-    const matched = configs.filter((config) => config.active && config.terms_checked && config.last_status === "ready" && config.country_code === countryCode && config.record_count > 0)
-    return [countryCode, { sourceIds: matched.map((config) => config.id), recordCount: matched.reduce((sum, config) => sum + config.record_count, 0) }]
+    const matched = configs.filter((config) => config.active && config.terms_checked && config.approval_status === "approved" && config.last_status === "ready" && config.country_code === countryCode && config.record_count > 0)
+    const scaleReady = matched.filter((config) => config.pilot_approved_at !== null)
+    return [countryCode, {
+      sourceIds: matched.map((config) => config.id),
+      scaleReadySourceIds: scaleReady.map((config) => config.id),
+      recordCount: matched.reduce((sum, config) => sum + config.record_count, 0),
+      scaleReadyRecordCount: scaleReady.reduce((sum, config) => sum + config.record_count, 0),
+    }]
   }))
 }
 
@@ -351,25 +416,30 @@ export async function fetchLeadSourceCandidateRecords(input: {
     .eq("country_code", input.countryCode)
     .eq("active", true)
     .eq("terms_checked", true)
+    .eq("approval_status", "approved")
     .eq("last_status", "ready")
   if (configsResult.error) throw new Error(configsResult.error.message)
   const configs = (configsResult.data ?? []) as LeadSourceConfig[]
   const configById = new Map(configs.map((config) => [config.id, config]))
+  if (configById.size === 0) return []
   const records: LeadSourceRecord[] = []
-  const pageSize = 1_000
-  const maxFetch = Math.min(Math.max(input.limit * 3, input.limit), 30_000)
-  for (let from = 0; from < maxFetch; from += pageSize) {
-    const recordsResult = await sb.from(DB_TABLES.SALES_LEAD_SOURCE_RECORDS)
-      .select("*")
-      .in("source_config_id", [...configById.keys()])
-      .eq("country_code", input.countryCode)
-      .eq("active", true)
-      .order("observed_at", { ascending: false })
-      .range(from, Math.min(from + pageSize - 1, maxFetch - 1))
-    if (recordsResult.error) throw new Error(recordsResult.error.message)
-    const page = (recordsResult.data ?? []) as LeadSourceRecord[]
-    records.push(...page)
-    if (page.length < pageSize) break
+  const seenDomains = new Set<string>()
+  for (let attempt = 0; attempt < 3 && records.length < input.limit; attempt += 1) {
+    const remaining = input.limit - records.length
+    const claimed = await sb.rpc("sales_claim_lead_source_records", {
+      p_country_code: input.countryCode,
+      p_source_config_ids: [...configById.keys()],
+      p_limit: Math.min(Math.max(remaining * 2, 100), 10_000),
+    })
+    if (claimed.error) throw new Error(claimed.error.message)
+    const page = (claimed.data ?? []) as LeadSourceRecord[]
+    for (const record of page) {
+      if (!seenDomains.has(record.domain)) {
+        records.push(record)
+        seenDomains.add(record.domain)
+      }
+    }
+    if (page.length === 0) break
   }
   const ranked = records.sort((a, b) => (configById.get(b.source_config_id)?.trust_tier ?? 0) - (configById.get(a.source_config_id)?.trust_tier ?? 0))
   const unique = new Map<string, LeadSourceRecord & { source: LeadSourceConfig }>()

@@ -11,7 +11,7 @@ const toast = vi.hoisted(() => ({
   warning: vi.fn(),
 }))
 
-vi.mock("sonner", () => ({ toast }))
+vi.mock("sonner", () => ({ toast, Toaster: () => null }))
 
 const staleRun = {
   id: "run-stale",
@@ -19,6 +19,9 @@ const staleRun = {
   country_code: "US",
   technology: "Shopify",
   status: "running",
+  execution_mode: "pilot",
+  operator_status: "pending_review",
+  cancel_requested: false,
   requested_limit: 1000,
   verify_limit: 120,
   min_opportunity_score: 68,
@@ -33,6 +36,8 @@ const staleRun = {
   forms_checked_count: 108,
   forms_qualified_count: 40,
   promoted_count: 0,
+  operator_approved_count: 0,
+  operator_rejected_count: 0,
   twenty_synced_count: 0,
   failure_count: 4,
   error_message: null,
@@ -95,6 +100,14 @@ describe("LeadFactoryConsole stalled run recovery", () => {
 
     await act(async () => root.render(<LeadFactoryConsole />))
     await vi.waitFor(() => expect(container.querySelector<HTMLButtonElement>('button[aria-label="USの停滞runを再開"]')).not.toBeNull())
+    const operator = container.querySelector<HTMLInputElement>("#factory-operator")
+    if (!operator) throw new Error("operator input not found")
+    await act(async () => {
+      const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set
+      if (!valueSetter) throw new Error("input value setter not found")
+      valueSetter.call(operator, "Sato")
+      operator.dispatchEvent(new Event("input", { bubbles: true }))
+    })
     const recover = container.querySelector<HTMLButtonElement>('button[aria-label="USの停滞runを再開"]')
     if (!recover) throw new Error("stalled run recovery button not found")
     await act(async () => recover.click())
@@ -105,7 +118,7 @@ describe("LeadFactoryConsole stalled run recovery", () => {
     ))
     const recoveryCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/runs/run-stale/process"))
     expect(recoveryCall).toBeDefined()
-    expect(JSON.parse(String(recoveryCall?.[1]?.body))).toEqual({ async: false, batchSize: 24, maxBatches: 10 })
-    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("12件を復旧し、Twenty同期0件で完了しました"))
+    expect(JSON.parse(String(recoveryCall?.[1]?.body))).toEqual({ async: false, batchSize: 24, maxBatches: 10, operatorName: "Sato" })
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("12件を復旧し、人手レビュー待ちへ進めました。Twenty同期0件"))
   })
 })

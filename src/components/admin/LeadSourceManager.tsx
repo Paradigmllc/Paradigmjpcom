@@ -19,11 +19,26 @@ interface LeadSource {
   trust_tier: number
   active: boolean
   terms_checked: boolean
+  approval_status: "draft" | "approved" | "suspended"
+  approved_by: string | null
+  last_preview: {
+    accepted?: number
+    rejected?: number
+    acceptanceRate?: number
+    sample?: Array<{ company_name: string; domain: string }>
+  }
+  last_previewed_at: string | null
+  pilot_approved_by: string | null
+  pilot_approved_at: string | null
   last_status: string
   last_error: string | null
   last_record_count: number
   record_count: number
   last_ingested_at: string | null
+}
+
+interface LeadSourceManagerProps {
+  operatorName: string
 }
 
 const SOURCE_TYPES = [
@@ -37,9 +52,10 @@ const SOURCE_TYPES = [
 
 const INPUT_CLASS = "mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
 
-export function LeadSourceManager() {
+export function LeadSourceManager({ operatorName }: LeadSourceManagerProps) {
   const [sources, setSources] = useState<LeadSource[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState("")
@@ -52,6 +68,7 @@ export function LeadSourceManager() {
   const [fieldMapping, setFieldMapping] = useState("{}")
 
   const refresh = useCallback(async () => {
+    setLoadError(null)
     try {
       const response = await fetch("/api/sales/lead-sources", { cache: "no-store" })
       const payload = await response.json() as { ok?: boolean; sources?: LeadSource[]; error?: string }
@@ -59,7 +76,9 @@ export function LeadSourceManager() {
       setSources(payload.sources ?? [])
     } catch (error) {
       console.error("[lead-source-manager] refresh failed:", error)
-      toast.error(error instanceof Error ? error.message : "収集元を取得できませんでした")
+      const message = error instanceof Error ? error.message : "収集元を取得できませんでした"
+      setLoadError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -68,6 +87,7 @@ export function LeadSourceManager() {
   useEffect(() => { void refresh() }, [refresh])
 
   async function createSource() {
+    if (!operatorName.trim()) return toast.error("操作者名を入力してください")
     let mapping: Record<string, unknown>
     try {
       const parsed = JSON.parse(fieldMapping) as unknown
@@ -82,7 +102,7 @@ export function LeadSourceManager() {
       const response = await fetch("/api/sales/lead-sources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, countryCode, sourceType, sourceUrl, sourceFormat, trustTier, termsChecked, fieldMapping: mapping }),
+        body: JSON.stringify({ name, countryCode, sourceType, sourceUrl, sourceFormat, trustTier, termsChecked, fieldMapping: mapping, operatorName: operatorName.trim() }),
       })
       const payload = await response.json() as { ok?: boolean; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error ?? "収集元を登録できませんでした")
@@ -99,13 +119,14 @@ export function LeadSourceManager() {
     }
   }
 
-  async function patchSource(source: LeadSource, patch: { active?: boolean; termsChecked?: boolean }) {
+  async function patchSource(source: LeadSource, patch: { active?: boolean; termsChecked?: boolean; approvalStatus?: "draft" | "approved" | "suspended" }) {
+    if (!operatorName.trim()) return toast.error("操作者名を入力してください")
     setBusyId(source.id)
     try {
       const response = await fetch(`/api/sales/lead-sources/${source.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
+        body: JSON.stringify({ ...patch, operatorName: operatorName.trim() }),
       })
       const payload = await response.json() as { ok?: boolean; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error ?? "収集元を更新できませんでした")
@@ -119,10 +140,36 @@ export function LeadSourceManager() {
     }
   }
 
-  async function ingest(source: LeadSource) {
+  async function preview(source: LeadSource) {
+    if (!operatorName.trim()) return toast.error("操作者名を入力してください")
     setBusyId(source.id)
     try {
-      const response = await fetch(`/api/sales/lead-sources/${source.id}/ingest`, { method: "POST" })
+      const response = await fetch(`/api/sales/lead-sources/${source.id}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ operatorName: operatorName.trim() }),
+      })
+      const payload = await response.json() as { ok?: boolean; preview?: { accepted: number; rejected: number; acceptanceRate: number }; error?: string }
+      if (!response.ok || !payload.ok) throw new Error(payload.error ?? "収集元をプレビューできませんでした")
+      toast.success(`候補保存なしで${payload.preview?.accepted ?? 0}件を確認。採用率${payload.preview?.acceptanceRate ?? 0}%`)
+      await refresh()
+    } catch (error) {
+      console.error("[lead-source-manager] preview failed:", error)
+      toast.error(error instanceof Error ? error.message : "収集元をプレビューできませんでした")
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function ingest(source: LeadSource) {
+    if (!operatorName.trim()) return toast.error("操作者名を入力してください")
+    setBusyId(source.id)
+    try {
+      const response = await fetch(`/api/sales/lead-sources/${source.id}/ingest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ operatorName: operatorName.trim() }),
+      })
       const payload = await response.json() as { ok?: boolean; accepted?: number; rejected?: number; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error ?? "収集元を取り込めませんでした")
       toast.success(`証拠付き企業${payload.accepted ?? 0}件を保存。不備${payload.rejected ?? 0}件`)
@@ -153,11 +200,12 @@ export function LeadSourceManager() {
         <div className="sm:col-span-2 lg:col-span-4"><Button disabled={creating || !name || !sourceUrl} onClick={() => void createSource()}>{creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}収集元を登録</Button></div>
       </div>
 
-      {loading ? <p className="py-8 text-center text-sm text-slate-500">収集元を読み込み中...</p> : sources.length === 0 ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">有効な収集元がありません。量産ランはfail-closedで開始できません。</p> : <div className="grid gap-3 lg:grid-cols-2">{sources.map((source) => <article key={source.id} className="rounded-xl border border-slate-200 bg-white p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-slate-950">{source.name}</p><p className="mt-1 max-w-md truncate text-xs text-slate-500" title={source.source_url}>{source.country_code} · {source.source_type} · {source.source_format}</p></div><div className="flex gap-2"><Badge variant={source.active ? "default" : "outline"}>{source.active ? "有効" : "停止"}</Badge><Badge variant={source.last_status === "ready" ? "secondary" : source.last_status === "failed" ? "destructive" : "outline"}>{source.last_status}</Badge></div></div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-slate-600"><span>保存 {source.record_count}</span><span>Tier {source.trust_tier}</span><span>{source.terms_checked ? "規約確認済" : "規約未確認"}</span></div>
+      {loading ? <p className="py-8 text-center text-sm text-slate-500">収集元を読み込み中...</p> : loadError ? <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{loadError}</p> : sources.length === 0 ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">有効な収集元がありません。量産ランはfail-closedで開始できません。</p> : <div className="grid gap-3 lg:grid-cols-2">{sources.map((source) => <article key={source.id} className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-slate-950">{source.name}</p><a className="mt-1 block max-w-md truncate text-xs text-indigo-700 underline" href={source.source_url} target="_blank" rel="noopener noreferrer" title={source.source_url}>{source.country_code} · {source.source_type} · {source.source_format}</a></div><div className="flex flex-wrap gap-2"><Badge variant={source.active ? "default" : "outline"}>{source.active ? "有効" : "停止"}</Badge><Badge variant={source.approval_status === "approved" ? "default" : source.approval_status === "suspended" ? "destructive" : "outline"}>{source.approval_status}</Badge><Badge variant={source.last_status === "ready" ? "secondary" : source.last_status === "failed" ? "destructive" : "outline"}>{source.last_status}</Badge></div></div>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4"><span>保存 {source.record_count}</span><span>Tier {source.trust_tier}</span><span>{source.terms_checked ? "規約確認済" : "規約未確認"}</span><span>{source.pilot_approved_at ? "量産承認済" : "パイロット未承認"}</span></div>
+        {source.last_previewed_at && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-700"><p>直近プレビュー: 採用 {source.last_preview.accepted ?? 0} / 除外 {source.last_preview.rejected ?? 0} / 採用率 {source.last_preview.acceptanceRate ?? 0}%</p>{(source.last_preview.sample ?? []).length > 0 && <p className="mt-1 truncate">例: {(source.last_preview.sample ?? []).map((item) => `${item.company_name} (${item.domain})`).join("、")}</p>}</div>}
         {source.last_error && <p className="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">{source.last_error}</p>}
-        <div className="mt-4 flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busyId !== null || !source.terms_checked} onClick={() => void ingest(source)}>{busyId === source.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}今すぐ取込</Button><Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { active: !source.active })}>{source.active ? "停止" : "有効化"}</Button>{!source.terms_checked && <Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { termsChecked: true })}><ShieldCheck className="h-4 w-4" />規約確認済みにする</Button>}</div>
+        <div className="mt-4 flex flex-wrap gap-2">{!source.terms_checked && <Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { termsChecked: true })}><ShieldCheck className="h-4 w-4" />規約確認済みにする</Button>}<Button size="sm" variant="outline" disabled={busyId !== null || !source.terms_checked} onClick={() => void preview(source)}>{busyId === source.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}候補保存なしでプレビュー</Button>{source.approval_status !== "approved" ? <Button size="sm" variant="outline" disabled={busyId !== null || !source.last_previewed_at} onClick={() => void patchSource(source, { approvalStatus: "approved" })}>収集元を承認</Button> : <Button size="sm" variant="outline" disabled={busyId !== null} onClick={() => void patchSource(source, { approvalStatus: "suspended" })}>承認を停止</Button>}<Button size="sm" variant="outline" disabled={busyId !== null || source.approval_status !== "approved" || !source.active} onClick={() => void ingest(source)}>承認データを取込</Button></div>
       </article>)}</div>}
     </CardContent>
   </Card>

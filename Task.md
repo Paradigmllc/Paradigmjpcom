@@ -1,3 +1,20 @@
+## CURRENT STATUS - 2026-07-14 Japan Entry候補factoryのoperator approval hardening（ローカルQA完了 / 本番release前 / 外部送信0）
+
+### 収集元・候補・Twentyの境界を人間の明示承認へ変更
+- lead sourceは登録時に必ずinactive/draftとし、候補を保存しないpreview、利用条件確認、担当者名付き承認、明示ingestの順に限定した。量産モードは成功したpilotを人間が評価して承認したsourceだけを使い、収集開始時のTwenty同期、文面生成、レポート生成、外部送信はDB制約とAPIの両方で常にfalseに固定する。
+- 決定論ゲート合格候補も自動昇格せず`awaiting_review`へ隔離。根拠snapshotの不変性、sourceの現行承認、証拠の鮮度、対象国、SMB・機会スコア、HTTPS実フォームとDOM/provider証拠を再検査し、担当者が最大20件・3文字以上の判断理由付きで承認した企業だけをTwentyへ同期する。承認、除外、pilot量産承認、停止、停止した同期の復旧はすべてappend-only監査ログへ保存する。
+- Twenty昇格時は既存のcountry metadata/国名field自己修復を通す。同期失敗は`promotion_failed`として候補単位で可視化し、15分以上停止した処理だけを手動で再レビュー可能へ戻す。自動再同期や外部送信への接続はしない。
+
+### 数千件運用の持続性とfail-closed設計
+- `sales_claim_lead_source_records` RPCで、承認済みsourceだけを`FOR UPDATE SKIP LOCKED`により原子的にclaimする。30分lease、同一run内domain dedupe、直近180日のterminal候補除外、selection countをDBで処理し、複数workerでも同じ候補を再取得しない。
+- 実行は同時2 runまで、pilotは最大3か国・候補100件/国・実確認25件/国に制限。量産は`START VERIFIED BATCH`の明示確認を必須とし、開始前・取得後・各検証batchでcancelを再確認する。GET/Realtime閲覧では処理を進めず、cron・常駐polling worker・SearXNG・Tranco・検索Regexを復活させない。
+- DeepSeek経路を公式API直叩きへ統一し、LiteLLM/OpenRouter fallbackを削除。初回フォーム文面は人間がTwenty昇格させた後の別操作でのみDeepSeek V4 Pro生成でき、URL・資料・価格を含めず、外部送信0件を維持する。
+
+### Local verification / release handoff
+- TypeScript、全体ESLint、変更対象Vitest、DB制約/RPC unit test、release-doctor、production build **408/408 pages**がpass。認証済みのローカルproduction buildに対し、PC/mobileで「非送信pilotだけを開始」「判断理由なしではTwenty昇格不可」を確認するPlaywright **4/4 pass**。E2E中に管理画面のSonner表示欠落を検出し、エラー通知を画面へ追加して再合格させた。
+- 全体Vitestの既知5件は今回変更外（日本語代表メッセージ191文字に対する旧200文字期待1件、`core.autocrlf=true` checkoutでbackup shellのLFを期待する4件）。新migrationは正式`npm run release:prod`で適用・DB検証し、未認証API 401、管理画面、本番health、Twenty worker、常駐runtime 0を確認するまで本番完了としない。
+- この作業ではsource登録・preview・ingest、候補収集、Twenty追加、文面/レポート生成、フォーム送信を実行していない。本番release後も最初の実データ操作は、利用条件を人間確認したsourceの非送信pilotとし、自動量産や自動Twenty同期から開始しない。
+
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Content / Art Direction V6（再設計実装・本番QA前 / 外部送信0）
 
 ### 薄い文章と反復テンプレを生成後の小修正ではなくschemaから廃止

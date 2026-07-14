@@ -59,7 +59,7 @@ describe("callDeepSeek フォールバックチェーン", () => {
     delete process.env.DEEPSEEK_API_KEY
     const r = await callDeepSeek([{ role: "user", content: "hi" }])
     expect(r.ok).toBe(false)
-    expect(r.error).toContain("no LLM provider")
+    expect(r.error).toContain("DEEPSEEK_API_KEY")
   })
 
   it("opts.model 指定はチェーン先頭に入る", async () => {
@@ -94,6 +94,20 @@ describe("callDeepSeek フォールバックチェーン", () => {
     )
     expect(r.ok).toBe(true)
     expect(r.usedModel).toBe("deepseek-v4-pro")
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("chain policy also ignores configured intermediary providers", async () => {
+    process.env.LITELLM_API_KEY = "litellm-test-key"
+    process.env.LITELLM_API_BASE = "https://litellm.example/v1"
+    process.env.OPENROUTER_API_KEY = "openrouter-test-key"
+    const fetchMock = vi.fn(async (url: string) => {
+      expect(url).toBe("https://api.deepseek.com/v1/chat/completions")
+      return new Response(JSON.stringify({ choices: [{ message: { content: "direct output" } }] }), { status: 200 })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const result = await callDeepSeek([{ role: "user", content: "hi" }])
+    expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 

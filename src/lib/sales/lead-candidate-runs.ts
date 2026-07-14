@@ -20,7 +20,7 @@ const MAX_VERIFY_LIMIT = 5_000
 const DEFAULT_VERIFY_BATCH = 120
 const MAX_VERIFY_CONCURRENCY = 8
 
-const TERMINAL_ITEM_STATUSES = ["scored", "form_missing", "promoted", "review_required", "rejected", "failed", "skipped"] as const
+const TERMINAL_ITEM_STATUSES = ["scored", "awaiting_review", "form_missing", "promoted", "review_required", "rejected", "failed", "skipped"] as const
 
 export interface DurableCandidateIngestInput {
   countryCode: string
@@ -35,13 +35,14 @@ export interface DurableCandidateIngestInput {
   requireVerifiedForm?: boolean
   minFormConfidence?: number
   syncTwenty?: boolean
+  executionMode?: "pilot" | "batch"
 }
 
 export interface DurableCandidateAcquisitionSummary {
   ok: boolean
   source: string
   runId: string
-  status: "queued" | "running" | "completed" | "partial" | "failed"
+  status: "queued" | "running" | "completed" | "partial" | "failed" | "cancelled"
   fetched: number
   upserted: number
   verified: number
@@ -112,12 +113,13 @@ function normalizeInput(input: DurableCandidateIngestInput) {
     technology: input.technology?.trim() || null,
     limit,
     verifyLimit,
-    promote: input.promote === true,
+    promote: false,
     minOpportunityScore: clampScore(input.minOpportunityScore ?? 68),
     minSmbScore: clampScore(input.minSmbScore ?? 50),
     requireVerifiedForm: input.requireVerifiedForm !== false,
     minFormConfidence: clampScore(input.minFormConfidence ?? 80),
-    syncTwenty: input.syncTwenty !== false,
+    syncTwenty: false,
+    executionMode: input.executionMode ?? "pilot",
     syncVerifyBatchSize: Math.min(Math.max(input.syncVerifyBatchSize ?? Math.min(verifyLimit, DEFAULT_VERIFY_BATCH), 0), DEFAULT_VERIFY_BATCH),
   }
 }
@@ -132,16 +134,17 @@ async function createRun(input: ReturnType<typeof normalizeInput>): Promise<Lead
     status: "queued",
     requested_limit: input.limit,
     verify_limit: input.verifyLimit,
-    promote: input.promote,
+    promote: false,
     min_opportunity_score: input.minOpportunityScore,
     min_smb_score: input.minSmbScore,
     require_verified_form: input.requireVerifiedForm,
     min_form_confidence: input.minFormConfidence,
-    sync_twenty: input.syncTwenty,
+    sync_twenty: false,
+    execution_mode: input.executionMode,
     source_config_ids: input.sourceConfigIds,
     require_source_evidence: true,
     heartbeat_at: nowIso(),
-  }).select("id, source_slug, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, source_config_ids, require_source_evidence, fetched_count, upserted_count").single()
+  }).select("id, source_slug, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, source_config_ids, require_source_evidence, execution_mode, cancel_requested, fetched_count, upserted_count").single()
   if (error) throw new Error(error.message)
   return data as LeadCandidateRunRow
 }
@@ -155,11 +158,12 @@ export async function markLeadCandidateRunFailed(runId: string, error: unknown):
   await updateRun(runId, { status: "failed", error_message: errorMessage(error), completed_at: nowIso() })
 }
 
-async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; failures: Array<{ key: string; reason: string }> }> {
+export async function refreshLeadCandidateRunCounts(runId: string): Promise<{ hasMore: boolean; failures: Array<{ key: string; reason: string }> }> {
   const sb = getSb()
-  const [discoveredRes, scoredRes, formMissingRes, promotedRes, reviewRes, rejectedRes, skippedRes, failedRes, matched, sourceQualified, formsChecked, formsQualified, twentySynced, runRes] = await Promise.all([
+  const [discoveredRes, scoredRes, awaitingReviewRes, formMissingRes, promotedRes, reviewRes, rejectedRes, skippedRes, failedRes, matched, sourceQualified, formsChecked, formsQualified, twentySynced, operatorApproved, operatorRejected, runRes] = await Promise.all([
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "discovered"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "scored"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "awaiting_review"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "form_missing"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "promoted"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "review_required"),
@@ -171,11 +175,14 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; fail
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).not("form_checked_at", "is", null),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("form_verified", true),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("twenty_synced", true),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("review_status", "approved"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("review_status", "rejected"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("verify_limit").eq("id", runId).single(),
   ])
   const counts = new Map<string, number>()
   counts.set("discovered", discoveredRes.count ?? 0)
   counts.set("scored", scoredRes.count ?? 0)
+  counts.set("awaiting_review", awaitingReviewRes.count ?? 0)
   counts.set("form_missing", formMissingRes.count ?? 0)
   counts.set("promoted", promotedRes.count ?? 0)
   counts.set("review_required", reviewRes.count ?? 0)
@@ -190,7 +197,7 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; fail
     status,
     verified_count: verified,
     matched_technology_count: matched.count ?? 0,
-    scored_count: (counts.get("scored") ?? 0) + (counts.get("form_missing") ?? 0) + (counts.get("promoted") ?? 0),
+    scored_count: (counts.get("scored") ?? 0) + (counts.get("awaiting_review") ?? 0) + (counts.get("form_missing") ?? 0) + (counts.get("promoted") ?? 0),
     source_qualified_count: sourceQualified.count ?? 0,
     quality_rejected_count: counts.get("rejected") ?? 0,
     review_required_count: counts.get("review_required") ?? 0,
@@ -199,6 +206,8 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; fail
     forms_checked_count: formsChecked.count ?? 0,
     forms_qualified_count: formsQualified.count ?? 0,
     twenty_synced_count: twentySynced.count ?? 0,
+    operator_approved_count: operatorApproved.count ?? 0,
+    operator_rejected_count: operatorRejected.count ?? 0,
     failure_count: counts.get("failed") ?? 0,
     completed_at: hasMore ? null : nowIso(),
   })
@@ -211,13 +220,20 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; fail
 
 export async function processLeadCandidateRun(runId: string, options: { batchSize?: number; maxBatches?: number } = {}) {
   const sb = getSb()
-  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, source_slug, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, source_config_ids, require_source_evidence, fetched_count, upserted_count, cursor").eq("id", runId).single()
+  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, source_slug, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, min_smb_score, require_verified_form, min_form_confidence, sync_twenty, source_config_ids, require_source_evidence, execution_mode, cancel_requested, fetched_count, upserted_count, cursor").eq("id", runId).single()
   if (runRes.error) throw new Error(runRes.error.message)
   const run = runRes.data as LeadCandidateRunRow
   if (run.source_slug !== SOURCE || run.require_source_evidence !== true) {
     throw new Error("Legacy lead candidate runs cannot be processed; create a new evidence-first run")
   }
+  if (run.cancel_requested) {
+    await updateRun(run.id, { status: "cancelled", completed_at: nowIso() })
+    return { ok: false, runId, processed: 0, jobsEnqueued: 0, twentySynced: 0, hasMore: false, cancelled: true, failures: [] }
+  }
   const acquisition = await ensureLeadCandidateRunDomainsFetched(run)
+  if (acquisition.cancelled) {
+    return { ok: false, runId, processed: 0, jobsEnqueued: 0, twentySynced: 0, hasMore: false, cancelled: true, failures: [] }
+  }
   if (acquisition.upserted === 0) {
     await updateRun(run.id, { status: "failed", failure_count: Math.max(acquisition.failures.length, 1), completed_at: nowIso() })
     return { ok: false, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures.length > 0 ? acquisition.failures : [{ key: run.country_code, reason: "No candidate domains were fetched" }] }
@@ -230,6 +246,12 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
   let processed = 0
   let twentySynced = 0
   for (let batch = 0; batch < maxBatches; batch++) {
+    const cancellation = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("cancel_requested").eq("id", runId).single()
+    if (cancellation.error) throw new Error(cancellation.error.message)
+    if (cancellation.data?.cancel_requested === true) {
+      await updateRun(run.id, { status: "cancelled", completed_at: nowIso() })
+      return { ok: false, runId, processed, jobsEnqueued: 0, twentySynced, hasMore: false, cancelled: true, failures: [] }
+    }
     const verified = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).in("status", [...TERMINAL_ITEM_STATUSES])
     const alreadyVerified = verified.count ?? 0
     if (alreadyVerified >= run.verify_limit) break
@@ -251,7 +273,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
     processed += items.length
     twentySynced += results.filter((item) => item.twentySynced).length
   }
-  const refreshed = await refreshRunCounts(runId)
+  const refreshed = await refreshLeadCandidateRunCounts(runId)
   return { ok: true, runId, processed, jobsEnqueued: 0, twentySynced, hasMore: refreshed.hasMore, failures: [...acquisition.failures, ...refreshed.failures].slice(0, 30) }
 }
 
