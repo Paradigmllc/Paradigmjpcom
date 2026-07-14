@@ -17,7 +17,7 @@ import {
 } from "./lead-candidate-scoring"
 import { detectTechStack, type TechItem } from "./sources/wappalyzer"
 import { discoverFormUrl } from "./sources/form-discovery"
-import { techFromCname } from "./passive-inventory-utils"
+import { mergeTechItems, techFromCname } from "./passive-inventory-utils"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -317,11 +317,9 @@ async function processItem(run: RunRow, item: RunItemRow) {
     : await detectTechStack(rootUrl)
   const passiveCname = typeof passive?.cnameTarget === "string" ? passive.cnameTarget : null
   const hostedTech = techFromCname(passiveCname)
-  const passiveTechnology = [...passiveTech, ...hostedTech]
-  const hostedSlugs = new Set(passiveTechnology.map((tech) => technologySlug(tech.name)))
   const detection = {
     ...activeDetection,
-    tech: [...passiveTechnology, ...activeDetection.tech.filter((tech) => !hostedSlugs.has(technologySlug(tech.name)))],
+    tech: mergeTechItems(passiveTech, hostedTech, activeDetection.tech),
   }
   const hasStrongPassiveCountry = passiveSignals.some((signal) => signal.confidence >= 60 && signal.signalType !== "request_scope")
   const countrySignals = hasStrongPassiveCountry
@@ -329,7 +327,13 @@ async function processItem(run: RunRow, item: RunItemRow) {
     : inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: detection.evidenceText })
   const requestedSlug = run.technology ? technologySlug(run.technology) : null
   const techMatched = requestedSlug ? detection.tech.some((tech) => technologySlug(tech.name) === requestedSlug) : detection.tech.length > 0
-  const form = await discoverFormUrl({ homeUrl: rootUrl, region: salesScopeFromCountry({ targetCountry: run.country_code }).region, enableLlm: false })
+  const form = await discoverFormUrl({
+    homeUrl: rootUrl,
+    region: salesScopeFromCountry({ targetCountry: run.country_code }).region,
+    enableLlm: false,
+    enableCrawl4Ai: false,
+    timeoutMs: 5_000,
+  })
   const qualification = decideFormQualification(form, run.min_form_confidence)
   const score = scoreCandidate({ requestedTechnology: run.technology, detections: detection.tech, countrySignals, lane: "tech_footprint", hasWebsite: true, hasContactSignal: qualification.qualified, source: SOURCE, isEnterpriseLike: isEnterpriseLikeStack(detection.tech) })
   await saveEvidence({ candidate, runId: run.id, observedUrl: rootUrl, rawEvidence: { server: detection.server, country_code: run.country_code, requested_technology: run.technology, passive_evidence: passive, form_discovery: form, form_qualification: qualification }, signatureHits: detection.tech, countrySignals, score })
@@ -393,7 +397,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
     const alreadyVerified = verified.count ?? 0
     if (alreadyVerified >= run.verify_limit) break
     const remaining = Math.max(1, run.verify_limit - alreadyVerified)
-    const res = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id, run_id, candidate_id, domain, root_url, attempts, meta").eq("run_id", runId).in("status", ["discovered", "failed"]).lt("attempts", 3).order("created_at", { ascending: true }).limit(Math.min(batchSize, remaining))
+    const res = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id, run_id, candidate_id, domain, root_url, attempts, meta").eq("run_id", runId).eq("status", "discovered").order("created_at", { ascending: true }).limit(Math.min(batchSize, remaining))
     if (res.error) throw new Error(res.error.message)
     const items = (res.data ?? []) as RunItemRow[]
     if (items.length === 0) break
@@ -404,7 +408,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
         const message = error instanceof Error ? error.message : "candidate verification failed"
         console.error("[lead-candidate-runs] item failed:", item.domain, error)
         const attempts = item.attempts + 1
-        await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({ status: attempts >= 3 ? "failed" : "discovered", attempts, error_message: message, processed_at: nowIso() }).eq("id", item.id)
+        await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({ status: "failed", attempts, error_message: message, processed_at: nowIso() }).eq("id", item.id)
         return { techMatched: false, promoted: false, twentySynced: false }
       }
     })

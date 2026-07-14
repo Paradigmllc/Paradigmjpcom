@@ -38,6 +38,7 @@ export interface FormDiscoveryOptions {
   region?: Region
   homepageHtml?: string
   enableLlm?: boolean
+  enableCrawl4Ai?: boolean
   spaDiscover?: (url: string) => Promise<string | null>
   timeoutMs?: number
 }
@@ -262,7 +263,9 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     }
   }
 
-  const crawl4Ai = await discoverWithCrawl4Ai({ origin, region: opts.region, timeoutMs })
+  const crawl4Ai = opts.enableCrawl4Ai === false
+    ? null
+    : await discoverWithCrawl4Ai({ origin, region: opts.region, timeoutMs })
   if (crawl4Ai?.formUrl) {
     for (const url of crawl4Ai.candidates) candidates.add(url)
     const pageType = await inspectContactPage(crawl4Ai.formUrl, timeoutMs)
