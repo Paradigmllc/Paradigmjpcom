@@ -6,6 +6,7 @@ import { DB_TABLES } from "./db-tables"
 import { normalizePublicDomain } from "./japan-entry-score"
 import { passesPublicDnsCheck } from "./japan-entry-score-service"
 import type { LeadSourcePreflightSummary } from "./lead-source-preflight"
+import { fetchFilteredZipCsvRows, zipCsvInputFromFieldMapping } from "./lead-source-zip-csv"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -20,7 +21,7 @@ export const LEAD_SOURCE_TYPES = [
   "company_registry",
   "structured_feed",
 ] as const
-export const LEAD_SOURCE_FORMATS = ["json", "jsonl", "csv", "html"] as const
+export const LEAD_SOURCE_FORMATS = ["json", "jsonl", "csv", "html", "zip_csv"] as const
 
 export type LeadSourceType = (typeof LEAD_SOURCE_TYPES)[number]
 export type LeadSourceFormat = (typeof LEAD_SOURCE_FORMATS)[number]
@@ -51,6 +52,11 @@ export interface LeadSourceConfig {
   last_ingested_at: string | null
   created_at: string
   updated_at: string
+  source_pack_id?: string | null
+  source_pack_version?: number | null
+  source_license_name?: string | null
+  source_license_url?: string | null
+  source_pack_query_sha256?: string | null
 }
 
 export interface LeadSourcePreview {
@@ -76,6 +82,7 @@ export interface LeadSourceRecord {
   employee_count: number | null
   annual_revenue_usd: number | null
   is_for_profit: boolean | null
+  is_sme?: boolean | null
   evidence: JsonRecord
   observed_at: string
   last_selected_at?: string | null
@@ -98,6 +105,7 @@ export interface NormalizedSourceRecord {
   employee_count: number | null
   annual_revenue_usd: number | null
   is_for_profit: boolean | null
+  is_sme: boolean | null
   evidence: JsonRecord
   content_hash: string
 }
@@ -200,7 +208,8 @@ function normalizeStructuredRecord(record: JsonRecord, config: LeadSourceConfig)
   const businessType = mappedValue(record, mapping, "business_type", ["business_type", "businessType", "category", "industry"])
   const employeeCount = mappedValue(record, mapping, "employee_count", ["employee_count", "employeeCount", "employees", "staff_count"])
   const annualRevenue = mappedValue(record, mapping, "annual_revenue_usd", ["annual_revenue_usd", "annualRevenueUsd", "revenue_usd"])
-  const forProfit = mappedValue(record, mapping, "is_for_profit", ["is_for_profit", "isForProfit", "for_profit"])
+  const forProfit = mapping.is_for_profit_constant ?? mappedValue(record, mapping, "is_for_profit", ["is_for_profit", "isForProfit", "for_profit"])
+  const isSme = mapping.is_sme_constant ?? mappedValue(record, mapping, "is_sme", ["is_sme", "isSme", "SME"])
   const evidence = {
     source_name: config.name,
     source_type: config.source_type,
@@ -212,6 +221,7 @@ function normalizeStructuredRecord(record: JsonRecord, config: LeadSourceConfig)
       employee_count: textValue(employeeCount),
       annual_revenue_usd: textValue(annualRevenue),
       is_for_profit: textValue(forProfit),
+      is_sme: textValue(isSme),
     },
   }
   return {
@@ -225,12 +235,14 @@ function normalizeStructuredRecord(record: JsonRecord, config: LeadSourceConfig)
     employee_count: scaledNumberValue(employeeCount),
     annual_revenue_usd: scaledNumberValue(annualRevenue),
     is_for_profit: booleanValue(forProfit),
+    is_sme: booleanValue(isSme),
     evidence,
     content_hash: contentHash(evidence),
   }
 }
 
 function structuredRows(text: string, format: LeadSourceFormat): JsonRecord[] {
+  if (format === "zip_csv") throw new Error("ZIP CSV sources must use the bounded archive adapter")
   if (format === "jsonl") {
     return text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => asRecord(JSON.parse(line)))
   }
@@ -272,16 +284,22 @@ function htmlRows(text: string, config: LeadSourceConfig): JsonRecord[] {
   return rows
 }
 
-export function parseLeadSourcePayload(text: string, config: LeadSourceConfig): { records: NormalizedSourceRecord[]; rawCount: number } {
-  const rawRows = config.source_format === "html" ? htmlRows(text, config) : structuredRows(text, config.source_format)
+function normalizeRows(rawRows: JsonRecord[], config: LeadSourceConfig, rawCount = rawRows.length): { records: NormalizedSourceRecord[]; rawCount: number } {
   const normalized = rawRows.map((row) => normalizeStructuredRecord(row, config)).filter((row): row is NormalizedSourceRecord => row !== null)
   const byDomain = new Map(normalized.map((row) => [row.domain, row]))
-  return { records: [...byDomain.values()], rawCount: rawRows.length }
+  return { records: [...byDomain.values()], rawCount }
+}
+
+export function parseLeadSourcePayload(text: string, config: LeadSourceConfig): { records: NormalizedSourceRecord[]; rawCount: number } {
+  const rawRows = config.source_format === "html" ? htmlRows(text, config) : structuredRows(text, config.source_format)
+  return normalizeRows(rawRows, config)
 }
 
 async function fetchSourceText(config: LeadSourceConfig): Promise<string> {
+  if (config.source_format === "zip_csv") throw new Error("ZIP CSV sources must use the bounded archive adapter")
+  const sourceFormat = config.source_format
   let url = new URL(config.source_url)
-  const acceptByFormat: Record<LeadSourceFormat, string> = {
+  const acceptByFormat: Record<Exclude<LeadSourceFormat, "zip_csv">, string> = {
     json: "application/json",
     jsonl: "application/x-ndjson, application/json;q=0.9",
     csv: "text/csv",
@@ -292,7 +310,7 @@ async function fetchSourceText(config: LeadSourceConfig): Promise<string> {
     if (!(await passesPublicDnsCheck(url.hostname))) throw new Error("Source URL did not pass the public DNS safety check")
     const response = await fetch(url, {
       headers: {
-        Accept: acceptByFormat[config.source_format],
+        Accept: acceptByFormat[sourceFormat],
         "User-Agent": "ParadigmLeadSourceIngest/1.0 (+https://paradigmjp.com)",
       },
       redirect: "manual",
@@ -327,6 +345,15 @@ async function fetchSourceText(config: LeadSourceConfig): Promise<string> {
   throw new Error("Source exceeded five redirects")
 }
 
+async function fetchParsedSource(config: LeadSourceConfig): Promise<{ records: NormalizedSourceRecord[]; rawCount: number }> {
+  if (config.source_format === "zip_csv") {
+    const input = zipCsvInputFromFieldMapping(config.source_url, config.field_mapping)
+    const parsed = await fetchFilteredZipCsvRows(input)
+    return normalizeRows(parsed.rows, config, parsed.rawCount)
+  }
+  return parseLeadSourcePayload(await fetchSourceText(config), config)
+}
+
 function preflightCount(config: LeadSourceConfig, key: keyof Pick<LeadSourcePreflightSummary, "eligible" | "pending" | "checking">): number {
   const summary = asRecord(config.last_preflight)
   const value = summary[key]
@@ -348,8 +375,7 @@ export async function previewLeadSourceConfig(sourceId: string): Promise<LeadSou
   if (result.error) throw new Error(result.error.message)
   const config = result.data as LeadSourceConfig
   if (!config.terms_checked) throw new Error("Source terms and robots policy must be confirmed before preview")
-  const text = await fetchSourceText(config)
-  const parsed = parseLeadSourcePayload(text, config)
+  const parsed = await fetchParsedSource(config)
   const accepted = parsed.records.length
   const previewedAt = new Date().toISOString()
   const preview: LeadSourcePreview = {
@@ -396,8 +422,7 @@ export async function ingestLeadSourceConfig(sourceId: string): Promise<{ source
   if (claimed.error) throw new Error(claimed.error.message)
   if (!claimed.data) throw new Error("Lead source was changed or another ingestion already started")
   try {
-    const text = await fetchSourceText(config)
-    const parsed = parseLeadSourcePayload(text, config)
+    const parsed = await fetchParsedSource(config)
     const rows = parsed.records
     if (rows.length === 0) throw new Error("Source returned no valid company name + public website records")
     const observedAt = new Date().toISOString()

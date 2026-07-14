@@ -428,6 +428,43 @@ function checkStaticReleaseRules() {
     fail("lead source website preflight requires bounded execution, audit, fresh eligibility and release wiring")
   }
 
+  const leadSourcePacksMigrationPath = "supabase/migrations/20260715140000_lead_source_country_packs.sql"
+  const leadSourcePacksMigration = fs.existsSync(leadSourcePacksMigrationPath)
+    ? fs.readFileSync(leadSourcePacksMigrationPath, "utf8")
+    : ""
+  const leadSourcePacksService = fs.existsSync("src/lib/sales/lead-source-packs.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-packs.ts", "utf8")
+    : ""
+  const leadSourcePacksRoute = fs.existsSync("src/app/api/sales/lead-source-packs/route.ts")
+    ? fs.readFileSync("src/app/api/sales/lead-source-packs/route.ts", "utf8")
+    : ""
+  const leadInventoryRunner = fs.existsSync("src/lib/sales/lead-inventory-runs.ts")
+    ? fs.readFileSync("src/lib/sales/lead-inventory-runs.ts", "utf8")
+    : ""
+  const leadSourceZipAdapter = fs.existsSync("src/lib/sales/lead-source-zip-csv.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-zip-csv.ts", "utf8")
+    : ""
+  if (
+    leadSourcePacksMigration.includes("source_pack_query_sha256")
+    && leadSourcePacksMigration.includes("idx_sales_lead_source_configs_pack_version")
+    && leadSourcePacksMigration.includes("sales_lead_inventory_runs_no_delivery_check")
+    && leadSourcePacksMigration.includes("source_format IN ('json', 'jsonl', 'csv', 'html', 'zip_csv')")
+    && noLoginDeploy.includes("20260715140000_lead_source_country_packs.sql")
+    && noLoginDeploy.includes("applyLeadSourceCountryPacksMigration")
+    && leadSourcePacksService.includes("PACK_LIMIT = 250")
+    && leadSourcePacksService.includes("European Commission CORDIS")
+    && leadSourcePacksService.includes("FILTER NOT EXISTS { ?company wdt:P576 ?dissolved }")
+    && leadSourceZipAdapter.includes("MAX_ENTRY_ROWS = 500_000")
+    && leadInventoryRunner.includes("Twenty同期・文面生成・レポート生成・外部送信は0件")
+    && leadSourcePacksRoute.includes("terms_checked: false")
+    && leadSourcePacksRoute.includes("approval_status: \"draft\"")
+    && leadSourcePacksRoute.includes("collectionStarted: false")
+  ) {
+    pass("country source packs and resumable verified inventory are bounded, attributed and no-delivery")
+  } else {
+    fail("country source packs require provenance, bounded ZIP ingestion, no-delivery inventory and draft-only registration")
+  }
+
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
   const evidenceFactory = fs.existsSync(evidenceFactoryPath)
     ? fs.readFileSync(evidenceFactoryPath, "utf8")

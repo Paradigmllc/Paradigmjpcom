@@ -660,6 +660,14 @@ async function applyLeadSourceWebsitePreflightMigration(envs) {
   )
 }
 
+async function applyLeadSourceCountryPacksMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715140000_lead_source_country_packs.sql",
+    "Versioned country lead-source packs migration",
+  )
+}
+
 async function applyJapanEntryProjectionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1296,6 +1304,7 @@ async function main() {
     console.log(await applyHighQualityLeadSourcesMigration(envs))
     console.log(await applyLeadFactoryOperatorApprovalMigration(envs))
     console.log(await applyLeadSourceWebsitePreflightMigration(envs))
+    console.log(await applyLeadSourceCountryPacksMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))

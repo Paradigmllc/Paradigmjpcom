@@ -87,6 +87,15 @@ describe("parseLeadSourcePayload", () => {
     expect(approved.records[0].source_page_url).toBe("https://www.wikidata.org/entity/Q123")
     expect(rejected.records[0].source_page_url).toBe("https://query.wikidata.org/sparql?query=bounded")
   })
+
+  it("persists licensed source constants without inferring them from company text", () => {
+    const parsed = parseLeadSourcePayload("name,website\nAlpha GmbH,https://alpha.example", config({
+      field_mapping: { company_name: "name", website_url: "website", is_sme_constant: "true", is_for_profit_constant: "true" },
+    }))
+
+    expect(parsed.records[0]).toMatchObject({ is_sme: true, is_for_profit: true })
+    expect(parsed.records[0].evidence).toMatchObject({ observed_values: { is_sme: "true", is_for_profit: "true" } })
+  })
 })
 
 describe("fetchLeadSourceCandidateRecords", () => {

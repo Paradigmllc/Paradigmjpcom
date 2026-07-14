@@ -1,3 +1,25 @@
+## CURRENT STATUS - 2026-07-15 検証済み候補在庫の数千件自動量産（実装・実データadapter検証完了 / release前 / 外部送信0）
+
+### 公式SMEデータをCodex非依存で取込・再開する経路
+- 欧州委員会CORDISのHorizon Europe / Horizon 2020月次公開ZIPを、欧州15市場・2世代の30 source packとして追加した。`SME=true`、`activityType=PRC`、企業名、公式サイト、組織ID、EC根拠URLが揃う行だけをstreaming CSV parserで抽出し、国別・domain別に重複排除する。既存Wikidata 10市場と合わせて40 pack。登録時は従来どおりdraft / inactive / terms未確認で、規約確認・preview・担当者承認を迂回しない。
+- ZIP adapterはpublic HTTPS / DNS再検証、redirect上限5、圧縮80MB、展開120MB、50万行、dataset filter後2.5万行のfail-closed上限を持つ。 malformed quoteを許容する一方、必須列欠落・想定entry欠落・サイズ超過は保存前に停止する。公式Tier 3の`is_sme=true`だけをSMB客観根拠98点として使い、enterprise signalがあれば0点へ戻す。企業同一性・サイト国・EC/SaaS適合・実フォームは別ゲートのまま。
+- `sales_lead_inventory_runs`へ収集元単位の進捗、取込数、サイト利用可、除外、一時障害、失敗とheartbeatを保存し、承認済みpackを順次ingest→全件website preflightするevent-driven runnerと認可API、管理GUIを追加した。途中停止したrunning runは同じDB位置から再開できる。run tableのCHECKで`send_count=0`かつ`twenty_sync_count=0`を強制し、文面・レポート・Twenty・フォーム送信を接続しない。
+
+### Verification / remaining production gate
+- 実CORDIS H2020 ZIPを新adapterで直接取得し、ドイツはfilter後1,045行・重複排除可能355 domain、公式EC根拠URL付きsampleを確認した。事前集計では優先15市場の2世代合算で約2,400 unique domain。これは候補母集団であり、実サイト・企業同一性・対象国・offer fit・フォーム合格後の件数を「数千件」とは未確認。
+- 対象Vitest **8 files / 29 tests**、main統合後の全Vitest **161 files / 740 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、release-doctorの新しい静的gate、`git diff --check`がpass。正式release、migration本番rollback、公開管理画面、規約確認済みsourceの非送信inventory runは未実行。品質を実測するまで自動Twenty、文面、レポート、送信は開始しない。
+
+## CURRENT STATUS - 2026-07-15 国別Lead Source Pack（実装・本番DB rollback検証完了 / release前 / 外部送信0）
+
+### Codexなしで国別sourceを再現する入口
+- 北米・欧州・豪州・シンガポール・中東の優先10市場を、版・ライセンス・最大件数・クエリSHA-256付きsource packとして管理画面からdraft登録できるようにした。登録時は必ず`terms_checked=false / active=false / approval_status=draft`でDB保存し、既存の規約確認、非保存preview、担当者承認、ingest、サイト事前検査を一切迂回しない。
+- 初期packはWikidata CC0の企業名・公式サイト・国・従業員数・業種が揃う候補だけを、従業員2〜249名、EC/SaaS等の業種、解散登録なし、archive/SNS URLなし、1国最大250件のbounded queryで取得する。Wikidataを公的登記とは扱わずtrust tier 2の構造化根拠とし、Japan Entry適合・フォーム・本人性は後段で別検査する。
+- source configにpack ID / version / license / query hashを保存するmigration、認証付き一覧・冪等draft登録API、loading / empty / error状態と外部ライセンスリンクを持つGUI、operator監査・DBベル/Slack通知を追加した。登録操作から候補取込、Twenty、文面、レポート、フォーム送信は起動しない。
+
+### Verification / remaining gate
+- 公式Wikidata endpointでUS packを実行し、企業名・website・従業員数・業種・HTTPS entity URLを持つ50件を取得、archive/SNS URL 0件を確認した。対象Vitest **3 files / 9 tests**、TypeScript、対象ESLint、release-doctorの新しいsource-pack静的gate、migrationの本番DB `BEGIN -> DDL -> ROLLBACK`がpass。
+- 正式release、公開管理画面/API確認、sourceのdraft登録からpreview・承認・ingest・事前検査、5件以上の実フォームを含む非送信pilotは未実行。batch承認、Twenty追加、文面/レポート生成、外部送信は開始しない。
+
 ## CURRENT STATUS - 2026-07-15 SMB DEMO 300社wave量産（本番release完了 / 数百社wave運用準備完了 / 外部送信0）
 
 ### 数百社運用に耐えるwave単位の量産制御
