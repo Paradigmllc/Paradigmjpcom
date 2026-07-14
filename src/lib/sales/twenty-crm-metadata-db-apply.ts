@@ -7,7 +7,7 @@ function env(name: string): string | null {
   return value && value.trim().length > 0 ? value.trim() : null
 }
 
-const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト"]
+const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト", "Japan Entry 候補"]
 const TWENTY_COMPANY_LIST_VIEW_NAME = "営業リスト"
 const TWENTY_COMPANY_RECORD_VIEW_NAME = "Company Record Page Fields"
 const TWENTY_HOME_EXTRA_FIELDS = [
