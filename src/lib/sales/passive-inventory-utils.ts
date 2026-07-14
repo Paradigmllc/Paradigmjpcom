@@ -147,6 +147,17 @@ export function techFromCname(cname: string | null | undefined): TechItem[] {
     .map((rule) => ({ name: rule.technology, category: "Hosted Platform", confidence: 98 }))
 }
 
+export function mergeTechItems(...groups: TechItem[][]): TechItem[] {
+  const bySlug = new Map<string, TechItem>()
+  for (const tech of groups.flat()) {
+    const slug = tech.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")
+    if (!slug) continue
+    const current = bySlug.get(slug)
+    if (!current || (tech.confidence ?? 0) > (current.confidence ?? 0)) bySlug.set(slug, tech)
+  }
+  return [...bySlug.values()]
+}
+
 export function countrySignalsFromText(countryCode: string, text: string): CandidateCountrySignal[] {
   const cc = countryCode.trim().toUpperCase()
   const signals: CandidateCountrySignal[] = []

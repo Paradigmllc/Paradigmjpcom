@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import { parseZoneDomains, techFromCname, countrySignalsFromText } from "./passive-inventory-utils"
+import { parseZoneDomains, techFromCname, countrySignalsFromText, mergeTechItems } from "./passive-inventory-utils"
 import { fetchPassiveDomainFeeds } from "./sources/passive-domain-feeds"
 import { detectTechFromEvidence } from "./sources/wappalyzer"
 
@@ -18,6 +18,16 @@ describe("passive inventory utilities", () => {
     const tech = techFromCname("shops.myshopify.com.")
 
     expect(tech.map((item) => item.name)).toContain("Shopify")
+  })
+
+  it("deduplicates passive and active technology evidence before database upsert", () => {
+    const merged = mergeTechItems(
+      [{ name: "Shopify", category: "Hosted Platform", confidence: 98 }],
+      [{ name: "Shopify", category: "EC", confidence: 92 }, { name: "Klaviyo", category: "Marketing", confidence: 84 }],
+    )
+
+    expect(merged.map((item) => item.name)).toEqual(["Shopify", "Klaviyo"])
+    expect(merged[0]?.confidence).toBe(98)
   })
 
   it("extracts Egypt country signals from archived text", () => {
