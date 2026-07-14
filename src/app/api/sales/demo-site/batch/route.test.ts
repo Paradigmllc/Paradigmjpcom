@@ -2,20 +2,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 
 const mocks = vi.hoisted(() => ({
+  after: vi.fn((callback: () => Promise<void>) => { void callback() }),
   activate: vi.fn(),
   authorize: vi.fn(),
+  claim: vi.fn(),
+  dispatch: vi.fn(),
   getSupabase: vi.fn(),
+  queue: vi.fn(),
+  release: vi.fn(),
 }))
 
+vi.mock("next/server", async (importOriginal) => ({
+  ...await importOriginal<typeof import("next/server")>(),
+  after: mocks.after,
+}))
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getSupabase }))
+vi.mock("@/lib/sales/demo-batch-queue", () => ({ queueReviewedDemoItem: mocks.queue }))
+vi.mock("@/lib/sales/demo-batch-drain", () => ({
+  claimDemoBatchDrain: mocks.claim,
+  dispatchDemoBatchDrain: mocks.dispatch,
+  releaseDemoBatchDrain: mocks.release,
+}))
 vi.mock("@/lib/sales/demo-private-access", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/sales/demo-private-access")>(),
   activateTemporaryUnlistedDemo: mocks.activate,
 }))
 vi.mock("@/lib/sales/routing", () => ({ demoSiteUrl: () => "https://demo.paradigmjp.com" }))
 
-import { GET, PUT } from "./route"
+import { GET, PATCH, POST, PUT } from "./route"
 
 const companyId = "11111111-1111-4111-8111-111111111111"
 const jobId = "22222222-2222-4222-8222-222222222222"
@@ -75,11 +90,85 @@ function fluentQuery(result: Record<string, unknown>) {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.authorize.mockResolvedValue(true)
+  mocks.claim.mockResolvedValue({ ok: true, claimed: true })
+  mocks.dispatch.mockResolvedValue({ ok: true, status: 200 })
+  mocks.queue.mockImplementation(async (item: { companyName?: string }) => ({
+    ok: true,
+    companyId,
+    companyName: item.companyName,
+    jobId,
+    status: "queued",
+  }))
   mocks.activate.mockResolvedValue({ urlSlug: "example-demo", expiresAt: "2026-07-21T00:00:00.000Z", review: { status: "private_proposal", assets: [] } })
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
 describe("demo batch route without PostgREST relationship metadata", () => {
+  it("accepts a 300-company wave and assigns one durable wave id to every queued job", async () => {
+    const items = Array.from({ length: 300 }, (_, index) => ({
+      companyName: `Example ${index + 1}`,
+      industry: "construction",
+      locale: "ja",
+      manifest: validManifest(),
+    }))
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/demo-site/batch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ items }),
+    }))
+    const body = await response.json()
+
+    expect(response.status).toBe(202)
+    expect(body).toMatchObject({ ok: true, requested: 300, queued: 300, sendingEnabled: false })
+    expect(body.waveId).toMatch(/^[0-9a-f-]{36}$/u)
+    expect(mocks.queue).toHaveBeenCalledTimes(300)
+    expect(mocks.queue).toHaveBeenNthCalledWith(1, expect.objectContaining({ waveId: body.waveId }), "demo_batch_console")
+    await vi.waitFor(() => expect(mocks.dispatch).toHaveBeenCalledTimes(1))
+  })
+
+  it("rejects a wave above 300 companies before writing jobs", async () => {
+    const items = Array.from({ length: 301 }, (_, index) => ({
+      companyName: `Example ${index + 1}`,
+      industry: "construction",
+      locale: "ja",
+      manifest: validManifest(),
+    }))
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/demo-site/batch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ items }),
+    }))
+
+    expect(response.status).toBe(400)
+    expect(mocks.queue).not.toHaveBeenCalled()
+  })
+
+  it("requeues only failed demo jobs from the selected wave", async () => {
+    const retryQuery = {
+      update: vi.fn(),
+      eq: vi.fn(),
+      select: vi.fn(),
+    }
+    retryQuery.update.mockReturnValue(retryQuery)
+    retryQuery.eq.mockReturnValue(retryQuery)
+    retryQuery.select.mockResolvedValue({ data: [{ id: jobId }], error: null })
+    mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue(retryQuery) })
+    const waveId = "33333333-3333-4333-8333-333333333333"
+
+    const response = await PATCH(new NextRequest("https://paradigmjp.com/api/sales/demo-site/batch", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "retry_failed", waveId, limit: 3 }),
+    }))
+    const body = await response.json()
+
+    expect(response.status).toBe(202)
+    expect(retryQuery.eq).toHaveBeenCalledWith("input_payload->>wave_id", waveId)
+    expect(retryQuery.eq).toHaveBeenCalledWith("status", "failed")
+    expect(body).toMatchObject({ ok: true, recovered: 1, waveId, sendingEnabled: false })
+    await vi.waitFor(() => expect(mocks.dispatch).toHaveBeenCalledTimes(1))
+  })
+
   it("loads jobs and companies in two batched queries", async () => {
     const jobs = fluentQuery({
       data: [{ id: jobId, company_id: companyId, status: "completed", attempts: 1, max_attempts: 3 }],

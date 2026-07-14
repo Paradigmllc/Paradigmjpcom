@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react"
 import { ClipboardCheck, LoaderCircle, Upload } from "lucide-react"
 import { toast } from "sonner"
 import type { PortalSource } from "@/lib/sales/portal-sources/types"
+import { chunkDemoBatch, DEMO_BATCH_MAX_ITEMS } from "@/lib/sales/demo-batch-wave"
 
 interface PortalSnapshotImportFormProps {
   source: PortalSource
@@ -29,18 +30,24 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
   const [busy, setBusy] = useState(false)
 
   async function submitSnapshots(snapshots: unknown[]): Promise<number> {
-    const response = await fetch("/api/sales/demo-site/portal-candidates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        source,
-        operatorConfirmed: true,
-        snapshots,
-      }),
-    })
-    const payload = await response.json() as { imported?: number; failed?: number; error?: string }
-    if (!response.ok || !payload.imported) throw new Error(payload.error ?? "確認済み候補の保存に失敗しました")
-    return payload.imported
+    let imported = 0
+    for (const snapshotChunk of chunkDemoBatch(snapshots, 50)) {
+      const response = await fetch("/api/sales/demo-site/portal-candidates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source,
+          operatorConfirmed: true,
+          snapshots: snapshotChunk,
+        }),
+      })
+      const payload = await response.json() as { imported?: number; failed?: number; error?: string }
+      if (!response.ok || !payload.imported) {
+        throw new Error(`${payload.error ?? "確認済み候補の保存に失敗しました"}（保存済み${imported}件）`)
+      }
+      imported += payload.imported
+    }
+    return imported
   }
 
   async function saveSnapshot() {
@@ -92,7 +99,7 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
       console.error("[portal-snapshot-form] batch JSON parse failed:", error)
       return toast.error("一括JSONを解析できませんでした")
     }
-    if (!Array.isArray(snapshots) || snapshots.length < 1 || snapshots.length > 100) return toast.error("1〜100件のJSON配列を指定してください")
+    if (!Array.isArray(snapshots) || snapshots.length < 1 || snapshots.length > DEMO_BATCH_MAX_ITEMS) return toast.error(`1〜${DEMO_BATCH_MAX_ITEMS}件のJSON配列を指定してください`)
     setBusy(true)
     try {
       const imported = await submitSnapshots(snapshots)
@@ -140,8 +147,8 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
         <div className="flex items-start gap-3">
           <Upload className="mt-1 h-5 w-5 text-slate-700" />
           <div>
-            <h4 className="text-sm font-semibold">確認済み候補を最大100件一括保存</h4>
-            <p className="mt-1 text-xs leading-5 text-slate-600">同じ項目を持つJSON配列を貼り付けます。選択中ポータルのsourceを付与し、各候補を同じfail-closed判定へ通します。</p>
+            <h4 className="text-sm font-semibold">確認済み候補を最大{DEMO_BATCH_MAX_ITEMS}件一括保存</h4>
+            <p className="mt-1 text-xs leading-5 text-slate-600">同じ項目を持つJSON配列を貼り付けます。50件単位で安全に保存し、選択中ポータルのsourceと同じfail-closed判定を全候補へ適用します。</p>
           </div>
         </div>
         <textarea value={batchJson} onChange={(event) => setBatchJson(event.target.value)} className="field mt-4 min-h-36 font-mono text-xs" placeholder='[{"listingUrl":"https://...","companyName":"...","category":"...","description":"代表者・沿革・資格...","address":"...","websiteUrl":null,"socialLinks":[],"images":[{"url":"https://.../1.jpg","alt":"施工例1"},{"url":"https://.../2.jpg","alt":"施工例2"},{"url":"https://.../3.jpg","alt":"施工例3"}]}]' />

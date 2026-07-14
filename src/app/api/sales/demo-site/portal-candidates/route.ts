@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const sourceValue = request.nextUrl.searchParams.get("source")
     const source = sourceValue ? SourceSchema.safeParse(sourceValue) : null
     if (source && !source.success) return NextResponse.json({ ok: false, error: "Invalid portal source" }, { status: 400 })
-    const candidates = await listPortalCandidates(source?.data, 100)
+    const candidates = await listPortalCandidates(source?.data, 300)
     return NextResponse.json({
       ok: true,
       candidates: candidates.flatMap((candidate) => {

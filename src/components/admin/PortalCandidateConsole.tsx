@@ -40,6 +40,8 @@ const SOURCE_OPTIONS: Array<{ value: PortalSource; label: string; hint: string }
   { value: "jmty", label: "ジモティー", hint: "地域サービス・法人投稿" },
 ]
 
+const PAGE_SIZE = 20
+
 function safeCssUrl(url: string): string {
   return `url("${url.replace(/["\\\n\r]/g, (character) => `\\${character}`)}")`
 }
@@ -48,6 +50,7 @@ export function PortalCandidateConsole() {
   const [source, setSource] = useState<PortalSource>("houzz")
   const [candidates, setCandidates] = useState<PortalCandidateView[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
 
   const refresh = useCallback(async (nextSource: PortalSource = source) => {
     setLoading(true)
@@ -56,6 +59,7 @@ export function PortalCandidateConsole() {
       const payload = await response.json() as { ok?: boolean; candidates?: PortalCandidateView[]; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error ?? "候補取得に失敗しました")
       setCandidates(payload.candidates ?? [])
+      setPage(0)
     } catch (error) {
       console.error("[portal-console] refresh failed:", error)
       toast.error(error instanceof Error ? error.message : "候補取得に失敗しました")
@@ -72,6 +76,11 @@ export function PortalCandidateConsole() {
     unverified: candidates.filter((candidate) => candidate.reviewStatus === "decision_fit_unverified").length,
     queued: candidates.filter((candidate) => candidate.status === "promoted").length,
   }), [candidates])
+  const pageCount = Math.max(1, Math.ceil(candidates.length / PAGE_SIZE))
+  const visibleCandidates = useMemo(
+    () => candidates.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
+    [candidates, page],
+  )
 
   return (
     <section className="mx-auto mt-8 max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
@@ -105,8 +114,16 @@ export function PortalCandidateConsole() {
       <div className="mt-7 space-y-5">
         {loading && <div className="flex min-h-32 items-center justify-center gap-2 rounded-2xl bg-slate-50 text-sm text-slate-600"><LoaderCircle className="h-4 w-4 animate-spin" />候補を読み込んでいます</div>}
         {!loading && candidates.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">まだ候補がありません。事業者プロフィールURLを投入してください。</div>}
-        {!loading && candidates.map((candidate) => <PortalCandidateCard key={candidate.id} candidate={candidate} onQueued={() => refresh(source)} />)}
+        {!loading && visibleCandidates.map((candidate) => <PortalCandidateCard key={candidate.id} candidate={candidate} onQueued={() => refresh(source)} />)}
       </div>
+      {!loading && candidates.length > PAGE_SIZE && <div className="mt-6 flex flex-col justify-between gap-3 rounded-2xl bg-slate-50 p-4 text-sm sm:flex-row sm:items-center">
+        <p>{candidates.length}件中 {page * PAGE_SIZE + 1}〜{Math.min((page + 1) * PAGE_SIZE, candidates.length)}件を表示</p>
+        <div className="flex items-center gap-2">
+          <button type="button" aria-label="前の候補ページ" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))} className="min-h-10 rounded-xl border border-slate-300 bg-white px-4 font-bold disabled:opacity-40">前へ</button>
+          <span className="min-w-20 text-center">{page + 1} / {pageCount}</span>
+          <button type="button" aria-label="次の候補ページ" disabled={page + 1 >= pageCount} onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))} className="min-h-10 rounded-xl border border-slate-300 bg-white px-4 font-bold disabled:opacity-40">次へ</button>
+        </div>
+      </div>}
     </section>
   )
 }
