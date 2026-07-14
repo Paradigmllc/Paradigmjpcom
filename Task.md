@@ -1561,9 +1561,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 
 ### 本番運用
 - 40件の国別source packを本番DBへdraft登録し、WikidataはCC0、European Commission CORDISはCC BY 4.0再利用条件を確認した。非保存previewはCORDIS 30/30とWikidata 3/10が合格し、この33件だけを承認・有効化した。Wikidata 7件は公開query endpointの502/timeoutで未承認のまま隔離した。
-- 非送信inventory run `15849730-69c7-47f4-81ab-200cce4d94a2`を開始。初期実測は3/33 source完了、233件取込、186件サイト事前検査合格、34件retryable、13件rejected、source失敗0。DB制約どおりsend_count 0 / twenty_sync_count 0を維持する。
+- 非送信inventory run `15849730-69c7-47f4-81ab-200cce4d94a2`は33/33 sourceを処理して`partial`完了。3,248件取込、2,319件サイト事前検査合格、648件retryable、281件rejected。唯一のsource失敗はWikidata英国packの公開endpoint timeoutで、CORDIS 30 packは完走した。DB制約どおりsend_count 0 / twenty_sync_count 0。
 - 起動時、`sales_lead_operator_events.run_id`が旧candidate run専用FKであるのにinventory run IDを渡して監査保存が500になる不整合を検出した。runnerはresume処理の先頭で開始できたため同じrun IDで実収集を継続し、送信系には接続していない。
 
 ### 修正・検証
 - inventoryのstart / resume / completion監査はcandidate-run FK列を使わず、汎用の`entity_type=run / entity_id=inventory run ID`だけで保存するよう修正した。startとresumeの回帰テストは監査payloadに`runId`が存在しないことを検証する。
-- 対象Vitest 2 files / 7 tests、全Vitest 161 files / 741 tests、TypeScript、対象ESLint、quality guard 0 errors / 60 existing warnings、production build 408/408 pages、`git diff --check`がpass。正式release後に同じrun IDをresumeし、監査HTTP 202、進捗、send 0、Twenty sync 0を再確認する。
+- 対象Vitest 2 files / 7 tests、全Vitest 161 files / 741 tests、TypeScript、対象ESLint、quality guard 0 errors / 60 existing warnings、production build 408/408 pages、`git diff --check`がpass。
+- PR **#237** / main **7fc9bf22** / deployment **qwe4md5606d5h3qlzeh2vasd**。正式releaseでDB 88/88とdeployment finishedを確認。直後の複数公開fetchが一時失敗したため同じdeployを再実行せず個別診断し、Ready / Twenty / 診断レポートHTTP 200を確認後にpost-deploy gateだけを再実行してSales health JSON `ok:true`を含む全項目pass。修正版resume APIはHTTP 202を返し、同じrun IDを新コンテナで再開・完走した。
