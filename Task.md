@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-14 Japan Entry証拠付き候補factory（実装・ローカル検証完了 / 正式release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-14 Japan Entry証拠付き候補factory（本番反映・公開QA完了 / 外部送信0）
 
 ### 旧Tranco母集団を廃止し、企業証拠から始める収集へ再構築
 - 本番候補factoryの母集団を、Tranco順位・SearXNG・検索結果Regex・推測会社名から完全分離。対象国ごとに、運用者が利用規約を確認した公的企業名簿・輸出事業者・業界団体・展示会出展者・管理済み構造化feedだけを`lead source`として登録し、企業名・公式domain・source pageを同時保存する。収集元が未取込・失敗・停止中ならrunはHTTP 409でfail-closedとなり、Twentyへ何も追加しない。
@@ -8,7 +8,8 @@
 
 ### Verification / handoff
 - 変更範囲Vitest **13 files / 53 tests pass**、TypeScript、全体ESLint、quality guard 0 errors、release-doctor static/infra、production build **408/408 pages** pass。全体Vitestは今回変更外の既知5件（日本語代表メッセージ旧200文字期待1件、CRLF checkoutのbackup shell 4件）のみ失敗し、今回追加した管理画面の一時timeoutは単独再実行でpass。
-- 正式releaseまでは収集元登録・候補収集・Twenty同期を開始しない。release後も承認済み収集元0件の状態ではfail-closedを維持し、実際のsource URLと再利用条件を人間確認してから国別pilotを開始する。
+- PR **#207** / merge commit **154f6662** / 正式deployment **ssby457z7bk4kfyvivzufw9b**。新規migration適用、DB table検査、Sales health HTTP 200 JSON `ok:true`、Traefik / Cloudflare / Supabase Realtime / Twenty worker restart 0、公開日本語・英語URL、Twenty HTTP 200を含むpost-deploy gateがpassした。収集元登録、候補収集、Twenty追加、文面・レポート生成、外部送信は実行していない。
+- release後も承認済み収集元0件の状態ではfail-closedを維持する。実際のsource URLと再利用条件を人間確認してから国別pilotを開始する。
 
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V5（Codex非依存化・本番QA前）
 
