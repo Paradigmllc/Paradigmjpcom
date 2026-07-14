@@ -330,6 +330,74 @@ function checkStaticReleaseRules() {
     fail("Evidence-first lead sources require RLS, fail-closed run gates, and release wiring")
   }
 
+  const operatorApprovalMigrationPath = "supabase/migrations/20260715093000_lead_factory_operator_approval.sql"
+  const operatorApprovalMigration = fs.existsSync(operatorApprovalMigrationPath)
+    ? fs.readFileSync(operatorApprovalMigrationPath, "utf8")
+    : ""
+  const factoryRoute = fs.existsSync("src/app/api/sales/lead-candidates/factory/route.ts")
+    ? fs.readFileSync("src/app/api/sales/lead-candidates/factory/route.ts", "utf8")
+    : ""
+  const verificationService = fs.existsSync("src/lib/sales/lead-candidate-verification.ts")
+    ? fs.readFileSync("src/lib/sales/lead-candidate-verification.ts", "utf8")
+    : ""
+  const reviewService = fs.existsSync("src/lib/sales/lead-candidate-review.ts")
+    ? fs.readFileSync("src/lib/sales/lead-candidate-review.ts", "utf8")
+    : ""
+  const candidateRunner = fs.existsSync("src/lib/sales/lead-candidate-runner.ts")
+    ? fs.readFileSync("src/lib/sales/lead-candidate-runner.ts", "utf8")
+    : ""
+  const reviewRoute = fs.existsSync("src/app/api/sales/lead-candidates/runs/[runId]/review/route.ts")
+    ? fs.readFileSync("src/app/api/sales/lead-candidates/runs/[runId]/review/route.ts", "utf8")
+    : ""
+  const sourcePreviewRoute = fs.existsSync("src/app/api/sales/lead-sources/[sourceId]/preview/route.ts")
+    ? fs.readFileSync("src/app/api/sales/lead-sources/[sourceId]/preview/route.ts", "utf8")
+    : ""
+  const leadSourceRecordsService = fs.existsSync("src/lib/sales/lead-source-records.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-records.ts", "utf8")
+    : ""
+  const deepSeekGateway = fs.existsSync("src/lib/deepseek.ts")
+    ? fs.readFileSync("src/lib/deepseek.ts", "utf8")
+    : ""
+  const personalizedMessage = fs.existsSync("src/lib/sales/japan-entry-personalized-message.ts")
+    ? fs.readFileSync("src/lib/sales/japan-entry-personalized-message.ts", "utf8")
+    : ""
+  if (
+    operatorApprovalMigration.includes("sales_lead_operator_events")
+    && operatorApprovalMigration.includes("ENABLE ROW LEVEL SECURITY")
+    && operatorApprovalMigration.includes("GRANT SELECT, INSERT")
+    && operatorApprovalMigration.includes("approval_status")
+    && operatorApprovalMigration.includes("sales_lead_source_configs_active_approval_check")
+    && operatorApprovalMigration.includes("sales_lead_candidate_runs_manual_promotion_only_check")
+    && operatorApprovalMigration.includes("awaiting_review")
+    && operatorApprovalMigration.includes("review_status")
+    && operatorApprovalMigration.includes("sales_lead_candidate_run_items_review_state_check")
+    && operatorApprovalMigration.includes("sales_claim_lead_source_records")
+    && operatorApprovalMigration.includes("FOR UPDATE OF source_record SKIP LOCKED")
+    && operatorApprovalMigration.includes("GRANT EXECUTE ON FUNCTION public.sales_claim_lead_source_records")
+    && noLoginDeploy.includes("20260715093000_lead_factory_operator_approval.sql")
+    && noLoginDeploy.includes("applyLeadFactoryOperatorApprovalMigration")
+    && factoryRoute.includes("promote: false")
+    && factoryRoute.includes("syncTwenty: false")
+    && factoryRoute.includes("START VERIFIED BATCH")
+    && !verificationService.includes("promoteFormQualifiedCandidate")
+    && verificationService.includes('eligibleByScore ? "awaiting_review"')
+    && reviewService.includes("promoteFormQualifiedCandidate")
+    && reviewService.includes("MAX_REVIEW_ITEMS = 20")
+    && candidateRunner.includes("MAX_CONCURRENT_FALLBACK_RUNS = 2")
+    && candidateRunner.includes("pendingFallbackRuns")
+    && reviewRoute.includes("approve_pilot")
+    && sourcePreviewRoute.includes("previewLeadSourceConfig")
+    && leadSourceRecordsService.includes('rpc("sales_claim_lead_source_records"')
+    && !deepSeekGateway.includes("process.env.LITELLM_API_KEY")
+    && !deepSeekGateway.includes("process.env.OPENROUTER_API_KEY")
+    && personalizedMessage.includes('modelPolicy: "strict"')
+    && personalizedMessage.includes('const MODEL = "deepseek-v4-pro"')
+  ) {
+    pass("lead factory enforces source preview, pilot review, manual Twenty promotion, operator audit and direct DeepSeek V4 Pro generation")
+  } else {
+    fail("lead factory must remain fail-closed until explicit operator review and Twenty approval")
+  }
+
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
   const evidenceFactory = fs.existsSync(evidenceFactoryPath)
     ? fs.readFileSync(evidenceFactoryPath, "utf8")
@@ -1202,20 +1270,17 @@ async function checkPublicFunnelEnvironment() {
     } else {
       fail("TWENTY_API_KEY is required for candidate-to-CRM synchronization")
     }
-    if (hasMinimumSecret("DIFY_API_KEY") || hasMinimumSecret("DIFY_FORM_MESSAGE_API_KEY") || hasMinimumSecret("DIFY_FORM_MESSAGE_KEY")) {
-      pass("LLM form-message credential is configured")
+    if (hasMinimumSecret("DEEPSEEK_API_KEY")) {
+      pass("form-message generation has a direct DeepSeek API credential")
     } else {
-      fail("DIFY_API_KEY or a dedicated form-message key is required for LLM draft generation")
+      fail("DEEPSEEK_API_KEY is required for direct DeepSeek V4 Pro form-message generation")
     }
     const demoModel = String(envs.DEMO_LLM_MODEL || "").trim()
-    const demoLiteLlmReady = hasMinimumSecret("LITELLM_API_KEY")
-      && typeof envs.LITELLM_API_BASE === "string"
-      && envs.LITELLM_API_BASE.trim().length > 0
     const demoDeepSeekReady = hasMinimumSecret("DEEPSEEK_API_KEY")
-    if (demoModel === "deepseek-v4-pro" && (demoLiteLlmReady || demoDeepSeekReady)) {
-      pass("SMB demo generation is pinned to DeepSeek V4 Pro")
+    if (demoModel === "deepseek-v4-pro" && demoDeepSeekReady) {
+      pass("SMB demo generation is pinned to the direct DeepSeek V4 Pro API")
     } else {
-      fail("DEMO_LLM_MODEL=deepseek-v4-pro and a LiteLLM or DeepSeek credential are required")
+      fail("DEMO_LLM_MODEL=deepseek-v4-pro and DEEPSEEK_API_KEY are required")
     }
     const backupEncrypted = /^(1|true|yes)$/i.test(String(envs.OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED || "true").trim())
     const backupSshReady = typeof envs.OSS_SUPABASE_BACKUP_SSH_TARGET === "string" && envs.OSS_SUPABASE_BACKUP_SSH_TARGET.trim().length > 0

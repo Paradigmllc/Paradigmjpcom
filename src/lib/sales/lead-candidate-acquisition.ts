@@ -67,6 +67,12 @@ async function updateRun(runId: string, patch: JsonRecord): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
+async function cancellationRequested(runId: string): Promise<boolean> {
+  const result = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("cancel_requested").eq("id", runId).single()
+  if (result.error) throw new Error(result.error.message)
+  return result.data?.cancel_requested === true
+}
+
 async function upsertCandidates(
   run: LeadCandidateAcquisitionRun,
   records: Awaited<ReturnType<typeof fetchLeadSourceCandidateRecords>>,
@@ -153,8 +159,12 @@ async function persistProgress(
 
 export async function ensureLeadCandidateRunDomainsFetched(
   run: LeadCandidateAcquisitionRun,
-): Promise<{ fetched: number; upserted: number; failures: Array<{ key: string; reason: string }> }> {
-  if (acquisitionCompleted(run.cursor)) return { fetched: run.fetched_count, upserted: run.upserted_count, failures: [] }
+): Promise<{ fetched: number; upserted: number; cancelled: boolean; failures: Array<{ key: string; reason: string }> }> {
+  if (await cancellationRequested(run.id)) {
+    await updateRun(run.id, { status: "cancelled", completed_at: nowIso() })
+    return { fetched: 0, upserted: 0, cancelled: true, failures: [] }
+  }
+  if (acquisitionCompleted(run.cursor)) return { fetched: run.fetched_count, upserted: run.upserted_count, cancelled: false, failures: [] }
   await updateRun(run.id, { status: "running", started_at: nowIso() })
 
   if (run.require_source_evidence !== true || run.source_config_ids.length === 0) {
@@ -165,6 +175,10 @@ export async function ensureLeadCandidateRunDomainsFetched(
     sourceConfigIds: run.source_config_ids,
     limit: run.requested_limit,
   })
+  if (await cancellationRequested(run.id)) {
+    await updateRun(run.id, { status: "cancelled", completed_at: nowIso() })
+    return { fetched: 0, upserted: 0, cancelled: true, failures: [] }
+  }
   await persistProgress(run, fetched, true)
 
   const failures = fetched.length === 0
@@ -173,5 +187,5 @@ export async function ensureLeadCandidateRunDomainsFetched(
   if (run.verify_limit === 0) {
     await updateRun(run.id, { status: failures.length > 0 ? "partial" : "completed", completed_at: nowIso() })
   }
-  return { fetched: fetched.length, upserted: await countRunItems(getSb(), run.id), failures }
+  return { fetched: fetched.length, upserted: await countRunItems(getSb(), run.id), cancelled: false, failures }
 }

@@ -2,7 +2,9 @@ import { markLeadCandidateRunFailed, processLeadCandidateRun } from "./lead-cand
 
 const DEFAULT_VERIFY_BATCH = 120
 const FALLBACK_RUN_MAX_ITERATIONS = 500
+const MAX_CONCURRENT_FALLBACK_RUNS = 2
 const activeFallbackRuns = new Set<string>()
+const pendingFallbackRuns: string[] = []
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -23,14 +25,25 @@ async function runLeadCandidateFallbackLoop(runId: string): Promise<void> {
     })
   } finally {
     activeFallbackRuns.delete(runId)
+    drainPendingFallbackRuns()
+  }
+}
+
+function drainPendingFallbackRuns(): void {
+  while (activeFallbackRuns.size < MAX_CONCURRENT_FALLBACK_RUNS) {
+    const runId = pendingFallbackRuns.shift()
+    if (!runId) return
+    if (activeFallbackRuns.has(runId)) continue
+    activeFallbackRuns.add(runId)
+    setTimeout(() => {
+      void runLeadCandidateFallbackLoop(runId)
+    }, 0)
   }
 }
 
 export function startLeadCandidateRunFallback(runId: string): { started: boolean; alreadyRunning: boolean } {
-  if (activeFallbackRuns.has(runId)) return { started: false, alreadyRunning: true }
-  activeFallbackRuns.add(runId)
-  setTimeout(() => {
-    void runLeadCandidateFallbackLoop(runId)
-  }, 0)
+  if (activeFallbackRuns.has(runId) || pendingFallbackRuns.includes(runId)) return { started: false, alreadyRunning: true }
+  pendingFallbackRuns.push(runId)
+  drainPendingFallbackRuns()
   return { started: true, alreadyRunning: false }
 }

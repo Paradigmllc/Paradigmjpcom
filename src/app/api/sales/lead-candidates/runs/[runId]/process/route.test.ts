@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   assertEvidenceFirst: vi.fn(),
   markFailed: vi.fn(),
   startFallback: vi.fn(),
+  audit: vi.fn(),
+  notify: vi.fn(),
 }))
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
@@ -16,6 +18,8 @@ vi.mock("@/lib/sales/lead-candidate-runs", () => ({
   markLeadCandidateRunFailed: mocks.markFailed,
 }))
 vi.mock("@/lib/sales/lead-candidate-runner", () => ({ startLeadCandidateRunFallback: mocks.startFallback }))
+vi.mock("@/lib/sales/lead-operator-audit", () => ({ recordLeadOperatorEvent: mocks.audit }))
+vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 
 import { POST } from "./route"
 
@@ -26,6 +30,8 @@ beforeEach(() => {
   mocks.authorize.mockResolvedValue(true)
   mocks.processRun.mockResolvedValue({ ok: true, processed: 24, hasMore: false, twentySynced: 3 })
   mocks.assertEvidenceFirst.mockResolvedValue(undefined)
+  mocks.audit.mockResolvedValue(undefined)
+  mocks.notify.mockResolvedValue({ ok: true })
 })
 
 describe("lead candidate run processing route", () => {
@@ -33,7 +39,7 @@ describe("lead candidate run processing route", () => {
     const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/lead-candidates/runs/run-stale/process", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ async: false, batchSize: 24, maxBatches: 10 }),
+      body: JSON.stringify({ async: false, batchSize: 24, maxBatches: 10, operatorName: "Sato" }),
     }), context)
 
     expect(response.status).toBe(200)
@@ -59,7 +65,7 @@ describe("lead candidate run processing route", () => {
     const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/lead-candidates/runs/run-stale/process", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ async: true }),
+      body: JSON.stringify({ async: true, operatorName: "Sato" }),
     }), context)
 
     expect(response.status).toBe(409)

@@ -1,26 +1,20 @@
 /**
  * lib/deepseek.ts — DeepSeek 公式 API ゲートウェイ
  *
- * 役割: 全 LLM 呼び出しの唯一の窓口。OpenAI 互換 endpoint を叩き、
- *       モデル/プロバイダの **フォールバックチェーン** で「空応答・エラー」を吸収する。
+ * 役割: 全 LLM 呼び出しの唯一の窓口。DeepSeek公式のOpenAI互換endpointを叩き、
+ *       同一プロバイダ内のモデルフォールバックで「空応答・エラー」を吸収する。
  *
  * モデル方針 (2026-07-13・ユーザー指示「DeepSeek V4 直叩き」):
  *   - **default = DeepSeek V4 を最初に試す** → 空/失敗なら自動で次モデルへフォールバック
  *   - 実 API では deepseek-v4-pro/v4/v4-flash が 200/空応答を返すため、フォールバックで
  *     `deepseek-chat` (実出力) に落ちる設計。DeepSeek が真の V4 id を公開したら default で通る。
- *   - LITELLM_API_BASE / LITELLM_API_KEY があれば社内LiteLLMをprimaryにする。
- *   - LiteLLM未設定時はDeepSeek公式APIを直接呼び出す。
- *   - **第2プロバイダ fallback**: chain modeだけOPENROUTER_API_KEYを利用できる。
+ *   - LiteLLM / OpenRouterを経由せず、常にDeepSeek公式APIを直接呼び出す。
  *
  * env:
  *   DEEPSEEK_API_KEY        DeepSeek 公式 API key (必須)
  *   DEEPSEEK_API_BASE       DeepSeek API base URL (default https://api.deepseek.com/v1)
  *   DEEPSEEK_MODEL_CHAIN    試行モデルを comma 区切りで明示 (例 "deepseek-v4,deepseek-chat")
  *   DEEPSEEK_MODEL          単一 default モデル (CHAIN 未指定時の先頭・default "deepseek-v4-pro")
- *   OPENROUTER_API_KEY      任意・第2プロバイダ fallback の鍵
- *   OPENROUTER_MODEL        任意・OpenRouter で使うモデル (default "deepseek/deepseek-chat")
- *   LITELLM_API_BASE        任意・社内LiteLLM OpenAI-compatible endpoint
- *   LITELLM_API_KEY         任意・社内LiteLLM credential
  *
  * 設計原則: system prompt 固定で cache hit / timeout + AbortSignal / fail-soft。
  */
@@ -95,46 +89,14 @@ function primaryModels(optModel?: string): string[] {
 }
 
 function buildProviders(optModel?: string, modelPolicy: DeepSeekOptions["modelPolicy"] = "chain"): Provider[] {
-  const providers: Provider[] = []
   const dsKey = process.env.DEEPSEEK_API_KEY?.trim()
-  if (modelPolicy === "strict" && dsKey) {
-    return [{
-      name: "deepseek",
-      base: (process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
-      key: dsKey,
-      models: optModel ? [optModel] : primaryModels(),
-    }]
-  }
-  const liteKey = process.env.LITELLM_API_KEY?.trim()
-  const liteBase = process.env.LITELLM_API_BASE?.trim()
-  if (liteKey && liteBase) {
-    providers.push({
-      name: "litellm",
-      base: liteBase.replace(/\/+$/, ""),
-      key: liteKey,
-      models: modelPolicy === "strict" && optModel ? [optModel] : primaryModels(optModel),
-    })
-  }
-  if (dsKey) {
-    providers.push({
-      name: "deepseek",
-      base: (process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
-      key: dsKey,
-      models: modelPolicy === "strict" && optModel ? [optModel] : primaryModels(optModel),
-    })
-  }
-  if (modelPolicy === "strict") return providers.slice(0, 1)
-  // 第2プロバイダ fallback (OpenRouter)
-  const orKey = process.env.OPENROUTER_API_KEY?.trim()
-  if (orKey) {
-    providers.push({
-      name: "openrouter",
-      base: "https://openrouter.ai/api/v1",
-      key: orKey,
-      models: [process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-chat"],
-    })
-  }
-  return providers
+  if (!dsKey) return []
+  return [{
+    name: "deepseek",
+    base: (process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
+    key: dsKey,
+    models: modelPolicy === "strict" && optModel ? [optModel] : primaryModels(optModel),
+  }]
 }
 
 /* ───── 1 回の呼び出し ───── */
@@ -162,10 +124,6 @@ async function callOnce(
       headers: {
         Authorization: `Bearer ${provider.key}`,
         "Content-Type": "application/json",
-        // OpenRouter 推奨ヘッダ (任意)
-        ...(provider.name === "openrouter"
-          ? { "HTTP-Referer": "https://paradigmjp.com", "X-Title": "Paradigm Sales OS" }
-          : {}),
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(opts.timeoutMs ?? DEFAULT_TIMEOUT_MS),
@@ -198,7 +156,7 @@ export async function callDeepSeek(
 ): Promise<DeepSeekResponse> {
   const providers = buildProviders(opts.model, opts.modelPolicy)
   if (providers.length === 0) {
-    return { ok: false, error: "no LLM provider configured (LITELLM_API_KEY / DEEPSEEK_API_KEY / OPENROUTER_API_KEY)" }
+    return { ok: false, error: "DEEPSEEK_API_KEY is not configured for the official DeepSeek API" }
   }
 
   let last: DeepSeekResponse = { ok: false, error: "no attempt made" }

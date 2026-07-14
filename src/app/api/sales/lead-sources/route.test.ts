@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   select: vi.fn(),
   single: vi.fn(),
+  audit: vi.fn(),
 }))
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
@@ -18,6 +19,7 @@ vi.mock("@/lib/sales/lead-source-records", async (importOriginal) => {
 })
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: () => ({ from: mocks.from }) }))
+vi.mock("@/lib/sales/lead-operator-audit", () => ({ recordLeadOperatorEvent: mocks.audit }))
 
 import { GET, POST } from "./route"
 
@@ -26,6 +28,7 @@ beforeEach(() => {
   mocks.authorize.mockResolvedValue(true)
   mocks.list.mockResolvedValue([])
   mocks.notify.mockResolvedValue({ ok: true })
+  mocks.audit.mockResolvedValue(undefined)
   mocks.single.mockResolvedValue({ data: { id: "source-1", name: "Official Exporters" }, error: null })
   mocks.select.mockReturnValue({ single: mocks.single })
   mocks.insert.mockReturnValue({ select: mocks.select })
@@ -54,6 +57,7 @@ describe("lead source routes", () => {
         trustTier: 3,
         termsChecked: true,
         fieldMapping: { website_url: { nested: true } },
+        operatorName: "Sato",
       }),
     }))
 
@@ -74,6 +78,7 @@ describe("lead source routes", () => {
         trustTier: 3,
         termsChecked: false,
         fieldMapping: { company_name: "name", website_url: "website" },
+        operatorName: "Sato",
       }),
     }))
 
@@ -82,6 +87,8 @@ describe("lead source routes", () => {
       country_code: "US",
       source_url: "https://directory.example/exporters.csv",
       terms_checked: false,
+      active: false,
+      approval_status: "draft",
     }))
     expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({ type: "lead_source_created" }))
   })

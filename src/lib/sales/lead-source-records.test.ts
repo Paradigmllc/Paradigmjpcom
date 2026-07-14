@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest"
-import { parseLeadSourcePayload, type LeadSourceConfig } from "./lead-source-records"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }))
+
+vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: () => ({ from: mocks.from, rpc: mocks.rpc }) }))
+
+import { fetchLeadSourceCandidateRecords, parseLeadSourcePayload, type LeadSourceConfig } from "./lead-source-records"
 
 function config(patch: Partial<LeadSourceConfig> = {}): LeadSourceConfig {
   return {
@@ -13,6 +18,13 @@ function config(patch: Partial<LeadSourceConfig> = {}): LeadSourceConfig {
     field_mapping: {},
     active: true,
     terms_checked: true,
+    approval_status: "approved",
+    approved_by: "Sato",
+    approved_at: "2026-07-14T00:00:00.000Z",
+    last_preview: { accepted: 1 },
+    last_previewed_at: "2026-07-14T00:00:00.000Z",
+    pilot_approved_by: null,
+    pilot_approved_at: null,
     last_status: "ready",
     last_error: null,
     last_record_count: 0,
@@ -52,5 +64,37 @@ describe("parseLeadSourcePayload", () => {
     }))
 
     expect(parsed.records[0]).toMatchObject({ company_name: "Bright Goods", domain: "brightgoods.example", employee_count: 18, source_page_url: "https://directory.example/exporters/bright-goods" })
+  })
+})
+
+describe("fetchLeadSourceCandidateRecords", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    const sourceQuery: Record<string, unknown> = {}
+    sourceQuery.select = vi.fn(() => sourceQuery)
+    sourceQuery.in = vi.fn(() => sourceQuery)
+    sourceQuery.eq = vi.fn(() => sourceQuery)
+    sourceQuery.then = (resolve: (value: unknown) => unknown) => Promise.resolve(resolve({ data: [config()], error: null }))
+    mocks.from.mockReturnValue(sourceQuery)
+    mocks.rpc.mockResolvedValue({
+      data: [
+        { id: "record-1", source_config_id: "source-1", domain: "acme.example", company_name: "Acme", observed_at: "2026-07-14T00:00:00.000Z" },
+        { id: "record-2", source_config_id: "source-1", domain: "acme.example", company_name: "Acme duplicate", observed_at: "2026-07-14T00:00:00.000Z" },
+        { id: "record-3", source_config_id: "source-1", domain: "bright.example", company_name: "Bright", observed_at: "2026-07-14T00:00:00.000Z" },
+      ],
+      error: null,
+    })
+  })
+
+  it("claims records atomically and deduplicates domains across approved sources", async () => {
+    const records = await fetchLeadSourceCandidateRecords({ countryCode: "AU", sourceConfigIds: ["source-1"], limit: 2 })
+
+    expect(mocks.rpc).toHaveBeenCalledWith("sales_claim_lead_source_records", {
+      p_country_code: "AU",
+      p_source_config_ids: ["source-1"],
+      p_limit: 100,
+    })
+    expect(records.map((record) => record.domain)).toEqual(["acme.example", "bright.example"])
+    expect(records.every((record) => record.source.id === "source-1")).toBe(true)
   })
 })

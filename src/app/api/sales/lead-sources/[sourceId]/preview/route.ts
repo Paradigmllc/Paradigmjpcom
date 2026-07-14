@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { ingestLeadSourceConfig } from "@/lib/sales/lead-source-records"
 import { recordLeadOperatorEvent } from "@/lib/sales/lead-operator-audit"
+import { previewLeadSourceConfig } from "@/lib/sales/lead-source-records"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -20,31 +20,31 @@ export async function POST(req: NextRequest, context: { params: Promise<{ source
     await recordLeadOperatorEvent({
       entityType: "source",
       entityId: sourceId,
-      action: "ingestion_requested",
+      action: "preview_requested",
       operatorName: parsed.data.operatorName,
     })
-    const result = await ingestLeadSourceConfig(sourceId)
+    const preview = await previewLeadSourceConfig(sourceId)
     await recordLeadOperatorEvent({
       entityType: "source",
       entityId: sourceId,
-      action: "ingested",
+      action: "previewed",
       operatorName: parsed.data.operatorName,
-      detail: { accepted: result.accepted, rejected: result.rejected },
+      detail: { rawCount: preview.rawCount, accepted: preview.accepted, rejected: preview.rejected, acceptanceRate: preview.acceptanceRate },
     })
     try {
       const { notifyBothChannels } = await import("@/lib/notify")
       await notifyBothChannels("sales", {
-        title: "候補収集元の取込完了",
-        message: `証拠付き企業${result.accepted}件を保存、形式不備${result.rejected}件。Twenty同期・文面生成・送信は未実行です。`,
+        title: "候補収集元のプレビュー完了",
+        message: `候補保存なしで${preview.accepted}件を確認、除外${preview.rejected}件。承認前のため収集ランには使用されません。`,
         link: "/ja/admin/lead-factory",
-        type: "lead_source_ingested",
+        type: "lead_source_previewed",
       })
     } catch (error) {
-      console.error("[lead-source-ingest] notification failed:", error)
+      console.error("[lead-source-preview] notification failed:", error)
     }
-    return NextResponse.json({ ok: true, ...result })
+    return NextResponse.json({ ok: true, preview })
   } catch (error) {
-    console.error("[lead-source-ingest] failed:", error)
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Lead source ingestion failed" }, { status: 500 })
+    console.error("[lead-source-preview] failed:", error)
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Lead source preview failed" }, { status: 500 })
   }
 }

@@ -84,6 +84,7 @@ export const DB_TABLES = {
   SALES_LEAD_CANDIDATE_RUN_ITEMS: "sales_lead_candidate_run_items",
   SALES_LEAD_SOURCE_CONFIGS: "sales_lead_source_configs",
   SALES_LEAD_SOURCE_RECORDS: "sales_lead_source_records",
+  SALES_LEAD_OPERATOR_EVENTS: "sales_lead_operator_events",
   SALES_PASSIVE_INVENTORY_RUNS: "sales_passive_inventory_runs",
   SALES_PASSIVE_INVENTORY_DOMAINS: "sales_passive_inventory_domains",
   SALES_PASSIVE_INVENTORY_SEGMENTS: "sales_passive_inventory_segments",

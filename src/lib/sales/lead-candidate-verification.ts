@@ -3,7 +3,6 @@ import { DB_TABLES } from "./db-tables"
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
 import { evaluateLeadQualityGate, fetchHomepageQualityProfile } from "./lead-quality-gate"
-import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
 import {
   inferCountrySignals,
   scoreCandidate,
@@ -37,6 +36,8 @@ export interface LeadCandidateRunRow {
   require_verified_form: boolean
   min_form_confidence: number
   sync_twenty: boolean
+  execution_mode: "pilot" | "batch"
+  cancel_requested: boolean
   source_config_ids: string[]
   require_source_evidence: boolean
   fetched_count: number
@@ -154,6 +155,7 @@ async function closeWithoutPromotion(item: LeadCandidateRunItemRow, patch: JsonR
     tech_matched: false,
     form_verified: false,
     twenty_synced: false,
+    review_status: "not_required",
     error_message: null,
     processed_at: nowIso(),
     ...patch,
@@ -247,53 +249,52 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
     score,
   })
 
-  let companyId: string | null = null
-  let twentySynced = false
-  let twentyCompanyId: string | null = null
-  let status = "scored"
   const eligibleByScore = score.opportunityScore >= run.min_opportunity_score && score.smbScore >= run.min_smb_score && techMatched
-  if (run.promote && eligibleByScore) {
-    const promotion = await promoteFormQualifiedCandidate({
-      runId: run.id,
-      countryCode: run.country_code,
-      syncTwenty: run.sync_twenty,
-      candidateId: candidate.id,
-      companyName: sourceRecord.company_name,
-      domain: candidate.domain,
-      sourcePageUrl: sourceRecord.source_page_url,
-      qualityGate,
-      score,
-      detections: detection.tech,
-      form,
-      source: EVIDENCE_FIRST_SOURCE,
-    })
-    if (!promotion.promoted) throw new Error(promotion.error ?? "promotion failed")
-    companyId = promotion.companyId ?? null
-    twentySynced = promotion.twentySynced
-    twentyCompanyId = promotion.twentyCompanyId ?? null
-    status = "promoted"
-  }
+  const status = eligibleByScore ? "awaiting_review" : "rejected"
+  const qualityReasons = eligibleByScore ? [] : [
+    ...(score.opportunityScore < run.min_opportunity_score ? ["below_opportunity_threshold"] : []),
+    ...(score.smbScore < run.min_smb_score ? ["below_smb_threshold"] : []),
+    ...(!techMatched ? ["technology_or_offer_fit_mismatch"] : []),
+  ]
   const update = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({
     status,
     attempts: item.attempts + 1,
     tech_matched: techMatched,
     job_enqueued: false,
     opportunity_score: score.opportunityScore,
-    company_id: companyId,
-    quality_status: "passed",
-    quality_gate: { ...qualityGate, form: { qualified: true, discovery: form } },
-    quality_reasons: [],
+    company_id: null,
+    quality_status: eligibleByScore ? "passed" : "rejected",
+    quality_gate: { ...qualityGate, form: { qualified: true, discovery: form }, score: { eligible: eligibleByScore, opportunity: score.opportunityScore, smb: score.smbScore, techMatched } },
+    quality_reasons: qualityReasons,
     form_url: form.formUrl,
     form_method: form.method,
     form_confidence: form.confidence,
     form_verified: true,
     form_checked_at: nowIso(),
     form_qualification_reason: qualification.reason,
-    twenty_synced: twentySynced,
-    twenty_company_id: twentyCompanyId,
+    twenty_synced: false,
+    twenty_company_id: null,
+    review_status: eligibleByScore ? "pending" : "not_required",
+    reviewed_by: null,
+    reviewed_at: null,
+    review_note: null,
+    promotion_error: null,
+    meta: {
+      ...(item.meta ?? {}),
+      promotion_snapshot: {
+        sourceRecord,
+        qualityGate,
+        score,
+        detections: detection.tech,
+        form,
+        countryCode: run.country_code,
+        techMatched,
+        verifiedAt: nowIso(),
+      },
+    },
     error_message: null,
     processed_at: nowIso(),
   }).eq("id", item.id)
   if (update.error) throw new Error(update.error.message)
-  return { techMatched, promoted: status === "promoted", twentySynced }
+  return { techMatched, promoted: false, twentySynced: false }
 }
