@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/sales/lead-candidate-runs", () => ({ ingestLeadCandidatesDurable: mocks.ingest }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
-vi.mock("@/lib/sales/lead-source-records", () => ({ getLeadSourceReadiness: mocks.readiness }))
+vi.mock("@/lib/sales/lead-source-selection", () => ({ getLeadSourceReadiness: mocks.readiness }))
 vi.mock("@/lib/sales/lead-operator-audit", () => ({ recordLeadOperatorEvent: mocks.audit }))
 
 import { POST } from "./route"

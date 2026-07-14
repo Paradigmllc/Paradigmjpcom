@@ -3,7 +3,7 @@ import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
-import { getLeadSourceReadiness } from "@/lib/sales/lead-source-records"
+import { getLeadSourceReadiness } from "@/lib/sales/lead-source-selection"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { recordLeadOperatorEvent } from "@/lib/sales/lead-operator-audit"
 

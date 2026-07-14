@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
-import { getLeadSourceReadiness } from "@/lib/sales/lead-source-records"
+import { getLeadSourceReadiness } from "@/lib/sales/lead-source-selection"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"

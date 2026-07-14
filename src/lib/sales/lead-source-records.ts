@@ -5,6 +5,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { normalizePublicDomain } from "./japan-entry-score"
 import { passesPublicDnsCheck } from "./japan-entry-score-service"
+import type { LeadSourcePreflightSummary } from "./lead-source-preflight"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -42,6 +43,8 @@ export interface LeadSourceConfig {
   last_previewed_at: string | null
   pilot_approved_by: string | null
   pilot_approved_at: string | null
+  last_preflight: LeadSourcePreflightSummary | JsonRecord
+  last_preflighted_at: string | null
   last_status: string
   last_error: string | null
   last_record_count: number
@@ -77,6 +80,11 @@ export interface LeadSourceRecord {
   observed_at: string
   last_selected_at?: string | null
   selection_count?: number
+  preflight_status?: "pending" | "checking" | "eligible" | "retryable" | "rejected"
+  preflight_reason?: string | null
+  preflight_checked_at?: string | null
+  preflight_attempts?: number
+  preflight_evidence?: JsonRecord
 }
 
 export interface NormalizedSourceRecord {
@@ -319,10 +327,19 @@ async function fetchSourceText(config: LeadSourceConfig): Promise<string> {
   throw new Error("Source exceeded five redirects")
 }
 
-export async function listLeadSourceConfigs(): Promise<Array<LeadSourceConfig & { record_count: number }>> {
+function preflightCount(config: LeadSourceConfig, key: keyof Pick<LeadSourcePreflightSummary, "eligible" | "pending" | "checking">): number {
+  const summary = asRecord(config.last_preflight)
+  const value = summary[key]
+  return typeof value === "number" && Number.isFinite(value) ? value : 0
+}
+export async function listLeadSourceConfigs(): Promise<Array<LeadSourceConfig & { record_count: number; eligible_record_count: number }>> {
   const configs = await getSb().from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS).select("*").order("country_code").order("trust_tier", { ascending: false })
   if (configs.error) throw new Error(configs.error.message)
-  return ((configs.data ?? []) as LeadSourceConfig[]).map((config) => ({ ...config, record_count: config.last_record_count }))
+  return ((configs.data ?? []) as LeadSourceConfig[]).map((config) => ({
+    ...config,
+    record_count: config.last_record_count,
+    eligible_record_count: preflightCount(config, "eligible"),
+  }))
 }
 
 export async function previewLeadSourceConfig(sourceId: string): Promise<LeadSourcePreview> {
@@ -385,7 +402,17 @@ export async function ingestLeadSourceConfig(sourceId: string): Promise<{ source
     if (rows.length === 0) throw new Error("Source returned no valid company name + public website records")
     const observedAt = new Date().toISOString()
     for (let index = 0; index < rows.length; index += 500) {
-      const part = rows.slice(index, index + 500).map((row) => ({ ...row, source_config_id: sourceId, active: true, observed_at: observedAt }))
+      const part = rows.slice(index, index + 500).map((row) => ({
+        ...row,
+        source_config_id: sourceId,
+        active: true,
+        observed_at: observedAt,
+        preflight_status: "pending",
+        preflight_reason: null,
+        preflight_checked_at: null,
+        preflight_attempts: 0,
+        preflight_evidence: {},
+      }))
       const saved = await sb.from(DB_TABLES.SALES_LEAD_SOURCE_RECORDS).upsert(part, { onConflict: "source_config_id,domain", ignoreDuplicates: false })
       if (saved.error) throw new Error(saved.error.message)
     }
@@ -396,6 +423,19 @@ export async function ingestLeadSourceConfig(sourceId: string): Promise<{ source
       last_error: null,
       last_record_count: rows.length,
       last_ingested_at: observedAt,
+      last_preflight: {
+        total: rows.length,
+        pending: rows.length,
+        checking: 0,
+        eligible: 0,
+        retryable: 0,
+        rejected: 0,
+        reasonCounts: {},
+        completed: false,
+      },
+      last_preflighted_at: null,
+      pilot_approved_by: null,
+      pilot_approved_at: null,
     }).eq("id", sourceId)
     if (updated.error) throw new Error(updated.error.message)
     return { sourceId, accepted: rows.length, rejected: Math.max(0, parsed.rawCount - rows.length) }
@@ -406,71 +446,4 @@ export async function ingestLeadSourceConfig(sourceId: string): Promise<{ source
     if (failed.error) console.error("[lead-source-records] failed to persist ingestion error:", failed.error.message)
     throw error
   }
-}
-
-export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Record<string, {
-  sourceIds: string[]
-  scaleReadySourceIds: string[]
-  recordCount: number
-  scaleReadyRecordCount: number
-}>> {
-  const configs = await listLeadSourceConfigs()
-  return Object.fromEntries(countryCodes.map((countryCode) => {
-    const matched = configs.filter((config) => config.active && config.terms_checked && config.approval_status === "approved" && config.last_status === "ready" && config.country_code === countryCode && config.record_count > 0)
-    const scaleReady = matched.filter((config) => config.pilot_approved_at !== null)
-    return [countryCode, {
-      sourceIds: matched.map((config) => config.id),
-      scaleReadySourceIds: scaleReady.map((config) => config.id),
-      recordCount: matched.reduce((sum, config) => sum + config.record_count, 0),
-      scaleReadyRecordCount: scaleReady.reduce((sum, config) => sum + config.record_count, 0),
-    }]
-  }))
-}
-
-export async function fetchLeadSourceCandidateRecords(input: {
-  countryCode: string
-  sourceConfigIds: string[]
-  limit: number
-}): Promise<Array<LeadSourceRecord & { source: LeadSourceConfig }>> {
-  if (input.sourceConfigIds.length === 0) return []
-  const sb = getSb()
-  const configsResult = await sb.from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS)
-    .select("*")
-    .in("id", input.sourceConfigIds)
-    .eq("country_code", input.countryCode)
-    .eq("active", true)
-    .eq("terms_checked", true)
-    .eq("approval_status", "approved")
-    .eq("last_status", "ready")
-  if (configsResult.error) throw new Error(configsResult.error.message)
-  const configs = (configsResult.data ?? []) as LeadSourceConfig[]
-  const configById = new Map(configs.map((config) => [config.id, config]))
-  if (configById.size === 0) return []
-  const records: LeadSourceRecord[] = []
-  const seenDomains = new Set<string>()
-  for (let attempt = 0; attempt < 3 && records.length < input.limit; attempt += 1) {
-    const remaining = input.limit - records.length
-    const claimed = await sb.rpc("sales_claim_lead_source_records", {
-      p_country_code: input.countryCode,
-      p_source_config_ids: [...configById.keys()],
-      p_limit: Math.min(Math.max(remaining * 2, 100), 10_000),
-    })
-    if (claimed.error) throw new Error(claimed.error.message)
-    const page = (claimed.data ?? []) as LeadSourceRecord[]
-    for (const record of page) {
-      if (!seenDomains.has(record.domain)) {
-        records.push(record)
-        seenDomains.add(record.domain)
-      }
-    }
-    if (page.length === 0) break
-  }
-  const ranked = records.sort((a, b) => (configById.get(b.source_config_id)?.trust_tier ?? 0) - (configById.get(a.source_config_id)?.trust_tier ?? 0))
-  const unique = new Map<string, LeadSourceRecord & { source: LeadSourceConfig }>()
-  for (const record of ranked) {
-    const source = configById.get(record.source_config_id)
-    if (source && !unique.has(record.domain)) unique.set(record.domain, { ...record, source })
-    if (unique.size >= input.limit) break
-  }
-  return [...unique.values()]
 }
