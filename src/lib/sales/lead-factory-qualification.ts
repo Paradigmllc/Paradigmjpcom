@@ -32,6 +32,13 @@ export function decideFormQualification(
   if (discovery.verification !== "form") {
     return { qualified: false, reason: "contact_page_only" }
   }
+  if (!discovery.inspection || discovery.inspection.status !== "form") {
+    return { qualified: false, reason: "no_form" }
+  }
+  const fields = new Set(discovery.inspection.fields)
+  if (!fields.has("email") || !fields.has("message") || !fields.has("submit")) {
+    return { qualified: false, reason: "no_form" }
+  }
   if (isNonContactFormUrl(discovery.formUrl)) {
     return { qualified: false, reason: "no_form" }
   }

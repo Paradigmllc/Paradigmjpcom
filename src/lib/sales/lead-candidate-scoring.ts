@@ -212,6 +212,7 @@ export function scoreCandidate(input: {
   hasContactSignal?: boolean
   source: string
   isEnterpriseLike?: boolean
+  smbEvidenceScore?: number
   websiteWeaknessScore?: number
   freshnessHintScore?: number
   techCollectedAt?: string | null
@@ -225,7 +226,7 @@ export function scoreCandidate(input: {
   const stackFitScore = requestedSlug ? (exactStack ? 96 : 0) : input.marketFitScore ?? Math.min(90, detectionSlugs.length * 18)
   const geoConfidence = maxCountryConfidence(input.countrySignals)
   const websiteAbsenceScore = input.websiteWeaknessScore ?? (input.hasWebsite ? 0 : 92)
-  const smbScore = input.isEnterpriseLike ? 8 : input.lane === "no_website_local_smb" ? 86 : input.lane === "dns_freshness" ? 78 : 58
+  const smbScore = input.isEnterpriseLike ? 8 : input.smbEvidenceScore !== undefined ? clampScore(input.smbEvidenceScore) : input.lane === "no_website_local_smb" ? 86 : input.lane === "dns_freshness" ? 78 : 58
   // Freshness: use hint if available, otherwise measure from collected timestamps
   let freshnessScore = input.freshnessHintScore
   if (freshnessScore == null) {
@@ -283,6 +284,7 @@ export function scoreCandidate(input: {
       source: input.source,
       laneOpportunityBonus,
       isEnterpriseLike: input.isEnterpriseLike ?? false,
+      smbEvidenceScore: input.smbEvidenceScore ?? null,
       marketFitScore: input.marketFitScore ?? null,
     },
   }

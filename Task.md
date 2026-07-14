@@ -1,3 +1,15 @@
+## CURRENT STATUS - 2026-07-14 Japan Entry証拠付き候補factory（実装・ローカル検証完了 / 正式release前 / 外部送信0）
+
+### 旧Tranco母集団を廃止し、企業証拠から始める収集へ再構築
+- 本番候補factoryの母集団を、Tranco順位・SearXNG・検索結果Regex・推測会社名から完全分離。対象国ごとに、運用者が利用規約を確認した公的企業名簿・輸出事業者・業界団体・展示会出展者・管理済み構造化feedだけを`lead source`として登録し、企業名・公式domain・source pageを同時保存する。収集元が未取込・失敗・停止中ならrunはHTTP 409でfail-closedとなり、Twentyへ何も追加しない。
+- `sales_lead_source_configs` / `sales_lead_source_records`をRLS + service_role最小権限で追加し、DB・認可API・管理GUIを一体実装。JSON / JSONL / CSV / HTML CSS selectorに対応し、HTTPS・public DNS・redirect再検証・25MB上限・同時取込ロック・500件batch upsert・途中失敗時の旧データ保護を実装した。売上の`$1.5M`や従業員レンジ`11-50`も上限値へ正規化する。
+- 候補ごとに企業名同一性、対象国の独立サイト根拠、営利性、除外業種、従業員2-249または売上$50M以下等のSMB根拠、EC/SaaS適合、DOM上のemail+message+submitを持つ実問い合わせフォームを順に検証。不明は定数スコアで通さず`review_required`へ隔離し、nonprofit・media・education・government・enterprise・商品/checkout/newsletter・無関係external formは除外する。
+- フォーム抽出はCheerio DOM parserを主経路、Crawl4AIをSPA fallbackだけに限定。DeepSeekは候補収集で使わない。全ゲート合格企業だけが確認済み企業名・国・source page・form evidence付きでSalesCompany/Twentyへ同期され、Opportunity・文面・レポート・外部送信は収集runから起動しない。旧`multi_source_domains` runは実行関数・復旧API・watchdogの3層で再起動不可にした。
+
+### Verification / handoff
+- 変更範囲Vitest **13 files / 53 tests pass**、TypeScript、全体ESLint、quality guard 0 errors、release-doctor static/infra、production build **408/408 pages** pass。全体Vitestは今回変更外の既知5件（日本語代表メッセージ旧200文字期待1件、CRLF checkoutのbackup shell 4件）のみ失敗し、今回追加した管理画面の一時timeoutは単独再実行でpass。
+- 正式releaseまでは収集元登録・候補収集・Twenty同期を開始しない。release後も承認済み収集元0件の状態ではfail-closedを維持し、実際のsource URLと再利用条件を人間確認してから国別pilotを開始する。
+
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V5（Codex非依存化・本番QA前）
 
 ### DeepSeekをコピー生成器から実装可能なアートディレクターへ拡張
@@ -1390,3 +1402,6 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 旧値を持っていた既存候補と再試行で確認された候補を含む13社を本番クリーンアップ。Supabaseは13/13で`report_url=null`、`pipeline_status=pending`、`list_only=true`、`skip_enrichment=true`。Twentyも13/13で確認済みフォーム、国、Shopify、機会スコア75、SMBスコア58、`フォーム確認済み / Twenty登録済み / 未送信`を保持し、旧report URL 0、旧sales status 0。
 - 最終非送信pilot run `b02dbf4d-5a3e-4565-a224-e70cfb69e84f`（US/Shopify）は候補20・確認10・実フォーム合格7・昇格7・Twenty同期7・失敗0。開始後のpipeline run 0、pipeline step 0、enrichment job 0、artifact 0、diagnosis 0、outreach run 0、report URL 0をDBで確認した。
 - ローカル回帰検証はlist-only/Twenty関連Vitest 5 files / 16 testsと最終互換修正3 files / 12 tests、TypeScript、対象ESLint、`git diff --check`がpass。レポート/Opportunity Brief生成と動画機能は削除せず、興味返信後の価値提供フェーズ専用として初回候補リスト経路から切り離す。
+- 実務Wave 1をUS/GB/AU/CA/SG/AE × Shopifyで実行。無料passive corpusから5,744候補を取得し、720件を実確認、実フォーム合格267件、適格昇格28件、Twenty同期28件、外部送信0件、文面生成0件。Twenty REST再照合は28/28 HTTP 200、国28/28、確認済みフォーム28/28、`未送信`ステータス28/28。国別同期はAE 3 / AU 7 / CA 6 / GB 5 / SG 7 / US 0。
+- Wave 1のUS/AEで、in-memory fallback runnerがheartbeat停止後も`alreadyRunning`を保持する停滞を実測。既存の認可済み同期process APIで残件を補完し、全6 runをactive 0まで完了させた。恒久対応として一覧API/Realtimeへ`heartbeat_at`を追加し、共通5分停滞判定、管理画面の`停滞runを再開`/`復旧を続行`操作、24件×最大10バッチの有界同期復旧を実装。復旧は残り候補だけを処理し、文面・レポート・フォーム送信を起動しない。
+- 停滞復旧のローカル検証はVitest 4 files / 9 tests、TypeScript、対象ESLint、`git diff --check`がpass。正式releaseと本番管理画面の公開確認を続行する。

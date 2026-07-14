@@ -1,0 +1,113 @@
+import { describe, expect, it } from "vitest"
+import { evaluateLeadQualityGate, type HomepageQualityProfile } from "./lead-quality-gate"
+import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
+
+const source: LeadSourceConfig = {
+  id: "source-1",
+  name: "Official Export Directory",
+  country_code: "US",
+  source_type: "export_directory",
+  source_url: "https://directory.example/exporters",
+  source_format: "json",
+  trust_tier: 3,
+  field_mapping: {},
+  active: true,
+  terms_checked: true,
+  last_status: "ready",
+  last_error: null,
+  last_record_count: 1,
+  last_ingested_at: "2026-07-14T00:00:00.000Z",
+  created_at: "2026-07-14T00:00:00.000Z",
+  updated_at: "2026-07-14T00:00:00.000Z",
+}
+
+function record(patch: Partial<LeadSourceRecord> = {}): LeadSourceRecord & { source: LeadSourceConfig } {
+  return {
+    id: "record-1",
+    source_config_id: source.id,
+    external_id: "123",
+    company_name: "Example Commerce LLC",
+    domain: "examplecommerce.com",
+    website_url: "https://examplecommerce.com",
+    country_code: "US",
+    source_page_url: "https://directory.example/exporters/example-commerce",
+    business_type: "Consumer products",
+    employee_count: 24,
+    annual_revenue_usd: 4_000_000,
+    is_for_profit: true,
+    evidence: {},
+    observed_at: "2026-07-14T00:00:00.000Z",
+    source,
+    ...patch,
+  }
+}
+
+function homepage(patch: Partial<HomepageQualityProfile> = {}): HomepageQualityProfile {
+  return {
+    url: "https://examplecommerce.com",
+    html: "",
+    title: "Example Commerce | Independent products",
+    description: "Shop our products online with shipping across the United States.",
+    organizationNames: ["Example Commerce"],
+    organizationTypes: ["Organization", "OnlineStore"],
+    visibleText: "Example Commerce is an independent business. Shop now. Add to cart. Shipping and returns. United States USD $120.",
+    ...patch,
+  }
+}
+
+const countrySignals = [{ countryCode: "US", signalType: "address", confidence: 84, evidence: "United States" }]
+const shopify = [{ name: "Shopify", category: "EC", confidence: 92 }]
+
+describe("evaluateLeadQualityGate", () => {
+  it("passes a source-identified, country-verified, explicit SMB commerce company", () => {
+    const result = evaluateLeadQualityGate({ sourceRecord: record(), homepage: homepage(), countrySignals, detections: shopify, enterpriseLike: false })
+
+    expect(result.status).toBe("passed")
+    expect(result.smb.score).toBe(100)
+    expect(result.offerFit.passed).toBe(true)
+  })
+
+  it("rejects enterprise and excluded media records before form discovery", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ company_name: "Example Media Inc", business_type: "Magazine publisher", employee_count: 900 }),
+      homepage: homepage({ title: "Example Media Magazine", organizationNames: ["Example Media"], description: "Investor relations and global offices" }),
+      countrySignals,
+      detections: shopify,
+      enterpriseLike: true,
+    })
+
+    expect(result.status).toBe("rejected")
+    expect(result.reasons).toEqual(expect.arrayContaining(["enterprise_signal"]))
+    expect(result.business.passed).toBe(false)
+  })
+
+  it("quarantines unknown SMB size instead of assigning a constant score", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({ visibleText: "Example Commerce. Shop now. Add to cart. United States USD $120." }),
+      countrySignals,
+      detections: shopify,
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("review_required")
+    expect(result.reasons).toContain("smb_evidence_missing")
+    expect(result.smb.score).toBe(0)
+  })
+
+  it("does not mistake a generic pricing page for a SaaS product", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ business_type: "Professional services" }),
+      homepage: homepage({
+        description: "See our pricing and book a consultation.",
+        visibleText: "Example Commerce is an independent business in the United States. Pricing and book a consultation.",
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("review_required")
+    expect(result.reasons).toContain("japan_entry_offer_fit_missing")
+  })
+})

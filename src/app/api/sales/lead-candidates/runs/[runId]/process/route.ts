@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { markLeadCandidateRunFailed, processLeadCandidateRun } from "@/lib/sales/lead-candidate-runs"
+import { assertEvidenceFirstLeadCandidateRun, markLeadCandidateRunFailed, processLeadCandidateRun } from "@/lib/sales/lead-candidate-runs"
 import { startLeadCandidateRunFallback } from "@/lib/sales/lead-candidate-runner"
 
 export const runtime = "nodejs"
@@ -40,6 +40,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ runId:
       return NextResponse.json({ ok: false, error: "Invalid request body", details: parsed.error.flatten() }, { status: 400 })
     }
 
+    await assertEvidenceFirstLeadCandidateRun(runId)
+
     if (parsed.data.async !== false) {
       const fallback = startLeadCandidateRunFallback(runId)
       return NextResponse.json({ ok: true, runId, mode: "async", ...fallback }, { status: 202 })
@@ -52,9 +54,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ runId:
     return NextResponse.json(result)
   } catch (error) {
     console.error("[lead-candidates/runs/process] request failed:", runId, error)
+    const message = toErrorMessage(error)
+    if (message.startsWith("Legacy lead candidate runs cannot be processed")) {
+      return NextResponse.json({ ok: false, error: message }, { status: 409 })
+    }
     await markLeadCandidateRunFailed(runId, error).catch((markError) => {
       console.error("[lead-candidates/runs/process] failed to mark run failed:", runId, markError)
     })
-    return NextResponse.json({ ok: false, error: toErrorMessage(error) }, { status: 500 })
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }

@@ -8,6 +8,7 @@ function discovery(patch: Partial<FormDiscoveryResult>): FormDiscoveryResult {
     method: "none",
     verification: "none",
     confidence: 0,
+    inspection: null,
     candidates: [],
     traceMs: 1,
     ...patch,
@@ -15,24 +16,27 @@ function discovery(patch: Partial<FormDiscoveryResult>): FormDiscoveryResult {
 }
 
 describe("decideFormQualification", () => {
+  const verifiedInspection = { status: "form" as const, reason: "verified_contact_fields" as const, fields: ["name", "email", "message", "submit"] as Array<"name" | "email" | "message" | "submit">, formCount: 1, action: "https://example.com/contact", sameOrigin: true, trustedProvider: false }
+
   it("accepts only a verified form at or above the configured confidence", () => {
-    expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "regex", verification: "form", confidence: 88 }), 80)).toEqual({ qualified: true, reason: "verified_form" })
+    expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "dom", verification: "form", confidence: 94, inspection: verifiedInspection }), 80)).toEqual({ qualified: true, reason: "verified_form" })
   })
 
   it("rejects a contact page without a form", () => {
-    expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "regex", verification: "page", confidence: 72 }), 70)).toEqual({ qualified: false, reason: "contact_page_only" })
+    expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "dom", verification: "page", confidence: 72, inspection: { ...verifiedInspection, status: "page", reason: "contact_page_only", fields: [] } }), 70)).toEqual({ qualified: false, reason: "contact_page_only" })
   })
 
   it("rejects low-confidence form discoveries", () => {
-    expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "spa", verification: "form", confidence: 75 }), 80)).toEqual({ qualified: false, reason: "low_confidence" })
+    expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "spa", verification: "form", confidence: 75, inspection: verifiedInspection }), 80)).toEqual({ qualified: false, reason: "low_confidence" })
   })
 
   it("rejects generic forms embedded on legal and policy pages", () => {
     const legalForm = discovery({
       formUrl: "https://example.com/policies/legal-notice",
-      method: "regex",
+      method: "dom",
       verification: "form",
       confidence: 88,
+      inspection: verifiedInspection,
     })
 
     expect(isNonContactFormUrl(legalForm.formUrl ?? "")).toBe(true)
