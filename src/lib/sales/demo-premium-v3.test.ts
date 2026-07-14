@@ -46,8 +46,8 @@ describe("premium v3 industry typography", () => {
           eyebrow: "WORKS",
           accentColor: "#000000",
           sections: [
-            { id: "scene-1", heading: "セット面", body: "白い椅子と鏡のある空間です。" },
-            { id: "scene-2", heading: "待合", body: "観葉植物のある待合です。" },
+            { id: "scene-1", heading: "セット面", body: "白い椅子と鏡のある空間です。営業日や提供内容などの最新情報は、正式な案内をご確認ください。" },
+            { id: "scene-2", heading: "待合", body: "観葉植物のある待合です。営業日や提供内容などの最新情報は、公式SNSでご確認ください。" },
           ],
         },
         contact: { formNote: "" },
@@ -60,7 +60,7 @@ describe("premium v3 industry typography", () => {
 
     expect(twice.pages.works?.sections[0].body.split(serviceLine)).toHaveLength(2)
     expect(twice.pages.works?.sections[1].body).not.toContain(serviceLine)
-    expect(JSON.stringify(twice.pages.works)).not.toContain("最新情報は、正式な案内をご確認ください")
+    expect(JSON.stringify(twice.pages.works)).not.toMatch(/営業日や提供内容などの最新情報/u)
     expect(twice.pages.works).toEqual(once.pages.works)
   })
 })

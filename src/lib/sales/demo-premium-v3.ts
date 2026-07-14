@@ -80,12 +80,19 @@ function enrichScenes(page: DemoMultiPageData): DemoContentPage {
   const current = page.pages.works!
   const serviceNames = page.pages.services.services.map((item) => item.title).filter(Boolean).join("、")
   const serviceLine = serviceNames ? `${page.companyName}では、${serviceNames}をご案内しています。` : ""
+  const legacyCaveats = [
+    "営業日や提供内容などの最新情報は、公式SNSでご確認ください。",
+    "営業日や提供内容などの最新情報は、正式な案内をご確認ください。",
+  ]
   const sections = current.sections.slice(0, 6).map((item, index) => {
     // This transformation runs once during generation and again when persisted
     // demos are read. Remove our own enrichment before applying it so copy does
     // not grow on every read. Operating-information caveats belong in News,
     // FAQ, and Contact rather than being repeated below every visual story.
-    const cleanBody = serviceLine ? item.body.split(serviceLine).join("").trim() : item.body
+    const cleanBody = [serviceLine, ...legacyCaveats]
+      .filter(Boolean)
+      .reduce((body, addition) => body.split(addition).join(""), item.body)
+      .trim()
     return {
       ...item,
       body: `${sentence(cleanBody)}${index === 0 ? serviceLine : ""}`,
