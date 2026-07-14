@@ -34,6 +34,7 @@ export function DemoPreviewToolbar({
   const [fullscreenSrc, setFullscreenSrc] = useState("")
   const [toolbarClosed, setToolbarClosed] = useState(false)
   const [noticeVisible, setNoticeVisible] = useState(true)
+  const [frameReady, setFrameReady] = useState(false)
 
   useEffect(() => {
     if (window.self !== window.top) {
@@ -51,6 +52,7 @@ export function DemoPreviewToolbar({
     url.searchParams.set("__demo_frame", "1")
     setFrameSrc(`${url.pathname}${url.search}${url.hash}`)
     setFullscreenSrc(`${fullscreenUrl.pathname}${fullscreenUrl.search}${fullscreenUrl.hash}`)
+    setFrameReady(false)
     setEnvironment("top")
   }, [])
 
@@ -87,8 +89,22 @@ export function DemoPreviewToolbar({
       </header>
 
       <div className="flex min-h-0 flex-1 justify-center overflow-hidden px-0 sm:px-3 sm:pb-3">
-        <div className="h-full overflow-hidden bg-white shadow-2xl transition-[width] duration-300 ease-out sm:rounded-b-xl" style={{ width: active.width, maxWidth: "100%" }}>
-          <iframe src={frameSrc} title={`${companyName} ${active.label}プレビュー`} className="h-full w-full border-0 bg-white" />
+        <div className="relative h-full overflow-hidden bg-white shadow-2xl transition-[width] duration-300 ease-out sm:rounded-b-xl" style={{ width: active.width, maxWidth: "100%" }}>
+          {!frameReady && (
+            <div className="absolute inset-0 z-10 grid place-items-center bg-[#f7f4ef]" role="status" aria-live="polite">
+              <div className="w-full max-w-sm px-8 text-center">
+                <span className="mx-auto block h-px w-20 animate-pulse bg-slate-950/30" aria-hidden="true" />
+                <p className="mt-6 text-xs font-bold tracking-[.18em] text-slate-800">{companyName}</p>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[.2em] text-slate-400">Preparing preview</p>
+              </div>
+            </div>
+          )}
+          <iframe
+            src={frameSrc}
+            title={`${companyName} ${active.label}プレビュー`}
+            className={`h-full w-full border-0 bg-white transition-opacity duration-300 ${frameReady ? "opacity-100" : "opacity-0"}`}
+            onLoad={() => setFrameReady(true)}
+          />
         </div>
       </div>
     </div>

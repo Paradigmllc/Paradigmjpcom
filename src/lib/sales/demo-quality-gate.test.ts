@@ -350,6 +350,24 @@ describe("demo quality gate", () => {
     expect(quality.dimensions).toEqual(expect.objectContaining({ specificity: expect.any(Number), contentDepth: expect.any(Number) }))
   })
 
+  it("blocks source-health metadata and repeated editorial sentences from inflating content depth", () => {
+    const page = fixture()
+    const repeated = "写真と言葉の間に余白を持たせ、日々の利用場面を想像しながら読み進められる構成にしています。"
+    page.pages.about.story = `${repeated}${repeated}`
+    page.pages.works!.sections[0].body = "登録公式URL non-hair-salon.business.site は2026年7月14日に404を確認。"
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toEqual(expect.arrayContaining([
+      "editorial_source_metadata_leak",
+      "repeated_editorial_fragment",
+    ]))
+  })
+
   it("blocks the former shallow page architecture even when legacy fields exist", () => {
     const page = fixture()
     page.pages.home.narrativeModules = []

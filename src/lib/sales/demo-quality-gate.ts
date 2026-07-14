@@ -11,7 +11,7 @@ import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 import { analyzeDemoQualitySignals } from "./demo-quality-signals"
 import { visualGrammar } from "./demo-creative-direction"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.7"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.8"
 export const DEMO_QUALITY_THRESHOLD = 94
 export const DEMO_VISUAL_SIMILARITY_THRESHOLD = 0.8
 
