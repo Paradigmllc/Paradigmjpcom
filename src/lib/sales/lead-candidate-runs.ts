@@ -1,6 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-list"
 import { ensureLeadCandidateRunDomainsFetched } from "./lead-candidate-acquisition"
 import { persistRunItemFailure } from "./lead-candidate-failure-persistence"
 import { clampScore } from "./lead-candidate-scoring"
@@ -57,7 +56,6 @@ export interface DurableCandidateAcquisitionSummary {
   runnerTriggered: boolean
   fallbackRunnerStarted: boolean
   failures: Array<{ key: string; reason: string }>
-  candidates: CandidateListItem[]
 }
 
 function getSb(): ServiceSupabase {
@@ -300,7 +298,6 @@ export async function ingestLeadCandidatesDurable(input: DurableCandidateIngestI
   const fallback = await startFallbackRunner(run.id)
   const counts = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("status, verified_count, matched_technology_count, scored_count, promoted_count, jobs_enqueued_count, forms_checked_count, forms_qualified_count, twenty_synced_count, failure_count").eq("id", run.id).single()
   const row = counts.data as Record<string, unknown> | null
-  const candidates = await listLeadCandidates({ countryCode: normalized.countryCode, technology: normalized.technology, limit: 30 })
   const runnerAvailable = trigger.ok || fallback.started || fallback.alreadyRunning
   return {
     ok: runnerAvailable,
@@ -321,6 +318,5 @@ export async function ingestLeadCandidatesDurable(input: DurableCandidateIngestI
     runnerTriggered: trigger.ok,
     fallbackRunnerStarted: fallback.started || fallback.alreadyRunning,
     failures: runnerAvailable ? [] : [{ key: "lead_candidate_runner", reason: trigger.error ?? "runner dispatch failed" }],
-    candidates,
   }
 }
