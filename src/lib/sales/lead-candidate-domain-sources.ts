@@ -6,6 +6,7 @@ import { fetchPassiveInventoryDomains } from "./passive-inventory"
 import { fetchHttpArchiveCandidates, toTechItems } from "./sources/http-archive-bigquery"
 import { fetchBrowserFootprintDomains } from "./sources/browser-footprint-domains"
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
+import { fetchSearxngFootprintDomains } from "./sources/searxng-footprint-domains"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -117,6 +118,34 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
     } catch (e) {
       console.error("[lead-candidate-domain-sources] passive_inventory failed:", e instanceof Error ? e.message : String(e))
       failures.push({ key: "passive_inventory", reason: e instanceof Error ? e.message : "passive inventory failed with retries" })
+    }
+    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+  }
+
+  // Self-hosted SearXNG is the primary active source. It is free/OSS and runs
+  // inside the private Coolify network; every result is still actively verified.
+  if (options?.technology) {
+    try {
+      const searxng = await withRetry("searxng_footprint", () => fetchSearxngFootprintDomains({
+        countryCode,
+        technology: options.technology as string,
+        limit: Math.min(limit, 200),
+      }), 1)
+      sourceStats.push({
+        source: "searxng_footprint",
+        pattern: `${countryCode}:${options.technology}`,
+        fetched: searxng.domains.length,
+        total: searxng.total,
+        ok: searxng.ok,
+        error: searxng.errors.length > 0 ? searxng.errors.join("; ") : undefined,
+      })
+      addDomains({ sourceByDomain, source: "searxng_footprint", domains: searxng.domains, limit })
+      for (const [domain, evidence] of Object.entries(searxng.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
+      if (!searxng.ok) failures.push({ key: "searxng_footprint", reason: searxng.errors.join("; ") || "SearXNG footprint search returned no domains" })
+    } catch (error) {
+      console.error("[lead-candidate-domain-sources] searxng_footprint failed:", error)
+      failures.push({ key: "searxng_footprint", reason: error instanceof Error ? error.message : "SearXNG footprint search failed" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })

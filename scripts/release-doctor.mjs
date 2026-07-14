@@ -312,6 +312,22 @@ function checkStaticReleaseRules() {
     fail("Initial form drafts require RLS, a never-sent DB constraint, and release wiring")
   }
 
+  const searxngSettingsPath = "infra/searxng/settings.yml"
+  const searxngSettings = fs.existsSync(searxngSettingsPath)
+    ? fs.readFileSync(searxngSettingsPath, "utf8")
+    : ""
+  if (
+    fs.existsSync("scripts/lib/ensure-searxng.mjs")
+    && searxngSettings.includes("- json")
+    && noLoginDeploy.includes("ensureSearxng")
+    && noLoginDeploy.includes('SEARXNG_BASE_URL: "http://searxng:8080"')
+    && noLoginDeploy.includes('SALES_LIST_COLLECTION_PROVIDER: "searxng"')
+  ) {
+    pass("self-hosted SearXNG has JSON format, private-network provisioning, and release wiring")
+  } else {
+    fail("self-hosted SearXNG requires JSON format, private-network provisioning, and release wiring")
+  }
+
   const demoQualityMigrationPath = "supabase/migrations/20260712233619_demo_quality_gate.sql"
   const demoQualityMigration = fs.existsSync(demoQualityMigrationPath)
     ? fs.readFileSync(demoQualityMigrationPath, "utf8")
@@ -1142,6 +1158,14 @@ async function checkPublicFunnelEnvironment() {
       }
     } else {
       fail("OUTREACH_EVIDENCE_MODE must be public-signals or paid-traffic")
+    }
+    if (
+      String(envs.SALES_LIST_COLLECTION_PROVIDER || "").trim().toLowerCase() === "searxng"
+      && String(envs.SEARXNG_BASE_URL || "").trim() === "http://searxng:8080"
+    ) {
+      pass("lead collection uses private self-hosted SearXNG")
+    } else {
+      fail("SALES_LIST_COLLECTION_PROVIDER=searxng and SEARXNG_BASE_URL=http://searxng:8080 are required")
     }
     if (hasMinimumSecret("TWENTY_API_KEY")) {
       pass("Twenty CRM sync credential is configured")
