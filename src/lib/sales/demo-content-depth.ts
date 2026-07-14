@@ -9,8 +9,46 @@ function sentence(value: string): string {
   return normalized ? `${normalized}。` : ""
 }
 
+const SOURCE_METADATA_PATTERNS = [
+  /(?:^|\s)https?:\/\//iu,
+  /404/u,
+  /business\.site/iu,
+  /登録公式URL/u,
+  /エキテン公式店舗/u,
+  /(?:取得|確認|更新)(?:日|日時)/u,
+  /現在確認できる情報の一つ/u,
+  /正式公開前/u,
+  /事業者確認/u,
+  /source\s*(?:url|updated|date)/iu,
+]
+
+/**
+ * Convert evidence records into short facts that can safely appear in customer
+ * copy. Source-health notes, timestamps, URLs, and phone-listing fragments are
+ * evidence for the pipeline, not prose for the finished website.
+ */
+export function curateEditorialFacts(facts: string[]): string[] {
+  const seen = new Set<string>()
+  return facts.flatMap((fact) => fact.split(/[。．.!！?？]+/u))
+    .map((fact) => fact
+      .replace(/https?:\/\/\S+/giu, "")
+      .replace(/0\d{1,4}-\d{1,4}-\d{3,4}/gu, "")
+      .replace(/^[\s、,，・:：]+|[\s、,，・:：]+$/gu, "")
+      .replace(/\s+/gu, " ")
+      .trim())
+    .filter((fact) => fact.length >= 8 && fact.length <= 180)
+    .filter((fact) => !SOURCE_METADATA_PATTERNS.some((pattern) => pattern.test(fact)))
+    .filter((fact) => {
+      const key = fact.toLocaleLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .slice(0, 12)
+}
+
 function factSummary(facts: string[], fallback: string): string {
-  const usable = facts.filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact)).slice(0, 6)
+  const usable = curateEditorialFacts(facts).slice(0, 2)
   return usable.length > 0 ? usable.map(sentence).join("") : fallback
 }
 
@@ -39,33 +77,69 @@ export function expandGroundedBody(input: {
   const initial = input.body.trim()
   if (initial.length >= input.targetLength) return initial
   const isJa = input.locale === "ja"
-  const facts = input.facts.filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
-  const rotatedFacts = facts.length > 0
-    ? Array.from({ length: Math.min(3, facts.length) }, (_, offset) => facts[(input.index + offset) % facts.length])
-    : []
+  const facts = curateEditorialFacts(input.facts)
+  const fact = facts.length > 0 ? facts[input.index % facts.length] : ""
   const service = input.services.length > 0 ? input.services[input.index % input.services.length] : undefined
-  const contextCopy = isJa ? {
-    home: "初めて知る方が、事業の特徴と次に確認する情報を一つの流れで理解できるように整理しています。",
-    about: "確認できる事実と、正式公開前に確認が必要な内容を分け、仕事への向き合い方が伝わる順序でご紹介します。",
-    services: "各項目の違い、利用前に確認したいこと、現在の案内へ進む方法を同じ章で確認できる構成です。",
-    works: "写真だけを並べず、写っている場所や提供内容と確認済み情報を組み合わせ、判断材料になる読み物としてご紹介します。",
-  }[input.context] : {
-    home: "The information is organized so a first-time visitor can understand the business and the next details to verify in one sequence.",
-    about: "Verified facts and items requiring operator review are separated so the business can be understood without unsupported claims.",
-    services: "Each section brings together the differences, pre-use checks, and the route to current official information.",
-    works: "Reviewed imagery is paired with verified context so this reads as useful editorial information rather than a gallery of isolated captions.",
-  }[input.context]
+  const jaContextCopy = {
+    home: [
+      `${input.companyName}を初めて知る方にも、場所の雰囲気と提供内容が自然につながる順序でご紹介します。`,
+      "写真と言葉の間に余白を持たせ、日々の利用場面を想像しながら読み進められる構成にしています。",
+      "特徴を短い見出しだけで終わらせず、選ぶ前に知りたい背景まで丁寧に掘り下げています。",
+    ],
+    about: [
+      `${input.companyName}が地域や利用者とどのように向き合ってきたかを、事業の歩みとともにたどります。`,
+      "仕事の姿勢、空間づくり、提供内容を章ごとに分け、ブランドの輪郭が伝わる読み物にしています。",
+      "一つひとつの情報を急いで並べず、選ばれる理由が自然に積み重なる編集設計です。",
+    ],
+    services: [
+      "各メニューの特徴と利用場面を分けて紹介し、自分に合う選択肢を落ち着いて比較できます。",
+      "サービス名だけでは伝わりにくい違いを、内容、相談の流れ、関連する案内まで含めて整理しています。",
+      "初めて利用する方が迷わないよう、提供内容から次に見るべき情報までを一つの流れにまとめています。",
+    ],
+    works: [
+      "写真を単なる一覧にせず、空間や仕事の特徴が伝わる小さなストーリーとして編集しています。",
+      "視線の高さや道具の置かれ方まで丁寧に見せ、訪れる前からその場の空気を想像できる構成です。",
+      "提供内容と空間の関係を言葉で補い、一枚ごとの写真に読み進める理由を持たせています。",
+    ],
+  } as const
+  const enContextCopy = {
+    home: [
+      `${input.companyName} is introduced in a sequence that connects the atmosphere, the offer, and the details a first-time visitor wants to understand.`,
+      "Photography and copy are given room to breathe so visitors can imagine the experience rather than scan a compressed list of claims.",
+      "Each highlight develops beyond a short heading and explains the context that helps a visitor make a considered choice.",
+    ],
+    about: [
+      `The story traces how ${input.companyName} approaches its work, its community, and the people who use its services.`,
+      "Working principles, place, and offer are separated into editorial chapters that give the brand a clear and memorable shape.",
+      "Information is paced deliberately so the reasons to choose the business build naturally from one chapter to the next.",
+    ],
+    services: [
+      "Each service is explained through its purpose and likely use, allowing visitors to compare the available options without guesswork.",
+      "The guide develops the differences between services through supporting detail and a clear route to the next relevant information.",
+      "The offer and the next step are arranged as one continuous journey for people encountering the business for the first time.",
+    ],
+    works: [
+      "Images are edited as short visual stories so the character of the place and the work can be understood beyond a simple gallery grid.",
+      "Details of the space and tools are given context, helping visitors imagine the experience before they arrive.",
+      "Copy connects the offer with the imagery so every frame gives the visitor a reason to continue through the story.",
+    ],
+  } as const
+  const contextCopy = (isJa ? jaContextCopy : enContextCopy)[input.context][input.index % 3]
   const candidates = [
-    ...rotatedFacts.map((fact) => isJa
-      ? `${sentence(fact)}これは、${input.companyName}について現在確認できる情報の一つです。`
-      : `${sentence(fact)} This is one of the details currently verified for ${input.companyName}.`),
     ...(service ? [isJa
       ? `${sentence(service.title)}${sentence(service.description)}`
       : `${sentence(service.title)} ${sentence(service.description)}`] : []),
     contextCopy,
+    fact ? sentence(fact) : "",
     isJa
-      ? "営業や提供状況など変わる可能性がある内容は固定せず、現在の正式な案内を優先します。"
-      : "Details that may change, including operations and availability, are routed to current official information.",
+      ? "必要な情報を探し回らなくてよいよう、関連する内容を同じ章の中で読みやすくつないでいます。"
+      : "Related information is kept within the same chapter so visitors can continue without hunting through disconnected fragments.",
+    isJa
+      ? `${input.companyName}らしさが見た目だけで終わらないよう、背景、提供内容、利用する方の視点を重ねて構成しています。`
+      : `The presentation layers context, offer, and visitor perspective so the character of ${input.companyName} is expressed through more than appearance alone.`,
+    isJa
+      ? "短い紹介文の寄せ集めではなく、前後の章がつながる読み物として、必要な情報を十分な余白とともに届けます。"
+      : "Rather than a collection of short promotional fragments, the chapters connect as one considered story with enough space for the information to register.",
   ]
   let expanded = initial
   for (const candidate of candidates) {
@@ -91,7 +165,7 @@ export function fallbackNarrativeModules(input: {
     input.facts,
     isJa ? `${input.companyName}の事業内容は、正式公開前に確認します。` : `${input.companyName}'s business details require confirmation before publication.`,
   )
-  const sharedPoints = input.facts.filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact)).slice(0, 3)
+  const sharedPoints = curateEditorialFacts(input.facts).slice(0, 3)
 
   const modules = isJa ? [
     {
@@ -149,7 +223,7 @@ export function fallbackWorksSections(input: {
   const isJa = input.locale === "ja"
   const source = [
     ...input.services.map((service) => ({ title: service.title, body: service.description, note: service.features.join(isJa ? " ／ " : " / ") })),
-    ...input.facts.slice(0, 6).map((fact, index) => ({
+    ...curateEditorialFacts(input.facts).slice(0, 6).map((fact, index) => ({
       title: isJa ? `${input.companyName}の風景 ${index + 1}` : `${input.companyName} story ${index + 1}`,
       body: isJa ? `${sentence(fact)}確認できる写真と言葉を組み合わせ、事業や場所の特徴をご紹介します。` : `${sentence(fact)} Reviewed imagery and verified copy are combined to explain the business and place.`,
       note: "",

@@ -49,4 +49,14 @@ describe("demo preview toolbar", () => {
     expect(container.textContent).toContain("サイト本文")
     expect(container.querySelector('button[aria-label="PC表示"]')).toBeNull()
   })
+
+  it("shows a branded loading surface until the preview iframe is ready", async () => {
+    await act(async () => root.render(<DemoPreviewToolbar companyName="ノン美容室"><div>サイト本文</div></DemoPreviewToolbar>))
+    expect(container.querySelector('[role="status"]')?.textContent).toContain("ノン美容室")
+    const iframe = container.querySelector<HTMLIFrameElement>("iframe")
+    if (!iframe) throw new Error("preview iframe not found")
+    await act(async () => iframe.dispatchEvent(new Event("load")))
+    expect(container.querySelector('[role="status"]')).toBeNull()
+    expect(iframe.className).toContain("opacity-100")
+  })
 })

@@ -25,6 +25,7 @@ import {
 } from "./demo-multi-page-content"
 import { detectPublicSourceEvidence } from "./demo-source-evidence"
 import {
+  curateEditorialFacts,
   fallbackNarrativeModules,
   fallbackWorksSections,
   reviewedMediaFacts,
@@ -72,7 +73,7 @@ export function buildDemoMultiPageData(
     ...Object.values(publicFacts).filter((value): value is string | number | boolean => ["string", "number", "boolean"].includes(typeof value)).map(String),
     ...reviewedMediaFacts(metaObj),
   ]
-  const displayFacts = verifiedFacts.filter((value) => !/^https?:\/\//u.test(value))
+  const displayFacts = curateEditorialFacts(verifiedFacts)
   const address = cleanFs(typeof publicFacts.address === "string" ? publicFacts.address : company.prefecture, locationStr, 160)
   const ctaUrl = `${basePath}/contact`
   const accentColor = cfg.accentColor ?? "#7c3aed"
@@ -324,7 +325,7 @@ export function buildDemoMultiPageData(
 
   const meta = {
     title: `${name} | ${industryLabel}`,
-    description: cleanFs(displayFacts.join("、"), `${name} | ${industryLabel}`, 150),
+    description: cleanFs(displayFacts.slice(0, 2).join("。"), `${name} | ${industryLabel}`, 150),
     ogImage: "",
     industry: industry as Industry,
     locale,
@@ -338,7 +339,7 @@ export function buildDemoMultiPageData(
     verifiedFacts,
     primaryCtaLabel: isJa ? "お問い合わせ" : "Contact",
     primaryCtaHref: ctaUrl,
-    footerDescription: cleanFs(displayFacts.join("。"), industryLabel, 180),
+    footerDescription: cleanFs(displayFacts.slice(0, 2).join("。"), `${name}の${industryLabel}をご紹介します。`, 180),
     footerOwner: name,
   }
   const premium = buildPremiumExperience(company.meta, homePage, aboutPage.story, industry)

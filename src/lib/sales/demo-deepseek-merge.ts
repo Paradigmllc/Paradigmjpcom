@@ -1,7 +1,7 @@
 import type { DemoMultiPageData } from "./demo-site-types"
 import type { DeepSeekEnhancedOutput } from "./demo-deepseek-types"
 import { groundDemoText } from "./demo-copy-grounding"
-import { expandGroundedBody } from "./demo-content-depth"
+import { curateEditorialFacts, expandGroundedBody } from "./demo-content-depth"
 
 /**
  * Merge DeepSeek AI-enhanced output into the rules-based DemoMultiPageData.
@@ -20,26 +20,19 @@ export function mergeDeepSeekOutput(
   const works = base.pages.works ? { ...base.pages.works } : undefined;
   const isJa = effectiveLocale === "ja";
   const verifiedFacts = (base.meta.verifiedFacts ?? []).join("\n");
-  const factSummary = (base.meta.verifiedFacts ?? [])
-    .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
-    .slice(0, 4)
-    .join(isJa ? "、" : ", ");
-  const usableFacts = (base.meta.verifiedFacts ?? [])
-    .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
-  const groundedFallback = factSummary
-    ? (isJa ? `確認済みの公開情報では、${factSummary}をご案内しています。` : `Verified public information includes ${factSummary}.`)
-    : (isJa ? "詳細は正式公開前に事業者確認を行います。" : "Details require operator confirmation before publication.");
+  const usableFacts = curateEditorialFacts(base.meta.verifiedFacts ?? [])
   const groundedDetail = (scope: string, index: number) => {
     const fact = usableFacts.length > 0 ? usableFacts[index % usableFacts.length] : ""
     if (isJa) {
       return fact
-        ? `${fact}。${base.companyName}の${scope}として現在確認できる情報です。変わる可能性がある詳細は、正式公開前に事業者確認を行います。`
-        : `${base.companyName}の${scope}は、正式公開前に事業者確認を行い、現在の案内だけを掲載します。`
+        ? `${fact.replace(/[。．]+$/u, "")}。${base.companyName}の${scope}を、初めての方にも流れが伝わる順序でご紹介します。`
+        : `${base.companyName}の${scope}を、利用を検討する方が迷わず読み進められる順序でご紹介します。`
     }
     return fact
-      ? `${fact}. This is currently verified information for ${scope} at ${base.companyName}. Details that may change require operator confirmation before publication.`
-      : `${scope} at ${base.companyName} requires operator confirmation before publication so only current information is presented.`
+      ? `${fact.replace(/[.!]+$/u, "")}. The ${scope} at ${base.companyName} is presented in a sequence that is easy for a first-time visitor to follow.`
+      : `The ${scope} at ${base.companyName} is presented in a sequence that helps a first-time visitor continue without guesswork.`
   }
+  const groundedFallback = groundedDetail(isJa ? "事業と提供内容" : "business and offer", 0)
   const reservedLongCopy = new Set<string>()
   const reserveUniqueCopy = (value: string, fallback: string): string => {
     const normalized = value.replace(/\s+/gu, " ").trim()
@@ -107,8 +100,17 @@ export function mergeDeepSeekOutput(
       if (!module.body.trim() || seen.has(key)) return false
       seen.add(key)
       return true
-    }).slice(0, 4)
-    return groundModules(combined, label, context)
+    })
+    while (combined.length < 3) {
+      const index = combined.length
+      combined.push({
+        eyebrow: `${label} ${String(index + 1).padStart(2, "0")}`,
+        title: isJa ? `${label}を知る視点 ${index + 1}` : `${label} perspective ${index + 1}`,
+        body: groundedDetail(isJa ? `${label}の背景 ${index + 1}` : `${label} background ${index + 1}`, index + 12),
+        points: [],
+      })
+    }
+    return groundModules(combined.slice(0, 3), label, context)
   }
 
   // Home: hero title/subtitle
@@ -211,7 +213,16 @@ export function mergeDeepSeekOutput(
       if (!section.body.trim() || seenWorks.has(key)) return false
       seenWorks.add(key)
       return true
-    }).slice(0, 6)
+    })
+    while (completeWorks.length < 4) {
+      const index = completeWorks.length
+      completeWorks.push({
+        title: isJa ? `空間と仕事の風景 ${index + 1}` : `Place and work ${index + 1}`,
+        body: groundedDetail(isJa ? `スタイル紹介 ${index + 1}` : `work story ${index + 1}`, index + 16),
+        note: "",
+      })
+    }
+    completeWorks.splice(6)
     works.sections = completeWorks.map((section, index) => {
       const expansionInput = {
         companyName: base.companyName,
@@ -289,8 +300,8 @@ function buildEvidenceBoundFaq(base: DemoMultiPageData, locale: string) {
   const isJa = locale === "ja";
   const instagram = base.premium?.social.find((item) => item.network === "instagram");
   const address = base.pages.contact.address?.trim();
-  const facts = (base.meta.verifiedFacts ?? [])
-    .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact) && fact !== address && fact !== base.companyName)
+  const facts = curateEditorialFacts(base.meta.verifiedFacts ?? [])
+    .filter((fact) => fact !== address && fact !== base.companyName)
     .slice(0, 3);
 
   return [

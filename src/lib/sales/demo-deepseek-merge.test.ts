@@ -109,9 +109,9 @@ describe("mergeDeepSeekOutput", () => {
     } satisfies DeepSeekEnhancedOutput
 
     const merged = mergeDeepSeekOutput(base, ai, "ja")
-    expect(merged.pages.home.narrativeModules).toHaveLength(4)
-    expect(merged.pages.about.chapters).toHaveLength(4)
-    expect(merged.pages.services.guidance).toHaveLength(4)
+    expect(merged.pages.home.narrativeModules).toHaveLength(3)
+    expect(merged.pages.about.chapters).toHaveLength(3)
+    expect(merged.pages.services.guidance).toHaveLength(3)
     expect(merged.pages.works?.sections).toHaveLength(4)
     expect(merged.pages.home.narrativeModules?.every((item) => item.body.length >= 180)).toBe(true)
     expect(merged.pages.about.chapters?.every((item) => item.body.length >= 220)).toBe(true)
@@ -125,5 +125,44 @@ describe("mergeDeepSeekOutput", () => {
     }
     visit(merged.pages)
     expect(Math.max(...counts.values())).toBeLessThan(3)
+  })
+
+  it("does not turn source verification records into visible editorial copy", () => {
+    const operationalFact = "045-541-9161、神奈川県横浜市港北区新吉田東5-59-11、美容室・ヘアサロン。昭和58年に横浜市港北区新吉田で開店し、2025年に42年。エキテン公式店舗は2026年6月25日更新。登録公式URL non-hair-salon.business.site は2026年7月14日に404を確認。これは現在確認できる情報の一つです。"
+    const fallbackNarratives = Array.from({ length: 3 }, (_, index) => ({
+      eyebrow: `FALLBACK ${index + 1}`,
+      title: `サロンのご案内 ${index + 1}`,
+      body: "地域の方が落ち着いて過ごせる空間をご紹介します。",
+      points: ["店内の雰囲気"],
+    }))
+    const base = {
+      companyName: "ノン美容室",
+      meta: { verifiedFacts: [operationalFact] },
+      pages: {
+        home: { hero: { title: "旧見出し", subtitle: "旧本文" }, features: [], narrativeModules: fallbackNarratives },
+        about: { story: "旧事業紹介", mission: "旧方針", values: [], chapters: fallbackNarratives },
+        services: { subtitle: "", services: [], process: [], guidance: fallbackNarratives },
+        contact: { subtitle: "固定文", address: "神奈川県横浜市港北区" },
+        works: { title: "スタイル", subtitle: "旧本文", eyebrow: "WORKS", accentColor: "#000", sections: fallbackNarratives.map((item, index) => ({ id: `work-${index}`, heading: item.title, body: item.body })) },
+      },
+    } as unknown as DemoMultiPageData
+    const short = { eyebrow: "STORY", title: "店内の時間", body: "店内の雰囲気をご紹介します。", points: ["店内写真"] }
+    const ai = {
+      engine: "deepseek",
+      generatedAt: "2026-07-14T00:00:00.000Z",
+      model: "deepseek-v4-pro",
+      home: { hero_title: "ノン美容室", hero_subtitle: "地域の方を迎えるサロンです。", features: [], narrative_modules: [short] },
+      about: { story: "地域で歩んできた美容室です。", mission: "一人ひとりと向き合います。", values: [], chapters: [short] },
+      services: { intro: "相談しながらメニューを選べます。", services: [{ title: "カット", description: "髪の状態に合わせて進めます。", icon: "sparkles", features: [] }], process: [], guidance: [short] },
+      works: { intro: "店内の風景をご紹介します。", sections: [{ title: "セット面", body: "鏡と椅子のある店内です。", note: "" }] },
+      contact: {},
+      artDirections: [],
+    } satisfies DeepSeekEnhancedOutput
+
+    const merged = mergeDeepSeekOutput(base, ai, "ja")
+    const visibleCopy = JSON.stringify(merged.pages)
+    expect(visibleCopy).not.toMatch(/404|business\.site|登録公式URL|エキテン公式店舗|現在確認できる情報の一つ|045-541-9161/u)
+    expect(merged.pages.home.narrativeModules).toHaveLength(3)
+    expect(merged.pages.works?.sections).toHaveLength(4)
   })
 })

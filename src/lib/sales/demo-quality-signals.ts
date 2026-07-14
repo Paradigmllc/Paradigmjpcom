@@ -12,6 +12,16 @@ const DRAFT_PATTERNS = [
   /pricing to be confirmed/iu,
 ]
 
+const EDITORIAL_METADATA_PATTERNS = [
+  /404/u,
+  /business\.site/iu,
+  /登録公式URL/u,
+  /エキテン公式店舗.{0,48}(?:取得|確認|更新)/u,
+  /現在確認できる情報の一つ/u,
+  /正式公開前に事業者確認/u,
+  /source\s*(?:url|updated|date)/iu,
+]
+
 const GENERIC_NAV_LABELS = new Set(["会社概要", "サービス", "実績"])
 
 const PAGE_DEPTH_MINIMUMS = {
@@ -61,6 +71,20 @@ function duplicateLongCopy(page: DemoMultiPageData): boolean {
   return [...counts.values()].some((count) => count >= 3)
 }
 
+function hasRepeatedEditorialFragment(value: unknown): boolean {
+  for (const text of collectStrings(value)) {
+    const counts = new Map<string, number>()
+    for (const fragment of text.split(/[。．.!！?？]+/u)) {
+      const normalized = fragment.replace(/\s+/gu, " ").trim().toLocaleLowerCase()
+      if (normalized.length < 36) continue
+      const count = (counts.get(normalized) ?? 0) + 1
+      if (count >= 2) return true
+      counts.set(normalized, count)
+    }
+  }
+  return false
+}
+
 export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
   blockers: string[]
   warnings: string[]
@@ -69,6 +93,26 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
   const blockers: string[] = []
   const warnings: string[] = []
   const copy = collectStrings({ meta: page.meta, pages: page.pages }).join("\n")
+  const editorialCopy = {
+    home: {
+      features: page.pages.home.features,
+      narrativeModules: page.pages.home.narrativeModules,
+    },
+    about: {
+      story: page.pages.about.story,
+      mission: page.pages.about.mission,
+      values: page.pages.about.values,
+      chapters: page.pages.about.chapters,
+    },
+    services: {
+      subtitle: page.pages.services.subtitle,
+      services: page.pages.services.services,
+      process: page.pages.services.process,
+      guidance: page.pages.services.guidance,
+    },
+    works: page.pages.works,
+  }
+  const editorialText = collectStrings(editorialCopy).join("\n")
   const navLabels = Object.values(page.meta.navLabels ?? {})
   const sectionCount = Object.values(page.pages).reduce((total, item) => {
     if (!item || typeof item !== "object" || !("sections" in item)) return total
@@ -80,6 +124,8 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
   })) as Record<keyof typeof PAGE_DEPTH_MINIMUMS, number>
 
   if (DRAFT_PATTERNS.some((pattern) => pattern.test(copy))) blockers.push("customer_facing_draft_copy")
+  if (EDITORIAL_METADATA_PATTERNS.some((pattern) => pattern.test(editorialText))) blockers.push("editorial_source_metadata_leak")
+  if (hasRepeatedEditorialFragment(editorialCopy)) blockers.push("repeated_editorial_fragment")
   if (duplicateLongCopy(page)) blockers.push("repeated_customer_copy")
   if (hasRepeatedHomeNarrative(page)) blockers.push("repeated_home_narrative")
   if (!page.meta.proposalNotice || !page.meta.footerDescription || navLabels.length < 6) {
@@ -133,6 +179,8 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
     - (warnings.includes("fixed_page_content_thin") ? 7 : 0)
     - (blockers.includes("repeated_customer_copy") ? 10 : 0)
     - (blockers.includes("repeated_home_narrative") ? 10 : 0)
+    - (blockers.includes("editorial_source_metadata_leak") ? 12 : 0)
+    - (blockers.includes("repeated_editorial_fragment") ? 10 : 0)
     - (blockers.filter((item) => item.endsWith("_depth_missing") || item === "works_content_architecture_missing").length * 5)
     - (blockers.filter((item) => item.startsWith("page_content_thin:")).length * 4)
     - (warnings.filter((item) => item.startsWith("page_content_near_minimum:")).length * 1))
