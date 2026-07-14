@@ -51,7 +51,7 @@ export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
   { fieldKey: "name", twentyFieldName: "name", label: "Name", position: 0, isVisible: true, fieldType: "text", description: "企業名" },
   { fieldKey: "domain", twentyFieldName: "domainName", label: "Domain Name", position: 1, isVisible: true, fieldType: "text", description: "Webサイトドメイン" },
   { fieldKey: "sales_status", twentyFieldName: "paradigmSalesStatus", label: "営業ステータス", position: 2, isVisible: true, fieldType: "select", description: "営業の現在地" },
-  { fieldKey: "country", twentyFieldName: "paradigmCountryName", label: "国名", position: 3, isVisible: true, fieldType: "select", description: "対象国" },
+  { fieldKey: "country", twentyFieldName: "paradigmCountryName", label: "国名", position: 3, isVisible: true, fieldType: "text", description: "対象国。Twenty再起動で選択肢が失われない自由入力表示" },
   { fieldKey: "region", twentyFieldName: "paradigmRegionName", label: "地域名", position: 4, isVisible: true, fieldType: "text", description: "国別の地域候補はSales OSの選択肢マスタで管理し、Twentyには確定した地域名だけを表示" },
   { fieldKey: "industry", twentyFieldName: "paradigmIndustryName", label: "業種名", position: 5, isVisible: true, fieldType: "select", description: "営業テンプレ選定に使う業種" },
   { fieldKey: "source", twentyFieldName: "paradigmSourceName", label: "ソース元", position: 6, isVisible: true, fieldType: "select", description: "Apollo、Fumadataなどの取得元" },
