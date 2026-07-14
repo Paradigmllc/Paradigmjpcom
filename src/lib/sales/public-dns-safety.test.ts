@@ -8,6 +8,8 @@ describe("public DNS safety", () => {
     "10.0.0.1",
     "100.64.0.1",
     "172.16.1.1",
+    "192.0.0.1",
+    "192.0.2.1",
     "192.168.1.1",
     "198.18.0.1",
     "::1",
@@ -18,7 +20,7 @@ describe("public DNS safety", () => {
     expect(isPrivateAddress(address)).toBe(true)
   })
 
-  it.each(["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"])("allows public address %s", (address) => {
+  it.each(["8.8.8.8", "1.1.1.1", "192.0.78.24", "192.0.78.25", "2606:4700:4700::1111"])("allows public address %s", (address) => {
     expect(isPrivateAddress(address)).toBe(false)
   })
 })
