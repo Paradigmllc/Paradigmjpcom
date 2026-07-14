@@ -1196,7 +1196,7 @@ async function checkPublicFunnelEnvironment() {
     } else {
       fail("OUTREACH_EVIDENCE_MODE must be public-signals or paid-traffic")
     }
-    pass("lead collection uses passive public corpora; no search proxy credential is required")
+    pass("lead collection uses approved evidence-bearing company sources; no search proxy credential is required")
     if (hasMinimumSecret("TWENTY_API_KEY")) {
       pass("Twenty CRM sync credential is configured")
     } else {
