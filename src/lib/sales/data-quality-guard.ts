@@ -42,6 +42,25 @@ const REJECT_DOMAINS = new Set([
   "domainmarket.com", "hugedomains.com", "buydomains.com",
 ])
 
+// Hosted preview/internal domains are useful as technology evidence, but they are
+// not safe CRM identities. A Japan Entry lead must have a customer-facing domain
+// that the company controls and can use in a form submission or report.
+const HOSTED_PLATFORM_SUFFIXES = [
+  "myshopify.com",
+  "wixsite.com",
+  "webflow.io",
+  "square.site",
+  "squarespace.com",
+  "wordpress.com",
+  "blogspot.com",
+  "github.io",
+  "pages.dev",
+  "web.app",
+  "netlify.app",
+  "vercel.app",
+  "herokuapp.com",
+] as const
+
 const GARBAGE_PATTERNS = [
   /captcha/i, /blocked/i, /access denied/i, /rate limit/i, /too many requests/i, /403/i,
 ]
@@ -70,8 +89,14 @@ export function validateSearchQuery(query: string): { ok: boolean; warning?: str
 }
 
 export function isRejectedDomain(domain: string): boolean {
-  const lower = domain.toLowerCase()
+  const lower = domain.replace(/^www\./, "").toLowerCase()
   return REJECT_DOMAINS.has(lower)
+}
+
+export function isCustomerFacingBusinessDomain(domain: string): boolean {
+  const lower = domain.replace(/^www\./, "").replace(/\.$/, "").toLowerCase()
+  if (!lower.includes(".") || isRejectedDomain(lower)) return false
+  return !HOSTED_PLATFORM_SUFFIXES.some((suffix) => lower === suffix || lower.endsWith(`.${suffix}`))
 }
 
 export function isGarbageSearchResult(html: string): boolean {

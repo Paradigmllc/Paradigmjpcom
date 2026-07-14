@@ -5,6 +5,7 @@ import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-lis
 import { ensureLeadCandidateRunDomainsFetched } from "./lead-candidate-acquisition"
 import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
 import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
+import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 import {
   clampScore,
   inferCountrySignals,
@@ -290,6 +291,20 @@ async function processItem(run: RunRow, item: RunItemRow) {
   const candidateRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).select("id, domain, root_url, lane, source_slug").eq("id", item.candidate_id).single()
   if (candidateRes.error) throw new Error(candidateRes.error.message)
   const candidate = candidateRes.data as CandidateRow
+  if (!isCustomerFacingBusinessDomain(candidate.domain)) {
+    const skipped = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({
+      status: "skipped",
+      attempts: item.attempts + 1,
+      tech_matched: false,
+      job_enqueued: false,
+      form_verified: false,
+      twenty_synced: false,
+      error_message: "Hosted platform or internal domain is not a customer-facing CRM identity",
+      processed_at: nowIso(),
+    }).eq("id", item.id)
+    if (skipped.error) throw new Error(skipped.error.message)
+    return { techMatched: false, promoted: false, twentySynced: false }
+  }
   const rootUrl = candidate.root_url ?? item.root_url ?? `https://${candidate.domain}`
   const passive = item.meta?.passive_evidence && typeof item.meta.passive_evidence === "object" && !Array.isArray(item.meta.passive_evidence)
     ? item.meta.passive_evidence as JsonRecord

@@ -6,7 +6,7 @@
  */
 
 const CMS_FOOTPRINTS: Record<string, string[]> = {
-  Shopify: ["site:myshopify.com", '"Powered by Shopify"', '"shopify-section"'],
+  Shopify: ['"Powered by Shopify"', '"cdn.shopify.com"', '"shopify-section"'],
   WordPress: ['"Powered by WordPress"', '"Proudly powered by WordPress"', "wp-content"],
   Wix: ['"Made with Wix"', '"Built with Wix"', "wixstatic.com"],
   Webflow: ['"Made in Webflow"', '"Powered by Webflow"', "webflow.io"],
@@ -120,8 +120,8 @@ export function buildFootprintQueries(
       continue
     }
 
-    const fp = footprints[0]
-    for (const city of cities) {
+    for (const [index, city] of cities.entries()) {
+      const fp = footprints[index % footprints.length] as string
       queries.push({
         query: `${fp} ${city}`,
         cms: tech,
