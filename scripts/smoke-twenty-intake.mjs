@@ -32,7 +32,6 @@ function fail(message) {
 const baseUrl = (argValue("base-url", env("NEXT_PUBLIC_SITE_URL") ?? "https://paradigmjp.com") ?? "").replace(/\/+$/, "")
 const limit = Math.max(1, Math.min(Number(argValue("limit", "5")), 50))
 const dryRun = boolArg("dry-run", true)
-const dispatchPipeline = boolArg("dispatch-pipeline", false)
 
 if (!baseUrl) fail("base URL is empty")
 
@@ -55,8 +54,6 @@ const res = await fetch(`${baseUrl}/api/sales/twenty/pull`, {
   body: JSON.stringify({
     limit,
     dry_run: dryRun,
-    auto_run_pipeline: true,
-    dispatch_pipeline: dispatchPipeline,
   }),
   signal: AbortSignal.timeout(30_000),
 })
@@ -86,9 +83,6 @@ console.log(
       created: data.created,
       updated: data.updated,
       skipped: data.skipped,
-      pipelineRunsCreated: data.pipelineRunsCreated,
-      pipelineRunsDispatched: data.pipelineRunsDispatched,
-      pipelineRunsReused: data.pipelineRunsReused,
       failures: Array.isArray(data.failures) ? data.failures.length : 0,
     },
     null,

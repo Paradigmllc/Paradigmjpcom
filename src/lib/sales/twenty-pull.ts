@@ -1,12 +1,9 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { upsertCompanyByDomain, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
-import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 import {
-  buildCompanySlug,
-  buildReportUrl,
   inferVariant,
   normalizeReportLocale,
   normalizeTargetCountry,
@@ -20,13 +17,9 @@ import {
 import { fetchTwentyCompanyPages } from "./twenty-pull-pages"
 import {
   formUrlFromTwenty,
-  hasSourceErrors,
-  isDataStale,
   reportUrlFromTwenty,
-  sourceCoverageTooLow,
 } from "@/lib/sales/twenty-pull-retry"
 import {
-  contactFormUrlFromMeta,
   countryCodeFromTwentyRecord,
   plainRecord,
   routingNeedsRepair,
@@ -42,20 +35,12 @@ export interface TwentyPullResult {
   created: number
   updated: number
   skipped: number
-  pipelineRunsCreated: number
-  pipelineRunsDispatched: number
-  pipelineRunsReused: number
   failures?: { twentyCompanyId: string | null; domain: string | null; reason: string }[]
   error?: string
 }
 
 export interface TwentyPullOptions {
   pipelineRunId?: string | null
-  autoRunPipeline?: boolean
-  dispatchPipeline?: boolean
-  requireVideo?: boolean
-  autoSyncExternalStudios?: boolean
-  requestedBy?: string
   dryRun?: boolean
   pageSize?: number
   maxPages?: number
@@ -67,7 +52,6 @@ function emptyResult(input: { configured: boolean; dryRun: boolean; error?: stri
     configured: input.configured,
     dryRun: input.dryRun,
     scanned: 0, created: 0, updated: 0, skipped: 0,
-    pipelineRunsCreated: 0, pipelineRunsDispatched: 0, pipelineRunsReused: 0,
     error: input.error,
   }
 }
@@ -106,11 +90,8 @@ export async function pullTwentyCompaniesToSupabase(
   if (!pageResult.ok) return emptyResult({ configured: true, dryRun: isDryRun, error: pageResult.error })
 
   const records = pageResult.records
-  const shouldAutoRunPipeline = options.autoRunPipeline === true
-  const shouldDispatchPipeline = options.dispatchPipeline !== false
   const failures: NonNullable<TwentyPullResult["failures"]> = [...pageResult.failures]
   let created = 0, updated = 0, skipped = 0
-  let pipelineRunsCreated = 0, pipelineRunsDispatched = 0, pipelineRunsReused = 0
 
   const allDomains = records
     .map((r) => normalizeDomain(r.domainName?.primaryLinkUrl) ?? normalizeDomain(r.domainName?.primaryLinkLabel))
@@ -136,7 +117,6 @@ export async function pullTwentyCompaniesToSupabase(
     const salesMaterialUrl = record.paradigmSalesMaterialUrl?.primaryLinkUrl ?? null
     const demoUrl = record.paradigmDemoUrl?.primaryLinkUrl ?? null
     const customerPortalUrl = record.paradigmCustomerPortalUrl?.primaryLinkUrl ?? null
-    const invalidTwentyUrl = Boolean((rawReportUrl && !reportUrl) || (rawFormUrl && !formUrl))
     if (rawReportUrl && !reportUrl) {
       failures.push({ twentyCompanyId: record.id ?? null, domain, reason: `invalid Twenty report URL ignored: ${rawReportUrl}` })
     }
@@ -174,18 +154,17 @@ export async function pullTwentyCompaniesToSupabase(
     const inferredScope = salesScopeFromCountry({ targetCountry: inferredCountry })
 
     let companyId = typeof company?.id === "string" ? company.id : null
-    let companyReportUrl = typeof company?.report_url === "string" && company.report_url.trim() ? company.report_url : null
-    let companyPipelineStatus: string | null = typeof company?.pipeline_status === "string" ? company.pipeline_status : null
 
     if (!companyId) {
-      if (isDryRun) { created += 1; if (shouldAutoRunPipeline) pipelineRunsCreated += 1; continue }
+      if (isDryRun) { created += 1; continue }
       const scope = inferredScope
       const templateVariant = inferVariant({ reportLocale: scope.reportLocale, targetCountry: scope.targetCountry, meta: patchMeta })
       const upsert = await upsertCompanyByDomain({
         domain, company_name: record.name?.trim() || domain,
         region: scope.region, report_locale: scope.reportLocale, target_country: scope.targetCountry,
         template_variant: templateVariant,
-        pipeline_status: shouldAutoRunPipeline ? "scanning" : "pending",
+        pipeline_status: "pending",
+        generate_report_url: false,
         source: "twenty", meta: patchMeta,
       })
       if (!upsert.ok || !upsert.company) {
@@ -194,8 +173,6 @@ export async function pullTwentyCompaniesToSupabase(
         continue
       }
       companyId = upsert.company.id
-      companyReportUrl = upsert.company.report_url
-      companyPipelineStatus = upsert.company.pipeline_status
       created += 1
     } else {
       // Conflict check: if Twenty has been edited externally since our last sync,
@@ -208,7 +185,6 @@ export async function pullTwentyCompaniesToSupabase(
         )
       }
 
-      const companyName = record.name?.trim() || domain
       const scope = inferredScope
       const shouldRepairRouting = routingNeedsRepair({ company, inferredCountry })
       const reportLocale = shouldRepairRouting ? scope.reportLocale : normalizeReportLocale(company?.report_locale ?? scope.reportLocale, company?.region ?? scope.region)
@@ -218,19 +194,10 @@ export async function pullTwentyCompaniesToSupabase(
       patchMeta.routing = { ...plainRecord(patchMeta.routing), report_locale: reportLocale, target_country: targetCountry, template_variant: templateVariant }
 
       const patch: Record<string, unknown> = { meta: patchMeta }
-      if (!listOnly && reportUrl && !companyReportUrl) { patch.report_url = reportUrl; companyReportUrl = reportUrl }
+      if (!listOnly && reportUrl && !company?.report_url) patch.report_url = reportUrl
 
-      if (!company?.slug) {
-        const generatedSlug = buildCompanySlug(companyName, domain)
-        patch.slug = generatedSlug
-        patch.report_url = patch.report_url ?? buildReportUrl(reportLocale, generatedSlug)
-        companyReportUrl = (patch.report_url as string) ?? companyReportUrl
-      }
-
-      const effectiveSlug = typeof patch.slug === "string" ? patch.slug : company?.slug
       if (shouldRepairRouting && !listOnly) {
         patch.region = scope.region; patch.report_locale = reportLocale; patch.target_country = targetCountry; patch.template_variant = templateVariant
-        if (effectiveSlug) { patch.report_url = buildReportUrl(reportLocale, effectiveSlug); companyReportUrl = patch.report_url as string }
       } else {
         if (!company?.report_locale) patch.report_locale = reportLocale
         if (!company?.target_country) patch.target_country = targetCountry
@@ -241,7 +208,6 @@ export async function pullTwentyCompaniesToSupabase(
         const parsed = parseSalesStatusLabel(record.paradigmSalesStatus)
         if (parsed.pipelineStatus) patch.pipeline_status = parsed.pipelineStatus
         if (parsed.dealStage) patch.deal_stage = parsed.dealStage
-        if (parsed.pipelineStatus) companyPipelineStatus = parsed.pipelineStatus
       }
 
       if (isDryRun) { updated += 1 } else {
@@ -254,11 +220,7 @@ export async function pullTwentyCompaniesToSupabase(
       }
     }
 
-    if (isDryRun) {
-      const needsGeneration = !companyReportUrl || companyPipelineStatus !== "report_ready" || sourceCoverageTooLow(record, patchMeta) || hasSourceErrors(patchMeta) || isDataStale(patchMeta) || invalidTwentyUrl
-      if (!listOnly && shouldAutoRunPipeline && needsGeneration && companyId) pipelineRunsCreated += 1
-      continue
-    }
+    if (isDryRun) continue
 
     const { error: syncLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
       direction: "twenty->supabase", entity_type: "company", entity_id: companyId,
@@ -267,21 +229,11 @@ export async function pullTwentyCompaniesToSupabase(
       payload: { twenty_company_id: record.id ?? null, domain, report_url: reportUrl, form_url: formUrl, sales_material_url: salesMaterialUrl, demo_url: demoUrl, customer_portal_url: customerPortalUrl },
     }, ["pipeline_run_id"])
     if (syncLogError) console.error("[twenty-pull] sync log insert failed:", syncLogError.message)
-
-    const needsGeneration = !companyReportUrl || !contactFormUrlFromMeta(patchMeta) || companyPipelineStatus !== "report_ready" || sourceCoverageTooLow(record, patchMeta) || hasSourceErrors(patchMeta) || isDataStale(patchMeta) || invalidTwentyUrl
-    if (listOnly || !shouldAutoRunPipeline || !needsGeneration) continue
-
-    const pipeline = await ensureTwentyPipelineRun(sb, { companyId, record, domain, options, dispatch: shouldDispatchPipeline })
-    if (pipeline.reused) pipelineRunsReused += 1
-    if (pipeline.created) pipelineRunsCreated += 1
-    if (pipeline.dispatched) pipelineRunsDispatched += 1
-    if (pipeline.error) failures.push({ twentyCompanyId: record.id ?? null, domain, reason: pipeline.error })
   }
 
   return {
     ok: true, configured: true, dryRun: isDryRun,
     scanned: records.length, created, updated, skipped,
-    pipelineRunsCreated, pipelineRunsDispatched, pipelineRunsReused,
     failures: failures.slice(0, 20),
   }
 }
