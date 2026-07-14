@@ -54,7 +54,7 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
   const opportunityScore = finiteScore(score.opportunityScore)
   const smbScore = finiteScore(score.smbScore)
   const evidence = [
-    "Japan Entry候補（未送信）",
+    "Japan Entry候補（OSSフォーム適格収集 / 未送信）",
     `対象国: ${company.target_country ?? "未判定"}`,
     `技術: ${technologies.join(", ") || "未判定"}`,
     `機会スコア: ${opportunityScore ?? "未判定"}`,
@@ -70,7 +70,9 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
       primaryLinkUrl: formUrl ?? "",
     },
     paradigmCountryName: countrySelectValue(company.target_country),
-    paradigmSourceName: "oss_form_factory",
+    // Twenty 2.14 restores SELECT options from its application manifest at boot.
+    // Use an existing stable value and describe the OSS lane in the lead evidence.
+    paradigmSourceName: "codex_verification",
     paradigmLeadStatus: "フォーム確認済み / Twenty登録済み / 未送信",
     paradigmTechnology: technologies.join(", ") || null,
     paradigmOpportunityScore: opportunityScore,

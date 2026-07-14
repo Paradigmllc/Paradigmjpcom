@@ -18,7 +18,7 @@ describe("listLeadTwentyPayload", () => {
 
     expect(payload).toMatchObject({
       paradigmCountryName: "カナダ",
-      paradigmSourceName: "oss_form_factory",
+      paradigmSourceName: "codex_verification",
       paradigmTechnology: "Shopify",
       paradigmOpportunityScore: 75,
       paradigmSmbScore: 58,
