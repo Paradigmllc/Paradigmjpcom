@@ -10,7 +10,6 @@ interface PipelineTickBody {
   enrichment_limit?: number
   recover_stale_runs?: boolean
   include_twenty_sync?: boolean
-  include_report_regenerator?: boolean
 }
 
 function optionalBoolean(value: unknown): boolean | undefined {
@@ -38,7 +37,6 @@ export async function POST(req: NextRequest) {
       enrichmentLimit: optionalLimit(body.enrichment_limit),
       recoverStaleRuns: optionalBoolean(body.recover_stale_runs),
       includeTwentySync: optionalBoolean(body.include_twenty_sync),
-      includeReportRegenerator: optionalBoolean(body.include_report_regenerator),
     })
     return NextResponse.json({ ok: true, ...result })
   } catch (error) {

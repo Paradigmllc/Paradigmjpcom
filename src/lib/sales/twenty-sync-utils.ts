@@ -70,9 +70,6 @@ export interface TwentyPullResult {
   created: number
   updated: number
   skipped: number
-  pipelineRunsCreated: number
-  pipelineRunsDispatched?: number
-  pipelineRunsReused?: number
   failures: { twentyCompanyId?: string | null; domain?: string | null; reason: string }[]
   error?: string
 }
