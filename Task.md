@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-15 SMB DEMO合格候補のTwenty可視化（実装・検証完了 / release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 SMB DEMO合格候補のTwenty可視化（本番release完了 / Twenty確認入口稼働 / 外部送信0）
 
 ### Twentyで必ず確認できる未送信DEMO候補同期
 - `/ja/admin/demo-assets`の生成waveで、品質合格済みDEMOの7日限定URLを発行する操作を「URL発行＋Twenty同期」へ変更した。発行済みDEMOはTwenty企業へ`DEMO生成済み / 要確認 / 未送信`、`7日限定DEMO URL`、品質スコア、失効日時、根拠数、次アクション`DEMOを目視確認（未送信）`として同期される。
@@ -7,7 +7,8 @@
 
 ### Verification
 - TypeScript `npx tsc --noEmit` pass、対象ESLint pass、対象Vitest `src/app/api/sales/demo-site/batch/route.test.ts` **1 file / 6 tests pass**、production build **408/408 pages** pass、`git diff --check` pass。
-- 実Twenty本番書き込みはまだ実行していない。release後に合格済みDEMOを1件選び、管理画面の`URL発行＋Twenty同期`からTwenty read-back済みの未送信DEMO候補として表示されることを確認する。
+- PR **#240** / main **0a0f8847** / deployment **vdeomj8uxwoyvhu2ue1tb7jt**。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty credential確認、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / 公開smoke / Sales health JSON `ok:true`までpass。本番`https://paradigmjp.com/api/ready`はHTTP 200、`/api/sales/demo-site/batch`は未認証HTTP 401。本番admin chunk `page-5d9c90c2f94c2842.js`に`URL発行＋Twenty同期`、`syncTwenty`、Twenty同期完了toastが含まれることを確認した。
+- 実Twenty本番書き込みはまだ実行していない。次に合格済みDEMOを1件選び、管理画面の`URL発行＋Twenty同期`からTwenty read-back済みの未送信DEMO候補として表示されることを確認する。
 
 ## CURRENT STATUS - 2026-07-15 エキテン中心SMB DEMO実務運用の高速化（本番release完了 / エキテン貼り付け量産入口稼働 / 外部送信0）
 
