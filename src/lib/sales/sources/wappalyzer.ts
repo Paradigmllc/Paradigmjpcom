@@ -67,7 +67,17 @@ const SIGNATURES: Signature[] = [
   { name: "ColorMe", category: "EC", confidence: 86, patterns: [/colorme\.shop|colorme-ec|shop-pro\.jp/i] },
   { name: "BASE (EC)", category: "EC", confidence: 86, patterns: [/binc\.jp|thebase\.in|baseec-img/i] },
   { name: "STORES.jp", category: "EC", confidence: 86, patterns: [/stores\.jp|stores\.dev/i] },
-  { name: "Shopify (JP detection)", category: "EC", confidence: 84, patterns: [/shopify-buy|shopify-payment-button/i] },
+  {
+    name: "Shopify",
+    category: "EC",
+    confidence: 92,
+    patterns: [
+      /cdn\.shopify\.com\/s\//i,
+      /\.myshopify\.com/i,
+      /Shopify\.(?:theme|shop|routes|currency)/i,
+      /shopify-section|shopify-buy|shopify-payment-button/i,
+    ],
+  },
   { name: "WooCommerce", category: "EC", confidence: 90, patterns: [/woocommerce|wc-cart-fragments|wc-blocks|\/wp-content\/plugins\/woocommerce\//i], cookiePatterns: [/woocommerce|wp_woocommerce_session/i] },
   { name: "Welcart", category: "EC", confidence: 80, patterns: [/welcart|usces_item|usces_cart/i] },
   { name: "CartWeb", category: "EC", confidence: 78, patterns: [/cartweb|cart\.cgi|shop\.cgi/i] },
