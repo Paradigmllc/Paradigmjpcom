@@ -3,7 +3,8 @@
 /**
  * Localized contact form with a qualification-first Japan Entry flow.
  * International routes use the Japan Entry application; the Japanese route
- * remains general contact unless `intent=japan-entry` is explicitly requested.
+ * always remains domestic Web production contact, including legacy campaign
+ * links that still carry `intent=japan-entry`.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -50,9 +51,9 @@ function newSubmissionKey(): string {
 
 export function isJapanEntryContact(
   locale: string,
-  intent: string | null,
+  _intent?: string | null,
 ): boolean {
-  return locale !== "ja" || intent === "japan-entry"
+  return locale !== "ja"
 }
 
 export function shouldRotateSubmissionIdentity(status: number): boolean {

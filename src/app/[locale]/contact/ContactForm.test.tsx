@@ -31,13 +31,14 @@ afterEach(() => {
 
 describe("isJapanEntryContact", () => {
   test("makes every English contact route a Japan Entry application", () => {
-    expect(isJapanEntryContact("en", null)).toBe(true)
+    expect(isJapanEntryContact("en")).toBe(true)
     expect(isJapanEntryContact("en", "general")).toBe(true)
   })
 
-  test("keeps the Japanese route general while international routes use the package", () => {
-    expect(isJapanEntryContact("ja", null)).toBe(false)
-    expect(isJapanEntryContact("de", null)).toBe(true)
+  test("keeps every Japanese route domestic, including legacy package links", () => {
+    expect(isJapanEntryContact("ja")).toBe(false)
+    expect(isJapanEntryContact("ja", "japan-entry")).toBe(false)
+    expect(isJapanEntryContact("de")).toBe(true)
     expect(isJapanEntryContact("de", "japan-entry")).toBe(true)
   })
 })
