@@ -19,6 +19,7 @@ import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filte
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { WORKS_EN } from "@/lib/data"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import ProfessionalUseCases, { type ProfessionalUseCase } from "@/components/japan-entry/ProfessionalUseCases"
 import Image from "next/image"
 import {
   JAPANESE_WORK_PUBLICATION_TAG,
@@ -78,6 +79,7 @@ export default async function WorksPage({ params }: Props) {
   const japanEntryLocale = locale !== "ja"
   const evidenceChecks = japanEntryLocale ? (t.raw("evidenceChecks") as EvidenceCheck[]) : []
   const caseNotes = japanEntryLocale ? (t.raw("caseNotes") as CaseNote[]) : []
+  const professionalUseCases = japanEntryLocale ? (t.raw("professionalUseCases") as ProfessionalUseCase[]) : []
 
   let works = japanEntryLocale
     ? (t.raw("proofItems") as Array<Omit<WorkDoc, "id" | "tags"> & { tags: string[] }>).map((work, index) => ({
@@ -228,6 +230,15 @@ export default async function WorksPage({ params }: Props) {
             </div>
           </div>
         </section>
+      )}
+
+      {professionalUseCases.length > 0 && (
+        <ProfessionalUseCases
+          eyebrow={t("professionalUseCasesEyebrow")}
+          title={t("professionalUseCasesTitle")}
+          description={t("professionalUseCasesDesc")}
+          items={professionalUseCases}
+        />
       )}
 
       {/* Process */}
