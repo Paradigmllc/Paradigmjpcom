@@ -8,6 +8,7 @@ import {
   JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
   JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
 } from "./japan-entry-public-copy"
+import { JAPAN_ENTRY_BLOG_POSTS } from "./japan-entry-blog"
 
 function collectStrings(value: unknown, path = "en"): Array<{ path: string; value: string }> {
   if (typeof value === "string") return [{ path, value }]
@@ -91,6 +92,37 @@ describe("public English Japan Entry copy", () => {
     expect(JSON.stringify(messages)).not.toContain("SNS")
     expect(seed).toMatch(supportedSectors)
     expect(homepageBlocks).toMatch(/WHO WE ARE/)
+  })
+
+  it("ships a long-form professional series for EC, SaaS, and Web3.0 teams", () => {
+    const professionalPosts = JAPAN_ENTRY_BLOG_POSTS.filter((post) =>
+      post.tags.includes("professional-domain"),
+    )
+
+    expect(professionalPosts).toHaveLength(10)
+    expect(professionalPosts.map((post) => post.slug)).toEqual([
+      "japan-ec-localization-buyer-path",
+      "japan-ec-payment-fulfilment-trust",
+      "japan-saas-market-entry-icp",
+      "japan-saas-pricing-security-procurement",
+      "japan-saas-support-operating-model",
+      "web3-japan-market-entry-classification",
+      "web3-japan-trust-risk-disclosures",
+      "web3-japan-community-operations",
+      "japan-base-operating-system-ec-saas-web3",
+      "japan-market-entry-evidence-to-operations",
+    ])
+
+    for (const post of professionalPosts) {
+      expect(post.content.length).toBeGreaterThanOrEqual(2000)
+      expect(post.content.match(/^## /gm)?.length ?? 0).toBeGreaterThanOrEqual(4)
+      expect(post.content).toContain("Paradigm LLC")
+      expect(post.heroImage?.src).toMatch(/^\/japan-entry\/.+\.svg$/)
+      expect(post.tags).toContain("japan-entry-public")
+    }
+
+    const sectors = professionalPosts.flatMap((post) => post.tags)
+    expect(sectors).toEqual(expect.arrayContaining(["EC", "SaaS", "Web3.0"]))
   })
 
   it("adds human context without presenting stock imagery as proof", () => {
