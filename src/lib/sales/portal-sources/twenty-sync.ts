@@ -8,7 +8,7 @@ import { linkField, type TwentyRecord } from "@/lib/sales/twenty-sync-utils"
 import { createTwentyCompanyBase, findTwentyCompanyByDomain, patchTwentyCompanyHome } from "@/lib/sales/twenty-sync-company-home"
 import type { CandidateListItem } from "@/lib/sales/lead-candidate-list"
 import type { PortalCandidateExtraction } from "./types"
-import { readPortalSnapshot } from "./service"
+import { isPortalPrivateProposalEligible, readPortalSnapshot } from "./service"
 
 export type PortalTwentySyncStatus = "synced" | "reused" | "skipped" | "failed"
 
@@ -170,7 +170,8 @@ export async function syncPortalCandidateToTwenty(
   if (!force && previous.status === "synced" && previous.companyId && previous.twentyCompanyId) {
     return { ok: true, candidateId: candidate.id, companyName, status: "reused", companyId: previous.companyId, twentyCompanyId: previous.twentyCompanyId }
   }
-  if (candidate.status === "promoted" || !snapshot || snapshot.status !== "ready_for_review") {
+  const listEligible = Boolean(snapshot && (snapshot.status === "ready_for_review" || isPortalPrivateProposalEligible(snapshot)))
+  if (candidate.status === "promoted" || !snapshot || !listEligible) {
     const result: PortalTwentySyncResult = { ok: true, candidateId: candidate.id, companyName, status: "skipped", error: "SMB適合・独自HPなし・情報量の基準を満たしていません" }
     await persistCandidateSync(candidate, { ...previous, status: "skipped", lastAttemptAt: new Date().toISOString(), error: result.error }, candidate.companyId)
     await writeSyncLog(candidate, result)

@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-15 日本SMB 1000件量産レーン（実装中 / 外部送信0）
+
+- Ekitenの公式`/api/shops/shopList/p*/`（robots.txtで許可された一覧API）を、地域コード・業種コード・ページ単位でbounded取得する`probe-ekiten-api.mts`を追加した。画像3点以上・国内住所・企業規模シグナル除外・重複排除を先段に置き、候補スナップショットを最大100件ずつ既存の認可APIへ投入できる`process-ekiten-browser-batch.mts`を追加した。
+- DEMOは「厳格な意思決定者確認済み」候補と「データ量は十分だが代表者確認待ち」の2層に分離した。後者は`private_proposal`素材・非公開DEMO・外部送信不可・公開不可のまま生成できるが、TwentyのNext Actionは確認待ち、送信・公開・納品には進めない。
+- 公式一覧APIの試算在庫は3,365 listing、国内住所・画像3点以上・企業規模シグナル除外後2,957件（未登録・未DEMO）。この数字は候補在庫であり、独自HPなし・代表者確認・DEMO品質合格の最終1,000件とはまだ数えない。
+- 既存の日本SMB実績はSales DB 4件、Twenty 2件、現行営業対象のDEMO URL 1件。今回の量産レーンは候補投入→Twenty（確認待ち）→非公開DEMO生成までをバッチ化し、外部送信は常に0件で維持する。
+
 ## CURRENT STATUS - 2026-07-15 日本SMB限定スコープ固定（海外在庫隔離 / DEMO品質ゲート確認済み / 外部送信0）
 
 - 日本のローカルSMBだけを営業対象にするため、先行登録されていた海外CORDIS在庫1,000社（`official-sme-1000-20260715`）を営業DBで`out_of_scope=true` / `pipeline_status=manual_queue` / `out_of_scope_foreign`へ隔離した。`send_result`、`sent_at`、`report_url`は1,000/1,000で空のまま。
