@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { evaluateLeadQualityGate, type HomepageQualityProfile } from "./lead-quality-gate"
+import { evaluateLeadQualityGate, readLimitedText, type HomepageQualityProfile } from "./lead-quality-gate"
 import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
 
 const source: LeadSourceConfig = {
@@ -68,6 +68,14 @@ const countrySignals = [{ countryCode: "US", signalType: "address", confidence: 
 const shopify = [{ name: "Shopify", category: "EC", confidence: 92 }]
 
 describe("evaluateLeadQualityGate", () => {
+  it("caps oversized homepage bodies to a safe prefix instead of rejecting the company", async () => {
+    const response = new Response("0123456789", {
+      headers: { "content-length": "10", "content-type": "text/html" },
+    })
+
+    await expect(readLimitedText(response, 5)).resolves.toBe("01234")
+  })
+
   it("passes a source-identified, country-verified, explicit SMB commerce company", () => {
     const result = evaluateLeadQualityGate({ sourceRecord: record(), homepage: homepage(), countrySignals, detections: shopify, enterpriseLike: false })
 
