@@ -465,6 +465,22 @@ function checkStaticReleaseRules() {
     fail("country source packs require provenance, bounded ZIP ingestion, no-delivery inventory and draft-only registration")
   }
 
+  const portalTwentyOptionsMigrationPath = "supabase/migrations/20260715150000_portal_twenty_source_options.sql"
+  const portalTwentyOptionsMigration = fs.existsSync(portalTwentyOptionsMigrationPath)
+    ? fs.readFileSync(portalTwentyOptionsMigrationPath, "utf8")
+    : ""
+  if (
+    portalTwentyOptionsMigration.includes("('source', 'houzz'")
+    && portalTwentyOptionsMigration.includes("('source', 'ekiten'")
+    && portalTwentyOptionsMigration.includes("('source', 'jmty'")
+    && noLoginDeploy.includes("20260715150000_portal_twenty_source_options.sql")
+    && noLoginDeploy.includes("applyPortalTwentySourceOptionsMigration")
+  ) {
+    pass("portal Twenty source options are present and release-wired")
+  } else {
+    fail("portal Twenty source options require Houzz, Ekiten, Jmty values and release wiring")
+  }
+
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
   const evidenceFactory = fs.existsSync(evidenceFactoryPath)
     ? fs.readFileSync(evidenceFactoryPath, "utf8")

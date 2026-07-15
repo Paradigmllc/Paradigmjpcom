@@ -668,6 +668,14 @@ async function applyLeadSourceCountryPacksMigration(envs) {
   )
 }
 
+async function applyPortalTwentySourceOptionsMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715150000_portal_twenty_source_options.sql",
+    "Portal Twenty source options migration",
+  )
+}
+
 async function applyJapanEntryProjectionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1305,6 +1313,7 @@ async function main() {
     console.log(await applyLeadFactoryOperatorApprovalMigration(envs))
     console.log(await applyLeadSourceWebsitePreflightMigration(envs))
     console.log(await applyLeadSourceCountryPacksMigration(envs))
+    console.log(await applyPortalTwentySourceOptionsMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
