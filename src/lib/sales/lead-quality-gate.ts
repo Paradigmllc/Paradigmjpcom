@@ -44,7 +44,7 @@ function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.replace(/\s+/g, " ").trim()).filter(Boolean))].slice(0, 20)
 }
 
-async function readLimitedText(response: Response, maxBytes: number): Promise<string> {
+export async function readLimitedText(response: Response, maxBytes: number): Promise<string> {
   if (!response.body) return ""
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
@@ -53,12 +53,18 @@ async function readLimitedText(response: Response, maxBytes: number): Promise<st
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-    total += value.byteLength
-    if (total > maxBytes) {
+    const remaining = maxBytes - total
+    if (remaining <= 0) {
       await reader.cancel()
-      throw new Error(`Homepage exceeds ${maxBytes} byte limit`)
+      break
     }
-    text += decoder.decode(value, { stream: true })
+    const accepted = value.byteLength > remaining ? value.subarray(0, remaining) : value
+    total += accepted.byteLength
+    text += decoder.decode(accepted, { stream: true })
+    if (accepted.byteLength < value.byteLength || total >= maxBytes) {
+      await reader.cancel()
+      break
+    }
   }
   return text + decoder.decode()
 }
@@ -116,8 +122,6 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
   if (!response.ok) throw new Error(`Homepage returned HTTP ${response.status}`)
   const contentType = response.headers.get("content-type") ?? ""
   if (contentType && !contentType.includes("text/html")) throw new Error(`Homepage is not HTML: ${contentType}`)
-  const contentLength = Number(response.headers.get("content-length") ?? 0)
-  if (contentLength > MAX_HOMEPAGE_BYTES) throw new Error(`Homepage exceeds ${MAX_HOMEPAGE_BYTES} byte limit`)
   const html = await readLimitedText(response, MAX_HOMEPAGE_BYTES)
   const $ = load(html)
   const structured = jsonLdOrganizations(html)
