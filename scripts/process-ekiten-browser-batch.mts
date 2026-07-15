@@ -60,7 +60,19 @@ async function main(): Promise<void> {
     for (const candidate of page.candidates ?? []) if (listingUrls.has(typeof candidate.listingUrl === "string" ? candidate.listingUrl : "")) candidates.push(candidate)
     if (page.nextOffset === null || page.nextOffset === undefined) break
   }
-  const eligible = candidates.filter((candidate) => {
+  const byListingUrl = new Map<string, Array<Record<string, unknown>>>()
+  for (const candidate of candidates) {
+    const listingUrl = typeof candidate.listingUrl === "string" ? candidate.listingUrl : ""
+    if (!listingUrl) continue
+    const group = byListingUrl.get(listingUrl) ?? []
+    group.push(candidate)
+    byListingUrl.set(listingUrl, group)
+  }
+  const uniqueCandidates = [...byListingUrl.values()].map((group) => group.find((candidate) => {
+    const websiteUrl = typeof candidate.websiteUrl === "string" ? candidate.websiteUrl.trim() : ""
+    return !websiteUrl && (candidate.reviewStatus === "ready_for_review" || candidate.reviewStatus === "decision_fit_unverified")
+  }) ?? group[0])
+  const eligible = uniqueCandidates.filter((candidate) => {
     if (candidate.reviewStatus === "ready_for_review") return true
     if (candidate.reviewStatus !== "decision_fit_unverified") return false
     const websiteUrl = typeof candidate.websiteUrl === "string" ? candidate.websiteUrl.trim() : ""
@@ -84,7 +96,11 @@ async function main(): Promise<void> {
     twentySyncResults.push(syncResult)
   }
   const demoResults: Array<{ candidateId: string; ok: boolean; companyName?: string; jobId?: string; error?: string }> = []
-  for (const candidate of eligible) {
+  let nextIndex = 0
+  const approveNext = async (): Promise<void> => {
+    while (nextIndex < eligible.length) {
+      const candidate = eligible[nextIndex]
+      nextIndex += 1
     const images = Array.isArray(candidate.images) ? candidate.images.filter((value): value is { url: string; alt: string } => Boolean(value && typeof value === "object" && typeof (value as { url?: unknown }).url === "string")) : []
     const listingUrl = typeof candidate.listingUrl === "string" ? candidate.listingUrl : ""
     const companyName = typeof candidate.companyName === "string" ? candidate.companyName : "候補企業"
@@ -102,7 +118,7 @@ async function main(): Promise<void> {
       notes: "エキテン掲載素材。非公開提案用。権利確認前は公開・納品に使用しない。",
     }))
     if (assets.length < 3) continue
-    try {
+      try {
       const queuedResponse = await fetch(`${origin}/api/sales/demo-site/portal-candidates`, {
         method: "PUT",
         headers: apiHeaders,
@@ -111,12 +127,14 @@ async function main(): Promise<void> {
       const queued = await queuedResponse.json() as { ok?: boolean; companyName?: string; jobId?: string; error?: string }
       demoResults.push({ candidateId: String(candidate.id), ok: queued.ok === true, companyName: queued.companyName, jobId: queued.jobId, error: queued.error })
       if (!queuedResponse.ok && !queued.error) console.error("[ekiten-browser-batch] demo approval failed:", queuedResponse.status)
-    } catch (error) {
-      console.error("[ekiten-browser-batch] demo approval failed:", candidate.id, error)
-      demoResults.push({ candidateId: String(candidate.id), ok: false, companyName, error: error instanceof Error ? error.message : String(error) })
+      } catch (error) {
+        console.error("[ekiten-browser-batch] demo approval failed:", candidate.id, error)
+        demoResults.push({ candidateId: String(candidate.id), ok: false, companyName, error: error instanceof Error ? error.message : String(error) })
+      }
     }
   }
-  console.log(JSON.stringify({ imported: importResult.imported ?? 0, failed: importResult.failed ?? 0, candidates: candidates.length, eligible: eligible.length, twentySync: twentySyncResults, demos: demoResults }, null, 2))
+  await Promise.all(Array.from({ length: Math.min(4, eligible.length) }, () => approveNext()))
+  console.log(JSON.stringify({ imported: importResult.imported ?? 0, failed: importResult.failed ?? 0, candidates: candidates.length, uniqueCandidates: uniqueCandidates.length, eligible: eligible.length, twentySync: twentySyncResults, demos: demoResults }, null, 2))
 }
 
 main().catch((error) => {
