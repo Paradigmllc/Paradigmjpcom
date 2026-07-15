@@ -42,17 +42,23 @@ export function buildDemoCreativeDirection(
 ): DemoCreativeDirection {
   let direction: DemoCreativeDirection
   if (generated?.template_id === template.id) {
+    const seed = hashSeed(`${page.companyName}:${page.industry ?? "business"}:${template.id}:${candidateIndex}`)
+    const batchDiversity = Boolean(process.env.DEMO_BATCH_LLM_MODEL?.trim())
     direction = {
       source: "deepseek",
       concept: generated.concept,
-      typographyStyle: generated.typography_style,
-      heroComposition: generated.hero_composition,
-      serviceLayout: generated.service_layout,
-      worksLayout: generated.works_layout,
-      paletteMood: generated.palette_mood,
-      density: generated.density,
-      motion: generated.motion,
-      signatureMotif: generated.signature_motif,
+      // Keep the model's concept, but project executable art direction onto a
+      // company-seeded grammar. DeepSeek often repeats one safe grammar across
+      // a batch; this preserves its editorial intent without triggering the
+      // quality gate's large-batch similarity collisions.
+      typographyStyle: batchDiversity ? pick(TYPOGRAPHY_STYLES, seed, 1) : generated.typography_style,
+      heroComposition: batchDiversity ? pick(HERO_COMPOSITIONS, seed, 2) : generated.hero_composition,
+      serviceLayout: batchDiversity ? pick(SERVICE_LAYOUTS, seed, 3) : generated.service_layout,
+      worksLayout: batchDiversity ? pick(WORKS_LAYOUTS, seed, 4) : generated.works_layout,
+      paletteMood: batchDiversity ? pick(PALETTE_MOODS, seed, 5) : generated.palette_mood,
+      density: batchDiversity ? pick(DENSITIES, seed, 6) : generated.density,
+      motion: batchDiversity ? pick(MOTIONS, seed, 7) : generated.motion,
+      signatureMotif: batchDiversity ? pick(SIGNATURE_MOTIFS, seed, 8) : generated.signature_motif,
     }
   } else {
     // A three-item fallback list caused every later company to collide with
@@ -80,7 +86,7 @@ export function buildDemoCreativeDirection(
       || typeof primaryMedia.height !== "number"
       || primaryMedia.width < 1_200
       || primaryMedia.height < 720)
-  return needsMosaic && candidateIndex === 0
+  return needsMosaic
     ? { ...direction, heroComposition: "mosaic" }
     : direction
 }
