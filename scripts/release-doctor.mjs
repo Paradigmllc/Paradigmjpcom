@@ -387,7 +387,7 @@ function checkStaticReleaseRules() {
     && candidateRunner.includes("pendingFallbackRuns")
     && reviewRoute.includes("approve_pilot")
     && sourcePreviewRoute.includes("previewLeadSourceConfig")
-    && leadSourceSelectionService.includes('rpc("sales_claim_lead_source_records"')
+    && leadSourceSelectionService.includes('"sales_claim_lead_source_records"')
     && !deepSeekGateway.includes("process.env.LITELLM_API_KEY")
     && !deepSeekGateway.includes("process.env.OPENROUTER_API_KEY")
     && personalizedMessage.includes('modelPolicy: "strict"')
@@ -396,6 +396,21 @@ function checkStaticReleaseRules() {
     pass("lead factory enforces source preview, pilot review, manual Twenty promotion, operator audit and direct DeepSeek V4 Pro generation")
   } else {
     fail("lead factory must remain fail-closed until explicit operator review and Twenty approval")
+  }
+
+  const listLeadSyncMigrationPath = "supabase/migrations/20260715193000_sales_sync_logs_list_lead.sql"
+  const listLeadSyncMigration = fs.existsSync(listLeadSyncMigrationPath)
+    ? fs.readFileSync(listLeadSyncMigrationPath, "utf8")
+    : ""
+  if (
+    listLeadSyncMigration.includes("sales_sync_logs_action_check")
+    && listLeadSyncMigration.includes("'list_lead_sync'")
+    && noLoginDeploy.includes("20260715193000_sales_sync_logs_list_lead.sql")
+    && noLoginDeploy.includes("applySalesSyncLogsListLeadMigration")
+  ) {
+    pass("list-only Twenty sync audit migration is release-wired")
+  } else {
+    fail("list-only Twenty sync audit migration must be release-wired")
   }
 
   const leadSourcePreflightMigrationPath = "supabase/migrations/20260715113000_lead_source_website_preflight.sql"
@@ -408,6 +423,10 @@ function checkStaticReleaseRules() {
   const leadSourcePreflightRoute = fs.existsSync("src/app/api/sales/lead-sources/[sourceId]/preflight/route.ts")
     ? fs.readFileSync("src/app/api/sales/lead-sources/[sourceId]/preflight/route.ts", "utf8")
     : ""
+  const leadSourcePartialPilotMigrationPath = "supabase/migrations/20260715151000_lead_source_partial_pilot_claim.sql"
+  const leadSourcePartialPilotMigration = fs.existsSync(leadSourcePartialPilotMigrationPath)
+    ? fs.readFileSync(leadSourcePartialPilotMigrationPath, "utf8")
+    : ""
   if (
     leadSourcePreflightMigration.includes("sales_claim_lead_source_preflight_records")
     && leadSourcePreflightMigration.includes("sales_complete_lead_source_preflight")
@@ -417,6 +436,14 @@ function checkStaticReleaseRules() {
     && leadSourcePreflightMigration.includes("TO service_role")
     && noLoginDeploy.includes("20260715113000_lead_source_website_preflight.sql")
     && noLoginDeploy.includes("applyLeadSourceWebsitePreflightMigration")
+    && noLoginDeploy.includes("20260715151000_lead_source_partial_pilot_claim.sql")
+    && noLoginDeploy.includes("applyLeadSourcePartialPilotClaimMigration")
+    && leadSourcePartialPilotMigration.includes("sales_claim_lead_source_pilot_records")
+    && leadSourcePartialPilotMigration.includes("preflight_status = 'eligible'")
+    && leadSourcePartialPilotMigration.includes("preflight_checked_at >= now() - interval '7 days'")
+    && !leadSourcePartialPilotMigration.includes("last_preflight->>'completed'")
+    && leadSourceSelectionService.includes("allowPartialSource")
+    && leadSourceSelectionService.includes("sales_claim_lead_source_pilot_records")
     && leadSourcePreflightService.includes("PREFLIGHT_CHUNK_SIZE = 50")
     && leadSourcePreflightService.includes("PREFLIGHT_CONCURRENCY = 10")
     && leadSourcePreflightService.includes("dns_private_or_reserved")
@@ -494,6 +521,15 @@ function checkStaticReleaseRules() {
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
+  const manualWorkService = fs.existsSync("src/lib/sales/manual-japan-entry-service.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-service.ts", "utf8")
+    : ""
+  const manualWorkReport = fs.existsSync("src/lib/sales/manual-japan-entry-report.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-report.ts", "utf8")
+    : ""
+  const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
+    ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
+    : ""
   if (
     manualWorkMigration.includes("CREATE TABLE IF NOT EXISTS public.manual_japan_entry_work")
     && manualWorkMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
@@ -503,10 +539,17 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyManualJapanEntryWorkMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && twentySelectOptionsScript.includes("'manual_work'")
+    && manualWorkService.includes('purpose: "initial_interest"')
+    && !manualWorkService.includes('purpose: "commercial_offer"')
+    && manualWorkService.includes("productContext: input.evidence.productContext")
+    && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
+    && manualWorkReport.includes("matchContentTemplate")
+    && manualWorkReport.includes('evidence_contract: "public-pages-only"')
+    && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has RLS, zero-send constraint, DB verification and release wiring")
+    pass("manual Japan Entry workbench has grounded initial-interest copy, business-model report evidence, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires migration, release apply, DB verification and Twenty source metadata")
+    fail("manual Japan Entry workbench requires grounded initial-interest copy, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"

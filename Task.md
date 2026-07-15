@@ -1,18 +1,29 @@
-## CURRENT STATUS - 2026-07-15 日本SMB 1000件量産レーン（実装中 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 Manual Japan Entry 文面・診断品質hardening（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
-- Ekitenの公式`/api/shops/shopList/p*/`（robots.txtで許可された一覧API）を、地域コード・業種コード・ページ単位でbounded取得する`probe-ekiten-api.mts`を追加した。画像3点以上・国内住所・企業規模シグナル除外・重複排除を先段に置き、候補スナップショットを最大100件ずつ既存の認可APIへ投入できる`process-ekiten-browser-batch.mts`を追加した。
-- DEMOは「厳格な意思決定者確認済み」候補と「データ量は十分だが代表者確認待ち」の2層に分離した。後者は`private_proposal`素材・非公開DEMO・外部送信不可・公開不可のまま生成できるが、TwentyのNext Actionは確認待ち、送信・公開・納品には進めない。
-- 公式一覧APIの試算在庫は3,365 listing、国内住所・画像3点以上・企業規模シグナル除外後2,957件（未登録・未DEMO）。この数字は候補在庫であり、独自HPなし・代表者確認・DEMO品質合格の最終1,000件とはまだ数えない。
-- 既存の日本SMB実績はSales DB 4件、Twenty 2件、現行営業対象のDEMO URL 1件。今回の量産レーンは候補投入→Twenty（確認待ち）→非公開DEMO生成までをバッチ化し、外部送信は常に0件で維持する。
+- `/work`の初回文面を既存の`initial_interest`契約へ統一した。初回は100〜160語・4段落・公開ページ根拠のみで、価格、支払条件、Japan Entry Packageの売り込み、URL、添付、通話提案を禁止し、詳細分析を受け取る意思だけを確認する。生成時の`productContext`はDeepSeekが書き直した要約ではなく、企業公開ページから直接抽出した原文へ固定した。
+- 会社profileの`productContext`と`observedFacts`も公開ページ原文で上書きし、モデル由来の未確認商品表現をTwenty・レポートへ流さない。日本企業除外、SMB/Japan Entry適合、文面92/100、実フォーム90/100の既存fail-closed条件は維持した。
+- 診断レポートは既存のJapan Entry事実抽出、診断content-template選択、`DiagnosticReportData`/表示基盤を共通利用する。SaaSは言語・JPY、serviceは言語だけ、ecommerceのみ配送・ローカル決済・commerce disclosureを扱い、需要、traffic、sales、ROI、法令違反を推測しない。source coverageは実際に収集・検証できた5ソースだけで算出する。
+- Crawl4AIは通常探索と並列実行し、返却URLを信用せずHTMLを再取得して実フォームを確認した候補だけを採用する。release doctorへ`initial_interest`、公開原文、業態別共通事実、content template、HTMLフォーム検証の静的回帰ゲートを追加した。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、最終全Vitest **176 files / 792 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。E2Eで方針文、複数URL、履歴、価格なしラベル、error overlay/console errorなし、mobile横overflowなしを確認した。
+- PR **#272 / #273**、manual work main **8b562b8c**、seed fix main **885113be**、最終deployment **y103mdoqravdurq2cy420muu**。正式`npm run release:prod`でhomepage CMS publish、DB **89/89**、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / Sales health JSON `ok:true`を含む`release gate passed`を確認。本番containerは両commitを含む`7d11fa13`でhealthy。`/work`は未認証時`/admin/login`へredirect、`/api/work`は未認証401、実DBは`manual_japan_entry_work` RLS有効・履歴0件。実企業URL投入、Twenty company追加、フォーム・メール等の外部送信は0件。
 
-## CURRENT STATUS - 2026-07-15 日本SMB限定スコープ固定（海外在庫隔離 / DEMO品質ゲート確認済み / 外部送信0）
+## CURRENT STATUS - 2026-07-15 Twenty高品質4,000件の母集団・審査・非送信同期基盤（本番収集・事前検査中 / 外部送信0）
 
-- 日本のローカルSMBだけを営業対象にするため、先行登録されていた海外CORDIS在庫1,000社（`official-sme-1000-20260715`）を営業DBで`out_of_scope=true` / `pipeline_status=manual_queue` / `out_of_scope_foreign`へ隔離した。`send_result`、`sent_at`、`report_url`は1,000/1,000で空のまま。
-- Twenty側も元の1,000/1,000に加え既存の海外候補を含む日本以外1,050件を`対象外（海外） / 保管のみ / 非送信`、`日本SMB対象外。営業・DEMO・送信には使用しない（保管のみ）`としてread-only保管状態へ更新した。`営業リスト`ビューは`paradigmCountryName IS 日本`の日本限定フィルタへ強化した。
-- 本番の国内SMBはSales DB 4件、Twenty 2件、現行営業対象に紐づくDEMO URLは`ノン美容室` 1件。日本企業の品質ゲート通過artifactは`ノン美容室`、`GREYMAN一級建築士事務所`、`Cafe SOSOMU`の3件（各100/100）だが、1,000件の日本SMBリスト／DEMO完成ではない。`ノン美容室`は`temporary_unlisted`、hard blockers **0**、有効期限2026-07-22をDBで確認した。
-- `https://demo.paradigmjp.com/ノン美容室`を実ブラウザでPC/モバイル切替、注意事項の表示、7日失効表示、全ページリンク、スライダー、法務ページ、モバイルレイアウトまで確認。主要11ルートはHTTP 200。問い合わせフォームは非公開DEMOのため送信停止のまま。
-- 今後のTwenty登録・DEMO生成は、①日本企業/国内所在地の根拠、②独自HPなし、③SMB・意思決定者適合、④公式プロフィール素材3点以上、⑤DEMO quality gate合格、の全条件を満たす国内候補だけに限定する。未確認候補を「完成」「送信可能」と数えない。
-- 本番 `npm run release:prod` は deployment `r14l2xyz0g9q47o9sq7dft1k` で完了し、post-deploy doctor（公開サイト、Sales health、Twenty、Cloudflare、DB 89/89）が通過した。DEMO主要11ルートも本番HTTP 200を再確認した。
+- 高品質合格4,000社には現行2%歩留まりで約200,000 websiteの検査が必要なため、公式・無料の母集団を追加した。Common Crawl `CC-MAIN-2026-25` URL Indexを欧米豪・シンガポール・中東の26市場×問い合わせ/EC/SaaS 3シグナル、各最大5,000ドメインで収集する。英国問い合わせシグナルのlive smokeは5,000/5,000ドメイン取得。URL文字列は合格根拠にせず、本文・個人情報も保存しない。
+- SBA SBIR/STTR公式公開CSVをstream処理し、公式サイトあり・従業員2〜249名だけをドメイン重複排除して最大50,000社取得する。担当者名・メール・電話は取り込まない。live smokeは394行から条件合格200社を正常抽出。
+- Common Crawl由来でSMB根拠だけが不足する候補は、企業本人性・国・商材適合・実フォーム確認を先に通し、その後DeepSeek V4 Pro公式APIで保守的に分類する。96%以上、2件以上の原文引用が元ページに完全一致、2〜249名帯、EC/SaaS/商品ブランド、risk 0の場合だけSMB合格へ昇格する。その他の不足理由はAIへ回さずfail-closed停止する。
+- 公式Tier 3の従業員/SME根拠、または上記V4高確度根拠を再確認し、管理画面の明示操作から20件ずつTwentyへ連続同期するrunnerを追加した。Twenty同期だけで、初回文面、診断レポート、Opportunity、メール、SNS、電話、フォーム送信は起動しない。操作と個別結果は既存DB監査ログへ保存する。
+- 初回release preflightで`lead-source-records.ts`が501行判定となったためCoolify deploy前に停止し、特殊source adapterを専用ファイルへ分離した。records本体は482行、Quality Guardは0 errors / 62 existing warningsへ復帰した。
+- PR **#264 / #265**、main **b495a9c2**、deployment **ob204hcbu643j82cp8simkqz**。正式releaseは一時的なhomepage seed fetch失敗後にseedを完了し、`release-doctor --post-deploy`でSales health JSON `ok:true`、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smokeを含む`release gate passed`を確認した。
+- 本番へCommon Crawl 78 pack＋SBIR 1 packの計79 source packをdraft登録。公式利用条件を確認したSBIRとGB contactだけpreview/承認/ingestし、SBIR公開CSV 219,503行から従業員2〜249名・公式サイトあり・ドメイン重複除外10,974社、GB contact 5,000社を保存した。残り75 packは未承認draftのまま。
+- SBIRのwebsite preflightと非送信inventory runを本番で開始した。過剰並列が一時障害判定を増やしたため停止し、安全な並列度へ戻して`retryable`を再検査する。部分的に合格済みのrecordだけをpilotで使え、量産は全preflight完了後だけ可能とする二段階readinessへ修正し、1 sourceの事前検査上限を10,000件から50,000件へ拡張した。TypeScript、対象Vitest **2 files / 10 tests**、Quality Guard **0 errors / 62 existing warnings** pass。
+- 上記release後のresumeで、既存inventory runnerが再ingestしてpreflight進捗をpendingへ戻す欠陥と、DB claimがpartial pilotを拒む二重条件を確認した。resume中のsourceはready在庫を再利用し、15分lease中の`checking`を完了まで待機する。pilot専用RPCはfresh `eligible`だけをclaimし、batch RPCは従来どおりsource全件preflight完了を必須とする。外部送信経路は追加しない。
+- lead resume修正の正式release中、同時変更のhomepage seedが日本語Heroを画像なし`split-image`、英語HeroをCMS upload relationへローカルURL objectとして保存しようとして500停止した。英語visualは既存renderer fallbackを使い、CMS seedから無効relation値を除去、日本語Heroを`centered`へ戻した。同じdeploymentは再実行せず、seed再実行とpost-deploy gateで確認する。
+- US pilotで最初の高確度候補`Metascape L.L.C.`をTwenty同期し、国名`米国`、確認済みフォーム`https://metascape.dev/contact-us`、未送信statusをread-backした。ただしhomepageのgeneric titleが会社名へ昇格していたため量産停止。source名とdomainが一致するだけで全site nameへdomain scoreを付けていた原因を修正し、候補site name自身もdomain/公式名と一致する場合だけcanonical nameに採用する。
+- US第5pilotは25社確認、サイト確認7、実フォーム4、失敗0。実フォームがあっても最低機会スコア未満で自動除外済みの候補まで人手レビュー必須数へ算入し、pilot承認不能になる欠陥を確認した。pilot承認では`form_verified + quality passed + review pending/approved/rejected`の実レビュー対象だけを最大3件数え、自動除外だけのrunは承認不可、レビュー対象1件のrunは1件レビューで判定できるよう修正する。
+- 4,000件母数拡張のCommon Crawl contact pack検査で、公式indexの壊れたJSONL 1行が市場全体を停止し、一時HTTP 504も即失敗にしていた。壊れた行は警告付きで除外、429/5xx/一時通信失敗は最大3回backoff、全page失敗時だけfail-closed、一部page成功時は取得できた証拠だけを使うよう修正する。preview合格前のsource承認は行わない。
+- 上記修正後、UAE 5,000、AT 3,188、AU 5,000、BE 5,000、BH 154、CA 5,000、CH 5,000をpreview承認できた。一方DEで後続504 pageを1回120秒×3回待ち続けるため、公式index 1 requestを20秒×最大2回、1 sourceを120秒の明示予算へ制限する。予算内の成功pageが0なら不合格、一部成功なら取得済み証拠だけを後段品質ゲートへ渡す。
+- Twenty高品質4,000件は未達。高確度レビューとTwenty read-backが完了するまで完成扱いにしない。初回文面、診断レポート、Opportunity、メール、SNS、電話、フォーム送信は起動しておらず、外部送信0件を維持する。
 
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry Workbench（本番release完了 / 履歴0件 / 外部送信0）
 
@@ -1664,10 +1675,3 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 ### Verification / remaining gate
 - 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLint、production buildがpass。PR **#250**をmainへマージし、deployment **z3eh9qes2pgz5cg3ifa7e8e3**はfinished。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
 - 本番`/ja/admin/demo-assets`のchunkにTwenty登録UIと`portal-candidates/twenty-sync`を確認。Ekiten APIはHTTP 200、50件ページング、`sendingEnabled=false`。現時点の候補は1件（`ノン美容室`、既に`promoted`）のみで、既存DEMOを上書きしないため新規Twentyリスト同期は未実行。次の実務入力は通常ブラウザで確認した候補スナップショットの追加。
-## CURRENT STATUS - 2026-07-15 日本SMB限定スコープ固定（海外在庫隔離 / DEMO品質ゲート確認済み / 外部送信0）
-
-- 日本のローカルSMBだけを営業対象にするため、海外CORDIS在庫1,000社（`official-sme-1000-20260715`）を営業DBとTwentyで対象外・保管のみ・非送信へ隔離した。`send_result`、`sent_at`、`report_url`は1,000/1,000で空。
-- Twentyの`営業リスト`には`paradigmDataStatus != out_of_scope_foreign`の除外フィルタを固定し、metadata再適用後も海外在庫が国内リストへ戻らないようにした。
-- 国内候補は5件（エキテン5、Houzz/ジモティー0）。DEMO品質ゲートを通過した国内SMBは`ノン美容室` 1件のみ（quality score 100/100、passed=true、hard blockers 0、7日限定非公開URL）。
-- `https://demo.paradigmjp.com/ノン美容室`をPC/モバイル切替、注意事項、スライダー、全ページ、法務ページ、モバイル表示まで実ブラウザ確認。主要11ルートHTTP 200、フォーム送信は停止。
-- 今後は、日本企業/国内所在地、独自HPなし、SMB・意思決定者適合、公式プロフィール素材3点以上、DEMO quality gate合格の全条件を満たす候補だけをTwentyとDEMOへ進める。

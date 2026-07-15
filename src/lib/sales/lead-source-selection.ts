@@ -31,7 +31,7 @@ export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Re
 }>> {
   const configs = await listLeadSourceConfigs()
   return Object.fromEntries(countryCodes.map((countryCode) => {
-    const matched = configs.filter((config) => {
+    const pilotReady = configs.filter((config) => {
       const lastPreflightAt = config.last_preflighted_at ? Date.parse(config.last_preflighted_at) : Number.NaN
       const preflightFresh = Number.isFinite(lastPreflightAt) && Date.now() - lastPreflightAt <= 7 * 24 * 60 * 60_000
       return config.active
@@ -40,15 +40,15 @@ export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Re
         && config.last_status === "ready"
         && config.country_code === countryCode
         && config.eligible_record_count > 0
-        && preflightCount(config, "pending") === 0
-        && preflightCount(config, "checking") === 0
         && preflightFresh
     })
-    const scaleReady = matched.filter((config) => config.pilot_approved_at !== null)
+    const scaleReady = pilotReady.filter((config) => config.pilot_approved_at !== null
+      && preflightCount(config, "pending") === 0
+      && preflightCount(config, "checking") === 0)
     return [countryCode, {
-      sourceIds: matched.map((config) => config.id),
+      sourceIds: pilotReady.map((config) => config.id),
       scaleReadySourceIds: scaleReady.map((config) => config.id),
-      recordCount: matched.reduce((sum, config) => sum + config.eligible_record_count, 0),
+      recordCount: pilotReady.reduce((sum, config) => sum + config.eligible_record_count, 0),
       scaleReadyRecordCount: scaleReady.reduce((sum, config) => sum + config.eligible_record_count, 0),
     }]
   }))
@@ -58,6 +58,7 @@ export async function fetchLeadSourceCandidateRecords(input: {
   countryCode: string
   sourceConfigIds: string[]
   limit: number
+  allowPartialSource?: boolean
 }): Promise<Array<LeadSourceRecord & { source: LeadSourceConfig }>> {
   if (input.sourceConfigIds.length === 0) return []
   const sb = getSb()
@@ -77,10 +78,12 @@ export async function fetchLeadSourceCandidateRecords(input: {
   const seenDomains = new Set<string>()
   for (let attempt = 0; attempt < 3 && records.length < input.limit; attempt += 1) {
     const remaining = input.limit - records.length
-    const claimed = await sb.rpc("sales_claim_lead_source_records", {
+    const claimed = await sb.rpc(input.allowPartialSource ? "sales_claim_lead_source_pilot_records" : "sales_claim_lead_source_records", {
       p_country_code: input.countryCode,
       p_source_config_ids: [...configById.keys()],
-      p_limit: Math.min(Math.max(remaining * 2, 100), 10_000),
+      // Every claimed row advances last_selected_at. Claim only what this run
+      // can persist so unpersisted records are not stranded for the lease window.
+      p_limit: Math.min(Math.max(remaining, 100), 10_000),
     })
     if (claimed.error) throw new Error(claimed.error.message)
     const page = (claimed.data ?? []) as LeadSourceRecord[]

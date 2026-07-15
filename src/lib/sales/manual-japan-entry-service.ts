@@ -13,7 +13,11 @@ import {
 } from "./manual-japan-entry-store"
 import { syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
 import type { ManualCompanyProfile, ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
-import { discoverFormUrl, type FormDiscoveryResult } from "./sources/form-discovery"
+import {
+  discoverFormUrl,
+  type FormDiscoveryResult,
+} from "./sources/form-discovery"
+import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
 import { findTwentyCompanyByDomain } from "./twenty-sync-company-home"
 
@@ -60,6 +64,44 @@ export function manualWorkEligibility(input: {
   if (input.form.verification !== "form" || input.form.confidence < 90 || !input.form.formUrl) reasons.push("A high-confidence public form was not verified")
   if (!input.messageOk || !input.messagePassed) reasons.push("The initial message did not pass the production quality gate")
   return { eligible: reasons.length === 0, reasons }
+}
+
+function formResultRank(result: FormDiscoveryResult): number {
+  if (result.verification === "form") return 300 + result.confidence
+  if (result.verification === "page") return 200 + result.confidence
+  if (result.verification === "fallback") return 100 + result.confidence
+  return result.confidence
+}
+
+export function selectBestManualFormResult(
+  results: Array<FormDiscoveryResult | null>,
+): FormDiscoveryResult {
+  const available = results.filter((result): result is FormDiscoveryResult => Boolean(result))
+  const selected = [...available].sort((a, b) => formResultRank(b) - formResultRank(a))[0]
+  return selected ?? {
+    formUrl: null,
+    method: "none",
+    verification: "none",
+    confidence: 0,
+    inspection: null,
+    candidates: [],
+    traceMs: 0,
+  }
+}
+
+export function buildManualInitialMessageInput(input: {
+  profile: ManualCompanyProfile
+  evidence: Awaited<ReturnType<typeof collectInitialFormDraftEvidence>>
+}): Parameters<typeof generatePersonalizedJapanEntryMessage>[0] {
+  return {
+    companyName: input.profile.companyName,
+    industry: input.profile.industry,
+    productContext: input.evidence.productContext,
+    targetCountry: input.profile.countryCode,
+    businessModel: input.profile.businessModel,
+    audit: input.evidence.audit,
+    purpose: "initial_interest",
+  }
 }
 
 function jsonRecord(value: unknown): Record<string, unknown> {
@@ -155,7 +197,7 @@ export async function processManualJapanEntryUrl(rawUrl: string): Promise<{
     }
 
     const origin = new URL(evidence.sourceUrl).origin
-    const [form, crawl4ai] = await Promise.all([
+    const [baselineForm, crawl4ai] = await Promise.all([
       discoverFormUrl({
         homeUrl: origin,
         region: "global",
@@ -165,22 +207,22 @@ export async function processManualJapanEntryUrl(rawUrl: string): Promise<{
       }),
       discoverWithCrawl4Ai({ origin, region: "global", timeoutMs: 10_000 }),
     ])
+    const verifiedCrawl4Ai = crawl4ai
+      ? await verifyExternalFormDiscoveryHit({ origin, hit: crawl4ai, timeoutMs: 10_000 })
+      : null
+    const form = selectBestManualFormResult([baselineForm, verifiedCrawl4Ai])
     work = await updateManualWork(work.id, {
-      form_discovery: { ...form, crawl4ai },
+      form_discovery: { ...form, crawl4ai, baseline: baselineForm, verified_crawl4ai: verifiedCrawl4Ai },
       form_url: form.formUrl,
       stage: "copy_generation",
     })
 
-    const generated = await generatePersonalizedJapanEntryMessage({
-      companyName: profile.companyName,
-      industry: profile.industry,
-      productContext: profile.productContext,
-      targetCountry: profile.countryCode,
-      businessModel: profile.businessModel,
-      audit: evidence.audit,
-      purpose: "commercial_offer",
-    })
-    const messageReview = jsonRecord(generated.review)
+    const generated = await generatePersonalizedJapanEntryMessage(buildManualInitialMessageInput({ profile, evidence }))
+    const messageReview = {
+      ...jsonRecord(generated.review),
+      purpose: "initial_interest",
+      product_context_source: "public_homepage",
+    }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
     work = await updateManualWork(work.id, {
       initial_message: generated.message ?? null,
@@ -189,7 +231,7 @@ export async function processManualJapanEntryUrl(rawUrl: string): Promise<{
       error_message: generated.ok ? null : generated.error ?? "Initial message generation failed",
     })
 
-    const report = buildManualJapanEntryReport({
+    const report = await buildManualJapanEntryReport({
       profile,
       audit: evidence.audit,
       form,

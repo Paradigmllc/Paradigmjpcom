@@ -118,6 +118,53 @@ describe("evaluateLeadQualityGate", () => {
     expect(result.smb.evidence).toContain("official_sme_flag:Official Export Directory")
   })
 
+  it("accepts official Tier 3 country evidence when the homepage omits an address", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true }),
+      homepage: homepage({ visibleText: "Example Commerce. Shop now. Add to cart. Shipping and returns." }),
+      countrySignals: [],
+      detections: shopify,
+      enterpriseLike: false,
+    })
+
+    expect(result.country.passed).toBe(true)
+    expect(result.status).toBe("passed")
+  })
+
+  it("does not replace an official company name with a generic homepage title", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ company_name: "Metascape L.L.C.", domain: "metascape.dev", website_url: "https://metascape.dev" }),
+      homepage: homepage({
+        url: "https://metascape.dev",
+        title: "Home: Data Virtualization using Neural Networks",
+        organizationNames: ["Home: Data Virtualization using Neural Networks"],
+      }),
+      countrySignals,
+      detections: shopify,
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("rejected")
+    expect(result.reasons).toContain("identity_mismatch")
+    expect(result.identity.canonicalName).toBeUndefined()
+  })
+
+  it("uses a site name only when that name itself matches the official identity", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ company_name: "Metascape L.L.C.", domain: "metascape.dev", website_url: "https://metascape.dev" }),
+      homepage: homepage({
+        url: "https://metascape.dev",
+        title: "Home: Data Virtualization using Neural Networks",
+        organizationNames: ["Home: Data Virtualization using Neural Networks", "Metascape"],
+      }),
+      countrySignals,
+      detections: shopify,
+      enterpriseLike: false,
+    })
+
+    expect(result.identity).toMatchObject({ passed: true, canonicalName: "Metascape" })
+  })
+
   it("does not mistake a generic pricing page for a SaaS product", () => {
     const result = evaluateLeadQualityGate({
       sourceRecord: record({ business_type: "Professional services" }),

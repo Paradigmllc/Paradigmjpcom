@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { discoverFormUrl, normalizeOrigin, resolveHref } from "./form-discovery"
 import { isAllowedFormUrlForOrigin } from "./external-form-discovery"
+import { verifyExternalFormDiscoveryHit } from "./external-form-verification"
 
 beforeEach(() => {
   vi.stubEnv("CRAWL4AI_BASE_URL", "")
@@ -49,6 +50,32 @@ describe("form-discovery", () => {
     expect(result.confidence).toBeGreaterThanOrEqual(80)
   })
 
+  it("verifies a same-domain source seed before running broader discovery", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://example.com/contact-sales") {
+        return new Response('<form><input type="email" name="email" /><textarea name="message"></textarea><button type="submit">Send</button></form>', {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })
+      }
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await discoverFormUrl({
+      homeUrl: "example.com",
+      region: "global",
+      seedUrls: ["https://example.com/contact-sales", "https://unrelated.example.net/contact"],
+    })
+
+    expect(result).toMatchObject({
+      formUrl: "https://example.com/contact-sales",
+      method: "source",
+      verification: "form",
+      confidence: 96,
+    })
+  })
+
   it("allows same-domain and trusted hosted-form URLs, but rejects unrelated external domains", () => {
     expect(isAllowedFormUrlForOrigin("https://example.com", "https://example.com/contact")).toBe(true)
     expect(isAllowedFormUrlForOrigin("https://example.com", "https://support.example.com/contact")).toBe(true)
@@ -85,6 +112,38 @@ describe("form-discovery", () => {
     expect(result.formUrl).toBe("https://example.com/contact-us")
     expect(result.method).toBe("crawl4ai")
     expect(result.verification).toBe("form")
+  })
+
+  it("does not trust a parallel Crawl4AI candidate until its HTML contains a usable form", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://example.com/contact-us") {
+        return new Response('<form><input type="email" name="email" /><textarea name="message"></textarea><button type="submit">Send</button></form>', {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })
+      }
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await verifyExternalFormDiscoveryHit({
+      origin: "https://example.com",
+      timeoutMs: 1_000,
+      hit: {
+        formUrl: "https://example.com/contact-us",
+        candidates: ["https://example.com/contact-us"],
+        confidence: 84,
+        source: "crawl4ai",
+        detail: "Crawl4AI form discovery",
+      },
+    })
+
+    expect(result).toMatchObject({
+      formUrl: "https://example.com/contact-us",
+      method: "crawl4ai",
+      verification: "form",
+      confidence: 90,
+    })
   })
 
   it("ignores unrelated external Crawl4AI form URLs and continues to local heuristics", async () => {

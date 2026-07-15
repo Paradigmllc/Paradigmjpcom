@@ -34,7 +34,7 @@ export interface LeadInventoryRun {
 
 const activeRuns = new Set<string>()
 const pendingRuns: string[] = []
-const MAX_PREFLIGHT_CHUNKS_PER_SOURCE = 200
+const MAX_PREFLIGHT_CHUNKS_PER_SOURCE = 1_000
 const MAX_ACTIVE_RUNS = 1
 
 function getSb(): ServiceSupabase {
@@ -92,10 +92,27 @@ async function runPreflight(sourceId: string): Promise<LeadSourcePreflightSummar
   let mode: "pending" | "continue" = "pending"
   for (let chunk = 0; chunk < MAX_PREFLIGHT_CHUNKS_PER_SOURCE; chunk += 1) {
     const result = await runLeadSourcePreflightChunk({ sourceId, mode })
-    if (result.remaining === 0) return result.summary
+    if (result.summary.completed) return result.summary
+    if (result.processed === 0 && result.summary.checking > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 5_000))
+    }
     mode = "continue"
   }
   throw new Error(`Source preflight exceeded ${MAX_PREFLIGHT_CHUNKS_PER_SOURCE * 50} records`)
+}
+
+async function ingestOrReuseResumedSource(run: LeadInventoryRun, sourceId: string): Promise<{ accepted: number; rejected: number }> {
+  if (run.current_source_id === sourceId) {
+    const source = await getSb().from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS)
+      .select("last_status,last_record_count")
+      .eq("id", sourceId)
+      .single()
+    if (source.error) throw new Error(source.error.message)
+    if (source.data?.last_status === "ready" && Number(source.data.last_record_count ?? 0) > 0) {
+      return { accepted: Number(source.data.last_record_count), rejected: 0 }
+    }
+  }
+  return ingestLeadSourceConfig(sourceId)
 }
 
 async function processNextSource(runId: string): Promise<boolean> {
@@ -114,7 +131,7 @@ async function processNextSource(runId: string): Promise<boolean> {
   let summary: LeadSourcePreflightSummary | null = null
   let failure: { sourceId: string; message: string; at: string } | null = null
   try {
-    ingestion = await ingestLeadSourceConfig(sourceId)
+    ingestion = await ingestOrReuseResumedSource(run, sourceId)
     summary = await runPreflight(sourceId)
   } catch (error) {
     console.error("[lead-inventory-runs] source preparation failed:", sourceId, error)

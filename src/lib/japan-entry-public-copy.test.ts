@@ -94,6 +94,20 @@ describe("public English Japan Entry copy", () => {
     expect(homepageBlocks).toMatch(/WHO WE ARE/)
   })
 
+  it("keeps the public hero asset out of Payload's media upload field", () => {
+    const seed = readFileSync(
+      join(process.cwd(), "src/app/api/admin/seed-all-content/seed-data.ts"),
+      "utf8",
+    )
+    const renderer = readFileSync(
+      join(process.cwd(), "src/blocks/BlockRendererHero.tsx"),
+      "utf8",
+    )
+
+    expect(seed).not.toMatch(/image:\s*\{\s*url:\s*["']\/japan-entry\/tokyo-sakura-panorama\.svg/)
+    expect(renderer).toContain('url: "/japan-entry/tokyo-sakura-panorama.svg"')
+  })
+
   it("ships a long-form professional series for EC, SaaS, and Web3.0 teams", () => {
     const professionalPosts = JAPAN_ENTRY_BLOG_POSTS.filter((post) =>
       post.tags.includes("professional-domain"),

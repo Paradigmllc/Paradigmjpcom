@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
+import { applyAiSmbReview, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
 import { evaluateLeadQualityGate, fetchHomepageQualityProfile } from "./lead-quality-gate"
 import {
   inferCountrySignals,
@@ -81,6 +82,15 @@ function readSourceRecord(item: LeadCandidateRunItemRow): EvidenceSourceRecord |
   if (!source || typeof source !== "object" || Array.isArray(source)) return null
   if (typeof record.id !== "string" || typeof record.company_name !== "string" || typeof record.domain !== "string" || typeof record.source_page_url !== "string") return null
   return value as EvidenceSourceRecord
+}
+
+function sourceFormSeedUrls(sourceRecord: EvidenceSourceRecord): string[] {
+  const evidence = sourceRecord.evidence
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) return []
+  const observed = (evidence as Record<string, unknown>).observed_values
+  if (!observed || typeof observed !== "object" || Array.isArray(observed)) return []
+  const value = (observed as Record<string, unknown>).contact_page_url
+  return typeof value === "string" && value.startsWith("https://") ? [value] : []
 }
 
 async function saveEvidence(input: {
@@ -192,19 +202,23 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
   const detection = { ...activeDetection, tech: mergeTechItems(activeDetection.tech) }
   const countrySignals = inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: `${homepage.title} ${homepage.description} ${homepage.visibleText}` })
   const enterpriseLike = isEnterpriseLikeStack(detection.tech)
-  const qualityGate = evaluateLeadQualityGate({ sourceRecord, homepage, countrySignals, detections: detection.tech, enterpriseLike })
-  if (qualityGate.status !== "passed") {
+  const initialQualityGate = evaluateLeadQualityGate({ sourceRecord, homepage, countrySignals, detections: detection.tech, enterpriseLike })
+  const aiSmbEligible = initialQualityGate.status === "review_required"
+    && initialQualityGate.reasons.length > 0
+    && initialQualityGate.reasons.every((reason) => reason === "smb_evidence_missing")
+  if (initialQualityGate.status === "rejected" || (initialQualityGate.status === "review_required" && !aiSmbEligible)) {
     return closeWithoutPromotion(item, {
-      status: qualityGate.status,
-      quality_status: qualityGate.status,
-      quality_gate: qualityGate,
-      quality_reasons: qualityGate.reasons,
+      status: initialQualityGate.status,
+      quality_status: initialQualityGate.status,
+      quality_gate: initialQualityGate,
+      quality_reasons: initialQualityGate.reasons,
     })
   }
 
   const form = await discoverFormUrl({
     homeUrl: rootUrl,
     homepageHtml: homepage.html,
+    seedUrls: sourceFormSeedUrls(sourceRecord),
     region: salesScopeFromCountry({ targetCountry: run.country_code }).region,
     enableLlm: false,
     enableCrawl4Ai: true,
@@ -215,7 +229,7 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
     return closeWithoutPromotion(item, {
       status: "form_missing",
       quality_status: "review_required",
-      quality_gate: { ...qualityGate, status: "review_required", form: { qualified: false, reason: qualification.reason, discovery: form } },
+      quality_gate: { ...initialQualityGate, status: "review_required", form: { qualified: false, reason: qualification.reason, discovery: form } },
       quality_reasons: [`form:${qualification.reason}`],
       form_url: null,
       form_method: form.method,
@@ -224,6 +238,29 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
       form_qualification_reason: qualification.reason,
     })
   }
+
+  const aiReview = aiSmbEligible ? await reviewUnknownSmbCandidate({
+    companyName: initialQualityGate.identity.canonicalName ?? sourceRecord.company_name,
+    countryCode: run.country_code,
+    homepage,
+    qualityGate: initialQualityGate,
+    detections: detection.tech,
+  }) : null
+  if (aiReview && !aiReview.passed) {
+    return closeWithoutPromotion(item, {
+      status: "review_required",
+      quality_status: "review_required",
+      quality_gate: { ...initialQualityGate, aiReview, form: { qualified: true, discovery: form } },
+      quality_reasons: ["ai_smb_review_failed"],
+      form_url: form.formUrl,
+      form_method: form.method,
+      form_confidence: form.confidence,
+      form_verified: true,
+      form_checked_at: nowIso(),
+      form_qualification_reason: qualification.reason,
+    })
+  }
+  const qualityGate = aiReview ? applyAiSmbReview(initialQualityGate, aiReview) : initialQualityGate
 
   const requestedSlug = run.technology ? technologySlug(run.technology) : null
   const techMatched = requestedSlug ? detection.tech.some((tech) => technologySlug(tech.name) === requestedSlug) : qualityGate.offerFit.passed
