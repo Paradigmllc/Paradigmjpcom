@@ -406,6 +406,10 @@ function checkStaticReleaseRules() {
   const productFitRetryMigration = fs.existsSync(productFitRetryMigrationPath)
     ? fs.readFileSync(productFitRetryMigrationPath, "utf8")
     : ""
+  const productEvidenceRetryCall = "await applyLeadSourceProductEvidenceRetryMigration(envs)"
+  const preDeployProductEvidenceRetryIndex = noLoginDeploy.indexOf(productEvidenceRetryCall)
+  const postDeployProductEvidenceRetryIndex = noLoginDeploy.lastIndexOf(productEvidenceRetryCall)
+  const deployCompletionIndex = noLoginDeploy.indexOf("await waitDeploy(uuid)")
   if (
     aiLeadReview.includes('"offer_fit"')
     && aiLeadReview.includes("japan_entry_offer_fit_missing")
@@ -422,12 +426,14 @@ function checkStaticReleaseRules() {
     && productFitRetryMigration.includes("jsonb_array_length(prior_item.quality_gate->'aiReview'->'riskFlags') = 0")
     && noLoginDeploy.includes("20260715233000_lead_source_product_evidence_retry.sql")
     && noLoginDeploy.includes("applyLeadSourceProductEvidenceRetryMigration")
-    && noLoginDeploy.indexOf("await applyLeadSourceProductEvidenceRetryMigration(envs)")
+    && preDeployProductEvidenceRetryIndex
       > noLoginDeploy.indexOf("await applySalesOptionalColumnRepairMigration(envs)")
+    && postDeployProductEvidenceRetryIndex > deployCompletionIndex
+    && preDeployProductEvidenceRetryIndex !== postDeployProductEvidenceRetryIndex
   ) {
-    pass("official SMB product-fit retries require grounded composite evidence and are release-wired")
+    pass("official SMB product-fit retries require grounded composite evidence and are release-wired before and after deploy")
   } else {
-    fail("official SMB product-fit retries must stay Tier 3, SME-only, grounded, risk-free, and release-wired")
+    fail("official SMB product-fit retries must stay Tier 3, SME-only, grounded, risk-free, and release-wired before and after deploy")
   }
 
   const listLeadSyncMigrationPath = "supabase/migrations/20260715193000_sales_sync_logs_list_lead.sql"

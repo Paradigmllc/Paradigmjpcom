@@ -1464,6 +1464,10 @@ async function main() {
     console.log(`Deployment queued: ${uuid}`)
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
+    // The application image runs compatibility migrations during startup.
+    // Reassert the newest claim contract after the new container is healthy so
+    // an older bundled function cannot silently remove product-evidence retries.
+    console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
     await seedMarketingHomepages(envs)
     await seedEnglishJapanEntryBlog(envs)
   } else {
