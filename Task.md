@@ -1619,7 +1619,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 対象Vitest 2 files / 7 tests、全Vitest 161 files / 741 tests、TypeScript、対象ESLint、quality guard 0 errors / 60 existing warnings、production build 408/408 pages、`git diff --check`がpass。
 - PR **#237** / main **7fc9bf22** / deployment **qwe4md5606d5h3qlzeh2vasd**。正式releaseでDB 88/88とdeployment finishedを確認。直後の複数公開fetchが一時失敗したため同じdeployを再実行せず個別診断し、Ready / Twenty / 診断レポートHTTP 200を確認後にpost-deploy gateだけを再実行してSales health JSON `ok:true`を含む全項目pass。修正版resume APIはHTTP 202を返し、同じrun IDを新コンテナで再開・完走した。
 - 本番監査DBに`verified_inventory_resumed`と`verified_inventory_partial`が各1件保存され、candidate-run FKを使わない修正が実データで成立した。最終run行も33/33、send_count 0、twenty_sync_count 0を維持する。
-## CURRENT STATUS - 2026-07-15 ポータル候補をTwentyへ先行登録する実務導線（実装・テスト完了 / release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 ポータル候補をTwentyへ先行登録する実務導線（本番反映・公開確認済み / 外部送信0）
 
 ### 実装内容
 - Houzz・エキテン・ジモティーの候補を、DEMO生成前にTwentyへ「リスト-only / 要確認 / 未送信」として登録するAPIと管理UIを追加。DEMO、文面生成、フォーム送信、メール送信はこの操作から起動しない。
@@ -1628,4 +1628,5 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 一覧APIは50件ページングとoffsetに対応し、数千件を単一レスポンス・単一リクエストへ詰め込まない。候補IDを明示したAPIでsource混在・不明IDを拒否する。
 
 ### Verification / remaining gate
-- 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLintがpass。正式release、Twenty実データへの新規登録、公開管理画面確認は未実行。外部送信は引き続き0。
+- 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLint、production buildがpass。PR **#250**をmainへマージし、deployment **z3eh9qes2pgz5cg3ifa7e8e3**はfinished。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
+- 本番`/ja/admin/demo-assets`のchunkにTwenty登録UIと`portal-candidates/twenty-sync`を確認。Ekiten APIはHTTP 200、50件ページング、`sendingEnabled=false`。現時点の候補は1件（`ノン美容室`、既に`promoted`）のみで、既存DEMOを上書きしないため新規Twentyリスト同期は未実行。次の実務入力は通常ブラウザで確認した候補スナップショットの追加。
