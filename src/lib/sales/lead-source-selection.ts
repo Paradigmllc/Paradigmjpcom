@@ -58,6 +58,7 @@ export async function fetchLeadSourceCandidateRecords(input: {
   countryCode: string
   sourceConfigIds: string[]
   limit: number
+  allowPartialSource?: boolean
 }): Promise<Array<LeadSourceRecord & { source: LeadSourceConfig }>> {
   if (input.sourceConfigIds.length === 0) return []
   const sb = getSb()
@@ -77,7 +78,7 @@ export async function fetchLeadSourceCandidateRecords(input: {
   const seenDomains = new Set<string>()
   for (let attempt = 0; attempt < 3 && records.length < input.limit; attempt += 1) {
     const remaining = input.limit - records.length
-    const claimed = await sb.rpc("sales_claim_lead_source_records", {
+    const claimed = await sb.rpc(input.allowPartialSource ? "sales_claim_lead_source_pilot_records" : "sales_claim_lead_source_records", {
       p_country_code: input.countryCode,
       p_source_config_ids: [...configById.keys()],
       p_limit: Math.min(Math.max(remaining * 2, 100), 10_000),

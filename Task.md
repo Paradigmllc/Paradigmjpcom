@@ -16,6 +16,7 @@
 - PR **#264 / #265**、main **b495a9c2**、deployment **ob204hcbu643j82cp8simkqz**。正式releaseは一時的なhomepage seed fetch失敗後にseedを完了し、`release-doctor --post-deploy`でSales health JSON `ok:true`、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smokeを含む`release gate passed`を確認した。
 - 本番へCommon Crawl 78 pack＋SBIR 1 packの計79 source packをdraft登録。公式利用条件を確認したSBIRとGB contactだけpreview/承認/ingestし、SBIR公開CSV 219,503行から従業員2〜249名・公式サイトあり・ドメイン重複除外10,974社、GB contact 5,000社を保存した。残り75 packは未承認draftのまま。
 - SBIRのwebsite preflightと非送信inventory runを本番で開始した。過剰並列が一時障害判定を増やしたため停止し、安全な並列度へ戻して`retryable`を再検査する。部分的に合格済みのrecordだけをpilotで使え、量産は全preflight完了後だけ可能とする二段階readinessへ修正し、1 sourceの事前検査上限を10,000件から50,000件へ拡張した。TypeScript、対象Vitest **2 files / 10 tests**、Quality Guard **0 errors / 62 existing warnings** pass。
+- 上記release後のresumeで、既存inventory runnerが再ingestしてpreflight進捗をpendingへ戻す欠陥と、DB claimがpartial pilotを拒む二重条件を確認した。resume中のsourceはready在庫を再利用し、15分lease中の`checking`を完了まで待機する。pilot専用RPCはfresh `eligible`だけをclaimし、batch RPCは従来どおりsource全件preflight完了を必須とする。外部送信経路は追加しない。
 - Twenty高品質4,000件は未達。高確度レビューとTwenty read-backが完了するまで完成扱いにしない。初回文面、診断レポート、Opportunity、メール、SNS、電話、フォーム送信は起動しておらず、外部送信0件を維持する。
 
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry Workbench（本番release完了 / 履歴0件 / 外部送信0）

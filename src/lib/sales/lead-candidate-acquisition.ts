@@ -18,6 +18,7 @@ export interface LeadCandidateAcquisitionRun {
   upserted_count: number
   source_config_ids: string[]
   require_source_evidence: boolean
+  execution_mode: "pilot" | "batch"
   cursor?: JsonRecord
 }
 
@@ -174,6 +175,7 @@ export async function ensureLeadCandidateRunDomainsFetched(
     countryCode: run.country_code,
     sourceConfigIds: run.source_config_ids,
     limit: run.requested_limit,
+    allowPartialSource: run.execution_mode === "pilot",
   })
   if (await cancellationRequested(run.id)) {
     await updateRun(run.id, { status: "cancelled", completed_at: nowIso() })
