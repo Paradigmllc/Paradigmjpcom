@@ -481,6 +481,21 @@ function checkStaticReleaseRules() {
     fail("product recommendation bootstrap must deterministically repair duplicates before its unique index")
   }
 
+  const dxAiTemplateVariantPath = "supabase/migration_043_sales_dx_ai_template_variant.sql"
+  const dxAiTemplateVariant = fs.existsSync(dxAiTemplateVariantPath)
+    ? fs.readFileSync(dxAiTemplateVariantPath, "utf8")
+    : ""
+  if (
+    dxAiTemplateVariant.includes("ALTER TABLE public.sales_templates")
+    && dxAiTemplateVariant.includes("ADD COLUMN IF NOT EXISTS template_variant")
+    && dxAiTemplateVariant.includes("sales_templates_template_variant_check")
+    && dxAiTemplateVariant.includes("'dx_ai_package'")
+  ) {
+    pass("DX/AI template migration repairs the legacy template variant column before constraining it")
+  } else {
+    fail("DX/AI template migration must repair the legacy template variant column before adding its constraint")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")

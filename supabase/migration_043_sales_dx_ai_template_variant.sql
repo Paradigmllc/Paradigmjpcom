@@ -1,5 +1,10 @@
 -- Sales OS: allow DX/AI package as a first-class diagnostic template variant.
 
+-- Some production databases were bootstrapped before migration_008. Repair
+-- the legacy template table before constraining the expanded value set.
+ALTER TABLE public.sales_templates
+  ADD COLUMN IF NOT EXISTS template_variant text NOT NULL DEFAULT 'website_diagnostic';
+
 ALTER TABLE sales_companies DROP CONSTRAINT IF EXISTS sales_companies_template_variant_check;
 ALTER TABLE sales_companies ADD CONSTRAINT sales_companies_template_variant_check
   CHECK (template_variant IN (
