@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isHighConfidenceAutoPromotionItem } from "./lead-candidate-high-confidence-runner"
+import { HIGH_CONFIDENCE_TWENTY_WRITE_POLICY, isHighConfidenceAutoPromotionItem } from "./lead-candidate-high-confidence-runner"
 import type { ReviewItemRow } from "./lead-candidate-review-gate"
 
 function item(gatePatch: Record<string, unknown>): ReviewItemRow {
@@ -50,6 +50,10 @@ function item(gatePatch: Record<string, unknown>): ReviewItemRow {
 }
 
 describe("high-confidence Twenty promotion selection", () => {
+  it("uses one complete company write per Twenty rolling rate window", () => {
+    expect(HIGH_CONFIDENCE_TWENTY_WRITE_POLICY).toEqual({ batchSize: 1, windowMs: 65_000 })
+  })
+
   it("accepts objective Tier 3 SMB evidence", () => {
     expect(isHighConfidenceAutoPromotionItem(item({}))).toBe(true)
   })

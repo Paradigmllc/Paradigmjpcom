@@ -8,10 +8,16 @@ type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
 const activeRuns = new Set<string>()
 const MAX_BATCHES = 500
-const BATCH_SIZE = 12
 const PAGE_SIZE = 100
 const MAX_SCAN_ITEMS = 10_000
-const TWENTY_RATE_WINDOW_MS = 65_000
+export const HIGH_CONFIDENCE_TWENTY_WRITE_POLICY = {
+  // A complete list-lead promotion consumes the full effective Twenty write
+  // budget in production. Keep one company per rolling rate window.
+  batchSize: 1,
+  windowMs: 65_000,
+} as const
+const BATCH_SIZE = HIGH_CONFIDENCE_TWENTY_WRITE_POLICY.batchSize
+const TWENTY_RATE_WINDOW_MS = HIGH_CONFIDENCE_TWENTY_WRITE_POLICY.windowMs
 
 function getSb(): ServiceSupabase {
   const sb = getServiceSalesSupabase()
