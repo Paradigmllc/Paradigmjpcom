@@ -456,6 +456,7 @@ function checkStaticReleaseRules() {
     && legacyExternalSyncMigration.includes("'demo_candidate_sync'")
     && noLoginDeploy.includes('"ON_ERROR_STOP=1"')
     && noLoginDeploy.includes("psql -X -v ON_ERROR_STOP=1")
+    && !noLoginDeploy.includes("/already exists|duplicate/i.test")
     && noLoginDeploy.includes("20260715193000_sales_sync_logs_list_lead.sql")
     && noLoginDeploy.includes("applySalesSyncLogsListLeadMigration")
   ) {
@@ -555,6 +556,27 @@ function checkStaticReleaseRules() {
     pass("demo quality migration preserves private-review publication states")
   } else {
     fail("demo quality migration must not regress private-review publication states")
+  }
+
+  const postOutreachToolsPath = "supabase/migration_034_sales_post_outreach_tools.sql"
+  const triggerDevToolSlugPath = "supabase/migration_040_sales_trigger_dev_tool_slug.sql"
+  const postOutreachTools = fs.existsSync(postOutreachToolsPath)
+    ? fs.readFileSync(postOutreachToolsPath, "utf8")
+    : ""
+  const triggerDevToolSlug = fs.existsSync(triggerDevToolSlugPath)
+    ? fs.readFileSync(triggerDevToolSlugPath, "utf8")
+    : ""
+  if (
+    postOutreachTools.includes("if not exists (")
+    && postOutreachTools.includes("'openclaw'")
+    && triggerDevToolSlug.includes("if not exists (")
+    && triggerDevToolSlug.includes("'openclaw'")
+    && postOutreachTools.includes("sales_tool_connections_slug_check")
+    && triggerDevToolSlug.includes("sales_tool_connections_slug_check")
+  ) {
+    pass("historical tool migrations preserve the current OpenClaw slug contract")
+  } else {
+    fail("historical tool migrations must not remove the current OpenClaw slug contract")
   }
 
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"

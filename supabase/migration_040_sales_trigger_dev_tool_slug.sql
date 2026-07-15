@@ -1,33 +1,26 @@
 -- Sales OS Trigger.dev migration hardening.
 -- Keeps Trigger.dev as a first-class tool slug for operator queue FK writes.
 
-alter table public.sales_tool_connections
-  drop constraint if exists sales_tool_connections_slug_check;
-
-alter table public.sales_tool_connections
-  add constraint sales_tool_connections_slug_check
-  check (
-    slug in (
-      'supabase',
-      'twenty',
-      'nocodb',
-      'appsmith',
-      'metabase',
-      'n8n',
-      'trigger_dev',
-      'trigger-dev',
-      'calcom',
-      'docuseal',
-      'notion',
-      'directus',
-      'keystatic',
-      'chatwoot',
-      'livekit',
-      'dify',
-      'crawl4ai',
-      'searxng'
-    )
-  );
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.sales_tool_connections'::regclass
+      and conname = 'sales_tool_connections_slug_check'
+  ) then
+    alter table public.sales_tool_connections
+      add constraint sales_tool_connections_slug_check
+      check (
+        slug in (
+          'supabase', 'twenty', 'nocodb', 'appsmith', 'metabase', 'n8n',
+          'trigger_dev', 'trigger-dev', 'calcom', 'docuseal', 'notion',
+          'directus', 'keystatic', 'chatwoot', 'livekit', 'dify', 'crawl4ai',
+          'searxng', 'openclaw'
+        )
+      );
+  end if;
+end
+$$;
 
 insert into public.sales_tool_connections
   (slug, display_name, role, interface_type, deployment_type, base_url, health_url, status, owner, meta)
