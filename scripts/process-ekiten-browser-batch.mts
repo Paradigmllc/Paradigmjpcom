@@ -12,6 +12,14 @@ type Snapshot = {
   images: Array<{ url: string; alt: string }>
 }
 
+const INDUSTRIES = new Set([
+  "beauty_salon", "dental", "restaurant", "construction", "accounting", "retail", "cleaning", "consulting",
+  "Hospitality / Food", "E-Commerce / Retail", "Technology / IT", "Healthcare / Medical", "Manufacturing / Industrial",
+  "Real Estate / Property", "Education / Training", "Legal / Professional Services", "Finance / Insurance",
+  "Transport / Logistics", "Media / Entertainment", "Nonprofit / Government", "Energy / Utilities", "Agriculture / Farming",
+  "Fashion / Apparel", "Other",
+])
+
 async function readStdin(): Promise<string> {
   const chunks: string[] = []
   for await (const chunk of process.stdin) chunks.push(String(chunk))
@@ -44,6 +52,7 @@ async function main(): Promise<void> {
   const origin = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://paradigmjp.com").replace(/\/+$/u, "")
   if (!secret) throw new Error("TRIGGER_WEBHOOK_SECRET is not configured")
   const apiHeaders = { "content-type": "application/json", "x-webhook-secret": secret }
+  console.error(`[ekiten-browser-batch] import start snapshots=${snapshots.length}`)
   const importResponse = await fetch(`${origin}/api/sales/demo-site/portal-candidates`, {
     method: "POST",
     headers: apiHeaders,
@@ -53,6 +62,7 @@ async function main(): Promise<void> {
   if (!importResponse.ok) throw new Error(importResult.error ?? `portal import failed (${importResponse.status})`)
   const listingUrls = new Set(snapshots.map((snapshot) => snapshot.listingUrl))
   const candidates: Array<Record<string, unknown>> = []
+  console.error("[ekiten-browser-batch] candidate list start")
   for (let offset = 0; ; offset += 100) {
     const response = await fetch(`${origin}/api/sales/demo-site/portal-candidates?source=ekiten&limit=100&offset=${offset}`, { headers: { "x-webhook-secret": secret } })
     const page = await response.json() as { candidates?: Array<Record<string, unknown>>; nextOffset?: number | null; error?: string }
@@ -85,6 +95,7 @@ async function main(): Promise<void> {
   })
   const candidateIds = eligible.map((candidate) => typeof candidate.id === "string" ? candidate.id : "").filter(Boolean)
   const twentySyncResults: unknown[] = []
+  console.error(`[ekiten-browser-batch] twenty sync start eligible=${candidateIds.length}`)
   for (let index = 0; index < candidateIds.length; index += 50) {
     const syncResponse = await fetch(`${origin}/api/sales/demo-site/portal-candidates/twenty-sync`, {
       method: "POST",
@@ -96,6 +107,7 @@ async function main(): Promise<void> {
     twentySyncResults.push(syncResult)
   }
   const demoResults: Array<{ candidateId: string; ok: boolean; companyName?: string; jobId?: string; error?: string }> = []
+  console.error(`[ekiten-browser-batch] demo queue start eligible=${eligible.length}`)
   let nextIndex = 0
   const approveNext = async (): Promise<void> => {
     while (nextIndex < eligible.length) {
@@ -104,6 +116,9 @@ async function main(): Promise<void> {
     const images = Array.isArray(candidate.images) ? candidate.images.filter((value): value is { url: string; alt: string } => Boolean(value && typeof value === "object" && typeof (value as { url?: unknown }).url === "string")) : []
     const listingUrl = typeof candidate.listingUrl === "string" ? candidate.listingUrl : ""
     const companyName = typeof candidate.companyName === "string" ? candidate.companyName : "候補企業"
+    const suggestedIndustry = typeof candidate.suggestedIndustry === "string" && INDUSTRIES.has(candidate.suggestedIndustry)
+      ? candidate.suggestedIndustry
+      : "Other"
     const assets = images.slice(0, 8).map((image, index) => ({
       id: `ekiten-${String(candidate.id)}-${index + 1}`,
       kind: "image" as const,
@@ -122,7 +137,7 @@ async function main(): Promise<void> {
       const queuedResponse = await fetch(`${origin}/api/sales/demo-site/portal-candidates`, {
         method: "PUT",
         headers: apiHeaders,
-        body: JSON.stringify({ candidateId: candidate.id, industry: "Other", prefecture: typeof candidate.prefecture === "string" ? candidate.prefecture : undefined, assets }),
+        body: JSON.stringify({ candidateId: candidate.id, industry: suggestedIndustry, prefecture: typeof candidate.prefecture === "string" ? candidate.prefecture : undefined, assets }),
       })
       const queued = await queuedResponse.json() as { ok?: boolean; companyName?: string; jobId?: string; error?: string }
       demoResults.push({ candidateId: String(candidate.id), ok: queued.ok === true, companyName: queued.companyName, jobId: queued.jobId, error: queued.error })
