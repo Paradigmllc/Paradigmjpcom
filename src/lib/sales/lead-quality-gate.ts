@@ -2,6 +2,7 @@ import { load } from "cheerio"
 import { getProxyFetchOptions } from "./proxy-agent"
 import { normalizePublicDomain } from "./japan-entry-score"
 import { passesPublicDnsCheck } from "./japan-entry-score-service"
+import { fetchPageWithCrawl4Ai } from "./crawl4ai-page"
 import type { CandidateCountrySignal } from "./lead-candidate-scoring"
 import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
 import type { TechItem } from "./sources/wappalyzer"
@@ -103,7 +104,7 @@ function jsonLdOrganizations(html: string): { names: string[]; types: string[] }
   return { names: unique(names), types: unique(types) }
 }
 
-export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000): Promise<HomepageQualityProfile> {
+async function fetchHomepageHtmlDirect(url: string, timeoutMs: number): Promise<{ url: string; html: string }> {
   const signal = AbortSignal.timeout(timeoutMs)
   let current = new URL(url)
   let response: Response | null = null
@@ -124,8 +125,38 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
   if (!response) throw new Error("Homepage exceeded five redirects")
   if (!response.ok) throw new Error(`Homepage returned HTTP ${response.status}`)
   const contentType = response.headers.get("content-type") ?? ""
-  if (contentType && !contentType.includes("text/html")) throw new Error(`Homepage is not HTML: ${contentType}`)
+  if (contentType && !contentType.toLowerCase().includes("text/html")) throw new Error(`Homepage is not HTML: ${contentType}`)
   const html = await readLimitedText(response, MAX_HOMEPAGE_BYTES)
+  return { url: current.toString(), html }
+}
+
+function mayUseBrowserFallback(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === "TimeoutError") return true
+  const message = error instanceof Error ? error.message : String(error)
+  return /Homepage returned HTTP (?:403|429|5\d\d)|fetch failed|aborted due to timeout/i.test(message)
+}
+
+export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000): Promise<HomepageQualityProfile> {
+  let fetched: { url: string; html: string }
+  try {
+    fetched = await fetchHomepageHtmlDirect(url, timeoutMs)
+  } catch (error) {
+    if (!mayUseBrowserFallback(error)) throw error
+    const fallback = await fetchPageWithCrawl4Ai(url, Math.max(timeoutMs, 15_000))
+    if (!fallback) throw error
+    const redirected = new URL(fallback.url)
+    if (!["http:", "https:"].includes(redirected.protocol) || !normalizePublicDomain(redirected.hostname)) {
+      throw new Error("Crawl4AI returned a non-public homepage URL")
+    }
+    if (!(await passesPublicDnsCheck(redirected.hostname))) {
+      throw new Error("Crawl4AI returned a homepage URL that failed the public DNS safety check")
+    }
+    fetched = {
+      url: redirected.toString(),
+      html: fallback.html.slice(0, MAX_HOMEPAGE_BYTES),
+    }
+  }
+  const { html } = fetched
   const $ = load(html)
   const structured = jsonLdOrganizations(html)
   const title = $("title").first().text().replace(/\s+/g, " ").trim()
@@ -137,7 +168,7 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
   $("script,style,noscript,template,svg").remove()
   const visibleText = $("body").text().replace(/\s+/g, " ").trim().slice(0, 60_000)
   return {
-    url: current.toString(),
+    url: fetched.url,
     html,
     title,
     description,
