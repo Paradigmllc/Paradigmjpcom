@@ -2,7 +2,7 @@
 
 - 日本のローカルSMBだけを営業対象にするため、先行登録されていた海外CORDIS在庫1,000社（`official-sme-1000-20260715`）を営業DBで`out_of_scope=true` / `pipeline_status=manual_queue` / `out_of_scope_foreign`へ隔離した。`send_result`、`sent_at`、`report_url`は1,000/1,000で空のまま。
 - Twenty側も元の1,000/1,000に加え既存の海外候補を含む日本以外1,050件を`対象外（海外） / 保管のみ / 非送信`、`日本SMB対象外。営業・DEMO・送信には使用しない（保管のみ）`としてread-only保管状態へ更新した。`営業リスト`ビューは`paradigmCountryName IS 日本`の日本限定フィルタへ強化した。
-- 本番の国内SMBはSales DB 4件、Twenty 2件、DEMO品質ゲート合格は`ノン美容室` 1件のみ。quality score **100/100**、`passed=true`、hard blockers **0**、`temporary_unlisted`、有効期限2026-07-22をDBで確認した。1,000件の日本SMBリスト／DEMO完成ではない。
+- 本番の国内SMBはSales DB 4件、Twenty 2件、現行営業対象に紐づくDEMO URLは`ノン美容室` 1件。日本企業の品質ゲート通過artifactは`ノン美容室`、`GREYMAN一級建築士事務所`、`Cafe SOSOMU`の3件（各100/100）だが、1,000件の日本SMBリスト／DEMO完成ではない。`ノン美容室`は`temporary_unlisted`、hard blockers **0**、有効期限2026-07-22をDBで確認した。
 - `https://demo.paradigmjp.com/ノン美容室`を実ブラウザでPC/モバイル切替、注意事項の表示、7日失効表示、全ページリンク、スライダー、法務ページ、モバイルレイアウトまで確認。主要11ルートはHTTP 200。問い合わせフォームは非公開DEMOのため送信停止のまま。
 - 今後のTwenty登録・DEMO生成は、①日本企業/国内所在地の根拠、②独自HPなし、③SMB・意思決定者適合、④公式プロフィール素材3点以上、⑤DEMO quality gate合格、の全条件を満たす国内候補だけに限定する。未確認候補を「完成」「送信可能」と数えない。
 - 本番 `npm run release:prod` は deployment `r14l2xyz0g9q47o9sq7dft1k` で完了し、post-deploy doctor（公開サイト、Sales health、Twenty、Cloudflare、DB 89/89）が通過した。DEMO主要11ルートも本番HTTP 200を再確認した。
