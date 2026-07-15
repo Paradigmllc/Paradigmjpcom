@@ -512,6 +512,22 @@ function checkStaticReleaseRules() {
     fail("form-qualified lead migration must not regress current quality and operator-review states")
   }
 
+  const highQualityLeadSourcesPath = "supabase/migrations/20260715082148_high_quality_lead_sources.sql"
+  const highQualityLeadSources = fs.existsSync(highQualityLeadSourcesPath)
+    ? fs.readFileSync(highQualityLeadSourcesPath, "utf8")
+    : ""
+  if (
+    highQualityLeadSources.includes("IF NOT EXISTS (")
+    && highQualityLeadSources.includes("sales_lead_candidate_run_items_status_check")
+    && highQualityLeadSources.includes("'awaiting_review'")
+    && highQualityLeadSources.includes("'review_required'")
+    && highQualityLeadSources.includes("'rejected'")
+  ) {
+    pass("high-quality source migration preserves the operator-review state contract")
+  } else {
+    fail("high-quality source migration must not regress the operator-review state contract")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")
