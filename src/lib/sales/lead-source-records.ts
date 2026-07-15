@@ -13,6 +13,7 @@ type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024
 const INGESTION_LOCK_MS = 10 * 60_000
+const COMMON_CRAWL_PREVIEW_MAX_RECORDS = 100
 
 export const LEAD_SOURCE_TYPES = [
   "official_directory",
@@ -361,6 +362,18 @@ async function fetchParsedSource(config: LeadSourceConfig): Promise<{ records: N
   return parseLeadSourcePayload(await fetchSourceText(config), config)
 }
 
+export function boundedPreviewSourceConfig(config: LeadSourceConfig): LeadSourceConfig {
+  const mapping = asRecord(config.field_mapping)
+  if (mapping.common_crawl_domain_signal !== "true") return config
+  return {
+    ...config,
+    field_mapping: {
+      ...mapping,
+      common_crawl_max_records: String(COMMON_CRAWL_PREVIEW_MAX_RECORDS),
+    },
+  }
+}
+
 function preflightCount(config: LeadSourceConfig, key: keyof Pick<LeadSourcePreflightSummary, "eligible" | "pending" | "checking">): number {
   const summary = asRecord(config.last_preflight)
   const value = summary[key]
@@ -382,7 +395,7 @@ export async function previewLeadSourceConfig(sourceId: string): Promise<LeadSou
   if (result.error) throw new Error(result.error.message)
   const config = result.data as LeadSourceConfig
   if (!config.terms_checked) throw new Error("Source terms and robots policy must be confirmed before preview")
-  const parsed = await fetchParsedSource(config)
+  const parsed = await fetchParsedSource(boundedPreviewSourceConfig(config))
   const accepted = parsed.records.length
   const previewedAt = new Date().toISOString()
   const preview: LeadSourcePreview = {

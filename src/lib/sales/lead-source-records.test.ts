@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }))
 
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: () => ({ from: mocks.from, rpc: mocks.rpc }) }))
 
-import { parseLeadSourcePayload, type LeadSourceConfig } from "./lead-source-records"
+import { boundedPreviewSourceConfig, parseLeadSourcePayload, type LeadSourceConfig } from "./lead-source-records"
 import { fetchLeadSourceCandidateRecords, getLeadSourceReadiness } from "./lead-source-selection"
 
 let sourceRows: LeadSourceConfig[] = []
@@ -95,6 +95,33 @@ describe("parseLeadSourcePayload", () => {
 
     expect(parsed.records[0]).toMatchObject({ is_sme: true, is_for_profit: true })
     expect(parsed.records[0].evidence).toMatchObject({ observed_values: { is_sme: "true", is_for_profit: "true" } })
+  })
+})
+
+describe("boundedPreviewSourceConfig", () => {
+  it("bounds Common Crawl approval previews without changing the 5,000-record ingestion config", () => {
+    const source = config({
+      field_mapping: {
+        common_crawl_domain_signal: "true",
+        common_crawl_max_records: "5000",
+        common_crawl_pages: "0,1,2,3",
+      },
+    })
+
+    const preview = boundedPreviewSourceConfig(source)
+
+    expect(preview.field_mapping).toMatchObject({
+      common_crawl_domain_signal: "true",
+      common_crawl_max_records: "100",
+      common_crawl_pages: "0,1,2,3",
+    })
+    expect(source.field_mapping).toMatchObject({ common_crawl_max_records: "5000" })
+  })
+
+  it("leaves official and structured non-Common-Crawl sources unchanged", () => {
+    const source = config({ field_mapping: { company_name: "name", website_url: "website" } })
+
+    expect(boundedPreviewSourceConfig(source)).toBe(source)
   })
 })
 
