@@ -76,6 +76,25 @@ function sentence(value: string): string {
   return /[。！？]$/u.test(normalized) ? normalized : `${normalized}。`
 }
 
+function normalizedCopy(value: string): string {
+  return value.replace(/\s+/gu, "").replace(/[。！？、]/gu, "").toLocaleLowerCase("ja-JP")
+}
+
+function normalizeServices(page: DemoMultiPageData): DemoMultiPageData["pages"]["services"] {
+  const services = page.pages.services.services.map((service) => {
+    const description = sentence(service.description ?? "")
+    const seen = new Set<string>()
+    const features = (service.features ?? []).filter((feature) => {
+      const key = normalizedCopy(feature)
+      if (!key || key === normalizedCopy(description) || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    return { ...service, description, features }
+  })
+  return { ...page.pages.services, services }
+}
+
 function enrichScenes(page: DemoMultiPageData): DemoContentPage {
   const current = page.pages.works!
   const serviceNames = page.pages.services.services.map((item) => item.title).filter(Boolean).join("、")
@@ -197,7 +216,7 @@ export function upgradeDemoToPremiumV3(page: DemoMultiPageData, recipe = page.de
     pages: {
       ...page.pages,
       home: { ...page.pages.home, cta: { ...page.pages.home.cta, subtitle: journeyCopy.home } },
-      services: { ...page.pages.services, ctaSubtitle: journeyCopy.services },
+      services: { ...normalizeServices(page), ctaSubtitle: journeyCopy.services },
       contact: { ...page.pages.contact, formNote: journeyCopy.contact },
       works: page.pages.works ? enrichScenes(page) : page.pages.works,
       news: page.pages.news ? buildNews(page) : page.pages.news,
