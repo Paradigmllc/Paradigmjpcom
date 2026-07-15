@@ -3,6 +3,7 @@ import { getProxyFetchOptions } from "./proxy-agent"
 import { normalizePublicDomain } from "./japan-entry-score"
 import { passesPublicDnsCheck } from "./japan-entry-score-service"
 import { fetchPageWithCrawl4Ai } from "./crawl4ai-page"
+import { extractFirstPartyProductEvidence, type FirstPartyProductEvidence } from "./lead-product-evidence"
 import type { CandidateCountrySignal } from "./lead-candidate-scoring"
 import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
 import type { TechItem } from "./sources/wappalyzer"
@@ -15,6 +16,7 @@ export interface HomepageQualityProfile {
   organizationNames: string[]
   organizationTypes: string[]
   visibleText: string
+  productEvidence?: FirstPartyProductEvidence
 }
 
 export interface LeadQualityGate {
@@ -159,6 +161,7 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
   const { html } = fetched
   const $ = load(html)
   const structured = jsonLdOrganizations(html)
+  const productEvidence = extractFirstPartyProductEvidence(html, fetched.url)
   const title = $("title").first().text().replace(/\s+/g, " ").trim()
   const description = ($("meta[name='description']").attr("content") ?? $("meta[property='og:description']").attr("content") ?? "").replace(/\s+/g, " ").trim()
   const siteNames = [
@@ -175,6 +178,7 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
     organizationNames: unique([...structured.names, ...siteNames, title.split(/[|–—-]/)[0] ?? ""]),
     organizationTypes: structured.types,
     visibleText,
+    productEvidence,
   }
 }
 
@@ -259,11 +263,18 @@ export function evaluateLeadQualityGate(input: {
   const productSchema = homepage.organizationTypes.find((type) => PRODUCT_SCHEMA_RE.test(type))
   const productCatalogSignal = PRODUCT_CATALOG_RE.exec(saasText)?.[0]
   const productMakerSignal = PRODUCT_MAKER_RE.exec(saasText)?.[0]
+  const firstPartyProducts = homepage.productEvidence ?? { hubLinks: [], detailLinks: [], claims: [] }
+  const hasProductHub = firstPartyProducts.hubLinks.length > 0
+  const hasMultipleProductDetails = firstPartyProducts.detailLinks.length >= 2
+  const hasGroundedProductClaim = firstPartyProducts.claims.length > 0
   const officialProductBrand = sourceRecord.source.trust_tier >= 3
     && sourceRecord.is_sme === true
     && Boolean(
       (productSchema && (productCatalogSignal || productMakerSignal))
-      || (productCatalogSignal && productMakerSignal),
+      || (productCatalogSignal && productMakerSignal)
+      || (productSchema && (hasProductHub || hasMultipleProductDetails || hasGroundedProductClaim))
+      || hasMultipleProductDetails
+      || (hasProductHub && hasGroundedProductClaim),
     )
   if (commerceTech.length > 0) offerEvidence.push(`commerce_tech:${commerceTech.map((item) => item.name).join(",")}`)
   if (saasSignal) offerEvidence.push(`saas_signal:${saasSignal}`)
@@ -272,6 +283,9 @@ export function evaluateLeadQualityGate(input: {
     if (productSchema) offerEvidence.push(`product_schema:${productSchema}`)
     if (productCatalogSignal) offerEvidence.push(`product_catalog_signal:${productCatalogSignal}`)
     if (productMakerSignal) offerEvidence.push(`product_maker_signal:${productMakerSignal}`)
+    offerEvidence.push(...firstPartyProducts.hubLinks.map((path) => `product_hub_link:${path}`))
+    offerEvidence.push(...firstPartyProducts.detailLinks.map((path) => `product_detail_link:${path}`))
+    offerEvidence.push(...firstPartyProducts.claims.map((claim) => `product_claim:${claim}`))
   }
   const offerScore = Math.min(100,
     (commerceTech.length > 0 ? 70 : 0)
