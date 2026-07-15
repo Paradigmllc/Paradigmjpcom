@@ -60,6 +60,7 @@ export interface DemoCopyCompletenessReport {
 }
 
 const REPAIRABLE_CONTENT_REASONS = new Set([
+  "services_incomplete",
   "home_narratives_incomplete",
   "home_narratives_short",
   "about_chapters_incomplete",
@@ -170,17 +171,22 @@ export async function enhanceDemoWithDeepSeek(
   // still routed through DeepSeek's API and keeps the quality parser/gate
   // identical; the batch override is useful when V4 Pro spends the whole
   // timeout in reasoning without returning JSON.
-  const model = process.env.DEMO_BATCH_LLM_MODEL?.trim()
+  const batchModel = process.env.DEMO_BATCH_LLM_MODEL?.trim()
+  const model = batchModel
     || process.env.DEMO_LLM_MODEL?.trim()
     || (process.env.LITELLM_API_KEY?.trim() ? "deepseek-v4-pro" : process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat");
   const result = await callDeepSeek(messages, {
     model,
     modelPolicy: "strict",
     temperature: 0.4,
-    maxTokens: DEMO_COPY_MAX_TOKENS,
+    // Batch copy is completed/expanded by mergeDeepSeekOutput, so the faster
+    // official model can use a bounded response budget without sacrificing
+    // the full-page content gate. The release-gated V4 Pro path keeps the
+    // larger budget for interactive/highest-fidelity generations.
+    maxTokens: batchModel ? 4_096 : DEMO_COPY_MAX_TOKENS,
     responseFormat: "json_object",
     thinking: "disabled",
-    timeoutMs: DEMO_COPY_TIMEOUT_MS,
+    timeoutMs: batchModel ? 60_000 : DEMO_COPY_TIMEOUT_MS,
   });
   if (!result.ok || !result.text) {
     console.error("[deepseek-enhancer] strict DeepSeek V4 Pro generation failed:", result.error ?? "empty response");
