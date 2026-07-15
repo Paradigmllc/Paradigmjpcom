@@ -233,8 +233,14 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
     return { ok: false, runId, processed: 0, jobsEnqueued: 0, twentySynced: 0, hasMore: false, cancelled: true, failures: [] }
   }
   if (acquisition.upserted === 0) {
-    await updateRun(run.id, { status: "failed", failure_count: Math.max(acquisition.failures.length, 1), completed_at: nowIso() })
-    return { ok: false, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures.length > 0 ? acquisition.failures : [{ key: run.country_code, reason: "No candidate domains were fetched" }] }
+    const failures = acquisition.failures.length > 0 ? acquisition.failures : [{ key: run.country_code, reason: "No candidate domains were fetched" }]
+    await updateRun(run.id, {
+      status: "failed",
+      failure_count: Math.max(failures.length, 1),
+      error_message: failures.map((failure) => `${failure.key}: ${failure.reason}`).join("; ").slice(0, 2_000),
+      completed_at: nowIso(),
+    })
+    return { ok: false, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures }
   }
   if (run.verify_limit === 0) {
     return { ok: true, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures }

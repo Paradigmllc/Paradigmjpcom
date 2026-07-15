@@ -8,7 +8,10 @@ type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
 const activeRuns = new Set<string>()
 const MAX_BATCHES = 500
-const BATCH_SIZE = 20
+const BATCH_SIZE = 12
+const PAGE_SIZE = 100
+const MAX_SCAN_ITEMS = 10_000
+const TWENTY_RATE_WINDOW_MS = 65_000
 
 function getSb(): ServiceSupabase {
   const sb = getServiceSalesSupabase()
@@ -40,24 +43,37 @@ export function isHighConfidenceAutoPromotionItem(item: ReviewItemRow): boolean 
 }
 
 async function nextEligibleIds(runId: string): Promise<string[]> {
-  const result = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
-    .select("id, run_id, candidate_id, source_config_id, source_record_id, domain, company_name, source_page_url, status, quality_status, opportunity_score, form_url, form_verified, form_checked_at, review_status, promotion_attempts, meta")
-    .eq("run_id", runId)
-    .eq("status", "awaiting_review")
-    .eq("review_status", "pending")
-    .order("created_at", { ascending: true })
-    .limit(100)
-  if (result.error) throw new Error(result.error.message)
-  return ((result.data ?? []) as ReviewItemRow[]).filter(isHighConfidenceAutoPromotionItem).slice(0, BATCH_SIZE).map((item) => item.id)
+  const ids: string[] = []
+  for (let offset = 0; offset < MAX_SCAN_ITEMS && ids.length < BATCH_SIZE; offset += PAGE_SIZE) {
+    const result = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
+      .select("id, run_id, candidate_id, source_config_id, source_record_id, domain, company_name, source_page_url, status, quality_status, opportunity_score, form_url, form_verified, form_checked_at, review_status, promotion_attempts, meta")
+      .eq("run_id", runId)
+      .eq("status", "awaiting_review")
+      .eq("review_status", "pending")
+      .order("created_at", { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1)
+    if (result.error) throw new Error(result.error.message)
+    const rows = (result.data ?? []) as ReviewItemRow[]
+    ids.push(...rows.filter(isHighConfidenceAutoPromotionItem).map((item) => item.id).slice(0, BATCH_SIZE - ids.length))
+    if (rows.length < PAGE_SIZE) break
+  }
+  return ids
+}
+
+function waitForTwentyRateWindow(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, TWENTY_RATE_WINDOW_MS))
 }
 
 async function runHighConfidencePromotion(input: { runId: string; operatorName: string; note: string }): Promise<void> {
   try {
+    let itemIds = await nextEligibleIds(input.runId)
     for (let batch = 0; batch < MAX_BATCHES; batch += 1) {
-      const itemIds = await nextEligibleIds(input.runId)
       if (itemIds.length === 0) return
       const result = await approveLeadCandidateItems({ ...input, itemIds })
       if (result.approved === 0 && result.failed === 0) return
+      itemIds = await nextEligibleIds(input.runId)
+      if (itemIds.length === 0) return
+      await waitForTwentyRateWindow()
     }
     throw new Error(`High-confidence promotion exceeded ${MAX_BATCHES} batches`)
   } catch (error) {
