@@ -26,7 +26,8 @@ alter table public.sales_tool_connections
       'trigger-dev',
       'dify',
       'crawl4ai',
-      'searxng'
+      'searxng',
+      'openclaw'
     )
   );
 
