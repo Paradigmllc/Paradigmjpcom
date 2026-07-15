@@ -120,6 +120,7 @@ const TWENTY_SOURCE_VALUES = new Set([
   "manual_csv",
   "codex_verification",
   "codex_e2e",
+  "manual_work",
   "houzz",
   "ekiten",
   "jmty",

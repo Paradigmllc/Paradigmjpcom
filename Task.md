@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-15 Manual Japan Entry Workbench（実装・ローカル検証完了 / release前）
+
+- `paradigmjp.com/work`へ、完全新規の海外企業URLを1〜20件投入し、最大3件並列で処理できる管理者専用の簡易ダッシュボードを追加した。処理段階、個別失敗、フォーム、初回文面、診断レポート、Twenty状態を専用履歴として保持し、リロード後も消えない。
+- 既存営業automationとは完全分離した`manual_japan_entry_work`専用テーブル/APIを使用する。`sales_companies`、候補factory、pipeline、enrichment、outreachには書き込まず、既存から再利用するのは公開ページ監査、Crawl4AIフォーム探索、DeepSeek V4 Proの初回文面品質ゲート、診断レポート表示、Twenty低レベルclientだけ。
+- `.jp`、JP国判定、日本法人表記を決定論で除外。海外SMB、Japan Entry適合、国、90点以上の実フォーム、92/100の初回文面品質を満たす場合だけTwentyへ`Manual Japan Entry / 手動確認 / 未対応`として追加する。既存Twenty domainは上書きせずduplicate停止し、メール・フォーム・SNS等の外部送信はDB制約を含め常に0件。
+- RLS + service_role最小権限migration、認可GET/POST API、非公開token形式の`/en/work-report/[token]`、DBベル+Slack通知を実装。TypeScript、対象ESLint、Vitest **5 files / 12 tests**、production build、Playwright主要フロー **1/1**がpass。agent-browserでPC/390pxとも内容表示、error overlay/console errorなし、mobile横overflowなしを確認した。正式`npm run release:prod`と本番URL/Twenty実接続確認は未実施。
+
 ## CURRENT STATUS - 2026-07-15 Japan Entry候補の非送信スケール検証（447社実確認 / 9社Twenty追加 / 外部送信0）
 
 - 成約20件の必要母数を再整理した。送信成功後の成約CVRを1%とする場合は2,000件の実送信、フォーム到達・送信成功率を50%と置く場合は4,000件の送信可能候補が必要。今回の実測は実フォーム合格23/447（5.1%）のためフォーム発見までで約80,000 website、最終offer fit合格9/447（2.0%）まで含む4,000件の送信可能候補には約200,000 websiteの検査が必要になる。
