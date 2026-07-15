@@ -278,6 +278,7 @@ begin
   perform public._paradigm_twenty_ensure_company_field('paradigmSalesMaterialUrl', '営業資料URL', 'LINKS', 'Slidev/Gotenberg等で生成した営業資料URL', 'IconPresentationAnalytics', '{"maxNumberOfValues":1}'::jsonb);
   perform public._paradigm_twenty_ensure_company_field('paradigmDemoUrl', 'デモURL', 'LINKS', 'Astro差し替えデモサイトURL', 'IconBrowserCheck', '{"maxNumberOfValues":1}'::jsonb);
   perform public._paradigm_twenty_ensure_company_field('paradigmCustomerPortalUrl', '顧客ポータルURL', 'LINKS', '成約後に顧客と共有する顧客ポータルURL', 'IconLink', '{"maxNumberOfValues":1}'::jsonb);
+  perform public._paradigm_twenty_ensure_company_field('paradigmOutreachTargetUrl', '営業先URL', 'LINKS', '実際に開いて提案する掲載ページまたは確認済みフォーム', 'IconExternalLink', '{"maxNumberOfValues":1}'::jsonb);
 
   update core."fieldMetadata"
   set label = case name
@@ -321,6 +322,9 @@ begin
   execute format('alter table %I.company add column if not exists "paradigmCustomerPortalUrlPrimaryLinkLabel" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmCustomerPortalUrlPrimaryLinkUrl" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmCustomerPortalUrlSecondaryLinks" jsonb', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlPrimaryLinkLabel" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlPrimaryLinkUrl" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlSecondaryLinks" jsonb', company_schema);
 
   update core."view"
   set name = 'Japan Entry 候補',
@@ -354,6 +358,7 @@ begin
   perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSmbScore'), 6, 100, true);
   perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSourceName'), 7, 140, true);
   perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmFormUrl'), 8, 180, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmOutreachTargetUrl'), 9, 220, true);
 
   update core."viewField"
   set "isVisible" = false,
@@ -381,7 +386,8 @@ begin
   perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSmbScore'), 5, 120, true);
   perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSourceName'), 6, 150, true);
   perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmFormUrl'), 7, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmKarteSummary'), 8, 280, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmOutreachTargetUrl'), 8, 220, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmKarteSummary'), 9, 280, true);
 end $$;
 
 drop function if exists public._paradigm_twenty_ensure_view_field(uuid, uuid, numeric, integer, boolean);

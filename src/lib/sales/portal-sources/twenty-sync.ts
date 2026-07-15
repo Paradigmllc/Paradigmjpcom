@@ -90,13 +90,14 @@ export function portalCandidateTwentyPayload(
   const source = sourceSelectValue(snapshot.source) ?? "manual_csv"
   return {
     name: snapshot.companyName,
-    paradigmFormUrl: linkField("ポータル掲載ページ", snapshot.listingUrl),
+    paradigmFormUrl: linkField("", null),
+    paradigmOutreachTargetUrl: linkField("営業先（ポータル掲載ページ）", snapshot.listingUrl),
     paradigmCountryName: countrySelectValue("JP"),
     paradigmRegionName: snapshot.prefecture ?? snapshot.address ?? null,
     paradigmIndustryName: industrySelectValue(snapshot.suggestedIndustry),
     paradigmSourceName: source,
     paradigmLeadStatus: "候補登録 / 要確認 / 未送信",
-    paradigmNextAction: "元ページ・画像・独自HP有無を最終確認（未送信）",
+    paradigmNextAction: "営業先URLを開いて掲載内容・独自HP有無を最終確認（未送信）",
     paradigmKarteSummary: { markdown: portalSummary(candidate, snapshot) },
     paradigmOpportunityScore: candidate.score?.opportunityScore ?? null,
     paradigmSmbScore: candidate.score?.smbScore ?? snapshot.smbFit.score,
@@ -125,7 +126,8 @@ function readbackIssues(
   if (actual.paradigmSourceName !== payload.paradigmSourceName) issues.push("source_mismatch")
   if (actual.paradigmKarteSummary?.markdown !== record(payload.paradigmKarteSummary).markdown) issues.push("summary_mismatch")
   const normalizeLink = (value: unknown): string => typeof value === "string" ? value.trim().replace(/\/+$/u, "") : ""
-  if (normalizeLink(actual.paradigmFormUrl?.primaryLinkUrl) !== normalizeLink(record(payload.paradigmFormUrl).primaryLinkUrl)) issues.push("source_url_mismatch")
+  if (normalizeLink(actual.paradigmFormUrl?.primaryLinkUrl) !== normalizeLink(record(payload.paradigmFormUrl).primaryLinkUrl)) issues.push("form_url_mismatch")
+  if (normalizeLink(actual.paradigmOutreachTargetUrl?.primaryLinkUrl) !== normalizeLink(record(payload.paradigmOutreachTargetUrl).primaryLinkUrl)) issues.push("outreach_target_url_mismatch")
   if (actual.paradigmDemoUrl?.primaryLinkUrl) issues.push("demo_url_must_be_empty")
   if (actual.paradigmReportUrl?.primaryLinkUrl) issues.push("report_url_must_be_empty")
   if (actual.paradigmSalesMaterialUrl?.primaryLinkUrl) issues.push("sales_material_url_must_be_empty")
