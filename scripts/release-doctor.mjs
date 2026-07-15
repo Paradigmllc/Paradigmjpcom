@@ -419,6 +419,8 @@ function checkStaticReleaseRules() {
     && productFitRetryMigration.includes("jsonb_array_length(prior_item.quality_gate->'aiReview'->'riskFlags') = 0")
     && noLoginDeploy.includes("20260715233000_lead_source_product_evidence_retry.sql")
     && noLoginDeploy.includes("applyLeadSourceProductEvidenceRetryMigration")
+    && noLoginDeploy.indexOf("await applyLeadSourceProductEvidenceRetryMigration(envs)")
+      > noLoginDeploy.indexOf("await applySalesOptionalColumnRepairMigration(envs)")
   ) {
     pass("official SMB product-fit retries require grounded composite evidence and are release-wired")
   } else {
@@ -1122,6 +1124,20 @@ then 1 else 0 end;
     echo "OK public schema RLS/anon ACL and integration slug constraints"
   else
     echo "FAIL public schema RLS/anon ACL or integration slug constraints"
+    fail=1
+  fi
+
+  lead_claim_guard="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "
+select case when
+  position('ai_evidence_review_failed' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
+  and position('evidenceQuotes' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
+  and position('riskFlags' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
+then 1 else 0 end;
+" 2>/dev/null || true)"
+  if [ "$lead_claim_guard" = "1" ]; then
+    echo "OK official-SMB grounded product-evidence claim contract"
+  else
+    echo "FAIL official-SMB grounded product-evidence claim contract"
     fail=1
   fi
 else

@@ -21,6 +21,8 @@ describe("lead source preflight release wiring", () => {
     expect(deploy).toContain("20260715233000_lead_source_product_evidence_retry.sql")
     expect(deploy).toContain("applyLeadSourceProductEvidenceRetryMigration")
     expect(deploy).toContain("await applyLeadSourceProductEvidenceRetryMigration(envs)")
+    expect(deploy.indexOf("await applyLeadSourceProductEvidenceRetryMigration(envs)"))
+      .toBeGreaterThan(deploy.indexOf("await applySalesOptionalColumnRepairMigration(envs)"))
   })
 
   it("limits historical product-fit retries to official Tier 3 SME evidence", () => {
@@ -43,6 +45,7 @@ describe("lead source preflight release wiring", () => {
     expect(doctor).toContain("sales_claim_lead_source_preflight_records")
     expect(doctor).toContain("sales_claim_lead_source_pilot_records")
     expect(doctor).toContain("preflight_checked_at >= now() - interval '7 days'")
+    expect(doctor).toContain("official-SMB grounded product-evidence claim contract")
   })
 
   it("applies country source-pack provenance through the formal release path", () => {

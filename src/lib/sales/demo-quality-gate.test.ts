@@ -489,17 +489,10 @@ describe("demo quality gate", () => {
 
   it("keeps exact grammar collisions blocked while allowing scalable near-match batches", () => {
     const page = fixture()
-    const template = DEMO_TEMPLATES[0]
     const nearMatch: DemoCreativeDirection = { ...TEST_DIRECTION, motion: "restrained" }
-    const recipe = buildBaseDesignRecipe(template, page, TEST_DIRECTION)
-    const quality = evaluateDemoQuality(
-      page,
-      recipe,
-      buildProposalRightsManifest([{ src: "/generated/hero-1.jpg", usage: "proposal_only" }]),
-      new Set(),
-      Array.from({ length: 300 }, () => nearMatch),
-    )
-
+    const quality = evaluateDemoQuality(page, buildBaseDesignRecipe(DEMO_TEMPLATES[0], page, TEST_DIRECTION),
+      buildProposalRightsManifest([{ src: "/generated/hero-1.jpg", usage: "proposal_only" }]), new Set(),
+      Array.from({ length: 300 }, () => nearMatch))
     expect(quality.hardBlockers).not.toContain("visual_similarity_collision")
     expect(quality.hardBlockers).not.toContain("structural_collision")
   })
