@@ -22,7 +22,14 @@ export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
   const image = b.image && typeof b.image === "object"
     ? b.image as { url?: string; alt?: string }
     : undefined
-  const hasImage = variant === "split-image" && Boolean(image?.url)
+  const isJapanEntryHero = String(b.badge ?? "").toLowerCase().includes("fast-decision")
+  const heroImage = image ?? (isJapanEntryHero
+    ? {
+        url: "/japan-entry/tokyo-sakura-panorama.svg",
+        alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
+      }
+    : undefined)
+  const hasImage = Boolean(heroImage?.url) && (variant === "split-image" || isJapanEntryHero)
 
   return (
     <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center bg-paradigm-ink overflow-hidden">
@@ -86,8 +93,8 @@ export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
             <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/95 p-2 shadow-2xl shadow-blue-950/30">
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-blue-200/10" />
               <img
-                src={image?.url}
-                alt={image?.alt ?? "Japan Entry package visual"}
+                src={heroImage?.url}
+                alt={heroImage?.alt ?? "Japan Entry package visual"}
                 className="relative z-10 h-auto w-full rounded-2xl object-cover"
                 loading="eager"
               />
