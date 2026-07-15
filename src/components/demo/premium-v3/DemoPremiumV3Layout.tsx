@@ -61,7 +61,7 @@ export function DemoPremiumV3Layout({
 
   return (
     <MotionConfig reducedMotion="user" transition={{ ease: [0.22, 1, 0.36, 1] }}>
-    <div className="min-h-dvh bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-brand-system={brand.id}>
+    <div className="demo-v3-shell min-h-dvh bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-demo-site="premium-v3" data-brand-system={brand.id}>
       <PremiumV3ScrollProgress />
       <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className="sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl" aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[78px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
