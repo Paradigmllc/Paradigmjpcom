@@ -8,7 +8,7 @@ export interface FirstPartyProductEvidence {
 
 const PRODUCT_HUB_PATH_RE = /^\/(?:products?|product-categories|shop|store|catalog(?:ue)?|purchase)\/?$/iu
 const PRODUCT_DETAIL_PATH_RE = /^\/(?:products?|shop|store|purchase)\/[^/?#]+(?:\/[^/?#]+)?\/?$/iu
-const NON_PRODUCT_DETAIL_RE = /(?:^|[-_])(?:services?|solutions?|support|consulting|development|industries|applications?|about|contact|resources?|news|blog)(?:$|[-_])/iu
+const NON_PRODUCT_DETAIL_RE = /(?:^|[-_])(?:services?|solutions?|support|consulting|development|industries|applications?|about|contact|resources?|news|blog|account|cart|checkout|login|register)(?:$|[-_])/iu
 const STRONG_PRODUCT_CLAIM_RE = /(?:\bwe\s+(?:design|develop|engineer|manufacture|produce|build)|\b(?:designs|develops|engineers|manufactures|produces))\b.{0,120}\b(?:products?|devices?|equipment|instruments?|materials?|hardware|compressors?|sensors?|batter(?:y|ies)|semiconductors?|surfactants?|molecules?|chemicals?|ingredients?|software platforms?)\b|\bmanufacturer of\b.{0,120}\b(?:products?|devices?|equipment|instruments?|materials?|hardware|compressors?|sensors?|batter(?:y|ies)|semiconductors?|surfactants?|molecules?|chemicals?|ingredients?)\b/iu
 
 function unique(values: string[]): string[] {
