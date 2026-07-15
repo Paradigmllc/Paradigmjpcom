@@ -1,6 +1,6 @@
 ## CURRENT STATUS - 2026-07-15 Japan Entry候補の非送信スケール検証（447社実確認 / 9社Twenty追加 / 外部送信0）
 
-- 成約20件の必要母数を再整理した。送信成功後の成約CVRを1%とする場合は2,000件の実送信、フォーム到達・送信成功率を50%と置く場合は4,000件の送信可能候補が必要。候補発見から実フォーム合格までを含む現在の実測では、4,000件の送信可能候補を作るには約80,000社以上のwebsite検査が必要になる。
+- 成約20件の必要母数を再整理した。送信成功後の成約CVRを1%とする場合は2,000件の実送信、フォーム到達・送信成功率を50%と置く場合は4,000件の送信可能候補が必要。今回の実測は実フォーム合格23/447（5.1%）のためフォーム発見までで約80,000 website、最終offer fit合格9/447（2.0%）まで含む4,000件の送信可能候補には約200,000 websiteの検査が必要になる。
 - 承認済み公式source inventoryは3,257件、website preflight合格2,342件、そのうちSME 2,330件。現sourceだけでは4,000件の送信可能候補を作れないため、source追加なしに「数千件完成」とは扱わない。
 - 12市場300 websiteの初回pilotに加え、GB batch 21件、DE / ES / IT pilot 75件、NL / FR / SG pilot 51件を処理し、累計447 websiteを実確認。実フォーム合格23件を全件公式サイトで再審査し、9件を承認、14件をグループ傘下・コンサル中心・地域サービス・旧ドメイン・証拠不足として除外した。
 - Twentyへ追加した9社はTAIPRO ENGINEERING / ELCON SOLUTIONS / RUSSELL IPM / CELOPLAS / FLUIDINOVA / TECHNOPHAGE / PHYTOWELT GREENTECHNOLOGIES / Trifolio-M / SOLEMS。全社で国名、確認済みフォーム、`フォーム確認済み / Twenty登録済み / 未送信`をlive read-backし、report URLは空を確認した。
