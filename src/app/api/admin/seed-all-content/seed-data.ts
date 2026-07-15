@@ -256,7 +256,7 @@ export async function seedAllContent(
   try {
     const layoutJa = [
       {
-        blockType: "hero", variant: "split-image",
+        blockType: "hero", variant: "centered",
         badge: "中小企業向け Web制作",
         title: "伝わるだけで終わらない。事業に使えるWebサイトを。",
         subtitle: "企業サイト、採用サイト、サービスサイト、LPを、情報設計から公開後の運用まで。初期費用30万円〜、要件と範囲を明記して進めます。",
