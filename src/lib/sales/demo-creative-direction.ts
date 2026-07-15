@@ -5,39 +5,6 @@ import type {
 } from "./demo-site-types"
 import type { DemoTemplate } from "./demo-templates/registry"
 
-const FALLBACKS: readonly Omit<DemoCreativeDirection, "source" | "concept">[] = [
-  {
-    typographyStyle: "editorial-serif",
-    heroComposition: "cinematic",
-    serviceLayout: "editorial-list",
-    worksLayout: "journal",
-    paletteMood: "warm-neutral",
-    density: "airy",
-    motion: "editorial",
-    signatureMotif: "hairline",
-  },
-  {
-    typographyStyle: "humanist-sans",
-    heroComposition: "mosaic",
-    serviceLayout: "salon-catalogue",
-    worksLayout: "salon-lookbook",
-    paletteMood: "soft-contrast",
-    density: "balanced",
-    motion: "expressive",
-    signatureMotif: "offset-grid",
-  },
-  {
-    typographyStyle: "technical-sans",
-    heroComposition: "precision-split",
-    serviceLayout: "precision-grid",
-    worksLayout: "case-grid",
-    paletteMood: "cool-professional",
-    density: "compact",
-    motion: "restrained",
-    signatureMotif: "numbered-index",
-  },
-] as const
-
 const TYPOGRAPHY_STYLES = ["editorial-serif", "humanist-sans", "modern-grotesk", "technical-sans"] as const
 const HERO_COMPOSITIONS = ["cinematic", "editorial-split", "precision-split", "mosaic"] as const
 const SERVICE_LAYOUTS = ["editorial-list", "salon-catalogue", "precision-grid"] as const
@@ -46,6 +13,20 @@ const PALETTE_MOODS = ["warm-neutral", "cool-professional", "earth", "monochrome
 const DENSITIES = ["airy", "balanced", "compact"] as const
 const MOTIONS = ["restrained", "editorial", "expressive"] as const
 const SIGNATURE_MOTIFS = ["hairline", "numbered-index", "framed-media", "offset-grid", "kinetic-rail"] as const
+
+function hashSeed(value: string): number {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+function pick<T>(values: readonly T[], seed: number, salt: number): T {
+  const index = (seed + Math.imul(salt, 2654435761)) >>> 0
+  return values[index % values.length] ?? values[0]
+}
 
 export function buildDemoCreativeDirection(
   template: DemoTemplate,
@@ -68,11 +49,22 @@ export function buildDemoCreativeDirection(
       signatureMotif: generated.signature_motif,
     }
   } else {
-    const fallback = FALLBACKS[candidateIndex % FALLBACKS.length] ?? FALLBACKS[0]
+    // A three-item fallback list caused every later company to collide with
+    // one of the first three creative grammars. Derive each axis from the
+    // company/template seed so a large reviewed batch remains visually
+    // diverse while staying inside the renderer's bounded vocabulary.
+    const seed = hashSeed(`${page.companyName}:${page.industry ?? "business"}:${template.id}:${candidateIndex}`)
     direction = {
       source: "deterministic",
-      concept: `${page.companyName} ${String(page.industry ?? "business")} ${template.id}`,
-      ...fallback,
+      concept: `${page.companyName} ${String(page.industry ?? "business")} ${template.id} ${seed.toString(16)}`,
+      typographyStyle: pick(TYPOGRAPHY_STYLES, seed, 1),
+      heroComposition: pick(HERO_COMPOSITIONS, seed, 2),
+      serviceLayout: pick(SERVICE_LAYOUTS, seed, 3),
+      worksLayout: pick(WORKS_LAYOUTS, seed, 4),
+      paletteMood: pick(PALETTE_MOODS, seed, 5),
+      density: pick(DENSITIES, seed, 6),
+      motion: pick(MOTIONS, seed, 7),
+      signatureMotif: pick(SIGNATURE_MOTIFS, seed, 8),
     }
   }
 

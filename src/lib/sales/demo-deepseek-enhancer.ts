@@ -165,7 +165,13 @@ export async function enhanceDemoWithDeepSeek(
   locale: ReportLocale,
 ): Promise<DeepSeekEnhancedOutput | null> {
   const messages = buildPrompt(company, report, templates, locale);
-  const model = process.env.DEMO_LLM_MODEL?.trim()
+  // Keep the release-gated default on V4 Pro, while allowing the high-volume
+  // reviewed-demo drain to use the faster official model explicitly. This is
+  // still routed through DeepSeek's API and keeps the quality parser/gate
+  // identical; the batch override is useful when V4 Pro spends the whole
+  // timeout in reasoning without returning JSON.
+  const model = process.env.DEMO_BATCH_LLM_MODEL?.trim()
+    || process.env.DEMO_LLM_MODEL?.trim()
     || (process.env.LITELLM_API_KEY?.trim() ? "deepseek-v4-pro" : process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat");
   const result = await callDeepSeek(messages, {
     model,
