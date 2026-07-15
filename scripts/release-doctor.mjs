@@ -469,16 +469,22 @@ function checkStaticReleaseRules() {
   const portalTwentyOptionsMigration = fs.existsSync(portalTwentyOptionsMigrationPath)
     ? fs.readFileSync(portalTwentyOptionsMigrationPath, "utf8")
     : ""
+  const twentySelectOptionsScriptPath = "scripts/twenty-sales-select-options.sql"
+  const twentySelectOptionsScript = fs.existsSync(twentySelectOptionsScriptPath)
+    ? fs.readFileSync(twentySelectOptionsScriptPath, "utf8")
+    : ""
   if (
     portalTwentyOptionsMigration.includes("('source', 'houzz'")
     && portalTwentyOptionsMigration.includes("('source', 'ekiten'")
     && portalTwentyOptionsMigration.includes("('source', 'jmty'")
     && noLoginDeploy.includes("20260715150000_portal_twenty_source_options.sql")
     && noLoginDeploy.includes("applyPortalTwentySourceOptionsMigration")
+    && twentySelectOptionsScript.includes("('paradigmSourceName', 'エキテン', 'ekiten'")
+    && noLoginDeploy.includes("applyTwentySelectOptionsScript")
   ) {
-    pass("portal Twenty source options are present and release-wired")
+    pass("portal Twenty source options and CRM field metadata are present and release-wired")
   } else {
-    fail("portal Twenty source options require Houzz, Ekiten, Jmty values and release wiring")
+    fail("portal Twenty source options require Houzz, Ekiten, Jmty values, CRM field metadata and release wiring")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
