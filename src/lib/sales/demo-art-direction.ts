@@ -82,13 +82,13 @@ export function demoHeadlineClass(value: string, scale: "hero" | "section" | "ca
   const length = [...normalized(value)].length
   if (scale === "hero") {
     return length >= 18
-      ? "text-[clamp(2.05rem,3.55vw,3.2rem)] leading-[1.18] tracking-[-.03em]"
-      : "text-[clamp(2.45rem,4.8vw,5rem)] leading-[1.06] tracking-[-.04em]"
+      ? "text-[clamp(2.15rem,3.8vw,3.8rem)] leading-[1.2] tracking-[-.025em]"
+      : "text-[clamp(2.3rem,4.3vw,4rem)] leading-[1.1] tracking-[-.03em]"
   }
-  if (scale === "card") return "text-[clamp(1.45rem,2.1vw,2rem)] leading-[1.28] tracking-[-.025em]"
+  if (scale === "card") return "text-[clamp(1.25rem,1.8vw,1.8rem)] leading-[1.34] tracking-[-.015em]"
   return length >= 22
-    ? "text-[clamp(2rem,3.5vw,3.35rem)] leading-[1.2] tracking-[-.03em]"
-    : "text-[clamp(2.25rem,4vw,4rem)] leading-[1.12] tracking-[-.035em]"
+    ? "text-[clamp(1.9rem,3vw,3.1rem)] leading-[1.22] tracking-[-.025em]"
+    : "text-[clamp(2rem,3.5vw,3.5rem)] leading-[1.16] tracking-[-.03em]"
 }
 
 export function demoHeadlineText(value: string): string {

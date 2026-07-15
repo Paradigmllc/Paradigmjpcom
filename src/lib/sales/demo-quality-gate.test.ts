@@ -12,7 +12,6 @@ import type { DemoMultiPageData } from "./demo-site-types"
 import { DEMO_TEMPLATES } from "./demo-templates/registry"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 import type { DemoCreativeDirection } from "./demo-site-types"
-
 const TEST_DIRECTION: DemoCreativeDirection = {
   source: "deepseek",
   concept: "確認済みの商品と場所を静かな編集デザインで伝える",
@@ -25,14 +24,12 @@ const TEST_DIRECTION: DemoCreativeDirection = {
   motion: "editorial",
   signatureMotif: "numbered-index",
 }
-
 function buildDesignRecipe(
   template: Parameters<typeof buildBaseDesignRecipe>[0],
   page: Parameters<typeof buildBaseDesignRecipe>[1],
 ) {
   return buildBaseDesignRecipe(template, page, TEST_DIRECTION)
 }
-
 function fixture(): DemoMultiPageData {
   const contentPage = {
     title: "追加ページ",
@@ -148,8 +145,7 @@ function fixture(): DemoMultiPageData {
       commerce: contentPage,
     },
   }
-}
-
+  }
 describe("demo quality gate", () => {
   it("passes a complete proposal-safe demo and emits stable fingerprints", () => {
     const basePage = fixture()
@@ -167,7 +163,6 @@ describe("demo quality gate", () => {
     expect(summary.structuralFingerprint).toBe(renderGrammarFingerprint(brandedRecipe))
     expect(summary.designFingerprint).not.toBe(summary.structuralFingerprint)
   })
-
   it("does not mistake reused reviewed-media captions for duplicated body copy", () => {
     const basePage = fixture()
     const caption = "エキテン公式店舗掲載画像をブラウザで目視確認。人物・透かしなし。非公開提案デモ限定。"
@@ -182,7 +177,6 @@ describe("demo quality gate", () => {
 
     expect(quality.hardBlockers).not.toContain("repeated_customer_copy")
   })
-
   it("still blocks genuinely repeated long body copy", () => {
     const page = fixture()
     const repeated = "同じ長い本文を複数の独立したセクションへ繰り返し掲載すると、読み手には薄いテンプレートとして見えてしまいます。"
@@ -195,7 +189,6 @@ describe("demo quality gate", () => {
 
     expect(quality.hardBlockers).toContain("repeated_customer_copy")
   })
-
   it("blocks a home page that repeats its hero as the editorial introduction", () => {
     const page = fixture()
     page.premium!.intro.title = page.pages.home.hero.title

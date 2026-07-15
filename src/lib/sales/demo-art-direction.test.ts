@@ -20,10 +20,10 @@ describe("demo art direction", () => {
     const productionLength = demoHeadlineClass("横浜・港北で42年、地域に寄り添う美容室", "hero")
     const short = demoHeadlineClass("髪を、整える。", "hero")
 
-    expect(long).toContain("3.2rem")
-    expect(long).toContain("leading-[1.18]")
-    expect(productionLength).toContain("3.2rem")
-    expect(short).toContain("5rem")
+    expect(long).toContain("3.8rem")
+    expect(long).toContain("leading-[1.2]")
+    expect(productionLength).toContain("3.8rem")
+    expect(short).toContain("4rem")
   })
 
   it("balances a long Japanese title at meaningful punctuation", () => {
