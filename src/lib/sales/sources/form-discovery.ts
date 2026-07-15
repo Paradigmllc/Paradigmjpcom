@@ -179,7 +179,7 @@ async function fetchText(url: string, timeoutMs: number): Promise<string | null>
   }
 }
 
-async function inspectContactPage(url: string, origin: string, timeoutMs: number): Promise<ContactFormInspection> {
+export async function inspectContactPage(url: string, origin: string, timeoutMs: number): Promise<ContactFormInspection> {
   const html = await fetchText(url, timeoutMs)
   if (!html) return { status: "missing", reason: "no_contact_intent", fields: [], formCount: 0, action: null, sameOrigin: false, trustedProvider: false }
   return inspectContactFormHtml(html, url, origin)

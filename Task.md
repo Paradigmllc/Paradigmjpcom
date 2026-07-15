@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-15 Manual Japan Entry 文面・診断品質hardening（実装・ローカル検証完了 / release前）
+
+- `/work`の初回文面を既存の`initial_interest`契約へ統一した。初回は100〜160語・4段落・公開ページ根拠のみで、価格、支払条件、Japan Entry Packageの売り込み、URL、添付、通話提案を禁止し、詳細分析を受け取る意思だけを確認する。生成時の`productContext`はDeepSeekが書き直した要約ではなく、企業公開ページから直接抽出した原文へ固定した。
+- 会社profileの`productContext`と`observedFacts`も公開ページ原文で上書きし、モデル由来の未確認商品表現をTwenty・レポートへ流さない。日本企業除外、SMB/Japan Entry適合、文面92/100、実フォーム90/100の既存fail-closed条件は維持した。
+- 診断レポートは既存のJapan Entry事実抽出、診断content-template選択、`DiagnosticReportData`/表示基盤を共通利用する。SaaSは言語・JPY、serviceは言語だけ、ecommerceのみ配送・ローカル決済・commerce disclosureを扱い、需要、traffic、sales、ROI、法令違反を推測しない。source coverageは実際に収集・検証できた5ソースだけで算出する。
+- Crawl4AIは通常探索と並列実行し、返却URLを信用せずHTMLを再取得して実フォームを確認した候補だけを採用する。release doctorへ`initial_interest`、公開原文、業態別共通事実、content template、HTMLフォーム検証の静的回帰ゲートを追加した。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、対象Vitest **10 files / 58 tests**、全Vitest **176 files / 789 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。E2Eで方針文、複数URL、履歴、価格なしラベル、error overlay/console errorなし、mobile横overflowなしを確認。実企業URL投入、Twenty追加、フォーム・メール等の外部送信は0件。正式releaseと本番read-backは未実施。
+
 ## CURRENT STATUS - 2026-07-15 Twenty高品質4,000件の母集団・審査・非送信同期基盤（本番収集・事前検査中 / 外部送信0）
 
 - 高品質合格4,000社には現行2%歩留まりで約200,000 websiteの検査が必要なため、公式・無料の母集団を追加した。Common Crawl `CC-MAIN-2026-25` URL Indexを欧米豪・シンガポール・中東の26市場×問い合わせ/EC/SaaS 3シグナル、各最大5,000ドメインで収集する。英国問い合わせシグナルのlive smokeは5,000/5,000ドメイン取得。URL文字列は合格根拠にせず、本文・個人情報も保存しない。

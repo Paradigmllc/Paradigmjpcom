@@ -506,6 +506,15 @@ function checkStaticReleaseRules() {
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
+  const manualWorkService = fs.existsSync("src/lib/sales/manual-japan-entry-service.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-service.ts", "utf8")
+    : ""
+  const manualWorkReport = fs.existsSync("src/lib/sales/manual-japan-entry-report.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-report.ts", "utf8")
+    : ""
+  const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
+    ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
+    : ""
   if (
     manualWorkMigration.includes("CREATE TABLE IF NOT EXISTS public.manual_japan_entry_work")
     && manualWorkMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
@@ -515,10 +524,17 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyManualJapanEntryWorkMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && twentySelectOptionsScript.includes("'manual_work'")
+    && manualWorkService.includes('purpose: "initial_interest"')
+    && !manualWorkService.includes('purpose: "commercial_offer"')
+    && manualWorkService.includes("productContext: input.evidence.productContext")
+    && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
+    && manualWorkReport.includes("matchContentTemplate")
+    && manualWorkReport.includes('evidence_contract: "public-pages-only"')
+    && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has RLS, zero-send constraint, DB verification and release wiring")
+    pass("manual Japan Entry workbench has grounded initial-interest copy, business-model report evidence, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires migration, release apply, DB verification and Twenty source metadata")
+    fail("manual Japan Entry workbench requires grounded initial-interest copy, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
