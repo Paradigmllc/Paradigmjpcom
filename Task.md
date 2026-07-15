@@ -1,3 +1,16 @@
+## CURRENT STATUS - 2026-07-15 Twenty上でDEMO候補が見えない問題の修正（本番release完了 / Twenty read-back済み / 外部送信0）
+
+### 原因と修正
+- `ノン美容室`のDEMO URL自体はTwenty companyへ同期されていたが、ユーザーが確認する一覧ビュー側で`paradigmDemoUrl`が後方列へ押し出され、`paradigmLeadStatus`も標準表示対象に入っていなかったため、Twenty画面上では「変わっていない」ように見えていた。
+- CRM field configの標準順を`会社名 -> domain -> 候補ステータス -> デモURL -> Next Action -> 営業ステータス -> フォームURL`へ固定し、`lead_status`を標準fieldへ追加、`demo_url`を3列目へ移動した。
+- Twenty company list viewの正規化対象に既存候補ビュー名を含め、release後のCRM metadata再適用で現在のTwenty一覧ビュー`営業リスト`へ列順を反映した。
+
+### Production verification
+- PR **#244** / main **d454c795** / deployment **xuyjfi0dsfox51xjhalstk34**。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
+- 本番`/api/sales/crm-field-config`へCRM metadataを再適用し、`lead_status` position 2、`demo_url` position 3、`next_action` position 4、`sales_status` position 5、`form_url` position 6を確認した。
+- 本番実データ`ノン美容室`のDEMO job `c40ccbc0-a39d-4c18-af9c-9f56b63e9448`を再度`syncTwenty:true`で実行し、Twenty company `54bba233-8f6d-44aa-b7ec-397c79b0683c`へ同期成功。Twenty REST read-backで`paradigmLeadStatus=DEMO生成済み / 要確認 / 未送信`、`paradigmDemoUrl=https://demo.paradigmjp.com/%E3%83%8E%E3%83%B3%E7%BE%8E%E5%AE%B9%E5%AE%A4`、`paradigmNextAction=DEMOを目視確認（未送信）`を確認した。
+- Twenty DB上の一覧ビュー`営業リスト`は`name 0 true`、`domainName 1 true`、`paradigmLeadStatus 2 true`、`paradigmDemoUrl 3 true`、`paradigmNextAction 4 true`、`paradigmSalesStatus 5 true`、`paradigmFormUrl 6 true`。外部送信、Opportunity、レポート、初回文面、メール、SNS、電話、郵送、フォーム送信は実行していない。
+
 ## CURRENT STATUS - 2026-07-15 検証済み候補をTwentyで確認する非送信経路（修正実装完了 / release前）
 
 ### 本番パイロットと個別レビュー
