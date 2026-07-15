@@ -45,11 +45,16 @@ export async function ingestPortalOperatorSnapshots(snapshots: PortalOperatorSna
   return { ok: rows.length > 0, imported: rows.length, failed: results.length - rows.length, results }
 }
 
-export async function listPortalCandidates(source?: PortalSource, limit = 100): Promise<CandidateListItem[]> {
+export async function listPortalCandidates(
+  source?: PortalSource,
+  limit = 100,
+  options: { offset?: number; ids?: string[] } = {},
+): Promise<CandidateListItem[]> {
   return listLeadCandidates({
-    countryCode: "JP",
     lane: "no_website_local_smb",
     sourceSlug: source ?? null,
+    offset: options.offset,
+    ids: options.ids,
     limit,
   })
 }

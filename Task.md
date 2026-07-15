@@ -1619,3 +1619,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 対象Vitest 2 files / 7 tests、全Vitest 161 files / 741 tests、TypeScript、対象ESLint、quality guard 0 errors / 60 existing warnings、production build 408/408 pages、`git diff --check`がpass。
 - PR **#237** / main **7fc9bf22** / deployment **qwe4md5606d5h3qlzeh2vasd**。正式releaseでDB 88/88とdeployment finishedを確認。直後の複数公開fetchが一時失敗したため同じdeployを再実行せず個別診断し、Ready / Twenty / 診断レポートHTTP 200を確認後にpost-deploy gateだけを再実行してSales health JSON `ok:true`を含む全項目pass。修正版resume APIはHTTP 202を返し、同じrun IDを新コンテナで再開・完走した。
 - 本番監査DBに`verified_inventory_resumed`と`verified_inventory_partial`が各1件保存され、candidate-run FKを使わない修正が実データで成立した。最終run行も33/33、send_count 0、twenty_sync_count 0を維持する。
+## CURRENT STATUS - 2026-07-15 ポータル候補をTwentyへ先行登録する実務導線（実装・テスト完了 / release前 / 外部送信0）
+
+### 実装内容
+- Houzz・エキテン・ジモティーの候補を、DEMO生成前にTwentyへ「リスト-only / 要確認 / 未送信」として登録するAPIと管理UIを追加。DEMO、文面生成、フォーム送信、メール送信はこの操作から起動しない。
+- 一括登録は明示選択した最大50件、Twenty API同時4件に固定。企業ごとにSupabaseの`portal_twenty_sync`へ同期状態・Twenty ID・最終エラーを保存し、再実行は既存成功を再利用、失敗企業だけ再試行する。
+- Twentyへupsert後にlive read-backを行い、企業名・ソース・掲載ページ・未送信ステータス・カルテ・旧DEMO/レポート/営業資料URL空状態が一致しない場合は成功扱いにしない。既存のDEMO投入済み候補はTwentyリスト同期対象から除外する。
+- 一覧APIは50件ページングとoffsetに対応し、数千件を単一レスポンス・単一リクエストへ詰め込まない。候補IDを明示したAPIでsource混在・不明IDを拒否する。
+
+### Verification / remaining gate
+- 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLintがpass。正式release、Twenty実データへの新規登録、公開管理画面確認は未実行。外部送信は引き続き0。

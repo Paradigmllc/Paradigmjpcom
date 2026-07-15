@@ -36,6 +36,11 @@ const ImportSchema = z.object({
   operatorConfirmed: z.literal(true),
   snapshots: z.array(SnapshotSchema).min(1).max(100),
 })
+const ListQuerySchema = z.object({
+  source: SourceSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).max(100_000).default(0),
+})
 const AssetSchema = demoSourceManifestSchema.shape.assets.element
 const ApproveSchema = z.object({
   candidateId: z.uuid(),
@@ -63,10 +68,9 @@ async function notifyPortalResult(title: string, message: string, idempotencyKey
 export async function GET(request: NextRequest) {
   if (!(await isSalesApiAuthorized(request))) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   try {
-    const sourceValue = request.nextUrl.searchParams.get("source")
-    const source = sourceValue ? SourceSchema.safeParse(sourceValue) : null
-    if (source && !source.success) return NextResponse.json({ ok: false, error: "Invalid portal source" }, { status: 400 })
-    const candidates = await listPortalCandidates(source?.data, 300)
+    const parsedQuery = ListQuerySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams.entries()))
+    if (!parsedQuery.success) return NextResponse.json({ ok: false, error: parsedQuery.error.issues[0]?.message ?? "Invalid portal query" }, { status: 400 })
+    const candidates = await listPortalCandidates(parsedQuery.data.source, parsedQuery.data.limit, { offset: parsedQuery.data.offset })
     return NextResponse.json({
       ok: true,
       candidates: candidates.flatMap((candidate) => {
@@ -88,9 +92,12 @@ export async function GET(request: NextRequest) {
           suggestedIndustry: snapshot.suggestedIndustry,
           smbFit: snapshot.smbFit,
           reviewStatus: snapshot.status,
+          companyId: candidate.companyId,
+          twentySync: candidate.meta.portal_twenty_sync ?? null,
           lastSeenAt: candidate.lastSeenAt,
         }] : []
       }),
+      nextOffset: candidates.length === parsedQuery.data.limit ? parsedQuery.data.offset + parsedQuery.data.limit : null,
       sendingEnabled: false,
     }, { headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {

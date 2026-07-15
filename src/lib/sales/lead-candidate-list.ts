@@ -16,6 +16,8 @@ export interface CandidateListFilters {
   lane?: CandidateLane | null
   minScore?: number | null
   sourceSlug?: string | null
+  ids?: string[] | null
+  offset?: number | null
   limit?: number | null
 }
 
@@ -85,6 +87,7 @@ export async function listLeadCandidates(filters: CandidateListFilters = {}): Pr
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role not configured")
   const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500)
+  const offset = Math.max(Math.floor(filters.offset ?? 0), 0)
   let candidateIds: Set<string> | null = null
 
   if (filters.countryCode) {
@@ -131,7 +134,9 @@ export async function listLeadCandidates(filters: CandidateListFilters = {}): Pr
   if (filters.status) query = query.eq("status", filters.status)
   if (filters.lane) query = query.eq("lane", filters.lane)
   if (filters.sourceSlug) query = query.eq("source_slug", filters.sourceSlug)
+  if (filters.ids && filters.ids.length > 0) query = query.in("id", filters.ids.slice(0, 100))
   if (candidateIds) query = query.in("id", [...candidateIds].slice(0, limit * 10))
+  query = query.range(offset, offset + limit - 1)
 
   const { data: rows, error } = await query
   if (error) throw new Error(error.message)
