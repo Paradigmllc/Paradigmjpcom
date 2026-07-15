@@ -542,6 +542,21 @@ function checkStaticReleaseRules() {
     fail("Japan Entry projections migration must be safely replayable with RLS intact")
   }
 
+  const demoQualityGatePath = "supabase/migrations/20260712233619_demo_quality_gate.sql"
+  const demoQualityGate = fs.existsSync(demoQualityGatePath)
+    ? fs.readFileSync(demoQualityGatePath, "utf8")
+    : ""
+  if (
+    demoQualityGate.includes("if not exists (")
+    && demoQualityGate.includes("theme_demo_pages_publication_status_check")
+    && demoQualityGate.includes("'private_review'")
+    && demoQualityGate.includes("theme_demo_pages_quality_publish_check")
+  ) {
+    pass("demo quality migration preserves private-review publication states")
+  } else {
+    fail("demo quality migration must not regress private-review publication states")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")
