@@ -7,13 +7,7 @@ import { normalizePublicDomain } from "./japan-entry-score"
 import { passesPublicDnsCheck } from "./japan-entry-score-service"
 import type { LeadSourcePreflightSummary } from "./lead-source-preflight"
 import { fetchFilteredZipCsvRows, zipCsvInputFromFieldMapping } from "./lead-source-zip-csv"
-import { fetchFilteredLargeCsvRows, largeCsvInputFromFieldMapping } from "./lead-source-large-csv"
-import {
-  commonCrawlDomainSignalInputFromFieldMapping,
-  commonCrawlInputFromFieldMapping,
-  fetchCommonCrawlDomainSignal,
-  fetchCommonCrawlIntersection,
-} from "./lead-source-common-crawl"
+import { fetchSpecialLeadSourceRows } from "./lead-source-special-adapters"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -357,21 +351,8 @@ async function fetchSourceText(config: LeadSourceConfig): Promise<string> {
 }
 
 async function fetchParsedSource(config: LeadSourceConfig): Promise<{ records: NormalizedSourceRecord[]; rawCount: number }> {
-  const largeCsvInput = largeCsvInputFromFieldMapping(config.source_url, config.field_mapping)
-  if (largeCsvInput) {
-    const parsed = await fetchFilteredLargeCsvRows(largeCsvInput)
-    return normalizeRows(parsed.rows, config, parsed.rawCount)
-  }
-  const commonCrawlDomainSignalInput = commonCrawlDomainSignalInputFromFieldMapping(config.source_url, config.field_mapping)
-  if (commonCrawlDomainSignalInput) {
-    const parsed = await fetchCommonCrawlDomainSignal(commonCrawlDomainSignalInput)
-    return normalizeRows(parsed.rows, config, parsed.rawCount)
-  }
-  const commonCrawlInput = commonCrawlInputFromFieldMapping(config.source_url, config.field_mapping)
-  if (commonCrawlInput) {
-    const parsed = await fetchCommonCrawlIntersection(commonCrawlInput)
-    return normalizeRows(parsed.rows, config, parsed.rawCount)
-  }
+  const special = await fetchSpecialLeadSourceRows(config)
+  if (special) return normalizeRows(special.rows, config, special.rawCount)
   if (config.source_format === "zip_csv") {
     const input = zipCsvInputFromFieldMapping(config.source_url, config.field_mapping)
     const parsed = await fetchFilteredZipCsvRows(input)
