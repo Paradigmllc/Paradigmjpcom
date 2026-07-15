@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
     if (missing.length > 0) {
       return NextResponse.json({ ok: false, error: `候補が見つかりません: ${missing.slice(0, 3).join(", ")}`, sendingEnabled: false }, { status: 404 })
     }
+    // Each candidate performs several Twenty API calls (find/create, patch,
+    // read-back). Serialize this legacy lane and stop on backpressure so it
+    // cannot consume the rate window reserved for verified list promotion.
     const summary = await syncPortalCandidatesToTwenty(candidates, { force: parsed.data.force === true, concurrency: 1 })
     const complete = summary.failed === 0 && (summary.deferred ?? 0) === 0
     return NextResponse.json({ ok: complete, ...summary, sendingEnabled: false }, { status: complete ? 200 : 207, headers: { "Cache-Control": "private, no-store" } })

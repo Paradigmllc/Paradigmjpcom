@@ -147,7 +147,9 @@ export async function approvePortalCandidateForDemo(input: {
   prefecture?: string
   assets: DemoReviewedAsset[]
 }) {
-  const candidates = await listLeadCandidates({ lane: "no_website_local_smb", limit: 500 })
+  // Resolve the explicit candidate ID instead of relying on the score-sorted
+  // first page. The bulk lane must remain correct beyond the first 500 rows.
+  const candidates = await listLeadCandidates({ lane: "no_website_local_smb", ids: [input.candidateId], limit: 1 })
   const candidate = candidates.find((item) => item.id === input.candidateId)
   if (!candidate) throw new Error("候補が見つかりません")
   const snapshot = portalSnapshot(candidate.meta)
