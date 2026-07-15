@@ -472,7 +472,6 @@ function applySqlMigrationThroughHost(sql, label) {
   )
   if (apply.status !== 0) {
     const detail = `${apply.stderr || apply.stdout || ""}`.trim()
-    if (/already exists|duplicate/i.test(detail)) return `${label}: already applied`
     throw new Error(`${label} DB SSH fallback failed: ${detail.slice(0, 300)}`)
   }
 
@@ -1539,7 +1538,7 @@ async function main() {
     console.log(await refreshIntegrationStatus(envs))
     // Public seed/smoke endpoints can load bundled compatibility contracts.
     // Make the newest claim RPC the final DB mutation before post-deploy doctor.
-    if (!SKIP_DB_UPSERT) console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
+    console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
   }
 }
 
