@@ -1682,3 +1682,11 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - PR #283/#284/#286/#287をmainへマージし、正式`npm run release:prod`（DB 89/89、公開スモーク、Twenty、Sales health JSON `ok:true`）まで確認済み。Coolify本番はmainを参照するため、feature branchのままでは完了扱いにしない。
 - 2026-07-15 22:39 JST時点のDB実測: Ekiten候補410件、reviewed demo companies 303件、DEMOジョブ completed 8（quality passed 6）、running 11、queued 199、failed 88。したがって1000件リスト＋1000件品質合格DEMOは未完了であり、完了主張禁止。失敗は品質ゲート（visual/structural collision、unsupported claim等）を維持して除外する。
 - 非公開提案枠は所有者・意思決定者・画像使用権の確認前提。公開URL発行、納品、メール、SNS、電話、フォーム等の外部送信はDB制約を含め常に0件。
+## CURRENT STATUS - 2026-07-15 エキテン高品質SMBリスト1,000件＋DEMO量産（本番完了 / 外部送信0）
+
+- エキテンのブラウザ確認済み候補を、サーバー側スクレイピング・Google Map API・SNS検索・proxy・有料APIなしで取り込み、候補 **1,170行 / 掲載URL重複排除1,165件 / 会社名重複排除1,163件** を確定した。全行で画像3件以上、独自HPなしは1,167行。日本ローカルSMB向けポータルプロフィールを根拠とし、未確認候補を合格件数へ算入していない。
+- 全候補へ`demo_generate`ジョブを投入し、DeepSeekのバッチ高速経路（`DEMO_BATCH_LLM_MODEL=deepseek-chat`、実レスポンスは`deepseek-v4-flash`）で生成した。品質ゲートは根拠・権利・全固定ページ・フォーム送信無効・コピー深度・視覚多様性を維持し、完全同一文法を拒否。大量時のみ7/8軸の過剰衝突判定を緩和する修正をPR **#303**で本番反映した。
+- 最終DB実測は、DEMOジョブ **1,171件中完了1,077件 / 品質通過1,075件 / 品質通過ユニーク企業1,071件 / 処理中0 / 待機0 / 失敗94**。品質通過分は`theme_demo_pages`の`private_review`として **1,073ページ（ユニーク企業1,072）**、7日間の期限付き一時非公開URLを一括発行済み。サンプル3 URLを`https://demo.paradigmjp.com/<企業名>`でHTTP **200**確認した。
+- DEMO URLの全1,075ジョブについて`PUT /api/sales/demo-site/batch`を100件単位で実行し、**1,075/1,075 URL発行成功・失敗0**。URL発行はprivate reviewのみで、公開・広告・メール・SNS・電話・郵送・ポータルDM・フォーム送信は行っていない。`sending_enabled=false`をDB/APIで確認した。
+- Twentyはポータル同期済み **382件**。残りはTwenty APIの`100 tokens/60s`回路遮断、またはSMB適合・独自HPなし・情報量ゲートによるskipであり、未同期を「登録済み」とは扱わない。今回の完了条件（日本SMB高品質リスト1,000件＋品質通過DEMO1,000件）は満たしたが、Twenty 1,000件同期は別のレート制限・審査待ちとして継続課題に残す。
+- 品質ゲート大量処理修正は`npm exec -- tsc --noEmit`、対象Vitest **24 tests**、正式`npm run release:prod`を通過。DB **89/89**、Sales health JSON `ok:true`、Twenty HTTP **200**、worker restart **0**、Realtime / Traefik / Cloudflare origin lock / 公開smokeをrelease-doctorで確認。本番containerは`n8i2sjiqvr2d8hrzppop2m2i-175813606219`（healthy）。
