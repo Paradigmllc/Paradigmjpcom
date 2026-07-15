@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { extractFirstPartyProductEvidence } from "./lead-product-evidence"
 import { evaluateLeadQualityGate, readLimitedText, type HomepageQualityProfile } from "./lead-quality-gate"
 import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
 
@@ -241,6 +242,130 @@ describe("evaluateLeadQualityGate", () => {
         description: "We develop product strategy for clients.",
         visibleText: "Our consultants develop product strategy and provide bespoke advisory services.",
       }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("review_required")
+    expect(result.reasons).toContain("japan_entry_offer_fit_missing")
+  })
+
+  it("accepts an official SME with multiple distinct first-party product detail pages", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <html><body>
+        <a href="/product/pd-replica">PD Replica</a>
+        <a href="https://examplecommerce.com/product/pd-sim">PD Sim</a>
+        <a href="https://other.example/product/not-ours">External product</a>
+      </body></html>
+    `, "https://www.examplecommerce.com")
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true, employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({
+        description: "Simulation technology for autonomous systems.",
+        visibleText: "Example Commerce builds simulation technology in the United States.",
+        productEvidence,
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(productEvidence.detailLinks).toEqual(["/product/pd-replica", "/product/pd-sim"])
+    expect(result.status).toBe("passed")
+    expect(result.offerFit.evidence).toEqual(expect.arrayContaining([
+      "product_detail_link:/product/pd-replica",
+      "product_detail_link:/product/pd-sim",
+    ]))
+  })
+
+  it("accepts a first-party product hub only when a grounded maker claim corroborates it", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <html><body>
+        <a href="/products">Products</a>
+        <p>We design and manufacture scientific instruments for laboratory teams worldwide.</p>
+      </body></html>
+    `, "https://examplecommerce.com")
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true, employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({
+        description: "Scientific instrumentation company.",
+        visibleText: "Example Commerce is based in the United States.",
+        productEvidence,
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("passed")
+    expect(result.offerFit.evidence).toEqual(expect.arrayContaining([
+      "product_hub_link:/products",
+      "product_claim:We design and manufacture scientific instruments for laboratory teams worldwide.",
+    ]))
+  })
+
+  it("recognizes a catalog of manufactured specialty molecules as grounded product evidence", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <html><body>
+        <a href="/product-categories">Shop Our Molecules</a>
+        <p>Our synthetic process produces glycolipid surfactants in greater than 95% purity.</p>
+      </body></html>
+    `, "https://examplecommerce.com")
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true, employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({
+        description: "Specialty surfactant manufacturer.",
+        visibleText: "Example Commerce specialty molecules in the United States.",
+        productEvidence,
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(productEvidence.hubLinks).toEqual(["/product-categories"])
+    expect(productEvidence.claims).toHaveLength(1)
+    expect(result.status).toBe("passed")
+  })
+
+  it("keeps Products & Services consultancies out of the product-brand lane", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <html><body>
+        <a href="/products-and-services">Products &amp; Services</a>
+        <a href="/products/consulting">Consulting</a>
+        <p>We develop product strategy and custom product development services for clients.</p>
+      </body></html>
+    `, "https://examplecommerce.com")
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true, employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({
+        description: "A product development consultancy.",
+        visibleText: "Products and services for clients in the United States.",
+        productEvidence,
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(productEvidence).toEqual({ hubLinks: [], detailLinks: [], claims: [] })
+    expect(result.status).toBe("review_required")
+    expect(result.reasons).toContain("japan_entry_offer_fit_missing")
+  })
+
+  it("does not let product links bypass official Tier 3 SME provenance", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <a href="/products/alpha">Alpha</a><a href="/products/beta">Beta</a>
+    `, "https://examplecommerce.com")
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({
+        is_sme: true,
+        employee_count: null,
+        annual_revenue_usd: null,
+        source: { ...source, trust_tier: 2 },
+      }),
+      homepage: homepage({ productEvidence }),
       countrySignals,
       detections: [],
       enterpriseLike: false,
