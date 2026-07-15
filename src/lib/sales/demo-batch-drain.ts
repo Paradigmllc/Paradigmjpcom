@@ -1,7 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const DEMO_BATCH_PATH = "/api/sales/demo-site/batch"
-const DEFAULT_BATCH_SIZE = 8
+const DEFAULT_BATCH_SIZE = 32
 const LEASE_SECONDS = 600
 
 type RpcBooleanResult = {

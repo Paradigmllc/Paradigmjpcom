@@ -24,7 +24,13 @@ function hashSeed(value: string): number {
 }
 
 function pick<T>(values: readonly T[], seed: number, salt: number): T {
-  const index = (seed + Math.imul(salt, 2654435761)) >>> 0
+  let mixed = (seed ^ Math.imul(salt, 0x9e3779b9)) >>> 0
+  mixed ^= mixed >>> 16
+  mixed = Math.imul(mixed, 0x85ebca6b) >>> 0
+  mixed ^= mixed >>> 13
+  mixed = Math.imul(mixed, 0xc2b2ae35) >>> 0
+  mixed ^= mixed >>> 16
+  const index = mixed >>> 0
   return values[index % values.length] ?? values[0]
 }
 
