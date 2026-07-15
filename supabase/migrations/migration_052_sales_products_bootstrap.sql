@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS public.sales_products (
   CONSTRAINT sales_products_amount_check CHECK (default_amount_yen >= 0)
 );
 
+-- Existing deployments can predate the inline UNIQUE declaration because
+-- CREATE TABLE IF NOT EXISTS does not repair missing constraints.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_sales_products_code
+  ON public.sales_products (code);
+
 CREATE TABLE IF NOT EXISTS public.sales_company_product_recommendations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.sales_companies (id) ON DELETE CASCADE,
@@ -37,6 +42,33 @@ CREATE TABLE IF NOT EXISTS public.sales_company_product_recommendations (
   CONSTRAINT sales_company_product_fit_score_check CHECK (fit_score BETWEEN 0 AND 100),
   CONSTRAINT sales_company_product_status_check CHECK (status IN ('recommended', 'assigned', 'opportunity_created', 'dismissed'))
 );
+
+-- Historical seed retries could insert the same recommendation twice before
+-- the unique index existed. Preserve the most operationally advanced row,
+-- then make the invariant enforceable for all later writes.
+WITH ranked_recommendations AS (
+  SELECT
+    id,
+    row_number() OVER (
+      PARTITION BY company_id, product_id
+      ORDER BY
+        (twenty_opportunity_id IS NOT NULL) DESC,
+        CASE status
+          WHEN 'opportunity_created' THEN 4
+          WHEN 'assigned' THEN 3
+          WHEN 'recommended' THEN 2
+          ELSE 1
+        END DESC,
+        updated_at DESC NULLS LAST,
+        created_at DESC NULLS LAST,
+        id DESC
+    ) AS duplicate_rank
+  FROM public.sales_company_product_recommendations
+)
+DELETE FROM public.sales_company_product_recommendations target
+USING ranked_recommendations ranked
+WHERE target.id = ranked.id
+  AND ranked.duplicate_rank > 1;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_sales_company_product_recommendation
   ON public.sales_company_product_recommendations (company_id, product_id);

@@ -464,6 +464,84 @@ function checkStaticReleaseRules() {
     fail("sales sync-log constraints must retain every current action and DB SSH migrations must fail closed")
   }
 
+  const salesProductsBootstrapPath = "supabase/migrations/migration_052_sales_products_bootstrap.sql"
+  const salesProductsBootstrap = fs.existsSync(salesProductsBootstrapPath)
+    ? fs.readFileSync(salesProductsBootstrapPath, "utf8")
+    : ""
+  if (
+    salesProductsBootstrap.includes("uniq_sales_products_code")
+    && salesProductsBootstrap.includes("ON public.sales_products (code)")
+    && salesProductsBootstrap.includes("ranked_recommendations")
+    && salesProductsBootstrap.includes("PARTITION BY company_id, product_id")
+    && salesProductsBootstrap.includes("twenty_opportunity_id IS NOT NULL")
+    && salesProductsBootstrap.includes("uniq_sales_company_product_recommendation")
+  ) {
+    pass("product recommendation bootstrap repairs duplicates before enforcing uniqueness")
+  } else {
+    fail("product recommendation bootstrap must deterministically repair duplicates before its unique index")
+  }
+
+  const dxAiTemplateVariantPath = "supabase/migration_043_sales_dx_ai_template_variant.sql"
+  const dxAiTemplateVariant = fs.existsSync(dxAiTemplateVariantPath)
+    ? fs.readFileSync(dxAiTemplateVariantPath, "utf8")
+    : ""
+  if (
+    dxAiTemplateVariant.includes("ALTER TABLE public.sales_templates")
+    && dxAiTemplateVariant.includes("ADD COLUMN IF NOT EXISTS template_variant")
+    && dxAiTemplateVariant.includes("sales_templates_template_variant_check")
+    && dxAiTemplateVariant.includes("'dx_ai_package'")
+  ) {
+    pass("DX/AI template migration repairs the legacy template variant column before constraining it")
+  } else {
+    fail("DX/AI template migration must repair the legacy template variant column before adding its constraint")
+  }
+
+  const formQualifiedLeadFactoryPath = "supabase/migrations/20260714143000_form_qualified_lead_factory.sql"
+  const formQualifiedLeadFactory = fs.existsSync(formQualifiedLeadFactoryPath)
+    ? fs.readFileSync(formQualifiedLeadFactoryPath, "utf8")
+    : ""
+  if (
+    formQualifiedLeadFactory.includes("IF NOT EXISTS (")
+    && formQualifiedLeadFactory.includes("sales_lead_candidate_run_items_status_check")
+    && formQualifiedLeadFactory.includes("'awaiting_review'")
+    && formQualifiedLeadFactory.includes("'review_required'")
+    && formQualifiedLeadFactory.includes("'rejected'")
+  ) {
+    pass("form-qualified lead migration preserves current quality and operator-review states")
+  } else {
+    fail("form-qualified lead migration must not regress current quality and operator-review states")
+  }
+
+  const highQualityLeadSourcesPath = "supabase/migrations/20260715082148_high_quality_lead_sources.sql"
+  const highQualityLeadSources = fs.existsSync(highQualityLeadSourcesPath)
+    ? fs.readFileSync(highQualityLeadSourcesPath, "utf8")
+    : ""
+  if (
+    highQualityLeadSources.includes("IF NOT EXISTS (")
+    && highQualityLeadSources.includes("sales_lead_candidate_run_items_status_check")
+    && highQualityLeadSources.includes("'awaiting_review'")
+    && highQualityLeadSources.includes("'review_required'")
+    && highQualityLeadSources.includes("'rejected'")
+  ) {
+    pass("high-quality source migration preserves the operator-review state contract")
+  } else {
+    fail("high-quality source migration must not regress the operator-review state contract")
+  }
+
+  const japanEntryProjectionsPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
+  const japanEntryProjections = fs.existsSync(japanEntryProjectionsPath)
+    ? fs.readFileSync(japanEntryProjectionsPath, "utf8")
+    : ""
+  if (
+    japanEntryProjections.includes("CREATE TABLE IF NOT EXISTS public.sales_japan_entry_projections")
+    && japanEntryProjections.includes("CREATE INDEX IF NOT EXISTS sales_japan_entry_projections_company_created_idx")
+    && japanEntryProjections.includes("ENABLE ROW LEVEL SECURITY")
+  ) {
+    pass("Japan Entry projections migration is safely replayable")
+  } else {
+    fail("Japan Entry projections migration must be safely replayable with RLS intact")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")

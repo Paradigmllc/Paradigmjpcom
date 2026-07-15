@@ -31,12 +31,27 @@ ALTER TABLE public.sales_lead_candidate_run_items
   ADD COLUMN IF NOT EXISTS twenty_synced boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS twenty_company_id text;
 
-ALTER TABLE public.sales_lead_candidate_run_items
-  DROP CONSTRAINT IF EXISTS sales_lead_candidate_run_items_status_check;
-ALTER TABLE public.sales_lead_candidate_run_items
-  ADD CONSTRAINT sales_lead_candidate_run_items_status_check CHECK (
-    status IN ('discovered', 'verified', 'scored', 'form_missing', 'promoted', 'failed', 'skipped')
-  );
+-- This historical migration is replayed by the release gate. Keep every state
+-- introduced by the later quality and operator-review migrations, and never
+-- replace a newer constraint with the old seven-state contract.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.sales_lead_candidate_run_items'::regclass
+      AND conname = 'sales_lead_candidate_run_items_status_check'
+  ) THEN
+    ALTER TABLE public.sales_lead_candidate_run_items
+      ADD CONSTRAINT sales_lead_candidate_run_items_status_check CHECK (
+        status IN (
+          'discovered', 'verified', 'scored', 'awaiting_review', 'form_missing',
+          'promoted', 'review_required', 'rejected', 'failed', 'skipped'
+        )
+      );
+  END IF;
+END
+$$;
 
 ALTER TABLE public.sales_lead_candidate_run_items
   DROP CONSTRAINT IF EXISTS sales_lead_candidate_run_items_form_confidence_check;

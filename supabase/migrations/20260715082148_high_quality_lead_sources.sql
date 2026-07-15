@@ -105,12 +105,27 @@ ALTER TABLE public.sales_lead_candidate_run_items
   ADD COLUMN IF NOT EXISTS quality_gate jsonb NOT NULL DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS quality_reasons text[] NOT NULL DEFAULT '{}'::text[];
 
-ALTER TABLE public.sales_lead_candidate_run_items
-  DROP CONSTRAINT IF EXISTS sales_lead_candidate_run_items_status_check;
-ALTER TABLE public.sales_lead_candidate_run_items
-  ADD CONSTRAINT sales_lead_candidate_run_items_status_check CHECK (
-    status IN ('discovered', 'verified', 'scored', 'form_missing', 'promoted', 'review_required', 'rejected', 'failed', 'skipped')
-  );
+-- This migration is replayed after the operator-review schema already exists
+-- on established deployments. Never remove awaiting_review or replace a newer
+-- status contract with this historical quality-only value set.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.sales_lead_candidate_run_items'::regclass
+      AND conname = 'sales_lead_candidate_run_items_status_check'
+  ) THEN
+    ALTER TABLE public.sales_lead_candidate_run_items
+      ADD CONSTRAINT sales_lead_candidate_run_items_status_check CHECK (
+        status IN (
+          'discovered', 'verified', 'scored', 'awaiting_review', 'form_missing',
+          'promoted', 'review_required', 'rejected', 'failed', 'skipped'
+        )
+      );
+  END IF;
+END
+$$;
 
 ALTER TABLE public.sales_lead_candidate_run_items
   DROP CONSTRAINT IF EXISTS sales_lead_candidate_run_items_quality_status_check;
