@@ -31,7 +31,7 @@ export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Re
 }>> {
   const configs = await listLeadSourceConfigs()
   return Object.fromEntries(countryCodes.map((countryCode) => {
-    const matched = configs.filter((config) => {
+    const pilotReady = configs.filter((config) => {
       const lastPreflightAt = config.last_preflighted_at ? Date.parse(config.last_preflighted_at) : Number.NaN
       const preflightFresh = Number.isFinite(lastPreflightAt) && Date.now() - lastPreflightAt <= 7 * 24 * 60 * 60_000
       return config.active
@@ -40,15 +40,15 @@ export async function getLeadSourceReadiness(countryCodes: string[]): Promise<Re
         && config.last_status === "ready"
         && config.country_code === countryCode
         && config.eligible_record_count > 0
-        && preflightCount(config, "pending") === 0
-        && preflightCount(config, "checking") === 0
         && preflightFresh
     })
-    const scaleReady = matched.filter((config) => config.pilot_approved_at !== null)
+    const scaleReady = pilotReady.filter((config) => config.pilot_approved_at !== null
+      && preflightCount(config, "pending") === 0
+      && preflightCount(config, "checking") === 0)
     return [countryCode, {
-      sourceIds: matched.map((config) => config.id),
+      sourceIds: pilotReady.map((config) => config.id),
       scaleReadySourceIds: scaleReady.map((config) => config.id),
-      recordCount: matched.reduce((sum, config) => sum + config.eligible_record_count, 0),
+      recordCount: pilotReady.reduce((sum, config) => sum + config.eligible_record_count, 0),
       scaleReadyRecordCount: scaleReady.reduce((sum, config) => sum + config.eligible_record_count, 0),
     }]
   }))

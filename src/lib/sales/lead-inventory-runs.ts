@@ -34,7 +34,7 @@ export interface LeadInventoryRun {
 
 const activeRuns = new Set<string>()
 const pendingRuns: string[] = []
-const MAX_PREFLIGHT_CHUNKS_PER_SOURCE = 200
+const MAX_PREFLIGHT_CHUNKS_PER_SOURCE = 1_000
 const MAX_ACTIVE_RUNS = 1
 
 function getSb(): ServiceSupabase {
