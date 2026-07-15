@@ -76,4 +76,61 @@ describe("fetchCommonCrawlIntersection", () => {
       expect.objectContaining({ website_url: "https://beta.co.uk", contact_page_url: "https://beta.co.uk/contact-us" }),
     ])
   })
+
+  it("ignores malformed JSONL rows without discarding valid evidence", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response([
+      JSON.stringify({ url: "https://valid.co.uk/contact", timestamp: "20260601000000", digest: "A" }),
+      '{"url":"https://broken.co.uk/contact",',
+    ].join("\n"), { status: 200 })))
+
+    const result = await fetchCommonCrawlDomainSignal({
+      queryUrl: query("url:contact"),
+      signal: "contact",
+      pages: [8],
+      maxRecords: 5_000,
+    })
+
+    expect(result.rows).toEqual([
+      expect.objectContaining({ website_url: "https://valid.co.uk", contact_page_url: "https://valid.co.uk/contact" }),
+    ])
+  })
+
+  it("retries transient index failures", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("gateway timeout", { status: 504 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        url: "https://recovered.co.uk/contact",
+        timestamp: "20260601000000",
+        digest: "A",
+      }), { status: 200 }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const result = await fetchCommonCrawlDomainSignal({
+      queryUrl: query("url:contact"),
+      signal: "contact",
+      pages: [9],
+      maxRecords: 5_000,
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(result.rows).toEqual([expect.objectContaining({ website_url: "https://recovered.co.uk" })])
+  })
+
+  it("keeps successful page evidence when another page is unavailable", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: URL | RequestInfo) => {
+      const page = new URL(String(url)).searchParams.get("page")
+      return page === "10"
+        ? new Response(JSON.stringify({ url: "https://partial.co.uk/contact", timestamp: "20260601000000", digest: "A" }), { status: 200 })
+        : new Response("bad request", { status: 400 })
+    }))
+
+    const result = await fetchCommonCrawlDomainSignal({
+      queryUrl: query("url:contact"),
+      signal: "contact",
+      pages: [10, 11],
+      maxRecords: 5_000,
+    })
+
+    expect(result.rows).toEqual([expect.objectContaining({ website_url: "https://partial.co.uk" })])
+  })
 })
