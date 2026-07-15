@@ -106,7 +106,7 @@ export function twentyBaseUrl(): string | null {
 function twentyFetchTimeoutMs(): number {
   const raw = process.env.TWENTY_FETCH_TIMEOUT_MS
   const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN
-  return Number.isFinite(parsed) && parsed >= 1_000 ? parsed : 8_000
+  return Number.isFinite(parsed) && parsed >= 1_000 ? parsed : 20_000
 }
 
 export function normalizeDomain(input: string | null | undefined): string | null {

@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     if (missing.length > 0) {
       return NextResponse.json({ ok: false, error: `候補が見つかりません: ${missing.slice(0, 3).join(", ")}`, sendingEnabled: false }, { status: 404 })
     }
-    const summary = await syncPortalCandidatesToTwenty(candidates, { force: parsed.data.force === true, concurrency: 4 })
+    // Each candidate performs several Twenty API calls (find/create, patch,
+    // read-back). Keep this lane bounded so large imports remain retryable
+    // without opening the circuit breaker.
+    const summary = await syncPortalCandidatesToTwenty(candidates, { force: parsed.data.force === true, concurrency: 2 })
     return NextResponse.json({ ok: summary.failed === 0, ...summary, sendingEnabled: false }, { status: summary.failed === 0 ? 200 : 207, headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {
     console.error("[portal-candidates/twenty-sync] request failed:", error)

@@ -31,7 +31,7 @@ describe("portal candidate Twenty sync API", () => {
     }))
     expect(response.status).toBe(200)
     expect(mocks.list).toHaveBeenCalledWith("ekiten", 1, { ids: [candidateId] })
-    expect(mocks.sync).toHaveBeenCalledWith([{ id: candidateId }], { force: false, concurrency: 4 })
+    expect(mocks.sync).toHaveBeenCalledWith([{ id: candidateId }], { force: false, concurrency: 2 })
     expect(await response.json()).toMatchObject({ ok: true, synced: 1, sendingEnabled: false })
   })
 
