@@ -63,6 +63,30 @@ describe("DeepSeek SMB adjudication", () => {
     expect(result.error).toContain("two evidence quotes")
   })
 
+  it("accepts bounded surplus quotes but retains only exact website evidence", async () => {
+    const caller: typeof callDeepSeek = async () => ({
+      ok: true,
+      text: responseJson({
+        evidence_quotes: [
+          "Our 18-person team builds inventory software for independent retailers.",
+          "Start a free trial and choose a monthly plan.",
+          "Not present one",
+          "Not present two",
+          "Not present three",
+          "Not present four",
+        ],
+      }),
+      usedModel: "deepseek-v4-pro",
+    })
+    const result = await reviewUnknownSmbCandidate({ companyName: "Alpha Cloud", countryCode: "GB", homepage, qualityGate: gate, detections: [] }, caller)
+
+    expect(result.passed).toBe(true)
+    expect(result.evidenceQuotes).toEqual([
+      "Our 18-person team builds inventory software for independent retailers.",
+      "Start a free trial and choose a monthly plan.",
+    ])
+  })
+
   it("does not review candidates with unresolved country or offer-fit reasons", async () => {
     const caller: typeof callDeepSeek = async () => ({ ok: true, text: responseJson(), usedModel: "deepseek-v4-pro" })
     const result = await reviewUnknownSmbCandidate({

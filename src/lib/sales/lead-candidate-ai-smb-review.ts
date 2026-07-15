@@ -24,8 +24,11 @@ const ReviewSchema = z.object({
   business_model: z.enum(["saas", "ecommerce", "product_brand", "services", "other"]),
   japan_entry_fit: z.boolean(),
   confidence: z.number().min(0).max(1),
-  evidence_quotes: z.array(z.string().trim().min(4).max(280)).min(2).max(5),
-  risk_flags: z.array(z.string().trim().min(1).max(180)).max(8),
+  // DeepSeek can return more evidence than requested. Accept a bounded surplus,
+  // then keep only exact, grounded quotes below; format excess alone must not
+  // turn an otherwise verifiable company into a false negative.
+  evidence_quotes: z.array(z.string().trim().min(4).max(280)).min(2).max(20),
+  risk_flags: z.array(z.string().trim().min(1).max(180)).max(20),
   reason: z.string().trim().min(1).max(600),
 }).strict()
 
@@ -106,7 +109,8 @@ export async function reviewUnknownSmbCandidate(input: {
   try {
     const result = ReviewSchema.parse(parseJson(response.text))
     const evidence = normalized(websiteEvidence)
-    const groundedQuotes = result.evidence_quotes.filter((quote) => evidence.includes(normalized(quote)))
+    const groundedQuotes = [...new Set(result.evidence_quotes.filter((quote) => evidence.includes(normalized(quote))))].slice(0, 5)
+    const riskFlags = result.risk_flags.slice(0, 8)
     const allowedBusinessModel = ["saas", "ecommerce", "product_brand"].includes(result.business_model)
     const allowedEmployeeBand = !["250+", "unknown"].includes(result.employee_band)
     const passed = result.smb_fit
@@ -116,7 +120,7 @@ export async function reviewUnknownSmbCandidate(input: {
       && allowedEmployeeBand
       && result.confidence >= MIN_CONFIDENCE
       && groundedQuotes.length >= 2
-      && result.risk_flags.length === 0
+      && riskFlags.length === 0
     return {
       passed,
       model: response.usedModel ?? MODEL,
@@ -124,7 +128,7 @@ export async function reviewUnknownSmbCandidate(input: {
       employeeBand: result.employee_band,
       businessModel: result.business_model,
       evidenceQuotes: groundedQuotes,
-      riskFlags: result.risk_flags,
+      riskFlags,
       reason: result.reason,
       usage: response.usage,
       error: groundedQuotes.length < 2 ? "fewer than two evidence quotes matched the supplied website" : undefined,
