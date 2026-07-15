@@ -243,6 +243,7 @@ export const DEFAULT_CRM_SELECT_OPTIONS: SalesCrmSelectOption[] = [
   option("source", "manual_csv", "手動CSV", 8, null, "gray"),
   option("source", "codex_verification", "Codex検証", 9, null, "red"),
   option("source", "codex_e2e", "Codex E2E", 10, null, "red"),
+  option("source", "manual_work", "Manual Japan Entry", 11, null, "green"),
   option("sales_status", "未診断 / 未対応", "未診断 / 未対応", 0, null, "gray"),
   option("sales_status", "カルテ生成中 / 未対応", "カルテ生成中 / 未対応", 1, null, "yellow"),
   option("sales_status", "送信待ち / 未対応", "送信待ち / 未対応", 2, null, "orange"),

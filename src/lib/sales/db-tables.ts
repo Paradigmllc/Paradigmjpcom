@@ -129,6 +129,9 @@ export const DB_TABLES = {
   // Public utility runs (migration_072)
   PUBLIC_JAPAN_ENTRY_CHECKS: "public_japan_entry_checks",
 
+  // Dedicated manual Japan Entry workbench (never part of Sales OS automation)
+  MANUAL_JAPAN_ENTRY_WORK: "manual_japan_entry_work",
+
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
   // NOTE: These tables have no migrations in this repo. Managed by Appexxme (separate project).
