@@ -80,7 +80,7 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
           set
             "position" = coalesce(crm_order.position, view_field."position"),
             "isVisible" = coalesce(crm_order.visible, false),
-            "universalOverrides" = coalesce(view_field."universalOverrides", '{}'::jsonb) || jsonb_build_object(
+            "overrides" = coalesce(view_field."overrides", '{}'::jsonb) || jsonb_build_object(
               'position', coalesce(crm_order.position, view_field."position"),
               'isVisible', coalesce(crm_order.visible, false)
             ),
@@ -100,7 +100,7 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
             when extra_home_fields.name is not null then true
             else false
           end,
-          "universalOverrides" = coalesce(view_field."universalOverrides", '{}'::jsonb) || jsonb_build_object(
+          "overrides" = coalesce(view_field."overrides", '{}'::jsonb) || jsonb_build_object(
             'position', coalesce(crm_order.position, extra_home_fields.position, view_field."position"),
             'isVisible', case
               when crm_order.name is not null then crm_order.visible
