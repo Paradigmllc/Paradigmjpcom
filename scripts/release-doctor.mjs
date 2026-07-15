@@ -410,6 +410,7 @@ function checkStaticReleaseRules() {
   const preDeployProductEvidenceRetryIndex = noLoginDeploy.indexOf(productEvidenceRetryCall)
   const postDeployProductEvidenceRetryIndex = noLoginDeploy.lastIndexOf(productEvidenceRetryCall)
   const deployCompletionIndex = noLoginDeploy.indexOf("await waitDeploy(uuid)")
+  const integrationRefreshIndex = noLoginDeploy.lastIndexOf("await refreshIntegrationStatus(envs)")
   if (
     aiLeadReview.includes('"offer_fit"')
     && aiLeadReview.includes("japan_entry_offer_fit_missing")
@@ -429,6 +430,7 @@ function checkStaticReleaseRules() {
     && preDeployProductEvidenceRetryIndex
       > noLoginDeploy.indexOf("await applySalesOptionalColumnRepairMigration(envs)")
     && postDeployProductEvidenceRetryIndex > deployCompletionIndex
+    && postDeployProductEvidenceRetryIndex > integrationRefreshIndex
     && preDeployProductEvidenceRetryIndex !== postDeployProductEvidenceRetryIndex
   ) {
     pass("official SMB product-fit retries require grounded composite evidence and are release-wired before and after deploy")
