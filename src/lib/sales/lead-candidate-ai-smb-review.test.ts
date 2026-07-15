@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { callDeepSeek } from "@/lib/deepseek"
-import { applyAiSmbReview, requiresAiSmbAdjudication, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
+import { aiAdjudicationMode, applyAiSmbReview, requiresAiSmbAdjudication, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
 import type { HomepageQualityProfile, LeadQualityGate } from "./lead-quality-gate"
 
 const homepage: HomepageQualityProfile = {
@@ -77,6 +77,57 @@ describe("DeepSeek SMB adjudication", () => {
     }
 
     expect(requiresAiSmbAdjudication(tierThreeGate)).toBe(false)
+  })
+
+  it("adjudicates product fit for an official Tier 3 SMB without requiring website size text", async () => {
+    const productHomepage: HomepageQualityProfile = {
+      ...homepage,
+      title: "Nova Sensor Systems",
+      description: "Autonomous optical sensors for industrial inspection.",
+      visibleText: "Nova Sensor Systems designs autonomous optical sensors for industrial inspection. Our modular sensor platform ships to manufacturers worldwide.",
+    }
+    const officialOfferGate: LeadQualityGate = {
+      ...gate,
+      status: "review_required",
+      reasons: ["japan_entry_offer_fit_missing"],
+      source: { ...gate.source, trustTier: 3 },
+      smb: { passed: true, score: 100, evidence: ["employee_count:36", "official_sme_flag:SBA SBIR"] },
+      offerFit: { passed: false, score: 0, evidence: [] },
+    }
+    const caller: typeof callDeepSeek = async () => ({
+      ok: true,
+      usedModel: "deepseek-v4-pro",
+      text: responseJson({
+        smb_fit: false,
+        employee_band: "unknown",
+        business_model: "product_brand",
+        evidence_quotes: [
+          "Nova Sensor Systems designs autonomous optical sensors for industrial inspection.",
+          "Our modular sensor platform ships to manufacturers worldwide.",
+        ],
+      }),
+    })
+
+    expect(aiAdjudicationMode(officialOfferGate)).toBe("offer_fit")
+    const result = await reviewUnknownSmbCandidate({ companyName: "Nova Sensor Systems", countryCode: "US", homepage: productHomepage, qualityGate: officialOfferGate, detections: [] }, caller)
+    expect(result).toMatchObject({ passed: true, mode: "offer_fit", businessModel: "product_brand" })
+    expect(applyAiSmbReview(officialOfferGate, result)).toMatchObject({
+      status: "passed",
+      smb: { passed: true, score: 100 },
+      offerFit: { passed: true, score: 90 },
+    })
+  })
+
+  it("does not use offer-fit adjudication without official Tier 3 SMB evidence", () => {
+    const ungroundedOfferGate: LeadQualityGate = {
+      ...gate,
+      status: "review_required",
+      reasons: ["japan_entry_offer_fit_missing"],
+      smb: { passed: true, score: 82, evidence: ["site_marker:small business"] },
+      offerFit: { passed: false, score: 0, evidence: [] },
+    }
+
+    expect(aiAdjudicationMode(ungroundedOfferGate)).toBeNull()
   })
 
   it("fails closed when model quotes are not present in the supplied page", async () => {

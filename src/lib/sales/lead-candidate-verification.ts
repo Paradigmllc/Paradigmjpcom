@@ -203,8 +203,8 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
   const countrySignals = inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: `${homepage.title} ${homepage.description} ${homepage.visibleText}` })
   const enterpriseLike = isEnterpriseLikeStack(detection.tech)
   const initialQualityGate = evaluateLeadQualityGate({ sourceRecord, homepage, countrySignals, detections: detection.tech, enterpriseLike })
-  const aiSmbEligible = requiresAiSmbAdjudication(initialQualityGate)
-  if (initialQualityGate.status === "rejected" || (initialQualityGate.status === "review_required" && !aiSmbEligible)) {
+  const aiReviewEligible = requiresAiSmbAdjudication(initialQualityGate)
+  if (initialQualityGate.status === "rejected" || (initialQualityGate.status === "review_required" && !aiReviewEligible)) {
     return closeWithoutPromotion(item, {
       status: initialQualityGate.status,
       quality_status: initialQualityGate.status,
@@ -237,7 +237,7 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
     })
   }
 
-  const aiReview = aiSmbEligible ? await reviewUnknownSmbCandidate({
+  const aiReview = aiReviewEligible ? await reviewUnknownSmbCandidate({
     companyName: initialQualityGate.identity.canonicalName ?? sourceRecord.company_name,
     countryCode: run.country_code,
     homepage,
@@ -249,7 +249,7 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
       status: "review_required",
       quality_status: "review_required",
       quality_gate: { ...initialQualityGate, aiReview, form: { qualified: true, discovery: form } },
-      quality_reasons: ["ai_smb_review_failed"],
+      quality_reasons: ["ai_evidence_review_failed"],
       form_url: form.formUrl,
       form_method: form.method,
       form_confidence: form.confidence,

@@ -398,6 +398,29 @@ function checkStaticReleaseRules() {
     fail("lead factory must remain fail-closed until explicit operator review and Twenty approval")
   }
 
+  const aiLeadReview = fs.existsSync("src/lib/sales/lead-candidate-ai-smb-review.ts")
+    ? fs.readFileSync("src/lib/sales/lead-candidate-ai-smb-review.ts", "utf8")
+    : ""
+  const productFitRetryMigrationPath = "supabase/migrations/20260715173000_lead_source_product_fit_retry.sql"
+  const productFitRetryMigration = fs.existsSync(productFitRetryMigrationPath)
+    ? fs.readFileSync(productFitRetryMigrationPath, "utf8")
+    : ""
+  if (
+    aiLeadReview.includes('"offer_fit"')
+    && aiLeadReview.includes("japan_entry_offer_fit_missing")
+    && aiLeadReview.includes("deepseek_v4_pro_product_fit")
+    && aiLeadReview.includes("MIN_CONFIDENCE = 0.96")
+    && productFitRetryMigration.includes("source_config.trust_tier >= 3")
+    && productFitRetryMigration.includes("source_record.is_sme = true")
+    && productFitRetryMigration.includes("ARRAY['japan_entry_offer_fit_missing']::text[]")
+    && noLoginDeploy.includes("20260715173000_lead_source_product_fit_retry.sql")
+    && noLoginDeploy.includes("applyLeadSourceProductFitRetryMigration")
+  ) {
+    pass("official SMB product-fit retries require grounded DeepSeek evidence and are release-wired")
+  } else {
+    fail("official SMB product-fit retries must stay Tier 3, SME-only, 96% grounded, and release-wired")
+  }
+
   const listLeadSyncMigrationPath = "supabase/migrations/20260715193000_sales_sync_logs_list_lead.sql"
   const listLeadSyncMigration = fs.existsSync(listLeadSyncMigrationPath)
     ? fs.readFileSync(listLeadSyncMigrationPath, "utf8")
