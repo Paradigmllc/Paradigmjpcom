@@ -7,6 +7,8 @@ const MAX_QUERY_BYTES = 12 * 1024 * 1024
 const MAX_PAGE_SIZE = 100
 const REQUEST_GAP_MS = 1_200
 const CACHE_TTL_MS = 10 * 60_000
+const MAX_FETCH_ATTEMPTS = 3
+const RETRY_BACKOFF_MS = 1_000
 
 interface CachedRows {
   expiresAt: number
@@ -90,9 +92,17 @@ async function readLimitedText(response: Response): Promise<string> {
 
 function parseIndexRows(text: string): CommonCrawlIndexRow[] {
   const rows: CommonCrawlIndexRow[] = []
+  let malformedRows = 0
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim()) continue
-    const parsed = JSON.parse(line) as unknown
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(line) as unknown
+    } catch (error) {
+      malformedRows += 1
+      if (malformedRows <= 3) console.warn("[lead-source-common-crawl] ignored malformed JSONL row:", error)
+      continue
+    }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) continue
     const record = parsed as JsonRecord
     const url = textValue(record.url)
@@ -103,7 +113,16 @@ function parseIndexRows(text: string): CommonCrawlIndexRow[] {
       digest: textValue(record.digest),
     })
   }
+  if (malformedRows > 3) console.warn(`[lead-source-common-crawl] ignored ${malformedRows} malformed JSONL rows`)
   return rows
+}
+
+function isTransientStatus(status: number): boolean {
+  return status === 429 || status >= 500
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
 async function fetchIndexRows(rawUrl: string): Promise<CommonCrawlIndexRow[]> {
@@ -116,18 +135,37 @@ async function fetchIndexRows(rawUrl: string): Promise<CommonCrawlIndexRow[]> {
   requestTail = new Promise<void>((resolve) => { release = resolve })
   await previous
   try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/x-ndjson, application/json;q=0.9",
-        "User-Agent": "ParadigmLeadSourceIngest/1.0 (+https://paradigmjp.com)",
-      },
-      redirect: "error",
-      signal: AbortSignal.timeout(120_000),
-    })
-    if (!response.ok) throw new Error(`Common Crawl index returned HTTP ${response.status}`)
-    const rows = parseIndexRows(await readLimitedText(response))
-    queryCache.set(cacheKey, { rows, expiresAt: Date.now() + CACHE_TTL_MS })
-    return rows
+    let lastError: Error | null = null
+    for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            Accept: "application/x-ndjson, application/json;q=0.9",
+            "User-Agent": "ParadigmLeadSourceIngest/1.0 (+https://paradigmjp.com)",
+          },
+          redirect: "error",
+          signal: AbortSignal.timeout(120_000),
+        })
+        if (!response.ok) {
+          await response.body?.cancel().catch((error) => console.warn("[lead-source-common-crawl] response cancel failed:", error))
+          const failure = new Error(`Common Crawl index returned HTTP ${response.status}`)
+          if (!isTransientStatus(response.status) || attempt === MAX_FETCH_ATTEMPTS) throw failure
+          lastError = failure
+          console.warn(`[lead-source-common-crawl] transient HTTP ${response.status}; retry ${attempt}/${MAX_FETCH_ATTEMPTS}`)
+          await wait(RETRY_BACKOFF_MS * attempt)
+          continue
+        }
+        const rows = parseIndexRows(await readLimitedText(response))
+        queryCache.set(cacheKey, { rows, expiresAt: Date.now() + CACHE_TTL_MS })
+        return rows
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Common Crawl index request failed")
+        if (attempt === MAX_FETCH_ATTEMPTS || /^Common Crawl index returned HTTP (?!429|5\d\d)/.test(lastError.message)) throw lastError
+        console.warn(`[lead-source-common-crawl] request failed; retry ${attempt}/${MAX_FETCH_ATTEMPTS}:`, lastError)
+        await wait(RETRY_BACKOFF_MS * attempt)
+      }
+    }
+    throw lastError ?? new Error("Common Crawl index request failed")
   } finally {
     setTimeout(release, REQUEST_GAP_MS)
   }
@@ -206,8 +244,18 @@ export function commonCrawlInputFromFieldMapping(sourceUrl: string, mapping: Jso
 export async function fetchCommonCrawlDomainSignal(input: CommonCrawlDomainSignalInput): Promise<{ rows: JsonRecord[]; rawCount: number }> {
   const maxRecords = boundedMaxRecords(input.maxRecords)
   const byDomain = new Map<string, CommonCrawlIndexRow>()
+  let successfulPages = 0
+  let lastPageError: Error | null = null
   for (const page of input.pages) {
-    const rows = await fetchIndexRows(queryForPage(input.queryUrl, page))
+    let rows: CommonCrawlIndexRow[]
+    try {
+      rows = await fetchIndexRows(queryForPage(input.queryUrl, page))
+      successfulPages += 1
+    } catch (error) {
+      lastPageError = error instanceof Error ? error : new Error("Common Crawl page failed")
+      console.warn(`[lead-source-common-crawl] skipped unavailable page ${page}:`, lastPageError)
+      continue
+    }
     for (const row of rows) {
       const domain = normalizePublicDomain(row.url)
       if (domain && !byDomain.has(domain)) byDomain.set(domain, row)
@@ -215,6 +263,7 @@ export async function fetchCommonCrawlDomainSignal(input: CommonCrawlDomainSigna
     }
     if (byDomain.size >= maxRecords) break
   }
+  if (successfulPages === 0) throw lastPageError ?? new Error("Every Common Crawl index page failed")
   return {
     rawCount: byDomain.size,
     rows: [...byDomain.entries()].map(([domain, row]) => ({
