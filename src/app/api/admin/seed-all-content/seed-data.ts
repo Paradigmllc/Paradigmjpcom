@@ -1,9 +1,6 @@
 // @ts-nocheck — seed data file, PayloadCMS collection types vary at runtime
 import type { getPayload as getPayloadType } from "payload"
-import {
-  EN_JAPAN_ENTRY_COMPARISON_BLOCK,
-  EN_JAPAN_ENTRY_PROCESS_BLOCK,
-} from "./homepage-en-blocks"
+import { EN_JAPAN_ENTRY_COMPARISON_BLOCK, EN_JAPAN_ENTRY_PROCESS_BLOCK, EN_PROFESSIONAL_USE_CASE_SECTION } from "./homepage-en-blocks"
 import {
   JAPAN_ENTRY_MONTH_ONE_TARGET,
   JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
@@ -368,7 +365,7 @@ export async function seedAllContent(
         blockType: "hero", variant: "centered",
         badge: "FOR FAST-DECISION GLOBAL SMBs",
         title: "Launch in Japan without hiring a local team",
-        subtitle: "A fixed-scope Japan entry operation for companies with an empowered approver ready to move this month. We build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
+        subtitle: "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies entering Japan or establishing a Japan-facing operating base. For fast-decision teams, we build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
         primaryCta: { label: "Apply for Japan Entry — $12K", href: "/en/contact?intent=japan-entry" },
         secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
         stats: [
@@ -391,11 +388,12 @@ export async function seedAllContent(
         ],
         direction: "left", speed: "slow",
       },
+      EN_PROFESSIONAL_USE_CASE_SECTION,
       {
         blockType: "section",
         kicker: "THE OUTCOME",
         title: "A Japan-ready revenue path, not another strategy deck",
-        subtitle: "Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a 14-business-day delivery guarantee from the recorded Start Date, and one accountable Tokyo-based team.",
+        subtitle: "As a Japan-based professional partner, Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a 14-business-day delivery guarantee from the recorded Start Date, and one accountable Tokyo-based team.",
         alignment: "center", background: "default",
       },
       {
@@ -438,7 +436,7 @@ export async function seedAllContent(
       {
         blockType: "faq",
         title: "Before you apply",
-        subtitle: "The terms are deliberately simple so qualified companies can decide quickly.",
+        subtitle: "Paradigm LLC supports overseas e-commerce, SaaS, and Web3.0 companies with a professional, evidence-led Japan launch path. The terms are deliberately simple so qualified companies can decide quickly.",
         items: [
           { question: "Is the setup fee always $12,000?", answer: textToLexical("Yes. The setup fee is fixed at $12,000 and paid before kickoff. If your launch cannot fit the published scope, we will decline the application rather than expand the price after the fact.") },
           { question: "What does $0/month for six months mean?", answer: textToLexical("The standard managed operating service is included for the first six months at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain your responsibility.") },

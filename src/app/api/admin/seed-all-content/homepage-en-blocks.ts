@@ -27,3 +27,12 @@ export const EN_JAPAN_ENTRY_COMPARISON_BLOCK = {
     { item: "Decision", leftValue: "One fixed scope", rightValue: "Repeated procurement decisions" },
   ],
 } as const
+
+export const EN_PROFESSIONAL_USE_CASE_SECTION = {
+  blockType: "section",
+  kicker: "WHO WE ARE",
+  title: "A Japan-based professional partner for e-commerce, SaaS, and Web3.0.",
+  subtitle: "Paradigm LLC combines practical Japan-entry experience with hands-on digital delivery. We support overseas companies with localization, buyer trust, compliance coordination, discovery, Japanese support, and a clear operating handover.",
+  alignment: "center",
+  background: "surface",
+} as const
