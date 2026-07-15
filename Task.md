@@ -23,17 +23,18 @@
 - 本番実データ`ノン美容室`のDEMO job `c40ccbc0-a39d-4c18-af9c-9f56b63e9448`を再度`syncTwenty:true`で実行し、Twenty company `54bba233-8f6d-44aa-b7ec-397c79b0683c`へ同期成功。Twenty REST read-backで`paradigmLeadStatus=DEMO生成済み / 要確認 / 未送信`、`paradigmDemoUrl=https://demo.paradigmjp.com/%E3%83%8E%E3%83%B3%E7%BE%8E%E5%AE%B9%E5%AE%A4`、`paradigmNextAction=DEMOを目視確認（未送信）`を確認した。
 - Twenty DB上の一覧ビュー`営業リスト`は`name 0 true`、`domainName 1 true`、`paradigmLeadStatus 2 true`、`paradigmDemoUrl 3 true`、`paradigmNextAction 4 true`、`paradigmSalesStatus 5 true`、`paradigmFormUrl 6 true`。外部送信、Opportunity、レポート、初回文面、メール、SNS、電話、郵送、フォーム送信は実行していない。
 
-## CURRENT STATUS - 2026-07-15 検証済み候補をTwentyで確認する非送信経路（修正実装完了 / release前）
+## CURRENT STATUS - 2026-07-15 検証済み候補をTwentyで確認する非送信経路（本番release・実画面確認完了 / 外部送信0）
 
 ### 本番パイロットと個別レビュー
-- 収集在庫を生のままTwentyへ入れず、既存の`evidence_first_sources`候補ファクトリーでDE / IT / ESを各100候補・25件実サイト検証した。3 runは全てcompleted、合計75件確認、実フォーム合格4件、Twenty同期0のレビュー待ちで停止した。
-- 4件を個別確認し、microresist.deはニュース記事上のフォーム、multichannelsystems.comはHarvard Bioscience傘下表示のためSMB専用条件外として人間レビューでreject。coronis.esとvinidea.itは公式CORDIS SME・営利企業・EC/SaaS offer fit・同一origin一般問い合わせフォームを確認してapproveした。
-- VINIDEAはTwenty同期成功。CORONISはTwenty read-backが末尾スラッシュ正規化差を`form_url_mismatch`として検出しrollback。本番送信、初回文面、レポート、Opportunity、enrichment jobは起動していない。
+- 生の収集在庫はTwentyへ入れず、既存の`evidence_first_sources`候補ファクトリーでDE / IT / ESを各25件、合計75件実サイト検証した。実フォーム候補4件を個別確認し、microresist.deはニュース記事上のフォーム、multichannelsystems.comは独立SMB条件外としてreject。coronis.esとvinidea.itだけをapproveした。
+- Twentyへ追加したのは承認済み2社のみ。`CORONIS COMPUTING SL`（Twenty ID `810ddf50-a875-466b-b04d-8944006fb6b8`）は国名`スペイン`、フォーム`https://coronis.es/es/contacto`。`VINIDEA SRL`（Twenty ID `a458846b-647f-4bc7-8dd3-d8a58a6029a5`）は国名`イタリア`、フォーム`https://vinidea.it/contact`。
+- 両社とも候補ステータス`フォーム確認済み / Twenty登録済み / 未送信`、Next Action`候補レビュー待ち（未送信）`。診断レポート、営業資料、デモURLは空で、Sales DBも`list_only=true / skip_enrichment=true / pending`、`report_url / send_result / sent_at`は空を維持する。
 
-### Twenty表示修正
-- `paradigmCountryName`をTwenty再起動時のSELECT option復元に依存しないTEXTへ変更し、inventory対象のIT / NL / BE / CH / AT / IE / DK / FI / NO / SEを日本語表示・Twenty pull逆変換へ追加した。既存のCRM field master migrationはrelease時の冪等upsertで`country.field_type=text`へ更新する。
-- フォームURL read-backはscheme / host / default port / hash / path末尾スラッシュを正規化して比較する。別パスは引き続き`form_url_mismatch`でfail-closed停止する。
-- 対象Vitest 3 files / 17 tests、全Vitest 162 files / 746 tests、TypeScript、対象ESLint、quality guard 0 errors / 61 existing warnings、production build 408/408 pages、`git diff --check`がpass。正式release後にCRM metadataを再適用し、CORONIS再同期、VINIDEA国名repair、Twenty REST / Supabase / 副作用0を再照合する。
+### Twenty表示・送信副作用の最終確認
+- `paradigmCountryName`をTEXTへ固定し、フォームURL read-backはscheme / host / default port / hash / path末尾スラッシュだけを正規化する。別パスは引き続き`form_url_mismatch`でfail-closed停止する。
+- Twenty一覧のapplication overrideを物理DB列`overrides`へ保存するよう修正。CRM metadata再適用とTwenty server / worker再起動後、country view fieldは`isVisible=true / position=7 / universalOverrides={position:7,isVisible:true}`。ログイン済みChromeで`営業リスト`の`国名`列、CORONISの`スペイン`、VINIDEAの`イタリア`を確認し、ページ再読込後も表示が維持された。
+- 対象2社に紐づく`sales_pipeline_runs / sales_enrichment_jobs / sales_diagnosis_events / sales_artifact_manifest / sales_initial_form_drafts / mvp_outreach_runs`はすべて0件。初回文面、Opportunity、レポート、enrichment、メール、SNS、電話、郵送、フォーム送信は起動していない。
+- PR **#245 / #248 / #251**、最終main **f47c5926**、deployment **ghhpl9lkddfwn496akyeojhx**。対象Vitest、全Vitest **162 files / 746 tests**、TypeScript、対象ESLint、quality guard **0 errors / 61 existing warnings**、production build **408/408 pages**、DB **88/88**、Twenty worker restart 0、Sales health JSON `ok:true`、正式`release gate passed`を確認した。
 
 ## CURRENT STATUS - 2026-07-15 SMB DEMO合格候補のTwenty可視化（本番release完了 / Twenty確認入口稼働 / 外部送信0）
 
