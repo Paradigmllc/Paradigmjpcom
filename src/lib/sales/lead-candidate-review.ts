@@ -10,6 +10,18 @@ type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 const MAX_REVIEW_ITEMS = 20
 
+export function pilotReviewEvidence(input: {
+  formsQualifiedCount: number
+  reviewableCount: number
+}): { hasReviewableQualifiedForm: boolean; requiredReviews: number } {
+  const formsQualifiedCount = Math.max(0, Math.trunc(input.formsQualifiedCount))
+  const reviewableCount = Math.max(0, Math.trunc(input.reviewableCount))
+  return {
+    hasReviewableQualifiedForm: formsQualifiedCount > 0 && reviewableCount > 0,
+    requiredReviews: Math.min(3, reviewableCount),
+  }
+}
+
 function getSb(): ServiceSupabase {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role not configured")
@@ -270,14 +282,25 @@ export async function approvePilotRun(input: { runId: string; operatorName: stri
     operator_approved_count: number
     operator_rejected_count: number
   }
+  const reviewableResult = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
+    .select("id", { count: "exact", head: true })
+    .eq("run_id", input.runId)
+    .eq("form_verified", true)
+    .eq("quality_status", "passed")
+    .in("review_status", ["pending", "approved", "rejected"])
+  if (reviewableResult.error) throw new Error(reviewableResult.error.message)
   const minimumVerified = Math.min(5, run.verify_limit)
   const failureRate = run.verified_count > 0 ? run.failure_count / run.verified_count : 1
-  const requiredReviews = Math.min(3, run.forms_qualified_count)
+  const reviewableCount = reviewableResult.count ?? 0
+  const reviewEvidence = pilotReviewEvidence({
+    formsQualifiedCount: run.forms_qualified_count,
+    reviewableCount,
+  })
   const reviewedCandidates = run.operator_approved_count + run.operator_rejected_count
   if (run.source_slug !== EVIDENCE_FIRST_SOURCE || run.execution_mode !== "pilot" || !["completed", "partial"].includes(run.status) || run.cancel_requested) {
     throw new Error("Only a completed evidence-first pilot can be approved for scale")
   }
-  if (run.verified_count < minimumVerified || run.forms_checked_count < minimumVerified || run.forms_qualified_count < 1 || reviewedCandidates < requiredReviews || failureRate > 0.2) {
+  if (run.verified_count < minimumVerified || run.forms_checked_count < minimumVerified || !reviewEvidence.hasReviewableQualifiedForm || reviewedCandidates < reviewEvidence.requiredReviews || failureRate > 0.2) {
     throw new Error("Pilot evidence is insufficient: verify five candidates, human-review up to three qualified forms, qualify one form, and keep failures at or below 20%")
   }
   await insertAuditEvents([{
@@ -311,7 +334,7 @@ export async function approvePilotRun(input: { runId: string; operatorName: stri
     entity_id: input.runId,
     action: "pilot_approved_for_scale",
     operator_name: input.operatorName,
-    detail: { sourceConfigIds: run.source_config_ids, verified: run.verified_count, formsQualified: run.forms_qualified_count, reviewedCandidates, failureRate, note: input.note },
+    detail: { sourceConfigIds: run.source_config_ids, verified: run.verified_count, formsQualified: run.forms_qualified_count, reviewableCount, reviewedCandidates, failureRate, note: input.note },
   }])
   return { approvedSources: (sources.data ?? []).length, approvedAt }
 }

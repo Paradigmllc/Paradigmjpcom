@@ -20,6 +20,7 @@
 - 上記release後のresumeで、既存inventory runnerが再ingestしてpreflight進捗をpendingへ戻す欠陥と、DB claimがpartial pilotを拒む二重条件を確認した。resume中のsourceはready在庫を再利用し、15分lease中の`checking`を完了まで待機する。pilot専用RPCはfresh `eligible`だけをclaimし、batch RPCは従来どおりsource全件preflight完了を必須とする。外部送信経路は追加しない。
 - lead resume修正の正式release中、同時変更のhomepage seedが日本語Heroを画像なし`split-image`、英語HeroをCMS upload relationへローカルURL objectとして保存しようとして500停止した。英語visualは既存renderer fallbackを使い、CMS seedから無効relation値を除去、日本語Heroを`centered`へ戻した。同じdeploymentは再実行せず、seed再実行とpost-deploy gateで確認する。
 - US pilotで最初の高確度候補`Metascape L.L.C.`をTwenty同期し、国名`米国`、確認済みフォーム`https://metascape.dev/contact-us`、未送信statusをread-backした。ただしhomepageのgeneric titleが会社名へ昇格していたため量産停止。source名とdomainが一致するだけで全site nameへdomain scoreを付けていた原因を修正し、候補site name自身もdomain/公式名と一致する場合だけcanonical nameに採用する。
+- US第5pilotは25社確認、サイト確認7、実フォーム4、失敗0。実フォームがあっても最低機会スコア未満で自動除外済みの候補まで人手レビュー必須数へ算入し、pilot承認不能になる欠陥を確認した。pilot承認では`form_verified + quality passed + review pending/approved/rejected`の実レビュー対象だけを最大3件数え、自動除外だけのrunは承認不可、レビュー対象1件のrunは1件レビューで判定できるよう修正する。
 - Twenty高品質4,000件は未達。高確度レビューとTwenty read-backが完了するまで完成扱いにしない。初回文面、診断レポート、Opportunity、メール、SNS、電話、フォーム送信は起動しておらず、外部送信0件を維持する。
 
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry Workbench（本番release完了 / 履歴0件 / 外部送信0）
