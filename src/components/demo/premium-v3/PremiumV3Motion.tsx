@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
   useScroll,
   useSpring,
@@ -151,6 +152,67 @@ export function PremiumV3TextLines({
         </span>
       ))}
     </span>
+  )
+}
+
+/**
+ * A restrained pointer response for primary actions. It adds the small amount
+ * of physicality people expect from a premium studio site without turning
+ * every interaction into a noisy hover effect. Touch and reduced-motion users
+ * receive the same button with no transform.
+ */
+export function PremiumV3Magnetic({
+  children,
+  className = "",
+  strength = 0.16,
+}: {
+  children: React.ReactNode
+  className?: string
+  strength?: number
+}) {
+  const reducedMotion = useReducedMotion()
+  const ref = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const springX = useSpring(x, { stiffness: 360, damping: 24, mass: 0.22 })
+  const springY = useSpring(y, { stiffness: 360, damping: 24, mass: 0.22 })
+
+  if (reducedMotion) return <span className={className}>{children}</span>
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "touch" || !ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    x.set((event.clientX - (rect.left + rect.width / 2)) * strength)
+    y.set((event.clientY - (rect.top + rect.height / 2)) * strength)
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      className={`inline-block ${className}`}
+      style={{ x: springX, y: springY }}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => { x.set(0); y.set(0) }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+export function PremiumV3ScrollCue({ dark = false }: { dark?: boolean }) {
+  const reducedMotion = useReducedMotion()
+  const tone = dark ? "text-white/58" : "text-[var(--demo-muted)]"
+  const line = dark ? "bg-white/48" : "bg-[var(--demo-line)]"
+  return (
+    <div className={`pointer-events-none absolute bottom-7 right-5 hidden items-center gap-3 text-[9px] font-bold uppercase tracking-[.32em] sm:flex lg:right-10 ${tone}`} aria-hidden="true">
+      <span>Scroll</span>
+      <motion.span
+        className={`relative block h-9 w-px overflow-hidden ${line}`}
+        animate={reducedMotion ? undefined : { scaleY: [0.35, 1, 0.35], opacity: [0.45, 1, 0.45] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        style={{ transformOrigin: "top" }}
+      />
+    </div>
   )
 }
 

@@ -2,13 +2,13 @@
 
 import type { DemoDesignRecipe, DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, demoHeadlineText, type DemoArtDirection } from "@/lib/sales/demo-art-direction"
-import { PremiumV3Parallax, PremiumV3Reveal, PremiumV3TextLines } from "./PremiumV3Motion"
+import { PremiumV3Parallax, PremiumV3Reveal, PremiumV3ScrollCue, PremiumV3TextLines } from "./PremiumV3Motion"
 import { PremiumV3Media } from "./PremiumV3Media"
 import { BeautyMediaMosaic, type BeautyMosaicLayout } from "./BeautyMediaMosaic"
 
 export { PremiumV3MediaCarousel } from "./PremiumV3Carousel"
 export { PremiumV3Media } from "./PremiumV3Media"
-export { PremiumV3KineticRail, PremiumV3Parallax, PremiumV3Reveal, PremiumV3ScrollProgress, PremiumV3Stagger, PremiumV3StaggerItem, PremiumV3TextLines } from "./PremiumV3Motion"
+export { PremiumV3KineticRail, PremiumV3Magnetic, PremiumV3Parallax, PremiumV3Reveal, PremiumV3ScrollCue, PremiumV3ScrollProgress, PremiumV3Stagger, PremiumV3StaggerItem, PremiumV3TextLines } from "./PremiumV3Motion"
 
 export function PremiumV3PageHero({
   title,
@@ -37,7 +37,7 @@ export function PremiumV3PageHero({
 
   if (split) {
     return (
-      <header className={`grid min-h-[500px] bg-[var(--demo-surface)] text-[var(--demo-ink)] ${editorialSplit ? "lg:grid-cols-[1.08fr_.92fr]" : "lg:grid-cols-[.88fr_1.12fr]"}`}>
+      <header className={`relative grid min-h-[500px] bg-[var(--demo-surface)] text-[var(--demo-ink)] ${editorialSplit ? "lg:grid-cols-[1.08fr_.92fr]" : "lg:grid-cols-[.88fr_1.12fr]"}`}>
         <div className={`flex px-5 pb-14 pt-28 sm:px-10 sm:pb-18 lg:px-16 lg:pb-20 ${editorialSplit ? "items-center" : "items-end"}`}>
           <PremiumV3Reveal motionStyle={motionStyle}>
             <p className="text-[10px] font-bold uppercase tracking-[.32em] text-[var(--demo-muted)] sm:text-xs">{eyebrow}</p>
@@ -48,6 +48,7 @@ export function PremiumV3PageHero({
         {useBeautyMosaic
           ? <BeautyMediaMosaic media={mediaGallery!} priority label={`${title}のサロン写真`} height="page" layout={mosaicLayout} />
           : <div className="group relative min-h-[420px] overflow-hidden lg:min-h-[500px]"><PremiumV3Parallax className="absolute -inset-y-14 inset-x-0"><PremiumV3Media media={media} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 56vw" /></PremiumV3Parallax><div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" /></div>}
+        <PremiumV3ScrollCue />
       </header>
     )
   }
@@ -62,6 +63,7 @@ export function PremiumV3PageHero({
         <h1 className={`${demoHeadlineClass(title, "hero")} mt-6 max-w-[15em] font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)]`}><PremiumV3TextLines text={balancedTitle} /></h1>
         <p className="mt-7 max-w-2xl border-l border-white/45 pl-5 text-base leading-8 text-white/78 sm:text-lg">{subtitle}</p>
       </PremiumV3Reveal>
+      <PremiumV3ScrollCue dark />
     </header>
   )
 }
