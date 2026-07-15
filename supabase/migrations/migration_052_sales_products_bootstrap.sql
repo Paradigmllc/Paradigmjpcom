@@ -38,6 +38,33 @@ CREATE TABLE IF NOT EXISTS public.sales_company_product_recommendations (
   CONSTRAINT sales_company_product_status_check CHECK (status IN ('recommended', 'assigned', 'opportunity_created', 'dismissed'))
 );
 
+-- Historical seed retries could insert the same recommendation twice before
+-- the unique index existed. Preserve the most operationally advanced row,
+-- then make the invariant enforceable for all later writes.
+WITH ranked_recommendations AS (
+  SELECT
+    id,
+    row_number() OVER (
+      PARTITION BY company_id, product_id
+      ORDER BY
+        (twenty_opportunity_id IS NOT NULL) DESC,
+        CASE status
+          WHEN 'opportunity_created' THEN 4
+          WHEN 'assigned' THEN 3
+          WHEN 'recommended' THEN 2
+          ELSE 1
+        END DESC,
+        updated_at DESC NULLS LAST,
+        created_at DESC NULLS LAST,
+        id DESC
+    ) AS duplicate_rank
+  FROM public.sales_company_product_recommendations
+)
+DELETE FROM public.sales_company_product_recommendations target
+USING ranked_recommendations ranked
+WHERE target.id = ranked.id
+  AND ranked.duplicate_rank > 1;
+
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_sales_company_product_recommendation
   ON public.sales_company_product_recommendations (company_id, product_id);
 CREATE INDEX IF NOT EXISTS idx_sales_company_product_company_status

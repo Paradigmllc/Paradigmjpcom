@@ -464,6 +464,21 @@ function checkStaticReleaseRules() {
     fail("sales sync-log constraints must retain every current action and DB SSH migrations must fail closed")
   }
 
+  const salesProductsBootstrapPath = "supabase/migrations/migration_052_sales_products_bootstrap.sql"
+  const salesProductsBootstrap = fs.existsSync(salesProductsBootstrapPath)
+    ? fs.readFileSync(salesProductsBootstrapPath, "utf8")
+    : ""
+  if (
+    salesProductsBootstrap.includes("ranked_recommendations")
+    && salesProductsBootstrap.includes("PARTITION BY company_id, product_id")
+    && salesProductsBootstrap.includes("twenty_opportunity_id IS NOT NULL")
+    && salesProductsBootstrap.includes("uniq_sales_company_product_recommendation")
+  ) {
+    pass("product recommendation bootstrap repairs duplicates before enforcing uniqueness")
+  } else {
+    fail("product recommendation bootstrap must deterministically repair duplicates before its unique index")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")
