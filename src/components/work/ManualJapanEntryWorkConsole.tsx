@@ -149,6 +149,9 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
           <p className="max-w-3xl text-sm leading-6 text-zinc-600 sm:text-base">
             完全新規の企業URLを解析し、フォーム・初回文面・診断レポートを履歴保存します。日本企業は除外し、条件を満たす企業だけTwentyへ未送信リストとして追加します。
           </p>
+          <p className="max-w-3xl rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-950 sm:text-sm">
+            初回文面は価格・URL・添付・通話提案を含めず、公開情報に基づく詳細分析を受け取る意思だけを確認します。診断レポートは業態に関係する公開ページ所見のみを表示し、需要・売上・法令違反を推測しません。
+          </p>
         </motion.header>
 
         <Card className="rounded-2xl border-zinc-200 shadow-sm">
@@ -225,7 +228,7 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
                   {item.error_message && <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{item.error_message}</p>}
                   {item.initial_message && (
                     <details className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                      <summary className="cursor-pointer text-sm font-semibold">初回営業文面（未送信）</summary>
+                      <summary className="cursor-pointer text-sm font-semibold">初回の興味確認文面（未送信・価格なし）</summary>
                       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{item.initial_message}</p>
                       <Button variant="outline" size="sm" className="mt-3" onClick={() => void copy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button>
                     </details>

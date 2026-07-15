@@ -8,6 +8,10 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
     !/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl),
     "This mocked non-mutating workbench flow runs only against a local build",
   )
+  const consoleErrors: string[] = []
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text())
+  })
   const login = await page.request.post("/api/admin", {
     data: { action: "login", password: LOCAL_ADMIN_PASSWORD },
   })
@@ -65,10 +69,15 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
 
   await page.goto("/work")
   await expect(page.getByRole("heading", { name: "海外SMBの初回営業準備" })).toBeVisible()
+  await expect(page.getByText(/初回文面は価格・URL・添付・通話提案を含めず/)).toBeVisible()
   await page.getByLabel("解析する海外企業URL").fill("https://one.example\nhttps://two.example")
   await page.getByRole("button", { name: "解析を開始" }).click()
   await expect.poll(() => submitted.sort()).toEqual(["https://one.example", "https://two.example"])
   await expect(page.getByText("one.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("two.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("自動送信: なし").first()).toBeVisible()
+  await expect(page.getByText("初回の興味確認文面（未送信・価格なし）").first()).toBeVisible()
+  await expect(page.locator("[data-nextjs-dialog], .vite-error-overlay, #webpack-dev-server-client-overlay")).toHaveCount(0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+  expect(consoleErrors).toEqual([])
 })

@@ -20,6 +20,8 @@ const profileSchema = z.object({
   observedFacts: z.array(z.string().min(3).max(240)).min(1).max(10),
 }).strict()
 
+type ParsedManualCompanyProfile = z.infer<typeof profileSchema>
+
 function parseJson(text: string): unknown {
   return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""))
 }
@@ -34,6 +36,47 @@ export function hasDeterministicJapanEvidence(input: {
     || input.countryCode === "JP"
     || input.llmJapanese
     || /株式会社|有限会社|合同会社|所在地.{0,30}(?:日本|東京都|大阪府|京都府)/.test(input.text)
+}
+
+function publicEvidenceFacts(productContext: string): string[] {
+  return [...new Set(productContext
+    .split(" | ")
+    .map((value) => value.trim())
+    .filter((value) => value.length >= 3))]
+    .slice(0, 10)
+}
+
+export function groundManualCompanyProfile(input: {
+  profile: ParsedManualCompanyProfile
+  domain: string
+  fallbackCompanyName: string | null
+  evidenceText: string
+  productContext: string
+}): ManualCompanyProfile {
+  const normalizedEvidence = input.evidenceText.toLocaleLowerCase("en-US")
+  const modelNameIsObserved = normalizedEvidence.includes(input.profile.companyName.toLocaleLowerCase("en-US"))
+  const companyName = modelNameIsObserved
+    ? input.profile.companyName
+    : input.fallbackCompanyName ?? input.profile.companyName ?? input.domain
+  const isJapaneseCompany = hasDeterministicJapanEvidence({
+    domain: input.domain,
+    text: input.evidenceText,
+    countryCode: input.profile.countryCode,
+    llmJapanese: input.profile.isJapaneseCompany,
+  })
+
+  return {
+    ...input.profile,
+    companyName,
+    productContext: input.productContext,
+    observedFacts: publicEvidenceFacts(input.productContext),
+    isJapaneseCompany,
+    japanEntryFitStatus: isJapaneseCompany ? "rejected" : input.profile.japanEntryFitStatus,
+    japanEntryFitConfidence: isJapaneseCompany ? 100 : input.profile.japanEntryFitConfidence,
+    japanEntryFitEvidence: isJapaneseCompany
+      ? [...input.profile.japanEntryFitEvidence, "Deterministic evidence indicates a Japanese company."].slice(0, 8)
+      : input.profile.japanEntryFitEvidence,
+  }
 }
 
 export async function analyzeManualCompanyProfile(input: {
@@ -88,20 +131,11 @@ export async function analyzeManualCompanyProfile(input: {
     throw new Error(response.error ?? "DeepSeek V4 Pro company classification failed")
   }
   const profile = profileSchema.parse(parseJson(response.text))
-  const isJapaneseCompany = hasDeterministicJapanEvidence({
+  return groundManualCompanyProfile({
+    profile,
     domain: input.domain,
-    text: evidenceText,
-    countryCode: profile.countryCode,
-    llmJapanese: profile.isJapaneseCompany,
+    fallbackCompanyName: input.fallbackCompanyName,
+    evidenceText,
+    productContext: input.productContext,
   })
-  return {
-    ...profile,
-    companyName: profile.companyName || input.fallbackCompanyName || input.domain,
-    isJapaneseCompany,
-    japanEntryFitStatus: isJapaneseCompany ? "rejected" : profile.japanEntryFitStatus,
-    japanEntryFitConfidence: isJapaneseCompany ? 100 : profile.japanEntryFitConfidence,
-    japanEntryFitEvidence: isJapaneseCompany
-      ? [...profile.japanEntryFitEvidence, "Deterministic evidence indicates a Japanese company."].slice(0, 8)
-      : profile.japanEntryFitEvidence,
-  }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { hasDeterministicJapanEvidence } from "./manual-japan-entry-profile"
+import { groundManualCompanyProfile, hasDeterministicJapanEvidence } from "./manual-japan-entry-profile"
 
 describe("manual company Japan exclusion", () => {
   it("rejects .jp domains regardless of model output", () => {
@@ -12,5 +12,36 @@ describe("manual company Japan exclusion", () => {
 
   it("does not reject an overseas domain without Japan evidence", () => {
     expect(hasDeterministicJapanEvidence({ domain: "example.com", text: "A Delaware software company", countryCode: "US", llmJapanese: false })).toBe(false)
+  })
+
+  it("replaces model-written product claims with exact public-page evidence", () => {
+    const grounded = groundManualCompanyProfile({
+      domain: "example.com",
+      fallbackCompanyName: "Example",
+      evidenceText: "Example | Workflow software for independent retailers",
+      productContext: "Workflow software for independent retailers | Inventory coordination",
+      profile: {
+        companyName: "Example",
+        countryCode: "US",
+        isJapaneseCompany: false,
+        smbStatus: "qualified",
+        smbConfidence: 90,
+        smbEvidence: ["Public evidence"],
+        japanEntryFitStatus: "qualified",
+        japanEntryFitConfidence: 88,
+        japanEntryFitEvidence: ["Public evidence"],
+        businessModel: "saas",
+        industry: "Technology / IT",
+        productContext: "Invented AI outcomes that were not present on the website.",
+        observedFacts: ["Invented customer outcome"],
+      },
+    })
+
+    expect(grounded.productContext).toBe("Workflow software for independent retailers | Inventory coordination")
+    expect(grounded.observedFacts).toEqual([
+      "Workflow software for independent retailers",
+      "Inventory coordination",
+    ])
+    expect(JSON.stringify(grounded)).not.toContain("Invented")
   })
 })
