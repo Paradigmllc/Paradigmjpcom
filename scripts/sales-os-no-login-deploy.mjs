@@ -462,6 +462,9 @@ function applySqlMigrationThroughHost(sql, label) {
       "-i",
       dbContainer,
       "psql",
+      "-X",
+      "-v",
+      "ON_ERROR_STOP=1",
       "-U",
       "postgres",
       "-d",
@@ -478,7 +481,7 @@ function applySqlMigrationThroughHost(sql, label) {
     "ssh",
     [
       ...commonArgs,
-      `docker exec ${dbContainer} psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';"`,
+      `docker exec ${dbContainer} psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';"`,
     ],
     { encoding: "utf8", maxBuffer: 1024 * 1024 },
   )
@@ -494,7 +497,21 @@ function applyTwentySqlThroughHost(sql, label) {
   const dbContainer = resolveTwentyDbContainer(sshTarget)
   const result = spawnSync(
     "ssh",
-    [...sshArgs(sshTarget, { acceptNew: true }), "docker", "exec", "-i", dbContainer, "psql", "-U", "twenty", "-d", "twenty"],
+    [
+      ...sshArgs(sshTarget, { acceptNew: true }),
+      "docker",
+      "exec",
+      "-i",
+      dbContainer,
+      "psql",
+      "-X",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-U",
+      "twenty",
+      "-d",
+      "twenty",
+    ],
     { input: sql, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
   )
   if (result.status !== 0) {

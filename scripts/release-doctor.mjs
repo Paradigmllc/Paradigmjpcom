@@ -442,15 +442,26 @@ function checkStaticReleaseRules() {
   const listLeadSyncMigration = fs.existsSync(listLeadSyncMigrationPath)
     ? fs.readFileSync(listLeadSyncMigrationPath, "utf8")
     : ""
+  const legacyExternalSyncMigrationPath = "supabase/migration_035_sales_external_studio_sync.sql"
+  const legacyExternalSyncMigration = fs.existsSync(legacyExternalSyncMigrationPath)
+    ? fs.readFileSync(legacyExternalSyncMigrationPath, "utf8")
+    : ""
   if (
     listLeadSyncMigration.includes("sales_sync_logs_action_check")
     && listLeadSyncMigration.includes("'list_lead_sync'")
+    && listLeadSyncMigration.includes("'portal_candidate_twenty_sync'")
+    && listLeadSyncMigration.includes("'demo_candidate_sync'")
+    && legacyExternalSyncMigration.includes("if not exists (")
+    && legacyExternalSyncMigration.includes("'portal_candidate_twenty_sync'")
+    && legacyExternalSyncMigration.includes("'demo_candidate_sync'")
+    && noLoginDeploy.includes('"ON_ERROR_STOP=1"')
+    && noLoginDeploy.includes("psql -X -v ON_ERROR_STOP=1")
     && noLoginDeploy.includes("20260715193000_sales_sync_logs_list_lead.sql")
     && noLoginDeploy.includes("applySalesSyncLogsListLeadMigration")
   ) {
-    pass("list-only Twenty sync audit migration is release-wired")
+    pass("sales sync-log constraints are monotonic and DB SSH migrations fail closed")
   } else {
-    fail("list-only Twenty sync audit migration must be release-wired")
+    fail("sales sync-log constraints must retain every current action and DB SSH migrations must fail closed")
   }
 
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"

@@ -15,7 +15,9 @@ ALTER TABLE public.sales_sync_logs
       'opportunity_sync',
       'external_studio_sync',
       'external_studio_pull',
-      'list_lead_sync'
+      'list_lead_sync',
+      'portal_candidate_twenty_sync',
+      'demo_candidate_sync'
     )
   );
 
