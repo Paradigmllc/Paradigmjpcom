@@ -1,10 +1,11 @@
-## CURRENT STATUS - 2026-07-15 Japan Entry候補の非送信スケール検証（300社実確認 / 6社Twenty追加 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 Japan Entry候補の非送信スケール検証（447社実確認 / 9社Twenty追加 / 外部送信0）
 
 - 成約20件の必要母数を再整理した。送信成功後の成約CVRを1%とする場合は2,000件の実送信、フォーム到達・送信成功率を50%と置く場合は4,000件の送信可能候補が必要。候補発見から実フォーム合格までを含む現在の実測では、4,000件の送信可能候補を作るには約80,000社以上のwebsite検査が必要になる。
 - 承認済み公式source inventoryは3,257件、website preflight合格2,342件、そのうちSME 2,330件。現sourceだけでは4,000件の送信可能候補を作れないため、source追加なしに「数千件完成」とは扱わない。
-- AT / BE / CH / DK / FI / FR / GB / IE / NL / NO / PT / SEの12市場で非送信pilotを4 wave実行し、300 websiteを実確認。フォーム合格15件、要レビュー178件、除外75件、取得失敗10件、Twenty同期0・外部送信0で停止した。
-- 15件を公式サイトで会社同一性、独立SMB、Japan Entry商材適合、実フォームの順に再審査。TAIPRO ENGINEERING / ELCON SOLUTIONS / RUSSELL IPM / CELOPLAS / FLUIDINOVA / TECHNOPHAGEの6社だけを承認しTwentyへ同期、グループ傘下・コンサル中心・地域サービス・証拠不足の9社を除外した。
-- Twenty live read-backと一覧画面の両方で6社、国名、確認済みフォーム、`フォーム確認済み / Twenty登録済み / 未送信`を確認。Sales DBは6社とも`list_only=true` / `skip_enrichment=true`、send result / sent_at / report URLは空。list-only総数89、外部送信0を維持している。
+- 12市場300 websiteの初回pilotに加え、GB batch 21件、DE / ES / IT pilot 75件、NL / FR / SG pilot 51件を処理し、累計447 websiteを実確認。実フォーム合格23件を全件公式サイトで再審査し、9件を承認、14件をグループ傘下・コンサル中心・地域サービス・旧ドメイン・証拠不足として除外した。
+- Twentyへ追加した9社はTAIPRO ENGINEERING / ELCON SOLUTIONS / RUSSELL IPM / CELOPLAS / FLUIDINOVA / TECHNOPHAGE / PHYTOWELT GREENTECHNOLOGIES / Trifolio-M / SOLEMS。全社で国名、確認済みフォーム、`フォーム確認済み / Twenty登録済み / 未送信`をlive read-backし、report URLは空を確認した。
+- 量産承認ゲートは8市場中、単一runでフォーム候補5件以上を確認したGB / PTだけを承認。他6市場は基準未達のため停止した。GB非送信batchは21件を処理してフォーム合格3件を得たが全件offer fit不合格。PT batchは直前pilotの30分claim lease中で候補0件となりfailed停止、lease後の再実行が必要。
+- Sales DBは新規9社とも`list_only=true` / `skip_enrichment=true`、send result / sent_at / report URLは空。list-only総数92、既存outreach runは2件・最終2026-05-10のままで、今回の文面生成・レポート生成・フォーム送信・外部送信は0件。
 
 ## CURRENT STATUS - 2026-07-15 エキテン中心DEMO実務運用の一括投入化（本番release完了 / 候補追加待ち / 外部送信0）
 
