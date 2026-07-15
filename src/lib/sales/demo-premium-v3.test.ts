@@ -80,7 +80,7 @@ describe("premium v3 industry typography", () => {
             title: "ドリップコーヒー",
             description: "一杯ずつ丁寧に抽出します",
             icon: "coffee",
-            features: ["一杯ずつ丁寧に抽出します", "豆の個性に合わせた抽出", "豆の個性に合わせた抽出"],
+            features: ["一杯ずつ丁寧に抽出します ／ 豆の個性に合わせた抽出 ／ 豆の個性に合わせた抽出"],
           }],
           process: [],
         },
