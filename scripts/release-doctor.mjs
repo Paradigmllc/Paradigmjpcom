@@ -487,6 +487,28 @@ function checkStaticReleaseRules() {
     fail("portal Twenty source options require Houzz, Ekiten, Jmty values, CRM field metadata and release wiring")
   }
 
+  const manualWorkMigrationPath = "supabase/migrations/20260715031327_manual_japan_entry_work.sql"
+  const manualWorkMigration = fs.existsSync(manualWorkMigrationPath)
+    ? fs.readFileSync(manualWorkMigrationPath, "utf8")
+    : ""
+  const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
+    ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
+    : ""
+  if (
+    manualWorkMigration.includes("CREATE TABLE IF NOT EXISTS public.manual_japan_entry_work")
+    && manualWorkMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
+    && manualWorkMigration.includes("ENABLE ROW LEVEL SECURITY")
+    && manualWorkMigration.includes("TO service_role")
+    && noLoginDeploy.includes("20260715031327_manual_japan_entry_work.sql")
+    && noLoginDeploy.includes("applyManualJapanEntryWorkMigration")
+    && dbVerifier.includes('"manual_japan_entry_work"')
+    && twentySelectOptionsScript.includes("'manual_work'")
+  ) {
+    pass("manual Japan Entry workbench has RLS, zero-send constraint, DB verification and release wiring")
+  } else {
+    fail("manual Japan Entry workbench requires migration, release apply, DB verification and Twenty source metadata")
+  }
+
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
   const evidenceFactory = fs.existsSync(evidenceFactoryPath)
     ? fs.readFileSync(evidenceFactoryPath, "utf8")

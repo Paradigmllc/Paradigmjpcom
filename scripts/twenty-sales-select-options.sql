@@ -131,6 +131,7 @@ with field_options(field_name, option_label, option_value, option_color, option_
     ('paradigmSourceName', 'Houzz', 'houzz', 'yellow', 11),
     ('paradigmSourceName', 'エキテン', 'ekiten', 'purple', 12),
     ('paradigmSourceName', 'ジモティー', 'jmty', 'cyan', 13),
+    ('paradigmSourceName', 'Manual Japan Entry', 'manual_work', 'green', 14),
     ('paradigmSalesStatus', '未診断 / 未対応', '未診断 / 未対応', 'gray', 0),
     ('paradigmSalesStatus', 'カルテ生成中 / 未対応', 'カルテ生成中 / 未対応', 'yellow', 1),
     ('paradigmSalesStatus', '送信待ち / 未対応', '送信待ち / 未対応', 'orange', 2),
