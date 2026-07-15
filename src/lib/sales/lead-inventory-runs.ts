@@ -101,16 +101,20 @@ async function runPreflight(sourceId: string): Promise<LeadSourcePreflightSummar
   throw new Error(`Source preflight exceeded ${MAX_PREFLIGHT_CHUNKS_PER_SOURCE * 50} records`)
 }
 
-async function ingestOrReuseResumedSource(run: LeadInventoryRun, sourceId: string): Promise<{ accepted: number; rejected: number }> {
-  if (run.current_source_id === sourceId) {
-    const source = await getSb().from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS)
-      .select("last_status,last_record_count")
-      .eq("id", sourceId)
-      .single()
-    if (source.error) throw new Error(source.error.message)
-    if (source.data?.last_status === "ready" && Number(source.data.last_record_count ?? 0) > 0) {
-      return { accepted: Number(source.data.last_record_count), rejected: 0 }
-    }
+export function reusableReadySourceRecordCount(source: { last_status?: unknown; last_record_count?: unknown }): number | null {
+  const recordCount = Number(source.last_record_count ?? 0)
+  return source.last_status === "ready" && Number.isInteger(recordCount) && recordCount > 0 ? recordCount : null
+}
+
+async function ingestOrReuseReadySource(sourceId: string): Promise<{ accepted: number; rejected: number }> {
+  const source = await getSb().from(DB_TABLES.SALES_LEAD_SOURCE_CONFIGS)
+    .select("last_status,last_record_count")
+    .eq("id", sourceId)
+    .single()
+  if (source.error) throw new Error(source.error.message)
+  const reusableRecordCount = reusableReadySourceRecordCount(source.data ?? {})
+  if (reusableRecordCount !== null) {
+    return { accepted: reusableRecordCount, rejected: 0 }
   }
   return ingestLeadSourceConfig(sourceId)
 }
@@ -131,7 +135,7 @@ async function processNextSource(runId: string): Promise<boolean> {
   let summary: LeadSourcePreflightSummary | null = null
   let failure: { sourceId: string; message: string; at: string } | null = null
   try {
-    ingestion = await ingestOrReuseResumedSource(run, sourceId)
+    ingestion = await ingestOrReuseReadySource(sourceId)
     summary = await runPreflight(sourceId)
   } catch (error) {
     console.error("[lead-inventory-runs] source preparation failed:", sourceId, error)

@@ -137,7 +137,7 @@ describe("fetchCommonCrawlIntersection", () => {
     expect(result.rows).toEqual([expect.objectContaining({ website_url: "https://partial.co.uk" })])
   })
 
-  it("uses a deterministic R2 cache when every direct index page is blocked", async () => {
+  it("uses a deterministic R2 cache before the unreliable direct index", async () => {
     const queryUrl = query("url:shop")
     process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL = "https://cache.example.com"
     const fetchMock = vi.fn(async (url: URL | RequestInfo) => String(url).startsWith("https://cache.example.com/")
@@ -156,6 +156,7 @@ describe("fetchCommonCrawlIntersection", () => {
       `https://cache.example.com/${commonCrawlCacheObjectKey(queryUrl)}`,
       expect.objectContaining({ redirect: "error" }),
     )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(result.rows).toEqual([expect.objectContaining({
       website_url: "https://cached-shop.co.uk",
       offer_page_url: "https://cached-shop.co.uk/shop",
