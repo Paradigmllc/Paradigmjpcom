@@ -528,6 +528,20 @@ function checkStaticReleaseRules() {
     fail("high-quality source migration must not regress the operator-review state contract")
   }
 
+  const japanEntryProjectionsPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
+  const japanEntryProjections = fs.existsSync(japanEntryProjectionsPath)
+    ? fs.readFileSync(japanEntryProjectionsPath, "utf8")
+    : ""
+  if (
+    japanEntryProjections.includes("CREATE TABLE IF NOT EXISTS public.sales_japan_entry_projections")
+    && japanEntryProjections.includes("CREATE INDEX IF NOT EXISTS sales_japan_entry_projections_company_created_idx")
+    && japanEntryProjections.includes("ENABLE ROW LEVEL SECURITY")
+  ) {
+    pass("Japan Entry projections migration is safely replayable")
+  } else {
+    fail("Japan Entry projections migration must be safely replayable with RLS intact")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")

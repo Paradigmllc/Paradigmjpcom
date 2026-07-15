@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TABLE public.sales_japan_entry_projections (
+CREATE TABLE IF NOT EXISTS public.sales_japan_entry_projections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.sales_companies(id) ON DELETE CASCADE,
   model_version text NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE public.sales_japan_entry_projections (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX sales_japan_entry_projections_company_created_idx
+CREATE INDEX IF NOT EXISTS sales_japan_entry_projections_company_created_idx
   ON public.sales_japan_entry_projections (company_id, created_at DESC);
 
 ALTER TABLE public.sales_japan_entry_projections ENABLE ROW LEVEL SECURITY;
