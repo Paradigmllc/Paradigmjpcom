@@ -1,3 +1,15 @@
+## CURRENT STATUS - 2026-07-15 エキテン中心DEMO実務運用の一括投入化（本番release完了 / 候補追加待ち / 外部送信0）
+
+### 実務運用を止めていた1件ずつ投入を解消
+- `/ja/admin/demo-assets`のポータル候補一覧へ「審査可能候補を一括DEMO生成へ投入」を追加した。現在選択中sourceの`ready_for_review`かつ独自HPなし・画像3件以上の候補を最大50件まとめてDEMO生成キューへ入れられる。
+- 一括投入時も、事業者本人の公式プロフィールであること、先頭画像に人物・透かし・権利リスクがないことの明示チェックを必須にした。個別投入と同じ`portal-candidates` APIを使い、素材は`private_proposal`・`officialSource=true`で登録する。
+- この操作はDEMO生成キューまでで、メール、SNS、電話、郵送、ポータルDM、フォーム送信、7日限定URL発行、Twenty同期は自動実行しない。URL発行＋Twenty同期は品質合格後の別操作のまま。
+
+### Verification / current production state
+- PR **#247** / main **9d877d79** / deployment **dpwtjq4rvn53wsnlbqpnbbqs**。`npx tsc --noEmit`、対象ESLint、対象Vitest **3 files / 13 tests pass**、production build **408/408 pages**、`git diff --check` pass。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
+- 本番`/ja/admin/demo-assets`はHTTP 200。本番chunk `page-a1c5b38848d8f9e2.js`に`審査可能候補を一括DEMO生成へ投入`が含まれることを確認した。
+- 本番API確認時点でエキテン候補は1件（`ノン美容室`、status `promoted`）、DEMO batchはtotal 3 / completed 3 / qualityPassed 1 / sendingEnabled false。次の実務作業は通常ブラウザで確認したエキテン一覧・詳細HTML/選択範囲を貼り付け、候補数を増やしてからこの一括投入を使うこと。
+
 ## CURRENT STATUS - 2026-07-15 Twenty上でDEMO候補が見えない問題の修正（本番release完了 / Twenty read-back済み / 外部送信0）
 
 ### 原因と修正
