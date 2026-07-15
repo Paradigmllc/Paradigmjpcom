@@ -509,7 +509,7 @@ function resolveTwentyDbContainer(sshTarget) {
   if (explicit) return explicit
   const result = spawnSync(
     "ssh",
-    [...sshArgs(sshTarget, { acceptNew: true }), "docker ps --format '{{.Names}}\\t{{.Image}}'"],
+    [...sshArgs(sshTarget, { acceptNew: true }), "docker ps --format '{{.Names}}\t{{.Image}}'"],
     { encoding: "utf8", timeout: 15_000, maxBuffer: 1024 * 1024 },
   )
   if (result.error) throw result.error
@@ -518,9 +518,9 @@ function resolveTwentyDbContainer(sshTarget) {
     throw new Error(`Could not list Twenty containers: ${detail.slice(0, 180)}`)
   }
   const rows = String(result.stdout || "")
-    .split("\\n")
+    .split("\n")
     .map((line) => {
-      const [name, image] = line.split("\\t")
+      const [name, image] = line.split("\t")
       return { name: name?.trim() || "", image: image?.trim() || "" }
     })
     .filter((row) => row.name.length > 0)
