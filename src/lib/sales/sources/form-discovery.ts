@@ -18,6 +18,7 @@ import {
 import { inspectContactFormHtml, type ContactFormInspection } from "./contact-form-inspection"
 
 export type DiscoveryMethod =
+  | "source"
   | "dom"
   | "sitemap"
   | "heuristic"
@@ -41,6 +42,7 @@ export interface FormDiscoveryOptions {
   homeUrl: string
   region?: Region
   homepageHtml?: string
+  seedUrls?: string[]
   enableLlm?: boolean
   enableCrawl4Ai?: boolean
   spaDiscover?: (url: string) => Promise<string | null>
@@ -254,6 +256,14 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   })
 
   if (!origin) return done(null, "none", "none", 0)
+
+  for (const seedUrl of opts.seedUrls ?? []) {
+    if (!isAllowedFormUrlForOrigin(origin, seedUrl)) continue
+    candidates.add(seedUrl)
+    const pageType = await inspectContactPage(seedUrl, origin, timeoutMs)
+    if (pageType.status === "form") return done(seedUrl, "source", "form", 96, pageType)
+    if (pageType.status === "page") rememberPage(seedUrl, "source", 76, pageType)
+  }
 
   const homepageHtml = opts.homepageHtml ?? (await fetchText(origin, timeoutMs))
   if (homepageHtml) {

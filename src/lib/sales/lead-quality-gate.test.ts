@@ -118,6 +118,19 @@ describe("evaluateLeadQualityGate", () => {
     expect(result.smb.evidence).toContain("official_sme_flag:Official Export Directory")
   })
 
+  it("accepts official Tier 3 country evidence when the homepage omits an address", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true }),
+      homepage: homepage({ visibleText: "Example Commerce. Shop now. Add to cart. Shipping and returns." }),
+      countrySignals: [],
+      detections: shopify,
+      enterpriseLike: false,
+    })
+
+    expect(result.country.passed).toBe(true)
+    expect(result.status).toBe("passed")
+  })
+
   it("does not mistake a generic pricing page for a SaaS product", () => {
     const result = evaluateLeadQualityGate({
       sourceRecord: record({ business_type: "Professional services" }),

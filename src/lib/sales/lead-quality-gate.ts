@@ -19,12 +19,13 @@ export interface HomepageQualityProfile {
 export interface LeadQualityGate {
   status: "passed" | "review_required" | "rejected"
   reasons: string[]
-  identity: { passed: boolean; score: number; sourceName: string; siteNames: string[] }
+  identity: { passed: boolean; score: number; sourceName: string; siteNames: string[]; canonicalName?: string }
   country: { passed: boolean; target: string; signals: CandidateCountrySignal[] }
   business: { passed: boolean; isForProfit: boolean | null; excludedType: string | null }
   smb: { passed: boolean; score: number; evidence: string[] }
   offerFit: { passed: boolean; score: number; evidence: string[] }
   source: { passed: boolean; sourceId: string; sourcePageUrl: string; trustTier: number }
+  aiReview?: unknown
 }
 
 type SourceWithConfig = LeadSourceRecord & { source: LeadSourceConfig }
@@ -166,10 +167,15 @@ export function evaluateLeadQualityGate(input: {
   enterpriseLike: boolean
 }): LeadQualityGate {
   const { sourceRecord, homepage } = input
-  const identityScore = homepage.organizationNames.reduce((best, name) => Math.max(best, identitySimilarity(sourceRecord.company_name, name, sourceRecord.domain)), 0)
+  const rankedSiteNames = homepage.organizationNames
+    .map((name) => ({ name, score: identitySimilarity(sourceRecord.company_name, name, sourceRecord.domain) }))
+    .sort((left, right) => right.score - left.score || left.name.length - right.name.length)
+  const identityScore = rankedSiteNames[0]?.score ?? 0
+  const canonicalName = rankedSiteNames.find((item) => item.score >= 0.45 && item.name.length >= 2 && item.name.length <= 120)?.name
   const identityPassed = identityScore >= 0.45
   const strongCountrySignals = input.countrySignals.filter((signal) => signal.signalType !== "request_scope" && signal.confidence >= 70)
-  const countryPassed = sourceRecord.country_code === sourceRecord.source.country_code && strongCountrySignals.length > 0
+  const officialCountryEvidence = sourceRecord.source.trust_tier >= 3
+  const countryPassed = sourceRecord.country_code === sourceRecord.source.country_code && (strongCountrySignals.length > 0 || officialCountryEvidence)
   const businessText = `${sourceRecord.business_type ?? ""} ${homepage.title} ${homepage.description} ${homepage.organizationTypes.join(" ")}`
   const excludedType = EXCLUDED_BUSINESS_RE.exec(businessText)?.[0] ?? null
   const isForProfit = sourceRecord.is_for_profit
@@ -232,7 +238,7 @@ export function evaluateLeadQualityGate(input: {
   return {
     status,
     reasons: status === "rejected" ? rejectedReasons : reviewReasons,
-    identity: { passed: identityPassed, score: Math.round(identityScore * 100), sourceName: sourceRecord.company_name, siteNames: homepage.organizationNames },
+    identity: { passed: identityPassed, score: Math.round(identityScore * 100), sourceName: sourceRecord.company_name, siteNames: homepage.organizationNames, canonicalName },
     country: { passed: countryPassed, target: sourceRecord.country_code, signals: strongCountrySignals },
     business: { passed: businessPassed, isForProfit, excludedType },
     smb: { passed: smbPassed, score: smbScore, evidence: smbEvidence },

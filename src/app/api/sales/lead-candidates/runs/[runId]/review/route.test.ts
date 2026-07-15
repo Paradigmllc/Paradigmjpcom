@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   reject: vi.fn(),
   approvePilot: vi.fn(),
   recover: vi.fn(),
+  startHighConfidence: vi.fn(),
+  audit: vi.fn(),
   notify: vi.fn(),
 }))
 
@@ -18,6 +20,8 @@ vi.mock("@/lib/sales/lead-candidate-review", () => ({
   recoverStaleLeadCandidatePromotions: mocks.recover,
 }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
+vi.mock("@/lib/sales/lead-candidate-high-confidence-runner", () => ({ startHighConfidencePromotion: mocks.startHighConfidence }))
+vi.mock("@/lib/sales/lead-operator-audit", () => ({ recordLeadOperatorEvent: mocks.audit }))
 
 import { POST } from "./route"
 
@@ -32,6 +36,8 @@ beforeEach(() => {
   mocks.reject.mockResolvedValue({ rejected: 1, skipped: 0 })
   mocks.approvePilot.mockResolvedValue({ approvedSources: 1, approvedAt: "2026-07-14T00:00:00.000Z" })
   mocks.recover.mockResolvedValue({ recovered: 2 })
+  mocks.startHighConfidence.mockReturnValue({ started: true, alreadyRunning: false })
+  mocks.audit.mockResolvedValue(undefined)
   mocks.notify.mockResolvedValue({ ok: true })
 })
 
@@ -79,6 +85,18 @@ describe("lead candidate operator review route", () => {
 
     expect(response.status).toBe(200)
     expect(mocks.recover).toHaveBeenCalledWith({ runId, operatorName: "Sato", note: "Twenty state checked" })
+    expect(mocks.approve).not.toHaveBeenCalled()
+  })
+
+  it("starts high-confidence list-only synchronization only with the explicit phrase", async () => {
+    const response = await POST(new NextRequest(`https://paradigmjp.com/api/sales/lead-candidates/runs/${runId}/review`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "sync_high_confidence", operatorName: "Sato", note: "公式またはV4高確度だけ同期", confirm: "SYNC VERIFIED LIST ONLY" }),
+    }), context)
+
+    expect(response.status).toBe(202)
+    expect(mocks.startHighConfidence).toHaveBeenCalledWith({ runId, operatorName: "Sato", note: "公式またはV4高確度だけ同期" })
     expect(mocks.approve).not.toHaveBeenCalled()
   })
 })

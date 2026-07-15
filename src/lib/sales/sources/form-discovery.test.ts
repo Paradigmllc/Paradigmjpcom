@@ -49,6 +49,32 @@ describe("form-discovery", () => {
     expect(result.confidence).toBeGreaterThanOrEqual(80)
   })
 
+  it("verifies a same-domain source seed before running broader discovery", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://example.com/contact-sales") {
+        return new Response('<form><input type="email" name="email" /><textarea name="message"></textarea><button type="submit">Send</button></form>', {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })
+      }
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await discoverFormUrl({
+      homeUrl: "example.com",
+      region: "global",
+      seedUrls: ["https://example.com/contact-sales", "https://unrelated.example.net/contact"],
+    })
+
+    expect(result).toMatchObject({
+      formUrl: "https://example.com/contact-sales",
+      method: "source",
+      verification: "form",
+      confidence: 96,
+    })
+  })
+
   it("allows same-domain and trusted hosted-form URLs, but rejects unrelated external domains", () => {
     expect(isAllowedFormUrlForOrigin("https://example.com", "https://example.com/contact")).toBe(true)
     expect(isAllowedFormUrlForOrigin("https://example.com", "https://support.example.com/contact")).toBe(true)

@@ -197,7 +197,7 @@ export async function approveLeadCandidateItems(input: {
         countryCode: snapshot.countryCode,
         syncTwenty: true,
         candidateId: item.candidate_id,
-        companyName: snapshot.sourceRecord.company_name,
+        companyName: snapshot.qualityGate.identity.canonicalName ?? snapshot.sourceRecord.company_name,
         domain: item.domain,
         sourcePageUrl: snapshot.sourceRecord.source_page_url,
         qualityGate: snapshot.qualityGate,
