@@ -39,9 +39,6 @@ alter table public.theme_demo_pages
   drop constraint if exists theme_demo_pages_quality_score_check,
   add constraint theme_demo_pages_quality_score_check
     check (quality_score is null or quality_score between 0 and 100),
-  drop constraint if exists theme_demo_pages_publication_status_check,
-  add constraint theme_demo_pages_publication_status_check
-    check (publication_status in ('draft', 'quality_review', 'approved', 'published', 'rejected', 'legacy_published')),
   drop constraint if exists theme_demo_pages_quality_publish_check,
   add constraint theme_demo_pages_quality_publish_check
     check (
@@ -53,6 +50,29 @@ alter table public.theme_demo_pages
           and coalesce(jsonb_array_length(quality_report -> 'hardBlockers'), 0) = 0
         )
     );
+
+-- Private review was introduced later. This migration is replayed by the
+-- release gate, so only create the status constraint when it is absent and use
+-- the complete current state set.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.theme_demo_pages'::regclass
+      and conname = 'theme_demo_pages_publication_status_check'
+  ) then
+    alter table public.theme_demo_pages
+      add constraint theme_demo_pages_publication_status_check
+      check (
+        publication_status in (
+          'draft', 'quality_review', 'approved', 'published', 'rejected',
+          'legacy_published', 'private_review'
+        )
+      );
+  end if;
+end
+$$;
 
 create index if not exists idx_theme_demo_pages_quality_queue
   on public.theme_demo_pages(publication_status, quality_score, updated_at desc);
