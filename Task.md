@@ -1,10 +1,11 @@
-## CURRENT STATUS - 2026-07-15 Manual Japan Entry 文面・診断品質hardening（実装・ローカル検証完了 / release前）
+## CURRENT STATUS - 2026-07-15 Manual Japan Entry 文面・診断品質hardening（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
 - `/work`の初回文面を既存の`initial_interest`契約へ統一した。初回は100〜160語・4段落・公開ページ根拠のみで、価格、支払条件、Japan Entry Packageの売り込み、URL、添付、通話提案を禁止し、詳細分析を受け取る意思だけを確認する。生成時の`productContext`はDeepSeekが書き直した要約ではなく、企業公開ページから直接抽出した原文へ固定した。
 - 会社profileの`productContext`と`observedFacts`も公開ページ原文で上書きし、モデル由来の未確認商品表現をTwenty・レポートへ流さない。日本企業除外、SMB/Japan Entry適合、文面92/100、実フォーム90/100の既存fail-closed条件は維持した。
 - 診断レポートは既存のJapan Entry事実抽出、診断content-template選択、`DiagnosticReportData`/表示基盤を共通利用する。SaaSは言語・JPY、serviceは言語だけ、ecommerceのみ配送・ローカル決済・commerce disclosureを扱い、需要、traffic、sales、ROI、法令違反を推測しない。source coverageは実際に収集・検証できた5ソースだけで算出する。
 - Crawl4AIは通常探索と並列実行し、返却URLを信用せずHTMLを再取得して実フォームを確認した候補だけを採用する。release doctorへ`initial_interest`、公開原文、業態別共通事実、content template、HTMLフォーム検証の静的回帰ゲートを追加した。
-- TypeScript、対象ESLint、Quality Guard **0 errors**、対象Vitest **10 files / 58 tests**、全Vitest **176 files / 789 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。E2Eで方針文、複数URL、履歴、価格なしラベル、error overlay/console errorなし、mobile横overflowなしを確認。実企業URL投入、Twenty追加、フォーム・メール等の外部送信は0件。正式releaseと本番read-backは未実施。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、最終全Vitest **176 files / 792 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。E2Eで方針文、複数URL、履歴、価格なしラベル、error overlay/console errorなし、mobile横overflowなしを確認した。
+- PR **#272 / #273**、manual work main **8b562b8c**、seed fix main **885113be**、最終deployment **y103mdoqravdurq2cy420muu**。正式`npm run release:prod`でhomepage CMS publish、DB **89/89**、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / Sales health JSON `ok:true`を含む`release gate passed`を確認。本番containerは両commitを含む`7d11fa13`でhealthy。`/work`は未認証時`/admin/login`へredirect、`/api/work`は未認証401、実DBは`manual_japan_entry_work` RLS有効・履歴0件。実企業URL投入、Twenty company追加、フォーム・メール等の外部送信は0件。
 
 ## CURRENT STATUS - 2026-07-15 Twenty高品質4,000件の母集団・審査・非送信同期基盤（本番収集・事前検査中 / 外部送信0）
 
