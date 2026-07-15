@@ -432,6 +432,7 @@ function checkStaticReleaseRules() {
     && postDeployProductEvidenceRetryIndex > deployCompletionIndex
     && postDeployProductEvidenceRetryIndex > integrationRefreshIndex
     && preDeployProductEvidenceRetryIndex !== postDeployProductEvidenceRetryIndex
+    && !noLoginDeploy.includes("SKIP_DB_UPSERT")
   ) {
     pass("official SMB product-fit retries require grounded composite evidence and are release-wired before and after deploy")
   } else {
