@@ -235,7 +235,9 @@ async function fetchExistingSignatures(
   const { data, error } = await sb
     .from(DB_TABLES.THEME_DEMO_PAGES)
     .select("structural_fingerprint, design_recipe")
-    .in("publication_status", ["published", "private_review", "approved", "quality_review"])
+    // Failed quality_review artifacts must not poison diversity checks for later candidates.
+    // Only reviewed or publishable pages are valid collision baselines.
+    .in("publication_status", ["published", "private_review", "approved"])
     .neq("company_id", companyId)
     .not("structural_fingerprint", "is", null)
     .limit(1000)
