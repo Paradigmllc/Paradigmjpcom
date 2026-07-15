@@ -710,6 +710,14 @@ async function applyLeadSourceCountryPacksMigration(envs) {
   )
 }
 
+async function applyLeadSourcePartialPilotClaimMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715151000_lead_source_partial_pilot_claim.sql",
+    "Lead source partial pilot claim migration",
+  )
+}
+
 async function applyPortalTwentySourceOptionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1370,6 +1378,7 @@ async function main() {
     console.log(await applyLeadFactoryOperatorApprovalMigration(envs))
     console.log(await applyLeadSourceWebsitePreflightMigration(envs))
     console.log(await applyLeadSourceCountryPacksMigration(envs))
+    console.log(await applyLeadSourcePartialPilotClaimMigration(envs))
     console.log(await applyPortalTwentySourceOptionsMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
     console.log(await applyTwentySelectOptionsScript(envs))

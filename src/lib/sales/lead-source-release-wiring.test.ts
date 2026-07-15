@@ -12,6 +12,9 @@ describe("lead source preflight release wiring", () => {
     expect(deploy).toContain("20260715113000_lead_source_website_preflight.sql")
     expect(deploy).toContain("applyLeadSourceWebsitePreflightMigration")
     expect(deploy).toContain("await applyLeadSourceWebsitePreflightMigration(envs)")
+    expect(deploy).toContain("20260715151000_lead_source_partial_pilot_claim.sql")
+    expect(deploy).toContain("applyLeadSourcePartialPilotClaimMigration")
+    expect(deploy).toContain("await applyLeadSourcePartialPilotClaimMigration(envs)")
   })
 
   it("checks the split selection service and preflight fail-closed contract", () => {
@@ -20,6 +23,7 @@ describe("lead source preflight release wiring", () => {
     expect(doctor).toContain("src/lib/sales/lead-source-selection.ts")
     expect(doctor).toContain("sales_claim_lead_source_records")
     expect(doctor).toContain("sales_claim_lead_source_preflight_records")
+    expect(doctor).toContain("sales_claim_lead_source_pilot_records")
     expect(doctor).toContain("preflight_checked_at >= now() - interval '7 days'")
   })
 
