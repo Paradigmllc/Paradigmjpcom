@@ -1675,3 +1675,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 ### Verification / remaining gate
 - 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLint、production buildがpass。PR **#250**をmainへマージし、deployment **z3eh9qes2pgz5cg3ifa7e8e3**はfinished。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
 - 本番`/ja/admin/demo-assets`のchunkにTwenty登録UIと`portal-candidates/twenty-sync`を確認。Ekiten APIはHTTP 200、50件ページング、`sendingEnabled=false`。現時点の候補は1件（`ノン美容室`、既に`promoted`）のみで、既存DEMOを上書きしないため新規Twentyリスト同期は未実行。次の実務入力は通常ブラウザで確認した候補スナップショットの追加。
+## CURRENT STATUS - 2026-07-15 日本SMB Ekiten 1000件量産レーン（実行中 / 外部送信0）
+
+- Ekiten公式の公開一覧API（検索エンジン・SNS・Google Map・プロキシのスクレイピングなし）から、日本住所・説明30文字以上・画像3枚以上・企業シグナル除外・listing URL重複排除の候補を取得するprobeを追加した。試行在庫は2957カード、入力ゲート通過の一意URLは1000件以上。
+- `scripts/process-ekiten-browser-batch.mts` は100件単位で候補を保存し、独自HPなし・住所あり・説明80文字以上・画像3枚以上・企業シグナルなしだけをTwentyへ非送信同期し、実素材は`private_proposal`としてDEMOジョブへ送る。候補ごとの業種プロファイル、URL重複排除、承認並列4を実装済み。
+- PR #283/#284/#286/#287をmainへマージし、正式`npm run release:prod`（DB 89/89、公開スモーク、Twenty、Sales health JSON `ok:true`）まで確認済み。Coolify本番はmainを参照するため、feature branchのままでは完了扱いにしない。
+- 2026-07-15 22:39 JST時点のDB実測: Ekiten候補410件、reviewed demo companies 303件、DEMOジョブ completed 8（quality passed 6）、running 11、queued 199、failed 88。したがって1000件リスト＋1000件品質合格DEMOは未完了であり、完了主張禁止。失敗は品質ゲート（visual/structural collision、unsupported claim等）を維持して除外する。
+- 非公開提案枠は所有者・意思決定者・画像使用権の確認前提。公開URL発行、納品、メール、SNS、電話、フォーム等の外部送信はDB制約を含め常に0件。
