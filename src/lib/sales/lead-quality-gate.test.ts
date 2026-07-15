@@ -354,6 +354,18 @@ describe("evaluateLeadQualityGate", () => {
     expect(result.reasons).toContain("japan_entry_offer_fit_missing")
   })
 
+  it("does not count store account, cart, checkout or login utilities as product details", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <a href="/store/account">Account</a>
+      <a href="/store/cart">Cart</a>
+      <a href="/shop/checkout">Checkout</a>
+      <a href="/products/login">Login</a>
+      <a href="/product/aao-wafers">AAO Wafers</a>
+    `, "https://examplecommerce.com")
+
+    expect(productEvidence.detailLinks).toEqual(["/product/aao-wafers"])
+  })
+
   it("does not let product links bypass official Tier 3 SME provenance", () => {
     const productEvidence = extractFirstPartyProductEvidence(`
       <a href="/products/alpha">Alpha</a><a href="/products/beta">Beta</a>
