@@ -4,6 +4,7 @@
 - SBA SBIR/STTR公式公開CSVをstream処理し、公式サイトあり・従業員2〜249名だけをドメイン重複排除して最大50,000社取得する。担当者名・メール・電話は取り込まない。live smokeは394行から条件合格200社を正常抽出。
 - Common Crawl由来でSMB根拠だけが不足する候補は、企業本人性・国・商材適合・実フォーム確認を先に通し、その後DeepSeek V4 Pro公式APIで保守的に分類する。96%以上、2件以上の原文引用が元ページに完全一致、2〜249名帯、EC/SaaS/商品ブランド、risk 0の場合だけSMB合格へ昇格する。その他の不足理由はAIへ回さずfail-closed停止する。
 - 公式Tier 3の従業員/SME根拠、または上記V4高確度根拠を再確認し、管理画面の明示操作から20件ずつTwentyへ連続同期するrunnerを追加した。Twenty同期だけで、初回文面、診断レポート、Opportunity、メール、SNS、電話、フォーム送信は起動しない。操作と個別結果は既存DB監査ログへ保存する。
+- 初回release preflightで`lead-source-records.ts`が501行判定となったためCoolify deploy前に停止し、特殊source adapterを専用ファイルへ分離した。records本体は482行、Quality Guardは0 errors / 62 existing warningsへ復帰した。
 - 現時点はローカル実装まで。対象Vitest 8 files / 38 tests、最新main取込後の全Vitest 175 files / 781 tests、TypeScript、対象ESLint、production build 408/408 pages、`git diff --check` pass。正式release、source登録/規約承認/ingest、非送信pilot、品質監査、4,000件Twenty read-backは未実施であり、4,000件完成とは扱わない。
 
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry Workbench（本番release完了 / 履歴0件 / 外部送信0）
