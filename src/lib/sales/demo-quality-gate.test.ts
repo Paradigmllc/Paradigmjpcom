@@ -486,4 +486,21 @@ describe("demo quality gate", () => {
     expect(collidingCandidateIndexes(recipes)).toEqual(new Set([0, 1]))
     expect(quality.hardBlockers).toContain("visual_similarity_collision")
   })
+
+  it("keeps exact grammar collisions blocked while allowing scalable near-match batches", () => {
+    const page = fixture()
+    const template = DEMO_TEMPLATES[0]
+    const nearMatch: DemoCreativeDirection = { ...TEST_DIRECTION, motion: "restrained" }
+    const recipe = buildBaseDesignRecipe(template, page, TEST_DIRECTION)
+    const quality = evaluateDemoQuality(
+      page,
+      recipe,
+      buildProposalRightsManifest([{ src: "/generated/hero-1.jpg", usage: "proposal_only" }]),
+      new Set(),
+      Array.from({ length: 300 }, () => nearMatch),
+    )
+
+    expect(quality.hardBlockers).not.toContain("visual_similarity_collision")
+    expect(quality.hardBlockers).not.toContain("structural_collision")
+  })
 })
