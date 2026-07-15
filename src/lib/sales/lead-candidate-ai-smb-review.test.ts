@@ -199,4 +199,48 @@ describe("DeepSeek SMB adjudication", () => {
     expect(result.passed).toBe(false)
     expect(result.error).toContain("not eligible")
   })
+
+  it("adjudicates combined SMB and offer-fit gaps without lowering the grounded threshold", async () => {
+    const combined = {
+      ...gate,
+      status: "review_required" as const,
+      reasons: ["smb_evidence_missing", "japan_entry_offer_fit_missing"],
+      smb: { passed: false, score: 0, evidence: [] },
+      offerFit: { passed: false, score: 0, evidence: [] },
+      source: { ...gate.source, trustTier: 2 },
+    }
+    const result = await reviewUnknownSmbCandidate({
+      companyName: "Alpha Cloud",
+      countryCode: "GB",
+      homepage,
+      qualityGate: combined,
+      detections: [],
+    }, async () => ({
+      ok: true,
+      text: JSON.stringify({
+        smb_fit: true,
+        enterprise: false,
+        japan_entry_fit: true,
+        employee_band: "11-50",
+        business_model: "saas",
+        confidence: 0.98,
+        evidence_quotes: [
+          "Our 18-person team builds inventory software for independent retailers.",
+          "Start a free trial and choose a monthly plan.",
+        ],
+        risk_flags: [],
+        reason: "Grounded SMB SaaS evidence",
+      }),
+      usedModel: "deepseek-v4-pro",
+    }))
+    const applied = applyAiSmbReview(combined, result)
+
+    expect(result).toMatchObject({ passed: true, confidence: 0.98, riskFlags: [] })
+    expect(applied).toMatchObject({
+      status: "passed",
+      reasons: [],
+      smb: { passed: true, score: 90 },
+      offerFit: { passed: true, score: 90 },
+    })
+  })
 })

@@ -11,10 +11,11 @@ const MAX_BATCHES = 500
 const PAGE_SIZE = 100
 const MAX_SCAN_ITEMS = 10_000
 export const HIGH_CONFIDENCE_TWENTY_WRITE_POLICY = {
-  // A complete list-lead promotion consumes the full effective Twenty write
-  // budget in production. Keep one company per rolling rate window.
-  batchSize: 1,
-  windowMs: 65_000,
+  // Twenty's live OpenAPI supports 60-record batch upserts and the official
+  // request limit is 100/minute. Three requests per batch (lookup, upsert,
+  // direct read-back) with a five-second gap stays below half that budget.
+  batchSize: 60,
+  windowMs: 5_000,
 } as const
 const BATCH_SIZE = HIGH_CONFIDENCE_TWENTY_WRITE_POLICY.batchSize
 const TWENTY_RATE_WINDOW_MS = HIGH_CONFIDENCE_TWENTY_WRITE_POLICY.windowMs

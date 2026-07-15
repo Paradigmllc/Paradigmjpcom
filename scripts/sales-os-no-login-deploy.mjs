@@ -734,6 +734,14 @@ async function applyLeadSourceProductEvidenceRetryMigration(envs) {
   )
 }
 
+async function applySalesListLeadBatchSyncMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715234500_sales_list_lead_batch_sync.sql",
+    "Sales list-lead Twenty batch sync migration",
+  )
+}
+
 async function applyPortalTwentySourceOptionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1443,6 +1451,7 @@ async function main() {
     // Keep the latest claim contract last: older compatibility migrations also
     // define this RPC and can otherwise restore a stale no-retry function.
     console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
+    console.log(await applySalesListLeadBatchSyncMigration(envs))
     console.log(await applyContentTemplates(envs))
     if (!SKIP_DB_VERIFY) runDbTableVerification(envs)
   } else {

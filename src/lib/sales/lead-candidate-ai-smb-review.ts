@@ -50,14 +50,15 @@ export interface AiSmbReviewResult {
 }
 
 export function aiAdjudicationMode(gate: LeadQualityGate): AiAdjudicationMode | null {
-  const missingOnly = gate.status === "review_required"
+  const missingSmbWithGroundableOffer = gate.status === "review_required"
     && gate.reasons.length > 0
-    && gate.reasons.every((reason) => reason === "smb_evidence_missing")
+    && gate.reasons.includes("smb_evidence_missing")
+    && gate.reasons.every((reason) => ["smb_evidence_missing", "japan_entry_offer_fit_missing"].includes(reason))
   const tierTwoDeterministicSmb = gate.status === "passed"
     && gate.source.trustTier < 3
     && gate.smb.passed
     && gate.smb.score < 90
-  if (missingOnly || tierTwoDeterministicSmb) return "smb"
+  if (missingSmbWithGroundableOffer || tierTwoDeterministicSmb) return "smb"
   const officialSmbMissingOfferFit = gate.status === "review_required"
     && gate.reasons.length > 0
     && gate.reasons.every((reason) => reason === "japan_entry_offer_fit_missing")
@@ -201,6 +202,15 @@ export function applyAiSmbReview(gate: LeadQualityGate, review: AiSmbReviewResul
       evidence: [
         ...gate.smb.evidence,
         `deepseek_v4_pro:${review.employeeBand}:${Math.round(review.confidence * 100)}`,
+        ...review.evidenceQuotes.map((quote) => `site_quote:${quote}`),
+      ],
+    },
+    offerFit: gate.offerFit.passed ? gate.offerFit : {
+      passed: true,
+      score: 90,
+      evidence: [
+        ...gate.offerFit.evidence,
+        `deepseek_v4_pro_product_fit:${review.businessModel}:${Math.round(review.confidence * 100)}`,
         ...review.evidenceQuotes.map((quote) => `site_quote:${quote}`),
       ],
     },
