@@ -1710,3 +1710,4 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 新規依存は追加せず、既存のFramer Motionを使用。動きは控えめなeasingに統一し、タッチ端末とreduced-motion環境では静的表示へフォールバックする。外部送信、Twenty同期、DEMOコンテンツ、URLは変更していない。
 - Verification: 対象Vitest **3 files / 11 tests**、TypeScript `tsc --noEmit`、Quality Guard **0 errors / 65 existing warnings**、production build **408/408 pages** pass。品質確認後にrelease branchへ反映し、本番公開URLでの確認を行う。
 - Release preflightでDB SSH fallbackの既存テーブル判定漏れ（`sales_japan_entry_projections`）を検出。migrationを削除・再作成せず、fallbackでも`already exists/duplicate`を適用済みとして扱う冪等化を追加し、正式gateを再実行する。
+- 再実行時に既存の`openclaw` tool connectionを旧post-outreach slug制約が拒否する互換不備を検出。正規slug集合へ`openclaw`を追加し、既存レコードを変更せず再実行可能にした。
