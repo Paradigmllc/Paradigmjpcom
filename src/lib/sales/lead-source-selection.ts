@@ -81,7 +81,9 @@ export async function fetchLeadSourceCandidateRecords(input: {
     const claimed = await sb.rpc(input.allowPartialSource ? "sales_claim_lead_source_pilot_records" : "sales_claim_lead_source_records", {
       p_country_code: input.countryCode,
       p_source_config_ids: [...configById.keys()],
-      p_limit: Math.min(Math.max(remaining * 2, 100), 10_000),
+      // Every claimed row advances last_selected_at. Claim only what this run
+      // can persist so unpersisted records are not stranded for the lease window.
+      p_limit: Math.min(Math.max(remaining, 100), 10_000),
     })
     if (claimed.error) throw new Error(claimed.error.message)
     const page = (claimed.data ?? []) as LeadSourceRecord[]

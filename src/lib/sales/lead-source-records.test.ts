@@ -141,6 +141,16 @@ describe("fetchLeadSourceCandidateRecords", () => {
     })
   })
 
+  it("does not lease more large-batch records than the run can persist", async () => {
+    await fetchLeadSourceCandidateRecords({ countryCode: "AU", sourceConfigIds: ["source-1"], limit: 5_000 })
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, "sales_claim_lead_source_records", {
+      p_country_code: "AU",
+      p_source_config_ids: ["source-1"],
+      p_limit: 5_000,
+    })
+  })
+
   it("allows fresh eligible records into a pilot while keeping partial sources out of scale", async () => {
     const notReady = await getLeadSourceReadiness(["AU"])
     sourceRows = [config({
