@@ -404,7 +404,6 @@ async function applySqlMigration(envs, fileName, label) {
   if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
     return applySqlMigrationThroughPostgres(envs, sql, label)
   }
-  if (/already exists|duplicate/i.test(text)) return `${label}: already applied`
   throw new Error(`${label} failed: HTTP ${res.status} ${text.slice(0, 180)}`)
 }
 
@@ -430,7 +429,6 @@ async function applySqlMigrationThroughPostgres(envs, sql, label) {
     return `${label}: applied through direct Postgres channel`
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    if (/already exists|duplicate/i.test(message)) return `${label}: already applied`
     if (/must be owner|permission denied|insufficient privilege/i.test(message)) {
       return `${label}: skipped by direct Postgres channel (${message.slice(0, 160)})`
     }
