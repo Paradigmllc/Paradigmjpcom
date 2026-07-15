@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { approveLeadCandidateItems, approvePilotRun, recoverStaleLeadCandidatePromotions, rejectLeadCandidateItems } from "@/lib/sales/lead-candidate-review"
+import { startHighConfidencePromotion } from "@/lib/sales/lead-candidate-high-confidence-runner"
+import { recordLeadOperatorEvent } from "@/lib/sales/lead-operator-audit"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 const BodySchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("sync_high_confidence"),
+    operatorName: z.string().trim().min(2).max(120),
+    note: z.string().trim().min(5).max(500),
+    confirm: z.literal("SYNC VERIFIED LIST ONLY"),
+  }),
   z.object({
     action: z.literal("approve"),
     itemIds: z.array(z.string().uuid()).min(1).max(20),
@@ -52,6 +60,19 @@ export async function POST(req: NextRequest, context: { params: Promise<{ runId:
       const result = await approvePilotRun({ runId, operatorName: parsed.data.operatorName, note: parsed.data.note })
       await notify("Lead Factoryパイロット承認", `${result.approvedSources}収集元を量産可能にしました。外部送信は停止中です。`, "lead_factory_pilot_approved")
       return NextResponse.json({ ok: true, ...result })
+    }
+    if (parsed.data.action === "sync_high_confidence") {
+      await recordLeadOperatorEvent({
+        runId,
+        entityType: "run",
+        entityId: runId,
+        action: "high_confidence_twenty_sync_requested",
+        operatorName: parsed.data.operatorName,
+        detail: { note: parsed.data.note, sendEnabled: false, qualification: "official_smb_or_grounded_deepseek_v4_pro_96" },
+      })
+      const result = startHighConfidencePromotion({ runId, operatorName: parsed.data.operatorName, note: parsed.data.note })
+      await notify("高確度LeadのTwenty同期を開始", `公式SMB根拠またはDeepSeek V4 Pro 96%以上・根拠引用一致の候補だけを同期します。外部送信0件。`, "lead_candidates_high_confidence_sync_started")
+      return NextResponse.json({ ok: true, ...result }, { status: 202 })
     }
     if (parsed.data.action === "recover_stale_promotions") {
       const result = await recoverStaleLeadCandidatePromotions({ runId, operatorName: parsed.data.operatorName, note: parsed.data.note })
