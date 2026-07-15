@@ -19,6 +19,7 @@
 - SBIRのwebsite preflightと非送信inventory runを本番で開始した。過剰並列が一時障害判定を増やしたため停止し、安全な並列度へ戻して`retryable`を再検査する。部分的に合格済みのrecordだけをpilotで使え、量産は全preflight完了後だけ可能とする二段階readinessへ修正し、1 sourceの事前検査上限を10,000件から50,000件へ拡張した。TypeScript、対象Vitest **2 files / 10 tests**、Quality Guard **0 errors / 62 existing warnings** pass。
 - 上記release後のresumeで、既存inventory runnerが再ingestしてpreflight進捗をpendingへ戻す欠陥と、DB claimがpartial pilotを拒む二重条件を確認した。resume中のsourceはready在庫を再利用し、15分lease中の`checking`を完了まで待機する。pilot専用RPCはfresh `eligible`だけをclaimし、batch RPCは従来どおりsource全件preflight完了を必須とする。外部送信経路は追加しない。
 - lead resume修正の正式release中、同時変更のhomepage seedが日本語Heroを画像なし`split-image`、英語HeroをCMS upload relationへローカルURL objectとして保存しようとして500停止した。英語visualは既存renderer fallbackを使い、CMS seedから無効relation値を除去、日本語Heroを`centered`へ戻した。同じdeploymentは再実行せず、seed再実行とpost-deploy gateで確認する。
+- US pilotで最初の高確度候補`Metascape L.L.C.`をTwenty同期し、国名`米国`、確認済みフォーム`https://metascape.dev/contact-us`、未送信statusをread-backした。ただしhomepageのgeneric titleが会社名へ昇格していたため量産停止。source名とdomainが一致するだけで全site nameへdomain scoreを付けていた原因を修正し、候補site name自身もdomain/公式名と一致する場合だけcanonical nameに採用する。
 - Twenty高品質4,000件は未達。高確度レビューとTwenty read-backが完了するまで完成扱いにしない。初回文面、診断レポート、Opportunity、メール、SNS、電話、フォーム送信は起動しておらず、外部送信0件を維持する。
 
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry Workbench（本番release完了 / 履歴0件 / 外部送信0）

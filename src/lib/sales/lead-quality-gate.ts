@@ -155,7 +155,9 @@ function identitySimilarity(sourceName: string, siteName: string, domain: string
   const compactSource = [...source].join("")
   const compactSite = [...site].join("")
   const contains = compactSource.length >= 4 && (compactSite.includes(compactSource) || compactSource.includes(compactSite)) ? 0.9 : 0
-  const domainMatch = domainToken.length >= 4 && (compactSource.includes(domainToken) || domainToken.includes(compactSource)) ? 0.85 : 0
+  const sourceMatchesDomain = domainToken.length >= 4 && (compactSource.includes(domainToken) || domainToken.includes(compactSource))
+  const siteMatchesDomain = domainToken.length >= 4 && (compactSite.includes(domainToken) || domainToken.includes(compactSite))
+  const domainMatch = sourceMatchesDomain && siteMatchesDomain ? 0.85 : 0
   return Math.max(jaccard, contains, domainMatch)
 }
 
