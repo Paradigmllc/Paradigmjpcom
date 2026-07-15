@@ -68,10 +68,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ runId:
         entityId: runId,
         action: "high_confidence_twenty_sync_requested",
         operatorName: parsed.data.operatorName,
-        detail: { note: parsed.data.note, sendEnabled: false, qualification: "official_smb_or_grounded_deepseek_v4_pro_96" },
+        detail: { note: parsed.data.note, sendEnabled: false, qualification: "official_smb_grounded_product_evidence_or_deepseek_v4_pro_96" },
       })
       const result = startHighConfidencePromotion({ runId, operatorName: parsed.data.operatorName, note: parsed.data.note })
-      await notify("高確度LeadのTwenty同期を開始", `公式SMB根拠またはDeepSeek V4 Pro 96%以上・根拠引用一致の候補だけを同期します。外部送信0件。`, "lead_candidates_high_confidence_sync_started")
+      await notify("高確度LeadのTwenty同期を開始", "公式SMB＋製品根拠一致、またはDeepSeek V4 Pro 96%以上＋根拠引用一致の候補だけを同期します。外部送信0件。", "lead_candidates_high_confidence_sync_started")
       return NextResponse.json({ ok: true, ...result }, { status: 202 })
     }
     if (parsed.data.action === "recover_stale_promotions") {
