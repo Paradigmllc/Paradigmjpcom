@@ -387,7 +387,7 @@ function checkStaticReleaseRules() {
     && candidateRunner.includes("pendingFallbackRuns")
     && reviewRoute.includes("approve_pilot")
     && sourcePreviewRoute.includes("previewLeadSourceConfig")
-    && leadSourceSelectionService.includes('rpc("sales_claim_lead_source_records"')
+    && leadSourceSelectionService.includes('"sales_claim_lead_source_records"')
     && !deepSeekGateway.includes("process.env.LITELLM_API_KEY")
     && !deepSeekGateway.includes("process.env.OPENROUTER_API_KEY")
     && personalizedMessage.includes('modelPolicy: "strict"')
@@ -408,6 +408,10 @@ function checkStaticReleaseRules() {
   const leadSourcePreflightRoute = fs.existsSync("src/app/api/sales/lead-sources/[sourceId]/preflight/route.ts")
     ? fs.readFileSync("src/app/api/sales/lead-sources/[sourceId]/preflight/route.ts", "utf8")
     : ""
+  const leadSourcePartialPilotMigrationPath = "supabase/migrations/20260715151000_lead_source_partial_pilot_claim.sql"
+  const leadSourcePartialPilotMigration = fs.existsSync(leadSourcePartialPilotMigrationPath)
+    ? fs.readFileSync(leadSourcePartialPilotMigrationPath, "utf8")
+    : ""
   if (
     leadSourcePreflightMigration.includes("sales_claim_lead_source_preflight_records")
     && leadSourcePreflightMigration.includes("sales_complete_lead_source_preflight")
@@ -417,6 +421,14 @@ function checkStaticReleaseRules() {
     && leadSourcePreflightMigration.includes("TO service_role")
     && noLoginDeploy.includes("20260715113000_lead_source_website_preflight.sql")
     && noLoginDeploy.includes("applyLeadSourceWebsitePreflightMigration")
+    && noLoginDeploy.includes("20260715151000_lead_source_partial_pilot_claim.sql")
+    && noLoginDeploy.includes("applyLeadSourcePartialPilotClaimMigration")
+    && leadSourcePartialPilotMigration.includes("sales_claim_lead_source_pilot_records")
+    && leadSourcePartialPilotMigration.includes("preflight_status = 'eligible'")
+    && leadSourcePartialPilotMigration.includes("preflight_checked_at >= now() - interval '7 days'")
+    && !leadSourcePartialPilotMigration.includes("last_preflight->>'completed'")
+    && leadSourceSelectionService.includes("allowPartialSource")
+    && leadSourceSelectionService.includes("sales_claim_lead_source_pilot_records")
     && leadSourcePreflightService.includes("PREFLIGHT_CHUNK_SIZE = 50")
     && leadSourcePreflightService.includes("PREFLIGHT_CONCURRENCY = 10")
     && leadSourcePreflightService.includes("dns_private_or_reserved")

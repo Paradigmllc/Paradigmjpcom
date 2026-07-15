@@ -131,6 +131,16 @@ describe("fetchLeadSourceCandidateRecords", () => {
     expect(records.every((record) => record.source.id === "source-1")).toBe(true)
   })
 
+  it("uses the partial-source claim only for explicitly requested pilots", async () => {
+    await fetchLeadSourceCandidateRecords({ countryCode: "AU", sourceConfigIds: ["source-1"], limit: 2, allowPartialSource: true })
+
+    expect(mocks.rpc).toHaveBeenCalledWith("sales_claim_lead_source_pilot_records", {
+      p_country_code: "AU",
+      p_source_config_ids: ["source-1"],
+      p_limit: 100,
+    })
+  })
+
   it("allows fresh eligible records into a pilot while keeping partial sources out of scale", async () => {
     const notReady = await getLeadSourceReadiness(["AU"])
     sourceRows = [config({
