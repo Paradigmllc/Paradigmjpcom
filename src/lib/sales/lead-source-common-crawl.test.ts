@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fetchCommonCrawlDomainSignal, fetchCommonCrawlIntersection } from "./lead-source-common-crawl"
+import { commonCrawlCacheObjectKey, fetchCommonCrawlDomainSignal, fetchCommonCrawlIntersection } from "./lead-source-common-crawl"
 
 function query(filter: string): string {
   const params = new URLSearchParams({ url: "*.co.uk", output: "json", collapse: "urlkey", fl: "url,timestamp,digest", pageSize: "100" })
@@ -10,7 +10,10 @@ function query(filter: string): string {
 }
 
 describe("fetchCommonCrawlIntersection", () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    delete process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL
+  })
 
   it("keeps only domains with both contact and offer-path evidence", async () => {
     const responses = [
@@ -132,5 +135,30 @@ describe("fetchCommonCrawlIntersection", () => {
     })
 
     expect(result.rows).toEqual([expect.objectContaining({ website_url: "https://partial.co.uk" })])
+  })
+
+  it("uses a deterministic R2 cache when every direct index page is blocked", async () => {
+    const queryUrl = query("url:shop")
+    process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL = "https://cache.example.com"
+    const fetchMock = vi.fn(async (url: URL | RequestInfo) => String(url).startsWith("https://cache.example.com/")
+      ? new Response(JSON.stringify({ url: "https://cached-shop.co.uk/shop", timestamp: "20260601000000", digest: "CACHE" }), { status: 200 })
+      : Promise.reject(new TypeError("fetch failed")))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const result = await fetchCommonCrawlDomainSignal({
+      queryUrl,
+      signal: "commerce",
+      pages: [37],
+      maxRecords: 5_000,
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://cache.example.com/${commonCrawlCacheObjectKey(queryUrl)}`,
+      expect.objectContaining({ redirect: "error" }),
+    )
+    expect(result.rows).toEqual([expect.objectContaining({
+      website_url: "https://cached-shop.co.uk",
+      offer_page_url: "https://cached-shop.co.uk/shop",
+    })])
   })
 })

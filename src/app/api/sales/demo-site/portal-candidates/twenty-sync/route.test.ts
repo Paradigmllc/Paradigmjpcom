@@ -19,7 +19,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.authorize.mockResolvedValue(true)
   mocks.list.mockResolvedValue([{ id: candidateId }])
-  mocks.sync.mockResolvedValue({ requested: 1, synced: 1, reused: 0, skipped: 0, failed: 0, results: [] })
+  mocks.sync.mockResolvedValue({ requested: 1, synced: 1, reused: 0, skipped: 0, failed: 0, deferred: 0, results: [] })
 })
 
 describe("portal candidate Twenty sync API", () => {
@@ -31,7 +31,7 @@ describe("portal candidate Twenty sync API", () => {
     }))
     expect(response.status).toBe(200)
     expect(mocks.list).toHaveBeenCalledWith("ekiten", 1, { ids: [candidateId] })
-    expect(mocks.sync).toHaveBeenCalledWith([{ id: candidateId }], { force: false, concurrency: 2 })
+    expect(mocks.sync).toHaveBeenCalledWith([{ id: candidateId }], { force: false, concurrency: 1 })
     expect(await response.json()).toMatchObject({ ok: true, synced: 1, sendingEnabled: false })
   })
 
@@ -44,5 +44,16 @@ describe("portal candidate Twenty sync API", () => {
     }))
     expect(response.status).toBe(404)
     expect(mocks.sync).not.toHaveBeenCalled()
+  })
+
+  it("returns a retryable multi-status when Twenty applies backpressure", async () => {
+    mocks.sync.mockResolvedValue({ requested: 1, synced: 0, reused: 0, skipped: 0, failed: 0, deferred: 1, results: [] })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/demo-site/portal-candidates/twenty-sync", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ source: "ekiten", candidateIds: [candidateId] }),
+    }))
+    expect(response.status).toBe(207)
+    expect(await response.json()).toMatchObject({ ok: false, deferred: 1, sendingEnabled: false })
   })
 })

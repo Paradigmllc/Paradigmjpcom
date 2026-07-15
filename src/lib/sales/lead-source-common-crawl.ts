@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { normalizePublicDomain } from "./japan-entry-score"
 
 type JsonRecord = Record<string, unknown>
@@ -11,6 +12,7 @@ const MAX_FETCH_ATTEMPTS = 2
 const RETRY_BACKOFF_MS = 1_000
 const INDEX_REQUEST_TIMEOUT_MS = 20_000
 const DOMAIN_SIGNAL_BUDGET_MS = 120_000
+const CACHE_OBJECT_PREFIX = "lead-source-cache/common-crawl"
 
 interface CachedRows {
   expiresAt: number
@@ -35,6 +37,26 @@ export interface CommonCrawlDomainSignalInput {
   signal: "contact" | "commerce" | "saas"
   pages: number[]
   maxRecords: number
+}
+
+function canonicalCommonCrawlQuery(rawUrl: string): string {
+  const url = assertCommonCrawlQuery(rawUrl)
+  url.searchParams.delete("page")
+  url.searchParams.sort()
+  return url.toString()
+}
+
+export function commonCrawlCacheObjectKey(rawUrl: string): string {
+  const digest = createHash("sha256").update(canonicalCommonCrawlQuery(rawUrl)).digest("hex")
+  return `${CACHE_OBJECT_PREFIX}/${digest}.jsonl`
+}
+
+function commonCrawlCacheUrl(rawUrl: string): string | null {
+  const base = process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL?.trim() || process.env.R2_PUBLIC_BASE_URL?.trim()
+  if (!base) return null
+  const url = new URL(`${base.replace(/\/+$/u, "")}/${commonCrawlCacheObjectKey(rawUrl)}`)
+  if (url.protocol !== "https:") throw new Error("Common Crawl cache must use HTTPS")
+  return url.toString()
 }
 
 const queryCache = new Map<string, CachedRows>()
@@ -117,6 +139,21 @@ function parseIndexRows(text: string): CommonCrawlIndexRow[] {
   }
   if (malformedRows > 3) console.warn(`[lead-source-common-crawl] ignored ${malformedRows} malformed JSONL rows`)
   return rows
+}
+
+async function fetchCachedIndexRows(queryUrl: string): Promise<CommonCrawlIndexRow[]> {
+  const cacheUrl = commonCrawlCacheUrl(queryUrl)
+  if (!cacheUrl) return []
+  const response = await fetch(cacheUrl, {
+    headers: { Accept: "application/x-ndjson, application/json;q=0.9" },
+    redirect: "error",
+    signal: AbortSignal.timeout(INDEX_REQUEST_TIMEOUT_MS),
+  })
+  if (!response.ok) {
+    await response.body?.cancel().catch((error) => console.warn("[lead-source-common-crawl] cache response cancel failed:", error))
+    throw new Error(`Common Crawl R2 cache returned HTTP ${response.status}`)
+  }
+  return parseIndexRows(await readLimitedText(response))
 }
 
 function isTransientStatus(status: number): boolean {
@@ -269,6 +306,22 @@ export async function fetchCommonCrawlDomainSignal(input: CommonCrawlDomainSigna
       if (byDomain.size >= maxRecords) break
     }
     if (byDomain.size >= maxRecords) break
+  }
+  if (successfulPages === 0) {
+    try {
+      const cachedRows = await fetchCachedIndexRows(input.queryUrl)
+      for (const row of cachedRows) {
+        const domain = normalizePublicDomain(row.url)
+        if (domain && !byDomain.has(domain)) byDomain.set(domain, row)
+        if (byDomain.size >= maxRecords) break
+      }
+      if (byDomain.size > 0) {
+        console.warn(`[lead-source-common-crawl] used R2 cache after index egress failure: ${byDomain.size} domains`)
+        successfulPages = 1
+      }
+    } catch (cacheError) {
+      console.error("[lead-source-common-crawl] R2 cache fallback failed:", cacheError)
+    }
   }
   if (successfulPages === 0) throw lastPageError ?? new Error("Every Common Crawl index page failed")
   return {
