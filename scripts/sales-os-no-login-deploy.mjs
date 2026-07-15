@@ -726,6 +726,14 @@ async function applyPortalTwentySourceOptionsMigration(envs) {
   )
 }
 
+async function applySalesSyncLogsListLeadMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715193000_sales_sync_logs_list_lead.sql",
+    "List-only Twenty sync audit migration",
+  )
+}
+
 async function applyManualJapanEntryWorkMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1380,6 +1388,7 @@ async function main() {
     console.log(await applyLeadSourceCountryPacksMigration(envs))
     console.log(await applyLeadSourcePartialPilotClaimMigration(envs))
     console.log(await applyPortalTwentySourceOptionsMigration(envs))
+    console.log(await applySalesSyncLogsListLeadMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
     console.log(await applyTwentySelectOptionsScript(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
