@@ -98,7 +98,9 @@ export function visualGrammar(value: DemoCreativeDirection): Record<string, stri
     serviceLayout: value.serviceLayout,
     worksLayout: value.worksLayout,
     paletteMood: value.paletteMood,
+    density: value.density,
     motion: value.motion,
+    signatureMotif: value.signatureMotif,
   }
 }
 
