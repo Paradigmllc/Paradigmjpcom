@@ -7,8 +7,10 @@ const MAX_QUERY_BYTES = 12 * 1024 * 1024
 const MAX_PAGE_SIZE = 100
 const REQUEST_GAP_MS = 1_200
 const CACHE_TTL_MS = 10 * 60_000
-const MAX_FETCH_ATTEMPTS = 3
+const MAX_FETCH_ATTEMPTS = 2
 const RETRY_BACKOFF_MS = 1_000
+const INDEX_REQUEST_TIMEOUT_MS = 20_000
+const DOMAIN_SIGNAL_BUDGET_MS = 120_000
 
 interface CachedRows {
   expiresAt: number
@@ -144,7 +146,7 @@ async function fetchIndexRows(rawUrl: string): Promise<CommonCrawlIndexRow[]> {
             "User-Agent": "ParadigmLeadSourceIngest/1.0 (+https://paradigmjp.com)",
           },
           redirect: "error",
-          signal: AbortSignal.timeout(120_000),
+          signal: AbortSignal.timeout(INDEX_REQUEST_TIMEOUT_MS),
         })
         if (!response.ok) {
           await response.body?.cancel().catch((error) => console.warn("[lead-source-common-crawl] response cancel failed:", error))
@@ -246,7 +248,12 @@ export async function fetchCommonCrawlDomainSignal(input: CommonCrawlDomainSigna
   const byDomain = new Map<string, CommonCrawlIndexRow>()
   let successfulPages = 0
   let lastPageError: Error | null = null
+  const startedAt = Date.now()
   for (const page of input.pages) {
+    if (Date.now() - startedAt >= DOMAIN_SIGNAL_BUDGET_MS) {
+      console.warn(`[lead-source-common-crawl] stopped at the ${DOMAIN_SIGNAL_BUDGET_MS}ms source preview budget`)
+      break
+    }
     let rows: CommonCrawlIndexRow[]
     try {
       rows = await fetchIndexRows(queryForPage(input.queryUrl, page))
