@@ -285,8 +285,22 @@ export async function fetchCommonCrawlDomainSignal(input: CommonCrawlDomainSigna
   const byDomain = new Map<string, CommonCrawlIndexRow>()
   let successfulPages = 0
   let lastPageError: Error | null = null
+  try {
+    const cachedRows = await fetchCachedIndexRows(input.queryUrl)
+    for (const row of cachedRows) {
+      const domain = normalizePublicDomain(row.url)
+      if (domain && !byDomain.has(domain)) byDomain.set(domain, row)
+      if (byDomain.size >= maxRecords) break
+    }
+    if (byDomain.size > 0) {
+      console.warn(`[lead-source-common-crawl] used deterministic R2 cache before direct index access: ${byDomain.size} domains`)
+      successfulPages = 1
+    }
+  } catch (cacheError) {
+    console.warn("[lead-source-common-crawl] R2 cache unavailable; falling back to the direct index:", cacheError)
+  }
   const startedAt = Date.now()
-  for (const page of input.pages) {
+  for (const page of successfulPages > 0 ? [] : input.pages) {
     if (Date.now() - startedAt >= DOMAIN_SIGNAL_BUDGET_MS) {
       console.warn(`[lead-source-common-crawl] stopped at the ${DOMAIN_SIGNAL_BUDGET_MS}ms source preview budget`)
       break
@@ -306,22 +320,6 @@ export async function fetchCommonCrawlDomainSignal(input: CommonCrawlDomainSigna
       if (byDomain.size >= maxRecords) break
     }
     if (byDomain.size >= maxRecords) break
-  }
-  if (successfulPages === 0) {
-    try {
-      const cachedRows = await fetchCachedIndexRows(input.queryUrl)
-      for (const row of cachedRows) {
-        const domain = normalizePublicDomain(row.url)
-        if (domain && !byDomain.has(domain)) byDomain.set(domain, row)
-        if (byDomain.size >= maxRecords) break
-      }
-      if (byDomain.size > 0) {
-        console.warn(`[lead-source-common-crawl] used R2 cache after index egress failure: ${byDomain.size} domains`)
-        successfulPages = 1
-      }
-    } catch (cacheError) {
-      console.error("[lead-source-common-crawl] R2 cache fallback failed:", cacheError)
-    }
   }
   if (successfulPages === 0) throw lastPageError ?? new Error("Every Common Crawl index page failed")
   return {
