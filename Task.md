@@ -1690,9 +1690,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - DEMO URLの全1,075ジョブについて`PUT /api/sales/demo-site/batch`を100件単位で実行し、**1,075/1,075 URL発行成功・失敗0**。URL発行はprivate reviewのみで、公開・広告・メール・SNS・電話・郵送・ポータルDM・フォーム送信は行っていない。`sending_enabled=false`をDB/APIで確認した。
 - Twentyは合格DEMOのURL・品質スコア・未送信ステータスをread-back確認付きで **1,069/1,071ユニーク企業**へ同期済み。残り2件は`demo-only-*.invalid`ドメインのためTwenty既存IDへのURL更新だけ保留だが、1,000件同期条件は達成した。ポータル候補のSMB適合・独自HPなし・情報量ゲートによるskipは別レーンとして未同期扱いを維持する。
 - 品質ゲート大量処理修正は`npm exec -- tsc --noEmit`、対象Vitest **24 tests**、正式`npm run release:prod`を通過。DB **89/89**、Sales health JSON `ok:true`、Twenty HTTP **200**、worker restart **0**、Realtime / Traefik / Cloudflare origin lock / 公開smokeをrelease-doctorで確認。本番containerは`n8i2sjiqvr2d8hrzppop2m2i-175813606219`（healthy）。
-## CURRENT STATUS - 2026-07-16 DEMO共通UI v2（全件底上げ / 本番反映前）
+## CURRENT STATUS - 2026-07-16 DEMO共通UI v2（全件底上げ / 本番release・実表示確認完了）
 
 - 企業ごとの個別修正ではなく、Premium V3共通レンダラーへ全件に効く品質改善を入れた。`data-demo-site="premium-v3"`を基点に、日本語向けの見出しスケール、行間、字間、`text-wrap: balance/pretty`、フォーカス表示、画像ホバー、モーション低減を一括適用する。既存の企業別コンテンツ・画像・ロゴは再生成せず、読み込み時に同じUI改善を継承する。
 - 長い日本語Heroを最大3.8rem、通常Heroを最大4rem、セクション見出しを最大3.5rem、カード見出しを最大1.8remへ整理し、過大な文字サイズと詰まりを抑制した。ホームとお問い合わせの主要見出しは共通`demoHeadlineClass`へ統一し、句読点を基準に改行する。
 - 既存のスライダー、パララックス、スクロールリビールに加え、共通画像の微細ズーム・彩度調整、キーボードフォーカス、モバイル用の縮小トークンを追加。送信・外部副作用・DEMOの非公開/7日失効ルールは変更していない。
-- 検証済み: `npm exec -- tsc --noEmit`、DEMO関連Vitest **9 files / 40 tests**、`npm run quality:guard` **0 errors / 63 warnings**、`npm run build` **408/408 pages**。本番反映後にPC/タブレット/モバイルと下層（サービス・お問い合わせ・法務）の公開URLを再確認する。
+- 検証済み: `npm exec -- tsc --noEmit`、DEMO関連Vitest **9 files / 40 tests**、`npm run quality:guard` **0 errors / 63 warnings**、`npm run build` **408/408 pages**。PR **#309**をmainへマージし、正式`npm run release:prod`のpre/post gateを通過した。
+- 本番`https://demo.paradigmjp.com/cafe-sosomu`をPC・モバイルで実表示確認。共有root `data-demo-site="premium-v3"`、Hero実測 **52.752px / line-height 60.137px**、services見出し **38.936px**、contactは地図・入力フォーム・送信なし表示を確認。下層のservices/contact/privacyはHTTP **200**、ブラウザのerrorログは **0件**。外部送信は引き続き0件。
