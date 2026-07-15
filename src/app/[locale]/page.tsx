@@ -70,8 +70,8 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     },
     secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
     image: {
-      url: "/japan-entry/package-scope.svg",
-      alt: "Japan Entry fixed-scope package visual showing the connected launch components",
+      url: "/japan-entry/tokyo-sakura-panorama.svg",
+      alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
     },
     stats: [
       { value: "$12K", label: "fixed setup" },

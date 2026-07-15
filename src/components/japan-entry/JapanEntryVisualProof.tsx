@@ -1,6 +1,7 @@
 import Image from "next/image"
 import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
+import JapanAtmosphereBanner from "@/components/japan-entry/JapanAtmosphereBanner"
 
 type LocaleVariant = "en" | "ja"
 
@@ -21,8 +22,10 @@ export default async function JapanEntryVisualProof({ locale }: { locale: Locale
   const cards = t.raw("visualProof.cards") as VisualProofCard[]
 
   return (
-    <section className="relative overflow-hidden border-y border-zinc-200 bg-zinc-50 px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="visual-proof-title">
-      <div className="mx-auto max-w-6xl">
+    <>
+      <JapanAtmosphereBanner locale={locale} />
+      <section className="relative overflow-hidden border-y border-zinc-200 bg-zinc-50 px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="visual-proof-title">
+        <div className="mx-auto max-w-6xl">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">{t("visualProof.eyebrow")}</p>
           <h2 id="visual-proof-title" className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-zinc-950 sm:text-5xl">{t("visualProof.title")}</h2>
@@ -54,7 +57,8 @@ export default async function JapanEntryVisualProof({ locale }: { locale: Locale
             {locale === "ja" ? "公開情報と自己申告を分け、非公開の売上やアクセスを推定しません。" : "Public evidence and self-reported answers stay separate; private traffic and revenue are not inferred."}
           </span>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   )
 }

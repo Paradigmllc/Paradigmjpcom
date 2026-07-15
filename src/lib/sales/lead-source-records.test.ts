@@ -131,16 +131,25 @@ describe("fetchLeadSourceCandidateRecords", () => {
     expect(records.every((record) => record.source.id === "source-1")).toBe(true)
   })
 
-  it("keeps a source out of readiness until website preflight is complete and fresh", async () => {
+  it("allows fresh eligible records into a pilot while keeping partial sources out of scale", async () => {
     const notReady = await getLeadSourceReadiness(["AU"])
+    sourceRows = [config({
+      last_record_count: 2,
+      last_preflight: { total: 4, pending: 2, checking: 0, eligible: 2, retryable: 0, rejected: 0, reasonCounts: {}, completed: false, checkedAt: new Date().toISOString() },
+      last_preflighted_at: new Date().toISOString(),
+      pilot_approved_at: new Date().toISOString(),
+    })]
+    const partial = await getLeadSourceReadiness(["AU"])
     sourceRows = [config({
       last_record_count: 2,
       last_preflight: { total: 2, pending: 0, checking: 0, eligible: 2, retryable: 0, rejected: 0, reasonCounts: {}, completed: true, checkedAt: new Date().toISOString() },
       last_preflighted_at: new Date().toISOString(),
+      pilot_approved_at: new Date().toISOString(),
     })]
-    const ready = await getLeadSourceReadiness(["AU"])
+    const complete = await getLeadSourceReadiness(["AU"])
 
     expect(notReady.AU).toMatchObject({ sourceIds: [], recordCount: 0 })
-    expect(ready.AU).toMatchObject({ sourceIds: ["source-1"], recordCount: 2 })
+    expect(partial.AU).toMatchObject({ sourceIds: ["source-1"], recordCount: 2, scaleReadySourceIds: [], scaleReadyRecordCount: 0 })
+    expect(complete.AU).toMatchObject({ sourceIds: ["source-1"], recordCount: 2, scaleReadySourceIds: ["source-1"], scaleReadyRecordCount: 2 })
   })
 })
