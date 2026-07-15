@@ -135,6 +135,9 @@ describe("public English Japan Entry copy", () => {
       expect(slide.alt.trim()).not.toBe("")
       expect(slide.body.trim()).not.toBe("")
     }
+    expect(messages.home.atmosphere.items).toHaveLength(3)
+    expect(jaMessages.home.atmosphere.items).toHaveLength(3)
+    expect(readFileSync(join(process.cwd(), "public/japan-entry/tokyo-sakura-panorama.svg"), "utf8")).toContain("Tokyo skyline")
   })
 
   it("keeps the legacy homeEn catalog identical across en and ja bundles", () => {

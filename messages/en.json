@@ -1605,6 +1605,17 @@
         }
       ]
     },
+    "atmosphere": {
+      "eyebrow": "A Japan you can picture",
+      "title": "Bring the Japan launch to life before the work begins.",
+      "description": "From Tokyo's operating rhythm to the quiet confidence of a well-run handover, the Japanese buyer experience should feel tangible—not like a translated page floating in space.",
+      "caption": "Tokyo · Sakura season · A buyer path built to operate",
+      "items": [
+        { "label": "Local context", "body": "A Japanese page should reflect how buyers evaluate responsibility, support, and the next step." },
+        { "label": "Visual language", "body": "Seasonal atmosphere, clear diagrams, and calm information design make the offer easier to trust." },
+        { "label": "Operating reality", "body": "Every visual promise connects back to an owner, source, route, and handover your team can run." }
+      ]
+    },
     "visualContext": {
       "eyebrow": "A closer look at the operating model",
       "title": "People, process, and a visible handover.",
