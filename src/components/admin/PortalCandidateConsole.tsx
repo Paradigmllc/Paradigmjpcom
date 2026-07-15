@@ -41,9 +41,42 @@ const SOURCE_OPTIONS: Array<{ value: PortalSource; label: string; hint: string }
 ]
 
 const PAGE_SIZE = 20
+const BULK_QUEUE_LIMIT = 50
 
 function safeCssUrl(url: string): string {
   return `url("${url.replace(/["\\\n\r]/g, (character) => `\\${character}`)}")`
+}
+
+function isQueueableCandidate(candidate: PortalCandidateView): boolean {
+  return candidate.reviewStatus === "ready_for_review" && candidate.status !== "promoted" && !candidate.websiteUrl && candidate.images.length >= 3
+}
+
+function buildReviewedAssets(candidate: PortalCandidateView, selectedUrls: string[]): DemoReviewedAsset[] {
+  return selectedUrls.map((url, index) => ({
+    id: `portal-${candidate.source}-${candidate.id.slice(0, 8)}-${index + 1}`,
+    kind: "image",
+    sourceUrl: url,
+    ownerLabel: candidate.companyName,
+    sourceAccount: candidate.listingUrl,
+    useBasis: "private_proposal",
+    officialSource: true,
+    peopleVisible: false,
+    watermarkVisible: false,
+    alt: candidate.images.find((image) => image.url === url)?.alt ?? `${candidate.companyName}の掲載写真`,
+    notes: `${candidate.source}公式プロフィール・非公開提案限定`,
+  }))
+}
+
+async function queuePortalCandidate(candidate: PortalCandidateView, selectedUrls: string[]): Promise<{ ok: boolean; reused?: boolean; error?: string }> {
+  const assets = buildReviewedAssets(candidate, selectedUrls)
+  const response = await fetch("/api/sales/demo-site/portal-candidates", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ candidateId: candidate.id, industry: candidate.suggestedIndustry, prefecture: candidate.prefecture ?? undefined, assets }),
+  })
+  const payload = await response.json() as { ok?: boolean; reused?: boolean; error?: string }
+  if (!response.ok || !payload.ok) return { ok: false, error: payload.error ?? "DEMOキュー投入に失敗しました" }
+  return { ok: true, reused: payload.reused }
 }
 
 export function PortalCandidateConsole() {
@@ -51,6 +84,9 @@ export function PortalCandidateConsole() {
   const [candidates, setCandidates] = useState<PortalCandidateView[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
+  const [bulkConfirmed, setBulkConfirmed] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
 
   const refresh = useCallback(async (nextSource: PortalSource = source) => {
     setLoading(true)
@@ -81,6 +117,40 @@ export function PortalCandidateConsole() {
     () => candidates.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
     [candidates, page],
   )
+  const bulkQueueCandidates = useMemo(
+    () => candidates.filter(isQueueableCandidate).slice(0, BULK_QUEUE_LIMIT),
+    [candidates],
+  )
+
+  async function queueReadyCandidates() {
+    if (!bulkConfirmed) return toast.error("公式プロフィール・人物/透かしなし画像の確認にチェックしてください")
+    if (bulkQueueCandidates.length === 0) return toast.error("一括投入できる審査可能候補がありません")
+    setBulkBusy(true)
+    setBulkProgress({ done: 0, total: bulkQueueCandidates.length })
+    let success = 0
+    let failed = 0
+    try {
+      for (const candidate of bulkQueueCandidates) {
+        const result = await queuePortalCandidate(candidate, candidate.images.slice(0, 6).map((image) => image.url))
+        if (result.ok) success += 1
+        else {
+          failed += 1
+          console.error("[portal-console] bulk queue failed:", candidate.id, result.error)
+        }
+        setBulkProgress((current) => current ? { ...current, done: current.done + 1 } : current)
+      }
+      if (failed > 0) toast.warning(`DEMO一括投入: 成功${success}件 / 失敗${failed}件。失敗候補は個別確認してください。`)
+      else toast.success(`DEMO一括投入: ${success}件を生成キューへ追加しました。送信はありません。`)
+      await refresh(source)
+    } catch (error) {
+      console.error("[portal-console] bulk queue crashed:", error)
+      toast.error(error instanceof Error ? error.message : "DEMO一括投入に失敗しました")
+    } finally {
+      setBulkBusy(false)
+      setBulkProgress(null)
+      setBulkConfirmed(false)
+    }
+  }
 
   return (
     <section className="mx-auto mt-8 max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
@@ -107,6 +177,25 @@ export function PortalCandidateConsole() {
         </div>
       </div>
       <PortalSnapshotImportForm source={source} onImported={() => refresh(source)} />
+      <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <h3 className="text-sm font-semibold text-emerald-950">審査可能候補を一括DEMO生成へ投入</h3>
+            <p className="mt-1 text-xs leading-5 text-emerald-900">現在のsourceで審査可能な候補を最大{BULK_QUEUE_LIMIT}件まとめてキューへ入れます。送信・DM・メール・フォーム送信は行わず、7日限定URL発行前の生成キューまでです。</p>
+            {bulkProgress && <p className="mt-2 text-xs font-bold text-emerald-950">投入中 {bulkProgress.done} / {bulkProgress.total}</p>}
+          </div>
+          <div className="flex flex-col gap-3 lg:min-w-96">
+            <label className="flex items-start gap-3 text-xs leading-5 text-emerald-950">
+              <input type="checkbox" checked={bulkConfirmed} onChange={(event) => setBulkConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
+              <span>対象候補が事業者本人の公式プロフィールで、先頭画像に人物・透かし・権利リスクがないことを確認済み</span>
+            </label>
+            <button type="button" disabled={loading || bulkBusy || !bulkConfirmed || bulkQueueCandidates.length === 0} onClick={() => void queueReadyCandidates()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white disabled:opacity-40">
+              {bulkBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {bulkBusy ? "投入中…" : `${bulkQueueCandidates.length}件を一括生成投入`}
+            </button>
+          </div>
+        </div>
+      </div>
       <div className="mt-4 flex flex-wrap gap-3">
         <button type="button" disabled={loading} onClick={() => void refresh(source)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-5 text-sm font-bold disabled:opacity-50"><RefreshCw className="h-4 w-4" />一覧を更新</button>
       </div>
@@ -143,29 +232,11 @@ function PortalCandidateCard({ candidate, onQueued }: { candidate: PortalCandida
   async function queueDemo() {
     if (!officialConfirmed) return toast.error("事業者本人の公式プロフィールであることを確認してください")
     if (selected.length < 3) return toast.error("人物・透かしのない画像を3件以上選択してください")
-    const assets: DemoReviewedAsset[] = selected.map((url, index) => ({
-      id: `portal-${candidate.source}-${candidate.id.slice(0, 8)}-${index + 1}`,
-      kind: "image",
-      sourceUrl: url,
-      ownerLabel: candidate.companyName,
-      sourceAccount: candidate.listingUrl,
-      useBasis: "private_proposal",
-      officialSource: true,
-      peopleVisible: false,
-      watermarkVisible: false,
-      alt: candidate.images.find((image) => image.url === url)?.alt ?? `${candidate.companyName}の掲載写真`,
-      notes: `${candidate.source}公式プロフィール・非公開提案限定`,
-    }))
     setBusy(true)
     try {
-      const response = await fetch("/api/sales/demo-site/portal-candidates", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: candidate.id, industry: candidate.suggestedIndustry, prefecture: candidate.prefecture ?? undefined, assets }),
-      })
-      const payload = await response.json() as { ok?: boolean; reused?: boolean; error?: string }
-      if (!response.ok || !payload.ok) throw new Error(payload.error ?? "DEMOキュー投入に失敗しました")
-      toast.success(payload.reused ? "既存の同一DEMOを再利用しました" : "品質ゲート付きDEMO生成へ追加しました")
+      const result = await queuePortalCandidate(candidate, selected)
+      if (!result.ok) throw new Error(result.error ?? "DEMOキュー投入に失敗しました")
+      toast.success(result.reused ? "既存の同一DEMOを再利用しました" : "品質ゲート付きDEMO生成へ追加しました")
       await onQueued()
     } catch (error) {
       console.error("[portal-console] queue failed:", error)
