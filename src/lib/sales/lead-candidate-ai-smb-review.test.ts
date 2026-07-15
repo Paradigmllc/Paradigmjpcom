@@ -101,6 +101,7 @@ describe("DeepSeek SMB adjudication", () => {
         smb_fit: false,
         employee_band: "unknown",
         business_model: "product_brand",
+        confidence: 0.9,
         evidence_quotes: [
           "Nova Sensor Systems designs autonomous optical sensors for industrial inspection.",
           "Our modular sensor platform ships to manufacturers worldwide.",
@@ -116,6 +117,25 @@ describe("DeepSeek SMB adjudication", () => {
       smb: { passed: true, score: 100 },
       offerFit: { passed: true, score: 90 },
     })
+  })
+
+  it("keeps official product-fit adjudication fail-closed below 90%", async () => {
+    const officialOfferGate: LeadQualityGate = {
+      ...gate,
+      status: "review_required",
+      reasons: ["japan_entry_offer_fit_missing"],
+      source: { ...gate.source, trustTier: 3 },
+      smb: { passed: true, score: 100, evidence: ["employee_count:18", "official_sme_flag:SBA SBIR"] },
+      offerFit: { passed: false, score: 0, evidence: [] },
+    }
+    const caller: typeof callDeepSeek = async () => ({
+      ok: true,
+      usedModel: "deepseek-v4-pro",
+      text: responseJson({ confidence: 0.89, business_model: "product_brand" }),
+    })
+
+    const result = await reviewUnknownSmbCandidate({ companyName: "Alpha Cloud", countryCode: "US", homepage, qualityGate: officialOfferGate, detections: [] }, caller)
+    expect(result).toMatchObject({ passed: false, mode: "offer_fit", confidence: 0.89 })
   })
 
   it("does not use offer-fit adjudication without official Tier 3 SMB evidence", () => {

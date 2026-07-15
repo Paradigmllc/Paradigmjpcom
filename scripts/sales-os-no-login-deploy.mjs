@@ -726,6 +726,14 @@ async function applyLeadSourceProductFitRetryMigration(envs) {
   )
 }
 
+async function applyLeadSourceProductEvidenceRetryMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715233000_lead_source_product_evidence_retry.sql",
+    "Official SMB grounded product-evidence retry migration",
+  )
+}
+
 async function applyPortalTwentySourceOptionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1396,6 +1404,7 @@ async function main() {
     console.log(await applyLeadSourceCountryPacksMigration(envs))
     console.log(await applyLeadSourcePartialPilotClaimMigration(envs))
     console.log(await applyLeadSourceProductFitRetryMigration(envs))
+    console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
     console.log(await applyPortalTwentySourceOptionsMigration(envs))
     console.log(await applySalesSyncLogsListLeadMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
