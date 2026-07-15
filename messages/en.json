@@ -734,7 +734,7 @@
     "fixedPlanDescription": "A fixed-scope Japan launch for fast-decision SMBs, covering the buyer-facing surface, public market evidence, channel setup, regulatory applicability screening, launch operations, and handover.",
     "fixedPlanFeatures": [
       "LP / HP localization and Japanese buyer-path rebuild",
-      "SNS setup for up to two priority channels",
+      "Social Media setup for up to two priority channels",
       "Public-signal market report across up to three markets, with one priority deep dive",
       "Japan trust, commercial disclosure, and regulatory applicability screening",
       "Eligible inquiry or payment-routing implementation",
@@ -770,7 +770,7 @@
         ]
       },
       {
-        "title": "SNS channel setup",
+        "title": "Social Media channel setup",
         "description": "Prepare the first Japanese-facing social presence without pretending that setup equals ongoing audience growth.",
         "deliverables": [
           "Up to two priority channel profiles and bios",
@@ -885,7 +885,7 @@
         "title": "Included in the agreed launch scope",
         "items": [
           "LP / HP localization and Japanese buyer-path implementation",
-          "SNS setup for up to two priority channels",
+          "Social Media setup for up to two priority channels",
           "Public-signal market report and priority-market deep dive",
           "Japan's Act on Specified Commercial Transactions and relevant regulatory applicability screening",
           "Discovery, analytics, support, launch, and handover setup",
@@ -896,7 +896,7 @@
         "title": "Separate or out of scope",
         "items": [
           "Formal legal, tax, banking, licensing, or incorporation advice",
-          "Ongoing SNS posting, community management, influencer work, or paid media",
+          "Ongoing Social Media posting, community management, influencer work, or paid media",
           "Private traffic, revenue, or conversion data that the client has not provided",
           "Advertising spend, inventory, fulfilment, and logistics",
           "Payment-provider, software, hosting, and other third-party fees",
@@ -929,7 +929,7 @@
         "a": "No. Provider fees, software, hosting, advertising, payment processing, legal or tax advice, licences, inventory, and logistics remain separate unless the signed scope explicitly says otherwise."
       },
       {
-        "q": "Does the setup include SNS?",
+        "q": "Does the setup include Social Media?",
         "a": "Yes. The fixed setup includes profile, bio, visual, link, CTA, and starter-content setup for up to two priority channels. Ongoing posting, community management, influencer work, and paid media are separate."
       },
       {
@@ -1286,7 +1286,7 @@
       },
       {
         "number": "03",
-        "title": "SNS launch setup",
+        "title": "Social Media launch setup",
         "summary": "Prepare up to two priority channels so the Japanese presence is coherent on launch day.",
         "deliverables": [
           "Profile, bio, category, link, CTA, and ownership setup",
@@ -1347,7 +1347,7 @@
       "steps": [
         { "label": "Start Date", "title": "Inputs and scope locked", "body": "We confirm the written scope, dependencies, access, materials, payment, and approver." },
         { "label": "Days 1–3", "title": "Frame and localize", "body": "Offer, buyer path, trust requirements, market signals, and content direction are aligned." },
-        { "label": "Days 4–9", "title": "Build the route", "body": "The agreed LP/HP, inquiry or payment path, SNS setup, support rules, and measurement baseline are implemented." },
+        { "label": "Days 4–9", "title": "Build the route", "body": "The agreed LP/HP, inquiry or payment path, Social Media setup, support rules, and measurement baseline are implemented." },
         { "label": "Days 10–13", "title": "Review and verify", "body": "We run responsive, content, link, form, tracking, and handover checks; one approver consolidates revisions." },
         { "label": "Day 14", "title": "Launch and hand over", "body": "The agreed route goes live with owners, open dependencies, operating notes, and the next decision recorded." }
       ]
@@ -1358,7 +1358,7 @@
       "desc": "The first six months include the standard monthly operation at no additional monthly charge. This is an operating layer around the agreed launch—not unlimited agency capacity.",
       "items": [
         { "title": "Support and triage", "body": "Customer questions, issue triage, and escalation within the agreed support route." },
-        { "title": "SNS / SEO updates", "body": "Planned updates to the agreed channels and search-ready content surface within the written scope." },
+        { "title": "Social Media / SEO updates", "body": "Planned updates to the agreed channels and search-ready content surface within the written scope." },
         { "title": "Marketing materials", "body": "Agreed launch assets and selected creative updates, including video only when explicitly scoped." },
         { "title": "Monthly report", "body": "Observed activity, completed work, open dependencies, and the next decision—not invented revenue attribution." },
         { "title": "Visible workspace", "body": "Notion by default or Trello by request; standard included requests are acknowledged, scoped, and started within 48 business hours." },
@@ -1375,7 +1375,7 @@
         "Formal legal, tax, immigration, medical, financial, or regulatory advice",
         "Unlimited pages, languages, products, markets, revisions, or integrations",
         "Paid media budget, creator or influencer fees, payment-provider fees, or local registrations",
-        "Unbounded daily SNS posting, community management, sales calls, or emergency response"
+        "Unbounded daily Social Media posting, community management, sales calls, or emergency response"
       ]
     },
     "commercial": {
