@@ -465,17 +465,14 @@ export async function seedAllContent(
       const pageData = { title: pageTitle, slug, description: pageDesc, layout, availableLocales: ["ja","en"], isHomepage: true }
       const { docs: existing } = await payload.find({ collection: "pages", where: { slug: { equals: slug } }, limit: 1 })
       if (existing.length > 0) {
-        // The legacy Japanese home document contains Payload's internal
-        // localized block metadata (_locale/_parent_id). Recreating that one
-        // reviewed homepage removes the invalid legacy keys and makes the
-        // locale seed deterministic. English remains an in-place update.
-        if (locale === "ja") {
-          await payload.delete({ collection: "pages", id: existing[0].id } as unknown as Parameters<typeof payload.delete>[0])
-          await payload.create({ collection: "pages", data: pageData, locale } as unknown as Parameters<typeof payload.create>[0])
-          summary.pages.updated++
-          return
-        }
-        await payload.update({ collection: "pages", id: existing[0].id, data: pageData, locale } as unknown as Parameters<typeof payload.update>[0])
+        // Recreate the reviewed homepage instead of partially updating it.
+        // Payload validates the full localized layout on update, so an old
+        // centered hero can retain a stale upload relation from a prior
+        // split-image variant and fail validation before the new layout lands.
+        // Deleting/recreating both locale documents makes the seed deterministic
+        // and keeps the CMS schema free of runtime-only visual URLs.
+        await payload.delete({ collection: "pages", id: existing[0].id } as unknown as Parameters<typeof payload.delete>[0])
+        await payload.create({ collection: "pages", data: pageData, locale } as unknown as Parameters<typeof payload.create>[0])
         summary.pages.updated++
         return
       }
