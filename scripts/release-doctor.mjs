@@ -469,7 +469,9 @@ function checkStaticReleaseRules() {
     ? fs.readFileSync(salesProductsBootstrapPath, "utf8")
     : ""
   if (
-    salesProductsBootstrap.includes("ranked_recommendations")
+    salesProductsBootstrap.includes("uniq_sales_products_code")
+    && salesProductsBootstrap.includes("ON public.sales_products (code)")
+    && salesProductsBootstrap.includes("ranked_recommendations")
     && salesProductsBootstrap.includes("PARTITION BY company_id, product_id")
     && salesProductsBootstrap.includes("twenty_opportunity_id IS NOT NULL")
     && salesProductsBootstrap.includes("uniq_sales_company_product_recommendation")
