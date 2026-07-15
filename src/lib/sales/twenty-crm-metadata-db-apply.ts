@@ -9,7 +9,8 @@ function env(name: string): string | null {
 
 const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト", "Japan Entry 候補"]
 const TWENTY_COMPANY_LIST_VIEW_NAME = "営業リスト"
-const JAPAN_ONLY_VIEW_FILTER_FIELD = "paradigmDataStatus"
+const JAPAN_ONLY_VIEW_FILTER_FIELD = "paradigmCountryName"
+const JAPAN_ONLY_VIEW_FILTER_VALUE = "日本"
 const OUT_OF_SCOPE_FOREIGN_VALUE = "out_of_scope_foreign"
 const TWENTY_COMPANY_RECORD_VIEW_NAME = "Company Record Page Fields"
 const TWENTY_HOME_EXTRA_FIELDS = [
@@ -150,14 +151,24 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
       ],
     )
 
-    const filterValue = JSON.stringify(OUT_OF_SCOPE_FOREIGN_VALUE)
+    const filterValue = JSON.stringify(JAPAN_ONLY_VIEW_FILTER_VALUE)
+    const legacyForeignFilterValue = JSON.stringify(OUT_OF_SCOPE_FOREIGN_VALUE)
     for (const target of japanViewFilterTargets.rows) {
       await client.query(
         `
           delete from core."viewFilter"
           where "viewId" = $1
-            and "fieldMetadataId" = $2
             and operand = 'IS_NOT'
+            and value = $2::jsonb
+        `,
+        [target.viewId, legacyForeignFilterValue],
+      )
+      await client.query(
+        `
+          delete from core."viewFilter"
+          where "viewId" = $1
+            and "fieldMetadataId" = $2
+            and operand = 'IS'
             and value = $3::jsonb
         `,
         [target.viewId, target.fieldMetadataId, filterValue],
@@ -166,7 +177,7 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
         `
           insert into core."viewFilter" (
             "universalIdentifier", "fieldMetadataId", operand, value, "viewId", "workspaceId", "applicationId"
-          ) values (gen_random_uuid(), $1, 'IS_NOT', $2::jsonb, $3, $4, $5)
+          ) values (gen_random_uuid(), $1, 'IS', $2::jsonb, $3, $4, $5)
         `,
         [target.fieldMetadataId, filterValue, target.viewId, target.workspaceId, target.applicationId],
       )

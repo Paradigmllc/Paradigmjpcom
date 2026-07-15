@@ -12,5 +12,7 @@ describe("normalizeTwentyCompanyViewsViaDatabase", () => {
     expect(source.match(/'position'/g)).toHaveLength(2)
     expect(source).toContain("OUT_OF_SCOPE_FOREIGN_VALUE")
     expect(source).toContain("operand = 'IS_NOT'")
+    expect(source).toContain("JAPAN_ONLY_VIEW_FILTER_VALUE")
+    expect(source).toContain("operand = 'IS'")
   })
 })
