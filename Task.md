@@ -1703,11 +1703,11 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 今回はサービス説明文と同一の箇条書き、同一箇条書きの重複を読み込み時に除去し、`／`区切りで連結された事実を独立した箇条書きへ展開する。旧データでも同じ正規化結果になるようにし、事実の異なる箇条書きは保持する。入力・送信・Twenty・外部連絡先には書き込まない。
 - 対象Vitest **9 files / 41 tests**、TypeScript、Quality Guard **0 errors / 65 existing warnings**、production build **408/408 pages**を通過。PR **#315 / #317**をmainへマージし、正式`npm run release:prod`のpost-deploy gateを通過した。初回post-deployは切替直後のSSH/Traefik列挙で一時停止したが、再検証でTraefik route、Cloudflare origin lock、DB **89/89**、Twenty、Sales health JSON `ok:true`を確認した。
 - 公開`/cafe-sosomu/services`で「ドリップコーヒー」の説明重複を除去し、箇条書きが「軽食とのセットもおすすめ」「テイクアウトについては要確認」に分離されたことを確認。モバイルはviewport **390px / documentWidth 390px / overflow false**、お問い合わせページはGoogle Maps埋め込み・入力項目・「送信なし」ボタンを確認。ブラウザerrorログ **0件**、外部送信 **0件**。
-## CURRENT STATUS - 2026-07-16 Premium V3 UX品質強化（共通レンダラー / 未release）
+## CURRENT STATUS - 2026-07-16 Premium V3 UX品質強化（共通レンダラー / 本番release・公開fingerprint確認完了）
 
 - TCD有料テーマ超えを目標に、個別DEMOの再生成ではなく全DEMOへ効く共通UIを強化した。`PremiumV3Motion`へタッチ・`prefers-reduced-motion`対応の磁石型CTA、ヒーローのスクロールキュー、既存reveal/parallaxと統合したモーション基盤を追加した。
 - `DemoPremiumV3Layout`はスクロール時の半透明ヘッダー影、アクティブナビのlayout animation、主要CTAのpointer responseを追加。`PremiumV3PageHero`とホームの両ヒーローへスクロールキューを追加し、全ページのFAQ/アンカー余白/選択状態/スムーススクロールを共通CSSへ統一した。
 - 新規依存は追加せず、既存のFramer Motionを使用。動きは控えめなeasingに統一し、タッチ端末とreduced-motion環境では静的表示へフォールバックする。外部送信、Twenty同期、DEMOコンテンツ、URLは変更していない。
-- Verification: 対象Vitest **3 files / 11 tests**、TypeScript `tsc --noEmit`、Quality Guard **0 errors / 65 existing warnings**、production build **408/408 pages** pass。品質確認後にrelease branchへ反映し、本番公開URLでの確認を行う。
-- Release preflightでDB SSH fallbackの既存テーブル判定漏れ（`sales_japan_entry_projections`）を検出。fallback側でエラーを握りつぶさず、対象migration自体を安全に再実行できる形へ修正して正式gateを再実行する。
-- 再実行時に既存の`openclaw` tool connectionを旧post-outreach slug制約が拒否する互換不備を検出。正規slug集合へ`openclaw`を追加し、既存レコードを変更せず再実行可能にした。
+- Verification: 対象Vitest **3 files / 11 tests**、TypeScript `tsc --noEmit`、Quality Guard **0 errors / 65 warnings**、production build **408/408 pages** pass。release preflight/post-deployでDB **89/89**、Twenty worker restart **0**、Realtime、Traefik、Cloudflare origin lock、公開smoke、Sales health JSON `ok:true`を確認した。
+- 途中で検出した既存DBテーブルと`openclaw` tool connectionの互換不備は、fallbackのエラー握りつぶしをせずmigration側を再実行可能に修正した。最終deployment `p12xg0mcss6rmir1d7z7r424` はfinished、正式`npm run release:prod`は`release gate passed`で完了。
+- 公開`https://demo.paradigmjp.com/cafe-sosomu`はHTTP **200**、`data-demo-site` / `premium-v3` / `Scroll`の新fingerprintを確認。DEMOは非公開提案用・検索除外のままで、外部送信、Twenty新規同期、コンテンツ再生成は行っていない。
