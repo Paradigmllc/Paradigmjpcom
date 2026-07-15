@@ -1697,8 +1697,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 既存のスライダー、パララックス、スクロールリビールに加え、共通画像の微細ズーム・彩度調整、キーボードフォーカス、モバイル用の縮小トークンを追加。送信・外部副作用・DEMOの非公開/7日失効ルールは変更していない。
 - 検証済み: `npm exec -- tsc --noEmit`、DEMO関連Vitest **9 files / 40 tests**、`npm run quality:guard` **0 errors / 63 warnings**、`npm run build` **408/408 pages**。PR **#309**をmainへマージし、正式`npm run release:prod`のpre/post gateを通過した。
 - 本番`https://demo.paradigmjp.com/cafe-sosomu`をPC・モバイルで実表示確認。共有root `data-demo-site="premium-v3"`、Hero実測 **52.752px / line-height 60.137px**、services見出し **38.936px**、contactは地図・入力フォーム・送信なし表示を確認。下層のservices/contact/privacyはHTTP **200**、ブラウザのerrorログは **0件**。外部送信は引き続き0件。
-## CURRENT STATUS - 2026-07-16 Premium V3 DEMO 全体底上げ（共通UI + コピー正規化 / 本番反映前）
+## CURRENT STATUS - 2026-07-16 Premium V3 DEMO 全体底上げ（共通UI + コピー正規化 / 本番release・公開DEMO再確認完了）
 
 - 既存DEMOを1件ずつ再生成せず、Premium V3共通レンダラーで全件に適用する。見出しの過大表示を抑えた日本語向け型スケール、行間・字間・改行バランス、画像ホバー、focus表示、モーション低減、モバイル用トークンは前回releaseで本番反映済み。
-- 今回はサービス説明文と同一の箇条書き、同一箇条書きの重複を読み込み時に除去し、旧データでも同じ正規化結果になるようにした。事実の異なる箇条書きは保持し、入力・送信・Twenty・外部連絡先には書き込まない。
-- 対象Vitest **9 files / 41 tests**、TypeScript、Quality Guard **0 errors / 65 existing warnings**を通過。正式releaseと公開DEMOの再確認をこの変更後に実施する。外部送信は0件。
+- 今回はサービス説明文と同一の箇条書き、同一箇条書きの重複を読み込み時に除去し、`／`区切りで連結された事実を独立した箇条書きへ展開する。旧データでも同じ正規化結果になるようにし、事実の異なる箇条書きは保持する。入力・送信・Twenty・外部連絡先には書き込まない。
+- 対象Vitest **9 files / 41 tests**、TypeScript、Quality Guard **0 errors / 65 existing warnings**、production build **408/408 pages**を通過。PR **#315 / #317**をmainへマージし、正式`npm run release:prod`のpost-deploy gateを通過した。初回post-deployは切替直後のSSH/Traefik列挙で一時停止したが、再検証でTraefik route、Cloudflare origin lock、DB **89/89**、Twenty、Sales health JSON `ok:true`を確認した。
+- 公開`/cafe-sosomu/services`で「ドリップコーヒー」の説明重複を除去し、箇条書きが「軽食とのセットもおすすめ」「テイクアウトについては要確認」に分離されたことを確認。モバイルはviewport **390px / documentWidth 390px / overflow false**、お問い合わせページはGoogle Maps埋め込み・入力項目・「送信なし」ボタンを確認。ブラウザerrorログ **0件**、外部送信 **0件**。
