@@ -12,6 +12,7 @@ export interface ReviewedDemoQueueItem {
   prefecture?: string
   locale: "ja" | "en"
   manifest: DemoSourceManifest
+  waveId?: string
 }
 
 export interface ReviewedDemoQueueResult {
@@ -71,6 +72,7 @@ export async function queueReviewedDemoItem(
       locale: item.locale,
       source_policy: "reviewed_manifest",
       generation_key: generationKey(saved.company.id, review.manifest),
+      ...(item.waveId ? { wave_id: item.waveId } : {}),
       sending_enabled: false,
     },
   })

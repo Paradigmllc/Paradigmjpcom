@@ -7,7 +7,7 @@ function env(name: string): string | null {
   return value && value.trim().length > 0 ? value.trim() : null
 }
 
-const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト"]
+const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト", "Japan Entry 候補"]
 const TWENTY_COMPANY_LIST_VIEW_NAME = "営業リスト"
 const TWENTY_COMPANY_RECORD_VIEW_NAME = "Company Record Page Fields"
 const TWENTY_HOME_EXTRA_FIELDS = [
@@ -80,6 +80,10 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
           set
             "position" = coalesce(crm_order.position, view_field."position"),
             "isVisible" = coalesce(crm_order.visible, false),
+            "universalOverrides" = coalesce(view_field."universalOverrides", '{}'::jsonb) || jsonb_build_object(
+              'position', coalesce(crm_order.position, view_field."position"),
+              'isVisible', coalesce(crm_order.visible, false)
+            ),
             "updatedAt" = now()
           from core."fieldMetadata" field
           left join crm_order on crm_order.name = field.name
@@ -96,6 +100,14 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
             when extra_home_fields.name is not null then true
             else false
           end,
+          "universalOverrides" = coalesce(view_field."universalOverrides", '{}'::jsonb) || jsonb_build_object(
+            'position', coalesce(crm_order.position, extra_home_fields.position, view_field."position"),
+            'isVisible', case
+              when crm_order.name is not null then crm_order.visible
+              when extra_home_fields.name is not null then true
+              else false
+            end
+          ),
           "updatedAt" = now()
         from core."fieldMetadata" field
         left join crm_order on crm_order.name = field.name

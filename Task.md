@@ -1,3 +1,79 @@
+## CURRENT STATUS - 2026-07-15 エキテン中心DEMO実務運用の一括投入化（本番release完了 / 候補追加待ち / 外部送信0）
+
+### 実務運用を止めていた1件ずつ投入を解消
+- `/ja/admin/demo-assets`のポータル候補一覧へ「審査可能候補を一括DEMO生成へ投入」を追加した。現在選択中sourceの`ready_for_review`かつ独自HPなし・画像3件以上の候補を最大50件まとめてDEMO生成キューへ入れられる。
+- 一括投入時も、事業者本人の公式プロフィールであること、先頭画像に人物・透かし・権利リスクがないことの明示チェックを必須にした。個別投入と同じ`portal-candidates` APIを使い、素材は`private_proposal`・`officialSource=true`で登録する。
+- この操作はDEMO生成キューまでで、メール、SNS、電話、郵送、ポータルDM、フォーム送信、7日限定URL発行、Twenty同期は自動実行しない。URL発行＋Twenty同期は品質合格後の別操作のまま。
+
+### Verification / current production state
+- PR **#247** / main **9d877d79** / deployment **dpwtjq4rvn53wsnlbqpnbbqs**。`npx tsc --noEmit`、対象ESLint、対象Vitest **3 files / 13 tests pass**、production build **408/408 pages**、`git diff --check` pass。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
+- 本番`/ja/admin/demo-assets`はHTTP 200。本番chunk `page-a1c5b38848d8f9e2.js`に`審査可能候補を一括DEMO生成へ投入`が含まれることを確認した。
+- 本番API確認時点でエキテン候補は1件（`ノン美容室`、status `promoted`）、DEMO batchはtotal 3 / completed 3 / qualityPassed 1 / sendingEnabled false。次の実務作業は通常ブラウザで確認したエキテン一覧・詳細HTML/選択範囲を貼り付け、候補数を増やしてからこの一括投入を使うこと。
+
+## CURRENT STATUS - 2026-07-15 Twenty上でDEMO候補が見えない問題の修正（本番release完了 / Twenty read-back済み / 外部送信0）
+
+### 原因と修正
+- `ノン美容室`のDEMO URL自体はTwenty companyへ同期されていたが、ユーザーが確認する一覧ビュー側で`paradigmDemoUrl`が後方列へ押し出され、`paradigmLeadStatus`も標準表示対象に入っていなかったため、Twenty画面上では「変わっていない」ように見えていた。
+- CRM field configの標準順を`会社名 -> domain -> 候補ステータス -> デモURL -> Next Action -> 営業ステータス -> フォームURL`へ固定し、`lead_status`を標準fieldへ追加、`demo_url`を3列目へ移動した。
+- Twenty company list viewの正規化対象に既存候補ビュー名を含め、release後のCRM metadata再適用で現在のTwenty一覧ビュー`営業リスト`へ列順を反映した。
+
+### Production verification
+- PR **#244** / main **d454c795** / deployment **xuyjfi0dsfox51xjhalstk34**。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
+- 本番`/api/sales/crm-field-config`へCRM metadataを再適用し、`lead_status` position 2、`demo_url` position 3、`next_action` position 4、`sales_status` position 5、`form_url` position 6を確認した。
+- 本番実データ`ノン美容室`のDEMO job `c40ccbc0-a39d-4c18-af9c-9f56b63e9448`を再度`syncTwenty:true`で実行し、Twenty company `54bba233-8f6d-44aa-b7ec-397c79b0683c`へ同期成功。Twenty REST read-backで`paradigmLeadStatus=DEMO生成済み / 要確認 / 未送信`、`paradigmDemoUrl=https://demo.paradigmjp.com/%E3%83%8E%E3%83%B3%E7%BE%8E%E5%AE%B9%E5%AE%A4`、`paradigmNextAction=DEMOを目視確認（未送信）`を確認した。
+- Twenty DB上の一覧ビュー`営業リスト`は`name 0 true`、`domainName 1 true`、`paradigmLeadStatus 2 true`、`paradigmDemoUrl 3 true`、`paradigmNextAction 4 true`、`paradigmSalesStatus 5 true`、`paradigmFormUrl 6 true`。外部送信、Opportunity、レポート、初回文面、メール、SNS、電話、郵送、フォーム送信は実行していない。
+
+## CURRENT STATUS - 2026-07-15 検証済み候補をTwentyで確認する非送信経路（修正実装完了 / release前）
+
+### 本番パイロットと個別レビュー
+- 収集在庫を生のままTwentyへ入れず、既存の`evidence_first_sources`候補ファクトリーでDE / IT / ESを各100候補・25件実サイト検証した。3 runは全てcompleted、合計75件確認、実フォーム合格4件、Twenty同期0のレビュー待ちで停止した。
+- 4件を個別確認し、microresist.deはニュース記事上のフォーム、multichannelsystems.comはHarvard Bioscience傘下表示のためSMB専用条件外として人間レビューでreject。coronis.esとvinidea.itは公式CORDIS SME・営利企業・EC/SaaS offer fit・同一origin一般問い合わせフォームを確認してapproveした。
+- VINIDEAはTwenty同期成功。CORONISはTwenty read-backが末尾スラッシュ正規化差を`form_url_mismatch`として検出しrollback。本番送信、初回文面、レポート、Opportunity、enrichment jobは起動していない。
+
+### Twenty表示修正
+- `paradigmCountryName`をTwenty再起動時のSELECT option復元に依存しないTEXTへ変更し、inventory対象のIT / NL / BE / CH / AT / IE / DK / FI / NO / SEを日本語表示・Twenty pull逆変換へ追加した。既存のCRM field master migrationはrelease時の冪等upsertで`country.field_type=text`へ更新する。
+- フォームURL read-backはscheme / host / default port / hash / path末尾スラッシュを正規化して比較する。別パスは引き続き`form_url_mismatch`でfail-closed停止する。
+- 対象Vitest 3 files / 17 tests、全Vitest 162 files / 746 tests、TypeScript、対象ESLint、quality guard 0 errors / 61 existing warnings、production build 408/408 pages、`git diff --check`がpass。正式release後にCRM metadataを再適用し、CORONIS再同期、VINIDEA国名repair、Twenty REST / Supabase / 副作用0を再照合する。
+
+## CURRENT STATUS - 2026-07-15 SMB DEMO合格候補のTwenty可視化（本番release完了 / Twenty確認入口稼働 / 外部送信0）
+
+### Twentyで必ず確認できる未送信DEMO候補同期
+- `/ja/admin/demo-assets`の生成waveで、品質合格済みDEMOの7日限定URLを発行する操作を「URL発行＋Twenty同期」へ変更した。発行済みDEMOはTwenty企業へ`DEMO生成済み / 要確認 / 未送信`、`7日限定DEMO URL`、品質スコア、失効日時、根拠数、次アクション`DEMOを目視確認（未送信）`として同期される。
+- Twenty同期は合格済み`demo_generate` jobだけが対象。URL発行時に`syncTwenty: true`を明示し、read-backでdemo URL、lead status、next action、summary一致を確認する。不一致ならAPIは207で返し、成功扱いにしない。
+- Twentyへの書き込みはCRM確認用のみ。Opportunity、レポート、初回文面、メール、SNS、電話、郵送、ポータルDM、フォーム送信は作成・実行しない。Sales DB側にも`demo_site.url`と`twenty.demoUrl`を保存し、後続監査で追跡できる。
+
+### Verification
+- TypeScript `npx tsc --noEmit` pass、対象ESLint pass、対象Vitest `src/app/api/sales/demo-site/batch/route.test.ts` **1 file / 6 tests pass**、production build **408/408 pages** pass、`git diff --check` pass。
+- PR **#240** / main **0a0f8847** / deployment **vdeomj8uxwoyvhu2ue1tb7jt**。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty credential確認、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / 公開smoke / Sales health JSON `ok:true`までpass。本番`https://paradigmjp.com/api/ready`はHTTP 200、`/api/sales/demo-site/batch`は未認証HTTP 401。本番admin chunk `page-5d9c90c2f94c2842.js`に`URL発行＋Twenty同期`、`syncTwenty`、Twenty同期完了toastが含まれることを確認した。
+- 本番実データで`ノン美容室`の合格済みDEMO job `c40ccbc0-a39d-4c18-af9c-9f56b63e9448`を1件だけ`syncTwenty:true`で実行し、Twenty company `54bba233-8f6d-44aa-b7ec-397c79b0683c`へ同期成功。Twenty API直接read-backで会社名`ノン美容室`、`paradigmDemoUrl`=`https://demo.paradigmjp.com/%E3%83%8E%E3%83%B3%E7%BE%8E%E5%AE%B9%E5%AE%A4`、`paradigmLeadStatus`=`DEMO生成済み / 要確認 / 未送信`、`paradigmNextAction`=`DEMOを目視確認（未送信）`、summary内DEMO URLありを確認した。外部送信、Opportunity、レポート、初回文面は作成していない。
+
+## CURRENT STATUS - 2026-07-15 エキテン中心SMB DEMO実務運用の高速化（本番release完了 / エキテン貼り付け量産入口稼働 / 外部送信0）
+
+### 1件ずつ入力する運用を廃止する貼り付け抽出
+- `/ja/admin/demo-assets`のポータル候補フォームへ、エキテン専用の「一覧・詳細ページ貼り付け抽出」を追加した。通常ブラウザで確認したエキテンの一覧ページまたは詳細ページHTML/選択範囲を貼ると、`/shop_...`リンク、事業者名、本文、住所候補、画像URLを抽出し、最大300件の一括保存JSONへ変換する。
+- サーバー側からエキテンへアクセスしない。operatorがブラウザで見た公開情報を貼り付けるだけなので、Google検索・SNS・Google Map・ポータル巡回・proxy・有料APIを使わず、既存のoperator-confirmed snapshot経路にそのまま乗せる。
+- 住宅リフォーム/外壁/屋根/防水、整体/鍼灸、行政書士/社労士/税理士、美容室などを貼り付け本文から簡易分類し、画像3件未満は候補JSON化しない。抽出後は既存の一括保存、候補審査、300社wave投入、失敗再試行、7日限定URL発行へ接続する。
+
+### Verification
+- `npm install`は1519 packages / audit 0 vulnerabilities。`src/components/admin/PortalSnapshotImportForm.tsx`は293行で500行未満。
+- TypeScript `npx tsc --noEmit` pass、対象ESLint pass、対象Vitest **2 files / 13 tests pass**、production build **408/408 pages** pass、`git diff --check` pass。
+- ローカル本番chunk `.next/static/chunks/app/[locale]/admin/demo-assets/page-dbd5ffe65bf328da.js` に `エキテン一覧・詳細ページ貼り付け抽出`、`候補JSONへ変換`、抽出ロジックが含まれることを確認した。ローカルdevの`/admin/login`ブラウザ確認は検証用`DATABASE_URI`未設定でPayload初期化500となったため、UIの実ブラウザ操作は正式release後の本番認証環境で確認する。
+- PR **#236** / main **64c2123a** / deployment **nbl42lf1dyg57hnqk4d23rdt**。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 60 existing warnings**、Sales health JSON `ok:true`、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / 公開smokeまでpass。本番`https://paradigmjp.com/api/ready`はHTTP 200、`/api/sales/demo-site/portal-candidates?source=ekiten`は未認証HTTP 401。本番admin chunk `page-02f1b913afffd74c.js`に`エキテン一覧・詳細ページ貼り付け抽出`、`候補JSONへ変換`、`DOMParser`、`/shop_`抽出が含まれることを確認した。
+- 外部送信、ポータルDM、メール、SNS、電話、郵送、フォーム送信、Twenty追加、実エキテンへのサーバー取得は実行していない。
+
+## CURRENT STATUS - 2026-07-15 検証済み候補在庫の数千件自動量産（本番release完了 / source承認前 / 外部送信0）
+
+### 公式SMEデータをCodex非依存で取込・再開する経路
+- 欧州委員会CORDISのHorizon Europe / Horizon 2020月次公開ZIPを、欧州15市場・2世代の30 source packとして追加した。`SME=true`、`activityType=PRC`、企業名、公式サイト、組織ID、EC根拠URLが揃う行だけをstreaming CSV parserで抽出し、国別・domain別に重複排除する。既存Wikidata 10市場と合わせて40 pack。登録時は従来どおりdraft / inactive / terms未確認で、規約確認・preview・担当者承認を迂回しない。
+- ZIP adapterはpublic HTTPS / DNS再検証、redirect上限5、圧縮80MB、展開120MB、50万行、dataset filter後2.5万行のfail-closed上限を持つ。 malformed quoteを許容する一方、必須列欠落・想定entry欠落・サイズ超過は保存前に停止する。公式Tier 3の`is_sme=true`だけをSMB客観根拠98点として使い、enterprise signalがあれば0点へ戻す。企業同一性・サイト国・EC/SaaS適合・実フォームは別ゲートのまま。
+- `sales_lead_inventory_runs`へ収集元単位の進捗、取込数、サイト利用可、除外、一時障害、失敗とheartbeatを保存し、承認済みpackを順次ingest→全件website preflightするevent-driven runnerと認可API、管理GUIを追加した。途中停止したrunning runは同じDB位置から再開できる。run tableのCHECKで`send_count=0`かつ`twenty_sync_count=0`を強制し、文面・レポート・Twenty・フォーム送信を接続しない。
+
+### Production verification / remaining operator gate
+- 実CORDIS H2020 ZIPを新adapterで直接取得し、ドイツはfilter後1,045行・重複排除可能355 domain、公式EC根拠URL付きsampleを確認した。事前集計では優先15市場の2世代合算で約2,400 unique domain。これは候補母集団であり、実サイト・企業同一性・対象国・offer fit・フォーム合格後の件数を「数千件」とは未確認。
+- 対象Vitest **8 files / 29 tests**、main統合後の全Vitest **161 files / 740 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、release-doctorの新しい静的gate、`git diff --check`がpass。
+- PR **#234** / main **1a638221** / deployment **xtpewz7x17jad1k9fl4rr4yr**。正式`npm run release:prod`は新migration、DB **88/88**、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / 公開smokeまでpass。本番`/ja/admin/lead-factory`はHTTP 200、新inventory / source pack APIは未認証HTTP 401。本番JS chunkで`数千件・検証済み在庫ラン`、`未登録packを一括draft登録`、`1国最大5,000候補・1,000社を実確認`を確認した。
+- release直後の本番DBはsource pack 0、approved pack 0、inventory run 0、inventory send 0、inventory Twenty sync 0。コード配布だけで候補登録・取込・Twenty・文面・レポート・送信が起動していない。次は管理画面で必要なpackをdraft登録し、再利用条件の人間確認→preview→承認後に非送信inventory runを開始する。実サイト・企業同一性・対象国・offer fit・フォーム合格を実測するまで「高品質な数千件完成」とは判定しない。
+
 ## CURRENT STATUS - 2026-07-15 国別Lead Source Pack（実装・本番DB rollback検証完了 / release前 / 外部送信0）
 
 ### Codexなしで国別sourceを再現する入口
@@ -8,6 +84,25 @@
 ### Verification / remaining gate
 - 公式Wikidata endpointでUS packを実行し、企業名・website・従業員数・業種・HTTPS entity URLを持つ50件を取得、archive/SNS URL 0件を確認した。対象Vitest **3 files / 9 tests**、TypeScript、対象ESLint、release-doctorの新しいsource-pack静的gate、migrationの本番DB `BEGIN -> DDL -> ROLLBACK`がpass。
 - 正式release、公開管理画面/API確認、sourceのdraft登録からpreview・承認・ingest・事前検査、5件以上の実フォームを含む非送信pilotは未実行。batch承認、Twenty追加、文面/レポート生成、外部送信は開始しない。
+
+## CURRENT STATUS - 2026-07-15 SMB DEMO 300社wave量産（本番release完了 / 数百社wave運用準備完了 / 外部送信0）
+
+### 数百社運用に耐えるwave単位の量産制御
+- `/api/sales/demo-site/batch`の一括受付上限を100社から300社へ拡張し、1回の実務waveを`waveId`で追跡する。enqueueは最大8並列、実際のデモ生成drainは既存どおり品質優先の最大3並列に抑え、数百社を受けてもLLM/API/DBへ過剰負荷をかけない。
+- 既存の`sales_enrichment_jobs`を単一の永続queueとして使い、`input_payload.wave_id`へwave情報を保存する。新規DB tableは追加しないため、既存migration/RLS面を増やさず、途中停止後も`GET ?waveId=`で進捗再取得、`PATCH retry_failed`で失敗分だけ再投入できる。
+- 管理GUIに300社manifest投入、進捗バー、queued/running/completed/quality passed/failedの件数、15秒自動更新、停止時の再開、失敗分再試行、完了分URL発行を追加した。外部送信は引き続きfalseで固定し、URL発行も既存の7日限定previewだけを対象にする。
+
+### Houzz / エキテン / ジモティー候補の人手確認を数百件化
+- ポータル候補APIの表示上限を300件へ上げ、GUIは20件ずつページングして画像カードを一気に描画しない。リストが大きくなっても管理画面の初期描画を重くしない。
+- ブラウザ確認済みプロフィールの一括保存は最大300件のJSONを受け付け、内部では50件chunkに分割して既存APIへ順次保存する。スクレイピングやGoogle/SNS自動取得は追加せず、operator-confirmed snapshotだけを量産入力にする。
+
+### Verification
+- `npm install`は1507 packages / audit 0 vulnerabilities。`git diff --check` pass。
+- TypeScript `npx tsc --noEmit` pass。対象Vitest **4 files / 14 tests pass**（300件wave、301件拒否、wave別retry、drain回帰）。production build **408/408 pages** pass。
+- agent-browserで`http://localhost:3100/ja/admin/demo-assets`を確認。管理ログイン後、HTTP 200、本文あり、Next error overlayなし、`最大300社`と`失敗分を再試行`のUI表示あり。mobile 390pxも横overflow 0。ローカルSupabase/Payload未設定に伴う候補取得エラー表示は想定どおりで、UIは落ちていない。
+- PR **#232** / main **11dbfc85** / deployment **k10tim3y83ckq55n9qmg07xt**。正式`npm run release:prod`はDB **87/87**、Quality Guard **0 errors / 60 existing warnings**、Traefik / Cloudflare origin lock / Realtime / Twenty worker restart 0、公開smoke、Sales health HTTP 200 JSON `ok:true`までpass。
+- 本番確認: `https://paradigmjp.com/api/ready` HTTP 200、`/api/sales/demo-site/batch`と`/api/sales/demo-site/portal-candidates?source=ekiten`は未認証HTTP 401。`/ja/admin/demo-assets`の本番chunk `page-71f47359ef9a3766.js`に`最大300社`、`失敗分を再試行`、`waveId`、`retry_failed`が含まれることを確認。
+- 実300社生成は未実行。LLM/APIコストと外部候補副作用を避けるため、まず本番反映後に10件 -> 50件 -> 300件の非送信pilotで運用負荷と品質を確認する。メール、SNS、郵送、電話、ポータルDM、フォーム送信、Twenty追加は実行していない。
 
 ## CURRENT STATUS - 2026-07-15 Lead Source website preflight強化（本番release・再pilot完了 / batch未承認 / 外部送信0）
 
@@ -1511,6 +1606,19 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 実務Wave 1をUS/GB/AU/CA/SG/AE × Shopifyで実行。無料passive corpusから5,744候補を取得し、720件を実確認、実フォーム合格267件、適格昇格28件、Twenty同期28件、外部送信0件、文面生成0件。Twenty REST再照合は28/28 HTTP 200、国28/28、確認済みフォーム28/28、`未送信`ステータス28/28。国別同期はAE 3 / AU 7 / CA 6 / GB 5 / SG 7 / US 0。
 - Wave 1のUS/AEで、in-memory fallback runnerがheartbeat停止後も`alreadyRunning`を保持する停滞を実測。既存の認可済み同期process APIで残件を補完し、全6 runをactive 0まで完了させた。恒久対応として一覧API/Realtimeへ`heartbeat_at`を追加し、共通5分停滞判定、管理画面の`停滞runを再開`/`復旧を続行`操作、24件×最大10バッチの有界同期復旧を実装。復旧は残り候補だけを処理し、文面・レポート・フォーム送信を起動しない。
 - 停滞復旧のローカル検証はVitest 4 files / 9 tests、TypeScript、対象ESLint、`git diff --check`がpass。正式releaseと本番管理画面の公開確認を続行する。
+## CURRENT STATUS - 2026-07-15 検証済み候補在庫の本番収集開始（33 source / 外部送信0）
+
+### 本番運用
+- 40件の国別source packを本番DBへdraft登録し、WikidataはCC0、European Commission CORDISはCC BY 4.0再利用条件を確認した。非保存previewはCORDIS 30/30とWikidata 3/10が合格し、この33件だけを承認・有効化した。Wikidata 7件は公開query endpointの502/timeoutで未承認のまま隔離した。
+- 非送信inventory run `15849730-69c7-47f4-81ab-200cce4d94a2`は33/33 sourceを処理して`partial`完了。3,248件取込、2,319件サイト事前検査合格、648件retryable、281件rejected。唯一のsource失敗はWikidata英国packの公開endpoint timeoutで、CORDIS 30 packは完走した。DB制約どおりsend_count 0 / twenty_sync_count 0。
+- source横断の重複排除では初回eligibleは1,700 unique domain。品質基準を緩めずretryable 648件を1回だけ再検査し、29/29 source・API失敗0で完了した。最終は2,334 eligible record / 1,711 unique domain、632 retryable record / 496 unique domain。source世代間の重複を除いたため「高品質な2,000 unique企業完成」とは扱わない。
+- 起動時、`sales_lead_operator_events.run_id`が旧candidate run専用FKであるのにinventory run IDを渡して監査保存が500になる不整合を検出した。runnerはresume処理の先頭で開始できたため同じrun IDで実収集を継続し、送信系には接続していない。
+
+### 修正・検証
+- inventoryのstart / resume / completion監査はcandidate-run FK列を使わず、汎用の`entity_type=run / entity_id=inventory run ID`だけで保存するよう修正した。startとresumeの回帰テストは監査payloadに`runId`が存在しないことを検証する。
+- 対象Vitest 2 files / 7 tests、全Vitest 161 files / 741 tests、TypeScript、対象ESLint、quality guard 0 errors / 60 existing warnings、production build 408/408 pages、`git diff --check`がpass。
+- PR **#237** / main **7fc9bf22** / deployment **qwe4md5606d5h3qlzeh2vasd**。正式releaseでDB 88/88とdeployment finishedを確認。直後の複数公開fetchが一時失敗したため同じdeployを再実行せず個別診断し、Ready / Twenty / 診断レポートHTTP 200を確認後にpost-deploy gateだけを再実行してSales health JSON `ok:true`を含む全項目pass。修正版resume APIはHTTP 202を返し、同じrun IDを新コンテナで再開・完走した。
+- 本番監査DBに`verified_inventory_resumed`と`verified_inventory_partial`が各1件保存され、candidate-run FKを使わない修正が実データで成立した。最終run行も33/33、send_count 0、twenty_sync_count 0を維持する。
 ## CURRENT STATUS - 2026-07-15 ポータル候補をTwentyへ先行登録する実務導線（実装・テスト完了 / release前 / 外部送信0）
 
 ### 実装内容

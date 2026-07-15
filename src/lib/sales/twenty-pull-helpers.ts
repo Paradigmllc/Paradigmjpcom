@@ -20,9 +20,15 @@ export function countryCodeFromTwentyRecord(record: TwentyRecord, domain: string
     SOUTH_AFRICA: "ZA", "SOUTH AFRICA": "ZA",
     KOREA: "KR", SOUTH_KOREA: "KR", "SOUTH KOREA": "KR",
     CHINA: "CN", TAIWAN: "TW", CANADA: "CA", AUSTRALIA: "AU", INDIA: "IN", SINGAPORE: "SG",
-    GERMANY: "DE", FRANCE: "FR", SPAIN: "ES", PORTUGAL: "PT", BRAZIL: "BR", RUSSIA: "RU",
+    GERMANY: "DE", FRANCE: "FR", SPAIN: "ES", ITALY: "IT", NETHERLANDS: "NL", BELGIUM: "BE", SWITZERLAND: "CH",
+    AUSTRIA: "AT", IRELAND: "IE", DENMARK: "DK", FINLAND: "FI", NORWAY: "NO", SWEDEN: "SE",
+    PORTUGAL: "PT", BRAZIL: "BR", RUSSIA: "RU",
     UAE: "AE", UNITED_ARAB_EMIRATES: "AE", "UNITED ARAB EMIRATES": "AE",
     VIETNAM: "VN", INDONESIA: "ID",
+    日本: "JP", 米国: "US", 英国: "GB", カナダ: "CA", オーストラリア: "AU", インド: "IN", シンガポール: "SG",
+    ドイツ: "DE", フランス: "FR", スペイン: "ES", イタリア: "IT", オランダ: "NL", ベルギー: "BE", スイス: "CH",
+    オーストリア: "AT", アイルランド: "IE", デンマーク: "DK", フィンランド: "FI", ノルウェー: "NO", スウェーデン: "SE",
+    ポルトガル: "PT",
   }
   return byLabel[upper] ?? inferTargetCountryFromDomain(domain)
 }

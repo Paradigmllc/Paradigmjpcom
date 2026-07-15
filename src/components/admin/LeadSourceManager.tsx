@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { LeadSourcePackCatalog } from "@/components/admin/LeadSourcePackCatalog"
+import { LeadInventoryScaleConsole } from "@/components/admin/LeadInventoryScaleConsole"
 
 interface LeadSource {
   id: string
@@ -38,6 +40,10 @@ interface LeadSource {
   last_ingested_at: string | null
   last_preflighted_at: string | null
   last_preflight?: PreflightSummary
+  source_pack_id?: string | null
+  source_pack_version?: number | null
+  source_license_name?: string | null
+  source_license_url?: string | null
 }
 
 interface PreflightSummary {
@@ -250,11 +256,13 @@ export function LeadSourceManager({ operatorName }: LeadSourceManagerProps) {
       <CardDescription>Trancoや検索順位は使いません。公的名簿・輸出事業者・業界団体・出展者名簿など、企業名と公式サイトを同時に確認できる収集元だけを登録します。</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
+      <LeadSourcePackCatalog operatorName={operatorName} onRegistered={refresh} />
+      <LeadInventoryScaleConsole operatorName={operatorName} />
       <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div><label className="text-sm font-semibold" htmlFor="lead-source-name">収集元名</label><Input id="lead-source-name" className="mt-2" value={name} onChange={(event) => setName(event.target.value)} placeholder="公式輸出事業者一覧" /></div>
         <div><label className="text-sm font-semibold" htmlFor="lead-source-country">国コード</label><Input id="lead-source-country" className="mt-2" maxLength={2} value={countryCode} onChange={(event) => setCountryCode(event.target.value.toUpperCase())} /></div>
         <div><label className="text-sm font-semibold" htmlFor="lead-source-type">種別</label><select id="lead-source-type" className={INPUT_CLASS} value={sourceType} onChange={(event) => setSourceType(event.target.value)}>{SOURCE_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
-        <div><label className="text-sm font-semibold" htmlFor="lead-source-format">形式</label><select id="lead-source-format" className={INPUT_CLASS} value={sourceFormat} onChange={(event) => setSourceFormat(event.target.value)}><option value="json">JSON</option><option value="jsonl">JSONL</option><option value="csv">CSV</option><option value="html">HTML + CSS selector</option></select></div>
+        <div><label className="text-sm font-semibold" htmlFor="lead-source-format">形式</label><select id="lead-source-format" className={INPUT_CLASS} value={sourceFormat} onChange={(event) => setSourceFormat(event.target.value)}><option value="json">JSON</option><option value="jsonl">JSONL</option><option value="csv">CSV</option><option value="zip_csv">ZIP内CSV</option><option value="html">HTML + CSS selector</option></select></div>
         <div className="sm:col-span-2"><label className="text-sm font-semibold" htmlFor="lead-source-url">HTTPS URL</label><Input id="lead-source-url" className="mt-2" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://official.example/exporters.json" /></div>
         <div><label className="text-sm font-semibold" htmlFor="lead-source-tier">信頼Tier</label><Input id="lead-source-tier" className="mt-2" type="number" min={1} max={3} value={trustTier} onChange={(event) => setTrustTier(Number(event.target.value))} /></div>
         <label className="flex items-end gap-2 pb-2 text-sm"><input type="checkbox" checked={termsChecked} onChange={(event) => setTermsChecked(event.target.checked)} />利用規約・robots・再利用条件を確認済み</label>
@@ -265,6 +273,7 @@ export function LeadSourceManager({ operatorName }: LeadSourceManagerProps) {
       {loading ? <p className="py-8 text-center text-sm text-slate-500">収集元を読み込み中...</p> : loadError ? <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{loadError}</p> : sources.length === 0 ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">有効な収集元がありません。量産ランはfail-closedで開始できません。</p> : <div className="grid gap-3 lg:grid-cols-2">{sources.map((source) => <article key={source.id} className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-slate-950">{source.name}</p><a className="mt-1 block max-w-md truncate text-xs text-indigo-700 underline" href={source.source_url} target="_blank" rel="noopener noreferrer" title={source.source_url}>{source.country_code} · {source.source_type} · {source.source_format}</a></div><div className="flex flex-wrap gap-2"><Badge variant={source.active ? "default" : "outline"}>{source.active ? "有効" : "停止"}</Badge><Badge variant={source.approval_status === "approved" ? "default" : source.approval_status === "suspended" ? "destructive" : "outline"}>{source.approval_status}</Badge><Badge variant={source.last_status === "ready" ? "secondary" : source.last_status === "failed" ? "destructive" : "outline"}>{source.last_status}</Badge></div></div>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4"><span>保存 {source.record_count}</span><span>利用可 {source.eligible_record_count}</span><span>Tier {source.trust_tier}</span><span>{source.pilot_approved_at ? "量産承認済" : "パイロット未承認"}</span></div>
+        {source.source_pack_id && <p className="mt-2 text-xs text-slate-500">Pack: {source.source_pack_id} / v{source.source_pack_version ?? "?"}{source.source_license_url && <a className="ml-2 text-indigo-700 underline" href={source.source_license_url} target="_blank" rel="noopener noreferrer">{source.source_license_name ?? "再利用条件"}</a>}</p>}
         {source.last_previewed_at && <div className="mt-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-700"><p>直近プレビュー: 採用 {source.last_preview.accepted ?? 0} / 除外 {source.last_preview.rejected ?? 0} / 採用率 {source.last_preview.acceptanceRate ?? 0}%</p>{(source.last_preview.sample ?? []).length > 0 && <p className="mt-1 truncate">例: {(source.last_preview.sample ?? []).map((item) => `${item.company_name} (${item.domain})`).join("、")}</p>}</div>}
         {(source.last_preflight?.total ?? 0) > 0 && <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-700"><p>サイト事前検査: 利用可 {source.last_preflight?.eligible ?? 0} / 一時障害 {source.last_preflight?.retryable ?? 0} / 除外 {source.last_preflight?.rejected ?? 0} / 未検査 {source.last_preflight?.pending ?? 0}</p>{Object.keys(source.last_preflight?.reasonCounts ?? {}).length > 0 && <p className="mt-1 text-slate-500">理由: {Object.entries(source.last_preflight?.reasonCounts ?? {}).map(([reason, count]) => `${reason} ${count}`).join("、")}</p>}</div>}
         {source.last_error && <p className="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">{source.last_error}</p>}

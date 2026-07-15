@@ -104,6 +104,20 @@ describe("evaluateLeadQualityGate", () => {
     expect(result.smb.score).toBe(0)
   })
 
+  it("accepts an official Tier 3 SME flag while still applying the other quality gates", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ employee_count: null, annual_revenue_usd: null, is_sme: true }),
+      homepage: homepage({ visibleText: "Example Commerce. Shop now. Add to cart. United States USD $120." }),
+      countrySignals,
+      detections: shopify,
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("passed")
+    expect(result.smb).toMatchObject({ passed: true, score: 98 })
+    expect(result.smb.evidence).toContain("official_sme_flag:Official Export Directory")
+  })
+
   it("does not mistake a generic pricing page for a SaaS product", () => {
     const result = evaluateLeadQualityGate({
       sourceRecord: record({ business_type: "Professional services" }),

@@ -15,6 +15,14 @@ import {
 import { demoSiteUrl } from "@/lib/sales/routing"
 import { DEMO_QUALITY_THRESHOLD } from "@/lib/sales/demo-quality-gate"
 import { queueReviewedDemoItem } from "@/lib/sales/demo-batch-queue"
+import { syncDemoCandidateToTwenty } from "@/lib/sales/demo-twenty-sync"
+import {
+  DEMO_BATCH_DISPLAY_LIMIT,
+  DEMO_BATCH_ENQUEUE_CONCURRENCY,
+  DEMO_BATCH_MAX_ITEMS,
+  mapWithConcurrency,
+  summarizeDemoBatchWave,
+} from "@/lib/sales/demo-batch-wave"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -31,12 +39,21 @@ const itemSchema = z.object({
   message: "companyId または companyName が必要です",
 })
 
-const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(100) })
-const issueSchema = z.object({ jobIds: z.array(z.uuid()).min(1).max(100), ttlDays: z.number().int().min(1).max(7).default(7) })
+const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(DEMO_BATCH_MAX_ITEMS) })
+const issueSchema = z.object({
+  jobIds: z.array(z.uuid()).min(1).max(100),
+  ttlDays: z.number().int().min(1).max(7).default(7),
+  syncTwenty: z.boolean().default(false),
+})
 const drainSchema = z.object({
   limit: z.number().int().min(1).max(3).default(3),
   drainId: z.string().uuid().optional(),
   automated: z.boolean().default(false),
+  action: z.enum(["drain", "retry_failed"]).default("drain"),
+  waveId: z.string().uuid().optional(),
+}).refine((value) => value.action !== "retry_failed" || Boolean(value.waveId), {
+  message: "失敗ジョブの再試行にはwaveIdが必要です",
+  path: ["waveId"],
 })
 
 export async function GET(request: NextRequest) {
@@ -44,12 +61,17 @@ export async function GET(request: NextRequest) {
   const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase unavailable" }, { status: 503 })
 
-  const { data, error } = await sb
+  const waveIdValue = request.nextUrl.searchParams.get("waveId")
+  const waveId = waveIdValue ? z.string().uuid().safeParse(waveIdValue) : null
+  if (waveId && !waveId.success) return NextResponse.json({ ok: false, error: "waveIdが不正です" }, { status: 400 })
+
+  let jobsQuery = sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-    .select("id, company_id, status, attempts, max_attempts, error_message, result_payload, created_at, updated_at")
+    .select("id, company_id, status, attempts, max_attempts, error_message, input_payload, result_payload, created_at, updated_at")
     .eq("job_type", "demo_generate")
     .order("created_at", { ascending: false })
-    .limit(100)
+  if (waveId?.success) jobsQuery = jobsQuery.eq("input_payload->>wave_id", waveId.data)
+  const { data, error } = await jobsQuery.limit(waveId?.success ? DEMO_BATCH_DISPLAY_LIMIT : 100)
   if (error) {
     console.error("[demo-batch] queue fetch failed:", error.message)
     return NextResponse.json({ ok: false, error: error.message }, { status: 503 })
@@ -67,7 +89,13 @@ export async function GET(request: NextRequest) {
     ...row,
     sales_companies: row.company_id ? companyById.get(row.company_id) ?? null : null,
   }))
-  return NextResponse.json({ ok: true, jobs }, { headers: { "Cache-Control": "private, no-store" } })
+  return NextResponse.json({
+    ok: true,
+    waveId: waveId?.success ? waveId.data : null,
+    summary: summarizeDemoBatchWave(jobs),
+    jobs,
+    sendingEnabled: false,
+  }, { headers: { "Cache-Control": "private, no-store" } })
 }
 
 export async function POST(request: NextRequest) {
@@ -78,11 +106,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
     }
 
-    const results: Array<Record<string, unknown>> = []
-    for (const [index, item] of parsed.data.items.entries()) {
-      const queued = await queueReviewedDemoItem(item, "demo_batch_console")
-      results.push({ index, ...queued })
-    }
+    const waveId = randomUUID()
+    const results = await mapWithConcurrency(
+      parsed.data.items,
+      DEMO_BATCH_ENQUEUE_CONCURRENCY,
+      async (item, index): Promise<Record<string, unknown>> => {
+        try {
+          const queued = await queueReviewedDemoItem({ ...item, waveId }, "demo_batch_console")
+          return { index, ...queued }
+        } catch (error) {
+          console.error(`[demo-batch] wave ${waveId} item ${index} enqueue failed:`, error)
+          return { index, ok: false, error: error instanceof Error ? error.message : "enqueue failed" }
+        }
+      },
+    )
 
     const queuedCount = results.filter((result) => result.ok && result.status === "queued").length
     const reusedCount = results.filter((result) => result.ok && result.reused).length
@@ -101,6 +138,8 @@ export async function POST(request: NextRequest) {
       rejected: results.length - acceptedCount,
       automated: queuedCount > 0,
       drainId,
+      waveId,
+      requested: parsed.data.items.length,
       sendingEnabled: false,
       results,
     }, {
@@ -172,9 +211,68 @@ export async function PUT(request: NextRequest) {
       }
       const update = await sb.from(DB_TABLES.SALES_ENRICHMENT_JOBS).update({ result_payload: nextResult }).eq("id", row.id)
       if (update.error) console.error("[demo-batch] preview audit update failed:", update.error.message)
-      issued.push({ jobId: row.id, ok: true, slug, previewUrl, expiresAt: access.expiresAt })
+      issued.push({
+        jobId: row.id,
+        companyId: row.company_id,
+        ok: true,
+        slug,
+        previewUrl,
+        expiresAt: access.expiresAt,
+        qualityScore: typeof qualityReport.score === "number" ? qualityReport.score : null,
+        sourcePolicy: typeof row.result_payload?.source_policy === "string" ? row.result_payload.source_policy : null,
+      })
     }
-    return NextResponse.json({ ok: issued.some((item) => item.ok), issued }, { headers: { "Cache-Control": "private, no-store" } })
+    if (!parsed.data.syncTwenty) {
+      return NextResponse.json({ ok: issued.some((item) => item.ok), issued, twentySync: null }, { headers: { "Cache-Control": "private, no-store" } })
+    }
+
+    const syncable = issued.filter((item) =>
+      item.ok === true
+      && typeof item.companyId === "string"
+      && typeof item.jobId === "string"
+      && typeof item.previewUrl === "string"
+      && typeof item.expiresAt === "string"
+      && typeof item.slug === "string",
+    )
+    const syncResults = await mapWithConcurrency(syncable, 3, async (item) => {
+      const result = await syncDemoCandidateToTwenty({
+        companyId: item.companyId as string,
+        jobId: item.jobId as string,
+        previewUrl: item.previewUrl as string,
+        expiresAt: item.expiresAt as string,
+        slug: item.slug as string,
+        qualityScore: typeof item.qualityScore === "number" ? item.qualityScore : null,
+        sourcePolicy: typeof item.sourcePolicy === "string" ? item.sourcePolicy : null,
+      })
+      return {
+        jobId: item.jobId,
+        ok: result.ok,
+        configured: result.configured,
+        twentyCompanyId: result.companyId ?? null,
+        error: result.error ?? null,
+      }
+    })
+    const syncByJobId = new Map(syncResults.map((item) => [item.jobId, item]))
+    const enrichedIssued = issued.map((item) => ({
+      ...item,
+      twenty: typeof item.jobId === "string" ? syncByJobId.get(item.jobId) ?? null : null,
+    }))
+    const synced = syncResults.filter((item) => item.ok).length
+    const failed = syncResults.length - synced
+    return NextResponse.json({
+      ok: issued.some((item) => item.ok) && failed === 0,
+      issued: enrichedIssued,
+      twentySync: {
+        requested: syncable.length,
+        synced,
+        failed,
+        results: syncResults,
+      },
+      sendingEnabled: false,
+    }, {
+      status: failed === 0 ? 200 : 207,
+      headers: { "Cache-Control": "private, no-store" },
+    })
   } catch (error) {
     console.error("[demo-batch] preview issue failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "preview issue failed" }, { status: 500 })
@@ -187,6 +285,46 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
 
   const drainId = parsed.data.drainId ?? randomUUID()
+  if (parsed.data.action === "retry_failed" && parsed.data.waveId) {
+    const sb = getServiceSalesSupabase()
+    if (!sb) return NextResponse.json({ ok: false, error: "Supabase unavailable" }, { status: 503 })
+    const { data, error } = await sb
+      .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+      .update({
+        status: "queued",
+        attempts: 0,
+        error_message: null,
+        next_run_at: new Date().toISOString(),
+        started_at: null,
+        completed_at: null,
+        locked_at: null,
+        lock_owner: null,
+      })
+      .eq("job_type", "demo_generate")
+      .eq("input_payload->>wave_id", parsed.data.waveId)
+      .eq("status", "failed")
+      .select("id")
+    if (error) {
+      console.error("[demo-batch] failed wave retry reset failed:", error.message)
+      return NextResponse.json({ ok: false, error: error.message, sendingEnabled: false }, { status: 503 })
+    }
+    const recovered = data?.length ?? 0
+    if (recovered > 0) {
+      after(async () => {
+        const dispatched = await dispatchDemoBatchDrain({ drainId, limit: parsed.data.limit })
+        if (!dispatched.ok) console.error("[demo-batch] retry drain failed:", dispatched.error)
+      })
+    }
+    return NextResponse.json({
+      ok: true,
+      status: recovered > 0 ? "retry_queued" : "nothing_to_retry",
+      recovered,
+      drainId,
+      waveId: parsed.data.waveId,
+      sendingEnabled: false,
+    }, { status: recovered > 0 ? 202 : 200 })
+  }
+
   const lease = await claimDemoBatchDrain(drainId)
   if (!lease.ok) return NextResponse.json({ ok: false, error: lease.error, sendingEnabled: false }, { status: 503 })
   if (!lease.claimed) return NextResponse.json({ ok: true, status: "already_running", drainId, sendingEnabled: false }, { status: 202 })

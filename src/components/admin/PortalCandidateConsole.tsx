@@ -43,9 +43,42 @@ const SOURCE_OPTIONS: Array<{ value: PortalSource; label: string; hint: string }
 ]
 
 const PAGE_SIZE = 50
+const BULK_QUEUE_LIMIT = 50
 
 function safeCssUrl(url: string): string {
   return `url("${url.replace(/["\\\n\r]/g, (character) => `\\${character}`)}")`
+}
+
+function isQueueableCandidate(candidate: PortalCandidateView): boolean {
+  return candidate.reviewStatus === "ready_for_review" && candidate.status !== "promoted" && !candidate.websiteUrl && candidate.images.length >= 3
+}
+
+function buildReviewedAssets(candidate: PortalCandidateView, selectedUrls: string[]): DemoReviewedAsset[] {
+  return selectedUrls.map((url, index) => ({
+    id: `portal-${candidate.source}-${candidate.id.slice(0, 8)}-${index + 1}`,
+    kind: "image",
+    sourceUrl: url,
+    ownerLabel: candidate.companyName,
+    sourceAccount: candidate.listingUrl,
+    useBasis: "private_proposal",
+    officialSource: true,
+    peopleVisible: false,
+    watermarkVisible: false,
+    alt: candidate.images.find((image) => image.url === url)?.alt ?? `${candidate.companyName}の掲載写真`,
+    notes: `${candidate.source}公式プロフィール・非公開提案限定`,
+  }))
+}
+
+async function queuePortalCandidate(candidate: PortalCandidateView, selectedUrls: string[]): Promise<{ ok: boolean; reused?: boolean; error?: string }> {
+  const assets = buildReviewedAssets(candidate, selectedUrls)
+  const response = await fetch("/api/sales/demo-site/portal-candidates", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ candidateId: candidate.id, industry: candidate.suggestedIndustry, prefecture: candidate.prefecture ?? undefined, assets }),
+  })
+  const payload = await response.json() as { ok?: boolean; reused?: boolean; error?: string }
+  if (!response.ok || !payload.ok) return { ok: false, error: payload.error ?? "DEMOキュー投入に失敗しました" }
+  return { ok: true, reused: payload.reused }
 }
 
 export function PortalCandidateConsole() {
@@ -56,6 +89,9 @@ export function PortalCandidateConsole() {
   const [hasMore, setHasMore] = useState(false)
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([])
   const [syncBusy, setSyncBusy] = useState(false)
+  const [bulkConfirmed, setBulkConfirmed] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
 
   const refresh = useCallback(async (nextSource: PortalSource = source, nextPage: number = page) => {
     setLoading(true)
@@ -83,14 +119,46 @@ export function PortalCandidateConsole() {
     unverified: candidates.filter((candidate) => candidate.reviewStatus === "decision_fit_unverified").length,
     queued: candidates.filter((candidate) => candidate.status === "promoted").length,
   }), [candidates])
-  const readyIds = candidates.filter((candidate) => candidate.reviewStatus === "ready_for_review" && candidate.status !== "promoted").map((candidate) => candidate.id)
+  const readyIds = candidates.filter((candidate) => isQueueableCandidate(candidate)).map((candidate) => candidate.id)
+  const bulkQueueCandidates = useMemo(
+    () => candidates.filter(isQueueableCandidate).slice(0, BULK_QUEUE_LIMIT),
+    [candidates],
+  )
 
-  function toggleCandidate(candidateId: string) {
-    setSelectedCandidateIds((current) => current.includes(candidateId) ? current.filter((id) => id !== candidateId) : [...current, candidateId])
+  async function queueReadyCandidates() {
+    if (!bulkConfirmed) return toast.error("公式プロフィール・人物/透かしなし画像の確認にチェックしてください")
+    if (bulkQueueCandidates.length === 0) return toast.error("一括投入できる審査可能候補がありません")
+    setBulkBusy(true)
+    setBulkProgress({ done: 0, total: bulkQueueCandidates.length })
+    let success = 0
+    let failed = 0
+    try {
+      for (const candidate of bulkQueueCandidates) {
+        const result = await queuePortalCandidate(candidate, candidate.images.slice(0, 6).map((image) => image.url))
+        if (result.ok) success += 1
+        else {
+          failed += 1
+          console.error("[portal-console] bulk queue failed:", candidate.id, result.error)
+        }
+        setBulkProgress((current) => current ? { ...current, done: current.done + 1 } : current)
+      }
+      if (failed > 0) toast.warning(`DEMO一括投入: 成功${success}件 / 失敗${failed}件。失敗候補は個別確認してください。`)
+      else toast.success(`DEMO一括投入: ${success}件を生成キューへ追加しました。送信はありません。`)
+      await refresh(source)
+    } catch (error) {
+      console.error("[portal-console] bulk queue crashed:", error)
+      toast.error(error instanceof Error ? error.message : "DEMO一括投入に失敗しました")
+    } finally {
+      setBulkBusy(false)
+      setBulkProgress(null)
+      setBulkConfirmed(false)
+    }
   }
 
   function togglePageSelection() {
-    setSelectedCandidateIds((current) => readyIds.every((id) => current.includes(id)) ? current.filter((id) => !readyIds.includes(id)) : [...new Set([...current, ...readyIds])])
+    setSelectedCandidateIds((current) => readyIds.every((id) => current.includes(id))
+      ? current.filter((id) => !readyIds.includes(id))
+      : [...new Set([...current, ...readyIds])])
   }
 
   async function syncSelectedToTwenty() {
@@ -140,7 +208,26 @@ export function PortalCandidateConsole() {
         </div>
       </div>
       <PortalSnapshotImportForm source={source} onImported={() => refresh(source)} />
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <h3 className="text-sm font-semibold text-emerald-950">審査可能候補を一括DEMO生成へ投入</h3>
+            <p className="mt-1 text-xs leading-5 text-emerald-900">現在のsourceで審査可能な候補を最大{BULK_QUEUE_LIMIT}件まとめてキューへ入れます。送信・DM・メール・フォーム送信は行わず、7日限定URL発行前の生成キューまでです。</p>
+            {bulkProgress && <p className="mt-2 text-xs font-bold text-emerald-950">投入中 {bulkProgress.done} / {bulkProgress.total}</p>}
+          </div>
+          <div className="flex flex-col gap-3 lg:min-w-96">
+            <label className="flex items-start gap-3 text-xs leading-5 text-emerald-950">
+              <input type="checkbox" checked={bulkConfirmed} onChange={(event) => setBulkConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
+              <span>対象候補が事業者本人の公式プロフィールで、先頭画像に人物・透かし・権利リスクがないことを確認済み</span>
+            </label>
+            <button type="button" disabled={loading || bulkBusy || !bulkConfirmed || bulkQueueCandidates.length === 0} onClick={() => void queueReadyCandidates()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white disabled:opacity-40">
+              {bulkBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {bulkBusy ? "投入中…" : `${bulkQueueCandidates.length}件を一括生成投入`}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-3">
         <button type="button" disabled={loading} onClick={() => void refresh(source)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-5 text-sm font-bold disabled:opacity-50"><RefreshCw className="h-4 w-4" />一覧を更新</button>
         <label className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-bold"><input type="checkbox" checked={readyIds.length > 0 && readyIds.every((id) => selectedCandidateIds.includes(id))} onChange={togglePageSelection} disabled={readyIds.length === 0 || syncBusy} />このページの審査可能候補を選択</label>
         <button type="button" disabled={syncBusy || selectedCandidateIds.length === 0} onClick={() => void syncSelectedToTwenty()} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-700 px-5 text-sm font-bold text-white disabled:opacity-40"><DatabaseZap className="h-4 w-4" />{syncBusy ? "Twenty登録中…" : `選択${selectedCandidateIds.length}件をTwenty登録`}</button>
@@ -150,7 +237,7 @@ export function PortalCandidateConsole() {
       <div className="mt-7 space-y-5">
         {loading && <div className="flex min-h-32 items-center justify-center gap-2 rounded-2xl bg-slate-50 text-sm text-slate-600"><LoaderCircle className="h-4 w-4 animate-spin" />候補を読み込んでいます</div>}
         {!loading && candidates.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">まだ候補がありません。事業者プロフィールURLを投入してください。</div>}
-        {!loading && candidates.map((candidate) => <PortalCandidateCard key={candidate.id} candidate={candidate} selectedForTwenty={selectedCandidateIds.includes(candidate.id)} onToggleTwenty={() => toggleCandidate(candidate.id)} onQueued={() => refresh(source, page)} />)}
+        {!loading && candidates.map((candidate) => <PortalCandidateCard key={candidate.id} candidate={candidate} selectedForTwenty={selectedCandidateIds.includes(candidate.id)} onToggleTwenty={() => setSelectedCandidateIds((current) => current.includes(candidate.id) ? current.filter((id) => id !== candidate.id) : [...current, candidate.id])} onQueued={() => refresh(source, page)} />)}
       </div>
       {!loading && (page > 0 || hasMore) && <div className="mt-6 flex flex-col justify-between gap-3 rounded-2xl bg-slate-50 p-4 text-sm sm:flex-row sm:items-center">
         <p>{page * PAGE_SIZE + 1}件目以降を表示（1ページ最大{PAGE_SIZE}件）</p>
@@ -179,29 +266,11 @@ function PortalCandidateCard({ candidate, selectedForTwenty, onToggleTwenty, onQ
   async function queueDemo() {
     if (!officialConfirmed) return toast.error("事業者本人の公式プロフィールであることを確認してください")
     if (selected.length < 3) return toast.error("人物・透かしのない画像を3件以上選択してください")
-    const assets: DemoReviewedAsset[] = selected.map((url, index) => ({
-      id: `portal-${candidate.source}-${candidate.id.slice(0, 8)}-${index + 1}`,
-      kind: "image",
-      sourceUrl: url,
-      ownerLabel: candidate.companyName,
-      sourceAccount: candidate.listingUrl,
-      useBasis: "private_proposal",
-      officialSource: true,
-      peopleVisible: false,
-      watermarkVisible: false,
-      alt: candidate.images.find((image) => image.url === url)?.alt ?? `${candidate.companyName}の掲載写真`,
-      notes: `${candidate.source}公式プロフィール・非公開提案限定`,
-    }))
     setBusy(true)
     try {
-      const response = await fetch("/api/sales/demo-site/portal-candidates", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: candidate.id, industry: candidate.suggestedIndustry, prefecture: candidate.prefecture ?? undefined, assets }),
-      })
-      const payload = await response.json() as { ok?: boolean; reused?: boolean; error?: string }
-      if (!response.ok || !payload.ok) throw new Error(payload.error ?? "DEMOキュー投入に失敗しました")
-      toast.success(payload.reused ? "既存の同一DEMOを再利用しました" : "品質ゲート付きDEMO生成へ追加しました")
+      const result = await queuePortalCandidate(candidate, selected)
+      if (!result.ok) throw new Error(result.error ?? "DEMOキュー投入に失敗しました")
+      toast.success(result.reused ? "既存の同一DEMOを再利用しました" : "品質ゲート付きDEMO生成へ追加しました")
       await onQueued()
     } catch (error) {
       console.error("[portal-console] queue failed:", error)
@@ -216,7 +285,7 @@ function PortalCandidateCard({ candidate, selectedForTwenty, onToggleTwenty, onQ
       <div className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-start">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            {candidate.reviewStatus === "ready_for_review" && candidate.status !== "promoted" && <label className="inline-flex items-center gap-2 text-xs font-bold text-indigo-800"><input type="checkbox" checked={selectedForTwenty} onChange={onToggleTwenty} aria-label={`${candidate.companyName}をTwenty登録対象にする`} />Twenty登録</label>}
+            {isQueueableCandidate(candidate) && <label className="inline-flex items-center gap-2 text-xs font-bold text-indigo-800"><input type="checkbox" checked={selectedForTwenty} onChange={onToggleTwenty} aria-label={`${candidate.companyName}をTwenty登録対象にする`} />Twenty登録</label>}
             <h3 className="text-lg font-semibold">{candidate.companyName}</h3>
             <StatusBadge candidate={candidate} />
             <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-800">適合度 {candidate.opportunityScore}</span>

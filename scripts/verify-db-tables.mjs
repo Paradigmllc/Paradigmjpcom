@@ -48,7 +48,7 @@ const ALL_TABLES = [
   "sales_lead_candidate_domains", "sales_lead_candidate_observations",
   "sales_lead_candidate_country_signals", "sales_lead_candidate_tech_detections",
   "sales_lead_candidate_scores", "sales_lead_candidate_runs", "sales_lead_candidate_run_items",
-  "sales_lead_source_configs", "sales_lead_source_records", "sales_lead_operator_events",
+  "sales_lead_source_configs", "sales_lead_source_records", "sales_lead_inventory_runs", "sales_lead_operator_events",
   "sales_passive_inventory_runs", "sales_passive_inventory_domains", "sales_passive_inventory_segments",
   // Pipeline
   "sales_pipeline_runs", "sales_pipeline_steps", "sales_artifact_manifest",
@@ -393,6 +393,7 @@ function printSummaryAndExit(ok, missing, errored) {
         "sales_lead_candidate_runs": "supabase/migrations/migration_048_sales_lead_candidate_runs.sql",
         "sales_lead_candidate_run_items": "supabase/migrations/migration_048_sales_lead_candidate_runs.sql",
         "sales_lead_source_configs": "supabase/migrations/20260715082148_high_quality_lead_sources.sql",
+        "sales_lead_inventory_runs": "supabase/migrations/20260715140000_lead_source_country_packs.sql",
         "sales_lead_source_records": "supabase/migrations/20260715082148_high_quality_lead_sources.sql",
         "sales_lead_operator_events": "supabase/migrations/20260715093000_lead_factory_operator_approval.sql",
         "prospects": "supabase/migrations/migration_061_release_table_parity.sql",

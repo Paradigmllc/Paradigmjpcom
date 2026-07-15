@@ -1,0 +1,13 @@
+import { describe, expect, it } from "vitest"
+import { normalizeTwentyCompanyViewsViaDatabase } from "./twenty-crm-metadata-db-apply"
+
+describe("normalizeTwentyCompanyViewsViaDatabase", () => {
+  it("persists visibility and position in application-owned universal overrides", () => {
+    const source = normalizeTwentyCompanyViewsViaDatabase.toString()
+
+    expect(source.match(/universalOverrides/g)).toHaveLength(4)
+    expect(source.match(/jsonb_build_object/g)).toHaveLength(2)
+    expect(source.match(/'isVisible'/g)).toHaveLength(2)
+    expect(source.match(/'position'/g)).toHaveLength(2)
+  })
+})
