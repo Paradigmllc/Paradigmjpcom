@@ -18,15 +18,15 @@ describe("lead source preflight release wiring", () => {
     expect(deploy).toContain("20260715173000_lead_source_product_fit_retry.sql")
     expect(deploy).toContain("applyLeadSourceProductFitRetryMigration")
     expect(deploy).toContain("await applyLeadSourceProductFitRetryMigration(envs)")
-    expect(deploy).toContain("20260715233000_lead_source_product_evidence_retry.sql")
+    expect(deploy).toContain("20260716000000_lead_source_balance_retry.sql")
     expect(deploy).toContain("applyLeadSourceProductEvidenceRetryMigration")
     expect(deploy).toContain("await applyLeadSourceProductEvidenceRetryMigration(envs)")
     expect(deploy.indexOf("await applyLeadSourceProductEvidenceRetryMigration(envs)"))
       .toBeGreaterThan(deploy.indexOf("await applySalesOptionalColumnRepairMigration(envs)"))
   })
 
-  it("limits historical product-fit retries to official Tier 3 SME evidence", () => {
-    const migration = read("supabase/migrations/20260715233000_lead_source_product_evidence_retry.sql")
+  it("limits historical product-fit and provider-outage retries to strict revalidation of official Tier 3 SMEs", () => {
+    const migration = read("supabase/migrations/20260716000000_lead_source_balance_retry.sql")
 
     expect(migration).toContain("source_config.trust_tier >= 3")
     expect(migration).toContain("source_record.is_sme = true")
@@ -34,6 +34,10 @@ describe("lead source preflight release wiring", () => {
     expect(migration).toContain("ARRAY['ai_evidence_review_failed']::text[]")
     expect(migration).toContain("jsonb_array_length(prior_item.quality_gate->'aiReview'->'evidenceQuotes') >= 2")
     expect(migration).toContain("jsonb_array_length(prior_item.quality_gate->'aiReview'->'riskFlags') = 0")
+    expect(migration).toContain("prior_item.quality_gate->'aiReview'->>'model' = 'deepseek-v4-pro'")
+    expect(migration).toContain("prior_item.quality_gate->'aiReview'->>'error' LIKE '%Insufficient Balance%'")
+    expect(migration).toContain("prior_item.quality_gate->'aiReview'->'riskFlags' = '[\"review_failed\"]'::jsonb")
+    expect(migration).toContain("prior_item.quality_gate->'aiReview'->'evidenceQuotes' = '[]'::jsonb")
     expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.sales_claim_lead_source_records")
   })
 

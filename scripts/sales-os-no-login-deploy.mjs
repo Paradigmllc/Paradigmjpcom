@@ -744,8 +744,8 @@ async function applyLeadSourceProductFitRetryMigration(envs) {
 async function applyLeadSourceProductEvidenceRetryMigration(envs) {
   return applySqlMigration(
     envs,
-    "20260715233000_lead_source_product_evidence_retry.sql",
-    "Official SMB grounded product-evidence retry migration",
+    "20260716000000_lead_source_balance_retry.sql",
+    "Official SMB fail-closed product-evidence retry migration",
   )
 }
 
