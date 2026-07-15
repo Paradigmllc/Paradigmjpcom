@@ -63,4 +63,34 @@ describe("premium v3 industry typography", () => {
     expect(JSON.stringify(twice.pages.works)).not.toMatch(/営業日や提供内容などの最新情報/u)
     expect(twice.pages.works).toEqual(once.pages.works)
   })
+
+  it("removes repeated service copy without discarding distinct facts", () => {
+    const page = {
+      companyId: "service-copy-1",
+      companyName: "Cafe SOSOMU",
+      industry: "restaurant",
+      premium: { style: "premium-v3", social: [], heroMedia: [], gallery: [], intro: {} },
+      pages: {
+        home: { cta: { subtitle: "" } },
+        about: {},
+        services: {
+          title: "メニュー",
+          subtitle: "素材と時間を大切にした一皿をご用意します",
+          services: [{
+            title: "ドリップコーヒー",
+            description: "一杯ずつ丁寧に抽出します",
+            icon: "coffee",
+            features: ["一杯ずつ丁寧に抽出します", "豆の個性に合わせた抽出", "豆の個性に合わせた抽出"],
+          }],
+          process: [],
+        },
+        contact: { formNote: "" },
+      },
+    } as unknown as DemoMultiPageData
+
+    const upgraded = upgradeDemoToPremiumV3(page)
+    expect(upgraded.pages.services.services[0].description).toBe("一杯ずつ丁寧に抽出します。")
+    expect(upgraded.pages.services.services[0].features).toEqual(["豆の個性に合わせた抽出"])
+    expect(upgradeDemoToPremiumV3(upgraded).pages.services).toEqual(upgraded.pages.services)
+  })
 })
