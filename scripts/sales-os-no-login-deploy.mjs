@@ -1519,7 +1519,12 @@ async function main() {
     const status = await smoke(target.url, target.markers)
     console.log(`Smoke OK: ${target.url} HTTP ${status}`)
   }
-  if (!DRY) console.log(await refreshIntegrationStatus(envs))
+  if (!DRY) {
+    console.log(await refreshIntegrationStatus(envs))
+    // Public seed/smoke endpoints can load bundled compatibility contracts.
+    // Make the newest claim RPC the final DB mutation before post-deploy doctor.
+    if (!SKIP_DB_UPSERT) console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
+  }
 }
 
 main().catch((error) => {
