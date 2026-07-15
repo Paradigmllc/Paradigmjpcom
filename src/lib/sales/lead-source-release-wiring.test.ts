@@ -15,6 +15,18 @@ describe("lead source preflight release wiring", () => {
     expect(deploy).toContain("20260715151000_lead_source_partial_pilot_claim.sql")
     expect(deploy).toContain("applyLeadSourcePartialPilotClaimMigration")
     expect(deploy).toContain("await applyLeadSourcePartialPilotClaimMigration(envs)")
+    expect(deploy).toContain("20260715173000_lead_source_product_fit_retry.sql")
+    expect(deploy).toContain("applyLeadSourceProductFitRetryMigration")
+    expect(deploy).toContain("await applyLeadSourceProductFitRetryMigration(envs)")
+  })
+
+  it("limits historical product-fit retries to official Tier 3 SME evidence", () => {
+    const migration = read("supabase/migrations/20260715173000_lead_source_product_fit_retry.sql")
+
+    expect(migration).toContain("source_config.trust_tier >= 3")
+    expect(migration).toContain("source_record.is_sme = true")
+    expect(migration).toContain("ARRAY['japan_entry_offer_fit_missing']::text[]")
+    expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.sales_claim_lead_source_records")
   })
 
   it("checks the split selection service and preflight fail-closed contract", () => {

@@ -6,12 +6,14 @@ import type { TechItem } from "./sources/wappalyzer"
 const MODEL = "deepseek-v4-pro" as const
 const MIN_CONFIDENCE = 0.96
 
+type AiAdjudicationMode = "smb" | "offer_fit"
+
 const SYSTEM_PROMPT = `You are the final evidence reviewer for a Japan market-entry lead list.
 Return JSON only. Never invent employee counts, revenue, offices, ownership, customers, or geography.
 The candidate may pass only when the supplied public website text supports all of these:
-1. It is an independent small or midsize business, reasonably within 2-249 employees.
+1. It is an independent small or midsize business, reasonably within 2-249 employees. In offer_fit mode, official Tier 3 source evidence already establishes this requirement; reject only if the website clearly contradicts it.
 2. It is not a listed company, enterprise group, multinational division, government body, nonprofit, university, publisher, recruiter, real-estate agency, or local professional-service agency.
-3. Its primary offer is a scalable SaaS/software product, ecommerce business, or branded physical product suitable for entering Japan.
+3. Its primary offer is a scalable SaaS/software product, ecommerce business, or branded physical product suitable for entering Japan. product_brand includes evidence-backed B2B hardware, DeepTech systems, industrial equipment, advanced materials, medtech, and scientific instruments; it does not include bespoke consulting or local services.
 4. The evidence is specific to this company, not a footer, cookie banner, generic navigation, customer logo, or third-party quotation.
 Evidence quotes must be copied exactly from the supplied website evidence. Absence of an enterprise signal is not evidence of SMB status. If size is uncertain, employee_band must be unknown and smb_fit must be false.
 Use a conservative standard: false negatives are acceptable; false positives are not.
@@ -34,6 +36,7 @@ const ReviewSchema = z.object({
 
 export interface AiSmbReviewResult {
   passed: boolean
+  mode: AiAdjudicationMode
   model: string
   confidence: number
   employeeBand: z.infer<typeof ReviewSchema>["employee_band"]
@@ -45,7 +48,7 @@ export interface AiSmbReviewResult {
   error?: string
 }
 
-export function requiresAiSmbAdjudication(gate: LeadQualityGate): boolean {
+export function aiAdjudicationMode(gate: LeadQualityGate): AiAdjudicationMode | null {
   const missingOnly = gate.status === "review_required"
     && gate.reasons.length > 0
     && gate.reasons.every((reason) => reason === "smb_evidence_missing")
@@ -53,7 +56,18 @@ export function requiresAiSmbAdjudication(gate: LeadQualityGate): boolean {
     && gate.source.trustTier < 3
     && gate.smb.passed
     && gate.smb.score < 90
-  return missingOnly || tierTwoDeterministicSmb
+  if (missingOnly || tierTwoDeterministicSmb) return "smb"
+  const officialSmbMissingOfferFit = gate.status === "review_required"
+    && gate.reasons.length > 0
+    && gate.reasons.every((reason) => reason === "japan_entry_offer_fit_missing")
+    && gate.source.trustTier >= 3
+    && gate.smb.passed
+    && gate.smb.score >= 90
+  return officialSmbMissingOfferFit ? "offer_fit" : null
+}
+
+export function requiresAiSmbAdjudication(gate: LeadQualityGate): boolean {
+  return aiAdjudicationMode(gate) !== null
 }
 
 type LlmCaller = typeof callDeepSeek
@@ -66,9 +80,10 @@ function normalized(value: string): string {
   return value.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase()
 }
 
-function failed(error: string, usage?: DeepSeekResponse["usage"]): AiSmbReviewResult {
+function failed(error: string, usage?: DeepSeekResponse["usage"], mode: AiAdjudicationMode = "smb"): AiSmbReviewResult {
   return {
     passed: false,
+    mode,
     model: MODEL,
     confidence: 0,
     employeeBand: "unknown",
@@ -88,7 +103,8 @@ export async function reviewUnknownSmbCandidate(input: {
   qualityGate: LeadQualityGate
   detections: TechItem[]
 }, caller: LlmCaller = callDeepSeek): Promise<AiSmbReviewResult> {
-  if (!requiresAiSmbAdjudication(input.qualityGate)) {
+  const mode = aiAdjudicationMode(input.qualityGate)
+  if (!mode) {
     return failed("candidate is not eligible for SMB-only AI adjudication")
   }
   const websiteEvidence = [input.homepage.title, input.homepage.description, input.homepage.visibleText.slice(0, 16_000)]
@@ -99,6 +115,8 @@ export async function reviewUnknownSmbCandidate(input: {
     { role: "user", content: JSON.stringify({
       company_name: input.companyName,
       country_code: input.countryCode,
+      review_mode: mode,
+      deterministic_smb_evidence: input.qualityGate.smb.evidence,
       page_title: input.homepage.title,
       meta_description: input.homepage.description,
       organization_types: input.homepage.organizationTypes,
@@ -115,7 +133,7 @@ export async function reviewUnknownSmbCandidate(input: {
     thinking: "disabled",
     timeoutMs: 120_000,
   })
-  if (!response.ok || !response.text) return failed(response.error ?? "empty response", response.usage)
+  if (!response.ok || !response.text) return failed(response.error ?? "empty response", response.usage, mode)
 
   try {
     const result = ReviewSchema.parse(parseJson(response.text))
@@ -123,8 +141,9 @@ export async function reviewUnknownSmbCandidate(input: {
     const groundedQuotes = [...new Set(result.evidence_quotes.filter((quote) => evidence.includes(normalized(quote))))].slice(0, 5)
     const riskFlags = result.risk_flags.slice(0, 8)
     const allowedBusinessModel = ["saas", "ecommerce", "product_brand"].includes(result.business_model)
-    const allowedEmployeeBand = !["250+", "unknown"].includes(result.employee_band)
-    const passed = result.smb_fit
+    const allowedEmployeeBand = mode === "offer_fit" || !["250+", "unknown"].includes(result.employee_band)
+    const smbSatisfied = mode === "offer_fit" || result.smb_fit
+    const passed = smbSatisfied
       && !result.enterprise
       && result.japan_entry_fit
       && allowedBusinessModel
@@ -134,6 +153,7 @@ export async function reviewUnknownSmbCandidate(input: {
       && riskFlags.length === 0
     return {
       passed,
+      mode,
       model: response.usedModel ?? MODEL,
       confidence: result.confidence,
       employeeBand: result.employee_band,
@@ -146,12 +166,29 @@ export async function reviewUnknownSmbCandidate(input: {
     }
   } catch (error) {
     console.error("[lead-candidate-ai-smb-review] invalid DeepSeek response:", error)
-    return failed(error instanceof Error ? error.message : "invalid JSON", response.usage)
+    return failed(error instanceof Error ? error.message : "invalid JSON", response.usage, mode)
   }
 }
 
 export function applyAiSmbReview(gate: LeadQualityGate, review: AiSmbReviewResult): LeadQualityGate {
   if (!review.passed) return gate
+  if (review.mode === "offer_fit") {
+    return {
+      ...gate,
+      status: "passed",
+      reasons: [],
+      offerFit: {
+        passed: true,
+        score: 90,
+        evidence: [
+          ...gate.offerFit.evidence,
+          `deepseek_v4_pro_product_fit:${review.businessModel}:${Math.round(review.confidence * 100)}`,
+          ...review.evidenceQuotes.map((quote) => `site_quote:${quote}`),
+        ],
+      },
+      aiReview: review,
+    }
+  }
   return {
     ...gate,
     status: "passed",

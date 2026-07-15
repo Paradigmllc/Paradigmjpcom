@@ -718,6 +718,14 @@ async function applyLeadSourcePartialPilotClaimMigration(envs) {
   )
 }
 
+async function applyLeadSourceProductFitRetryMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715173000_lead_source_product_fit_retry.sql",
+    "Official SMB product-fit retry migration",
+  )
+}
+
 async function applyPortalTwentySourceOptionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1387,6 +1395,7 @@ async function main() {
     console.log(await applyLeadSourceWebsitePreflightMigration(envs))
     console.log(await applyLeadSourceCountryPacksMigration(envs))
     console.log(await applyLeadSourcePartialPilotClaimMigration(envs))
+    console.log(await applyLeadSourceProductFitRetryMigration(envs))
     console.log(await applyPortalTwentySourceOptionsMigration(envs))
     console.log(await applySalesSyncLogsListLeadMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
