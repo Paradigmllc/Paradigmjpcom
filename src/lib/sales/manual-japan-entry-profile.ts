@@ -57,7 +57,7 @@ export function groundManualCompanyProfile(input: {
   const modelNameIsObserved = normalizedEvidence.includes(input.profile.companyName.toLocaleLowerCase("en-US"))
   const companyName = modelNameIsObserved
     ? input.profile.companyName
-    : input.fallbackCompanyName ?? input.profile.companyName ?? input.domain
+    : input.fallbackCompanyName ?? input.domain
   const isJapaneseCompany = hasDeterministicJapanEvidence({
     domain: input.domain,
     text: input.evidenceText,

@@ -1,11 +1,7 @@
 // @ts-nocheck — seed data file, PayloadCMS collection types vary at runtime
 import type { getPayload as getPayloadType } from "payload"
 import { EN_JAPAN_ENTRY_COMPARISON_BLOCK, EN_JAPAN_ENTRY_PROCESS_BLOCK, EN_PROFESSIONAL_USE_CASE_SECTION } from "./homepage-en-blocks"
-import {
-  JAPAN_ENTRY_MONTH_ONE_TARGET,
-  JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
-  JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
-} from "@/lib/japan-entry-public-copy"
+import { JAPAN_ENTRY_MONTH_ONE_TARGET, JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE, JAPAN_ENTRY_MONTH_ONE_TARGET_STAT } from "@/lib/japan-entry-public-copy"
 function textToLexical(text: string) {
   return {
     root: { type: "root" as const, direction: "ltr" as const, format: "" as const, indent: 0, version: 1,

@@ -44,4 +44,30 @@ describe("manual company Japan exclusion", () => {
     ])
     expect(JSON.stringify(grounded)).not.toContain("Invented")
   })
+
+  it("does not retain an unobserved model-generated company name", () => {
+    const grounded = groundManualCompanyProfile({
+      domain: "example.com",
+      fallbackCompanyName: null,
+      evidenceText: "Workflow software for independent retailers",
+      productContext: "Workflow software for independent retailers",
+      profile: {
+        companyName: "Invented Holdings",
+        countryCode: "US",
+        isJapaneseCompany: false,
+        smbStatus: "qualified",
+        smbConfidence: 90,
+        smbEvidence: ["Public evidence"],
+        japanEntryFitStatus: "qualified",
+        japanEntryFitConfidence: 88,
+        japanEntryFitEvidence: ["Public evidence"],
+        businessModel: "saas",
+        industry: "Technology / IT",
+        productContext: "Invented claim",
+        observedFacts: ["Invented customer outcome"],
+      },
+    })
+
+    expect(grounded.companyName).toBe("example.com")
+  })
 })
