@@ -489,6 +489,48 @@ function applySqlMigrationThroughHost(sql, label) {
   return `${label}: applied through DB SSH channel`
 }
 
+function applyTwentySqlThroughHost(sql, label) {
+  const sshTarget = envValue("PARADIGM_TWENTY_SSH_TARGET", DEPLOY_HOST)
+  const dbContainer = resolveTwentyDbContainer(sshTarget)
+  const result = spawnSync(
+    "ssh",
+    [...sshArgs(sshTarget, { acceptNew: true }), "docker", "exec", "-i", dbContainer, "psql", "-U", "twenty", "-d", "twenty"],
+    { input: sql, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
+  )
+  if (result.status !== 0) {
+    const detail = `${result.stderr || result.stdout || ""}`.trim()
+    throw new Error(`${label} Twenty DB SSH fallback failed: ${detail.slice(0, 300)}`)
+  }
+  return `${label}: applied through Twenty DB SSH channel`
+}
+
+function resolveTwentyDbContainer(sshTarget) {
+  const explicit = envValue("PARADIGM_TWENTY_DB_CONTAINER")
+  if (explicit) return explicit
+  const result = spawnSync(
+    "ssh",
+    [...sshArgs(sshTarget, { acceptNew: true }), "docker ps --format '{{.Names}}\t{{.Image}}'"],
+    { encoding: "utf8", timeout: 15_000, maxBuffer: 1024 * 1024 },
+  )
+  if (result.error) throw result.error
+  if (result.status !== 0) {
+    const detail = `${result.stderr || result.stdout || ""}`.trim()
+    throw new Error(`Could not list Twenty containers: ${detail.slice(0, 180)}`)
+  }
+  const rows = String(result.stdout || "")
+    .split("\n")
+    .map((line) => {
+      const [name, image] = line.split("\t")
+      return { name: name?.trim() || "", image: image?.trim() || "" }
+    })
+    .filter((row) => row.name.length > 0)
+  const exact = rows.find((row) => row.name === "opt-twenty-db-1")
+  if (exact) return exact.name
+  const candidate = rows.find((row) => /twenty.*db|db.*twenty/i.test(row.name) && /postgres/i.test(row.image))
+  if (candidate) return candidate.name
+  throw new Error("Could not resolve Twenty Postgres container on host")
+}
+
 function resolveSupabaseDbContainer(sshTarget) {
   const explicit = envValue("PARADIGM_SUPABASE_DB_CONTAINER")
   if (explicit) return explicit
@@ -666,6 +708,21 @@ async function applyLeadSourceCountryPacksMigration(envs) {
     "20260715140000_lead_source_country_packs.sql",
     "Versioned country lead-source packs migration",
   )
+}
+
+async function applyPortalTwentySourceOptionsMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715150000_portal_twenty_source_options.sql",
+    "Portal Twenty source options migration",
+  )
+}
+
+async function applyTwentySelectOptionsScript(envs) {
+  const sqlPath = path.join(process.cwd(), "scripts", "twenty-sales-select-options.sql")
+  if (!fs.existsSync(sqlPath)) return "Twenty select options script missing"
+  const sql = fs.readFileSync(sqlPath, "utf8")
+  return applyTwentySqlThroughHost(sql, "Twenty select options script")
 }
 
 async function applyJapanEntryProjectionsMigration(envs) {
@@ -1305,6 +1362,8 @@ async function main() {
     console.log(await applyLeadFactoryOperatorApprovalMigration(envs))
     console.log(await applyLeadSourceWebsitePreflightMigration(envs))
     console.log(await applyLeadSourceCountryPacksMigration(envs))
+    console.log(await applyPortalTwentySourceOptionsMigration(envs))
+    console.log(await applyTwentySelectOptionsScript(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))

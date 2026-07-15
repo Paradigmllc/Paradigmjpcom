@@ -117,7 +117,8 @@ function readbackIssues(
   if (actual.paradigmNextAction !== payload.paradigmNextAction) issues.push("next_action_mismatch")
   if (actual.paradigmSourceName !== payload.paradigmSourceName) issues.push("source_mismatch")
   if (actual.paradigmKarteSummary?.markdown !== record(payload.paradigmKarteSummary).markdown) issues.push("summary_mismatch")
-  if (actual.paradigmFormUrl?.primaryLinkUrl !== record(payload.paradigmFormUrl).primaryLinkUrl) issues.push("source_url_mismatch")
+  const normalizeLink = (value: unknown): string => typeof value === "string" ? value.trim().replace(/\/+$/u, "") : ""
+  if (normalizeLink(actual.paradigmFormUrl?.primaryLinkUrl) !== normalizeLink(record(payload.paradigmFormUrl).primaryLinkUrl)) issues.push("source_url_mismatch")
   if (actual.paradigmDemoUrl?.primaryLinkUrl) issues.push("demo_url_must_be_empty")
   if (actual.paradigmReportUrl?.primaryLinkUrl) issues.push("report_url_must_be_empty")
   if (actual.paradigmSalesMaterialUrl?.primaryLinkUrl) issues.push("sales_material_url_must_be_empty")
