@@ -1,0 +1,43 @@
+name: Cache Common Crawl lead sources
+
+on:
+  workflow_dispatch:
+    inputs:
+      markets:
+        description: "Comma-separated ISO markets"
+        required: true
+        default: "CA,GB,DE,FR,SE"
+        type: string
+      signals:
+        description: "Comma-separated signals: contact,commerce,saas"
+        required: true
+        default: "commerce"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: common-crawl-lead-source-cache
+  cancel-in-progress: false
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Fetch official Common Crawl index and publish immutable-input cache
+        env:
+          COMMON_CRAWL_MARKETS: ${{ inputs.markets }}
+          COMMON_CRAWL_SIGNALS: ${{ inputs.signals }}
+          CLOUDFLARE_R2_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ID }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+        run: node scripts/cache-common-crawl-sources.mjs

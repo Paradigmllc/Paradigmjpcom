@@ -11,7 +11,7 @@ export const maxDuration = 300
 
 const BodySchema = z.object({
   source: z.enum(PORTAL_SOURCES),
-  candidateIds: z.array(z.uuid()).min(1).max(50),
+  candidateIds: z.array(z.uuid()).min(1).max(8),
   force: z.boolean().optional(),
 })
 
@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
     if (missing.length > 0) {
       return NextResponse.json({ ok: false, error: `候補が見つかりません: ${missing.slice(0, 3).join(", ")}`, sendingEnabled: false }, { status: 404 })
     }
-    const summary = await syncPortalCandidatesToTwenty(candidates, { force: parsed.data.force === true, concurrency: 4 })
-    return NextResponse.json({ ok: summary.failed === 0, ...summary, sendingEnabled: false }, { status: summary.failed === 0 ? 200 : 207, headers: { "Cache-Control": "private, no-store" } })
+    const summary = await syncPortalCandidatesToTwenty(candidates, { force: parsed.data.force === true, concurrency: 1 })
+    const complete = summary.failed === 0 && (summary.deferred ?? 0) === 0
+    return NextResponse.json({ ok: complete, ...summary, sendingEnabled: false }, { status: complete ? 200 : 207, headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {
     console.error("[portal-candidates/twenty-sync] request failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Twenty同期に失敗しました", sendingEnabled: false }, { status: 500 })

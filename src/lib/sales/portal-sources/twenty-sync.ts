@@ -10,7 +10,7 @@ import type { CandidateListItem } from "@/lib/sales/lead-candidate-list"
 import type { PortalCandidateExtraction } from "./types"
 import { isPortalPrivateProposalEligible, readPortalSnapshot } from "./service"
 
-export type PortalTwentySyncStatus = "synced" | "reused" | "skipped" | "failed"
+export type PortalTwentySyncStatus = "synced" | "reused" | "skipped" | "failed" | "deferred"
 
 export interface PortalTwentySyncResult {
   ok: boolean
@@ -28,7 +28,14 @@ export interface PortalTwentySyncSummary {
   reused: number
   skipped: number
   failed: number
+  deferred: number
   results: PortalTwentySyncResult[]
+}
+
+const TWENTY_BACKPRESSURE_PATTERN = /circuit breaker is open|limit reached|statusCode["']?:\s*429|HTTP 429/iu
+
+export function isTwentyBackpressureError(message: string | undefined): boolean {
+  return TWENTY_BACKPRESSURE_PATTERN.test(message ?? "")
 }
 
 interface PortalSyncMeta {
@@ -147,7 +154,7 @@ async function writeSyncLog(candidate: CandidateListItem, result: PortalTwentySy
     entity_type: "company",
     entity_id: result.companyId ?? candidate.id,
     action: "portal_candidate_twenty_sync",
-    status: result.ok ? "success" : "failed",
+    status: result.ok ? "success" : "error",
     payload: {
       candidate_id: candidate.id,
       source: candidate.sourceSlug,
@@ -254,22 +261,40 @@ export async function syncPortalCandidatesToTwenty(
 ): Promise<PortalTwentySyncSummary> {
   const results: PortalTwentySyncResult[] = []
   let nextIndex = 0
+  let backpressureError: string | null = null
   const concurrency = Math.max(1, Math.min(Math.floor(options.concurrency ?? 4), 6))
   async function worker(): Promise<void> {
     while (true) {
+      if (backpressureError) return
       const index = nextIndex++
       const candidate = candidates[index]
       if (!candidate) return
-      results[index] = await syncPortalCandidateToTwenty(candidate, options.force === true)
+      const result = await syncPortalCandidateToTwenty(candidate, options.force === true)
+      results[index] = result
+      if (isTwentyBackpressureError(result.error)) backpressureError = result.error ?? "Twenty backpressure"
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, candidates.length) }, () => worker()))
+  if (backpressureError) {
+    for (let index = 0; index < candidates.length; index += 1) {
+      if (results[index]) continue
+      const snapshot = readPortalSnapshot(candidates[index])
+      results[index] = {
+        ok: false,
+        candidateId: candidates[index].id,
+        companyName: snapshot?.companyName ?? "候補企業",
+        status: "deferred",
+        error: `Twenty rate window deferred this candidate: ${backpressureError}`,
+      }
+    }
+  }
   return {
-    requested: results.length,
+    requested: candidates.length,
     synced: results.filter((result) => result.status === "synced").length,
     reused: results.filter((result) => result.status === "reused").length,
     skipped: results.filter((result) => result.status === "skipped").length,
     failed: results.filter((result) => result.status === "failed").length,
+    deferred: results.filter((result) => result.status === "deferred").length,
     results,
   }
 }
