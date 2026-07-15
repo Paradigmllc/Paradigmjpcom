@@ -361,10 +361,6 @@ export async function seedAllContent(
         subtitle: "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies entering Japan or establishing a Japan-facing operating base. For fast-decision teams, we build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
         primaryCta: { label: "Apply for Japan Entry — $12K", href: "/en/contact?intent=japan-entry" },
         secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
-        image: {
-          url: "/japan-entry/tokyo-sakura-panorama.svg",
-          alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
-        },
         stats: [
           { value: "$12K", label: "fixed setup" },
           { value: "$0", label: "monthly for 6 months" },
