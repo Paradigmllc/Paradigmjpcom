@@ -1,3 +1,14 @@
+## CURRENT STATUS - 2026-07-15 国別Lead Source Pack（実装・本番DB rollback検証完了 / release前 / 外部送信0）
+
+### Codexなしで国別sourceを再現する入口
+- 北米・欧州・豪州・シンガポール・中東の優先10市場を、版・ライセンス・最大件数・クエリSHA-256付きsource packとして管理画面からdraft登録できるようにした。登録時は必ず`terms_checked=false / active=false / approval_status=draft`でDB保存し、既存の規約確認、非保存preview、担当者承認、ingest、サイト事前検査を一切迂回しない。
+- 初期packはWikidata CC0の企業名・公式サイト・国・従業員数・業種が揃う候補だけを、従業員2〜249名、EC/SaaS等の業種、解散登録なし、archive/SNS URLなし、1国最大250件のbounded queryで取得する。Wikidataを公的登記とは扱わずtrust tier 2の構造化根拠とし、Japan Entry適合・フォーム・本人性は後段で別検査する。
+- source configにpack ID / version / license / query hashを保存するmigration、認証付き一覧・冪等draft登録API、loading / empty / error状態と外部ライセンスリンクを持つGUI、operator監査・DBベル/Slack通知を追加した。登録操作から候補取込、Twenty、文面、レポート、フォーム送信は起動しない。
+
+### Verification / remaining gate
+- 公式Wikidata endpointでUS packを実行し、企業名・website・従業員数・業種・HTTPS entity URLを持つ50件を取得、archive/SNS URL 0件を確認した。対象Vitest **3 files / 9 tests**、TypeScript、対象ESLint、release-doctorの新しいsource-pack静的gate、migrationの本番DB `BEGIN -> DDL -> ROLLBACK`がpass。
+- 正式release、公開管理画面/API確認、sourceのdraft登録からpreview・承認・ingest・事前検査、5件以上の実フォームを含む非送信pilotは未実行。batch承認、Twenty追加、文面/レポート生成、外部送信は開始しない。
+
 ## CURRENT STATUS - 2026-07-15 Lead Source website preflight強化（本番release・再pilot完了 / batch未承認 / 外部送信0）
 
 ### 数千件を504なしで検査するfail-closed経路
@@ -1500,3 +1511,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 実務Wave 1をUS/GB/AU/CA/SG/AE × Shopifyで実行。無料passive corpusから5,744候補を取得し、720件を実確認、実フォーム合格267件、適格昇格28件、Twenty同期28件、外部送信0件、文面生成0件。Twenty REST再照合は28/28 HTTP 200、国28/28、確認済みフォーム28/28、`未送信`ステータス28/28。国別同期はAE 3 / AU 7 / CA 6 / GB 5 / SG 7 / US 0。
 - Wave 1のUS/AEで、in-memory fallback runnerがheartbeat停止後も`alreadyRunning`を保持する停滞を実測。既存の認可済み同期process APIで残件を補完し、全6 runをactive 0まで完了させた。恒久対応として一覧API/Realtimeへ`heartbeat_at`を追加し、共通5分停滞判定、管理画面の`停滞runを再開`/`復旧を続行`操作、24件×最大10バッチの有界同期復旧を実装。復旧は残り候補だけを処理し、文面・レポート・フォーム送信を起動しない。
 - 停滞復旧のローカル検証はVitest 4 files / 9 tests、TypeScript、対象ESLint、`git diff --check`がpass。正式releaseと本番管理画面の公開確認を続行する。
+## CURRENT STATUS - 2026-07-15 ポータル候補をTwentyへ先行登録する実務導線（実装・テスト完了 / release前 / 外部送信0）
+
+### 実装内容
+- Houzz・エキテン・ジモティーの候補を、DEMO生成前にTwentyへ「リスト-only / 要確認 / 未送信」として登録するAPIと管理UIを追加。DEMO、文面生成、フォーム送信、メール送信はこの操作から起動しない。
+- 一括登録は明示選択した最大50件、Twenty API同時4件に固定。企業ごとにSupabaseの`portal_twenty_sync`へ同期状態・Twenty ID・最終エラーを保存し、再実行は既存成功を再利用、失敗企業だけ再試行する。
+- Twentyへupsert後にlive read-backを行い、企業名・ソース・掲載ページ・未送信ステータス・カルテ・旧DEMO/レポート/営業資料URL空状態が一致しない場合は成功扱いにしない。既存のDEMO投入済み候補はTwentyリスト同期対象から除外する。
+- 一覧APIは50件ページングとoffsetに対応し、数千件を単一レスポンス・単一リクエストへ詰め込まない。候補IDを明示したAPIでsource混在・不明IDを拒否する。
+
+### Verification / remaining gate
+- 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLintがpass。正式release、Twenty実データへの新規登録、公開管理画面確認は未実行。外部送信は引き続き0。

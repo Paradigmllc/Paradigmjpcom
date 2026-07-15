@@ -110,6 +110,9 @@ const TWENTY_SOURCE_VALUES = new Set([
   "manual_csv",
   "codex_verification",
   "codex_e2e",
+  "houzz",
+  "ekiten",
+  "jmty",
 ]);
 
 export function sourceSelectValue(
