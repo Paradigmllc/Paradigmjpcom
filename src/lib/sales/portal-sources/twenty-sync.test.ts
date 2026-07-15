@@ -63,7 +63,8 @@ describe("portalCandidateTwentyPayload", () => {
       paradigmReportUrl: { primaryLinkUrl: "" },
       paradigmSalesMaterialUrl: { primaryLinkUrl: "" },
     })
-    expect(payload.paradigmFormUrl).toEqual({ primaryLinkLabel: "ポータル掲載ページ", primaryLinkUrl: snapshot.listingUrl })
+    expect(payload.paradigmFormUrl).toEqual({ primaryLinkLabel: "", primaryLinkUrl: "" })
+    expect(payload.paradigmOutreachTargetUrl).toEqual({ primaryLinkLabel: "営業先（ポータル掲載ページ）", primaryLinkUrl: snapshot.listingUrl })
     expect((payload.paradigmKarteSummary as { markdown: string }).markdown).toContain(snapshot.listingUrl)
   })
 })

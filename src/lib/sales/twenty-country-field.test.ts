@@ -9,6 +9,15 @@ describe("Twenty country field", () => {
     expect(TWENTY_TEXT_ONLY_FIELD_KEYS.has("country")).toBe(true)
   })
 
+  it("keeps the operator-facing outreach destination as a visible link field", () => {
+    expect(DEFAULT_CRM_VIEW_FIELDS.find((field) => field.fieldKey === "outreach_target_url")).toMatchObject({
+      twentyFieldName: "paradigmOutreachTargetUrl",
+      label: "営業先URL",
+      fieldType: "url",
+      isVisible: true,
+    })
+  })
+
   it("round-trips the new European display labels", () => {
     expect(countryCodeFromTwentyRecord({ paradigmCountryName: "イタリア" }, "vinidea.it")).toBe("IT")
     expect(countryCodeFromTwentyRecord({ paradigmCountryName: "オランダ" }, "example.com")).toBe("NL")

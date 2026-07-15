@@ -788,6 +788,13 @@ async function applyTwentySelectOptionsScript(envs) {
   return applyTwentySqlThroughHost(sql, "Twenty select options script")
 }
 
+async function applyTwentyCompaniesViewScript(envs) {
+  const sqlPath = path.join(process.cwd(), "scripts", "twenty-sales-companies-view.sql")
+  if (!fs.existsSync(sqlPath)) return "Twenty companies view script missing"
+  const sql = fs.readFileSync(sqlPath, "utf8")
+  return applyTwentySqlThroughHost(sql, "Twenty companies view script")
+}
+
 async function applyJapanEntryProjectionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1431,6 +1438,7 @@ async function main() {
     console.log(await applySalesSyncLogsListLeadMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
     console.log(await applyTwentySelectOptionsScript(envs))
+    console.log(await applyTwentyCompaniesViewScript(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
