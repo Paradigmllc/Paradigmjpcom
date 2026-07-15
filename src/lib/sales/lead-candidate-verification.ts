@@ -2,7 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
-import { applyAiSmbReview, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
+import { applyAiSmbReview, requiresAiSmbAdjudication, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
 import { evaluateLeadQualityGate, fetchHomepageQualityProfile } from "./lead-quality-gate"
 import {
   inferCountrySignals,
@@ -203,9 +203,7 @@ export async function verifyLeadCandidateItem(run: LeadCandidateRunRow, item: Le
   const countrySignals = inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: `${homepage.title} ${homepage.description} ${homepage.visibleText}` })
   const enterpriseLike = isEnterpriseLikeStack(detection.tech)
   const initialQualityGate = evaluateLeadQualityGate({ sourceRecord, homepage, countrySignals, detections: detection.tech, enterpriseLike })
-  const aiSmbEligible = initialQualityGate.status === "review_required"
-    && initialQualityGate.reasons.length > 0
-    && initialQualityGate.reasons.every((reason) => reason === "smb_evidence_missing")
+  const aiSmbEligible = requiresAiSmbAdjudication(initialQualityGate)
   if (initialQualityGate.status === "rejected" || (initialQualityGate.status === "review_required" && !aiSmbEligible)) {
     return closeWithoutPromotion(item, {
       status: initialQualityGate.status,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { callDeepSeek } from "@/lib/deepseek"
-import { applyAiSmbReview, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
+import { applyAiSmbReview, requiresAiSmbAdjudication, reviewUnknownSmbCandidate } from "./lead-candidate-ai-smb-review"
 import type { HomepageQualityProfile, LeadQualityGate } from "./lead-quality-gate"
 
 const homepage: HomepageQualityProfile = {
@@ -49,6 +49,34 @@ describe("DeepSeek SMB adjudication", () => {
 
     expect(result).toMatchObject({ passed: true, confidence: 0.98, employeeBand: "11-50", businessModel: "saas" })
     expect(applyAiSmbReview(gate, result)).toMatchObject({ status: "passed", smb: { passed: true, score: 90 } })
+  })
+
+  it("requires the same 96% grounded review for Tier 2 site-marker SMB evidence", async () => {
+    const tierTwoGate: LeadQualityGate = {
+      ...gate,
+      status: "passed",
+      reasons: [],
+      smb: { passed: true, score: 82, evidence: ["site_marker:independently owned"] },
+    }
+    const caller: typeof callDeepSeek = async () => ({ ok: true, text: responseJson(), usedModel: "deepseek-v4-pro" })
+
+    expect(requiresAiSmbAdjudication(tierTwoGate)).toBe(true)
+    const result = await reviewUnknownSmbCandidate({ companyName: "Alpha Cloud", countryCode: "GB", homepage, qualityGate: tierTwoGate, detections: [] }, caller)
+
+    expect(result).toMatchObject({ passed: true, confidence: 0.98 })
+    expect(applyAiSmbReview(tierTwoGate, result).smb.evidence).toContain("deepseek_v4_pro:11-50:98")
+  })
+
+  it("does not override Tier 3 deterministic SMB evidence", () => {
+    const tierThreeGate: LeadQualityGate = {
+      ...gate,
+      status: "passed",
+      reasons: [],
+      source: { ...gate.source, trustTier: 3 },
+      smb: { passed: true, score: 82, evidence: ["official_sme_flag:Official SME directory"] },
+    }
+
+    expect(requiresAiSmbAdjudication(tierThreeGate)).toBe(false)
   })
 
   it("fails closed when model quotes are not present in the supplied page", async () => {

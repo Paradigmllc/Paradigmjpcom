@@ -45,6 +45,17 @@ export interface AiSmbReviewResult {
   error?: string
 }
 
+export function requiresAiSmbAdjudication(gate: LeadQualityGate): boolean {
+  const missingOnly = gate.status === "review_required"
+    && gate.reasons.length > 0
+    && gate.reasons.every((reason) => reason === "smb_evidence_missing")
+  const tierTwoDeterministicSmb = gate.status === "passed"
+    && gate.source.trustTier < 3
+    && gate.smb.passed
+    && gate.smb.score < 90
+  return missingOnly || tierTwoDeterministicSmb
+}
+
 type LlmCaller = typeof callDeepSeek
 
 function parseJson(text: string): unknown {
@@ -77,7 +88,7 @@ export async function reviewUnknownSmbCandidate(input: {
   qualityGate: LeadQualityGate
   detections: TechItem[]
 }, caller: LlmCaller = callDeepSeek): Promise<AiSmbReviewResult> {
-  if (input.qualityGate.status !== "review_required" || input.qualityGate.reasons.some((reason) => reason !== "smb_evidence_missing")) {
+  if (!requiresAiSmbAdjudication(input.qualityGate)) {
     return failed("candidate is not eligible for SMB-only AI adjudication")
   }
   const websiteEvidence = [input.homepage.title, input.homepage.description, input.homepage.visibleText.slice(0, 16_000)]
