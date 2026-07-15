@@ -474,6 +474,7 @@ function applySqlMigrationThroughHost(sql, label) {
   )
   if (apply.status !== 0) {
     const detail = `${apply.stderr || apply.stdout || ""}`.trim()
+    if (/already exists|duplicate/i.test(detail)) return `${label}: already applied`
     throw new Error(`${label} DB SSH fallback failed: ${detail.slice(0, 300)}`)
   }
 
