@@ -7,7 +7,7 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion"
 import { ArrowUpRight, Menu, X } from "lucide-react"
 import { FaInstagram } from "react-icons/fa6"
 import type { DemoBrandSystem, DemoMeta, DemoQualityReport } from "@/lib/sales/demo-site-types"
-import { PremiumV3ScrollProgress } from "./PremiumV3Motion"
+import { PremiumV3Magnetic, PremiumV3ScrollProgress } from "./PremiumV3Motion"
 
 interface NavLink { label: string; href: string }
 type DemoStyle = CSSProperties & Record<`--demo-${string}`, string | number>
@@ -34,6 +34,7 @@ export function DemoPremiumV3Layout({
 }) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
   const ctaHref = presentation?.primaryCtaHref ?? `${basePath}/contact`
   const ctaLabel = presentation?.primaryCtaLabel ?? "お問い合わせ"
   const isExternalCta = /^https?:\/\//u.test(ctaHref)
@@ -53,6 +54,12 @@ export function DemoPremiumV3Layout({
 
   useEffect(() => setMenuOpen(false), [pathname])
   useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 18)
+    handleScroll()
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+  useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : ""
     return () => { document.body.style.overflow = "" }
   }, [menuOpen])
@@ -63,7 +70,7 @@ export function DemoPremiumV3Layout({
     <MotionConfig reducedMotion="user" transition={{ ease: [0.22, 1, 0.36, 1] }}>
     <div className="demo-v3-shell min-h-dvh bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-demo-site="premium-v3" data-brand-system={brand.id}>
       <PremiumV3ScrollProgress />
-      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className="sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl" aria-label="メインナビゲーション">
+      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className={`sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl transition-[box-shadow,background-color] duration-500 ${isScrolled ? "shadow-[0_16px_40px_-28px_var(--demo-ink)] bg-[color:var(--demo-surface)]/96" : ""}`} aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[78px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
           <motion.a href={basePath} whileHover={{ x: 3 }} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
             {presentation?.brandLogoUrl ? (
@@ -74,10 +81,12 @@ export function DemoPremiumV3Layout({
             <span className="truncate text-lg font-[var(--demo-heading-weight)] tracking-[-.02em] sm:text-xl [font-family:var(--demo-font-display)]">{companyName}</span>
           </motion.a>
           <div className="hidden shrink-0 items-center gap-6 xl:flex">
-            {navLinks.map((link) => <a key={link.href} href={link.href} aria-current={isActive(link.href) ? "page" : undefined} className={`relative py-2 text-xs font-bold tracking-[.08em] transition ${isActive(link.href) ? "text-[var(--demo-ink)]" : "text-[var(--demo-muted)] hover:text-[var(--demo-ink)]"}`}>{link.label}{isActive(link.href) && <span className="absolute inset-x-0 -bottom-1 h-px bg-[var(--demo-accent)]" />}</a>)}
+            {navLinks.map((link) => <a key={link.href} href={link.href} aria-current={isActive(link.href) ? "page" : undefined} className={`relative py-2 text-xs font-bold tracking-[.08em] transition ${isActive(link.href) ? "text-[var(--demo-ink)]" : "text-[var(--demo-muted)] hover:text-[var(--demo-ink)]"}`}>{link.label}{isActive(link.href) && <motion.span layoutId="premium-v3-active-nav" className="absolute inset-x-0 -bottom-1 h-px bg-[var(--demo-accent)]" transition={{ duration: 0.35 }} />}</a>)}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hidden min-h-11 items-center gap-2 bg-[var(--demo-ink)] px-5 text-xs font-bold text-white transition hover:bg-[var(--demo-accent)] md:inline-flex">{isInstagram && <FaInstagram className="h-4 w-4" aria-hidden="true" />}{ctaLabel}<ArrowUpRight className="h-4 w-4" /></a>
+            <PremiumV3Magnetic className="hidden md:inline-block">
+              <a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-11 items-center gap-2 bg-[var(--demo-ink)] px-5 text-xs font-bold text-white transition-colors hover:bg-[var(--demo-accent)]">{isInstagram && <FaInstagram className="h-4 w-4" aria-hidden="true" />}{ctaLabel}<ArrowUpRight className="h-4 w-4" /></a>
+            </PremiumV3Magnetic>
             <button type="button" aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center border border-[var(--demo-line)] xl:hidden">{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
