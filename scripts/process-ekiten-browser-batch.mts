@@ -60,9 +60,31 @@ async function main(): Promise<void> {
     for (const candidate of page.candidates ?? []) if (listingUrls.has(typeof candidate.listingUrl === "string" ? candidate.listingUrl : "")) candidates.push(candidate)
     if (page.nextOffset === null || page.nextOffset === undefined) break
   }
-  const ready = candidates.filter((candidate) => candidate.reviewStatus === "ready_for_review")
+  const eligible = candidates.filter((candidate) => {
+    if (candidate.reviewStatus === "ready_for_review") return true
+    if (candidate.reviewStatus !== "decision_fit_unverified") return false
+    const websiteUrl = typeof candidate.websiteUrl === "string" ? candidate.websiteUrl.trim() : ""
+    const address = typeof candidate.address === "string" ? candidate.address.trim() : ""
+    const description = typeof candidate.description === "string" ? candidate.description.trim() : ""
+    const images = Array.isArray(candidate.images) ? candidate.images : []
+    const smbFit = candidate.smbFit && typeof candidate.smbFit === "object" ? candidate.smbFit as { enterpriseSignals?: unknown } : {}
+    const enterpriseSignals = Array.isArray(smbFit.enterpriseSignals) ? smbFit.enterpriseSignals : []
+    return !websiteUrl && Boolean(address) && description.length >= 80 && images.length >= 3 && enterpriseSignals.length === 0
+  })
+  const candidateIds = eligible.map((candidate) => typeof candidate.id === "string" ? candidate.id : "").filter(Boolean)
+  const twentySyncResults: unknown[] = []
+  for (let index = 0; index < candidateIds.length; index += 50) {
+    const syncResponse = await fetch(`${origin}/api/sales/demo-site/portal-candidates/twenty-sync`, {
+      method: "POST",
+      headers: apiHeaders,
+      body: JSON.stringify({ source: "ekiten", candidateIds: candidateIds.slice(index, index + 50) }),
+    })
+    const syncResult = await syncResponse.json() as Record<string, unknown>
+    if (!syncResponse.ok) throw new Error(typeof syncResult.error === "string" ? syncResult.error : `Twenty sync failed (${syncResponse.status})`)
+    twentySyncResults.push(syncResult)
+  }
   const demoResults: Array<{ candidateId: string; ok: boolean; companyName?: string; jobId?: string; error?: string }> = []
-  for (const candidate of ready) {
+  for (const candidate of eligible) {
     const images = Array.isArray(candidate.images) ? candidate.images.filter((value): value is { url: string; alt: string } => Boolean(value && typeof value === "object" && typeof (value as { url?: unknown }).url === "string")) : []
     const listingUrl = typeof candidate.listingUrl === "string" ? candidate.listingUrl : ""
     const companyName = typeof candidate.companyName === "string" ? candidate.companyName : "候補企業"
@@ -94,7 +116,7 @@ async function main(): Promise<void> {
       demoResults.push({ candidateId: String(candidate.id), ok: false, companyName, error: error instanceof Error ? error.message : String(error) })
     }
   }
-  console.log(JSON.stringify({ imported: importResult.imported ?? 0, failed: importResult.failed ?? 0, candidates: candidates.length, ready: ready.length, demos: demoResults }, null, 2))
+  console.log(JSON.stringify({ imported: importResult.imported ?? 0, failed: importResult.failed ?? 0, candidates: candidates.length, eligible: eligible.length, twentySync: twentySyncResults, demos: demoResults }, null, 2))
 }
 
 main().catch((error) => {
