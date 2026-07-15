@@ -1,0 +1,55 @@
+<svg width="1600" height="700" viewBox="0 0 1600 700" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Tokyo skyline with a spring sakura atmosphere</title>
+  <desc id="desc">An abstract night-blue Tokyo skyline, soft sunrise gradient, and cherry blossom branch framing a Japan market entry path.</desc>
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D1833"/>
+      <stop offset="0.58" stop-color="#263E68"/>
+      <stop offset="1" stop-color="#F0A5B7"/>
+    </linearGradient>
+    <linearGradient id="horizon" x1="800" y1="420" x2="800" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8D2D3" stop-opacity="0.74"/>
+      <stop offset="1" stop-color="#B76383" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="building" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#152640"/>
+      <stop offset="1" stop-color="#080F20"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1600" height="700" fill="url(#sky)"/>
+  <circle cx="1180" cy="155" r="92" fill="#FFF1E9" fill-opacity="0.76" filter="url(#glow)"/>
+  <circle cx="1180" cy="155" r="64" fill="#FFF7F2" fill-opacity="0.9"/>
+  <path d="M0 430C220 376 388 448 590 410C826 366 1002 438 1194 393C1352 356 1485 393 1600 365V700H0V430Z" fill="url(#horizon)"/>
+  <g opacity="0.28" stroke="#FCE7F3" stroke-width="2">
+    <path d="M0 482H1600"/><path d="M0 532H1600"/><path d="M0 582H1600"/>
+    <path d="M128 430V700M312 430V700M486 430V700M662 430V700M842 430V700M1026 430V700M1216 430V700M1402 430V700"/>
+  </g>
+  <g fill="url(#building)">
+    <path d="M0 470H82V700H0V470Z"/><path d="M92 426H174V700H92V426Z"/><path d="M185 505H260V700H185V505Z"/>
+    <path d="M270 448H352V700H270V448Z"/><path d="M365 394H438V700H365V394Z"/><path d="M452 478H544V700H452V478Z"/>
+    <path d="M556 420H640V700H556V420Z"/><path d="M651 474H740V700H651V474Z"/><path d="M756 382H830V700H756V382Z"/>
+    <path d="M845 448H927V700H845V448Z"/><path d="M940 404H1020V700H940V404Z"/><path d="M1032 470H1114V700H1032V470Z"/>
+    <path d="M1128 430H1208V700H1128V430Z"/><path d="M1224 486H1302V700H1224V486Z"/><path d="M1318 412H1400V700H1318V412Z"/>
+    <path d="M1418 462H1490V700H1418V462Z"/><path d="M1500 430H1600V700H1500V430Z"/>
+  </g>
+  <g fill="#F7C7D4" opacity="0.72">
+    <circle cx="110" cy="468" r="3"/><circle cx="121" cy="492" r="3"/><circle cx="206" cy="532" r="3"/><circle cx="288" cy="476" r="3"/>
+    <circle cx="392" cy="425" r="3"/><circle cx="409" cy="458" r="3"/><circle cx="580" cy="450" r="3"/><circle cx="690" cy="502" r="3"/>
+    <circle cx="784" cy="424" r="3"/><circle cx="964" cy="441" r="3"/><circle cx="1160" cy="468" r="3"/><circle cx="1350" cy="448" r="3"/>
+    <circle cx="1450" cy="500" r="3"/><circle cx="1540" cy="468" r="3"/>
+  </g>
+  <path d="M-40 150C178 62 294 96 438 196C535 264 612 246 690 182" stroke="#4A213D" stroke-width="18" stroke-linecap="round" opacity="0.86"/>
+  <path d="M206 104C198 218 168 286 90 366M354 142C350 230 322 292 246 348M490 176C478 254 456 304 394 350" stroke="#4A213D" stroke-width="9" stroke-linecap="round" opacity="0.72"/>
+  <g fill="#F7B6C9" stroke="#FFEAF1" stroke-width="3">
+    <path d="M138 92C150 70 181 72 188 96C201 75 229 88 221 111C248 107 254 137 230 147C248 165 226 189 204 174C200 201 168 205 159 180C141 201 113 182 122 157C96 160 86 130 111 120C91 102 111 77 138 92Z"/>
+    <path d="M296 174C309 151 337 156 342 178C357 158 383 173 374 195C398 195 403 222 380 231C396 250 374 271 352 257C347 282 318 283 309 260C290 278 266 258 275 235C250 236 244 207 268 198C249 180 270 158 296 174Z"/>
+    <path d="M452 238C465 216 492 220 499 243C513 222 540 237 531 260C557 258 562 287 538 296C555 314 534 336 510 322C505 348 475 349 466 323C447 342 424 322 433 298C408 300 401 271 426 261C407 243 426 220 452 238Z"/>
+  </g>
+  <g opacity="0.75" fill="#FFE6EF">
+    <circle cx="588" cy="128" r="7"/><circle cx="660" cy="270" r="5"/><circle cx="774" cy="118" r="4"/><circle cx="906" cy="218" r="5"/><circle cx="1015" cy="98" r="4"/><circle cx="1332" cy="260" r="6"/>
+  </g>
+</svg>

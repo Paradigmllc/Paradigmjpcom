@@ -18,6 +18,12 @@ import {
   ARTICLE_VISUALS_ADDITIONS,
   JAPAN_ENTRY_BLOG_POSTS_ADDITIONS,
 } from "./japan-entry-blog-additions"
+import {
+  ARTICLE_VISUALS_PROFESSIONAL,
+  JAPAN_ENTRY_BLOG_POSTS_PROFESSIONAL_WEB3_OPERATIONS,
+} from "./japan-entry-blog-professional-web3"
+import { JAPAN_ENTRY_BLOG_POSTS_PROFESSIONAL_EC_SAAS } from "./japan-entry-blog-professional"
+import { EDITORIAL_APPENDIX } from "./japan-entry-blog-editorial"
 
 export { textToLexical } from "./japan-entry-blog-additions"
 
@@ -445,28 +451,11 @@ const ARTICLE_VISUALS: Record<string, NonNullable<JapanEntryBlogPost["heroImage"
   },
 }
 
-const ALL_ARTICLE_VISUALS = { ...ARTICLE_VISUALS, ...ARTICLE_VISUALS_ADDITIONS }
-
-const EDITORIAL_APPENDIX = `
-
-## A decision table for the next step
-
-| Decision point | Ready when | Evidence to keep |
-|---|---|---|
-| Buyer path | A Japanese buyer can state the offer, price, owner, and next action | The published page, form test, and approval record |
-| Operating path | Every request has an owner, response rule, and escalation route | The handover checklist and support decision log |
-| External dependency | Legal, tax, payment, fulfilment, or licensing questions have an identified reviewer | The dependency register with status and next action |
-| Measurement | The team can separate public signals from first-party results | The baseline report and the date/source for each observation |
-
-## Practical pre-launch checklist
-
-- Confirm the first offer, audience, and one accountable approver.
-- Mark every claim as source-backed, client-provided, or not yet verified.
-- Test the Japanese route on mobile: page, form, acknowledgement, and human follow-up.
-- Record what is included, what is excluded, and which third-party costs remain separate.
-- Schedule the first post-launch review around questions and route completion—not an invented revenue promise.
-
-This is the standard of a useful first launch: a buyer can act, the operator can respond, and the decision-maker can see what remains unknown. A fixed-scope implementation should make those facts easier to inspect, not replace professional advice or guarantee a market outcome.`.trim()
+const ALL_ARTICLE_VISUALS = {
+  ...ARTICLE_VISUALS,
+  ...ARTICLE_VISUALS_ADDITIONS,
+  ...ARTICLE_VISUALS_PROFESSIONAL,
+}
 
 function enrichEditorialContent(post: JapanEntryBlogPost): JapanEntryBlogPost {
   const content = post.content.includes("| Decision point |")
@@ -483,6 +472,8 @@ function enrichEditorialContent(post: JapanEntryBlogPost): JapanEntryBlogPost {
 export const JAPAN_ENTRY_BLOG_POSTS: JapanEntryBlogPost[] = [
   ...JAPAN_ENTRY_BLOG_POSTS_RAW,
   ...JAPAN_ENTRY_BLOG_POSTS_ADDITIONS,
+  ...JAPAN_ENTRY_BLOG_POSTS_PROFESSIONAL_EC_SAAS,
+  ...JAPAN_ENTRY_BLOG_POSTS_PROFESSIONAL_WEB3_OPERATIONS,
 ].map(enrichEditorialContent)
 
 export const DEFAULT_JAPAN_ENTRY_HERO_IMAGE = ALL_ARTICLE_VISUALS["what-a-japan-entry-package-should-deliver"]

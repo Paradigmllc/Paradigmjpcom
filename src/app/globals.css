@@ -357,6 +357,27 @@ body.no-grain::before { display: none; }
   0%, 100% { transform: translate(0, 0) scale(1); }
   50%      { transform: translate(14px, 20px) scale(1.08); }
 }
+
+@keyframes japanPetal {
+  0% { opacity: 0; transform: translate3d(-12px, -18px, 0) rotate(12deg); }
+  15% { opacity: .78; }
+  55% { opacity: .58; transform: translate3d(18px, 46px, 0) rotate(128deg); }
+  100% { opacity: 0; transform: translate3d(-8px, 132px, 0) rotate(232deg); }
+}
+
+.japan-petal {
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  border-radius: 80% 18% 80% 18%;
+  background: linear-gradient(135deg, #fff1f5, #f5a8c0);
+  box-shadow: 0 0 16px rgba(251, 182, 206, .42);
+  animation: japanPetal 14s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .japan-petal { animation: none; opacity: .5; }
+}
 .ph-blob-1 { animation: blobFloat  14s ease-in-out infinite; }
 .ph-blob-2 { animation: blobFloat2 18s ease-in-out infinite; }
 .ph-blob-3 { animation: blobFloat3 11s ease-in-out infinite; }
