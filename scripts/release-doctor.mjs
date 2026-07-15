@@ -496,6 +496,22 @@ function checkStaticReleaseRules() {
     fail("DX/AI template migration must repair the legacy template variant column before adding its constraint")
   }
 
+  const formQualifiedLeadFactoryPath = "supabase/migrations/20260714143000_form_qualified_lead_factory.sql"
+  const formQualifiedLeadFactory = fs.existsSync(formQualifiedLeadFactoryPath)
+    ? fs.readFileSync(formQualifiedLeadFactoryPath, "utf8")
+    : ""
+  if (
+    formQualifiedLeadFactory.includes("IF NOT EXISTS (")
+    && formQualifiedLeadFactory.includes("sales_lead_candidate_run_items_status_check")
+    && formQualifiedLeadFactory.includes("'awaiting_review'")
+    && formQualifiedLeadFactory.includes("'review_required'")
+    && formQualifiedLeadFactory.includes("'rejected'")
+  ) {
+    pass("form-qualified lead migration preserves current quality and operator-review states")
+  } else {
+    fail("form-qualified lead migration must not regress current quality and operator-review states")
+  }
+
   const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
   const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
     ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")
