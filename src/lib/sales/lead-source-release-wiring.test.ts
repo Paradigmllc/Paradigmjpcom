@@ -18,14 +18,20 @@ describe("lead source preflight release wiring", () => {
     expect(deploy).toContain("20260715173000_lead_source_product_fit_retry.sql")
     expect(deploy).toContain("applyLeadSourceProductFitRetryMigration")
     expect(deploy).toContain("await applyLeadSourceProductFitRetryMigration(envs)")
+    expect(deploy).toContain("20260715233000_lead_source_product_evidence_retry.sql")
+    expect(deploy).toContain("applyLeadSourceProductEvidenceRetryMigration")
+    expect(deploy).toContain("await applyLeadSourceProductEvidenceRetryMigration(envs)")
   })
 
   it("limits historical product-fit retries to official Tier 3 SME evidence", () => {
-    const migration = read("supabase/migrations/20260715173000_lead_source_product_fit_retry.sql")
+    const migration = read("supabase/migrations/20260715233000_lead_source_product_evidence_retry.sql")
 
     expect(migration).toContain("source_config.trust_tier >= 3")
     expect(migration).toContain("source_record.is_sme = true")
     expect(migration).toContain("ARRAY['japan_entry_offer_fit_missing']::text[]")
+    expect(migration).toContain("ARRAY['ai_evidence_review_failed']::text[]")
+    expect(migration).toContain("jsonb_array_length(prior_item.quality_gate->'aiReview'->'evidenceQuotes') >= 2")
+    expect(migration).toContain("jsonb_array_length(prior_item.quality_gate->'aiReview'->'riskFlags') = 0")
     expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.sales_claim_lead_source_records")
   })
 

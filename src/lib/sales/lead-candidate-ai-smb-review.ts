@@ -4,7 +4,8 @@ import type { HomepageQualityProfile, LeadQualityGate } from "./lead-quality-gat
 import type { TechItem } from "./sources/wappalyzer"
 
 const MODEL = "deepseek-v4-pro" as const
-const MIN_CONFIDENCE = 0.96
+const MIN_SMB_CONFIDENCE = 0.96
+const MIN_OFFICIAL_PRODUCT_CONFIDENCE = 0.90
 
 type AiAdjudicationMode = "smb" | "offer_fit"
 
@@ -143,12 +144,13 @@ export async function reviewUnknownSmbCandidate(input: {
     const allowedBusinessModel = ["saas", "ecommerce", "product_brand"].includes(result.business_model)
     const allowedEmployeeBand = mode === "offer_fit" || !["250+", "unknown"].includes(result.employee_band)
     const smbSatisfied = mode === "offer_fit" || result.smb_fit
+    const minimumConfidence = mode === "offer_fit" ? MIN_OFFICIAL_PRODUCT_CONFIDENCE : MIN_SMB_CONFIDENCE
     const passed = smbSatisfied
       && !result.enterprise
       && result.japan_entry_fit
       && allowedBusinessModel
       && allowedEmployeeBand
-      && result.confidence >= MIN_CONFIDENCE
+      && result.confidence >= minimumConfidence
       && groundedQuotes.length >= 2
       && riskFlags.length === 0
     return {
