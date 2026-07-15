@@ -80,16 +80,26 @@ function normalizedCopy(value: string): string {
   return value.replace(/\s+/gu, "").replace(/[。！？、]/gu, "").toLocaleLowerCase("ja-JP")
 }
 
+function stripDescriptionPrefix(value: string, description: string): string {
+  const prefix = description.replace(/[。！？]\s*$/u, "")
+  if (!prefix) return value.trim()
+  const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
+  return value.replace(new RegExp(`^\\s*${escaped}(?:[。！？])?\\s*(?:[／/]\\s*)?`, "u"), "").trim()
+}
+
 function normalizeServices(page: DemoMultiPageData): DemoMultiPageData["pages"]["services"] {
   const services = page.pages.services.services.map((service) => {
     const description = sentence(service.description ?? "")
     const seen = new Set<string>()
-    const features = (service.features ?? []).filter((feature) => {
-      const key = normalizedCopy(feature)
-      if (!key || key === normalizedCopy(description) || seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+    const features = (service.features ?? [])
+      .flatMap((feature) => feature.split(/\s*[／/]\s*/u))
+      .map((feature) => stripDescriptionPrefix(feature, description))
+      .filter((feature) => {
+        const key = normalizedCopy(feature)
+        if (!key || key === normalizedCopy(description) || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
     return { ...service, description, features }
   })
   return { ...page.pages.services, services }
