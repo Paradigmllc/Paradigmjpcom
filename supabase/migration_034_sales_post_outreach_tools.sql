@@ -2,33 +2,26 @@
 -- Registers Chatwoot, LiveKit, Directus, and Keystatic as first-class
 -- operational surfaces without opening new public tables.
 
-alter table public.sales_tool_connections
-  drop constraint if exists sales_tool_connections_slug_check;
-
-alter table public.sales_tool_connections
-  add constraint sales_tool_connections_slug_check
-  check (
-    slug in (
-      'supabase',
-      'twenty',
-      'nocodb',
-      'appsmith',
-      'metabase',
-      'n8n',
-      'calcom',
-      'docuseal',
-      'notion',
-      'directus',
-      'keystatic',
-      'chatwoot',
-      'livekit',
-      'trigger_dev',
-      'trigger-dev',
-      'dify',
-      'crawl4ai',
-      'searxng'
-    )
-  );
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.sales_tool_connections'::regclass
+      and conname = 'sales_tool_connections_slug_check'
+  ) then
+    alter table public.sales_tool_connections
+      add constraint sales_tool_connections_slug_check
+      check (
+        slug in (
+          'supabase', 'twenty', 'nocodb', 'appsmith', 'metabase', 'n8n',
+          'calcom', 'docuseal', 'notion', 'directus', 'keystatic', 'chatwoot',
+          'livekit', 'trigger_dev', 'trigger-dev', 'dify', 'crawl4ai',
+          'searxng', 'openclaw'
+        )
+      );
+  end if;
+end
+$$;
 
 alter table public.sales_tool_connections
   drop constraint if exists sales_tool_connections_interface_type_check;
