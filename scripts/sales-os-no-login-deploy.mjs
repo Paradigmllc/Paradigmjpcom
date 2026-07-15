@@ -1404,7 +1404,6 @@ async function main() {
     console.log(await applyLeadSourceCountryPacksMigration(envs))
     console.log(await applyLeadSourcePartialPilotClaimMigration(envs))
     console.log(await applyLeadSourceProductFitRetryMigration(envs))
-    console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
     console.log(await applyPortalTwentySourceOptionsMigration(envs))
     console.log(await applySalesSyncLogsListLeadMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
@@ -1441,6 +1440,9 @@ async function main() {
     console.log(await applyPassiveInventorySegmentsMigration(envs))
     console.log(await applySalesRaceConditionGuardsMigration(envs))
     console.log(await applySalesOptionalColumnRepairMigration(envs))
+    // Keep the latest claim contract last: older compatibility migrations also
+    // define this RPC and can otherwise restore a stale no-retry function.
+    console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
     console.log(await applyContentTemplates(envs))
     if (!SKIP_DB_VERIFY) runDbTableVerification(envs)
   } else {
