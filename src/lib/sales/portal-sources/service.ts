@@ -91,11 +91,16 @@ function portalSnapshot(meta: Record<string, unknown>): PortalCandidateExtractio
  * any real outreach or public publication.
  */
 export function isPortalPrivateProposalEligible(snapshot: PortalCandidateExtraction): boolean {
+  const websiteUrl = typeof snapshot.websiteUrl === "string" ? snapshot.websiteUrl.trim() : ""
+  const enterpriseSignals = Array.isArray(snapshot.smbFit?.enterpriseSignals) ? snapshot.smbFit.enterpriseSignals : []
+  const address = typeof snapshot.address === "string" ? snapshot.address.trim() : ""
+  const description = typeof snapshot.description === "string" ? snapshot.description.trim() : ""
   return snapshot.status === "decision_fit_unverified"
-    && snapshot.websiteUrl === null
-    && snapshot.smbFit.enterpriseSignals.length === 0
-    && Boolean(snapshot.address)
-    && snapshot.description.trim().length >= 80
+    && !websiteUrl
+    && enterpriseSignals.length === 0
+    && Boolean(address)
+    && description.length >= 80
+    && Array.isArray(snapshot.images)
     && snapshot.images.length >= 3
 }
 
