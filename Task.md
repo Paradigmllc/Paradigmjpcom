@@ -1648,3 +1648,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 ### Verification / remaining gate
 - 対象Vitest **3 files / 7 tests**、TypeScript、対象ESLint、production buildがpass。PR **#250**をmainへマージし、deployment **z3eh9qes2pgz5cg3ifa7e8e3**はfinished。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 61 existing warnings**、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / public smoke / Sales health JSON `ok:true`までpass。
 - 本番`/ja/admin/demo-assets`のchunkにTwenty登録UIと`portal-candidates/twenty-sync`を確認。Ekiten APIはHTTP 200、50件ページング、`sendingEnabled=false`。現時点の候補は1件（`ノン美容室`、既に`promoted`）のみで、既存DEMOを上書きしないため新規Twentyリスト同期は未実行。次の実務入力は通常ブラウザで確認した候補スナップショットの追加。
+## CURRENT STATUS - 2026-07-15 日本SMB限定スコープ固定（海外在庫隔離 / DEMO品質ゲート確認済み / 外部送信0）
+
+- 日本のローカルSMBだけを営業対象にするため、海外CORDIS在庫1,000社（`official-sme-1000-20260715`）を営業DBとTwentyで対象外・保管のみ・非送信へ隔離した。`send_result`、`sent_at`、`report_url`は1,000/1,000で空。
+- Twentyの`営業リスト`には`paradigmDataStatus != out_of_scope_foreign`の除外フィルタを固定し、metadata再適用後も海外在庫が国内リストへ戻らないようにした。
+- 国内候補は5件（エキテン5、Houzz/ジモティー0）。DEMO品質ゲートを通過した国内SMBは`ノン美容室` 1件のみ（quality score 100/100、passed=true、hard blockers 0、7日限定非公開URL）。
+- `https://demo.paradigmjp.com/ノン美容室`をPC/モバイル切替、注意事項、スライダー、全ページ、法務ページ、モバイル表示まで実ブラウザ確認。主要11ルートHTTP 200、フォーム送信は停止。
+- 今後は、日本企業/国内所在地、独自HPなし、SMB・意思決定者適合、公式プロフィール素材3点以上、DEMO quality gate合格の全条件を満たす候補だけをTwentyとDEMOへ進める。

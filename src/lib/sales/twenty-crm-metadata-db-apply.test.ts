@@ -10,5 +10,7 @@ describe("normalizeTwentyCompanyViewsViaDatabase", () => {
     expect(source.match(/jsonb_build_object/g)).toHaveLength(2)
     expect(source.match(/'isVisible'/g)).toHaveLength(2)
     expect(source.match(/'position'/g)).toHaveLength(2)
+    expect(source).toContain("OUT_OF_SCOPE_FOREIGN_VALUE")
+    expect(source).toContain("operand = 'IS_NOT'")
   })
 })
