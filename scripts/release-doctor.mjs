@@ -398,6 +398,21 @@ function checkStaticReleaseRules() {
     fail("lead factory must remain fail-closed until explicit operator review and Twenty approval")
   }
 
+  const listLeadSyncMigrationPath = "supabase/migrations/20260715193000_sales_sync_logs_list_lead.sql"
+  const listLeadSyncMigration = fs.existsSync(listLeadSyncMigrationPath)
+    ? fs.readFileSync(listLeadSyncMigrationPath, "utf8")
+    : ""
+  if (
+    listLeadSyncMigration.includes("sales_sync_logs_action_check")
+    && listLeadSyncMigration.includes("'list_lead_sync'")
+    && noLoginDeploy.includes("20260715193000_sales_sync_logs_list_lead.sql")
+    && noLoginDeploy.includes("applySalesSyncLogsListLeadMigration")
+  ) {
+    pass("list-only Twenty sync audit migration is release-wired")
+  } else {
+    fail("list-only Twenty sync audit migration must be release-wired")
+  }
+
   const leadSourcePreflightMigrationPath = "supabase/migrations/20260715113000_lead_source_website_preflight.sql"
   const leadSourcePreflightMigration = fs.existsSync(leadSourcePreflightMigrationPath)
     ? fs.readFileSync(leadSourcePreflightMigrationPath, "utf8")
