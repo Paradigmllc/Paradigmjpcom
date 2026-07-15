@@ -54,7 +54,7 @@ export async function queueReviewedDemoItem(
     company_name: companyName,
     region: item.locale === "ja" ? "jp" : "global",
     report_locale: item.locale,
-    industry: existing?.industry ?? item.industry,
+    industry: existing?.source === "reviewed_demo_manifest" ? item.industry : (existing?.industry ?? item.industry),
     prefecture: existing?.prefecture ?? item.prefecture ?? null,
     pipeline_status: "manual_queue",
     source: "reviewed_demo_manifest",

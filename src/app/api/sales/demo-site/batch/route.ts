@@ -46,7 +46,7 @@ const issueSchema = z.object({
   syncTwenty: z.boolean().default(false),
 })
 const drainSchema = z.object({
-  limit: z.number().int().min(1).max(3).default(3),
+  limit: z.number().int().min(1).max(8).default(8),
   drainId: z.string().uuid().optional(),
   automated: z.boolean().default(false),
   action: z.enum(["drain", "retry_failed"]).default("drain"),
