@@ -18,7 +18,7 @@ const BodySchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("approve"),
-    itemIds: z.array(z.string().uuid()).min(1).max(20),
+    itemIds: z.array(z.string().uuid()).min(1).max(60),
     operatorName: z.string().trim().min(2).max(120),
     note: z.string().trim().min(3).max(500),
   }),

@@ -50,8 +50,8 @@ function item(gatePatch: Record<string, unknown>): ReviewItemRow {
 }
 
 describe("high-confidence Twenty promotion selection", () => {
-  it("uses one complete company write per Twenty rolling rate window", () => {
-    expect(HIGH_CONFIDENCE_TWENTY_WRITE_POLICY).toEqual({ batchSize: 1, windowMs: 65_000 })
+  it("uses the live Twenty 60-record batch limit below the request-rate ceiling", () => {
+    expect(HIGH_CONFIDENCE_TWENTY_WRITE_POLICY).toEqual({ batchSize: 60, windowMs: 5_000 })
   })
 
   it("accepts objective Tier 3 SMB evidence", () => {

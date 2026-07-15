@@ -1,14 +1,15 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { EVIDENCE_FIRST_SOURCE } from "./lead-candidate-verification"
-import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
+import { prepareFormQualifiedCandidatesBatch } from "./lead-candidate-promotion-batch"
 import { parsePromotionSnapshot, promotionEligibilityReason, type ReviewItemRow } from "./lead-candidate-review-gate"
 import { refreshLeadCandidateRunCounts } from "./lead-candidate-runs"
 import { requireTwentyAuth } from "./twenty-health"
+import { syncListLeadsToTwentyBatch } from "./twenty-sync-list-lead-batch"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
-const MAX_REVIEW_ITEMS = 20
+const MAX_REVIEW_ITEMS = 60
 
 export function pilotReviewEvidence(input: {
   formsQualifiedCount: number
@@ -199,49 +200,84 @@ export async function approveLeadCandidateItems(input: {
     eligible.splice(0, eligible.length, ...eligible.filter((item) => claimedIds.has(item.id)))
   }
 
-  const results = [] as Array<{ id: string; domain: string; ok: boolean; error?: string }>
-  for (const item of eligible) {
+  const snapshots = eligible.flatMap((item) => {
     const snapshot = parsePromotionSnapshot(item)
-    if (!snapshot) continue
+    return snapshot ? [{ item, snapshot }] : []
+  })
+  let preparationError: string | null = null
+  let prepared: Awaited<ReturnType<typeof prepareFormQualifiedCandidatesBatch>> = []
+  try {
+    prepared = await prepareFormQualifiedCandidatesBatch(snapshots.map(({ item, snapshot }) => ({
+      itemId: item.id,
+      runId: input.runId,
+      countryCode: snapshot.countryCode,
+      candidateId: item.candidate_id,
+      companyName: snapshot.qualityGate.identity.canonicalName ?? snapshot.sourceRecord.company_name,
+      domain: item.domain,
+      sourcePageUrl: snapshot.sourceRecord.source_page_url,
+      qualityGate: snapshot.qualityGate,
+      score: snapshot.score,
+      detections: snapshot.detections,
+      form: snapshot.form,
+      source: EVIDENCE_FIRST_SOURCE,
+    })))
+  } catch (error) {
+    preparationError = error instanceof Error ? error.message : "Candidate batch preparation failed"
+    console.error("[lead-candidate-review] batch preparation failed:", input.runId, error)
+  }
+  const preparedByItem = new Map(prepared.map((item) => [item.itemId, item]))
+  let synced: Awaited<ReturnType<typeof syncListLeadsToTwentyBatch>> = []
+  if (prepared.length > 0) {
     try {
-      const promoted = await promoteFormQualifiedCandidate({
-        runId: input.runId,
-        countryCode: snapshot.countryCode,
-        syncTwenty: true,
-        candidateId: item.candidate_id,
-        companyName: snapshot.qualityGate.identity.canonicalName ?? snapshot.sourceRecord.company_name,
-        domain: item.domain,
-        sourcePageUrl: snapshot.sourceRecord.source_page_url,
-        qualityGate: snapshot.qualityGate,
-        score: snapshot.score,
-        detections: snapshot.detections,
-        form: snapshot.form,
-        source: EVIDENCE_FIRST_SOURCE,
-      })
-      if (!promoted.promoted || !promoted.twentySynced) throw new Error(promoted.error ?? "Twenty promotion failed")
-      const saved = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({
-        status: "promoted",
-        review_status: "approved",
-        company_id: promoted.companyId,
-        twenty_synced: true,
-        twenty_company_id: promoted.twentyCompanyId,
-        promotion_attempts: Math.min(item.promotion_attempts + 1, 20),
-        promotion_error: null,
-        processed_at: new Date().toISOString(),
-      }).eq("id", item.id).eq("review_status", "promoting")
-      if (saved.error) throw new Error(saved.error.message)
-      results.push({ id: item.id, domain: item.domain, ok: true })
+      synced = await syncListLeadsToTwentyBatch(prepared.map((item) => item.companyId))
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Candidate promotion failed"
-      console.error("[lead-candidate-review] promotion failed:", item.domain, error)
-      const failed = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({
-        review_status: "promotion_failed",
-        promotion_attempts: Math.min(item.promotion_attempts + 1, 20),
-        promotion_error: message,
-      }).eq("id", item.id).eq("review_status", "promoting")
-      if (failed.error) console.error("[lead-candidate-review] failure persistence failed:", item.domain, failed.error.message)
-      results.push({ id: item.id, domain: item.domain, ok: false, error: message })
+      const message = error instanceof Error ? error.message : "Twenty batch synchronization failed"
+      console.error("[lead-candidate-review] Twenty batch synchronization failed:", input.runId, error)
+      synced = prepared.map((item) => ({ companyId: item.companyId, ok: false, error: message }))
     }
+  }
+  const syncByCompany = new Map(synced.map((result) => [result.companyId, result]))
+  const results = eligible.map((item) => {
+    const promotion = preparedByItem.get(item.id)
+    const sync = promotion ? syncByCompany.get(promotion.companyId) : null
+    if (promotion && sync?.ok && sync.twentyCompanyId) {
+      return {
+        id: item.id,
+        candidateId: item.candidate_id,
+        companyId: promotion.companyId,
+        twentyCompanyId: sync.twentyCompanyId,
+        domain: item.domain,
+        ok: true,
+        promotionAttempts: Math.min(item.promotion_attempts + 1, 20),
+      }
+    }
+    const error = sync?.error ?? preparationError ?? "Candidate preparation or Twenty batch mapping failed"
+    console.error("[lead-candidate-review] batch promotion failed:", item.domain, error)
+    return {
+      id: item.id,
+      candidateId: item.candidate_id,
+      companyId: promotion?.companyId ?? null,
+      twentyCompanyId: sync?.twentyCompanyId ?? null,
+      domain: item.domain,
+      ok: false,
+      error,
+      promotionAttempts: Math.min(item.promotion_attempts + 1, 20),
+    }
+  })
+  if (results.length > 0) {
+    const finalized = await sb.rpc("sales_finalize_lead_candidate_promotions", {
+      p_run_id: input.runId,
+      p_rows: results.map((result) => ({
+        item_id: result.id,
+        candidate_id: result.candidateId,
+        company_id: result.companyId,
+        twenty_company_id: result.twentyCompanyId,
+        ok: result.ok,
+        error: result.error ?? null,
+        promotion_attempts: result.promotionAttempts,
+      })),
+    })
+    if (finalized.error) throw new Error(`Lead candidate batch finalization failed: ${finalized.error.message}`)
   }
 
   await insertAuditEvents(results.map((result) => ({

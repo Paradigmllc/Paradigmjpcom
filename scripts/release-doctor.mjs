@@ -381,8 +381,9 @@ function checkStaticReleaseRules() {
     && factoryRoute.includes("START VERIFIED BATCH")
     && !verificationService.includes("promoteFormQualifiedCandidate")
     && verificationService.includes('eligibleByScore ? "awaiting_review"')
-    && reviewService.includes("promoteFormQualifiedCandidate")
-    && reviewService.includes("MAX_REVIEW_ITEMS = 20")
+    && reviewService.includes("prepareFormQualifiedCandidatesBatch")
+    && reviewService.includes("syncListLeadsToTwentyBatch")
+    && reviewService.includes("MAX_REVIEW_ITEMS = 60")
     && candidateRunner.includes("MAX_CONCURRENT_FALLBACK_RUNS = 2")
     && candidateRunner.includes("pendingFallbackRuns")
     && reviewRoute.includes("approve_pilot")
@@ -409,6 +410,8 @@ function checkStaticReleaseRules() {
     aiLeadReview.includes('"offer_fit"')
     && aiLeadReview.includes("japan_entry_offer_fit_missing")
     && aiLeadReview.includes("deepseek_v4_pro_product_fit")
+    && aiLeadReview.includes('["smb_evidence_missing", "japan_entry_offer_fit_missing"]')
+    && aiLeadReview.includes("offerFit: gate.offerFit.passed ? gate.offerFit")
     && aiLeadReview.includes("MIN_SMB_CONFIDENCE = 0.96")
     && aiLeadReview.includes("MIN_OFFICIAL_PRODUCT_CONFIDENCE = 0.90")
     && productFitRetryMigration.includes("source_config.trust_tier >= 3")
@@ -440,6 +443,28 @@ function checkStaticReleaseRules() {
     pass("list-only Twenty sync audit migration is release-wired")
   } else {
     fail("list-only Twenty sync audit migration must be release-wired")
+  }
+
+  const listLeadBatchMigrationPath = "supabase/migrations/20260715234500_sales_list_lead_batch_sync.sql"
+  const listLeadBatchMigration = fs.existsSync(listLeadBatchMigrationPath)
+    ? fs.readFileSync(listLeadBatchMigrationPath, "utf8")
+    : ""
+  const listLeadBatchSync = fs.existsSync("src/lib/sales/twenty-sync-list-lead-batch.ts")
+    ? fs.readFileSync("src/lib/sales/twenty-sync-list-lead-batch.ts", "utf8")
+    : ""
+  if (
+    listLeadBatchMigration.includes("sales_reconcile_list_lead_twenty_batch")
+    && listLeadBatchMigration.includes("sales_finalize_lead_candidate_promotions")
+    && listLeadBatchMigration.includes("jsonb_array_length(p_rows) not between 1 and 60")
+    && listLeadBatchMigration.includes("revoke all on function")
+    && listLeadBatchSync.includes('"/rest/batch/companies?upsert=true&depth=0"')
+    && listLeadBatchSync.includes("listLeadTwentyReadbackIssues")
+    && noLoginDeploy.includes("20260715234500_sales_list_lead_batch_sync.sql")
+    && noLoginDeploy.includes("applySalesListLeadBatchSyncMigration")
+  ) {
+    pass("list-only Twenty sync uses bounded batch upsert, direct read-back and DB finalization")
+  } else {
+    fail("list-only Twenty batch sync must stay bounded, read-back verified and release-wired")
   }
 
   const leadSourcePreflightMigrationPath = "supabase/migrations/20260715113000_lead_source_website_preflight.sql"
