@@ -66,6 +66,33 @@ describe("public English Japan Entry copy", () => {
     expect(jaMessages.home.trustPanel.cards).toHaveLength(4)
   })
 
+  it("states Paradigm's Japan-based professional domain across public English surfaces", () => {
+    const professionalDomain = /Japan-based .*partner|Japan-based .*professional/i
+    const supportedSectors = /e-commerce, SaaS, and Web3\.0/i
+    const seed = readFileSync(
+      join(process.cwd(), "src/app/api/admin/seed-all-content/seed-data.ts"),
+      "utf8",
+    )
+    const homepageBlocks = readFileSync(
+      join(process.cwd(), "src/app/api/admin/seed-all-content/homepage-en-blocks.ts"),
+      "utf8",
+    )
+
+    expect(messages.aboutPage.heroDesc).toMatch(supportedSectors)
+    expect(messages.aboutPage.missionDesc).toMatch(professionalDomain)
+    expect(messages.home.heroSubheadline).toMatch(supportedSectors)
+    expect(messages.footer.companyTagline).toMatch(professionalDomain)
+    expect(messages.worksPage.professionalUseCases).toHaveLength(3)
+    expect(messages.worksPage.professionalUseCases.map((item) => item.sector)).toEqual([
+      "E-COMMERCE",
+      "SAAS",
+      "WEB3.0",
+    ])
+    expect(JSON.stringify(messages)).not.toContain("SNS")
+    expect(seed).toMatch(supportedSectors)
+    expect(homepageBlocks).toMatch(/WHO WE ARE/)
+  })
+
   it("adds human context without presenting stock imagery as proof", () => {
     expect(messages.home.visualContext.slides).toHaveLength(3)
     expect(jaMessages.home.visualContext.slides).toHaveLength(3)

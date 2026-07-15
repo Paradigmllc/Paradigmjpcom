@@ -313,7 +313,7 @@
     "heroBadge": "Journal",
     "heroTitle": "Make the next Japan decision with less uncertainty.",
     "heroHighlight": "less uncertainty",
-    "heroDesc": "Practical notes for overseas SMB decision-makers on Japan-entry scope, localization, buyer trust, launch readiness, and operating choices.",
+    "heroDesc": "Paradigm LLC shares practical notes from its work as a Japan-based market-entry and digital operations partner for overseas e-commerce, SaaS, and Web3.0 companies. Read guidance on localization, buyer trust, launch readiness, and operating choices.",
     "emptyMessage": "The next Japan-entry briefing is being prepared.",
     "emptyCta": "Apply for Japan Entry — $12K",
     "readTimeFormat": "{readTime} read"
@@ -324,7 +324,7 @@
     "heroBadge": "Delivery evidence",
     "heroTitle": "Evidence you can inspect before you apply.",
     "heroHighlight": "inspect",
-    "heroDesc": "We do not publish inflated anonymous results. These are concrete capabilities demonstrated by this site and its operating workflow.",
+    "heroDesc": "Paradigm LLC is a Japan-based professional partner for overseas e-commerce, SaaS, and Web3.0 companies. We do not publish inflated anonymous results; these are concrete delivery capabilities demonstrated by this site and its operating workflow.",
     "emptyMessage": "Delivery evidence is being prepared.",
     "emptyCta": "Apply for Japan Entry — $12K",
     "ctaEyebrow": "Your launch",
@@ -437,6 +437,53 @@
         "whatWeShow": "Fit review, scope confirmation, source/access checklist, approval gates, support escalation, measurement baseline, and written handover.",
         "acceptance": "A second operator can reproduce the inquiry response, ownership decision, escalation route, and launch checklist.",
         "notClaimed": "The 14-business-day figure is a gated target, not a promise that client or third-party delays disappear."
+      }
+    ],
+    "professionalUseCasesEyebrow": "PROFESSIONAL USE CASES",
+    "professionalUseCasesTitle": "How different businesses become Japan-ready.",
+    "professionalUseCasesDesc": "These are representative delivery patterns drawn from the work Paradigm performs for overseas companies. They show the decisions, build sequence, handover, and professional boundaries—not invented client outcomes.",
+    "professionalUseCases": [
+      {
+        "sector": "E-COMMERCE",
+        "title": "Turn an international store into a Japanese buyer path.",
+        "scenario": "For an online retailer with existing demand or a proven product, we align the Japanese storefront, trust information, inquiry or payment route, and post-purchase support.",
+        "accent": "cyan",
+        "stages": [
+          { "label": "01 · Diagnose", "detail": "Review catalogue, delivery promise, pricing, support load, and current Japanese traffic signals." },
+          { "label": "02 · Localize", "detail": "Rebuild the LP / HP path, product context, trust pages, metadata, and buyer-facing calls to action." },
+          { "label": "03 · Route", "detail": "Connect eligible payment or inquiry paths and document fulfilment, escalation, and ownership." },
+          { "label": "04 · Operate", "detail": "Measure the first buyer signals, resolve friction, and hand over a repeatable operating checklist." }
+        ],
+        "deliverables": ["Japanese buyer-path architecture", "Trust, policy, and fulfilment checklist", "Eligible payment or inquiry routing", "Measurement baseline and handover"],
+        "boundary": "No promise of sales, conversion, ranking, or payment-provider approval."
+      },
+      {
+        "sector": "SAAS",
+        "title": "Give a global product a credible Japan-facing operating base.",
+        "scenario": "For a SaaS company entering with a self-serve or sales-assisted motion, we make the product story, proof, support route, and commercial handoff clear to Japanese buyers.",
+        "accent": "violet",
+        "stages": [
+          { "label": "01 · Position", "detail": "Map the Japanese ICP, use cases, pricing language, proof points, and decision-maker questions." },
+          { "label": "02 · Explain", "detail": "Create localized product, security, onboarding, and comparison content without overstating certifications or outcomes." },
+          { "label": "03 · Support", "detail": "Set up bilingual knowledge, first-line response rules, escalation ownership, and qualified inquiry routing." },
+          { "label": "04 · Improve", "detail": "Review inquiry quality, activation signals, and unanswered questions to prioritize the next iteration." }
+        ],
+        "deliverables": ["Localized SaaS positioning and information architecture", "Japanese trust and onboarding content", "Bilingual support and escalation map", "Analytics baseline and improvement queue"],
+        "boundary": "No guarantee of adoption, activation, enterprise procurement, or regulatory approval."
+      },
+      {
+        "sector": "WEB3.0",
+        "title": "Make a Web3.0 offer understandable before it meets Japan.",
+        "scenario": "For a Web3.0 product, protocol, or digital-asset service, we translate complex mechanics into a clear Japanese buyer path while separating implementation from specialist legal and financial advice.",
+        "accent": "amber",
+        "stages": [
+          { "label": "01 · Classify", "detail": "Document the product, user journey, token or asset mechanics, jurisdictions, and open specialist questions." },
+          { "label": "02 · Clarify", "detail": "Build plain-language Japanese explanations, risk disclosures, FAQs, and a trust-first information hierarchy." },
+          { "label": "03 · Screen", "detail": "Coordinate applicable disclosure and provider questions for qualified review; record what remains unresolved." },
+          { "label": "04 · Handover", "detail": "Deliver the approved route, content ownership, support escalation, and a change log for future updates." }
+        ],
+        "deliverables": ["Japanese product and risk-information architecture", "Disclosure and specialist-review question set", "Trust, support, and escalation workflow", "Versioned handover and operating boundaries"],
+        "boundary": "No legal, tax, investment, licensing, exchange, or token-value advice; no guarantee of listing or user growth."
       }
     ]
   },
@@ -687,7 +734,7 @@
     "fixedPlanDescription": "A fixed-scope Japan launch for fast-decision SMBs, covering the buyer-facing surface, public market evidence, channel setup, regulatory applicability screening, launch operations, and handover.",
     "fixedPlanFeatures": [
       "LP / HP localization and Japanese buyer-path rebuild",
-      "SNS setup for up to two priority channels",
+      "Social Media setup for up to two priority channels",
       "Public-signal market report across up to three markets, with one priority deep dive",
       "Japan trust, commercial disclosure, and regulatory applicability screening",
       "Eligible inquiry or payment-routing implementation",
@@ -723,7 +770,7 @@
         ]
       },
       {
-        "title": "SNS channel setup",
+        "title": "Social Media channel setup",
         "description": "Prepare the first Japanese-facing social presence without pretending that setup equals ongoing audience growth.",
         "deliverables": [
           "Up to two priority channel profiles and bios",
@@ -838,7 +885,7 @@
         "title": "Included in the agreed launch scope",
         "items": [
           "LP / HP localization and Japanese buyer-path implementation",
-          "SNS setup for up to two priority channels",
+          "Social Media setup for up to two priority channels",
           "Public-signal market report and priority-market deep dive",
           "Japan's Act on Specified Commercial Transactions and relevant regulatory applicability screening",
           "Discovery, analytics, support, launch, and handover setup",
@@ -849,7 +896,7 @@
         "title": "Separate or out of scope",
         "items": [
           "Formal legal, tax, banking, licensing, or incorporation advice",
-          "Ongoing SNS posting, community management, influencer work, or paid media",
+          "Ongoing Social Media posting, community management, influencer work, or paid media",
           "Private traffic, revenue, or conversion data that the client has not provided",
           "Advertising spend, inventory, fulfilment, and logistics",
           "Payment-provider, software, hosting, and other third-party fees",
@@ -882,7 +929,7 @@
         "a": "No. Provider fees, software, hosting, advertising, payment processing, legal or tax advice, licences, inventory, and logistics remain separate unless the signed scope explicitly says otherwise."
       },
       {
-        "q": "Does the setup include SNS?",
+        "q": "Does the setup include Social Media?",
         "a": "Yes. The fixed setup includes profile, bio, visual, link, CTA, and starter-content setup for up to two priority channels. Ongoing posting, community management, influencer work, and paid media are separate."
       },
       {
@@ -913,7 +960,7 @@
     "heroBadge": "Japan Entry application",
     "heroTitle": "Bring a decision, not a procurement maze.",
     "heroHighlight": "a decision",
-    "heroDesc": "$12,000 one-time setup · standard monthly service included for the first six months · then $995/month. We review fit before confirming an engagement.",
+    "heroDesc": "Paradigm LLC is a Japan-based market-entry and digital operations partner with experience supporting overseas e-commerce, SaaS, and Web3.0 companies. The $12,000 one-time setup includes the agreed launch scope; standard monthly service is included for the first six months, then $995/month. We review fit before confirming an engagement.",
     "formEyebrow": "Application",
     "formTitle": "Tell us what must launch in Japan",
     "consultLabel": "Before you apply",
@@ -927,7 +974,7 @@
     "contactItems": [
       "Email: info@paradigmjp.com",
       "Hours: weekdays 10:00-18:00 JST",
-      "Applications are reviewed by the Paradigm operator team"
+      "Applications are reviewed by the Paradigm Japan-entry operator team"
     ],
     "hurryLabel": "Need the commercial details first?",
     "hurryDesc": "Review the fixed scope, exclusions, support period, and cancellation outline before submitting.",
@@ -956,7 +1003,7 @@
     "heroBadge": "FAQ",
     "heroTitle": "Answers to common questions.",
     "heroHighlight": "common questions",
-    "heroDesc": "Clear answers about the fixed $12,000 package, payment rails, delivery guarantee, eligibility, scope, and ongoing support.",
+    "heroDesc": "Clear answers about Paradigm LLC, a Japan-based professional partner for overseas e-commerce, SaaS, and Web3.0 companies, plus the fixed $12,000 package, payment rails, delivery guarantee, eligibility, scope, and ongoing support.",
     "emptyMessage": "No FAQs are published yet.",
     "emptyCta": "Apply for Japan Entry — $12K",
     "ctaEyebrow": "Ready to decide",
@@ -1043,17 +1090,17 @@
     "metaTitle": "About Paradigm's Japan Entry Delivery",
     "metaDescription": "How Paradigm delivers a fixed $12,000 Japan Entry package for fast-decision SMBs.",
     "heroBadge": "About",
-    "heroTitle": "A focused Japan-entry operator for decisive SMBs.",
+    "heroTitle": "A Japan-based professional partner for decisive Japan entry.",
     "heroHighlight": "decisive SMBs",
-    "heroDesc": "One accountable package combines the localized revenue site, launch coordination, discovery foundation, support setup, and handover.",
+    "heroDesc": "Paradigm LLC has supported overseas e-commerce, SaaS, and Web3.0 companies entering Japan or establishing a Japan-facing operating base. One accountable package combines the localized revenue site, launch coordination, discovery foundation, support setup, and handover.",
     "missionEyebrow": "Operating principle",
     "missionTitle": "Reduce the distance between decision and Japan launch.",
-        "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, a recorded Start Date, and a 14-business-day delivery guarantee rather than an open-ended agency engagement.",
+    "missionDesc": "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies with the practical work required to enter Japan or operate a Japan-facing base. We use a written fixed scope, a recorded Start Date, and a 14-business-day delivery guarantee rather than an open-ended agency engagement.",
     "representativeEyebrow": "A note from the operator",
     "representativeTitle": "Japan entry should end with a decision you can operate.",
-    "representativeMessage": "We built Paradigm around a simple problem: a capable overseas company can spend months coordinating market research, translation, agencies, and local setup without ever reaching a buyer. Our job is to make the first Japan path concrete, inspectable, and owned. That means stating what is included, showing what is still unknown, and handing over something your team can actually run. We do not replace legal, tax, banking, or licensed advice. We do take responsibility for making the commercial and implementation work visible enough for a fast decision.",
+    "representativeMessage": "We built Paradigm around a simple problem: a capable overseas e-commerce, SaaS, or Web3.0 company can spend months coordinating market research, translation, agencies, and local setup without ever reaching a Japanese buyer. Our team has supported companies through that gap by making the first Japan path concrete, inspectable, and owned. That means stating what is included, showing what is still unknown, and handing over something your team can actually run. We do not replace legal, tax, banking, or licensed advice. We do take responsibility for making the commercial and implementation work visible enough for a fast decision.",
     "representativePrinciples": [
-      "One accountable launch path instead of disconnected workstreams",
+      "Practical experience across e-commerce, SaaS, and Web3.0 market entry",
       "Public evidence and explicit unknowns instead of invented outcomes",
       "A documented handover so the client can decide what happens next"
     ],
@@ -1097,7 +1144,7 @@
       }
     ],
     "companyEyebrow": "Company",
-    "companyTitle": "Company information",
+    "companyTitle": "Paradigm LLC — Japan market-entry professionals",
     "companyInfo": [
       [
         "Company",
@@ -1124,7 +1171,7 @@
     "heroBadge": "One package · coordinated modules",
     "heroTitle": "Everything points to one Japan launch.",
     "heroHighlight": "one Japan launch",
-    "heroDesc": "The pages below explain individual delivery modules. They are not separate low-cost offers on the English site; they support the fixed Japan Entry package.",
+    "heroDesc": "Paradigm LLC has supported overseas e-commerce, SaaS, and Web3.0 companies with practical Japan-entry delivery. The pages below explain the individual modules; they are not separate low-cost offers on the English site, but the professional workstreams inside the fixed Japan Entry package.",
     "emptyMessage": "Package module details are being prepared.",
     "emptyCta": "Apply for Japan Entry — $12K",
     "learnMore": "See module details",
@@ -1161,7 +1208,7 @@
     ],
     "operatingEyebrow": "How the modules connect",
     "operatingTitle": "The deliverable is a working path, not five isolated tasks.",
-    "operatingDesc": "Each module produces a decision or input for the next one. That connection is what makes a fixed launch scope useful for a small team with limited time.",
+    "operatingDesc": "Each module produces a decision or input for the next one. Paradigm's Japan-based team connects those workstreams so a small overseas company can move with professional ownership instead of coordinating disconnected vendors.",
     "operatingSteps": [
       {
         "title": "01 · Frame the offer",
@@ -1239,7 +1286,7 @@
       },
       {
         "number": "03",
-        "title": "SNS launch setup",
+        "title": "Social Media launch setup",
         "summary": "Prepare up to two priority channels so the Japanese presence is coherent on launch day.",
         "deliverables": [
           "Profile, bio, category, link, CTA, and ownership setup",
@@ -1300,7 +1347,7 @@
       "steps": [
         { "label": "Start Date", "title": "Inputs and scope locked", "body": "We confirm the written scope, dependencies, access, materials, payment, and approver." },
         { "label": "Days 1–3", "title": "Frame and localize", "body": "Offer, buyer path, trust requirements, market signals, and content direction are aligned." },
-        { "label": "Days 4–9", "title": "Build the route", "body": "The agreed LP/HP, inquiry or payment path, SNS setup, support rules, and measurement baseline are implemented." },
+        { "label": "Days 4–9", "title": "Build the route", "body": "The agreed LP/HP, inquiry or payment path, Social Media setup, support rules, and measurement baseline are implemented." },
         { "label": "Days 10–13", "title": "Review and verify", "body": "We run responsive, content, link, form, tracking, and handover checks; one approver consolidates revisions." },
         { "label": "Day 14", "title": "Launch and hand over", "body": "The agreed route goes live with owners, open dependencies, operating notes, and the next decision recorded." }
       ]
@@ -1311,7 +1358,7 @@
       "desc": "The first six months include the standard monthly operation at no additional monthly charge. This is an operating layer around the agreed launch—not unlimited agency capacity.",
       "items": [
         { "title": "Support and triage", "body": "Customer questions, issue triage, and escalation within the agreed support route." },
-        { "title": "SNS / SEO updates", "body": "Planned updates to the agreed channels and search-ready content surface within the written scope." },
+        { "title": "Social Media / SEO updates", "body": "Planned updates to the agreed channels and search-ready content surface within the written scope." },
         { "title": "Marketing materials", "body": "Agreed launch assets and selected creative updates, including video only when explicitly scoped." },
         { "title": "Monthly report", "body": "Observed activity, completed work, open dependencies, and the next decision—not invented revenue attribution." },
         { "title": "Visible workspace", "body": "Notion by default or Trello by request; standard included requests are acknowledged, scoped, and started within 48 business hours." },
@@ -1328,7 +1375,7 @@
         "Formal legal, tax, immigration, medical, financial, or regulatory advice",
         "Unlimited pages, languages, products, markets, revisions, or integrations",
         "Paid media budget, creator or influencer fees, payment-provider fees, or local registrations",
-        "Unbounded daily SNS posting, community management, sales calls, or emergency response"
+        "Unbounded daily Social Media posting, community management, sales calls, or emergency response"
       ]
     },
     "commercial": {
@@ -1376,7 +1423,7 @@
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "One fixed-scope Japan Entry package for fast-decision SMBs: $12,000 setup, six months at $0, then $995/month.",
+    "companyTagline": "Paradigm LLC is a Japan-based market-entry and digital operations partner for overseas e-commerce, SaaS, and Web3.0 companies. Fixed Japan Entry scope: $12,000 setup, six months at $0, then $995/month.",
     "servicesHeading": "Services",
     "companyHeading": "Company",
     "contactHeading": "Contact",
@@ -1394,7 +1441,7 @@
     "studioLocation": "Japan · Paradigm LLC",
     "socialGithub": "GitHub",
     "socialEmail": "Email",
-    "companyHeadline": "Enter Japan with one accountable launch partner.",
+    "companyHeadline": "A professional Japan launch partner for e-commerce, SaaS, and Web3.0.",
     "representativeLabel": "Representative",
     "registrationLabel": "Registration"
   },
@@ -1403,7 +1450,7 @@
     "heroTitle": "Launch in Japan with one accountable package",
     "heroSubtitle": "$12,000 one-time setup · monthly service included for six months · then $995/month.",
     "heroSuffix": " for fast-decision SMBs.",
-    "heroSubheadline": "Localized revenue site, trust and compliance coordination, discovery foundation, support setup, and handover in one agreed scope.",
+    "heroSubheadline": "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies with localization, trust and compliance coordination, discovery, Japanese support, and handover in one agreed scope.",
     "heroTypingWords": [
       "Localized launch",
       "Trust coordination",
@@ -1412,7 +1459,7 @@
     ],
     "heroBookConsult": "Apply — $12K",
     "heroSeeServices": "Review package scope",
-    "trusted": "Public commercial facts",
+    "trusted": "Japan-based professional partner · public commercial facts",
     "stats": {
       "support": {
         "suffix": " langs",
@@ -1533,12 +1580,12 @@
         "desc": "PDCA + KPI optimisation as your partner"
       }
     },
-    "testimonialsBody": "We do not publish anonymous outcome claims as proof. Review the inspectable site, application workflow, scope boundaries, delivery process, and company details, then decide whether the package fits.",
-    "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs.",
+    "testimonialsBody": "Paradigm has supported overseas e-commerce, SaaS, and Web3.0 companies with practical Japan-entry delivery. We do not publish anonymous outcome claims as proof; review the inspectable site, application workflow, scope boundaries, delivery process, and company details, then decide whether the package fits.",
+    "heroBrandStory": "Paradigm LLC is a Japan-based professional partner helping overseas e-commerce, SaaS, and Web3.0 companies enter Japan or establish a Japan-facing operating base.",
     "visualProof": {
       "eyebrow": "Visual proof",
       "title": "See the system before you buy the service.",
-      "desc": "These are product surfaces and operating artifacts—not stock photos or anonymous case-study claims.",
+      "desc": "These are product surfaces and operating artifacts from a Japan-based professional delivery practice—not stock photos or anonymous case-study claims.",
       "utilityCta": "Run the free Signal Check",
       "cards": [
         {
@@ -1587,7 +1634,7 @@
     "journey": {
       "eyebrow": "The decision path",
       "title": "From first question to a Japan channel your team can run.",
-      "description": "The path is visible before you apply: ask a question, share the right context, confirm fit, approve one written scope, then operate and scale with evidence.",
+      "description": "The path is visible before you apply: work with a Japan-based professional partner, share the right context, confirm fit, approve one written scope, then operate and scale with evidence.",
       "steps": [
         {
           "title": "Contact",
@@ -1679,7 +1726,7 @@
     "title": "Paradigm Assistant",
     "status": "AI assistant available · human-reviewed handoff",
     "openLabel": "Ask our AI assistant",
-    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link\n• The 14-business-day delivery guarantee and full-refund condition\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
+    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nParadigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies entering Japan or establishing a Japan-facing operating base.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link\n• The 14-business-day delivery guarantee and full-refund condition\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
     "placeholder": "Ask us anything...",
     "errorReply": "Sorry — something went wrong generating a reply.",
     "errorNetwork": "Sorry — a connection error occurred.\n\n📧 info@paradigmjp.com",
