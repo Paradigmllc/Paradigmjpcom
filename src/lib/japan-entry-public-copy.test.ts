@@ -88,6 +88,7 @@ describe("public English Japan Entry copy", () => {
       "SAAS",
       "WEB3.0",
     ])
+    expect(JSON.stringify(messages)).not.toContain("SNS")
     expect(seed).toMatch(supportedSectors)
     expect(homepageBlocks).toMatch(/WHO WE ARE/)
   })
