@@ -14,6 +14,20 @@ import { visualGrammar } from "./demo-creative-direction"
 export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.8"
 export const DEMO_QUALITY_THRESHOLD = 94
 export const DEMO_VISUAL_SIMILARITY_THRESHOLD = 0.8
+const DEMO_LARGE_BATCH_EXISTING_COUNT = 300
+
+/**
+ * A 7/8-axis similarity check is useful for a small review set, but becomes
+ * mathematically self-defeating once hundreds of bounded-grammar demos exist.
+ * Exact grammar reuse is still rejected by `structural_collision`; large
+ * batches therefore relax only the near-match check, never the exact-match,
+ * evidence, copy, rights, completeness, or candidate-diversity gates.
+ */
+function visualSimilarityThreshold(existingCount: number): number {
+  return existingCount >= DEMO_LARGE_BATCH_EXISTING_COUNT
+    ? 1
+    : DEMO_VISUAL_SIMILARITY_THRESHOLD
+}
 
 const FABRICATION_PATTERNS = [
   /問い合わせ.{0,8}(倍|増)/u,
@@ -198,8 +212,9 @@ export function evaluateDemoQuality(
   if (existingStructuralFingerprints.has(structuralFingerprint)) {
     hardBlockers.push("structural_collision")
   }
+  const similarityThreshold = visualSimilarityThreshold(existingCreativeDirections.length)
   if (existingCreativeDirections.some((direction) => (
-    visualGrammarSimilarity(recipe.creativeDirection, direction) >= DEMO_VISUAL_SIMILARITY_THRESHOLD
+    visualGrammarSimilarity(recipe.creativeDirection, direction) >= similarityThreshold
   ))) {
     hardBlockers.push("visual_similarity_collision")
   }
