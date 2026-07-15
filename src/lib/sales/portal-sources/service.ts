@@ -85,10 +85,31 @@ function portalSnapshot(meta: Record<string, unknown>): PortalCandidateExtractio
   return { ...candidate, smbFit, status }
 }
 
+/**
+ * Proposal-only tier: enough grounded portal evidence to generate a private
+ * preview, while keeping owner/decision-maker confirmation as a hard stop for
+ * any real outreach or public publication.
+ */
+export function isPortalPrivateProposalEligible(snapshot: PortalCandidateExtraction): boolean {
+  const websiteUrl = typeof snapshot.websiteUrl === "string" ? snapshot.websiteUrl.trim() : ""
+  const enterpriseSignals = Array.isArray(snapshot.smbFit?.enterpriseSignals) ? snapshot.smbFit.enterpriseSignals : []
+  const address = typeof snapshot.address === "string" ? snapshot.address.trim() : ""
+  const description = typeof snapshot.description === "string" ? snapshot.description.trim() : ""
+  return snapshot.status === "decision_fit_unverified"
+    && !websiteUrl
+    && enterpriseSignals.length === 0
+    && Boolean(address)
+    && description.length >= 80
+    && Array.isArray(snapshot.images)
+    && snapshot.images.length >= 3
+}
+
 export function buildPortalDemoManifest(candidate: CandidateListItem, assets: DemoReviewedAsset[]): DemoSourceManifest {
   const snapshot = portalSnapshot(candidate.meta)
   if (!snapshot) throw new Error("ポータル取得スナップショットがありません")
-  if (snapshot.status !== "ready_for_review") throw new Error("独自HP・大企業シグナル・意思決定者情報・素材のいずれかが基準未達です")
+  if (snapshot.status !== "ready_for_review" && !isPortalPrivateProposalEligible(snapshot)) {
+    throw new Error("独自HP・大企業シグナル・掲載情報量・意思決定者確認のいずれかが基準未達です")
+  }
   const allowedImages = new Set(snapshot.images.map((image) => image.url))
   if (assets.some((asset) => !allowedImages.has(asset.sourceUrl))) throw new Error("取得スナップショットにない素材が含まれています")
   const sourceId = `portal-${snapshot.source}`

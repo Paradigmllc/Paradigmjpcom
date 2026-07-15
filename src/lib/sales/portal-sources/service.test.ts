@@ -80,6 +80,22 @@ describe("portal candidate review manifest", () => {
     expect(() => buildPortalDemoManifest(candidate("has_website"), assets())).toThrow("独自HP・大企業シグナル")
   })
 
+  it("allows a data-rich, no-website candidate only in the private proposal tier", () => {
+    const pending = candidate()
+    const raw = pending.meta.raw as Record<string, unknown>
+    const snapshot = raw.portal_snapshot as Record<string, unknown>
+    snapshot.status = "decision_fit_unverified"
+    snapshot.smbFit = {
+      eligible: false,
+      score: 65,
+      decisionSignals: [],
+      enterpriseSignals: [],
+      reasons: ["代表者確認待ち"],
+    }
+    const manifest = buildPortalDemoManifest(pending, assets())
+    expect(manifest.assets.every((asset) => asset.useBasis === "private_proposal")).toBe(true)
+  })
+
   it("re-evaluates legacy snapshots with the current decision-maker gate", () => {
     const legacy = candidate()
     const raw = legacy.meta.raw as Record<string, unknown>

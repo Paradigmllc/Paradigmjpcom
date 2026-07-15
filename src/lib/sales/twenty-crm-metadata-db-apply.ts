@@ -9,6 +9,9 @@ function env(name: string): string | null {
 
 const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト", "Japan Entry 候補"]
 const TWENTY_COMPANY_LIST_VIEW_NAME = "営業リスト"
+const JAPAN_ONLY_VIEW_FILTER_FIELD = "paradigmCountryName"
+const JAPAN_ONLY_VIEW_FILTER_VALUE = "日本"
+const OUT_OF_SCOPE_FOREIGN_VALUE = "out_of_scope_foreign"
 const TWENTY_COMPANY_RECORD_VIEW_NAME = "Company Record Page Fields"
 const TWENTY_HOME_EXTRA_FIELDS = [
   { name: "paradigmDataStatus", position: 3 },
@@ -51,6 +54,23 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
     )
     const objectId = objectRes.rows[0]?.id
     if (!objectId) throw new Error("Twenty company object metadata was not found.")
+
+    const japanViewFilterTargets = await client.query<{
+      viewId: string
+      fieldMetadataId: string
+      workspaceId: string
+      applicationId: string
+    }>(
+      `
+        select view.id as "viewId", field.id as "fieldMetadataId", view."workspaceId", view."applicationId"
+        from core."view" view
+        join core."fieldMetadata" field on field."objectMetadataId" = view."objectMetadataId"
+          and field.name = $2
+        where view."objectMetadataId" = $1
+          and view.name = $3
+      `,
+      [objectId, JAPAN_ONLY_VIEW_FILTER_FIELD, TWENTY_COMPANY_LIST_VIEW_NAME],
+    )
 
     await client.query(
       `
@@ -130,6 +150,38 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
         TWENTY_COMPANY_RECORD_VIEW_NAME,
       ],
     )
+
+    const filterValue = JSON.stringify(JAPAN_ONLY_VIEW_FILTER_VALUE)
+    const legacyForeignFilterValue = JSON.stringify(OUT_OF_SCOPE_FOREIGN_VALUE)
+    for (const target of japanViewFilterTargets.rows) {
+      await client.query(
+        `
+          delete from core."viewFilter"
+          where "viewId" = $1
+            and operand = 'IS_NOT'
+            and value = $2::jsonb
+        `,
+        [target.viewId, legacyForeignFilterValue],
+      )
+      await client.query(
+        `
+          delete from core."viewFilter"
+          where "viewId" = $1
+            and "fieldMetadataId" = $2
+            and operand = 'IS'
+            and value = $3::jsonb
+        `,
+        [target.viewId, target.fieldMetadataId, filterValue],
+      )
+      await client.query(
+        `
+          insert into core."viewFilter" (
+            "universalIdentifier", "fieldMetadataId", operand, value, "viewId", "workspaceId", "applicationId"
+          ) values (gen_random_uuid(), $1, 'IS', $2::jsonb, $3, $4, $5)
+        `,
+        [target.fieldMetadataId, filterValue, target.viewId, target.workspaceId, target.applicationId],
+      )
+    }
 
     await client.query("commit")
     return null
