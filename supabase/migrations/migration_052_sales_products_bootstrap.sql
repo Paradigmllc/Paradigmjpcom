@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS public.sales_products (
   CONSTRAINT sales_products_amount_check CHECK (default_amount_yen >= 0)
 );
 
+-- Existing deployments can predate the inline UNIQUE declaration because
+-- CREATE TABLE IF NOT EXISTS does not repair missing constraints.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_sales_products_code
+  ON public.sales_products (code);
+
 CREATE TABLE IF NOT EXISTS public.sales_company_product_recommendations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.sales_companies (id) ON DELETE CASCADE,
