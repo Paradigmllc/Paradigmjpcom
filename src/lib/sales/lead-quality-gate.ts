@@ -38,6 +38,9 @@ const SAAS_STRONG_RE = /software as a service|saas|cloud platform|api documentat
 const SAAS_PRODUCT_RE = /software|platform|dashboard|workspace|automation|developer tool|business application/i
 const SAAS_CONVERSION_RE = /pricing|free trial|request a demo|book a demo|subscription plan/i
 const COMMERCE_RE = /add to cart|buy now|shop now|shipping|returns|checkout|product catalog|online store/i
+const PRODUCT_SCHEMA_RE = /^(?:product|individualproduct|productgroup)$/i
+const PRODUCT_CATALOG_RE = /our products?|product portfolio|product range|product catalogue|product catalog|unsere produkte|produktportfolio|gamme de produits|nos produits|vara produkter|produktutbud/iu
+const PRODUCT_MAKER_RE = /we (?:design|develop|engineer|manufacture|produce|build)\b|(?:designs|develops|engineers|manufactures|produces) (?:advanced |innovative |next-generation |next generation )?(?:products?|devices?|equipment|systems?|instruments?|materials?|hardware|technology)|manufacturer of|entwickelt und (?:produziert|fertigt)|hersteller (?:von|für)|développe et (?:fabrique|produit)|fabricant (?:de|d')|utvecklar och tillverkar|tillverkare av/iu
 const MAX_HOMEPAGE_BYTES = 1_500_000
 
 function unique(values: string[]): string[] {
@@ -222,10 +225,28 @@ export function evaluateLeadQualityGate(input: {
   const conversionSignal = SAAS_CONVERSION_RE.exec(saasText)?.[0]
   const saasSignal = strongSaasSignal ?? (productSignal && conversionSignal ? `${productSignal}+${conversionSignal}` : null)
   const commerceSignal = COMMERCE_RE.exec(homepage.visibleText.slice(0, 20_000))?.[0]
+  const productSchema = homepage.organizationTypes.find((type) => PRODUCT_SCHEMA_RE.test(type))
+  const productCatalogSignal = PRODUCT_CATALOG_RE.exec(saasText)?.[0]
+  const productMakerSignal = PRODUCT_MAKER_RE.exec(saasText)?.[0]
+  const officialProductBrand = sourceRecord.source.trust_tier >= 3
+    && sourceRecord.is_sme === true
+    && Boolean(
+      (productSchema && (productCatalogSignal || productMakerSignal))
+      || (productCatalogSignal && productMakerSignal),
+    )
   if (commerceTech.length > 0) offerEvidence.push(`commerce_tech:${commerceTech.map((item) => item.name).join(",")}`)
   if (saasSignal) offerEvidence.push(`saas_signal:${saasSignal}`)
   if (commerceSignal) offerEvidence.push(`commerce_signal:${commerceSignal}`)
-  const offerScore = Math.min(100, (commerceTech.length > 0 ? 70 : 0) + (saasSignal ? 70 : 0) + (commerceSignal ? 30 : 0))
+  if (officialProductBrand) {
+    if (productSchema) offerEvidence.push(`product_schema:${productSchema}`)
+    if (productCatalogSignal) offerEvidence.push(`product_catalog_signal:${productCatalogSignal}`)
+    if (productMakerSignal) offerEvidence.push(`product_maker_signal:${productMakerSignal}`)
+  }
+  const offerScore = Math.min(100,
+    (commerceTech.length > 0 ? 70 : 0)
+    + (saasSignal ? 70 : 0)
+    + (commerceSignal ? 30 : 0)
+    + (officialProductBrand ? 90 : 0))
   const offerPassed = offerScore >= 70
   const sourcePassed = Boolean(sourceRecord.id && sourceRecord.company_name && sourceRecord.source_page_url && sourceRecord.source.trust_tier >= 2)
 

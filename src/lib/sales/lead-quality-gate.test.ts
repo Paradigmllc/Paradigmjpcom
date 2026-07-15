@@ -30,7 +30,7 @@ const source: LeadSourceConfig = {
   updated_at: "2026-07-14T00:00:00.000Z",
 }
 
-function record(patch: Partial<LeadSourceRecord> = {}): LeadSourceRecord & { source: LeadSourceConfig } {
+function record(patch: Partial<LeadSourceRecord> & { source?: LeadSourceConfig } = {}): LeadSourceRecord & { source: LeadSourceConfig } {
   return {
     id: "record-1",
     source_config_id: source.id,
@@ -179,6 +179,67 @@ describe("evaluateLeadQualityGate", () => {
       homepage: homepage({
         description: "See our pricing and book a consultation.",
         visibleText: "Example Commerce is an independent business in the United States. Pricing and book a consultation.",
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("review_required")
+    expect(result.reasons).toContain("japan_entry_offer_fit_missing")
+  })
+
+  it("accepts a live product manufacturer only when a Tier 3 source establishes official SME status", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true, employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({
+        title: "Example Commerce | Scientific instruments",
+        description: "We design and manufacture scientific instruments for laboratory teams.",
+        organizationTypes: ["Organization", "Product"],
+        visibleText: "Our product portfolio includes scientific instruments and laboratory hardware. We design and manufacture every system in the United States.",
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("passed")
+    expect(result.offerFit).toMatchObject({ passed: true, score: 90 })
+    expect(result.offerFit.evidence).toEqual(expect.arrayContaining([
+      "product_schema:Product",
+      "product_maker_signal:We design",
+    ]))
+    expect(result.offerFit.evidence.some((value) => value.startsWith("product_catalog_signal:"))).toBe(true)
+  })
+
+  it("does not grant product-brand fit to Tier 2 discovery sources", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({
+        is_sme: true,
+        employee_count: null,
+        annual_revenue_usd: null,
+        source: { ...source, trust_tier: 2 },
+      }),
+      homepage: homepage({
+        organizationTypes: ["Organization", "Product"],
+        visibleText: "Our product portfolio includes scientific instruments. We design and manufacture every system.",
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("review_required")
+    expect(result.reasons).toContain("japan_entry_offer_fit_missing")
+  })
+
+  it("does not treat consulting language with a product word as a scalable product", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record({ is_sme: true, employee_count: null, annual_revenue_usd: null }),
+      homepage: homepage({
+        organizationTypes: ["Organization"],
+        description: "We develop product strategy for clients.",
+        visibleText: "Our consultants develop product strategy and provide bespoke advisory services.",
       }),
       countrySignals,
       detections: [],
