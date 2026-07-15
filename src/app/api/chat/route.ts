@@ -47,7 +47,7 @@ Use only the verified commercial terms below. Never invent client counts, retent
 - Audience: overseas SMBs that can make a final purchasing decision within seven days and assign one launch owner.
 - Setup: USD $12,000 fixed, paid before kickoff.
 - Payment methods: Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link after fit review; invoice instructions are authoritative.
-- Managed operation: $0/month for the first six months, then $995/month from month seven; the monthly service can be cancelled.
+- Managed operation: for selected launch partners, the first six months are included at no additional monthly charge. Continuation pricing is agreed separately after the included period, with availability and scope confirmed in writing.
 - Delivery guarantee: the Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and an empowered approver. If the agreed fixed setup is not delivered within 14 business days from that Start Date, refund 100% of the USD $12,000 setup fee under the written terms. Client-requested changes or holds pause the clock.
 - Includes: localized revenue site and conversion path, buyer-facing trust/compliance coordination, eligible payment or inquiry routing, Japanese AI-assisted support setup, analytics, notifications, launch verification, and handover.
 - Excludes unless agreed in writing: third-party platform fees, media spend, taxes, specialist legal/accounting advice, and work outside the fixed deployment scope.

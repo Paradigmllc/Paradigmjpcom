@@ -426,7 +426,7 @@
 - PR **#143**をmainへmerge。正式`npm run release:prod`のdeployment **jdgsrj4fpvbs5yq7kwd8er5a**はfinished、DB **83/83**、Traefik/Cloudflare/Realtime/Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
 
 ### 2026-07-13 Opportunity Briefパッケージ・限定オファー・CTA強化（本番反映・実企業QA済み / 送信停止）
-- Opportunity Brief末尾の契約条件を独立パネルへ分離し、`$12,000 paid upfront`、最初の6か月は追加月額なし、7か月目以降は署名済み契約に基づき月額$995という条件の直下へ、Japan Entry Packageの正式な7ワークストリームを表示する。
+- Opportunity Brief末尾の契約条件を独立パネルへ分離し、`$12,000 paid upfront`、選定した契約先には最初の6か月を追加月額なしで提供、期間終了後の継続条件・月額は個別に書面合意という条件の直下へ、Japan Entry Packageの正式な7ワークストリームを表示する。
 - 6か月の月額無料を、期間限定かつ審査を通過した数組だけの導入オファーとして強調。架空の残枠数・締切は表示せず、適用可否は15分面談と契約書面で確定し、フォーム送信だけでは枠確保にならない境界を明記した。
 - 意思決定要約と最終オファーのCTAを、企業名付きCal.comの `Book the 15-minute review` と、Japan Entry意図・企業名を引き継ぐ `Apply via the form` の2種類へ統一。Our Placeでは予約先が `https://cal.com/paradigm-jp/15min?name=Our%20Place`、申込先が `/en/contact?intent=japan-entry&company=Our%20Place` になる。
 - 検証: 関連Vitest **2 files / 6 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。React確認ではサーバーコンポーネントのまま、named export、semantic link、外部URLの安全属性、安定keyを確認した。
@@ -557,7 +557,7 @@
 - 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、quality guard 0 error、diff check、production build **336/336 pages**。PR **#85**をmainへmergeし、正式deployment `bfzoe7yd8o4aywfs9jwniu2o` はfinished。初回CMS seedの一時504は限定retryで回復し、post-deploy gate、公開URL、Sales health HTTP 200 / JSON ok、DB **82/82**をpassした。直後の後続mainコンテナ `2e57c16d` もPR #85 mergeを祖先に含みhealthy。`sales_japan_entry_projections` は **0件**で、DB保存、Twenty登録、候補収集、フォーム送信は未実行。
 
 ### 2026-07-13 法務公開面の整備（本番反映済み）
-- `/[locale]/terms` と `/[locale]/refund` を追加。JAは国内向け一般サービスの利用規約・返金／キャンセル方針、ENはJapan Entryの固定USD 12,000、開始日、14営業日納品保証、6か月月額込み、7か月目以降USD 995、支払経路、将来期間解約、第三者費用境界を明示する別文面にした。
+- `/[locale]/terms` と `/[locale]/refund` を追加。JAは国内向け一般サービスの利用規約・返金／キャンセル方針、ENはJapan Entryの固定USD 12,000、開始日、14営業日納品保証、選定先向け6か月運用込み、期間終了後の継続条件・月額は個別書面合意、支払経路、第三者費用境界を明示する別文面にした。
 - `LegalDocumentPage`で法務文書のレイアウトとアクセシビリティ構造を共有し、各localeのmessagesで本文・メタデータを管理。フッターへPrivacy / Specified Commercial Transactions / Terms / Refund & Cancellationの4導線を追加し、CMSの既存legalLinksがあっても新規2ページを欠落させない。
 - 法定情報の既定値を、個人名なし・英語住所 `2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan`・法人番号 `5010403026363` に統一。代表者名は従来どおり公開せず、請求時の事前開示経路を維持。
 - sitemap、hreflang/canonical、release-doctor、production smokeへterms/refundを配線。Vitestのserver-only境界をテスト専用mockで安定化。
@@ -617,7 +617,7 @@
 - Twenty営業リストは空のまま。候補収集、SNS送信、メール、電話、郵送、フォーム送信は一切実行していない。送信再開は別途オペレーター承認が必要。
 
 ### 2026-07-13 ブログ編集セット刷新・実装漏れ修正（本番反映前）
-- 英語Japan Entry編集シードを9本から12本へ拡張。新規記事は、必要素材・承認、問い合わせ/決済導線、公開シグナルと一次データを扱い、固定$12,000・6か月月額込み・7か月目以降$995・14営業日目標・法務境界を一貫して記載。
+- 英語Japan Entry編集シードを9本から12本へ拡張。新規記事は、必要素材・承認、問い合わせ/決済導線、公開シグナルと一次データを扱い、固定$12,000・選定先向け6か月運用込み・期間終了後の継続条件は個別書面合意・14営業日保証・法務境界を一貫して記載。
 - 日本語の公開レビュー済み編集シードを4本から7本へ拡張。申込み後の適合確認、問い合わせ/決済、公開後の引き継ぎを追加し、各記事に2,000文字以上、表、タグ、ヒーロー画像、目次/サイドバー、固定CTAが揃う状態を維持。
 - `seed-japan-entry-blog` は本番DBの接続上限を踏まえ、英語12本を冪等CMS seedする正式経路へ整理。日本語7本は承認済みコードseedをCMS空時fallbackとして公開し、release smokeで表示を検査する。管理画面への日本語投入はDB負荷を分けて実施できる。
 - 既存の安定スラッグ `japan-entry-21-business-day-readiness` は維持しつつ、本文の工程をDays 1–5 / 6–10 / 11–14へ修正。FAQ、チャット、診断、fallback homepageの旧21営業日表記も14営業日へ統一。
@@ -625,7 +625,7 @@
 
 ### 2026-07-13 HP全体 Japan Entry コンテンツ刷新（本番反映済み）
 - 英日ホーム、料金、サービス、FAQ、実績/公開根拠、会社概要、申込、ブログメタデータ、構造化データを Japan Market Engine / Japan Entry の固定オファーへ統一。
-- 公開条件を統一：セットアップ **$12,000固定**、最初の6か月は標準月額運用込み、7か月目以降 **$995/月**、必要条件受領後 **14営業日公開目標**、通常依頼は **48営業時間以内着手**。
+- 公開条件を統一：セットアップ **$12,000固定**、選定した契約先には最初の6か月の標準月額運用込み、期間終了後の継続条件・月額は個別に書面合意、必要条件受領後 **14営業日納品保証**、通常依頼は **48営業時間以内着手**。
 - セットアップ範囲を明示：LP/HPローカライズ、SNS最大2チャネル初期設定、最大3市場の公開シグナル比較＋1市場深掘り、法規制適用可能性整理、日本語サポート導線、公開運用・引き継ぎ。
 - 日本語ホームは旧Payload文書の内部ローカライズキーを除去して再生成するrelease seedを追加。`release:prod`で日英ホームCMS publish成功、全主要URL・DB 81/81・Revenue/Cloudflareゲートを確認。
 - 公開個人名をフッター・会社概要・特商法から抑止。住所は `2-2-15 Minami-Aoyama, Minato-ku, Tokyo, Japan`、法人番号 `5010403026363` を表示。
@@ -638,7 +638,7 @@
 
 ### 2026-07-13 Japan Entry 市場別アクセス・ROIモデル（実装中 / 送信停止）
 - Japan Entry Package専用の公開シグナル投影モデルを追加。Tranco / Cloudflare Radar / Common Crawl等で構成済みの `public-signals-v1` を起点に、市場別推定アクセスと保守・基準・上振れの6/12/24か月試算を生成する。実アクセス・確定売上としては扱わず、観測・指数・推定・仮定を区別する。
-- 商条件は初期費用 **$12,000一括前払い**、最初の6か月は追加月額なし、7か月目以降は署名済み条件に基づき **$995/月**。ROIは増分売上ではなく増分粗利から費用を控除して算出する。
+- 商条件は初期費用 **$12,000一括前払い**、選定した契約先には最初の6か月を追加月額なしで提供、期間終了後の継続条件・月額は個別に書面合意。ROIは未確定の継続費用を推測せず、書面見積り前の計画モデルから除外する。
 - 専用DB `sales_japan_entry_projections`（RLS、service_role限定）、認証済みGET/POST API、レポートの市場別アクセスグラフ・累積純便益グラフ・ROI表、URLなし初回文面を実装。生成物は常に `needs_review` で、既存の `report_ready` / 送信処理 / Twenty送信導線には接続しない。
 - 収集・見込み客への送信は未実施。公開ランク根拠がない企業は推定を生成せず停止する。
 - 検証: 投影ロジックVitest **4/4 pass**、対象ESLint pass、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**。新API routeが本番bundleへ含まれることを確認。
@@ -835,18 +835,18 @@
 ※下記の過去セクションに残る件数・コミット・「migration待ち」記述は履歴であり、上記remediation記録とrelease doctorの実測を正本とする。
 
 ### 2026-07-11 Japan Entryコンテンツ拡張（本番反映完了）
-- EN商流表現を全主要導線で統一: **$12,000 one-time setup**、標準月額運用はセットアップに含めて最初の6ヶ月は追加月額なし、7ヶ月目以降 **$995/month**。単なる値引きの「無料」ではなく、included serviceとして説明する。
+- EN商流表現を全主要導線で統一: **$12,000 one-time setup**、選定した契約先には最初の6ヶ月の運用を追加月額なしで提供、期間終了後の継続条件・月額は個別に書面合意。単なる値引きの「無料」ではなく、included serviceとして説明する。
 - Blogを汎用Web制作記事からJapan Entry意思決定者向けへ再編。`src/lib/japan-entry-blog.ts`に英語基幹記事6本（市場参入、21営業日準備、翻訳とローカライズ、法人・銀行、費用比較、買い手信頼）を追加した。
 - `/api/admin/seed-japan-entry-blog`を追加。`japan-entry-public`タグ、本文、英語localeを含む冪等seed。公開英語記事は本文空欄を`blog-cms`側でも拒否する。
 - 未検証の`industry first`、ChatGPT等での推薦保証、Google Maps上位保証、`instant replies`表現を公開英語コピーから除去・弱めた。
 - ローカル検証: `messages/en.json` parse OK、対象Vitest **12/12 pass**、`tsc --noEmit` 0 error、`quality:guard` 0 error、production build **337 pages / exit 0**。新seed routeもbuild route一覧に含まれる。既存backup scriptのCRLFをLFへ正規化し、backup validation testsも復旧した。
 - Payloadの既存import schemaに`posts` / `posts_locales`等のunique arbiterが欠落しており、`ON CONFLICT` seedが失敗する状態を検出。`migration_069_payload_posts_constraints.sql`を追加し、正式release pathへ組み込んだ（PR #58）。既存26件の重複なしを確認後、production DBへ適用した。
-- 本番seed: 認証済み`/api/admin/seed-japan-entry-blog`で**6/6 updated、errors 0**。`/en/blog`一覧と6記事URLで期待するH1・本文表示を確認。`/en/pricing`で`$12,000`、6ヶ月included、7ヶ月目以降`$995/month`を確認。
+- 本番seed: 認証済み`/api/admin/seed-japan-entry-blog`で**6/6 updated、errors 0**。`/en/blog`一覧と6記事URLで期待するH1・本文表示を確認。`/en/pricing`で`$12,000`、選定先向け6ヶ月included、期間終了後は個別書面合意を確認。
 - 正式`npm run release:prod`: DB **79/79**、Cloudflare origin lock 4 host、主要英語route、Sales health JSON `ok:true`、direct origin / forged header **403**を全てpass。月額の対応件数・時間・SLAは契約で確定していないため、公開コピーには推測値を書かない。
 
 ### 固定条件・公開方針
 - ENの主対象は欧米豪の「意思決定が早いSMB」。業種・従業員数ではなく、短期間で最終承認できるかを適格条件にする。
-- 商条件はセットアップ **$12,000固定**、最初の6か月 **$0/month**、7か月目以降 **$995/month**。解約条件は「署名済み契約条件に従う」に統一し、「いつでも解約可」は使用しない。
+- 商条件はセットアップ **$12,000固定**、選定先には最初の6か月を追加月額なしで提供、期間終了後の継続条件・月額は個別書面合意。「いつでも解約可」など未合意の約束は使用しない。
 - 初月 **20 qualified launches** は変更不可の社内運用目標として表示し、成果保証ではないことを明示する。
 - 保守対象はJA/ENの公開ページ。旧ENサービス／LP／video／agency導線はJapan Entryへ集約し、JA/EN以外の公開localeはENへredirectする。内部・アーカイブページは`noindex`とする。
 - 営業フローの設計・運用自動化は別途壁打ちへ延期し、この作業ではHPの公開品質、問い合わせ受付、SEO、法務表示、セキュリティ、配信インフラだけを完了対象にする。
@@ -902,7 +902,7 @@
 
 ### 決定事項
 - 対象: 欧米豪の意思決定が早いSMB。業種・従業員数ではなく、7日以内の最終承認可否で選別する。
-- 商条件: セットアップ **$12,000固定**、最初の6か月は **$0/month**、7か月目以降 **$995/month**（いつでも解約可）。
+- 商条件: セットアップ **$12,000固定**、選定先には最初の6か月を追加月額なしで提供、期間終了後は継続条件・月額を個別書面合意。
 - 提供目標: 必要素材受領後 **21 business days**、初月 **20 launch slots**。安価なパイロット、$1,500レポート、無料相談は販売導線から除外する。
 
 ### 実装済み
@@ -926,7 +926,7 @@
 - 全体テスト: 257/263 pass。既存の非関連6件は未変更（agent-team links / content templates / dify timeout / routing / sales pipeline / browser search）。
 - Production release: DB 78/78、Traefik、Realtime、Twenty、Sales health JSON `ok:true`を正式gateでpass ✅
 - Production CMS seed: `scope=homepage`で2ページupdated、errors 0 ✅
-- Production Chrome: `/en`の新Hero・$12,000・6か月$0・$995/month・20 slots・旧$1,500/Free Consult非表示を確認 ✅
+- Production Chrome: `/en`の新Hero・$12,000・選定先向け6か月included・期間終了後の個別合意・20-launch internal target・旧$1,500/Free Consult非表示を確認 ✅
 - Production Chrome: `/en/contact?intent=japan-entry`の決裁権・承認時期・開始時期・固定価格同意・送信CTAを確認 ✅
 - Playwright CLIはローカルChromium executable未導入で起動不可。テスト内容はChrome拡張の実ブラウザ検証で代替（アプリ不具合ではない）。
 

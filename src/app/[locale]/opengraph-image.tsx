@@ -39,8 +39,8 @@ const COPY: Record<string, CopyBundle> = {
     services: [
       "$12K fixed",
       "14-business-day delivery guarantee",
-      "6 months $0",
-      "then $995/mo",
+      "6 months included for selected launch partners",
+      "selected partners · continuation terms agreed separately",
     ],
   },
   ko: {

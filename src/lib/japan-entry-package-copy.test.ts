@@ -21,7 +21,7 @@ describe("Japan Entry package detail copy", () => {
     expect(page.operations.items.some((item) => item.body.includes("48 business hours"))).toBe(true)
     expect(page.notIncluded.items).toContain("Guaranteed traffic, rankings, conversion rate, revenue, or ROI")
     expect(JSON.stringify(page.commercial)).toContain("$12,000 USD")
-    expect(JSON.stringify(page.commercial)).toContain("$995/month")
+    expect(JSON.stringify(page.commercial)).toContain("continuation pricing is agreed separately")
   })
 
   it("does not frame stock imagery or estimates as proof", () => {

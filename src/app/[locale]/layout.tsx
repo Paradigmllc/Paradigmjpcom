@@ -44,7 +44,7 @@ const LOCALE_TITLES: Record<Locale, { default: string; template: string; descrip
   en: {
     default: "Japan Entry Package for Fast-Decision SMBs | Paradigm",
     template: "%s | Paradigm LLC",
-    description: "$12,000 fixed Japan entry setup with six months of managed operation included. Launch a market-ready Japanese revenue path with a Tokyo-based team.",
+    description: "$12,000 fixed Japan entry setup. Selected launch partners receive the first six months of managed operation at no additional monthly charge; continuation pricing is agreed separately after the included period.",
     ogSiteName: "Paradigm LLC",
     ogLocale: "en_US",
   },

@@ -60,17 +60,18 @@ export function isSafeEnglishJapanEntryHomepage(
   if (price !== "$12,000" || typeof features !== "string") return false
 
   const copy = JSON.stringify(blocks)
+  const normalizedCopy = copy.toLowerCase()
   const requiredCopy = [
-    "$0/month for the first six months",
-    "$995/month",
-    "signed terms",
+    "six months of managed operation are included for selected launch partners",
+    "continuation pricing is agreed separately",
+    "availability and scope are confirmed in writing",
     "Month-one target: 20 qualified launches",
     "not a customer outcome guarantee",
     "/en/contact?intent=japan-entry",
   ] as const
 
   return (
-    requiredCopy.every((value) => copy.includes(value)) &&
+    requiredCopy.every((value) => normalizedCopy.includes(value.toLowerCase())) &&
     !UNSAFE_ENGLISH_JAPAN_ENTRY_PATTERNS.some((pattern) => pattern.test(copy))
   )
 }

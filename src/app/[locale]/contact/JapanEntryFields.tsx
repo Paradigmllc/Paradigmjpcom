@@ -34,7 +34,7 @@ export function JapanEntryCompanyFields({
           $12,000 fixed setup
         </p>
         <p className="text-[13px] leading-[1.7] text-paradigm-ink-soft">
-          $0/month for the first six months, then $995/month. Apply only if your
+          For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Apply only if your
           company can make a final decision within seven days and assign one
           launch owner.
         </p>

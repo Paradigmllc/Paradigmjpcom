@@ -52,8 +52,8 @@ describe("Japan Entry opportunity projection", () => {
     ).toBeCloseTo(130_000, -1);
     expect(base?.horizons.map((item) => item.horizon)).toEqual([6, 12, 24]);
     expect(base?.horizons[0].cumulativeCostUsd).toBe(12_000);
-    expect(base?.horizons[1].cumulativeCostUsd).toBe(17_970);
-    expect(base?.horizons[2].cumulativeCostUsd).toBe(29_910);
+    expect(base?.horizons[1].cumulativeCostUsd).toBe(12_000);
+    expect(base?.horizons[2].cumulativeCostUsd).toBe(12_000);
   });
 
   it("keeps every number explicitly modeled and leaves actual traffic unknown", () => {

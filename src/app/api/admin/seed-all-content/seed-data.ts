@@ -80,7 +80,7 @@ export const WORKS = [
 export const FAQS = [
   { qJa:"Webサイト制作の期間はどのくらいですか？", qEn:"How long does web development take?", aJa:"制作規模により異なります。5ページ程度のシンプルなコーポレートサイトは1〜2ヶ月、10ページ以上の本格サイトは2〜3ヶ月、ECサイトやフルカスタム開発は3〜6ヶ月が目安です。いずれも企画・設計フェーズを含めた全体期間です。", aEn:"Depends on scope: 5-page corporate site 1-2 months, 10+ page site 2-3 months, ecommerce/custom 3-6 months. All timelines include planning and design.", catJa:"Web制作", catEn:"Web Development", sort:1 },
   { qJa:"MEO対策の効果が出るまでどのくらいかかりますか？", qEn:"How long until MEO shows results?", aJa:"最適化後、即日〜1週間で順位変動が始まります。安定した上位表示には1〜3ヶ月の継続運用が必要です。口コミ数や競合状況で変動します。", aEn:"Ranking changes begin within days to a week. Stable top rankings require 1-3 months of consistent effort.", catJa:"MEO対策", catEn:"MEO", sort:2 },
-  { qJa:"Japan Entryの費用はいくらですか？", qEn:"What does Japan Entry cost?", aJa:"セットアップ費用は12,000ドル固定です。月額運用は最初の6か月無料で、7か月目以降は月額995ドルです。第三者費用や法務・税務費用は別途です。", aEn:"Setup is fixed at $12,000. Managed operation is $0/month for the first six months, then $995/month. Third-party, legal, and tax costs remain separate.", catJa:"Japan Entry", catEn:"Japan Entry", sort:3 },
+  { qJa:"Japan Entryの費用はいくらですか？", qEn:"What does Japan Entry cost?", aJa:"セットアップ費用は12,000ドル固定です。選定した契約先には最初の6か月の運用を追加月額なしで提供します。期間終了後の継続条件・月額は個別に協議し、書面で合意します。第三者費用や法務・税務費用は別途です。", aEn:"Setup is fixed at $12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party, legal, and tax costs remain separate.", catJa:"Japan Entry", catEn:"Japan Entry", sort:3 },
   { qJa:"多言語対応はどの言語まで可能ですか？", qEn:"How many languages can you support?", aJa:"日本語、英語、韓国語、中国語、ドイツ語、フランス語、スペイン語、ポルトガル語、ロシア語、アラビア語、ベトナム語、インドネシア語の12カ国語です。DeepSeek V4翻訳＋ネイティブチェックで高品質を実現します。", aEn:"12 languages: Japanese, English, Korean, Chinese, German, French, Spanish, Portuguese, Russian, Arabic, Vietnamese, Indonesian. Hybrid of AI translation + native review.", catJa:"多言語対応", catEn:"Multilingual", sort:4 },
   { qJa:"AIチャットボットの導入にはどのくらいの期間が必要ですか？", qEn:"How long does AI chatbot deployment take?", aJa:"既存FAQやマニュアルが整っていれば1〜2週間で初期導入可能です。本格的なワークフロー自動化を含む場合は1〜2ヶ月を見込んでください。", aEn:"1-2 weeks with existing FAQs/manuals. Full workflow automation: 1-2 months.", catJa:"AI導入", catEn:"AI Implementation", sort:5 },
   { qJa:"保守・運用サポートはありますか？", qEn:"Do you provide maintenance and support?", aJa:"はい、全プランに初期無料保守期間（1〜12ヶ月）が含まれます。終了後は月額プランでサーバー管理、セキュリティ更新、コンテンツ更新代行を提供します。", aEn:"Yes, every plan includes free initial maintenance (1-12 months). After that, monthly plans cover server, security, and content updates.", catJa:"運用保守", catEn:"Maintenance", sort:6 },
@@ -363,7 +363,7 @@ export async function seedAllContent(
         secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
         stats: [
           { value: "$12K", label: "fixed setup" },
-          { value: "$0", label: "monthly for 6 months" },
+          { value: "6", label: "months included for selected launch partners" },
           { value: "14", label: "business-day delivery guarantee" },
           JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
         ],
@@ -407,7 +407,7 @@ export async function seedAllContent(
         title: "One fixed Japan entry offer",
         subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with six months of managed Japan operation included at no additional monthly charge.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with six months of managed Japan operation included at no additional monthly charge.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\nsix months of managed operation are included for selected launch partners\nContinuation pricing is agreed separately after the included period; availability and scope are confirmed in writing", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
@@ -432,8 +432,8 @@ export async function seedAllContent(
         subtitle: "Paradigm LLC supports overseas e-commerce, SaaS, and Web3.0 companies with a professional, evidence-led Japan launch path. The terms are deliberately simple so qualified companies can decide quickly.",
         items: [
           { question: "Is the setup fee always $12,000?", answer: textToLexical("Yes. The setup fee is fixed at $12,000 and paid before kickoff. If your launch cannot fit the published scope, we will decline the application rather than expand the price after the fact.") },
-          { question: "What does $0/month for six months mean?", answer: textToLexical("The standard managed operating service is included for the first six months at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain your responsibility.") },
-          { question: "What happens after six months?", answer: textToLexical("Managed operation continues at $995 per month and may be cancelled for future billing under the signed service terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
+          { question: "What does the selected-launch-partner operating period include?", answer: textToLexical("For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain your responsibility.") },
+          { question: "What happens after six months?", answer: textToLexical("After the included period, continuation pricing is agreed separately under written scope and terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
           { question: "Do I need a Japanese entity or bank account?", answer: textToLexical("Not for every launch. Eligibility depends on your product, regulated category, payment methods, and provider account location. We confirm the viable route before accepting the fixed-scope engagement and do not promise unsupported payment methods.") },
           { question: "Do you guarantee Japanese sales?", answer: textToLexical("No. Product-market fit and purchasing decisions remain yours. We deliver the agreed market-ready environment and launch work, not a specific revenue outcome.") },
           { question: "Is this only for SaaS or e-commerce?", answer: textToLexical("No. We evaluate the launch path, decision speed, and commercial fit rather than filtering primarily by industry or employee count.") },
@@ -480,7 +480,7 @@ export async function seedAllContent(
     }
     await upsertHomePage("home-en",
       "Paradigm — Fixed-Price Japan Entry for Fast-Decision Global SMBs",
-      "$12,000 fixed Japan entry setup with six months of managed operation included. Launch a market-ready Japanese revenue path without hiring a local team.",
+      "$12,000 fixed Japan entry setup. Selected launch partners receive the first six months of managed operation at no additional monthly charge; continuation pricing is agreed separately after the included period.",
       layoutEn, "en")
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
   return summary

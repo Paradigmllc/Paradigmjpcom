@@ -109,7 +109,7 @@ const FALLBACK_PRODUCTS: Record<SalesProductCode, Omit<SalesProduct, "id">> = {
       pricing_model: "fixed_setup",
       setup_amount_usd: 12000,
       monthly_free_months: 6,
-      monthly_amount_usd_after_free_period: 995,
+      continuation_pricing: "agreed_separately_after_included_period",
     },
   },
   global_video_subscription: {

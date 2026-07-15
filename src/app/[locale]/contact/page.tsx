@@ -93,7 +93,7 @@ export default async function ContactPage({ params }: Props) {
         formTitle: "適合条件と開始時期を確認",
         back: "← Japan Entryパッケージに戻る",
         fixedLabel: "固定の取引条件",
-        fixedItems: ["セットアップ12,000ドル（着手前払い）", "支払方法：Wise・銀行振込・USDC・クレジットカード", "必要条件受領後14営業日以内に納品できない場合はセットアップ費用全額返金", "最初の6か月は月額0ドル", "7か月目以降は月額995ドル"],
+        fixedItems: ["セットアップ12,000ドル（着手前払い）", "支払方法：Wise・銀行振込・USDC・クレジットカード", "必要条件受領後14営業日以内に納品できない場合はセットアップ費用全額返金", "選定した契約先には最初の6か月の運用を追加月額なしで提供", "期間終了後の継続条件・月額は個別協議のうえ書面合意"],
         fitLabel: "迅速な意思決定に必要な条件",
         fitItems: ["7日以内に最終承認", "社内の公開責任者1名", "48時間以内に必要素材を共有", "起算日から14営業日以内の納品保証"],
       }
@@ -107,7 +107,7 @@ export default async function ContactPage({ params }: Props) {
         formTitle: "Confirm your fit and launch timing",
         back: "← Back to the Japan Entry Package",
         fixedLabel: "Fixed commercial terms",
-        fixedItems: ["$12,000 setup paid before kickoff", "Payment: Wise, bank transfer, USDC, or credit card", "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date", "$0/month for the first six months", "$995/month from month seven"],
+        fixedItems: ["$12,000 setup paid before kickoff", "Payment: Wise, bank transfer, USDC, or credit card", "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date", "six months of managed operation are included for selected launch partners", "continuation pricing is agreed separately after the included period"],
         fitLabel: "Fast-decision qualification",
         fitItems: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "14-business-day delivery guarantee from the Start Date"],
       }

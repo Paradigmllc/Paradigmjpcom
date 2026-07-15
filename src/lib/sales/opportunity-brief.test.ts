@@ -16,7 +16,7 @@ const projection = {
     grossMargin: 0.55,
     currentJapanShare: 0.015,
     targetJapanShareMonth24: 0.055,
-    monthlyManagedFeeUsdAfterMonth6: 995,
+    monthlyManagedFeeUsdAfterMonth6: null,
     setupFeeUsd: 12_000,
   },
   scenarios: ["conservative", "base", "upside"].map((scenario) => ({

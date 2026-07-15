@@ -33,7 +33,12 @@ export interface ProjectionAssumptions {
   grossMargin: number;
   currentJapanShare: number;
   targetJapanShareMonth24: number;
-  monthlyManagedFeeUsdAfterMonth6: number;
+  /**
+   * Continuation pricing is intentionally not published. A null value keeps
+   * the public model honest and excludes an unknown future fee from the
+   * estimate until a written quote exists.
+   */
+  monthlyManagedFeeUsdAfterMonth6: number | null;
   setupFeeUsd: number;
 }
 
@@ -284,7 +289,7 @@ export function calculateJapanEntryScenario(
     const grossProfit = incrementalRevenue * assumptions.grossMargin;
     cumulativeGrossProfit += grossProfit;
     const continuationCost =
-      Math.max(0, month - 6) * assumptions.monthlyManagedFeeUsdAfterMonth6;
+      Math.max(0, month - 6) * (assumptions.monthlyManagedFeeUsdAfterMonth6 ?? 0);
     const cumulativeCost = assumptions.setupFeeUsd + continuationCost;
     const net = cumulativeGrossProfit - cumulativeCost;
     return {
@@ -337,7 +342,7 @@ export function buildJapanEntryProjection(
       0.001,
       0.5,
     ),
-    monthlyManagedFeeUsdAfterMonth6: 995,
+    monthlyManagedFeeUsdAfterMonth6: null,
     setupFeeUsd: 12_000,
   };
   if (assumptions.targetJapanShareMonth24 <= assumptions.currentJapanShare) {
@@ -431,7 +436,7 @@ export function buildJapanEntryProjection(
       "Traffic, country mix, revenue and ROI are modeled estimates, not observed analytics or guarantees.",
       "Public rank and crawl signals indicate relative visibility but do not disclose exact visits.",
       "Country allocation, conversion, order value and margin must be replaced with first-party data when available.",
-      "The first six managed months add no monthly fee; the model applies $995/month from month 7 under signed terms.",
+      "For selected launch partners, the first six managed months add no monthly fee. Continuation pricing is agreed separately after the included period and is excluded from this planning model until quoted in writing.",
     ],
   };
 }

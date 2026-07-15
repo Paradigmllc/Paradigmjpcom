@@ -54,7 +54,7 @@
           "label": "Monthly service included with setup"
         },
         {
-          "value": "$995",
+          "value": "continuation pricing",
           "label": "Monthly service from month seven"
         }
       ],
@@ -66,7 +66,7 @@
         },
         {
           "question": "Do you offer post-launch maintenance?",
-          "answer": "The standard monthly service is included at no additional monthly charge for the first six months, then $995/month from month seven unless cancelled under the signed terms. Its exact responsibilities are confirmed in the engagement scope."
+          "answer": "For selected launch partners, the first six months of managed operation are included at no additional monthly charge, then continuation pricing is agreed separately after the included period; availability and scope are confirmed in writing. Its exact responsibilities are confirmed in the engagement scope."
         },
         {
           "question": "Can I update the site myself after launch?",
@@ -391,7 +391,7 @@
         "title": "Fixed commercial scope",
         "industry": "Commercial clarity",
         "description": "One public offer keeps setup, included launch work, exclusions, support period, and ongoing price visible before application.",
-        "metrics": "$12K · 6 months $0",
+        "metrics": "$12K · six months included for selected launch partners",
         "tags": ["Fixed scope", "USD", "Support", "Handover"]
       },
       {
@@ -531,7 +531,7 @@
       ],
       [
         "Ongoing service price",
-        "The standard monthly service is included at no additional monthly charge for the first six months, then $995/month from month seven unless cancelled under the signed terms."
+        "For selected launch partners, the first six months of managed operation are included at no additional monthly charge, then continuation pricing is agreed separately after the included period; availability and scope are confirmed in writing."
       ],
       [
         "Service start and delivery guarantee",
@@ -547,7 +547,7 @@
       ],
       [
         "Ongoing cancellation",
-        "The $995/month ongoing service may be cancelled for future periods under the notice and effective-date provisions in the signed terms."
+        "The continuation after the included period is subject to separate written scope and terms."
       ],
       [
         "Separate costs and exclusions",
@@ -632,7 +632,7 @@
       },
       {
         "title": "3. Fixed setup and monthly service",
-        "body": "The standard Japan Entry setup is USD 12,000. The standard managed operation is included at no additional monthly charge for the first six months, then USD 995 per month from month seven unless cancelled for future periods under the signed terms. A different price or scope is effective only if confirmed in writing."
+        "body": "The standard Japan Entry setup is USD 12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. A different price or scope is effective only if confirmed in writing."
       },
       {
         "title": "4. Payment rails, taxes, and third-party charges",
@@ -677,7 +677,7 @@
     "sections": [
       {
         "title": "1. What this policy covers",
-        "body": "This policy covers the fixed USD 12,000 Japan Entry setup, the first six months of included managed operation, the USD 995 monthly service from month seven, and related approved work. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
+        "body": "This policy covers the fixed USD 12,000 Japan Entry setup, the first six months of included managed operation, any continuation service after the included period, and related approved work. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
       },
       {
         "title": "2. Full setup-fee refund for a late fixed setup",
@@ -693,7 +693,7 @@
       },
       {
         "title": "5. Monthly service cancellation",
-        "body": "The standard monthly service is included for months one through six. From month seven, USD 995/month applies unless the service is cancelled for a future period under the notice and effective-date terms. Cancellation does not reverse an earned period or an already-approved third-party commitment."
+        "body": "For selected launch partners, managed operation is included for months one through six. After the included period, continuation pricing is agreed separately; availability and scope are confirmed in writing. Third-party commitments remain governed by the written scope."
       },
       {
         "title": "6. How to request a review",
@@ -715,11 +715,11 @@
   },
   "pricingPage": {
     "metaTitle": "Japan Entry Pricing — Fixed $12,000 Setup",
-    "metaDescription": "One fixed Japan Entry offer: $12,000 one-time setup covering localization, social setup, market intelligence, regulatory screening, launch operations, and handover. Monthly service included for six months, then $995/month.",
+    "metaDescription": "One fixed Japan Entry offer: $12,000 one-time setup covering localization, social setup, market intelligence, regulatory screening, launch operations, and handover. Managed operation included for six months for selected launch partners, then continuation pricing is agreed separately.",
     "heroBadge": "One package · fixed USD price",
     "heroTitle": "One decision. One scope. One Japan launch.",
     "heroHighlight": "One scope",
-    "heroDesc": "$12,000 one-time setup. The standard monthly service is included at no additional monthly charge for the first six months, then $995/month from month seven. No regional price adjustment.",
+    "heroDesc": "$12,000 one-time setup. For selected launch partners, the first six months of managed operation are included at no additional monthly charge, then continuation pricing is agreed separately after the included period. No regional price adjustment.",
     "emptyMessage": "The Japan Entry application is temporarily unavailable.",
     "emptyCta": "Apply for Japan Entry — $12K",
     "popularBadge": "Fixed offer",
@@ -741,8 +741,8 @@
       "Bilingual support, launch operations, and operator handover",
       "Payment options: Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link",
       "Full USD 12,000 setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date",
-      "Standard monthly service included for the first six months",
-      "$995/month from month seven"
+      "Managed operation included for selected launch partners for the first six months",
+      "continuation pricing is agreed separately after the included period"
     ],
     "paymentEyebrow": "Payment and delivery assurance",
     "paymentTitle": "Choose the settlement rail; keep the delivery boundary written.",
@@ -860,7 +860,7 @@
       },
       {
         "criterion": "Commercial shape",
-        "package": "$12,000 fixed setup; six months included; $995/month from month seven",
+        "package": "$12,000 fixed setup; six months included for selected launch partners; continuation pricing is agreed separately after the included period",
         "hire": "Recruiting, salary, employment overhead, and management cost",
         "vendors": "Separate proposals, retainers, minimums, and change orders"
       },
@@ -889,7 +889,7 @@
           "Public-signal market report and priority-market deep dive",
           "Japan's Act on Specified Commercial Transactions and relevant regulatory applicability screening",
           "Discovery, analytics, support, launch, and handover setup",
-          "Six months of the defined monthly service included with setup"
+          "Six months of managed operation included for selected launch partners"
         ]
       },
       {
@@ -917,8 +917,8 @@
         "a": "No. The English Japan Entry package has one fixed setup price of $12,000 USD. Any applicable tax and payment details are confirmed in the engagement documents."
       },
       {
-        "q": "When does the $995 monthly fee begin?",
-        "a": "The standard monthly service is included at no additional monthly charge for the first six months. The $995/month fee begins in month seven unless the ongoing service is cancelled under the signed terms."
+        "q": "When does the continuation fee agreed separately begin?",
+        "a": "For selected launch partners, the first six months of managed operation are included at no additional monthly charge. The continuation pricing is agreed separately after the included period; availability and scope are confirmed in writing."
       },
       {
         "q": "Can the setup scope change?",
@@ -960,7 +960,7 @@
     "heroBadge": "Japan Entry application",
     "heroTitle": "Bring a decision, not a procurement maze.",
     "heroHighlight": "a decision",
-    "heroDesc": "Paradigm LLC is a Japan-based market-entry and digital operations partner with experience supporting overseas e-commerce, SaaS, and Web3.0 companies. The $12,000 one-time setup includes the agreed launch scope; standard monthly service is included for the first six months, then $995/month. We review fit before confirming an engagement.",
+    "heroDesc": "Paradigm LLC is a Japan-based market-entry and digital operations partner with experience supporting overseas e-commerce, SaaS, and Web3.0 companies. The $12,000 one-time setup includes the agreed launch scope; for selected launch partners, managed operation is included for the first six months, then continuation pricing is agreed separately. We review fit before confirming an engagement.",
     "formEyebrow": "Application",
     "formTitle": "Tell us what must launch in Japan",
     "consultLabel": "Before you apply",
@@ -1014,7 +1014,7 @@
     "items": [
       {
         "q": "What exactly does the Japan Entry package cost?",
-        "a": "The setup fee is fixed at $12,000 USD. The standard monthly service is included at no additional monthly charge for the first six months, then $995 per month from month seven. Third-party fees and approved work outside the fixed scope are separate."
+        "a": "The setup fee is fixed at $12,000 USD. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party fees and approved work outside the fixed scope are separate."
       },
       {
         "q": "What is included in the fixed setup?",
@@ -1038,7 +1038,7 @@
       },
       {
         "q": "Can we cancel the ongoing service?",
-        "a": "The setup engagement remains governed by the agreed scope. The standard monthly service is included at no additional monthly charge for the first six months. From month seven it is $995 per month and may be cancelled for future periods under the signed service terms; fees already earned and third-party commitments are not reversed."
+        "a": "The setup engagement remains governed by the agreed scope. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. After the included period, continuation pricing is agreed separately and is subject to separate written scope and terms; fees already earned and third-party commitments are not reversed."
       },
       {
         "q": "What happens after we apply?",
@@ -1132,7 +1132,7 @@
     "values": [
       {
         "title": "One public offer",
-        "desc": "$12,000 one-time setup, with the standard monthly service included for six months, then $995/month. The price does not change by visitor region."
+        "desc": "$12,000 one-time setup, with the standard managed operation included for six months for selected launch partners, then continuation pricing is agreed separately. The price does not change by visitor region."
       },
       {
         "title": "Written scope boundaries",
@@ -1230,7 +1230,7 @@
     "ctaEyebrow": "One commercial decision",
     "ctaTitle": "Choose the package, not a maze of retainers.",
     "ctaHighlight": "the package",
-    "ctaDesc": "$12,000 one-time setup, standard monthly service included for six months, then $995/month. Final scope and dependencies are confirmed before kickoff.",
+    "ctaDesc": "$12,000 one-time setup, standard managed operation included for six months for selected launch partners, then continuation pricing is agreed separately. Final scope and dependencies are confirmed before kickoff.",
     "ctaButton": "Apply for Japan Entry — $12K"
   },
   "marketUrgency": {
@@ -1252,7 +1252,7 @@
     "heroDesc": "This is the implementation brief behind the public offer: what we build, what we configure, what you approve, and what your team receives after launch. The package is designed for fast-decision SMBs that want one accountable Japan path without pulling their core team into a long market-entry project.",
     "summary": [
       { "value": "$12,000", "label": "one-time setup" },
-      { "value": "$0", "label": "standard monthly service for months 1–6" },
+      { "value": "Included", "label": "managed operation for selected launch partners during months 1–6" },
       { "value": "14 days", "label": "delivery guarantee from the recorded Start Date" },
       { "value": "48h", "label": "start SLA for standard included requests" }
     ],
@@ -1355,14 +1355,14 @@
     "operations": {
       "eyebrow": "Months 1–6 included",
       "title": "What happens after launch.",
-      "desc": "The first six months include the standard monthly operation at no additional monthly charge. This is an operating layer around the agreed launch—not unlimited agency capacity.",
+      "desc": "For selected launch partners, the first six months include managed operation at no additional monthly charge. This is an operating layer around the agreed launch—not unlimited agency capacity.",
       "items": [
         { "title": "Support and triage", "body": "Customer questions, issue triage, and escalation within the agreed support route." },
         { "title": "Social Media / SEO updates", "body": "Planned updates to the agreed channels and search-ready content surface within the written scope." },
         { "title": "Marketing materials", "body": "Agreed launch assets and selected creative updates, including video only when explicitly scoped." },
         { "title": "Monthly report", "body": "Observed activity, completed work, open dependencies, and the next decision—not invented revenue attribution." },
         { "title": "Visible workspace", "body": "Notion by default or Trello by request; standard included requests are acknowledged, scoped, and started within 48 business hours." },
-        { "title": "Month-seven choice", "body": "The $995/month continuation is a future operating decision under the signed terms; you are not locked into an indefinite retainer." }
+        { "title": "Month-seven choice", "body": "The continuation after the included period is a separate written decision; no indefinite retainer is promised." }
       ]
     },
     "notIncluded": {
@@ -1383,8 +1383,8 @@
       "title": "The decision is simple; the boundaries are written.",
       "items": [
         { "label": "Setup", "value": "$12,000 USD, one-time" },
-        { "label": "Months 1–6", "value": "Standard monthly operation included" },
-        { "label": "Month 7 onward", "value": "$995/month under the signed terms" },
+        { "label": "Months 1–6", "value": "Managed operation included for selected launch partners" },
+        { "label": "Month 7 onward", "value": "continuation pricing is agreed separately under the signed terms" },
         { "label": "Refund", "value": "If the agreed setup is not delivered within 14 business days from the recorded Start Date, the setup fee is refunded in full, subject to the written conditions." },
         { "label": "Payment", "value": "Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link where applicable" }
       ]
@@ -1423,7 +1423,7 @@
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "Paradigm LLC is a Japan-based market-entry and digital operations partner for overseas e-commerce, SaaS, and Web3.0 companies. Fixed Japan Entry scope: $12,000 setup, six months at $0, then $995/month.",
+    "companyTagline": "Paradigm LLC is a Japan-based market-entry and digital operations partner for overseas e-commerce, SaaS, and Web3.0 companies. Fixed Japan Entry scope: $12,000 setup, six months included for selected launch partners, then continuation pricing is agreed separately.",
     "servicesHeading": "Services",
     "companyHeading": "Company",
     "contactHeading": "Contact",
@@ -1448,7 +1448,7 @@
   "home": {
     "heroBadge": "Fixed Japan Entry Package",
     "heroTitle": "Launch in Japan with one accountable package",
-    "heroSubtitle": "$12,000 one-time setup · monthly service included for six months · then $995/month.",
+    "heroSubtitle": "$12,000 one-time setup · managed operation included for six months for selected launch partners · then continuation pricing is agreed separately.",
     "heroSuffix": " for fast-decision SMBs.",
     "heroSubheadline": "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies with localization, trust and compliance coordination, discovery, Japanese support, and handover in one agreed scope.",
     "heroTypingWords": [
@@ -1543,8 +1543,8 @@
     "trustBadges": {
       "1": "Bilingual JP / EN",
       "2": "$12,000 fixed setup",
-      "3": "Monthly service included for six months",
-      "4": "$995/month from month seven"
+      "3": "Managed operation included for six months for selected launch partners",
+      "4": "continuation pricing is agreed separately after the included period"
     },
     "ctaEyebrow": "Get Started",
     "ctaHeading": "Apply for the ",
@@ -1670,7 +1670,7 @@
         {
           "title": "Operate & scale",
           "timing": "Month 1 onward",
-          "body": "Use the included operating period to learn from real signals. From month seven, continue at $995/month only if the ongoing scope still earns its place."
+          "body": "Use the included operating period to learn from real signals. After the included period, continue only under separately agreed terms if the ongoing scope still earns its place."
         }
       ],
       "note": "*The 14-business-day delivery guarantee starts only after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. Application submission itself does not create a contract.",
@@ -1715,7 +1715,7 @@
           "kicker": "Commercial scope",
           "value": "$12K",
           "title": "A price with boundaries",
-          "body": "Fixed setup, six months included, exclusions, dependencies, and the month-seven decision."
+          "body": "Fixed setup, six months included for selected launch partners, exclusions, dependencies, and the month-seven decision."
         },
         {
           "kicker": "Handover",
@@ -1745,7 +1745,7 @@
     "footerContact": "Apply for Japan Entry →",
     "quick": {
       "pricingLabel": "Fixed price & terms",
-      "pricingMessage": "Explain the $12,000 one-time Japan Entry setup, the standard monthly service included for six months, and the $995 monthly fee from month seven.",
+      "pricingMessage": "Explain the $12,000 one-time Japan Entry setup, the standard managed operation included for six months for selected launch partners, and the continuation fee agreed separately from month seven.",
       "processLabel": "How it works",
       "processMessage": "Walk me through what happens after I submit a Japan Entry application.",
       "timelineLabel": "Timeline",
@@ -1755,7 +1755,7 @@
       "aiLabel": "Bilingual support setup",
       "aiMessage": "What bilingual support and automation setup is included, and what remains out of scope?",
       "supportLabel": "After launch",
-      "supportMessage": "What is included in the standard monthly service during the first six months, and what does the $995 monthly service cover from month seven?"
+      "supportMessage": "What is included in managed operation for selected launch partners during the first six months, and what does the continuation service with terms agreed separately cover from month seven?"
     }
   },
   "report": {
@@ -1902,7 +1902,7 @@
     "ctaEyebrow": "From insight to launch",
     "ctaTitle": "Apply the lesson to your Japan entry.",
     "ctaHighlight": "Japan entry",
-    "ctaDesc": "The public offer is fixed: $12,000 one-time setup, standard monthly service included for six months, then $995/month. Apply if your decision-maker is ready.",
+    "ctaDesc": "The public offer is fixed: $12,000 one-time setup, standard managed operation included for six months for selected launch partners, then continuation pricing is agreed separately. Apply if your decision-maker is ready.",
     "ctaButton": "Apply for Japan Entry — $12K",
     "notFound": "Article not found",
     "emptyContent": "The full article content is being prepared. Please check back soon."
@@ -1913,7 +1913,7 @@
     "heroBadge": "Japan Entry module",
     "heroTitle": "Build a Japanese buyer path, not a raw translation.",
     "heroHighlight": "buyer path",
-    "heroDesc": "This module is available through the fixed $12,000 Japan Entry setup, with the standard monthly service included for six months and then $995/month.",
+    "heroDesc": "This module is available through the fixed $12,000 Japan Entry setup, with the standard managed operation included for six months for selected launch partners and then continuation pricing is agreed separately.",
     "painsEyebrow": "Pains",
     "painsHeading": "Any of these sound familiar?",
     "pains": [
@@ -1963,8 +1963,8 @@
       },
       {
         "name": "Months 1–6",
-        "price": "0",
-        "desc": "Standard monthly service included with the setup for months 1–6.",
+        "price": "Included",
+        "desc": "Managed operation included for selected launch partners during months 1–6.",
         "features": [
           "Agreed monitoring and support",
           "Analytics and notifications",
@@ -1974,10 +1974,10 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "995",
-        "desc": "Standard monthly service at $995/month from month seven.",
+        "price": "Agreed separately",
+        "desc": "Continuation service is available only under separate written terms after the included period.",
         "features": [
-          "$995/month",
+          "continuation pricing is agreed separately",
           "Future-period cancellation follows the signed terms",
           "Paradigm-operated work stops when service ends",
           "Approved out-of-scope work remains separate"
@@ -1987,7 +1987,7 @@
     "ctaEyebrow": "Begin",
     "ctaTitle": "Apply for the fixed Japan Entry package",
     "ctaHighlight": "Japan Entry package",
-    "ctaDesc": "$12,000 one-time setup · standard monthly service included for six months · then $995/month.",
+    "ctaDesc": "$12,000 one-time setup · standard managed operation included for six months for selected launch partners · then continuation pricing is agreed separately.",
     "ctaButton": "Apply for Japan Entry — $12K"
   },
   "lpMeo": {
@@ -2070,9 +2070,9 @@
       },
       {
         "name": "Months 1–6",
-        "price": "0",
+        "price": "Included",
         "period": "/month",
-        "desc": "Standard monthly service included with setup for months 1–6",
+        "desc": "Managed operation included for selected launch partners during months 1–6",
         "features": [
           "Responsibilities defined in scope",
           "No separate English discovery retainer",
@@ -2081,9 +2081,9 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "995",
+        "price": "Agreed separately",
         "period": "/month",
-        "desc": "Standard monthly service at $995/month from month seven unless cancelled",
+        "desc": "Continuation service is available only under separate written terms after the included period",
         "features": [
           "Cancellation follows signed terms",
           "Provider fees remain separate",
@@ -2150,9 +2150,9 @@
       },
       {
         "name": "Months 1–6",
-        "price": "0",
+        "price": "Included",
         "period": "/month",
-        "desc": "Standard monthly service included with setup for months 1–6",
+        "desc": "Managed operation included for selected launch partners during months 1–6",
         "features": [
           "Responsibilities defined in scope",
           "No separate English search retainer",
@@ -2161,9 +2161,9 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "995",
+        "price": "Agreed separately",
         "period": "/month",
-        "desc": "Standard monthly service at $995/month from month seven unless cancelled",
+        "desc": "Continuation service is available only under separate written terms after the included period",
         "features": [
           "Cancellation follows signed terms",
           "Third-party and expanded content costs are separate",
@@ -2261,9 +2261,9 @@
       },
       {
         "name": "Months 1–6",
-        "price": "0",
+        "price": "Included",
         "period": "/month",
-        "desc": "Standard monthly service included with setup for months 1–6",
+        "desc": "Managed operation included for selected launch partners during months 1–6",
         "features": [
           "Responsibilities defined in scope",
           "No separate English AI retainer",
@@ -2272,9 +2272,9 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "995",
+        "price": "Agreed separately",
         "period": "/month",
-        "desc": "Standard monthly service at $995/month from month seven unless cancelled",
+        "desc": "Continuation service is available only under separate written terms after the included period",
         "features": [
           "Cancellation follows signed terms",
           "Expanded workflows require written scope",
@@ -2301,7 +2301,7 @@
     "comparisonTraditionalHead": "Agency / hire",
     "pricingEyebrow": "Pricing",
     "pricingTitle": "One fixed Japan Entry package",
-    "pricingDesc": "$12,000 one-time setup · standard monthly service included for six months · then $995/month. Content work outside the agreed launch scope requires written approval.",
+    "pricingDesc": "$12,000 one-time setup · standard managed operation included for six months for selected launch partners · then continuation pricing is agreed separately. Content work outside the agreed launch scope requires written approval.",
     "processEyebrow": "Process",
     "processTitle": "From request to delivery — 4 steps",
     "ctaButton": "Apply for Japan Entry — $12K",
@@ -2315,7 +2315,7 @@
         "name": "Japan Entry Package",
         "price": "$12,000",
         "period": "setup",
-        "volume": "Monthly service included for months 1–6 · $995/month from month 7",
+        "volume": "Managed operation included for selected launch partners during months 1–6 · continuation pricing is agreed separately after the included period",
         "popular": true,
         "features": [
           "Content deliverables only when included in the signed scope",
@@ -2349,7 +2349,7 @@
       },
       {
         "item": "Billing",
-        "paradigm": "Monthly service included for six months, then $995/month; future-period cancellation follows the signed terms",
+        "paradigm": "Managed operation included for six months for selected launch partners, then continuation pricing is agreed separately; continuation terms are agreed separately in writing",
         "traditional": "Per-project, minimums"
       }
     ],
@@ -2397,7 +2397,7 @@
     "howItWorksEyebrow": "How it works",
     "howItWorksTitle": "One written scope across agency, client, and Paradigm",
     "pricingTitle": "One public package",
-    "pricingDesc": "$12,000 one-time setup · standard monthly service included for six months · then $995/month. Agency-specific additions require written scope approval.",
+    "pricingDesc": "$12,000 one-time setup · standard managed operation included for six months for selected launch partners · then continuation pricing is agreed separately. Agency-specific additions require written scope approval.",
     "comparisonEyebrow": "Why WL",
     "comparisonTitle": "Written responsibilities instead of assumed white-label promises",
     "faqEyebrow": "FAQ",
@@ -2435,10 +2435,10 @@
       },
       {
         "name": "Month 7 onward",
-      "price": "$995",
+      "price": "continuation pricing",
       "period": "/month",
         "videos": "Defined ongoing service",
-        "desc": "Unless cancelled under signed terms",
+        "desc": "Continuation scope agreed separately",
         "features": [
           "Responsibilities defined in scope",
           "Provider and out-of-scope costs remain separate",
@@ -2493,7 +2493,7 @@
       },
       {
         "q": "How does future-period cancellation work?",
-        "a": "The public English terms include the standard monthly service for the first six months, then charge $995/month. Future-period cancellation follows the signed terms; agency additions may have separate commitments."
+        "a": "For selected launch partners, the public English terms include managed operation for the first six months at no additional monthly charge. Continuation pricing is agreed separately after the included period; agency additions may have separate commitments."
       }
     ],
     "ctaEyebrow": "Partnership",
@@ -2511,7 +2511,7 @@
     "videoFooter": "Review the evidence, assumptions, and recommended priorities before deciding on any action.",
     "ctaEyebrow": "NEXT STEP",
     "ctaTitle": "Apply for the fixed Japan Entry package",
-    "ctaDesc": "$12,000 one-time setup · standard monthly service included for six months · then $995/month. Submission is a fit review, not contract acceptance.",
+    "ctaDesc": "$12,000 one-time setup · standard managed operation included for six months for selected launch partners · then continuation pricing is agreed separately. Submission is a fit review, not contract acceptance.",
     "ctaSubtext": "For fast-decision SMBs with launch-ready inputs",
     "footerNote": "Paradigm Web Diagnostics · report valid until {date}",
     "severityCritical": "Critical",
@@ -2524,7 +2524,7 @@
       "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
       "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
       "ctaPrimary": "Apply for Japan Entry — $12K",
-      "ctaPrimaryNote": "$12,000 setup · six months $0 · then $995/month",
+      "ctaPrimaryNote": "$12,000 setup · six months included for selected launch partners · then continuation pricing is agreed separately",
       "ctaSecondary": "Review fixed scope",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
@@ -2574,9 +2574,9 @@
       "metric2Value": "$12K",
       "metric2Label": "fixed setup price in USD",
       "metric3Value": "6",
-      "metric3Label": "first six months of standard monthly service included",
-      "metric4Value": "$995",
-      "metric4Label": "monthly service price from month seven",
+      "metric3Label": "first six months of managed operation included for selected launch partners",
+      "metric4Value": "continuation pricing",
+      "metric4Label": "continuation terms after the included period",
       "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
     },
     "report": {
@@ -2608,16 +2608,16 @@
         },
         "growth": {
           "name": "Months 1–6",
-          "price": "$0/month",
-          "desc": "The defined ongoing service during the included support period.",
+          "price": "Included",
+          "desc": "Managed operation included for selected launch partners during months 1–6.",
           "feature1": "Localized site sections plus MEO foundation",
           "feature2": "LINE / inquiry flow and AI support setup",
           "feature3": "30-day launch improvement sprint"
         },
         "scale": {
           "name": "Month 7 onward",
-          "price": "$995/month",
-          "desc": "The defined ongoing service unless cancelled under the signed terms.",
+          "price": "Agreed separately",
+          "desc": "Continuation scope is agreed separately after the included period.",
           "feature1": "Expanded localization and conversion optimization",
           "feature2": "AI customer support and operations automation",
           "feature3": "Executive report with next-quarter Japan roadmap"
@@ -2635,13 +2635,13 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$12,000 one-time setup, with the standard monthly service included for the first six months, then $995/month from month seven. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$12,000 one-time setup. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
       "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "The agreed handover materials and ownership are documented in scope. The standard monthly service is included for six months, then $995/month unless cancelled under the signed terms."
+      "a8": "The agreed handover materials and ownership are documented in scope. The managed operation is included for six months for selected launch partners, then continuation pricing is agreed separately; availability and scope are confirmed in writing."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",

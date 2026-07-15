@@ -61,7 +61,7 @@ function buildEnglishCompanyInfo(
   rows.push(
     ["Email", settings.contact.email ?? "info@paradigmjp.com"],
     ["Website", "https://paradigmjp.com"],
-    ["Public offer", "$12,000 Japan Entry setup · first six months $0 · then $995/month"],
+    ["Public offer", "$12,000 Japan Entry setup · first six months included for selected launch partners · then continuation pricing is agreed separately"],
   )
   return rows
 }

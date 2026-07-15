@@ -642,7 +642,7 @@
       "支払方法：Wise・銀行振込・USDC・Stripe請求書／決済リンクのクレジットカード",
       "開始日から14営業日以内に合意したセットアップを納品できない場合の12,000ドル全額返金",
       "最初の6か月は標準月額運用込み",
-      "7か月目以降は月額995ドル"
+      "選定した契約先には最初の6か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別に協議して書面で合意します。"
     ],
     "paymentEyebrow": "支払方法と納品保証",
     "paymentTitle": "支払経路を選び、納品条件を文書で固定する。",
@@ -683,7 +683,7 @@
     "comparisonRows": [
       { "criterion": "最初の公開導線", "package": "記録した開始日から14営業日の納品保証", "hire": "採用・オンボーディングが先", "vendors": "各社の開始日が分かれる" },
       { "criterion": "責任の所在", "package": "固定範囲、担当、承認、引き継ぎを一つに", "hire": "社員だけでは専門作業が残る", "vendors": "顧客が統合責任を負う" },
-      { "criterion": "費用の形", "package": "$12,000固定、6か月込み、7か月目以降$995/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
+      { "criterion": "費用の形", "package": "$12,000固定、6か月込み、7か月目以降continuation pricing/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
       { "criterion": "適する企業", "package": "実際の提案と、今月判断できる責任者がいる企業", "hire": "恒久的な日本チームをつくる企業", "vendors": "社内に統合責任者と時間がある企業" }
     ],
     "scopeEyebrow": "範囲の境界",
@@ -2045,7 +2045,7 @@
       "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
       "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
       "ctaPrimary": "Apply for Japan Entry — $12K",
-      "ctaPrimaryNote": "$12,000 setup · six months $0 · then $995/month",
+      "ctaPrimaryNote": "$12,000 setup · six months included for selected launch partners · then continuation pricing is agreed separately",
       "ctaSecondary": "Review fixed scope",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
@@ -2095,9 +2095,9 @@
       "metric2Value": "$12K",
       "metric2Label": "fixed setup price in USD",
       "metric3Value": "6",
-      "metric3Label": "first six months of standard monthly service included",
-      "metric4Value": "$995",
-      "metric4Label": "monthly service price from month seven",
+      "metric3Label": "first six months of managed operation included for selected launch partners",
+      "metric4Value": "continuation pricing",
+      "metric4Label": "continuation terms after the included period",
       "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
     },
     "report": {
@@ -2129,16 +2129,16 @@
         },
         "growth": {
           "name": "Months 1–6",
-          "price": "$0/month",
-          "desc": "The defined ongoing service during the included support period.",
+          "price": "Included",
+          "desc": "Managed operation included for selected launch partners during months 1–6.",
           "feature1": "Localized site sections plus MEO foundation",
           "feature2": "LINE / inquiry flow and AI support setup",
           "feature3": "30-day launch improvement sprint"
         },
         "scale": {
           "name": "Month 7 onward",
-          "price": "$995/month",
-          "desc": "The defined ongoing service unless cancelled under the signed terms.",
+          "price": "Agreed separately",
+          "desc": "Continuation scope is agreed separately after the included period.",
           "feature1": "Expanded localization and conversion optimization",
           "feature2": "AI customer support and operations automation",
           "feature3": "Executive report with next-quarter Japan roadmap"
@@ -2156,13 +2156,13 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$12,000 one-time setup, with the standard monthly service included for the first six months, then $995/month from month seven. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$12,000 one-time setup. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
       "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "The agreed handover materials and ownership are documented in scope. The standard monthly service is included for six months, then $995/month unless cancelled under the signed terms."
+      "a8": "The agreed handover materials and ownership are documented in scope. The managed operation is included for six months for selected launch partners, then continuation pricing is agreed separately; availability and scope are confirmed in writing."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",

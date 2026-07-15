@@ -76,7 +76,7 @@ const PRODUCTS = [
       delivery: "lp_localization_ops",
       setup_price_usd: 12000,
       included_months: 6,
-      monthly_price_usd_after_included_period: 995,
+      continuation_pricing: "agreed_separately_after_included_period",
     },
   },
   {
@@ -1519,7 +1519,7 @@ async function main() {
       ],
     },
     { url: "https://paradigmjp.com/en/about" },
-    { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "$995", "Wise", "delivery guarantee"] },
+    { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "continuation pricing", "Wise", "delivery guarantee"] },
     { url: "https://paradigmjp.com/en/faq", markers: ["$12,000", "Which payment methods can we use?", "full setup fee is refunded"] },
     { url: "https://paradigmjp.com/en/works" },
     { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?", "The Source Pack That Keeps a Japan Launch Moving"] },

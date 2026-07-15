@@ -32,7 +32,7 @@ describe("public English Japan Entry copy", () => {
   it("keeps the fixed commercial terms consistent", () => {
     expect(messages.pricingPage.fixedPlanName).toBe("Japan Entry Package")
     expect(messages.pricingPage.heroDesc).toContain("$12,000")
-    expect(messages.pricingPage.heroDesc).toContain("$995/month")
+    expect(messages.pricingPage.heroDesc).toContain("continuation pricing is agreed separately")
     expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for Japan Entry — $12K")
     expect(messages.cta.primary).toBe("Apply — $12K")
     expect(messages.lpWeb.plans.map((plan) => plan.name)).toEqual([
@@ -43,7 +43,7 @@ describe("public English Japan Entry copy", () => {
     expect(messages.videoPage.plans).toHaveLength(1)
     expect(messages.videoPage.plans[0].name).toBe("Japan Entry Package")
     expect(JSON.stringify(messages)).not.toMatch(
-      /cancel anytime|\bcancellable\b|our pro plan/i,
+      /cancel anytime|\bsubject to separate written terms\b|our pro plan/i,
     )
   })
 
@@ -160,9 +160,9 @@ describe("public English Japan Entry copy", () => {
     const copy = JSON.stringify(jaMessages.homeEn)
     for (const term of [
       "$12,000",
-      "$0/month",
-      "$995/month",
-      "signed terms",
+      "six months included for selected launch partners",
+      "continuation pricing is agreed separately",
+      "Continuation scope is agreed separately after the included period.",
       "Month-one target: 20 qualified launches",
       "not a customer outcome guarantee",
     ]) {
@@ -206,7 +206,7 @@ describe("public English Japan Entry copy", () => {
     const priceToken = /\$(?:\d{1,3}(?:,\d{3})+|\d+)(?:K)?/g
     const prices = new Set(strings.flatMap(({ value }) => value.match(priceToken) ?? []))
 
-    expect([...prices].sort()).toEqual(["$0", "$12,000", "$12K", "$995"])
+    expect([...prices].sort()).toEqual(["$12,000", "$12K"])
   })
 
   it("contains no accidental Japanese copy outside the locale-switch label", () => {
