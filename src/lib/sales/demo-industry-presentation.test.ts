@@ -92,7 +92,7 @@ describe("applyIndustryPresentation", () => {
     base.premium = {
       style: "professional",
       heroMedia: [
-        { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_m", alt: "エキテン掲載素材", caption: "権利確認前は公開・納品に使用しない", kind: "image" },
+        { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_m", alt: "エキテン掲載素材", caption: "生成イメージ", kind: "image" },
         { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_l", alt: "同じ写真", caption: "権利確認前", kind: "image" },
         { src: "/clinic-2.jpg", alt: "受付", caption: "受付", kind: "image" },
       ],
@@ -107,7 +107,7 @@ describe("applyIndustryPresentation", () => {
     expect(page.pages.home.hero.industryLabel).toBe("歯科医院")
     expect(page.pages.about.industryLabel).toBe("歯科医院")
     expect(page.premium?.heroMedia).toHaveLength(2)
-    expect(JSON.stringify(page.premium)).not.toMatch(/エキテン掲載素材|権利確認前|提案用素材/u)
+    expect(JSON.stringify(page.premium)).not.toMatch(/エキテン掲載素材|権利確認前|提案用素材|生成イメージ/u)
     expect(page.premium?.intro.note).not.toMatch(/提案用|権利確認/u)
   })
 
