@@ -1772,7 +1772,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 本番read-backで`/en/package`、`/en/faq`、`/en/terms`、`/en/refund`、`/en/pricing`はHTTP **200**。Package本文にJapan Digital Launch、Observed、Setup Queue、Managed Operations Commencement Dateを確認し、FAQの3トラック・6か月起算日を確認。`$2,000`、`$995`、Founding 10、10 companies、10 slotsの未確定マーカーはPackageに存在しない。
 - 既存のTwenty変更 `src/lib/sales/twenty-sync-list-lead.test.ts` は未編集・未stageで保持する。
 
-## CURRENT STATUS - 2026-07-16 Customer-copy cleanup after live QA (実装・対象テスト完了 / 本番release待ち / 外部送信0)
+## CURRENT STATUS - 2026-07-16 Customer-copy cleanup after live QA (本番反映・公開確認済み / 外部送信0)
 
 - 公開DEMOの実表示で残っていた「生成イメージ」と公開情報取得メタ文（`確認済みの公開情報では`等）を、サービス本文・ナラティブ・ニュース・フッターへ流さない共通サニタイズを追加した。顧客向けの編集ラベルと短い事業紹介へ置換する。
-- 対象Vitest **2 files / 9 tests**、TypeScript、`git diff --check`を通過。候補追加、Twenty同期、公開URL発行、外部送信は行っていない。
+- 対象Vitest **2 files / 9 tests**、TypeScript、`git diff --check`を通過。PR **#357**（公開情報メタ文除去）とPR **#358**（生成イメージ／コンセプト素材ラベル除去）をmainへマージし、正式`npm run release:prod`のpre/post gateを通過した。deployment **zyk3rvrjupohnboiu1w5rn7h**、DB **89/89**、公開smoke、Twenty、Sales health JSON `ok:true`を確認した。
+- 公開`https://demo.paradigmjp.com/cafe-sosomu`をPC・モバイルで再確認。顧客画面に`生成イメージ`、`確認済みの公開情報では`、エキテン権利確認メモ、`コンサルティング`は0件。モバイルはviewport **390px / documentWidth 390px / overflow false**、ブラウザerror **0件**。候補追加、Twenty同期、公開URL発行、外部送信は行っていない。
