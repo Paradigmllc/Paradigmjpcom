@@ -123,7 +123,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("deliver") ||
     question.includes("service")
   ) {
-    return "Included: localized revenue site and conversion path, buyer-facing trust/compliance coordination, eligible payment or inquiry routing, Japanese AI-assisted support setup, analytics, notifications, launch verification, and handover."
+    return "Included in the standard setup envelope: Japan Opportunity analysis, a Japanese landing page plus normally eight to ten core pages, payment setup coordination, up to two Social Media channels, launch creative, a Notion or Trello workspace, regulatory-readiness coordination, launch verification, and handover. The signed scope is final; legal, tax, banking, licensing, logistics, advertising, specialist advice, and provider approval remain separate."
   }
   if (
     question.includes("support") ||
@@ -131,7 +131,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("after") ||
     question.includes("launch")
   ) {
-    return "For selected launch partners, the first six months of managed Japan operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Exact support channels, ownership, and response expectations are confirmed in the written scope."
+    return "For selected launch partners, the first six months of managed Japan operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. The standard operating envelope is up to four pages or 5,000 words per month, one active creative request at a time, up to two Social Media channels, and a 48-business-hour start commitment for standard requests; exact channels, ownership, and priorities are confirmed in the written scope."
   }
   if (
     question.includes("contact") ||

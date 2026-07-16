@@ -63,7 +63,7 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     title: "Japan Entry scope and exclusions",
     href: "/en/services",
     keywords: ["include", "scope", "deliver", "localization", "sns", "social", "compliance", "support", "handover", "exclude"],
-    content: "The fixed setup connects a Japanese buyer path, LP/HP localization, up to two priority social channels, public-signal market research, regulatory applicability screening, eligible inquiry or payment routing, bilingual support setup, launch operations, and handover. It does not replace legal, tax, banking, licensing, logistics, advertising, or provider approval.",
+    content: "The standard fixed setup envelope connects Japan Opportunity analysis (including three to five competitors and a 90-day plan), a Japanese landing page plus normally eight to ten core pages and 15,000–20,000 source words, payment setup coordination, up to two priority Social Media channels with ten starter posts or briefs, launch creative, a Notion or Trello workspace, regulatory-readiness coordination, launch operations, and handover. The signed scope is final. It does not replace legal, tax, banking, licensing, logistics, advertising, specialist advice, or provider approval.",
   },
   {
     locale: "ja",

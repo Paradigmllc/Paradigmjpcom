@@ -26,6 +26,7 @@ type SummaryItem = { value: string; label: string }
 type Workstream = { number: string; title: string; summary: string; deliverables: string[] }
 type TimelineStep = { label: string; title: string; body: string }
 type OperationItem = { title: string; body: string }
+type CapacityItem = { label: string; value: string }
 type CommercialItem = { label: string; value: string }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -54,6 +55,7 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
   const workstreams = t.raw("workstreams") as Workstream[]
   const timeline = t.raw("timeline.steps") as TimelineStep[]
   const operations = t.raw("operations.items") as OperationItem[]
+  const capacity = t.raw("operations.capacity") as CapacityItem[]
   const commercial = t.raw("commercial.items") as CommercialItem[]
   const notIncluded = t.raw("notIncluded.items") as string[]
 
@@ -156,6 +158,23 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
               )
             })}
           </div>
+          <FadeIn className="mt-8 rounded-lg border border-paradigm-line bg-paradigm-paper p-5 md:p-7">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="paradigm-eyebrow text-paradigm-accent">{t("operations.capacityEyebrow")}</p>
+                <h3 className="mt-2 font-display text-[22px] leading-[1.15] text-paradigm-ink">{t("operations.capacityTitle")}</h3>
+              </div>
+              <p className="max-w-xl text-[12px] leading-[1.75] text-paradigm-ink-soft">{t("operations.capacityDesc")}</p>
+            </div>
+            <dl className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {capacity.map((item) => (
+                <div key={item.label} className="rounded-md border border-paradigm-line/70 bg-paradigm-paper-deep p-4">
+                  <dt className="text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-ink-mute">{item.label}</dt>
+                  <dd className="mt-2 font-display text-[20px] text-paradigm-ink">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </FadeIn>
         </div>
       </section>
 
