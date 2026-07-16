@@ -1383,6 +1383,18 @@
         { "label": "Response start", "value": "Within 48 business hours" }
       ]
     },
+    "async": {
+      "eyebrow": "Async-first delivery",
+      "title": "Decisions in writing. Production in the queue.",
+      "desc": "The default operating model is a dedicated client workspace plus short Loom updates. You can submit as many Japan-related requests as you need; one primary request stays in active production at a time so priorities remain visible.",
+      "points": [
+        { "title": "A private client workspace", "body": "Each client receives an isolated Notion workspace by default, or Trello if preferred. It includes Home, Request Queue, Launch Roadmap, Deliverables, Approvals, Reports, and a Meeting & Loom archive." },
+        { "title": "One active request at a time", "body": "Requests can be queued without an artificial request-count cap. Large work is split into reviewable tasks; a change to the original requirement becomes a new request, and client-side waits pause the delivery clock." },
+        { "title": "Loom plus a written record", "body": "When useful, we attach a short Loom explaining the approach, what changed, the Japan-specific reason, and what needs approval. Owners, decisions, dependencies, and acceptance remain in the written workspace." },
+        { "title": "Meetings for decisions, not status theatre", "body": "Kickoff, key approvals, and material blockers can use Zoom. Normal updates stay async. Translated captions or AI interpretation may assist live calls where available, but they are not the source of contractual or regulatory truth." }
+      ],
+      "meetingPolicy": "Typical cadence: a 45–60 minute kickoff, an optional 30-minute setup check-in every two weeks, and a 30-minute monthly review after launch. New requests are acknowledged within one business day and normally enter active production within two business days. Small and medium delivery ranges are agreed per request."
+    },
     "notIncluded": {
       "eyebrow": "Boundaries that protect the scope",
       "title": "What is not silently bundled.",

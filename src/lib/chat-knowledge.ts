@@ -84,7 +84,7 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     title: "Shared delivery workspace and 48-hour start SLA",
     href: "/en/pricing#japan-entry-journey",
     keywords: ["notion", "trello", "workspace", "board", "task", "progress", "status", "48", "hours", "SLA", "updates"],
-    content: "After written scope acceptance, Paradigm creates a dedicated client delivery workspace, normally Notion or Trello on request. It records scope, owners, task status, blockers, approvals, deliverables, and the next action. Standard requests inside the included monthly operation are acknowledged, scoped, and started within 48 business hours; that is a start SLA, not a promise of completion within 48 hours.",
+    content: "After written scope acceptance, Paradigm creates a private, isolated client delivery workspace, normally Notion or Trello on request. It includes Home, Request Queue, Launch Roadmap, Deliverables, Approvals, Reports, and a Meeting & Loom archive. Requests can be queued without an artificial request-count cap, with one primary request in active production at a time; large work is split into reviewable tasks and client-side waits pause the delivery clock. Normal communication is async-first, with short Loom updates when a visual explanation helps. New requests are acknowledged within one business day and normally enter active production within two business days; the 48-business-hour start language is a start SLA, not a promise of completion within 48 hours. Kickoff, key approvals, and material blockers can use Zoom. Translated captions or AI interpretation may assist live calls, but the written English scope and post-call summary govern contractual and regulatory meaning.",
   },
   {
     locale: "ja",

@@ -1735,3 +1735,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 月額運用は、最大4ページ/5,000ワード、同時1件のクリエイティブ依頼、最大2 Social Mediaチャネル、標準依頼の48営業時間以内着手を「標準運用目安」として表示。広告費、外部SaaS/決済、法務・税務・許認可、物流、常時CS、営業代行、大規模開発、成果保証を除外リストへ追加した。未確定の継続月額（添付資料の例示額を含む）は公開していない。
 - FAQ、英語AIチャット知識・フォールバック、公開リリースRunbookも同じ範囲・除外・「書面スコープが最終」の原則へ同期した。日本語サイトの国内Web制作ポジションと、既存Twenty関連の未コミット変更は変更していない。
 - 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 warnings）、production build **408/408 pages**。PR **#347**をmainへマージし、正式`npm run release:prod`（deployment `rxh9k70ocn9qyyro3n1sfrx6`）のpre/post gate、DB **89/89**、Traefik、Cloudflare origin lock、Twenty、Sales health JSON `ok:true`、公開smokeを通過。`/en/package`と主要英語ページで新しい標準範囲・除外・継続価格非公開をHTTP 200確認した。
+
+## CURRENT STATUS - 2026-07-16 DesignJoy型の非同期運用設計（実装・ローカル検証完了 / release pending）
+
+- 添付の運用案を、英語Japan Entryのパッケージページへ反映した。専用Notionワークスペース（希望時Trello）、Home / Request Queue / Launch Roadmap / Deliverables / Approvals / Reports / Meeting & Loom Archive、キュー無制限・同時1件、依頼の1営業日以内確認と原則2営業日以内のアクティブ着手、顧客側待機による時計停止、Loomと書面記録、会議を意思決定に限定する方針を明記した。
+- Zoomの翻訳字幕・AI通訳は補助に限定し、契約・規制上の意味は英語の書面スコープ、検収記録、通話後サマリーを優先することを、パッケージ、AIチャット知識・フォールバック、公開運用Runbookへ同期した。カード情報・銀行認証情報・秘密鍵をNotion/Trello/Loomへ保存しない運用境界もRunbookへ追加した。
+- 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard` **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。本番releaseと公開URL確認は次工程。

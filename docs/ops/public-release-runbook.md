@@ -64,6 +64,43 @@ numbers, bank credentials, wallet addresses, or seed phrases. Credit-card
 collection remains an invoice/payment-link flow because the direct checkout
 endpoint is intentionally retired.
 
+### Async delivery operations
+
+Every engaged client receives a private, isolated delivery workspace. Use a
+separate Notion parent page and guest boundary for each client (or a separate
+Trello board when requested); never expose multiple clients through one shared
+filtered database. Grant least-privilege access and verify that parent-page
+sharing does not expose unrelated subpages.
+
+The workspace must contain, at minimum, Home, Request Queue, Launch Roadmap,
+Deliverables, Approvals, Reports, and Meeting & Loom Archive. Each request
+follows the visible state machine `Submitted → Active → Review → Completed` or
+`Blocked`, with owner, priority, submitted/started timestamps, delivery estimate,
+dependencies, approval state, and the next action recorded. Queue size is not
+artificially capped, but only one primary request is active at a time; large
+work is split into reviewable tasks and a material change to the original
+requirement becomes a new request.
+
+The operating SLA is: acknowledge a new request within one business day and
+normally start active production within two business days (the public wording
+may also say within 48 business hours). “Start” means requirement review,
+research, copy, wireframe, design, translation, or technical investigation has
+begun; it does not mean completion. Missing inputs, access, or client approval
+must be logged as a dependency and pause the delivery clock.
+
+Keep normal updates asynchronous. Link short Loom recordings to the relevant
+request and preserve a written summary of what changed, why it matters for
+Japan, requested approval, and the next action. Typical synchronous touchpoints
+are a 45–60 minute kickoff, an optional 30-minute setup check-in every two
+weeks, and a 30-minute monthly review after launch; use Zoom for decisions,
+material blockers, or key approvals rather than routine status reporting.
+Translated captions or AI interpretation may assist a live call where
+available, but they are assistive only. The written English scope, acceptance
+record, and post-call summary govern commercial, contractual, and regulatory
+meaning; use a human interpreter or specialist review when nuance is material.
+Never place card data, bank credentials, seed phrases, or private wallet keys in
+Notion, Trello, Loom, comments, or uploads.
+
 ## Required production settings
 
 The following values belong in the Coolify production environment, never in git
