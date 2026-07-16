@@ -133,7 +133,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
                   lang === "ja" ? "信頼表示 + セキュリティ対策" : "Buyer-facing trust and compliance coordination",
                   lang === "ja" ? "合意した集客・問い合わせ導線の最適化" : "Eligible payment or inquiry routing, analytics, and notifications",
                   hasDemo ? (lang === "ja" ? "改善デモサイト公開済み" : "Demo site already live") : (lang === "ja" ? "改善デモサイト作成" : "Demo site creation"),
-                  lang === "ja" ? "選定した契約先には最初の6か月の運用を追加月額なしで提供" : "For selected launch partners, the first six months of managed operation are included at no additional monthly charge; continuation pricing is agreed separately after the included period",
+                  lang === "ja" ? "選定した契約先には最初の6か月の運用を追加月額なしで提供" : "Standard Managed Japan Desk is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge",
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />

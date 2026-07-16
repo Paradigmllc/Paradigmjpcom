@@ -391,7 +391,7 @@
         "title": "Fixed commercial scope",
         "industry": "Commercial clarity",
         "description": "One public offer keeps setup, included launch work, exclusions, support period, and ongoing price visible before application.",
-        "metrics": "$12K · six months included for selected launch partners",
+        "metrics": "$12K setup · $0/month in months 1–6 for the first 10 selected launch partners",
         "tags": ["Fixed scope", "USD", "Support", "Handover"]
       },
       {
@@ -1890,7 +1890,7 @@
           "kicker": "Commercial scope",
           "value": "$12K",
           "title": "A price with boundaries",
-          "body": "Fixed setup, six months included for selected launch partners, exclusions, dependencies, and the month-seven decision."
+          "body": "Fixed setup, $2,000/month standard operation, months 1–6 at $0/month for the first 10 selected launch partners, exclusions, dependencies, and the month-seven rate."
         },
         {
           "kicker": "Handover",
@@ -2245,9 +2245,9 @@
       },
       {
         "name": "Months 1–6",
-        "price": "Included",
+        "price": "$0",
         "period": "/month",
-        "desc": "Managed operation included for selected launch partners during months 1–6",
+        "desc": "$0/month for the first 10 selected launch partners during months 1–6",
         "features": [
           "Responsibilities defined in scope",
           "No separate English discovery retainer",
@@ -2256,9 +2256,9 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "Agreed separately",
+        "price": "$2,000",
         "period": "/month",
-        "desc": "Continuation service is available only under separate written terms after the included period",
+        "desc": "Standard Managed Japan Desk from month 7 onward",
         "features": [
           "Cancellation follows signed terms",
           "Provider fees remain separate",
@@ -2325,9 +2325,9 @@
       },
       {
         "name": "Months 1–6",
-        "price": "Included",
+        "price": "$0",
         "period": "/month",
-        "desc": "Managed operation included for selected launch partners during months 1–6",
+        "desc": "$0/month for the first 10 selected launch partners during months 1–6",
         "features": [
           "Responsibilities defined in scope",
           "No separate English search retainer",
@@ -2336,9 +2336,9 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "Agreed separately",
+        "price": "$2,000",
         "period": "/month",
-        "desc": "Continuation service is available only under separate written terms after the included period",
+        "desc": "Standard Managed Japan Desk from month 7 onward",
         "features": [
           "Cancellation follows signed terms",
           "Third-party and expanded content costs are separate",
@@ -2436,9 +2436,9 @@
       },
       {
         "name": "Months 1–6",
-        "price": "Included",
+        "price": "$0",
         "period": "/month",
-        "desc": "Managed operation included for selected launch partners during months 1–6",
+        "desc": "$0/month for the first 10 selected launch partners during months 1–6",
         "features": [
           "Responsibilities defined in scope",
           "No separate English AI retainer",
@@ -2447,9 +2447,9 @@
       },
       {
         "name": "Month 7 onward",
-        "price": "Agreed separately",
+        "price": "$2,000",
         "period": "/month",
-        "desc": "Continuation service is available only under separate written terms after the included period",
+        "desc": "Standard Managed Japan Desk from month 7 onward",
         "features": [
           "Cancellation follows signed terms",
           "Expanded workflows require written scope",
@@ -2668,7 +2668,7 @@
       },
       {
         "q": "How does future-period cancellation work?",
-        "a": "For selected launch partners, the public English terms include managed operation for the first six months at no additional monthly charge. Continuation pricing is agreed separately after the included period; agency additions may have separate commitments."
+        "a": "The standard Managed Japan Desk is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month, followed by $2,000/month from month 7 under the signed terms; agency additions may have separate commitments."
       }
     ],
     "ctaEyebrow": "Partnership",

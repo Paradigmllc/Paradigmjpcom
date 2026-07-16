@@ -133,6 +133,63 @@ Do not jump from “low public visibility” to “lost revenue.” Use it to ch
 
 The objective is not to imitate a paid intelligence platform for free. It is to give an SMB a reliable boundary between what Japan is showing publicly, what the company can verify privately, and what still needs a decision.`
   },
+  {
+    slug: "managed-japan-desk-six-months-included",
+    title: "Managed Japan Desk: What Six Months of Included Operation Actually Covers",
+    excerpt:
+      "Six months included does not mean an unlimited agency retainer. Here is how a managed Japan desk turns a launched buyer path into a visible, bounded operating queue.",
+    category: "Launch Operations",
+    readTime: "10 min",
+    publishedAt: "2026-07-16",
+    tags: ["japan-entry-public", "Launch Operations", "Managed Japan Desk", "Commercial Scope"],
+    content: `## “Included” should describe an operating system, not a vague discount
+
+When an overseas company sees “six months included,” the useful question is not whether every future request is free. It is: what operating layer starts after the Japan launch, what can enter the queue, who approves it, and what remains outside the service? A clear answer protects both sides. The client can plan a realistic launch; the delivery team can keep quality and ownership visible.
+
+The Japan Entry offer separates two milestones. The fixed $12,000 setup builds the Japanese buyer path, trust information, eligible inquiry or payment route, launch assets, operating record, and handover. The Managed Japan Desk then keeps that path usable and improves it through a written request queue. Setup and operation are related, but they are not one unlimited bucket.
+
+## The commercial model in one view
+
+The standard Managed Japan Desk fee is $2,000/month. For the first 10 selected launch partners, the fee is waived for months 1–6, so those months are $0/month. From month 7 onward, the standard fee is $2,000/month under the signed terms. Eligibility and availability are confirmed in writing; an application alone does not reserve a place.
+
+| Stage | What the client pays | What the stage is for |
+|---|---:|---|
+| Setup | $12,000 one time | Build, verify, publish, and hand over the agreed Japan launch scope |
+| Months 1–6 campaign | $0/month for the first 10 selected launch partners | Operate the agreed route, answer questions, and improve priority surfaces |
+| Month 7 onward | $2,000/month | Continue the standard Managed Japan Desk under the signed scope |
+
+The table is a commercial map, not a promise of sales. It does not include advertising spend, payment-provider charges, hosting, fulfilment, inventory, legal or tax advice, licensing, or specialist approval unless the signed scope explicitly adds them.
+
+## What enters the monthly queue
+
+### Localization and buyer-path maintenance
+
+The desk can update Japanese page copy, product explanations, FAQs, emails, pricing context, calls to action, and campaign landing pages within the written monthly envelope. A change request should include the source fact, intended buyer action, reviewer, and launch dependency. If a product or policy changes in English, the Japanese page should not quietly retain the old promise.
+
+### Social Media and creative support
+
+The operating queue can prepare content for the agreed priority channels: post copy, visual direction, banners, short edits, subtitles, thumbnails, blog visuals, and reply drafts. Publishing, community response, creator fees, paid media, and a new channel remain explicit operating choices. A queue is healthier when the owner and approval step are visible than when a provider promises an unbounded number of posts.
+
+### Market and customer feedback monitoring
+
+The desk can monitor agreed competitors, Japanese reviews, public search signals, customer questions, and relevant primary-source changes. It can organize Japanese feedback into decisions for the product or support owner. Public observations are not private traffic or revenue data. A report should label each item as Observed, Modeled, or Hypothesis and record the source and captured date.
+
+### Light payment and support fixes
+
+The desk can review checkout wording, refund explanations, purchase emails, inquiry routing, acknowledgement messages, and small integration errors. Provider approval, underwriting, large migrations, custom product development, banking, tax, and regulated decisions remain external dependencies. When a question is uncertain, the correct action is to record it and escalate rather than improvise a confident Japanese answer.
+
+## How the queue protects response quality
+
+Requests can be submitted in the private Notion or Trello workspace with context, priority, owner, and requested decision. One primary request stays Active at a time; larger work is split into reviewable tasks. New standard requests are acknowledged within one business day and normally start within 48 business hours after required inputs are ready. Client-side waits, missing access, provider review, and approval holds are logged as dependencies and pause the relevant clock.
+
+This is not bureaucracy for its own sake. It gives a founder a current view of what is being produced, what is blocked, and what needs a decision. It also creates a handover record that remains useful if the company later hires locally or changes providers.
+
+## What success should mean after six months
+
+Do not define the included period as a guaranteed revenue number. A responsible six-month review asks whether the Japanese buyer path is understandable, whether the inquiry or payment route is usable, whether support ownership is clear, which objections recur, which public signals changed, and which first-party measurements the client can now authorize. The answer may be to expand, narrow, pause, or continue the desk at the standard rate.
+
+That is the point of a Managed Japan Desk: not to hide an agency retainer behind the word “free,” but to keep a market-ready Japanese operating path accountable after the initial build. A written queue, evidence labels, approval gates, and a defined month-seven rate make the decision easier to evaluate.`
+  },
 ]
 
 export const ARTICLE_VISUALS_ADDITIONS: Record<string, NonNullable<JapanEntryBlogPost["heroImage"]>> = {
@@ -150,6 +207,11 @@ export const ARTICLE_VISUALS_ADDITIONS: Record<string, NonNullable<JapanEntryBlo
     src: "/japan-entry/signal-check.svg",
     alt: "Public signals separated from first-party data and unknowns",
     caption: "A defensible market report separates public observations, authorized data, and unknowns.",
+  },
+  "managed-japan-desk-six-months-included": {
+    src: "/japan-entry/application-handover.svg",
+    alt: "A managed Japan Desk queue connecting launch tasks, approvals, and handover",
+    caption: "A visible request queue turns an included operating period into accountable work rather than an unlimited promise.",
   },
 }
 
