@@ -5,8 +5,10 @@ import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal } from "./PremiumV3Primitives"
 import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
+import { PremiumV3HospitalityAbout } from "./PremiumV3HospitalityInnerPages"
 
 export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
+  if ((data.presentation?.industryProfile ?? data.industry) === "restaurant") return <PremiumV3HospitalityAbout data={data} />
   const premium = data.premium!
   const about = data.pages.about
   const media = premium.gallery.length > 0 ? premium.gallery : premium.heroMedia

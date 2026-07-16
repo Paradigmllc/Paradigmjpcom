@@ -804,6 +804,199 @@ body.no-grain::before { display: none; }
   }
 }
 
+/* ─── Hospitality editorial family ──────────────────────────────────────
+   This is a real composition family, not a restaurant label on the generic
+   SMB grid. It uses an editorial index, asymmetric menu cards, a dark ritual
+   chapter, and a visit decision block so the page has a beginning, middle,
+   and useful end for an actual guest.
+*/
+[data-demo-site="premium-v3"] .premium-hospitality-home {
+  --hospitality-rule: color-mix(in srgb, var(--demo-ink) 15%, transparent);
+  position: relative;
+  isolation: isolate;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(50% - .5px), color-mix(in srgb, var(--demo-ink) 3%, transparent) 50%, transparent calc(50% + .5px)),
+    radial-gradient(circle at 92% 21%, color-mix(in srgb, var(--demo-accent) 12%, transparent), transparent 28rem);
+  opacity: .72;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-kicker {
+  color: var(--demo-accent);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .27em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-vertical-mark {
+  display: inline-block;
+  color: var(--demo-muted);
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .26em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link {
+  position: relative;
+  transition: color 300ms ease, gap 300ms ease;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -.42rem;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  transform: scaleX(.34);
+  transform-origin: left;
+  transition: transform 400ms cubic-bezier(.22, 1, .36, 1);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link:hover {
+  gap: 1rem;
+  color: var(--demo-accent);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link:hover::after {
+  transform: scaleX(1);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-index {
+  background: color-mix(in srgb, var(--demo-surface) 85%, white);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-manifesto {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--demo-surface-alt) 46%, transparent), transparent 46%),
+    var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-side-note {
+  border-left: 1px solid var(--hospitality-rule);
+  padding-left: 1.25rem;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu {
+  background: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card {
+  overflow: hidden;
+  background: var(--demo-ink);
+  box-shadow: 0 24px 70px -42px color-mix(in srgb, var(--demo-ink) 65%, transparent);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card img,
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card video {
+  transition: transform 1.2s cubic-bezier(.22, 1, .36, 1), filter 1.2s ease;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card:hover img,
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card:hover video {
+  filter: saturate(1.13) contrast(1.06);
+  transform: scale(1.055);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-ritual {
+  position: relative;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-ritual::after {
+  position: absolute;
+  top: 0;
+  right: 6vw;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(transparent, rgba(255,255,255,.18) 18%, rgba(255,255,255,.18) 82%, transparent);
+  content: "";
+  opacity: .45;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-process {
+  background-image: linear-gradient(90deg, transparent 0, transparent calc(66% - .5px), color-mix(in srgb, var(--demo-ink) 4%, transparent) 66%, transparent calc(66% + .5px));
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-scenes {
+  position: relative;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-scenes::before {
+  position: absolute;
+  top: 6rem;
+  right: 8vw;
+  width: clamp(12rem, 24vw, 25rem);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--demo-accent) 18%, transparent);
+  border-radius: 50%;
+  content: "";
+  opacity: .45;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-journal {
+  background: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-visit {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-visit::before {
+  position: absolute;
+  top: -12rem;
+  right: -7rem;
+  width: 34rem;
+  height: 34rem;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 50%;
+  content: "";
+  opacity: .6;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-visit > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  [data-demo-site="premium-v3"] .premium-hospitality-side-note {
+    border-left: 0;
+    border-top: 1px solid var(--hospitality-rule);
+    padding-left: 0;
+    padding-top: 1rem;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hospitality-vertical-mark {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hospitality-ritual::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-site="premium-v3"] .premium-hospitality-menu-card img,
+  [data-demo-site="premium-v3"] .premium-hospitality-menu-card video,
+  [data-demo-site="premium-v3"] .premium-hospitality-link::after {
+    transition: none;
+  }
+}
+
 /* ─── Premium V3 hero deck ────────────────────────────────────────────────
    The first viewport is a real media experience, not a single static hero.
    The deck keeps the source imagery unique while giving every profile a
