@@ -34,8 +34,8 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     locale: "en",
     title: "Japan Entry pricing and commercial terms",
     href: "/en/pricing",
-    keywords: ["price", "pricing", "cost", "fee", "monthly", "setup", "12,000", "six", "month", "continuation"],
-    content: "$12,000 USD fixed one-time setup. For selected launch partners, the first six months of managed operation are included at no additional monthly charge; continuation pricing is agreed separately after the included period in the written scope. Third-party costs and approved work outside scope remain separate.",
+    keywords: ["price", "pricing", "cost", "fee", "monthly", "setup", "12,000", "2,000", "2000", "six", "month", "campaign", "waived", "10"],
+    content: "$12,000 USD fixed one-time setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge because that fee is waived. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved work outside scope remain separate.",
   },
   {
     locale: "ja",

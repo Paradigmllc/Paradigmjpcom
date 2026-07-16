@@ -34,7 +34,7 @@ export function JapanEntryCompanyFields({
           $12,000 fixed setup
         </p>
         <p className="text-[13px] leading-[1.7] text-paradigm-ink-soft">
-          For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Apply only if your
+          The standard managed-operation fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms. Apply only if your
           company can make a final decision within seven days and assign one
           launch owner.
         </p>

@@ -19,6 +19,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import { JapanMarketUrgency } from "@/components/japan-entry/JapanMarketUrgency"
+import JapanEntryCampaign, { type CampaignCopy } from "@/components/japan-entry/JapanEntryCampaign"
 
 const PACKAGE_LOCALES = ["en", ...INTERNATIONAL_REPORT_LOCALES] as const
 
@@ -57,6 +58,7 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
 
   const t = await getTranslations({ locale: "en", namespace: "packagePage" })
   const summary = t.raw("summary") as SummaryItem[]
+  const campaign = t.raw("campaign") as CampaignCopy
   const workstreams = t.raw("workstreams") as Workstream[]
   const tracks = t.raw("tracks.items") as Track[]
   const sharedTrackPoints = t.raw("tracks.common") as string[]
@@ -94,6 +96,8 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
           ))}
         </div>
       </section>
+
+      {campaign && <JapanEntryCampaign copy={campaign} source="package" />}
 
       <section id="deliverables" className="relative overflow-hidden bg-paradigm-paper px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="deliverables-title">
         <div className="paradigm-mesh opacity-25" />

@@ -4,7 +4,7 @@ import type { ChatLocale } from "@/lib/chat-knowledge"
 export type { ChatLocale } from "@/lib/chat-knowledge"
 
 const STALE_ENGLISH_ANSWER =
-  /free consult|free audit|¥|198,000|300,000|350,000|200\+ clients|98% retention|founded 20\d{2}|\$(?:1,?300|1,?500|2,?000|3,?000|5,?000|8,?000)/i
+  /free consult|free audit|¥|198,000|300,000|350,000|200\+ clients|98% retention|founded 20\d{2}|\$(?:1,?300|1,?500|3,?000|5,?000|8,?000)/i
 
 const ALLOWED_DOLLAR_VALUES = new Set([
   "$0",
@@ -12,6 +12,9 @@ const ALLOWED_DOLLAR_VALUES = new Set([
   "$12k",
   "$12,000",
   "$12000",
+  "$2,000",
+  "$2K",
+  "$2k",
 ])
 
 export function isSafeEnglishCommercialAnswer(answer: string): boolean {
@@ -87,7 +90,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("how much") ||
     question.includes("pricing")
   ) {
-    return "Japan Entry is a fixed $12,000 setup, paid before kickoff. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
+    return "Japan Entry is a fixed $12,000 setup, paid before kickoff. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge. Month 7 onward is $2,000/month under the signed terms. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
   }
   if (
     question.includes("process") ||
@@ -159,7 +162,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("after") ||
     question.includes("launch")
   ) {
-    return "For selected launch partners, the first six months of managed Japan operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. The standard operating envelope is up to four pages or 5,000 words per month, one active creative request at a time, up to two Social Media channels, and a 48-business-hour start commitment for standard requests; exact channels, ownership, and priorities are confirmed in the written scope."
+    return "The standard managed-operation fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at no additional monthly charge, and month 7 onward is $2,000/month under the signed terms. The standard operating envelope is up to four pages or 5,000 words per month, one active creative request at a time, up to two Social Media channels, and a 48-business-hour start commitment for standard requests; exact channels, ownership, and priorities are confirmed in the written scope."
   }
   if (
     question.includes("contact") ||
@@ -177,5 +180,5 @@ function getFallbackAnswerEn(question: string): string {
   ) {
     return "Paradigm LLC is a Tokyo-based Japan market-entry operator for overseas SMBs. We publish only verified company and commercial information; see https://paradigmjp.com/en/about and /en/legal."
   }
-  return "Japan Entry is a fixed $12,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. For selected launch partners, the first six months of managed operation are included at no additional monthly charge; continuation pricing is agreed separately after the included period. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
+  return "Japan Entry is a fixed $12,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
 }

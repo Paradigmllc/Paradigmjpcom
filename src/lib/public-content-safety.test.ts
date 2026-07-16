@@ -39,7 +39,7 @@ describe("Japanese public content safety", () => {
           {
             price: "$12,000",
             features:
-              "six months of managed operation are included for selected launch partners\nContinuation pricing is agreed separately after the included period; availability and scope are confirmed in writing",
+              "Standard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
           },
         ],
       },

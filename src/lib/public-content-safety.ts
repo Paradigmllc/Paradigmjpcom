@@ -62,8 +62,10 @@ export function isSafeEnglishJapanEntryHomepage(
   const copy = JSON.stringify(blocks)
   const normalizedCopy = copy.toLowerCase()
   const requiredCopy = [
-    "six months of managed operation are included for selected launch partners",
-    "continuation pricing is agreed separately",
+    "$2,000/month",
+    "first 10 selected launch partners",
+    "months 1–6 at $0/month",
+    "Month 7 onward: $2,000/month",
     "availability and scope are confirmed in writing",
     "Month-one target: 20 qualified launches",
     "not a customer outcome guarantee",

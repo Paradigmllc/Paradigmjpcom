@@ -114,7 +114,7 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
       { value: "CRM", label: "Pipeline follow-up" },
     ],
     ctaTitle: "Turn Japan entry into an execution-ready plan.",
-    ctaBody: "Setup is fixed at $12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Apply only if an empowered decision-maker can move now.",
+    ctaBody: "Setup is fixed at $12,000. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Apply only if an empowered decision-maker can move now.",
   },
 }
 

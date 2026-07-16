@@ -107,7 +107,7 @@ export default async function ContactPage({ params }: Props) {
         formTitle: "Confirm your fit and launch timing",
         back: "← Back to the Japan Entry Package",
         fixedLabel: "Fixed commercial terms",
-        fixedItems: ["$12,000 setup paid before kickoff", "Payment: Wise, bank transfer, USDC, or credit card", "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date", "six months of managed operation are included for selected launch partners", "continuation pricing is agreed separately after the included period"],
+        fixedItems: ["$12,000 setup paid before kickoff", "Payment: Wise, bank transfer, USDC, or credit card", "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date", "Standard managed operation is $2,000/month", "First 10 selected launch partners receive months 1–6 at $0/month", "Month 7 onward is $2,000/month under the signed terms"],
         fitLabel: "Fast-decision qualification",
         fitItems: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "14-business-day delivery guarantee from the Start Date"],
       }
