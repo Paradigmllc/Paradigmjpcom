@@ -20,7 +20,7 @@ I reviewed Example and its subscription analytics platform for independent retai
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.
 
-If useful, I can share a more detailed Japan opportunity analysis based on public evidence. Would you be open to receiving it?`
+I can share a one-page Japan Opportunity Snapshot based on this public evidence. Could you forward this to the founder or person responsible for international growth?`
 
 describe("manual work first-touch generation integration", () => {
   it("generates the approved permission-based first touch without commercial terms", async () => {
@@ -83,6 +83,7 @@ describe("manual work first-touch generation integration", () => {
     expect(result).toMatchObject({ ok: true, review: { passed: true, score: 96 } })
     expect(result.message).toBe(message)
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
+    expect(result.message).toContain("Could you forward this to the founder")
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })
     expect(callIndex).toBe(2)
   })
