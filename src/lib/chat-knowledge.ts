@@ -87,6 +87,13 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     content: "After written scope acceptance, Paradigm creates a private, isolated client delivery workspace, normally Notion or Trello on request. It includes Home, Request Queue, Launch Roadmap, Deliverables, Approvals, Reports, and a Meeting & Loom archive. Requests can be queued without an artificial request-count cap, with one primary request in active production at a time; large work is split into reviewable tasks and client-side waits pause the delivery clock. Normal communication is async-first, with short Loom updates when a visual explanation helps. New requests are acknowledged within one business day and normally enter active production within two business days; the 48-business-hour start language is a start SLA, not a promise of completion within 48 hours. Kickoff, key approvals, and material blockers can use Zoom. Translated captions or AI interpretation may assist live calls, but the written English scope and post-call summary govern contractual and regulatory meaning.",
   },
   {
+    locale: "en",
+    title: "Contract packet, SOW, and change control",
+    href: "/en/terms",
+    keywords: ["sow", "statement", "work", "msa", "master", "order", "form", "sla", "dpa", "nda", "contract", "agreement", "acceptance", "change", "signature"],
+    content: "The public site is an overview, not the contract. Before kickoff, the written record may include master service terms, a Setup Statement of Work (SOW), an Order Form and service schedule/SLA, plus a DPA, NDA, or payment addendum when needed. The SOW records pages, words, channels, assets, responsibilities, dependencies, acceptance criteria, exclusions, and change control for the fixed USD 12,000 setup. A material change to an accepted direction or a new deliverable is logged as a written Change Request. The signed documents and post-call written summary control over an informal chat message. Client-specific deliverables are handed over with the agreed ownership or usage rights after payment; reusable portal structures, templates, automation, prompts, methods, and OSS/third-party material remain subject to the written terms.",
+  },
+  {
     locale: "ja",
     title: "申込み後と14営業日の前提",
     href: "/ja/contact?intent=japan-entry",
