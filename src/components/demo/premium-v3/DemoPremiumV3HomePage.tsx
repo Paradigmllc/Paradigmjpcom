@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowRight, ArrowUpRight, MapPin } from "lucide-react"
+import { ArrowRight, ArrowUpRight, MapPin, Newspaper } from "lucide-react"
 import { FaInstagram } from "react-icons/fa6"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { PremiumV3KineticRail, PremiumV3Magnetic, PremiumV3Media, PremiumV3MediaCarousel, PremiumV3Parallax, PremiumV3Reveal, PremiumV3ScrollCue, PremiumV3Stagger, PremiumV3StaggerItem, PremiumV3TextLines } from "./PremiumV3Primitives"
@@ -30,6 +30,7 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const splitHero = direction.hero !== "cinematic"
   const editorialSplit = direction.hero === "editorial-split"
   const aboutLabel = data.meta.navLabels?.about ?? (isRestaurant ? "お店について" : "私たちについて")
+  const newsItems = data.pages.news?.sections.slice(0, 3) ?? []
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
@@ -91,6 +92,18 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
         motionStyle={motionStyle}
         variant="index"
       />
+
+      {newsItems.length > 0 && <section className="border-y border-[var(--demo-line)] bg-[var(--demo-surface-alt)] px-5 py-20 sm:px-10 sm:py-28 lg:px-16">
+        <div className="mx-auto max-w-7xl">
+          <PremiumV3Reveal motionStyle={motionStyle} className="grid gap-7 border-b border-[var(--demo-line)] pb-9 md:grid-cols-[1fr_.55fr] md:items-end">
+            <div><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">JOURNAL / UPDATE</p><h2 className={`mt-5 [font-family:var(--demo-font-display)] ${demoHeadlineClass(isRestaurant ? "お店からのお知らせ。" : "最新のご案内。")}`}>{isRestaurant ? "お店からのお知らせ。" : "最新のご案内。"}</h2></div>
+            <p className="text-sm leading-8 text-[var(--demo-muted)]">{isRestaurant ? "営業情報、季節のご案内、メニューに関する情報をまとめています。" : "サービスや営業に関する確認済みの情報を、読みやすくまとめています。"}</p>
+          </PremiumV3Reveal>
+          <PremiumV3Stagger className="grid gap-px bg-[var(--demo-line)] md:grid-cols-3">
+            {newsItems.map((item, index) => <PremiumV3StaggerItem key={item.id} className="group bg-[var(--demo-surface)] p-7 transition-colors hover:bg-white sm:p-9"><div className="flex items-center justify-between text-[var(--demo-muted)]"><Newspaper className="h-4 w-4" aria-hidden="true" /><span className="text-[10px] font-bold tracking-[.24em]">0{index + 1}</span></div><h3 className="mt-10 text-2xl leading-tight [font-family:var(--demo-font-display)]">{item.heading}</h3><p className="mt-5 text-sm leading-8 text-[var(--demo-muted)]">{item.body}</p><a href={`${basePath}/news`} className="mt-7 inline-flex items-center gap-2 border-b border-[var(--demo-line)] pb-2 text-xs font-bold">詳しく読む<ArrowUpRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" /></a></PremiumV3StaggerItem>)}
+          </PremiumV3Stagger>
+        </div>
+      </section>}
 
       <section className="bg-[var(--demo-surface-alt)] px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto max-w-7xl">

@@ -48,4 +48,29 @@ describe("applyIndustryPresentation", () => {
       "authored-1", "authored-2", "authored-3", "authored-4",
     ])
   })
+
+  it("infers the hospitality profile when a source omitted its industry code", () => {
+    const base = buildDemoMultiPageData({
+      id: "company-2",
+      company_name: "料理屋サンプル",
+      domain: "demo-only.invalid",
+      slug: "ryori-sample",
+      industry: null,
+      prefecture: "大阪府",
+      report_locale: "ja",
+      meta: {},
+    } as Parameters<typeof buildDemoMultiPageData>[0], {
+      slug: "ryori-sample",
+      company_id: "company-2",
+      report_locale: "ja",
+    } as unknown as Parameters<typeof buildDemoMultiPageData>[1]) as DemoMultiPageData
+    base.pages.home.hero.industryLabel = "飲食店"
+
+    const page = applyIndustryPresentation(base)
+
+    expect(page.presentation?.industryProfile).toBe("restaurant")
+    expect(page.meta.navLabels?.works).toBe("店の景色")
+    expect(page.pages.home.narrativeModules).toHaveLength(3)
+    expect(page.pages.news?.sections.length).toBeGreaterThanOrEqual(3)
+  })
 })
