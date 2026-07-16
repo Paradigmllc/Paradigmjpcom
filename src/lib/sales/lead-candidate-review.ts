@@ -23,6 +23,17 @@ export function pilotReviewEvidence(input: {
   }
 }
 
+export function runAllowsCandidatePromotion(input: {
+  sourceSlug: string
+  status: string
+  cancelRequested: boolean
+}): boolean {
+  if (input.sourceSlug !== EVIDENCE_FIRST_SOURCE) return false
+  if (input.status === "cancelled") return true
+  if (input.cancelRequested) return false
+  return input.status === "completed" || input.status === "partial"
+}
+
 function getSb(): ServiceSupabase {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role not configured")
@@ -138,7 +149,9 @@ export async function approveLeadCandidateItems(input: {
     .single()
   if (runResult.error) throw new Error(runResult.error.message)
   const run = runResult.data as { source_slug: string; status: string; cancel_requested: boolean; min_opportunity_score: number; min_smb_score: number }
-  if (run.source_slug !== EVIDENCE_FIRST_SOURCE || run.cancel_requested || run.status === "cancelled") throw new Error("Run is not eligible for candidate promotion")
+  if (!runAllowsCandidatePromotion({ sourceSlug: run.source_slug, status: run.status, cancelRequested: run.cancel_requested })) {
+    throw new Error("Run is not eligible for candidate promotion")
+  }
 
   const itemsResult = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
     .select("id, run_id, candidate_id, source_config_id, source_record_id, domain, company_name, source_page_url, status, quality_status, opportunity_score, form_url, form_verified, form_checked_at, review_status, promotion_attempts, meta")
