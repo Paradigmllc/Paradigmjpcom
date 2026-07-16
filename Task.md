@@ -1,9 +1,9 @@
-## CURRENT STATUS - 2026-07-16 Manual Japan Entry 訴求角度・業種playbook・営業ソース台帳（実装検証完了 / release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-16 Manual Japan Entry 訴求角度・業種playbook・営業ソース台帳（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
 - `/work`の既存4セルへ、問題提起・競合比較・推定機会・モックアップの4訴求角度を追加した。競合公開根拠、公開rank由来のモデル値、公開原文に紐づく保存済み日本語ポジショニング案がない角度は問題提起型へfail-closedで戻し、希望角度・実効角度・理由をDB履歴へ保存する。
 - SaaS/AI/DevTools、Web3、cyber/B2B infra、education/membership、research/data/media、creator tools、gaming、premium hobby ecommerce、hospitality SaaS、marketplace、genericの11業種playbookを実装した。初回文面は企業固有の公開事実、既存の4セル・`initial_interest`契約、100〜160語、4段落、URL/添付/通話提案/自動送信なしを維持する。
 - 添付の営業リスト生成台帳を独立した手動ソースマスターとして実装した。39ソース、複数ソース帰属、root-domain重複防止、企業発見/成長タイミング/支払力/ Japan Fit/法人確認/問い合わせ経路の6段階、Observed/Modeled/Hypothesis分離を専用DBへ保存する。ソースの能力だけで企業固有のtrigger・商業実績・法的実体を確認済みにしない。collector、scheduler、既存automation接続、送信経路は追加していない。
-- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **192 files / 882 tests**、production build **408/408 pages**、production-mode Playwright PC/Pixel 7 **2/2**がpass。release-doctorの新しい静的gate、DB/RLS/39ソース/zero-send read-back gate、migration適用配線もpass。正式releaseと本番DB・Twenty・公開URL read-backは未実行で、企業URL投入、Twenty company作成、フォーム・メール等の外部送信は0件。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **192 files / 882 tests**、production build **408/408 pages**、production-mode Playwright PC/Pixel 7 **2/2**がpass。PR **#363** / main **5af86224**を統合し、正式`npm run release:prod`のdeployment **naz7dq1j6hboomdz92h4u1xv**を完走。DB **91/91**、active source **39**、専用3 tableのRLS **3/3**、work履歴 **0**、source link **0**、`sent=true` **0**、Twenty worker restart **0**、Sales health JSON `ok:true`、公開smokeを確認した。未認証`/api/work`は401、実ブラウザの`/work`は`/admin/login`へ遷移し、error overlay/console error/mobile横overflowは0。企業URL投入、Twenty company作成、フォーム・メール等の外部送信は0件。
 
 ## CURRENT STATUS - 2026-07-16 Manual Japan Entry 問い合わせ文面4セル実験（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
