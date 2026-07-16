@@ -68,6 +68,7 @@ const ALL_TABLES = [
   "sales_error_log",
   // Public form storage
   "demo_contact_submissions", "public_japan_entry_checks", "manual_japan_entry_work",
+  "manual_japan_entry_source_catalog", "manual_japan_entry_work_sources",
   // Demo
   "web_demos", "diagnostic_reports", "diagnostic_runs",
   // Notifications

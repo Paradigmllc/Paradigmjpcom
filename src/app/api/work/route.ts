@@ -3,11 +3,14 @@ import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import {
   listManualJapanEntryWork,
+  listManualLeadSourceCatalog,
+  listManualWorkAngleMetrics,
   listManualWorkExperimentMetrics,
   MANUAL_WORK_OUTCOMES,
   recordManualWorkOutcome,
 } from "@/lib/sales/manual-japan-entry-store"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
+import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
 import { processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
 
 export const dynamic = "force-dynamic"
@@ -16,6 +19,13 @@ export const maxDuration = 300
 const createSchema = z.object({
   url: z.string().trim().min(1).max(2_048),
   variant: z.enum(["auto", ...MANUAL_MESSAGE_VARIANTS]).default("auto"),
+  angle: z.enum(["auto", ...MANUAL_MESSAGE_ANGLES]).default("auto"),
+  sourceSlug: z.string().regex(/^[a-z0-9_]{2,80}$/).default("manual_input"),
+  sourcePageUrl: z.union([
+    z.string().url().max(2_048).refine((value) => value.startsWith("https://"), "HTTPS URL required"),
+    z.literal(""),
+  ]).default(""),
+  observedOn: z.string().date().optional(),
 }).strict()
 const outcomeSchema = z.object({
   id: z.string().uuid(),
@@ -28,11 +38,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
   try {
-    const [items, metrics] = await Promise.all([
+    const [items, metrics, angleMetrics, sources] = await Promise.all([
       listManualJapanEntryWork(100),
       listManualWorkExperimentMetrics(),
+      listManualWorkAngleMetrics(),
+      listManualLeadSourceCatalog(),
     ])
-    return NextResponse.json({ ok: true, items, metrics })
+    return NextResponse.json({ ok: true, items, metrics, angleMetrics, sources })
   } catch (error) {
     console.error("[api/work] list failed:", error)
     return NextResponse.json(
@@ -58,7 +70,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "有効な企業URLを1件指定してください" }, { status: 400 })
   }
   try {
-    const result = await processManualJapanEntryUrl(parsed.data.url, parsed.data.variant)
+    const result = await processManualJapanEntryUrl(parsed.data.url, parsed.data.variant, parsed.data.angle, {
+      sourceSlug: parsed.data.sourceSlug,
+      sourcePageUrl: parsed.data.sourcePageUrl || null,
+      observedOn: parsed.data.observedOn ?? null,
+    })
     try {
       const { notifyBothChannels } = await import("@/lib/notify")
       await notifyBothChannels("sales", {

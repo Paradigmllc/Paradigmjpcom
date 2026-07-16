@@ -36,6 +36,8 @@ function profile(businessModel: ManualCompanyProfile["businessModel"]): ManualCo
     industry: businessModel === "ecommerce" ? "E-Commerce / Retail" : businessModel === "saas" ? "Technology / IT" : "Legal / Professional Services",
     productContext: "Acme provides a documented product through its public website.",
     observedFacts: ["Public offer exists"],
+    outreachPlaybook: businessModel === "ecommerce" ? "premium_hobby_ecommerce" : "general_online_smb",
+    positioningConcept: null,
   }
 }
 
