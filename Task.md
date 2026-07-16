@@ -1736,8 +1736,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - FAQ、英語AIチャット知識・フォールバック、公開リリースRunbookも同じ範囲・除外・「書面スコープが最終」の原則へ同期した。日本語サイトの国内Web制作ポジションと、既存Twenty関連の未コミット変更は変更していない。
 - 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 warnings）、production build **408/408 pages**。PR **#347**をmainへマージし、正式`npm run release:prod`（deployment `rxh9k70ocn9qyyro3n1sfrx6`）のpre/post gate、DB **89/89**、Traefik、Cloudflare origin lock、Twenty、Sales health JSON `ok:true`、公開smokeを通過。`/en/package`と主要英語ページで新しい標準範囲・除外・継続価格非公開をHTTP 200確認した。
 
-## CURRENT STATUS - 2026-07-16 DesignJoy型の非同期運用設計（実装・ローカル検証完了 / release pending）
+## CURRENT STATUS - 2026-07-16 DesignJoy型の非同期運用設計（本番反映・公開確認済み）
 
 - 添付の運用案を、英語Japan Entryのパッケージページへ反映した。専用Notionワークスペース（希望時Trello）、Home / Request Queue / Launch Roadmap / Deliverables / Approvals / Reports / Meeting & Loom Archive、キュー無制限・同時1件、依頼の1営業日以内確認と原則2営業日以内のアクティブ着手、顧客側待機による時計停止、Loomと書面記録、会議を意思決定に限定する方針を明記した。
 - Zoomの翻訳字幕・AI通訳は補助に限定し、契約・規制上の意味は英語の書面スコープ、検収記録、通話後サマリーを優先することを、パッケージ、AIチャット知識・フォールバック、公開運用Runbookへ同期した。カード情報・銀行認証情報・秘密鍵をNotion/Trello/Loomへ保存しない運用境界もRunbookへ追加した。
-- 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard` **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。本番releaseと公開URL確認は次工程。
+- 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard` **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。PR **#350**をmainへmergeし、正式`npm run release:prod`を完走。deployment **ex45lqezddv4wuignvxxx5jo**、DB **89/89**、CMS publish、Traefik / Cloudflare origin lock、Realtime / Twenty worker、Sales health JSON `ok:true`、公開smokeまで全gate pass。
+- 公開確認済み: `/en/package`、`/en/faq`、`/en/about`、`/en/pricing`、`/en/contact` がHTTP **200**で、Async-first delivery、Notion/Trello workspace、Loom、one active request、two business daysの文言を確認。公開ページに未確定の`$2,000`、`$995`、`10 companies`、`10 slots`は存在しない。既存Twentyテスト変更は未コミットのまま保全・復元した。
