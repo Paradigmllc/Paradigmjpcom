@@ -1,7 +1,8 @@
-## CURRENT STATUS - 2026-07-16 Twenty営業先URLバックフィル（本番read-back完了 / 外部送信0）
+## CURRENT STATUS - 2026-07-16 Twenty営業先URLバックフィル（本番release・read-back完了 / 外部送信0）
 
-- 既存Twenty 2,981社の旧`paradigmFormUrl`を一度だけ判定し、ポータル（エキテン397件）は掲載ページを`営業先URL`へ移してフォーム列を空にし、フォーム系（codex_verification 540件）は確認済みフォームを`営業先URL`へ複製した。read-backはポータル397件・フォーム558件で営業先URLが埋まり、送信系テーブル・送信経路は変更していない。
+- 既存Twenty 2,981社の旧`paradigmFormUrl`を一度だけ判定し、ポータル（エキテン397件）は掲載ページを`営業先URL`へ移してフォーム列を空にし、フォーム系（codex_verification 564件）は確認済みフォームを`営業先URL`へ複製した。live read-backは営業先URLがポータル397件・フォーム564件で埋まり、送信系テーブル・送信経路は変更していない。
 - `scripts/twenty-sales-companies-view.sql`へ同じ処理をidempotentに追加したため、今後のreleaseでも旧データが残っていれば自動修復される。
+- `paradigmOutreachTargetUrl` はTwenty metadata上で `LINKS` / 表示名 `営業先URL`、一覧ビュー・record viewともposition 9 / visible true。正式 `npm run release:prod` は deployment `uk6ad2trdzmuof1c0yzfvy4s`、DB 89/89、Twenty worker、Realtime、公開smoke、Sales health `ok:true` を含む `release gate passed`。
 
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry 文面・診断品質hardening（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
