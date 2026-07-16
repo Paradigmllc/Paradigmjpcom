@@ -5,6 +5,7 @@ import {
   initialInterestClose,
   type JapanEntryInitialInterestOptions,
 } from "./japan-entry-message-options";
+import type { ManualMessageAngle } from "./manual-japan-entry-angle";
 
 const BASE_MIN_WORDS = 100;
 const BASE_MAX_WORDS = 160;
@@ -74,6 +75,8 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   facts: JapanEntryPersonalizationFact[];
   purpose?: JapanEntryMessagePurpose;
   initialInterestOptions?: JapanEntryInitialInterestOptions;
+  messageAngle?: ManualMessageAngle;
+  candidateAngle?: string;
 }): { passed: boolean; score: number; issues: string[]; wordCount: number; factIds: string[] } {
   const message = input.message.trim();
   const words = message.split(/\s+/).filter(Boolean);
@@ -86,13 +89,19 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const purpose = input.purpose ?? "commercial_offer";
   const initialInterestOptions = input.initialInterestOptions ?? DEFAULT_INITIAL_INTEREST_OPTIONS;
   const customInitialInterest = purpose === "initial_interest" && Boolean(input.initialInterestOptions);
-  const enhanced = input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
+  const messageAngle = input.messageAngle;
+  const enhanced = (!messageAngle || messageAngle === "competitor")
+    && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
   const minWords = customInitialInterest && initialInterestOptions.includePrice ? 110 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
   const maxWords = customInitialInterest ? initialInterestOptions.includePrice ? 175 : 165 : enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
 
   if (containsUnresolvedPlaceholder(message)) {
     issues.push("Unresolved template placeholder is prohibited");
     score = 0;
+  }
+  if (messageAngle && input.candidateAngle !== messageAngle) {
+    issues.push(`Candidate angle must be exactly ${messageAngle}`);
+    score -= 35;
   }
 
   if (!message.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("Company name is missing"); score -= 20; }
@@ -105,16 +114,26 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (!selected.some((fact) => fact.id.startsWith("japan-audit-"))) { issues.push("No audited Japan-specific page observation was selected"); score -= 35; }
   const availableCompetitors = input.facts.filter((fact) => fact.id.startsWith("verified-competitor-"));
   const selectedCompetitor = selected.find((fact) => fact.id.startsWith("verified-competitor-"));
-  if (availableCompetitors.length > 0 && !selectedCompetitor) { issues.push("Verified competitor context is available but was not selected"); score -= 35; }
+  if ((messageAngle === "competitor" || (!messageAngle && availableCompetitors.length > 0)) && !selectedCompetitor) { issues.push("The competitor angle requires a verified competitor fact"); score -= 35; }
   else if (selectedCompetitor && !includesAny(message, selectedCompetitor.anchors)) { issues.push("The exact verified competitor name is missing"); score -= 35; }
   const demandAvailable = input.facts.some((fact) => fact.id.startsWith("verified-japan-demand-"));
   const officialMarketAvailable = input.facts.some((fact) => fact.id === "official-japan-ecommerce-market");
-  if (demandAvailable && !selected.some((fact) => fact.id.startsWith("verified-japan-demand-"))) { issues.push("Verified product-specific Japan demand is available but was not selected"); score -= 35; }
-  else if (!demandAvailable && officialMarketAvailable && !selected.some((fact) => fact.id === "official-japan-ecommerce-market")) { issues.push("Official Japan market context is available but was not selected"); score -= 30; }
+  const requireCompetitivePressure = !messageAngle || messageAngle === "competitor";
+  if (requireCompetitivePressure && demandAvailable && !selected.some((fact) => fact.id.startsWith("verified-japan-demand-"))) { issues.push("Verified product-specific Japan demand is available but was not selected"); score -= 35; }
+  else if (requireCompetitivePressure && !demandAvailable && officialMarketAvailable && !selected.some((fact) => fact.id === "official-japan-ecommerce-market")) { issues.push("Official Japan market context is available but was not selected"); score -= 30; }
   const regulatoryAvailable = input.facts.some((fact) => fact.id.startsWith("regulatory-"));
-  if (regulatoryAvailable && !selected.some((fact) => fact.id.startsWith("regulatory-"))) { issues.push("Available regulatory pressure evidence was not selected"); score -= 35; }
+  if (requireCompetitivePressure && regulatoryAvailable && !selected.some((fact) => fact.id.startsWith("regulatory-"))) { issues.push("Available regulatory pressure evidence was not selected"); score -= 35; }
   if (selected.some((fact) => fact.id.startsWith("regulatory-")) && !/(?:does not|doesn't|not a finding).{0,80}(?:establish|determine|show|mean).{0,60}(?:applicability|breach|obligation)/i.test(message)) {
     issues.push("Regulatory pressure must state that the screen does not establish applicability or breach"); score -= 40;
+  }
+  if (messageAngle === "opportunity" && !selected.some((fact) => fact.id === "modeled-annual-opportunity-range")) {
+    issues.push("The opportunity angle requires the modeled annual opportunity range"); score -= 45;
+  }
+  const selectedPositioning = selected.find((fact) => fact.id === "prepared-positioning-concept");
+  if (messageAngle === "mockup" && !selectedPositioning) {
+    issues.push("The mockup angle requires a stored positioning concept"); score -= 45;
+  } else if (messageAngle === "mockup" && (!/draft Japanese positioning concept/i.test(message) || !/unpublished/i.test(message))) {
+    issues.push("The mockup angle must identify the positioning concept as an unpublished draft"); score -= 40;
   }
 
   if (paragraphs.length !== 4) { issues.push("Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }

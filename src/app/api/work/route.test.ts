@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   list: vi.fn(),
   metrics: vi.fn(),
+  angleMetrics: vi.fn(),
+  sources: vi.fn(),
   outcome: vi.fn(),
   process: vi.fn(),
   notify: vi.fn(),
@@ -14,6 +16,8 @@ vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }
 vi.mock("@/lib/sales/manual-japan-entry-store", () => ({
   listManualJapanEntryWork: mocks.list,
   listManualWorkExperimentMetrics: mocks.metrics,
+  listManualWorkAngleMetrics: mocks.angleMetrics,
+  listManualLeadSourceCatalog: mocks.sources,
   MANUAL_WORK_OUTCOMES: ["manually_sent", "reply_received", "founder_forwarded", "meeting_converted"],
   recordManualWorkOutcome: mocks.outcome,
 }))
@@ -27,6 +31,8 @@ beforeEach(() => {
   mocks.authorize.mockResolvedValue(true)
   mocks.list.mockResolvedValue([])
   mocks.metrics.mockResolvedValue([])
+  mocks.angleMetrics.mockResolvedValue([])
+  mocks.sources.mockResolvedValue([])
   mocks.outcome.mockResolvedValue({ id: "106db008-80af-4c56-93ee-916643d84c1b", manually_sent_at: "2026-07-16T00:00:00.000Z" })
   mocks.process.mockResolvedValue({ item: { id: "work-1", domain: "example.com" }, duplicate: false })
   mocks.notify.mockResolvedValue({ ok: true })
@@ -47,7 +53,11 @@ describe("manual Japan Entry work API", () => {
       body: JSON.stringify({ url: "https://example.com" }),
     }))
     expect(response.status).toBe(201)
-    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "auto")
+    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "auto", "auto", {
+      sourceSlug: "manual_input",
+      sourcePageUrl: null,
+      observedOn: null,
+    })
   })
 
   it("passes an explicit experiment cell to the processor", async () => {
@@ -57,7 +67,43 @@ describe("manual Japan Entry work API", () => {
       body: JSON.stringify({ url: "https://example.com", variant: "estimate_on_price_on" }),
     }))
     expect(response.status).toBe(201)
-    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "estimate_on_price_on")
+    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "estimate_on_price_on", "auto", {
+      sourceSlug: "manual_input",
+      sourcePageUrl: null,
+      observedOn: null,
+    })
+  })
+
+  it("passes an explicit evidence-gated angle to the processor", async () => {
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com", angle: "mockup" }),
+    }))
+    expect(response.status).toBe(201)
+    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "auto", "mockup", {
+      sourceSlug: "manual_input",
+      sourcePageUrl: null,
+      observedOn: null,
+    })
+  })
+
+  it("records the selected source and listing URL without starting a collector", async () => {
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        url: "https://example.com",
+        sourceSlug: "product_hunt",
+        sourcePageUrl: "https://www.producthunt.com/products/example",
+      }),
+    }))
+    expect(response.status).toBe(201)
+    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "auto", "auto", {
+      sourceSlug: "product_hunt",
+      sourcePageUrl: "https://www.producthunt.com/products/example",
+      observedOn: null,
+    })
   })
 
   it("rejects implicit or malformed batches", async () => {

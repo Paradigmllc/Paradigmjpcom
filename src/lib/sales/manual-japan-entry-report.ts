@@ -6,6 +6,7 @@ import type { SourceCoverageItem } from "./source-coverage"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 import type { JapanMarketAudit, JapanMarketAuditStatus } from "./sources/japan-market-audit"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
+import type { ManualMasterLeadLedger, ManualQualificationLedger } from "./manual-japan-entry-source-ledger"
 
 const GAP_META: Record<string, { statusKey: keyof JapanMarketAuditStatus; title: string }> = {
   "japan-audit-language": {
@@ -63,8 +64,14 @@ function buildSourceCoverage(input: {
   initialMessage: string | null
   messageReview: Record<string, unknown>
   sourceUrl: string
+  qualificationLedger?: ManualQualificationLedger
+  masterLeadLedger?: ManualMasterLeadLedger
 }) {
   const messagePassed = Boolean(input.initialMessage) && input.messageReview.passed === true
+  const messageVariant = typeof input.messageReview.message_variant === "string"
+    ? input.messageReview.message_variant
+    : "estimate_off_price_off"
+  const priceCell = messageVariant === "estimate_off_price_on" || messageVariant === "estimate_on_price_on"
   const items: SourceCoverageItem[] = [
     sourceItem({
       slug: "company-public-website",
@@ -96,6 +103,16 @@ function buildSourceCoverage(input: {
       missingConsequence: "Without checked pages, the Japan Entry diagnosis would be generic.",
       nextStep: "Validate commercial and legal requirements with primary sources during delivery.",
     }),
+    ...(input.profile.positioningConcept ? [sourceItem({
+      slug: "draft-japanese-positioning-concept",
+      label: "Stored Japanese positioning draft",
+      category: "analysis",
+      status: "collected",
+      detail: `Unpublished draft grounded in the exact public phrase “${input.profile.positioningConcept.sourcePhrase}”.`,
+      meaning: "This stored artifact is the only basis for permitting a mockup-led first touch.",
+      missingConsequence: "Without a stored draft, mockup-led wording must fall back to a public-page problem statement.",
+      nextStep: "Human-review the Japanese wording before publishing or sharing it.",
+    })] : []),
     sourceItem({
       slug: "verified-contact-form",
       label: "Verified public inquiry form",
@@ -112,9 +129,11 @@ function buildSourceCoverage(input: {
       category: "outreach",
       status: messagePassed ? "collected" : "missing",
       detail: messagePassed
-        ? `DeepSeek V4 Pro review passed at ${String(input.messageReview.score ?? "unscored")}/100; price, URL, attachment, and call offers are prohibited.`
+        ? `DeepSeek V4 Pro review passed at ${String(input.messageReview.score ?? "unscored")}/100; ${priceCell ? "only the approved $12,000 fixed fee and six included support months are allowed" : "price and payment terms are prohibited"}; URL, attachment, and call offers are prohibited.`
         : "No initial-interest message passed the deterministic and editorial gates.",
-      meaning: "The first touch asks permission to share a deeper analysis and does not lead with commercial terms.",
+      meaning: priceCell
+        ? "This test cell asks for a founder or growth-owner forward after stating only the approved fixed commercial term."
+        : "The first touch asks permission to share a deeper analysis without commercial terms.",
       missingConsequence: "The company cannot be added to the manual outreach list.",
       nextStep: "Human-review the message against the cited public-page facts before sending.",
     }),
@@ -137,6 +156,8 @@ export async function buildManualJapanEntryReport(input: {
   messageReview: Record<string, unknown>
   reportUrl: string
   sourceUrl: string
+  qualificationLedger?: ManualQualificationLedger
+  masterLeadLedger?: ManualMasterLeadLedger
 }): Promise<DiagnosticReportData> {
   const gaps = gapRows(input.profile, input.audit)
   const topGaps = gaps.slice(0, 3)
@@ -208,6 +229,16 @@ export async function buildManualJapanEntryReport(input: {
           detail: input.profile.productContext,
           whyItMatters: "The Japan offer must match the company’s publicly described product and operating model.",
         },
+        ...(input.profile.positioningConcept ? [{
+          id: "draft-japanese-positioning",
+          label: "Draft Japanese positioning concept",
+          value: input.profile.positioningConcept.japaneseHeadline,
+          source: `Company public wording: ${input.profile.positioningConcept.sourcePhrase}`,
+          category: "company" as const,
+          tone: "neutral" as const,
+          detail: `${input.profile.positioningConcept.japaneseSupportLine} This is an unpublished draft, not evidence of Japan demand or performance.`,
+          whyItMatters: "A mockup-led first touch is permitted only because this concrete draft is stored with the work record.",
+        }] : []),
         {
           id: "japan-public-page-screen",
           label: "Business-model-relevant Japan signals",
@@ -249,6 +280,9 @@ export async function buildManualJapanEntryReport(input: {
       nextActions: [
         "Human-review the generated first-touch message before sending.",
         "Confirm the target company, country, product wording, and public form route.",
+        ...(input.qualificationLedger?.legal_verification.status === "pending"
+          ? ["Verify the active contracting entity in an official company registry before treating the lead as send-ready."]
+          : []),
         "Use primary-source commercial and legal requirements during delivery; this report is not legal advice.",
       ],
     },
@@ -258,6 +292,10 @@ export async function buildManualJapanEntryReport(input: {
       source_url: input.sourceUrl,
       japan_market_audit: input.audit,
       manual_company_profile: input.profile,
+      outreach_playbook: input.profile.outreachPlaybook,
+      draft_japanese_positioning_concept: input.profile.positioningConcept,
+      manual_source_qualification_ledger: input.qualificationLedger ?? null,
+      manual_master_lead_ledger: input.masterLeadLedger ?? null,
       form_discovery: input.form,
       japan_entry_initial_message: input.initialMessage,
       japan_entry_message_review: input.messageReview,

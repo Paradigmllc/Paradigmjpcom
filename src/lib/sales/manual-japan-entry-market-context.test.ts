@@ -29,6 +29,8 @@ const profile: ManualCompanyProfile = {
   industry: "Technology / IT",
   productContext: "Subscription analytics platform",
   observedFacts: ["Public evidence"],
+  outreachPlaybook: "saas_ai_devtools",
+  positioningConcept: null,
 }
 
 beforeEach(() => {

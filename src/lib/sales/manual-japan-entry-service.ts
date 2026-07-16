@@ -1,7 +1,5 @@
 import "server-only"
 
-import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
-import { normalizeDomain } from "./dedup"
 import { collectInitialFormDraftEvidence } from "./initial-form-draft-evidence"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
@@ -11,112 +9,45 @@ import {
   assignManualMessageVariant,
   isManualMessageVariant,
   nonEstimateVariant,
-  type ManualMessageVariant,
   type ManualMessageVariantSelection,
   variantOptions,
 } from "./manual-japan-entry-experiment"
 import {
+  assignManualMessageAngle,
+  isManualMessageAngle,
+  resolveManualMessageAngle,
+  type ManualMessageAngleSelection,
+} from "./manual-japan-entry-angle"
+import {
   createManualWork,
+  attachManualWorkSource,
+  findManualLeadSource,
   findManualWorkByDomain,
   updateManualWork,
 } from "./manual-japan-entry-store"
-import { syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
-import type { ManualCompanyProfile, ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 import {
-  discoverFormUrl,
-  type FormDiscoveryResult,
-} from "./sources/form-discovery"
+  buildManualSourceLedgers,
+  type ManualWorkSourceInput,
+} from "./manual-japan-entry-source-ledger"
+import {
+  buildManualInitialMessageInput,
+  manualWorkEligibility,
+  normalizeManualWorkUrl,
+  selectBestManualFormResult,
+} from "./manual-japan-entry-workflow-helpers"
+import { syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
+import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
+import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
 import { findTwentyCompanyByDomain } from "./twenty-sync-company-home"
 
-export interface ManualWorkEligibility {
-  eligible: boolean
-  reasons: string[]
-}
-
-export function normalizeManualWorkUrl(input: string): {
-  inputUrl: string
-  canonicalUrl: string
-  domain: string
-} {
-  const trimmed = input.trim()
-  if (!trimmed) throw new Error("URL is required")
-  let url: URL
-  try {
-    url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`)
-  } catch (error) {
-    console.error("[manual-work] invalid URL:", { input: trimmed, error })
-    throw new Error("A valid public company URL is required")
-  }
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
-    throw new Error("Only public HTTP(S) company URLs are allowed")
-  }
-  const domain = normalizeDomain(url.hostname)
-  if (!domain || !isCustomerFacingBusinessDomain(domain)) {
-    throw new Error("A customer-facing company domain is required")
-  }
-  return { inputUrl: trimmed, canonicalUrl: `https://${domain}`, domain }
-}
-
-export function manualWorkEligibility(input: {
-  profile: ManualCompanyProfile
-  form: FormDiscoveryResult
-  messageOk: boolean
-  messagePassed: boolean
-}): ManualWorkEligibility {
-  const reasons: string[] = []
-  if (!input.profile.countryCode) reasons.push("Country is unconfirmed")
-  if (input.profile.isJapaneseCompany || input.profile.countryCode === "JP") reasons.push("Japanese companies are excluded")
-  if (input.profile.smbStatus !== "qualified" || input.profile.smbConfidence < 70) reasons.push("SMB classification needs review")
-  if (input.profile.japanEntryFitStatus !== "qualified" || input.profile.japanEntryFitConfidence < 70) reasons.push("Japan Entry fit needs review")
-  if (input.form.verification !== "form" || input.form.confidence < 90 || !input.form.formUrl) reasons.push("A high-confidence public form was not verified")
-  if (!input.messageOk || !input.messagePassed) reasons.push("The initial message did not pass the production quality gate")
-  return { eligible: reasons.length === 0, reasons }
-}
-
-function formResultRank(result: FormDiscoveryResult): number {
-  if (result.verification === "form") return 300 + result.confidence
-  if (result.verification === "page") return 200 + result.confidence
-  if (result.verification === "fallback") return 100 + result.confidence
-  return result.confidence
-}
-
-export function selectBestManualFormResult(
-  results: Array<FormDiscoveryResult | null>,
-): FormDiscoveryResult {
-  const available = results.filter((result): result is FormDiscoveryResult => Boolean(result))
-  const selected = [...available].sort((a, b) => formResultRank(b) - formResultRank(a))[0]
-  return selected ?? {
-    formUrl: null,
-    method: "none",
-    verification: "none",
-    confidence: 0,
-    inspection: null,
-    candidates: [],
-    traceMs: 0,
-  }
-}
-
-export function buildManualInitialMessageInput(input: {
-  profile: ManualCompanyProfile
-  evidence: Awaited<ReturnType<typeof collectInitialFormDraftEvidence>>
-  variant?: ManualMessageVariant
-  projection?: Awaited<ReturnType<typeof collectManualMarketProjection>>["projection"]
-}): Parameters<typeof generatePersonalizedJapanEntryMessage>[0] {
-  const variant = input.variant ?? "estimate_off_price_off"
-  return {
-    companyName: input.profile.companyName,
-    industry: input.profile.industry,
-    productContext: input.evidence.productContext,
-    targetCountry: input.profile.countryCode,
-    businessModel: input.profile.businessModel,
-    audit: input.evidence.audit,
-    purpose: "initial_interest",
-    projection: input.projection ?? undefined,
-    initialInterestOptions: variantOptions(variant),
-  }
-}
+export {
+  buildManualInitialMessageInput,
+  manualWorkEligibility,
+  normalizeManualWorkUrl,
+  selectBestManualFormResult,
+} from "./manual-japan-entry-workflow-helpers"
 
 function jsonRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
@@ -137,6 +68,8 @@ async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWor
 export async function processManualJapanEntryUrl(
   rawUrl: string,
   variantSelection: ManualMessageVariantSelection = "auto",
+  angleSelection: ManualMessageAngleSelection = "auto",
+  sourceInput: ManualWorkSourceInput = { sourceSlug: "manual_input" },
 ): Promise<{
   item: ManualJapanEntryWorkRow
   duplicate: boolean
@@ -145,11 +78,24 @@ export async function processManualJapanEntryUrl(
   const requestedVariant = isManualMessageVariant(variantSelection)
     ? variantSelection
     : assignManualMessageVariant(normalized.domain)
+  const requestedAngle = isManualMessageAngle(angleSelection)
+    ? angleSelection
+    : assignManualMessageAngle(normalized.domain)
+  const sourceCatalog = await findManualLeadSource(sourceInput.sourceSlug)
+  if (!sourceCatalog) throw new Error("選択した営業ソースは台帳に存在しません")
   const existing = await findManualWorkByDomain(normalized.domain)
-  if (existing) return { item: existing, duplicate: true }
+  if (existing) {
+    await attachManualWorkSource(existing.id, sourceInput)
+    return { item: existing, duplicate: true }
+  }
 
-  let work = await createManualWork({ ...normalized, messageVariantRequested: requestedVariant })
+  let work = await createManualWork({
+    ...normalized,
+    messageVariantRequested: requestedVariant,
+    messageAngleRequested: requestedAngle,
+  })
   try {
+    await attachManualWorkSource(work.id, sourceInput)
     try {
       const twentyExisting = await findTwentyCompanyByDomain(normalized.domain)
       if (twentyExisting?.id) {
@@ -204,6 +150,7 @@ export async function processManualJapanEntryUrl(
       industry: profile.industry,
       product_context: profile.productContext,
       profile,
+      outreach_playbook: profile.outreachPlaybook,
       stage: "form_discovery",
     })
     if (profile.isJapaneseCompany || profile.countryCode === "JP") {
@@ -239,11 +186,32 @@ export async function processManualJapanEntryUrl(
     const effectiveVariant = requestedOptions.includeEstimate && !marketProjection.projection
       ? nonEstimateVariant(requestedVariant)
       : requestedVariant
+    const effectiveOptions = variantOptions(effectiveVariant)
+    const resolvedAngle = resolveManualMessageAngle({
+      requested: requestedAngle,
+      hasVerifiedCompetitor: false,
+      hasModeledOpportunity: effectiveOptions.includeEstimate && Boolean(marketProjection.projection),
+      hasPreparedPositioningConcept: Boolean(profile.positioningConcept),
+    })
+    const sourceLedgers = buildManualSourceLedgers({
+      domain: normalized.domain,
+      source: sourceCatalog,
+      sourcePageUrl: sourceInput.sourcePageUrl?.trim() || null,
+      sourceDate: sourceInput.observedOn ?? new Date().toISOString().slice(0, 10),
+      profile,
+      audit: evidence.audit,
+      form,
+      projection: marketProjection.projection,
+    })
     work = await updateManualWork(work.id, {
       form_discovery: { ...form, crawl4ai, baseline: baselineForm, verified_crawl4ai: verifiedCrawl4Ai },
       form_url: form.formUrl,
       message_variant: effectiveVariant,
       message_variant_fallback_reason: marketProjection.fallbackReason,
+      message_angle: resolvedAngle.angle,
+      message_angle_fallback_reason: resolvedAngle.fallbackReason,
+      qualification_ledger: sourceLedgers.qualification,
+      master_lead_ledger: sourceLedgers.master,
       evidence: {
         sourceUrl: evidence.sourceUrl,
         title: evidence.title,
@@ -260,6 +228,7 @@ export async function processManualJapanEntryUrl(
       profile,
       evidence,
       variant: effectiveVariant,
+      angle: resolvedAngle.angle,
       projection: marketProjection.projection,
     }))
     const messageReview = {
@@ -269,6 +238,11 @@ export async function processManualJapanEntryUrl(
       message_variant_requested: requestedVariant,
       message_variant: effectiveVariant,
       message_variant_fallback_reason: marketProjection.fallbackReason,
+      message_angle_requested: requestedAngle,
+      message_angle: resolvedAngle.angle,
+      message_angle_fallback_reason: resolvedAngle.fallbackReason,
+      outreach_playbook: profile.outreachPlaybook,
+      positioning_concept_prepared: Boolean(profile.positioningConcept),
     }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
     work = await updateManualWork(work.id, {
@@ -286,6 +260,8 @@ export async function processManualJapanEntryUrl(
       messageReview,
       reportUrl,
       sourceUrl: evidence.sourceUrl,
+      qualificationLedger: sourceLedgers.qualification,
+      masterLeadLedger: sourceLedgers.master,
     })
     const eligibility = manualWorkEligibility({
       profile,

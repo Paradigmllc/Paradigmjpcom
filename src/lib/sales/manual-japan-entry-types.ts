@@ -2,6 +2,13 @@ import type { DiagnosticReportData } from "./diagnostic"
 import type { Industry } from "./types"
 import type { BusinessModel } from "./japan-entry-projection"
 import type { ManualMessageVariant } from "./manual-japan-entry-experiment"
+import type { ManualMessageAngle } from "./manual-japan-entry-angle"
+import type { ManualOutreachPlaybook, ManualPositioningConcept } from "./manual-japan-entry-playbook"
+import type {
+  ManualMasterLeadLedger,
+  ManualQualificationLedger,
+  ManualWorkSourceAttribution,
+} from "./manual-japan-entry-source-ledger"
 
 export const MANUAL_WORK_STATUSES = [
   "processing",
@@ -42,6 +49,8 @@ export interface ManualCompanyProfile {
   industry: Industry
   productContext: string
   observedFacts: string[]
+  outreachPlaybook: ManualOutreachPlaybook
+  positioningConcept: ManualPositioningConcept | null
 }
 
 export interface ManualJapanEntryWorkRow {
@@ -71,6 +80,13 @@ export interface ManualJapanEntryWorkRow {
   message_variant_requested: ManualMessageVariant
   message_variant: ManualMessageVariant
   message_variant_fallback_reason: string | null
+  message_angle_requested: ManualMessageAngle
+  message_angle: ManualMessageAngle
+  message_angle_fallback_reason: string | null
+  outreach_playbook: ManualOutreachPlaybook
+  qualification_ledger: ManualQualificationLedger | Record<string, never>
+  master_lead_ledger: ManualMasterLeadLedger | Record<string, never>
+  source_attributions: ManualWorkSourceAttribution[]
   report_data: DiagnosticReportData | Record<string, never>
   report_url: string | null
   twenty_company_id: string | null

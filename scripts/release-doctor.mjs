@@ -723,11 +723,22 @@ function checkStaticReleaseRules() {
   const manualExperimentMigration = fs.existsSync(manualExperimentMigrationPath)
     ? fs.readFileSync(manualExperimentMigrationPath, "utf8")
     : ""
+  const manualAnglesMigrationPath = "supabase/migrations/20260716180000_manual_form_copy_angles.sql"
+  const manualAnglesMigration = fs.existsSync(manualAnglesMigrationPath)
+    ? fs.readFileSync(manualAnglesMigrationPath, "utf8")
+    : ""
+  const manualSourceLedgerMigrationPath = "supabase/migrations/20260716181500_manual_japan_entry_source_ledger.sql"
+  const manualSourceLedgerMigration = fs.existsSync(manualSourceLedgerMigrationPath)
+    ? fs.readFileSync(manualSourceLedgerMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
   const manualWorkService = fs.existsSync("src/lib/sales/manual-japan-entry-service.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-service.ts", "utf8")
+    : ""
+  const manualWorkHelpers = fs.existsSync("src/lib/sales/manual-japan-entry-workflow-helpers.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-workflow-helpers.ts", "utf8")
     : ""
   const manualWorkReport = fs.existsSync("src/lib/sales/manual-japan-entry-report.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-report.ts", "utf8")
@@ -749,19 +760,33 @@ function checkStaticReleaseRules() {
     && manualExperimentMigration.includes("Never set by an automated delivery path")
     && noLoginDeploy.includes("20260716090000_manual_form_copy_experiment.sql")
     && noLoginDeploy.includes("applyManualFormCopyExperimentMigration")
+    && manualAnglesMigration.includes("message_angle_requested")
+    && manualAnglesMigration.includes("outreach_playbook")
+    && manualAnglesMigration.includes("Unsupported competitor, opportunity, or mockup requests fall back to problem")
+    && noLoginDeploy.includes("20260716180000_manual_form_copy_angles.sql")
+    && noLoginDeploy.includes("applyManualFormCopyAnglesMigration")
+    && manualSourceLedgerMigration.includes("manual_japan_entry_source_catalog")
+    && manualSourceLedgerMigration.includes("manual_japan_entry_work_sources")
+    && manualSourceLedgerMigration.includes("qualification_ledger")
+    && manualSourceLedgerMigration.includes("master_lead_ledger")
+    && manualSourceLedgerMigration.includes("no collector, scheduler, or send path")
+    && noLoginDeploy.includes("20260716181500_manual_japan_entry_source_ledger.sql")
+    && noLoginDeploy.includes("applyManualJapanEntrySourceLedgerMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
+    && dbVerifier.includes('"manual_japan_entry_source_catalog"')
+    && dbVerifier.includes('"manual_japan_entry_work_sources"')
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
-    && manualWorkService.includes("productContext: input.evidence.productContext")
+    && manualWorkHelpers.includes("productContext: input.evidence.productContext")
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
     && manualWorkReport.includes("matchContentTemplate")
     && manualWorkReport.includes('evidence_contract: "public-pages-only"')
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has grounded four-cell initial-interest copy, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has grounded four-cell and evidence-gated angle copy, industry playbooks, a separate source master, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires grounded four-cell copy, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires grounded four-cell and angle copy, industry playbooks, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1291,9 +1316,16 @@ select case when
       and table_name = 'manual_japan_entry_work'
       and column_name in (
         'message_variant_requested', 'message_variant', 'message_variant_fallback_reason',
-        'manually_sent_at', 'reply_received_at', 'founder_forwarded_at', 'meeting_converted_at'
+        'manually_sent_at', 'reply_received_at', 'founder_forwarded_at', 'meeting_converted_at',
+        'message_angle_requested', 'message_angle', 'message_angle_fallback_reason', 'outreach_playbook',
+        'qualification_ledger', 'master_lead_ledger'
       )
-  ) = 7
+  ) = 13
+  and to_regclass('public.manual_japan_entry_source_catalog') is not null
+  and to_regclass('public.manual_japan_entry_work_sources') is not null
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_source_catalog'::regclass)
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_work_sources'::regclass)
+  and (select count(*) from public.manual_japan_entry_source_catalog where active) >= 39
   and exists (
     select 1 from pg_constraint
     where conrelid = 'public.manual_japan_entry_work'::regclass
@@ -1304,9 +1336,9 @@ select case when
 then 1 else 0 end;
 " 2>/dev/null || true)"
   if [ "$manual_copy_experiment_guard" = "1" ]; then
-    echo "OK manual copy experiment columns/outcome constraint/RLS/zero-send guard"
+    echo "OK manual copy experiment columns/angle playbooks/outcome constraint/RLS/zero-send guard"
   else
-    echo "FAIL manual copy experiment columns/outcome constraint/RLS/zero-send guard"
+    echo "FAIL manual copy experiment columns/angle playbooks/outcome constraint/RLS/zero-send guard"
     fail=1
   fi
 

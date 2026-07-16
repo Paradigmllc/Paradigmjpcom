@@ -1,5 +1,6 @@
 import type { BusinessModel, JapanEntryProjection } from "./japan-entry-projection";
 import { JAPAN_ENTRY_MARKET_EVIDENCE } from "@/lib/japan-entry-market-evidence";
+import type { ManualPositioningConcept } from "./manual-japan-entry-playbook";
 
 export interface JapanEntryPersonalizationFact {
   id: string;
@@ -13,6 +14,7 @@ type JsonRecord = Record<string, unknown>;
 
 export interface JapanEntryPersonalizationContext {
   competitorAnalysis?: unknown;
+  positioningConcept?: ManualPositioningConcept | null;
 }
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -202,6 +204,16 @@ export function buildJapanEntryPersonalizationFacts(
         anchors: ["2026 reform policy", "triennial APPI review", "does not establish which obligations apply"],
       });
     }
+  }
+
+  if (context?.positioningConcept) {
+    facts.push({
+      id: "prepared-positioning-concept",
+      statement: `A draft Japanese positioning concept is prepared and stored for this review, grounded in the public product phrase “${context.positioningConcept.sourcePhrase}”. It is an unpublished draft, not evidence of demand or performance.`,
+      source: "Stored manual-work positioning draft",
+      confidence: 0.9,
+      anchors: ["draft Japanese positioning concept", context.positioningConcept.sourcePhrase],
+    });
   }
 
   const japanMarket = projection?.markets.find((market) => market.code === "JP");
