@@ -3,10 +3,10 @@
 import { ArrowRight, ArrowUpRight, MapPin, Newspaper } from "lucide-react"
 import { FaInstagram } from "react-icons/fa6"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
-import { PremiumV3KineticRail, PremiumV3Magnetic, PremiumV3Media, PremiumV3MediaCarousel, PremiumV3Parallax, PremiumV3Reveal, PremiumV3ScrollCue, PremiumV3Stagger, PremiumV3StaggerItem, PremiumV3TextLines } from "./PremiumV3Primitives"
+import { PremiumV3KineticRail, PremiumV3Media, PremiumV3MediaCarousel, PremiumV3Parallax, PremiumV3Reveal, PremiumV3Stagger, PremiumV3StaggerItem } from "./PremiumV3Primitives"
 import { DemoPremiumV3BeautyHome } from "./DemoPremiumV3BeautyHome"
-import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
-import { demoHeadlineClass, demoHeadlineText, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
+import { PremiumV3HeroDeck } from "./PremiumV3HeroDeck"
+import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
@@ -17,59 +17,35 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
   const home = data.pages.home
   const basePath = `/${data.slug}`
-  const hero = premium.heroMedia[0]
-  const secondary = premium.heroMedia[1] ?? premium.gallery[0] ?? hero
+  const secondary = premium.heroMedia[1] ?? premium.gallery[0] ?? premium.heroMedia[0]
   const mapHref = data.pages.contact.mapUrl ?? `${basePath}/contact`
   const instagram = premium.social.find((item) => item.network === "instagram")?.href
   const serviceHighlights = data.pages.services.services.slice(0, 3)
   const faq = data.pages.faq?.sections.slice(0, 3) ?? []
   const presentation = data.presentation
-  const isExternalPrimary = /^https?:\/\//u.test(home.hero.primaryCta.href)
   const isExternalMap = /^https?:\/\//u.test(mapHref)
   const motionStyle = data.designRecipe?.motionVariant
   const isRestaurant = profile === "restaurant"
-  const splitHero = direction.hero !== "cinematic"
-  const editorialSplit = direction.hero === "editorial-split"
   const aboutLabel = data.meta.navLabels?.about ?? (isRestaurant ? "お店について" : "私たちについて")
   const newsItems = data.pages.news?.sections.slice(0, 3) ?? []
+  const heroSlides = [...premium.heroMedia, ...premium.gallery]
+  const heroVariant = direction.hero === "cinematic" ? "cinematic" : "split"
+  const heroSplitSide = direction.hero === "precision-split" ? "left" : "right"
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
-      {splitHero ? <section className={`relative grid min-h-[660px] bg-[var(--demo-surface)] ${editorialSplit ? "lg:grid-cols-[.72fr_1.28fr]" : "lg:grid-cols-[.92fr_1.08fr]"}`}>
-        <div className={`flex px-5 pb-14 pt-28 sm:px-10 sm:pb-20 lg:px-16 lg:pb-24 ${editorialSplit ? "items-center" : "items-end"}`}>
-          <PremiumV3Reveal motionStyle={motionStyle}>
-            <p className="mb-7 text-[10px] font-bold uppercase tracking-[.34em] text-[var(--demo-accent)] sm:text-xs">{home.hero.tagline}</p>
-            <h1 className={`max-w-4xl font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)] ${demoHeadlineClass(home.hero.title, "hero")}`}><PremiumV3TextLines text={demoHeadlineText(home.hero.title)} /></h1>
-            <p className="mt-8 max-w-2xl border-l border-[var(--demo-line)] pl-5 text-base leading-8 text-[var(--demo-muted)] sm:text-lg">{home.hero.subtitle}</p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <PremiumV3Magnetic className="sm:inline-block"><a href={home.hero.primaryCta.href} {...(isExternalPrimary ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-12 items-center justify-center gap-3 bg-[var(--demo-ink)] px-7 text-sm font-bold text-white transition-colors hover:bg-[var(--demo-accent)]">{home.hero.primaryCta.text}<ArrowUpRight className="h-4 w-4" /></a></PremiumV3Magnetic>
-              <a href={`${basePath}/about`} className="inline-flex min-h-12 items-center justify-center border border-[var(--demo-line)] px-7 text-sm font-bold">{aboutLabel}</a>
-            </div>
-          </PremiumV3Reveal>
-        </div>
-        {direction.hero === "mosaic"
-          ? <BeautyMediaMosaic media={[...premium.heroMedia, ...premium.gallery]} priority label={`${data.companyName}の写真`} height="home" />
-          : <div className="group relative min-h-[520px] overflow-hidden lg:min-h-[660px]"><PremiumV3Parallax className="absolute -inset-y-16 inset-x-0"><PremiumV3Media media={hero} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 54vw" /></PremiumV3Parallax><div className="absolute inset-0 bg-gradient-to-t from-black/36 via-transparent to-transparent" /><div className="absolute bottom-7 left-7 border-l border-white/55 pl-4 text-xs uppercase tracking-[.26em] text-white/80">{home.hero.locationLabel}</div></div>}
-        <PremiumV3ScrollCue />
-      </section> : <section className="relative min-h-[620px] lg:min-h-[calc(100svh-4.9rem)]">
-        <PremiumV3Parallax className="absolute -inset-y-16 inset-x-0"><PremiumV3Media media={hero} priority className="absolute inset-0" sizes="100vw" /></PremiumV3Parallax>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/76 via-black/34 to-black/5" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/48 via-transparent to-black/12" />
-        <div className="relative mx-auto flex min-h-[620px] max-w-[1500px] flex-col justify-end px-5 pb-14 pt-28 text-white sm:px-10 sm:pb-18 lg:min-h-[calc(100svh-4.9rem)] lg:px-16 lg:pb-20">
-          <PremiumV3Reveal motionStyle={motionStyle}>
-            <p className="mb-6 text-[10px] font-bold uppercase tracking-[.34em] text-white/68 sm:text-xs">{home.hero.tagline}</p>
-            <h1 className={`max-w-4xl font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)] ${demoHeadlineClass(home.hero.title, "hero")}`}><PremiumV3TextLines text={demoHeadlineText(home.hero.title)} /></h1>
-            <div className="mt-8 grid max-w-5xl gap-7 border-t border-white/32 pt-7 md:grid-cols-[1fr_auto] md:items-end">
-              <p className="max-w-2xl text-base leading-8 text-white/82 sm:text-lg">{home.hero.subtitle}</p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <PremiumV3Magnetic><a href={home.hero.primaryCta.href} {...(isExternalPrimary ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-12 items-center justify-center gap-3 bg-white px-7 text-sm font-bold text-black transition-colors hover:bg-white/90">{home.hero.primaryCta.text}<ArrowUpRight className="h-4 w-4" /></a></PremiumV3Magnetic>
-                <a href={`${basePath}/about`} className="inline-flex min-h-12 items-center justify-center border border-white/45 px-7 text-sm font-bold text-white backdrop-blur-md transition hover:bg-white/10">{aboutLabel}</a>
-              </div>
-            </div>
-          </PremiumV3Reveal>
-        </div>
-        <PremiumV3ScrollCue dark />
-      </section>}
+      <PremiumV3HeroDeck
+        media={heroSlides}
+        title={home.hero.title}
+        subtitle={home.hero.subtitle}
+        eyebrow={home.hero.tagline}
+        locationLabel={home.hero.locationLabel}
+        primaryCta={home.hero.primaryCta}
+        secondaryCta={{ text: aboutLabel, href: `${basePath}/about` }}
+        variant={heroVariant}
+        splitSide={heroSplitSide}
+        motionStyle={motionStyle}
+      />
 
       <section className="border-b border-[var(--demo-line)]">
         <div className="mx-auto grid max-w-[1500px] divide-y divide-[var(--demo-line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
