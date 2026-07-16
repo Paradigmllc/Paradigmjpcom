@@ -6,8 +6,8 @@ export interface FirstPartyProductEvidence {
   claims: string[]
 }
 
-const PRODUCT_HUB_PATH_RE = /^\/(?:products?|product-categories|shop|store|catalog(?:ue)?|purchase)\/?$/iu
-const PRODUCT_DETAIL_PATH_RE = /^\/(?:products?|shop|store|purchase)\/[^/?#]+(?:\/[^/?#]+)?\/?$/iu
+const PRODUCT_HUB_PATH_RE = /^\/(?:products?|our-products|[a-z0-9-]+-products|product-categories|shop|shop-all|store|catalog(?:ue)?|purchase)\/?$/iu
+const PRODUCT_DETAIL_PATH_RE = /^\/(?:products?|product-page|product-category|shop|store|purchase)\/[^/?#]+(?:\/[^/?#]+)?\/?$/iu
 const NON_PRODUCT_DETAIL_RE = /(?:^|[-_])(?:services?|solutions?|support|consulting|development|industries|applications?|about|contact|resources?|news|blog|account|cart|checkout|login|register)(?:$|[-_])/iu
 const STRONG_PRODUCT_CLAIM_RE = /(?:\bwe\s+(?:design|develop|engineer|manufacture|produce|build)|\b(?:designs|develops|engineers|manufactures|produces))\b.{0,120}\b(?:products?|devices?|equipment|instruments?|materials?|hardware|compressors?|sensors?|batter(?:y|ies)|semiconductors?|surfactants?|molecules?|chemicals?|ingredients?|software platforms?)\b|\bmanufacturer of\b.{0,120}\b(?:products?|devices?|equipment|instruments?|materials?|hardware|compressors?|sensors?|batter(?:y|ies)|semiconductors?|surfactants?|molecules?|chemicals?|ingredients?)\b/iu
 
@@ -34,7 +34,10 @@ export function extractFirstPartyProductEvidence(html: string, pageUrl: string):
       const target = new URL(href, page)
       if (!["http:", "https:"].includes(target.protocol) || !sameFirstPartyHost(target.hostname, page.hostname)) return
       const path = target.pathname.replace(/\/{2,}/g, "/")
-      if (PRODUCT_HUB_PATH_RE.test(path)) {
+      const label = $(element).text().replace(/\s+/g, " ").trim()
+      const labeledProductHub = /^(?:browse all |view all |our |[a-z0-9®™ -]+ )?products?$/iu.test(label)
+        && !/service|solution|development/iu.test(label)
+      if (PRODUCT_HUB_PATH_RE.test(path) || labeledProductHub) {
         hubLinks.push(path.replace(/\/$/, "") || "/")
         return
       }

@@ -32,6 +32,15 @@ interface TwentyMetadataViewField {
   isVisible: boolean
 }
 
+interface TwentyCompanyListPayload {
+  data?: { companies?: Array<Record<string, unknown>> }
+}
+
+export function missingTwentyCrmFieldNames(fields: SalesCrmViewField[], existingNames: Iterable<string>): string[] {
+  const existing = new Set(existingNames)
+  return fields.map((field) => field.twentyFieldName).filter((name) => !existing.has(name))
+}
+
 async function twentyMetadataRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const baseUrl = twentyBaseUrl()
   const apiKey = env("TWENTY_API_KEY")
@@ -70,6 +79,10 @@ async function applyTwentyCrmMetadataViaApi(input: {
   if (!company) throw new Error("Twenty company metadata object was not found.")
 
   const fieldByName = new Map((company.fields ?? []).map((field) => [field.name, field]))
+  const missingMetadataFields = missingTwentyCrmFieldNames(input.fields, fieldByName.keys())
+  if (missingMetadataFields.length > 0) {
+    throw new Error(`Twenty company metadata is missing required fields: ${missingMetadataFields.join(", ")}. Apply the Twenty application schema before list synchronization.`)
+  }
   const viewsPayload = await twentyMetadataRequest<unknown>("/rest/metadata/views?limit=10000")
   const viewFieldsPayload = await twentyMetadataRequest<unknown>("/rest/metadata/viewFields?limit=10000")
   const companyViews = asArray<TwentyMetadataView>(viewsPayload).filter(
@@ -83,7 +96,7 @@ async function applyTwentyCrmMetadataViaApi(input: {
   let selectFields = 0
   for (const field of input.fields) {
     const twentyField = fieldByName.get(field.twentyFieldName)
-    if (!twentyField) continue
+    if (!twentyField) throw new Error(`Twenty company metadata field disappeared during apply: ${field.twentyFieldName}`)
 
     const options = selectOptionsForField(field, input.options)
     const twentyType = field.fieldType === "select" ? "SELECT" : field.fieldType === "multi_select" ? "MULTI_SELECT" : field.fieldType === "url" ? "LINKS" : "TEXT"
@@ -108,6 +121,15 @@ async function applyTwentyCrmMetadataViaApi(input: {
           isVisible: field.isVisible,
         }),
       })
+    }
+  }
+
+  const corePayload = await twentyMetadataRequest<TwentyCompanyListPayload>("/rest/companies?limit=1&depth=0")
+  const coreCompany = corePayload.data?.companies?.[0]
+  if (coreCompany) {
+    const missingCoreFields = missingTwentyCrmFieldNames(input.fields, Object.keys(coreCompany))
+    if (missingCoreFields.length > 0) {
+      throw new Error(`Twenty Core API schema is stale; required fields are unavailable: ${missingCoreFields.join(", ")}. Restart the Twenty server to refresh the workspace schema before list synchronization.`)
     }
   }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { extractFirstPartyProductEvidence } from "./lead-product-evidence"
-import { evaluateLeadQualityGate, readLimitedText, type HomepageQualityProfile } from "./lead-quality-gate"
+import { detectFirstPartyJapanPresence, evaluateLeadQualityGate, readLimitedText, type HomepageQualityProfile } from "./lead-quality-gate"
 import type { LeadSourceConfig, LeadSourceRecord } from "./lead-source-records"
 
 const source: LeadSourceConfig = {
@@ -385,5 +385,54 @@ describe("evaluateLeadQualityGate", () => {
 
     expect(result.status).toBe("review_required")
     expect(result.reasons).toContain("japan_entry_offer_fit_missing")
+  })
+
+  it("recognizes a branded products navigation hub without weakening service exclusions", () => {
+    const productEvidence = extractFirstPartyProductEvidence(`
+      <a href="/lix-products">LiX Products</a>
+      <a href="/engineering-services">Engineering Services</a>
+    `, "https://examplecommerce.com")
+
+    expect(productEvidence.hubLinks).toEqual(["/lix-products"])
+    expect(productEvidence.detailLinks).toEqual([])
+  })
+
+  it("rejects a company that already exposes first-party Japanese localization", () => {
+    const html = `
+      <html><head><link rel="alternate" hreflang="ja-JP" href="/ja/"></head>
+      <body><a href="/ja/" hreflang="ja">日本語</a></body></html>
+    `
+    const japanPresenceSignals = detectFirstPartyJapanPresence(html, "https://examplecommerce.com")
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record(),
+      homepage: homepage({
+        productEvidence: { hubLinks: ["/products"], detailLinks: ["/products/a", "/products/b"], claims: [] },
+        japanPresenceSignals,
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(japanPresenceSignals).toContain("hreflang:ja-jp")
+    expect(result.status).toBe("rejected")
+    expect(result.reasons).toContain("existing_japan_presence")
+  })
+
+  it("treats billion-unit scale as current enterprise evidence despite historical SME data", () => {
+    const result = evaluateLeadQualityGate({
+      sourceRecord: record(),
+      homepage: homepage({
+        visibleText: "The company has shipped billions of units worldwide.",
+        productEvidence: { hubLinks: ["/products"], detailLinks: ["/products/a", "/products/b"], claims: [] },
+      }),
+      countrySignals,
+      detections: [],
+      enterpriseLike: false,
+    })
+
+    expect(result.status).toBe("rejected")
+    expect(result.reasons).toContain("enterprise_signal")
+    expect(result.smb.score).toBe(0)
   })
 })
