@@ -276,6 +276,11 @@ export interface DemoMultiPageData {
     servicesHeading: string
     galleryEyebrow: string
     galleryHeading: string
+    /** Deterministic industry profile used by every page renderer. */
+    industryProfile?: string
+    worksLead?: string
+    worksDescription?: string
+    aboutLead?: string
   }
   privatePreview?: {
     expiresAt: string

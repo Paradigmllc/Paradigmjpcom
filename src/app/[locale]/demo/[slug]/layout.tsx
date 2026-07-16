@@ -67,6 +67,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
       brand={resolveDemoBrandSystem(demoData)}
       quality={demoData.quality}
       presentation={demoData.meta}
+      social={demoData.premium?.social}
       privatePreview={demoData.privatePreview}
     >
       {children}

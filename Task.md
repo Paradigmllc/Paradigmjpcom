@@ -1723,3 +1723,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - ポータル掲載ページを従来の`フォームURL`へ誤格納しないよう修正し、`営業先（ポータル掲載ページ）`／`営業先（確認済みフォーム）`のリンクラベルと、read-back不一致時のfail-closed検証を追加した。通常カルテ同期もフォームURLを営業先URLへ投影する。
 - Twenty field metadata、会社ビュー／record view、Supabase CRM field master、select options script、release scriptを同じ変更で更新。正式release時にTwenty側でLINKS列と列表示を自動作成・正規化する。送信経路は起動しない。
 - 対象Vitest **4 files / 12 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 existing warnings）を確認。PR作成・本番release・Twenty live read-backは次工程。
+## CURRENT STATUS - 2026-07-16 Premium V3 demo quality foundation (実装・対象検証中 / 外部送信0)
+
+- Premium V3共通レンダラーを業種プロファイル優先へ更新。業種コードが欠落していても「飲食店・カフェ・料理」等の公開ラベルから飲食プロファイルを推定し、ナビ・作品ページ・About文面が「メニュー」「店の景色」「料理・空間・接客」へ切り替わる。企業向けの「仕事・実績」を飲食デモへ流さない。
+- 共通UIへverified logo優先・未提供時は文字頭文字ではなく視覚的なBrand Mark、初期ローディング、Framer Motionのページ遷移／reveal、Emblaのギャラリースライダー、モバイルdrawer、SNSアイコンリンクを実装。既存依存のみを利用し、Three.jsの無差別追加は行わず量産時の表示速度を維持する。
+- HomeへJOURNAL/UPDATEカードを追加し、サービス説明と公式SNS導線を記事風に再構成。ニュースページを3項目以上の決定論的な編集層へ拡張。顧客向けフッターから素材権利確認の内部注意文を除去し、提案用UIの注意事項は既存の最上部プレビューバーへ分離した。
+- 対象Vitest **7 files / 34 tests pass**、TypeScript、対象ESLint、Quality Guard **0 errors / 66 existing warnings**、`git diff --check` pass。外部送信、候補追加、Twenty同期、実企業DEMO再生成は未実行。

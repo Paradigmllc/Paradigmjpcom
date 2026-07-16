@@ -16,6 +16,7 @@ export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
   const motionStyle = data.designRecipe?.motionVariant
   const basePath = `/${data.slug}`
   const direction = resolveDemoArtDirection(data)
+  const isRestaurant = data.presentation?.industryProfile === "restaurant" || data.industry === "restaurant"
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
@@ -31,7 +32,7 @@ export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
         modules={about.chapters ?? []}
         label="OUR STORY"
         title={`${data.companyName}を、もう少し深く。`}
-        introduction="表面的な紹介だけでは伝わらない、仕事への向き合い方と日々の判断軸を章立てでご紹介します。"
+        introduction={data.presentation?.aboutLead ?? (isRestaurant ? "料理、空間、接客。表面的な紹介だけでは伝わらない、お店の日々を章立てでご紹介します。" : "表面的な紹介だけでは伝わらない、考え方と日々の判断軸を章立てでご紹介します。")}
         motionStyle={motionStyle}
         variant="index"
       />
