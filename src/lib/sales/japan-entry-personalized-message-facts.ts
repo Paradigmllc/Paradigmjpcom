@@ -225,5 +225,22 @@ export function buildJapanEntryPersonalizationFacts(
       anchors: [`$${gap}`, "monthly revenue opportunity", "opportunity gap"],
     });
   }
+  if (projection) {
+    const conservative = projection.scenarios.find((scenario) => scenario.scenario === "conservative");
+    const upside = projection.scenarios.find((scenario) => scenario.scenario === "upside");
+    const low = conservative?.months.slice(0, 12).reduce((sum, month) => sum + month.incrementalRevenueUsd, 0) ?? 0;
+    const high = upside?.months.slice(0, 12).reduce((sum, month) => sum + month.incrementalRevenueUsd, 0) ?? 0;
+    if (low > 0 && high >= low) {
+      const lowLabel = low.toLocaleString("en-US");
+      const highLabel = high.toLocaleString("en-US");
+      facts.push({
+        id: "modeled-annual-opportunity-range",
+        statement: `Based on public signals and conservative planning assumptions, the model estimates a potential first-12-month Japan revenue opportunity range of approximately $${lowLabel}–$${highLabel}.`,
+        source: projection.modelVersion,
+        confidence: 0.3,
+        anchors: [`$${lowLabel}–$${highLabel}`, "first-12-month Japan revenue opportunity", "public signals"],
+      });
+    }
+  }
   return facts.filter((fact) => fact.id.startsWith("modeled-") || fact.confidence >= 0.55);
 }

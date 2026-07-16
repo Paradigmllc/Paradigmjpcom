@@ -1,6 +1,7 @@
 import type { DiagnosticReportData } from "./diagnostic"
 import type { Industry } from "./types"
 import type { BusinessModel } from "./japan-entry-projection"
+import type { ManualMessageVariant } from "./manual-japan-entry-experiment"
 
 export const MANUAL_WORK_STATUSES = [
   "processing",
@@ -67,6 +68,9 @@ export interface ManualJapanEntryWorkRow {
   form_url: string | null
   initial_message: string | null
   message_review: Record<string, unknown>
+  message_variant_requested: ManualMessageVariant
+  message_variant: ManualMessageVariant
+  message_variant_fallback_reason: string | null
   report_data: DiagnosticReportData | Record<string, never>
   report_url: string | null
   twenty_company_id: string | null
@@ -74,6 +78,10 @@ export interface ManualJapanEntryWorkRow {
   error_message: string | null
   attempts: number
   sent: false
+  manually_sent_at: string | null
+  reply_received_at: string | null
+  founder_forwarded_at: string | null
+  meeting_converted_at: string | null
   created_at: string
   updated_at: string
 }

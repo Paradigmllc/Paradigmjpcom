@@ -719,6 +719,10 @@ function checkStaticReleaseRules() {
   const manualWorkMigration = fs.existsSync(manualWorkMigrationPath)
     ? fs.readFileSync(manualWorkMigrationPath, "utf8")
     : ""
+  const manualExperimentMigrationPath = "supabase/migrations/20260716090000_manual_form_copy_experiment.sql"
+  const manualExperimentMigration = fs.existsSync(manualExperimentMigrationPath)
+    ? fs.readFileSync(manualExperimentMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -738,6 +742,13 @@ function checkStaticReleaseRules() {
     && manualWorkMigration.includes("TO service_role")
     && noLoginDeploy.includes("20260715031327_manual_japan_entry_work.sql")
     && noLoginDeploy.includes("applyManualJapanEntryWorkMigration")
+    && manualExperimentMigration.includes("message_variant_requested")
+    && manualExperimentMigration.includes("manually_sent_at")
+    && manualExperimentMigration.includes("founder_forwarded_at")
+    && manualExperimentMigration.includes("meeting_converted_at")
+    && manualExperimentMigration.includes("Never set by an automated delivery path")
+    && noLoginDeploy.includes("20260716090000_manual_form_copy_experiment.sql")
+    && noLoginDeploy.includes("applyManualFormCopyExperimentMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
@@ -748,9 +759,9 @@ function checkStaticReleaseRules() {
     && manualWorkReport.includes('evidence_contract: "public-pages-only"')
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has grounded initial-interest copy, business-model report evidence, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has grounded four-cell initial-interest copy, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires grounded initial-interest copy, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires grounded four-cell copy, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1268,6 +1279,34 @@ then 1 else 0 end;
     echo "OK contact ingress table/RPC ACL/CAS guard"
   else
     echo "FAIL contact ingress table/RPC ACL/CAS guard"
+    fail=1
+  fi
+
+  manual_copy_experiment_guard="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "
+select case when
+  to_regclass('public.manual_japan_entry_work') is not null
+  and (
+    select count(*) from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'manual_japan_entry_work'
+      and column_name in (
+        'message_variant_requested', 'message_variant', 'message_variant_fallback_reason',
+        'manually_sent_at', 'reply_received_at', 'founder_forwarded_at', 'meeting_converted_at'
+      )
+  ) = 7
+  and exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.manual_japan_entry_work'::regclass
+      and conname = 'manual_japan_entry_work_outcome_requires_manual_send'
+  )
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_work'::regclass)
+  and not exists (select 1 from public.manual_japan_entry_work where sent is distinct from false)
+then 1 else 0 end;
+" 2>/dev/null || true)"
+  if [ "$manual_copy_experiment_guard" = "1" ]; then
+    echo "OK manual copy experiment columns/outcome constraint/RLS/zero-send guard"
+  else
+    echo "FAIL manual copy experiment columns/outcome constraint/RLS/zero-send guard"
     fail=1
   fi
 
