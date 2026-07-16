@@ -106,11 +106,42 @@ export function resolveDemoArtDirection(page: Pick<DemoMultiPageData, "industry"
   const base = ART_DIRECTIONS[profile] ?? CORPORATE
   const creative = page.designRecipe?.creativeDirection
   if (!creative) return base
+
+  // A generated recipe may have been created before the industry profile was
+  // inferred. Never let a salon mosaic or corporate split replace a
+  // restaurant's hospitality composition (or a clinic's precision layout).
+  const compatibleHeroes: Record<string, DemoArtDirection["hero"][]> = {
+    restaurant: ["cinematic"],
+    dental: ["precision-split"],
+    construction: ["precision-split"],
+    accounting: ["precision-split"],
+    consulting: ["precision-split"],
+    beauty_salon: ["editorial-split", "mosaic"],
+    retail: ["editorial-split"],
+  }
+  const compatibleServices: Record<string, DemoArtDirection["serviceLayout"][]> = {
+    restaurant: ["editorial-list"],
+    dental: ["precision-grid"],
+    construction: ["precision-grid"],
+    accounting: ["precision-grid"],
+    consulting: ["precision-grid"],
+    beauty_salon: ["salon-catalogue"],
+    retail: ["editorial-list"],
+  }
+  const compatibleWorks: Record<string, DemoArtDirection["worksLayout"][]> = {
+    restaurant: ["journal"],
+    dental: ["case-grid"],
+    construction: ["case-grid"],
+    accounting: ["case-grid"],
+    consulting: ["case-grid"],
+    beauty_salon: ["salon-lookbook"],
+    retail: ["journal"],
+  }
   return {
     ...base,
-    hero: creative.heroComposition,
-    serviceLayout: creative.serviceLayout,
-    worksLayout: creative.worksLayout,
+    hero: compatibleHeroes[profile]?.includes(creative.heroComposition) ? creative.heroComposition : base.hero,
+    serviceLayout: compatibleServices[profile]?.includes(creative.serviceLayout) ? creative.serviceLayout : base.serviceLayout,
+    worksLayout: compatibleWorks[profile]?.includes(creative.worksLayout) ? creative.worksLayout : base.worksLayout,
   }
 }
 
