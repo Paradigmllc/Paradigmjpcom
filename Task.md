@@ -1763,12 +1763,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `/en/terms`では、書面スコープ優先、検収・変更管理、顧客専用成果物とParadigmの再利用可能な制作基盤、個人データ・AI支援の人による確認境界を明文化した。公開運用Runbookにも電子署名記録、署名権限、版管理、レビュー期間、変更依頼、秘密情報の保管境界を追加した。
 - AIチャットの知識・フォールバックもSOW/MSA/SLA/DPA/NDA/検収/Change Requestへ対応。検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、TypeScript、Quality Guard **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。PR **#353**をmainへmergeし、正式`npm run release:prod`を完走。初回実行は対象migrationのschema reload通知が一時失敗したが、DBテーブル存在とNOTIFY成功を確認後に再実行し、deployment **w2cdklpr4m66tajcq4l717nu**、DB **89/89**、CMS publish、Traefik / Cloudflare origin lock、Realtime / Twenty worker、Sales health JSON `ok:true`、公開smokeまで全gate pass。
 - 公開確認済み: `/en/package`、`/en/faq`、`/en/terms`、`/en/pricing` がHTTP **200**で、MSA / Setup SOW / Order Form + SLA / DPA・NDA・payment addendum、検収・Change Request、AI/data境界の文言を確認。公開ページに未確定の`$2,000`、`$995`、`Founding 10`は存在しない。既存Twentyテスト変更は未コミットのまま保全・復元した。
-## CURRENT STATUS - 2026-07-16 Japan Entry監査項目の公開・実務運用反映（ローカル検証済み / release pending）
+## CURRENT STATUS - 2026-07-16 Japan Entry監査項目の公開・実務運用反映（本番release・公開read-back完了）
 
 - 添付監査のうち、価格・枠数・成果保証を増やさず実装できる項目を反映した。`/en/package`へJapan Digital / Web3 / Commerceの3トラック、共通成果物、Setup Queue（Opportunity Analysis → Localization Strategy → Web Build → Payments → Social Media Setup → Initial Creative → QA → Launch）、Managed Request Queue、Observed / Modeled / Hypothesisの証拠分類を追加した。
 - 規約・Refund Policy・FAQへ、選定した契約先の6か月運用についてOrder Formで`Managed Operations Commencement Date`を記録し、セットアップ完了・引き渡し後を起算点にできる境界を同期した。未確定のデポジット額、契約社数、枠数、月額、成果保証は公開していない。
 - `docs/ops/public-release-runbook.md`へ、契約カウントの内部定義、開始時期の分散、60–90時間のセットアップ容量モデル（内部計画値）、Trust Stack、証拠メタデータ、専門家パートナー台帳、顧客5営業日応答、トラック別受入基準、オフボーディング、CRMファネル、欧州フォーム営業のLIA/オプトアウト/Do Not Contact、30/60/90日指標、税務・決済確認を追加した。いずれも公開価格・結果保証ではなく運用チェックリストとして扱う。
-- `messages/en.json`のJSON parse、対象Vitest **2 files / 19 tests**、TypeScript、Quality Guard **0 errors / 67 existing warnings**、`git diff --check` pass。production buildは現在実行中で、完了後に正式release gateと公開URLを確認する。
+- `messages/en.json`のJSON parse、対象Vitest **2 files / 19 tests**、TypeScript、Quality Guard **0 errors / 67 existing warnings**、`git diff --check` pass。ローカルNextはWebpack/Turboともコンパイル成功・静的ページ**408/408**生成まで確認し、最終最適化プロセスが長時間終了しないため中断した。正式`npm run release:prod`はdeployment **ar02ozwvh9yclzbcckvhm89d**でDB **89/89**、CMS publish（English editorial 22更新）、Traefik / Cloudflare origin lock、Realtime / Twenty worker restart 0、Sales health JSON `ok:true`、公開smokeを含む全gate pass。
+- 本番read-backで`/en/package`、`/en/faq`、`/en/terms`、`/en/refund`、`/en/pricing`はHTTP **200**。Package本文にJapan Digital Launch、Observed、Setup Queue、Managed Operations Commencement Dateを確認し、FAQの3トラック・6か月起算日を確認。`$2,000`、`$995`、Founding 10、10 companies、10 slotsの未確定マーカーはPackageに存在しない。
 - 既存のTwenty変更 `src/lib/sales/twenty-sync-list-lead.test.ts` は未編集・未stageで保持する。
 
 ## CURRENT STATUS - 2026-07-16 Customer-copy cleanup after live QA (実装・対象テスト完了 / 本番release待ち / 外部送信0)
