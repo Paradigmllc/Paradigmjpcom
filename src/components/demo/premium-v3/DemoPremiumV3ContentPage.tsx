@@ -30,7 +30,8 @@ function WorksPage({ data, page }: { data: DemoMultiPageData; page: DemoContentP
   const media = pageMedia(data)
   const hero = media[0] ?? data.premium!.heroMedia[0]
   const motionStyle = data.designRecipe?.motionVariant
-  const isRestaurant = data.presentation?.industryProfile === "restaurant" || data.industry === "restaurant"
+  const profile = data.presentation?.industryProfile ?? data.industry
+  const isRestaurant = profile === "restaurant"
   const direction = resolveDemoArtDirection(data)
   if (direction.worksLayout === "salon-lookbook") return <BeautyWorksPage data={data} page={page} />
   return (
@@ -97,7 +98,7 @@ function FaqPage({ data, page }: { data: DemoMultiPageData; page: DemoContentPag
   const media = pageMedia(data)
   const hero = media[1] ?? media[0] ?? data.premium!.heroMedia[0]
   const motionStyle = data.designRecipe?.motionVariant
-  const isRestaurant = data.industry === "restaurant"
+  const isRestaurant = (data.presentation?.industryProfile ?? data.industry) === "restaurant"
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
       {pageHero(data, page, hero)}
@@ -112,7 +113,7 @@ function DocumentPage({ data, page }: { data: DemoMultiPageData; page: DemoConte
   return (
     <div className="bg-[var(--demo-surface)] text-[var(--demo-ink)]">
       <header className="border-b border-[var(--demo-line)] px-5 pb-14 pt-24 sm:px-10 sm:pb-18 sm:pt-28 lg:px-16"><PremiumV3Reveal motionStyle={motionStyle} className="mx-auto max-w-6xl"><p className="text-xs font-bold uppercase tracking-[.32em] text-[var(--demo-accent)]">{page.eyebrow}</p><h1 className="mt-6 max-w-5xl text-[clamp(2.5rem,5vw,4.8rem)] leading-[1.08] tracking-[-.035em] [font-family:var(--demo-font-display)]">{page.title}</h1><p className="mt-7 max-w-3xl text-base leading-8 text-[var(--demo-muted)]">{page.subtitle}</p></PremiumV3Reveal></header>
-      <section className="px-5 py-16 sm:px-10 sm:py-24 lg:px-16"><div className="mx-auto max-w-6xl"><PremiumV3Reveal motionStyle={motionStyle} className="mb-10 border-l-2 border-[var(--demo-accent)] bg-[var(--demo-surface-alt)] p-6"><p className="text-sm leading-8 text-[var(--demo-muted)]">正式公開前に、事業者の運用、契約条件、利用サービスおよび専門家の確認を反映します。以下は必要項目を欠落させないためのレビュー用文面です。</p></PremiumV3Reveal><div className="border-t border-[var(--demo-line)]">{page.sections.map((section, index) => <PremiumV3Reveal key={section.id} motionStyle={motionStyle} delay={index * 0.035} className="grid gap-5 border-b border-[var(--demo-line)] py-9 sm:grid-cols-[70px_.5fr_1fr] sm:gap-10"><span className="text-xs text-[var(--demo-muted)]">{String(index + 1).padStart(2, "0")}</span><h2 className="text-2xl sm:text-3xl [font-family:var(--demo-font-display)]">{section.heading}</h2><p className="whitespace-pre-line text-sm leading-8 text-[var(--demo-muted)] sm:text-base">{section.body}</p></PremiumV3Reveal>)}</div></div></section>
+      <section className="px-5 py-16 sm:px-10 sm:py-24 lg:px-16"><div className="mx-auto max-w-6xl"><PremiumV3Reveal motionStyle={motionStyle} className="mb-10 border-l-2 border-[var(--demo-accent)] bg-[var(--demo-surface-alt)] p-6"><p className="text-sm leading-8 text-[var(--demo-muted)]">個人情報、利用条件、取引条件について、事業者の実際の運用に沿ってご案内します。重要な事項は、各ページの最新情報をご確認ください。</p></PremiumV3Reveal><div className="border-t border-[var(--demo-line)]">{page.sections.map((section, index) => <PremiumV3Reveal key={section.id} motionStyle={motionStyle} delay={index * 0.035} className="grid gap-5 border-b border-[var(--demo-line)] py-9 sm:grid-cols-[70px_.5fr_1fr] sm:gap-10"><span className="text-xs text-[var(--demo-muted)]">{String(index + 1).padStart(2, "0")}</span><h2 className="text-2xl sm:text-3xl [font-family:var(--demo-font-display)]">{section.heading}</h2><p className="whitespace-pre-line text-sm leading-8 text-[var(--demo-muted)] sm:text-base">{section.body}</p></PremiumV3Reveal>)}</div></div></section>
     </div>
   )
 }

@@ -5,7 +5,16 @@ import { normalizeDomain } from "./dedup"
 import { collectInitialFormDraftEvidence } from "./initial-form-draft-evidence"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
+import { collectManualMarketProjection } from "./manual-japan-entry-market-context"
 import { analyzeManualCompanyProfile } from "./manual-japan-entry-profile"
+import {
+  assignManualMessageVariant,
+  isManualMessageVariant,
+  nonEstimateVariant,
+  type ManualMessageVariant,
+  type ManualMessageVariantSelection,
+  variantOptions,
+} from "./manual-japan-entry-experiment"
 import {
   createManualWork,
   findManualWorkByDomain,
@@ -92,7 +101,10 @@ export function selectBestManualFormResult(
 export function buildManualInitialMessageInput(input: {
   profile: ManualCompanyProfile
   evidence: Awaited<ReturnType<typeof collectInitialFormDraftEvidence>>
+  variant?: ManualMessageVariant
+  projection?: Awaited<ReturnType<typeof collectManualMarketProjection>>["projection"]
 }): Parameters<typeof generatePersonalizedJapanEntryMessage>[0] {
+  const variant = input.variant ?? "estimate_off_price_off"
   return {
     companyName: input.profile.companyName,
     industry: input.profile.industry,
@@ -101,6 +113,8 @@ export function buildManualInitialMessageInput(input: {
     businessModel: input.profile.businessModel,
     audit: input.evidence.audit,
     purpose: "initial_interest",
+    projection: input.projection ?? undefined,
+    initialInterestOptions: variantOptions(variant),
   }
 }
 
@@ -120,15 +134,21 @@ async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWor
   })
 }
 
-export async function processManualJapanEntryUrl(rawUrl: string): Promise<{
+export async function processManualJapanEntryUrl(
+  rawUrl: string,
+  variantSelection: ManualMessageVariantSelection = "auto",
+): Promise<{
   item: ManualJapanEntryWorkRow
   duplicate: boolean
 }> {
   const normalized = normalizeManualWorkUrl(rawUrl)
+  const requestedVariant = isManualMessageVariant(variantSelection)
+    ? variantSelection
+    : assignManualMessageVariant(normalized.domain)
   const existing = await findManualWorkByDomain(normalized.domain)
   if (existing) return { item: existing, duplicate: true }
 
-  let work = await createManualWork(normalized)
+  let work = await createManualWork({ ...normalized, messageVariantRequested: requestedVariant })
   try {
     try {
       const twentyExisting = await findTwentyCompanyByDomain(normalized.domain)
@@ -197,7 +217,11 @@ export async function processManualJapanEntryUrl(rawUrl: string): Promise<{
     }
 
     const origin = new URL(evidence.sourceUrl).origin
-    const [baselineForm, crawl4ai] = await Promise.all([
+    const requestedOptions = variantOptions(requestedVariant)
+    const marketProjectionPromise = requestedOptions.includeEstimate
+      ? collectManualMarketProjection({ domain: normalized.domain, profile })
+      : Promise.resolve({ visibility: null, projection: null, fallbackReason: null })
+    const [baselineForm, crawl4ai, marketProjection] = await Promise.all([
       discoverFormUrl({
         homeUrl: origin,
         region: "global",
@@ -206,22 +230,45 @@ export async function processManualJapanEntryUrl(rawUrl: string): Promise<{
         timeoutMs: 10_000,
       }),
       discoverWithCrawl4Ai({ origin, region: "global", timeoutMs: 10_000 }),
+      marketProjectionPromise,
     ])
     const verifiedCrawl4Ai = crawl4ai
       ? await verifyExternalFormDiscoveryHit({ origin, hit: crawl4ai, timeoutMs: 10_000 })
       : null
     const form = selectBestManualFormResult([baselineForm, verifiedCrawl4Ai])
+    const effectiveVariant = requestedOptions.includeEstimate && !marketProjection.projection
+      ? nonEstimateVariant(requestedVariant)
+      : requestedVariant
     work = await updateManualWork(work.id, {
       form_discovery: { ...form, crawl4ai, baseline: baselineForm, verified_crawl4ai: verifiedCrawl4Ai },
       form_url: form.formUrl,
+      message_variant: effectiveVariant,
+      message_variant_fallback_reason: marketProjection.fallbackReason,
+      evidence: {
+        sourceUrl: evidence.sourceUrl,
+        title: evidence.title,
+        description: evidence.description,
+        headings: evidence.headings,
+        audit: evidence.audit,
+        market_visibility: marketProjection.visibility,
+        message_projection: marketProjection.projection,
+      },
       stage: "copy_generation",
     })
 
-    const generated = await generatePersonalizedJapanEntryMessage(buildManualInitialMessageInput({ profile, evidence }))
+    const generated = await generatePersonalizedJapanEntryMessage(buildManualInitialMessageInput({
+      profile,
+      evidence,
+      variant: effectiveVariant,
+      projection: marketProjection.projection,
+    }))
     const messageReview = {
       ...jsonRecord(generated.review),
       purpose: "initial_interest",
       product_context_source: "public_homepage",
+      message_variant_requested: requestedVariant,
+      message_variant: effectiveVariant,
+      message_variant_fallback_reason: marketProjection.fallbackReason,
     }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
     work = await updateManualWork(work.id, {

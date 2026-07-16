@@ -20,10 +20,11 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
   const submitted: string[] = []
   await page.route(/\/api\/work$/, async (route) => {
     if (route.request().method() === "GET") {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, items: [] }) })
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, items: [], metrics: [] }) })
       return
     }
-    const { url } = route.request().postDataJSON() as { url: string }
+    const { url, variant } = route.request().postDataJSON() as { url: string; variant: string }
+    expect(variant).toBe("auto")
     submitted.push(url)
     const domain = new URL(url).hostname
     await route.fulfill({
@@ -53,13 +54,21 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
           profile: {}, evidence: {}, form_discovery: {},
           form_url: `https://${domain}/contact`,
           initial_message: `Hello ${domain}`,
-          message_review: {}, report_data: {},
+          message_review: {},
+          message_variant_requested: "estimate_off_price_off",
+          message_variant: "estimate_off_price_off",
+          message_variant_fallback_reason: null,
+          report_data: {},
           report_url: "https://paradigmjp.com/en/work-report/11111111-1111-4111-8111-111111111111",
           twenty_company_id: null,
           twenty_sync_status: "skipped",
           error_message: "Human review required",
           attempts: 1,
           sent: false,
+          manually_sent_at: null,
+          reply_received_at: null,
+          founder_forwarded_at: null,
+          meeting_converted_at: null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -69,14 +78,16 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
 
   await page.goto("/work")
   await expect(page.getByRole("heading", { name: "海外SMBの初回営業準備" })).toBeVisible()
-  await expect(page.getByText(/初回文面は価格・URL・添付・通話提案を含めず/)).toBeVisible()
+  await expect(page.getByText(/初回文面は4セル実験として/)).toBeVisible()
+  await expect(page.getByRole("button", { name: "自動均等割付" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "推定あり・価格あり" })).toBeVisible()
   await page.getByLabel("解析する海外企業URL").fill("https://one.example\nhttps://two.example")
   await page.getByRole("button", { name: "解析を開始" }).click()
   await expect.poll(() => submitted.sort()).toEqual(["https://one.example", "https://two.example"])
   await expect(page.getByText("one.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("two.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("自動送信: なし").first()).toBeVisible()
-  await expect(page.getByText("初回の興味確認文面（未送信・価格なし）").first()).toBeVisible()
+  await expect(page.getByText("問い合わせフォーム初回文面（未送信・推定なし・価格なし）").first()).toBeVisible()
   await expect(page.locator("[data-nextjs-dialog], .vite-error-overlay, #webpack-dev-server-client-overlay")).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
   expect(consoleErrors).toEqual([])

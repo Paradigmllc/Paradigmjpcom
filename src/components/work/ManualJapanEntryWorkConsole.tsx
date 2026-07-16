@@ -8,6 +8,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  MANUAL_MESSAGE_VARIANT_LABELS,
+  MANUAL_MESSAGE_VARIANTS,
+  summarizeManualWorkExperiment,
+  type ManualExperimentMetric,
+  type ManualMessageVariantSelection,
+} from "@/lib/sales/manual-japan-entry-experiment"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 
 const MAX_URLS = 20
@@ -68,12 +75,23 @@ function mergeItems(current: ManualJapanEntryWorkRow[], incoming: ManualJapanEnt
   return [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
 
-export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: ManualJapanEntryWorkRow[] }) {
+export function ManualJapanEntryWorkConsole({
+  initialItems,
+  initialMetrics,
+  initialHistoryError,
+}: {
+  initialItems: ManualJapanEntryWorkRow[]
+  initialMetrics: ManualExperimentMetric[]
+  initialHistoryError: string | null
+}) {
   const [input, setInput] = useState("")
   const [items, setItems] = useState(initialItems)
+  const [metrics, setMetrics] = useState(initialMetrics)
+  const [variant, setVariant] = useState<ManualMessageVariantSelection>("auto")
   const [queue, setQueue] = useState<QueueState>({})
   const [running, setRunning] = useState(false)
-  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [updatingOutcome, setUpdatingOutcome] = useState<string | null>(null)
+  const [historyError, setHistoryError] = useState<string | null>(initialHistoryError)
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
   const queueValues = Object.values(queue)
   const finished = queueValues.filter((value) => value === "done" || value === "error").length
@@ -81,9 +99,10 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
   const refreshHistory = useCallback(async (quiet = false) => {
     try {
       const response = await fetch("/api/work", { cache: "no-store" })
-      const body = await response.json() as { ok?: boolean; items?: ManualJapanEntryWorkRow[]; error?: string }
+      const body = await response.json() as { ok?: boolean; items?: ManualJapanEntryWorkRow[]; metrics?: ManualExperimentMetric[]; error?: string }
       if (!response.ok || !body.ok || !body.items) throw new Error(body.error ?? "履歴を取得できませんでした")
       setItems((current) => mergeItems(current, body.items ?? []))
+      setMetrics(body.metrics ?? summarizeManualWorkExperiment(body.items ?? []))
       setHistoryError(null)
     } catch (error) {
       console.error("[manual-work-ui] history refresh failed:", error)
@@ -111,7 +130,7 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
         const response = await fetch("/api/work", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url, variant }),
         })
         const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; error?: string }
         if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
@@ -139,6 +158,34 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
     }
   }
 
+  const updateOutcome = async (
+    item: ManualJapanEntryWorkRow,
+    outcome: "manually_sent" | "reply_received" | "founder_forwarded" | "meeting_converted",
+    value: boolean,
+  ) => {
+    const key = `${item.id}:${outcome}`
+    setUpdatingOutcome(key)
+    try {
+      const response = await fetch("/api/work", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, outcome, value }),
+      })
+      const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; error?: string }
+      if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? "評価イベントを保存できませんでした")
+      setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
+      toast.success("評価イベントを保存しました")
+      await refreshHistory(true)
+    } catch (error) {
+      console.error("[manual-work-ui] outcome update failed:", { itemId: item.id, outcome, error })
+      toast.error(error instanceof Error ? error.message : "評価イベントを保存できませんでした")
+    } finally {
+      setUpdatingOutcome(null)
+    }
+  }
+
+  const rate = (count: number, denominator: number) => denominator > 0 ? `${Math.round((count / denominator) * 100)}%` : "—"
+
   return (
     <main className="min-h-dvh bg-[#f7f8fa] px-4 py-8 text-zinc-950 sm:px-6 lg:px-8">
       <Toaster richColors position="top-center" />
@@ -150,9 +197,37 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
             完全新規の企業URLを解析し、フォーム・初回文面・診断レポートを履歴保存します。日本企業は除外し、条件を満たす企業だけTwentyへ未送信リストとして追加します。
           </p>
           <p className="max-w-3xl rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-950 sm:text-sm">
-            初回文面は価格・URL・添付・通話提案を含めず、公開情報に基づく詳細分析を受け取る意思だけを確認します。診断レポートは業態に関係する公開ページ所見のみを表示し、需要・売上・法令違反を推測しません。
+            初回文面は4セル実験として、推定金額あり／なし × 価格あり／なしを記録します。全セルで企業固有の公開事実を必須とし、推定は公開rank根拠がある場合だけ非断定で使用します。URL・添付・通話提案・自動送信はありません。
           </p>
         </motion.header>
+
+        <Card className="rounded-2xl border-zinc-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">初回文面のテストセル</CardTitle>
+            <CardDescription>自動均等割付はdomainから安定して割り当てます。推定根拠が不足する場合は同じ価格条件の「推定なし」へ自動で落とします。</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button type="button" variant={variant === "auto" ? "default" : "outline"} size="sm" onClick={() => setVariant("auto")} disabled={running}>自動均等割付</Button>
+            {MANUAL_MESSAGE_VARIANTS.map((value) => (
+              <Button key={value} type="button" variant={variant === value ? "default" : "outline"} size="sm" onClick={() => setVariant(value)} disabled={running}>
+                {MANUAL_MESSAGE_VARIANT_LABELS[value]}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-zinc-200 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">テスト評価</CardTitle>
+            <CardDescription>返信率・Founder転送率・商談化率の分母は「手動フォーム送信済み」です。</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-zinc-200 text-xs text-zinc-500"><tr><th scope="col" className="py-2 pr-4">セル</th><th scope="col" className="px-3 py-2">割付</th><th scope="col" className="px-3 py-2">送信</th><th scope="col" className="px-3 py-2">返信率</th><th scope="col" className="px-3 py-2">Founder転送率</th><th scope="col" className="px-3 py-2">商談化率</th></tr></thead>
+              <tbody>{metrics.map((metric) => <tr key={metric.variant} className="border-b border-zinc-100"><td className="py-3 pr-4 font-medium">{MANUAL_MESSAGE_VARIANT_LABELS[metric.variant]}</td><td className="px-3 py-3">{metric.assigned}</td><td className="px-3 py-3">{metric.manuallySent}</td><td className="px-3 py-3">{metric.replies} / {rate(metric.replies, metric.manuallySent)}</td><td className="px-3 py-3">{metric.founderForwards} / {rate(metric.founderForwards, metric.manuallySent)}</td><td className="px-3 py-3">{metric.meetings} / {rate(metric.meetings, metric.manuallySent)}</td></tr>)}</tbody>
+            </table>
+          </CardContent>
+        </Card>
 
         <Card className="rounded-2xl border-zinc-200 shadow-sm">
           <CardHeader>
@@ -214,6 +289,7 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
                         <h3 className="truncate text-lg font-semibold">{item.company_name ?? item.domain}</h3>
                         <Badge variant={badgeVariant(item.status)}>{statusCopy[item.status]}</Badge>
                         {item.status === "processing" && <Badge variant="outline">{stageCopy[item.stage]}</Badge>}
+                        <Badge variant="outline">{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}</Badge>
                       </div>
                       <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all text-sm text-blue-700 hover:underline">{item.domain}<ExternalLink className="h-3.5 w-3.5" /></a>
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500">
@@ -226,12 +302,34 @@ export function ManualJapanEntryWorkConsole({ initialItems }: { initialItems: Ma
                     </div>
                   </div>
                   {item.error_message && <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{item.error_message}</p>}
+                  {item.message_variant_fallback_reason && <p className="mt-4 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900">{item.message_variant_fallback_reason}</p>}
                   {item.initial_message && (
                     <details className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                      <summary className="cursor-pointer text-sm font-semibold">初回の興味確認文面（未送信・価格なし）</summary>
+                      <summary className="cursor-pointer text-sm font-semibold">問い合わせフォーム初回文面（未送信・{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}）</summary>
                       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{item.initial_message}</p>
                       <Button variant="outline" size="sm" className="mt-3" onClick={() => void copy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button>
                     </details>
+                  )}
+                  {item.initial_message && (
+                    <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-zinc-200 p-3">
+                      {([
+                        ["manually_sent", "手動フォーム送信済み", Boolean(item.manually_sent_at)],
+                        ["reply_received", "返信あり", Boolean(item.reply_received_at)],
+                        ["founder_forwarded", "Founder転送あり", Boolean(item.founder_forwarded_at)],
+                        ["meeting_converted", "商談化", Boolean(item.meeting_converted_at)],
+                      ] as const).map(([outcome, label, active]) => (
+                        <Button
+                          key={outcome}
+                          type="button"
+                          size="sm"
+                          variant={active ? "default" : "outline"}
+                          disabled={updatingOutcome !== null || (outcome !== "manually_sent" && !item.manually_sent_at)}
+                          onClick={() => void updateOutcome(item, outcome, !active)}
+                        >
+                          {updatingOutcome === `${item.id}:${outcome}` ? <LoaderCircle className="animate-spin" /> : active ? <CheckCircle2 /> : null}{label}
+                        </Button>
+                      ))}
+                    </div>
                   )}
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
                     <span>Twenty: {item.twenty_sync_status}</span><span>・</span><span>自動送信: なし</span>

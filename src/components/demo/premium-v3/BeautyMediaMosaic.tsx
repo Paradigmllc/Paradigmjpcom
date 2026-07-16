@@ -2,6 +2,7 @@
 
 import type { DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { PremiumV3Media } from "./PremiumV3Media"
+import { canonicalDemoMediaSrc } from "@/lib/sales/demo-public-surface"
 
 type MosaicHeight = "home" | "page" | "compact"
 export type BeautyMosaicLayout = "grid" | "editorial" | "strip" | "lookbook"
@@ -26,7 +27,9 @@ export function BeautyMediaMosaic({
   layout?: BeautyMosaicLayout
 }) {
   const compact = height === "compact"
-  const visibleMedia = media.slice(0, layout === "grid" ? 6 : 4)
+  const visibleMedia = media
+    .filter((item, index, items) => items.findIndex((candidate) => canonicalDemoMediaSrc(candidate.src) === canonicalDemoMediaSrc(item.src)) === index)
+    .slice(0, layout === "grid" ? 6 : 4)
   const gridClass = layout === "editorial"
     ? "grid-cols-12 grid-rows-[repeat(6,minmax(48px,1fr))] p-5 sm:p-8 lg:p-10"
     : layout === "strip"

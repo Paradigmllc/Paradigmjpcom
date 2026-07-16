@@ -9,7 +9,8 @@ import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData }) {
   const direction = resolveDemoArtDirection(data)
-  if (data.industry === "beauty_salon" && direction.serviceLayout === "salon-catalogue") return <DemoPremiumV3BeautyServices data={data} />
+  const profile = data.presentation?.industryProfile ?? data.industry
+  if (profile === "beauty_salon" && direction.serviceLayout === "salon-catalogue") return <DemoPremiumV3BeautyServices data={data} />
 
   const premium = data.premium!
   const services = data.pages.services

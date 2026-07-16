@@ -781,6 +781,14 @@ async function applyManualJapanEntryWorkMigration(envs) {
   )
 }
 
+async function applyManualFormCopyExperimentMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260716090000_manual_form_copy_experiment.sql",
+    "Manual form-copy experiment migration",
+  )
+}
+
 async function applyTwentySelectOptionsScript(envs) {
   const sqlPath = path.join(process.cwd(), "scripts", "twenty-sales-select-options.sql")
   if (!fs.existsSync(sqlPath)) return "Twenty select options script missing"
@@ -1437,6 +1445,7 @@ async function main() {
     console.log(await applyPortalTwentySourceOptionsMigration(envs))
     console.log(await applySalesSyncLogsListLeadMigration(envs))
     console.log(await applyManualJapanEntryWorkMigration(envs))
+    console.log(await applyManualFormCopyExperimentMigration(envs))
     console.log(await applyTwentySelectOptionsScript(envs))
     console.log(await applyTwentyCompaniesViewScript(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))

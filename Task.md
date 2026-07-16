@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-16 Manual Japan Entry 問い合わせ文面4セル実験（本番release・read-back完了 / 履歴0件 / 外部送信0）
+
+- `/work`へ問い合わせフォーム専用の4セル（推定あり／なし × 価格あり／なし）を追加した。domainからの安定自動割付と明示セル選択に対応し、各履歴へ希望セル・実効セル・フォールバック理由をDB保存する。全セルで企業固有の公開事実とFounder／海外展開責任者への転送依頼を必須にし、自動送信経路は追加していない。
+- 推定ありセルはTranco / Cloudflare Radar / Common Crawl / sitemapの公開シグナルを既存projectionロジックへ渡し、初年度の幅を「公開シグナルと保守的仮定に基づくモデル値・実売上ではない・成果保証ではない」と明示する。公開rankを確認できない場合は、価格条件を変えずに推定なしセルへfail-closedで切り替える。
+- 価格ありセルは現行の確定条件`$12,000 fixed`と`first six months included`だけを許可する。添付文面にあった未確認のfounding-company枠、通常月額、7か月目以降、前払い条件、希少性は生成promptと決定論reviewの両方で拒否する。SaaS/AI/DevTools、Web3、premium ecommerceの業態角度も、実際に取得した公開事実だけを使用する。
+- 手動フォーム送信済み、返信、Founder転送、商談化をoperatorが記録でき、4セル別の返信率・転送率・商談化率を手動送信数を分母に表示する。下流成果は手動送信後だけ記録可能で、送信解除時は下流成果も消すDB制約・API・UIを実装した。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **188 files / 869 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。PR **#351** / main **6f92c6e5**を統合し、正式`npm run release:prod`のdeployment **k45ektcogiybfao0vipbgxsz**を完走。main **6f92c6e5**を含む本番container **668c0f3d**はhealthyで、DB **89/89**、4セル用7列、成果制約、RLS、自動送信0、Twenty worker restart 0、Sales health JSON `ok:true`、post-deploy smokeを確認した。認証付き`/api/work`はHTTP 200・履歴0件・metrics 4セル・手動送信0件、未認証APIは401。未認証`/work`はNext.js streaming redirect後に実ブラウザで`/admin/login`を表示し、workbench本文は非表示。企業URL投入、Twenty追加、フォーム・メール等の外部送信は実行していない。
+
 ## CURRENT STATUS - 2026-07-16 Twenty営業先URLバックフィル（本番release・read-back完了 / 外部送信0）
 
 - 既存Twenty 2,981社の旧`paradigmFormUrl`を一度だけ判定し、ポータル（エキテン397件）は掲載ページを`営業先URL`へ移してフォーム列を空にし、フォーム系（codex_verification 564件）は確認済みフォームを`営業先URL`へ複製した。live read-backは営業先URLがポータル397件・フォーム564件で埋まり、送信系テーブル・送信経路は変更していない。
@@ -1735,6 +1743,12 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 月額運用は、最大4ページ/5,000ワード、同時1件のクリエイティブ依頼、最大2 Social Mediaチャネル、標準依頼の48営業時間以内着手を「標準運用目安」として表示。広告費、外部SaaS/決済、法務・税務・許認可、物流、常時CS、営業代行、大規模開発、成果保証を除外リストへ追加した。未確定の継続月額（添付資料の例示額を含む）は公開していない。
 - FAQ、英語AIチャット知識・フォールバック、公開リリースRunbookも同じ範囲・除外・「書面スコープが最終」の原則へ同期した。日本語サイトの国内Web制作ポジションと、既存Twenty関連の未コミット変更は変更していない。
 - 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 warnings）、production build **408/408 pages**。PR **#347**をmainへマージし、正式`npm run release:prod`（deployment `rxh9k70ocn9qyyro3n1sfrx6`）のpre/post gate、DB **89/89**、Traefik、Cloudflare origin lock、Twenty、Sales health JSON `ok:true`、公開smokeを通過。`/en/package`と主要英語ページで新しい標準範囲・除外・継続価格非公開をHTTP 200確認した。
+## CURRENT STATUS - 2026-07-16 Premium V3 customer-surface hardening (実装・ローカル検証完了 / 本番release待ち / 外部送信0)
+
+- 業種推定後も残っていた旧 `industryLabel`、保存済み企業向けブランド、生成レシピの不整合を共通層で修正。飲食店・歯科・美容等は、業種別カテゴリ名、配色、ナビ、ヒーロー構成、サービス／作品ラベルを強制し、飲食店へ「コンサルティング」「仕事・実績」「サロン用モザイク」が流れない。
+- 顧客向け画面からエキテン掲載素材・権利確認・提案用素材などの内部文言を除去。プレビューバーの非公開注意だけを残し、画像 `alt/caption` は業種別の自然な編集ラベルへ置換する。ヒーロー／ギャラリー／モザイク／Emblaスライダーは正規化URLで重複排除し、同一画像の連続表示を防止する。
+- `demo-public-surface.ts` の決定論的サニタイズを追加し、LLM再生成なしで既存DEMOにも読込時適用する。新規依存は追加せず、既存のFramer Motion / Emblaを継続利用する。
+- 検証済み: 対象Vitest **7 files / 35 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 67 existing warnings**、production build **408/408 pages**、`git diff --check`。このブランチでは候補追加・Twenty同期・外部送信・公開URL発行は行っていない。
 
 ## CURRENT STATUS - 2026-07-16 DesignJoy型の非同期運用設計（本番反映・公開確認済み）
 
@@ -1756,3 +1770,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `docs/ops/public-release-runbook.md`へ、契約カウントの内部定義、開始時期の分散、60–90時間のセットアップ容量モデル（内部計画値）、Trust Stack、証拠メタデータ、専門家パートナー台帳、顧客5営業日応答、トラック別受入基準、オフボーディング、CRMファネル、欧州フォーム営業のLIA/オプトアウト/Do Not Contact、30/60/90日指標、税務・決済確認を追加した。いずれも公開価格・結果保証ではなく運用チェックリストとして扱う。
 - `messages/en.json`のJSON parse、対象Vitest **2 files / 19 tests**、TypeScript、Quality Guard **0 errors / 67 existing warnings**、`git diff --check` pass。production buildは現在実行中で、完了後に正式release gateと公開URLを確認する。
 - 既存のTwenty変更 `src/lib/sales/twenty-sync-list-lead.test.ts` は未編集・未stageで保持する。
+
+## CURRENT STATUS - 2026-07-16 Customer-copy cleanup after live QA (実装・対象テスト完了 / 本番release待ち / 外部送信0)
+
+- 公開DEMOの実表示で残っていた「生成イメージ」と公開情報取得メタ文（`確認済みの公開情報では`等）を、サービス本文・ナラティブ・ニュース・フッターへ流さない共通サニタイズを追加した。顧客向けの編集ラベルと短い事業紹介へ置換する。
+- 対象Vitest **2 files / 9 tests**、TypeScript、`git diff --check`を通過。候補追加、Twenty同期、公開URL発行、外部送信は行っていない。

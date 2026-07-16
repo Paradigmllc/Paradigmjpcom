@@ -1,8 +1,12 @@
 import type { DemoContentPage, DemoMultiPageData } from "./demo-site-types"
+import { sanitizeDemoCopy, sanitizeDemoMedia } from "./demo-public-surface"
 
 type NavKey = "home" | "about" | "services" | "works" | "faq" | "contact"
 
 interface PresentationProfile {
+  categoryLabel: string
+  accentColor: string
+  accentColorDark: string
   nav: Record<NavKey, string>
   featureEyebrow: string
   featureHeading: string
@@ -21,6 +25,9 @@ interface PresentationProfile {
 
 const PROFILES: Record<string, PresentationProfile> = {
   restaurant: {
+    categoryLabel: "飲食店",
+    accentColor: "#b86b3d",
+    accentColorDark: "#7d4324",
     nav: { home: "ホーム", about: "お店について", services: "メニュー", works: "店の景色", faq: "よくある質問", contact: "アクセス" },
     featureEyebrow: "TASTE & PLACE",
     featureHeading: "一杯と一皿を、\n選ぶ時間。",
@@ -37,6 +44,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     worksDescription: "料理や店内の写真を通じて、その場所で過ごす時間や細部のこだわりをご紹介します。",
   },
   beauty_salon: {
+    categoryLabel: "美容サロン",
+    accentColor: "#b66b7b",
+    accentColorDark: "#7d3f50",
     nav: { home: "ホーム", about: "私たちについて", services: "メニュー", works: "スタイル", faq: "よくある質問", contact: "ご予約・アクセス" },
     featureEyebrow: "サロンの考え方",
     featureHeading: "髪を整える時間まで、\n心地よく。",
@@ -53,6 +63,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     worksDescription: "スタイル、施術、空間の写真を通じて、サロンで過ごす時間を具体的にご紹介します。",
   },
   dental: {
+    categoryLabel: "歯科医院",
+    accentColor: "#168a8c",
+    accentColorDark: "#0a5c60",
     nav: { home: "ホーム", about: "医院について", services: "診療案内", works: "院内紹介", faq: "よくある質問", contact: "アクセス" },
     featureEyebrow: "CARE",
     featureHeading: "安心して相談できる、\n身近な診療を。",
@@ -69,6 +82,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     worksDescription: "受付、待合、診療空間など、来院前に確認したい院内の様子をご紹介します。",
   },
   construction: {
+    categoryLabel: "建設・施工",
+    accentColor: "#ad6a32",
+    accentColorDark: "#713d1d",
     nav: { home: "ホーム", about: "私たちについて", services: "事業案内", works: "施工・仕事", faq: "よくある質問", contact: "お問い合わせ" },
     featureEyebrow: "CRAFT",
     featureHeading: "確かな仕事を、\n一つひとつ。",
@@ -85,6 +101,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     worksDescription: "施工の考え方、現場の様子、仕上がりに至るまでの判断軸をご紹介します。",
   },
   retail: {
+    categoryLabel: "ショップ",
+    accentColor: "#a5793f",
+    accentColorDark: "#6b4d27",
     nav: { home: "ホーム", about: "お店について", services: "商品・サービス", works: "ギャラリー", faq: "よくある質問", contact: "店舗情報" },
     featureEyebrow: "SELECTION",
     featureHeading: "暮らしに寄り添うものを、\n丁寧に選ぶ。",
@@ -103,6 +122,9 @@ const PROFILES: Record<string, PresentationProfile> = {
 }
 
 const DEFAULT_PROFILE: PresentationProfile = {
+  categoryLabel: "事業者",
+  accentColor: "#526579",
+  accentColorDark: "#2f4356",
   nav: { home: "ホーム", about: "私たちについて", services: "事業案内", works: "仕事・実績", faq: "よくある質問", contact: "お問い合わせ" },
   featureEyebrow: "OUR APPROACH",
   featureHeading: "大切にしていることを、\nひとつずつ。",
@@ -205,6 +227,9 @@ function distinctPremiumIntro(page: DemoMultiPageData, profile: PresentationProf
       eyebrow: repeatsHero ? profile.featureEyebrow : intro.eyebrow,
       title: repeatsHero ? profile.featureHeading : intro.title,
       body: repeatsStory && valueSummary ? valueSummary : intro.body,
+      note: profile.categoryLabel === "飲食店"
+        ? "料理、空間、サービス。その店らしさが伝わる情報を、写真と言葉でご紹介します。"
+        : `${profile.categoryLabel}の特徴とご案内を、確認できる情報をもとに整理しています。`,
     },
   }
 }
@@ -217,6 +242,32 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
   if (page.locale !== "ja") return page
   const profileKey = resolveProfileKey(page)
   const profile = PROFILES[profileKey] ?? DEFAULT_PROFILE
+  const publicMedia = page.premium
+    ? {
+        ...page.premium,
+        heroMedia: sanitizeDemoMedia(page.premium.heroMedia, page.companyName, profile.sceneHeadings).slice(0, 5),
+        gallery: sanitizeDemoMedia(
+          [...page.premium.gallery, ...page.premium.heroMedia],
+          page.companyName,
+          profile.sceneHeadings,
+        ).slice(0, 8),
+      }
+    : page.premium
+  const publicServices = page.pages.services.services.map((service) => ({
+    ...service,
+    description: sanitizeDemoCopy(service.description, `${service.title}についてご案内します。`),
+    features: service.features
+      .map((feature) => sanitizeDemoCopy(feature, ""))
+      .filter(Boolean),
+  }))
+  const publicPage: DemoMultiPageData = {
+    ...page,
+    premium: publicMedia,
+    pages: {
+      ...page.pages,
+      services: { ...page.pages.services, services: publicServices },
+    },
+  }
   const social = page.premium?.social[0]
   const primaryHref = social?.href ?? `/${page.slug}/contact`
   const primaryLabel = social ? `${social.label}を見る` : profile.nav.contact
@@ -232,13 +283,15 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
 
   return {
     ...page,
-    premium: distinctPremiumIntro(page, profile),
+    premium: distinctPremiumIntro(publicPage, profile),
     meta: {
       ...page.meta,
+      accentColor: profile.accentColor,
+      accentColorDark: profile.accentColorDark,
       proposalNotice: "提案用デモ · 公式サイトではありません",
       primaryCtaLabel: primaryLabel,
       primaryCtaHref: primaryHref,
-      footerDescription: page.meta.description,
+      footerDescription: `${profile.aboutLead} ${page.pages.contact.address || page.pages.about.locationLabel}`.trim(),
       footerOwner: page.companyName,
       navLabels: profile.nav,
     },
@@ -249,9 +302,11 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         featureEyebrow: profile.featureEyebrow,
         featureHeading: profile.featureHeading,
         featureSubtitle: page.pages.services.subtitle,
-        narrativeModules: buildNarrativeModules(page, profile),
+        narrativeModules: buildNarrativeModules(publicPage, profile),
         hero: {
           ...page.pages.home.hero,
+          tagline: profile.categoryLabel,
+          industryLabel: profile.categoryLabel,
           primaryCta: { text: primaryLabel, href: primaryHref },
           secondaryCta: { text: profile.nav.services, href: `/${page.slug}/services` },
         },
@@ -266,13 +321,14 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
       about: {
         ...page.pages.about,
         title: profile.nav.about,
+        industryLabel: profile.categoryLabel,
       },
       services: {
         ...page.pages.services,
         title: profile.nav.services,
-        processEyebrow: page.industry === "restaurant" ? "VISIT" : "FLOW",
-        processTitle: page.industry === "restaurant" ? "店で過ごす時間。" : "ご利用の流れ。",
-        services: page.pages.services.services.map((service) => ({ ...service, priceNote: undefined })),
+        processEyebrow: profileKey === "restaurant" ? "VISIT" : "FLOW",
+        processTitle: profileKey === "restaurant" ? "店で過ごす時間。" : "ご利用の流れ。",
+        services: publicServices.map((service) => ({ ...service, priceNote: undefined })),
         ctaTitle: social ? "最新のご案内はこちら。" : "詳しく知りたい方へ。",
         ctaSubtitle: social ? "営業情報や最新のラインアップは、公式アカウントをご確認ください。" : page.pages.contact.formNote || page.pages.contact.subtitle,
         ctaText: primaryLabel,
@@ -284,7 +340,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         subtitle: profile.contactSubtitle,
       },
       works,
-      news: socialNewsPage(page),
+      news: socialNewsPage(publicPage),
       recruit: page.pages.recruit ? {
         ...page.pages.recruit,
         title: "採用情報",

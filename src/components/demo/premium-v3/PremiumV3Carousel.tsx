@@ -6,12 +6,14 @@ import useEmblaCarousel from "embla-carousel-react"
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
 import type { DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { PremiumV3Media } from "./PremiumV3Media"
+import { canonicalDemoMediaSrc } from "@/lib/sales/demo-public-surface"
 
 const AUTOPLAY_MS = 5600
 
 export function PremiumV3MediaCarousel({ media, label, variant = "wide" }: { media: DemoPremiumMedia[]; label: string; variant?: "wide" | "compact" }) {
+  const uniqueMedia = media.filter((item, index, items) => items.findIndex((candidate) => canonicalDemoMediaSrc(candidate.src) === canonicalDemoMediaSrc(item.src)) === index)
   const reducedMotion = useReducedMotion()
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: media.length > 1, align: "center", skipSnaps: false })
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: uniqueMedia.length > 1, align: "center", skipSnaps: false })
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [playing, setPlaying] = useState(!reducedMotion)
   const [hovered, setHovered] = useState(false)
@@ -25,9 +27,9 @@ export function PremiumV3MediaCarousel({ media, label, variant = "wide" }: { med
 
   const scheduleNext = useCallback(() => {
     clearTimer()
-    if (!emblaApi || !playing || hovered || focused || reducedMotion || media.length < 2 || document.hidden) return
+    if (!emblaApi || !playing || hovered || focused || reducedMotion || uniqueMedia.length < 2 || document.hidden) return
     timerRef.current = setTimeout(() => emblaApi.scrollNext(), AUTOPLAY_MS)
-  }, [clearTimer, emblaApi, focused, hovered, media.length, playing, reducedMotion])
+  }, [clearTimer, emblaApi, focused, hovered, playing, reducedMotion, uniqueMedia.length])
 
   const updateSelected = useCallback(() => {
     if (!emblaApi) return
@@ -56,14 +58,14 @@ export function PremiumV3MediaCarousel({ media, label, variant = "wide" }: { med
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [clearTimer, scheduleNext])
 
-  if (media.length === 0) return null
-  const active = media[selectedIndex]
+  if (uniqueMedia.length === 0) return null
+  const active = uniqueMedia[selectedIndex] ?? uniqueMedia[0]
 
   return (
     <section aria-label={label} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={() => setFocused(false)}>
       <div ref={emblaRef} className="overflow-hidden">
         <div className="flex touch-pan-y">
-          {media.map((item, index) => {
+          {uniqueMedia.map((item, index) => {
             const selected = selectedIndex === index
             return (
               <motion.div
@@ -103,11 +105,11 @@ export function PremiumV3MediaCarousel({ media, label, variant = "wide" }: { med
                 {active.caption ?? active.alt}
               </motion.span>
             </AnimatePresence>
-            <span className="shrink-0 tabular-nums">{String(selectedIndex + 1).padStart(2, "0")} / {String(media.length).padStart(2, "0")}</span>
+            <span className="shrink-0 tabular-nums">{String(selectedIndex + 1).padStart(2, "0")} / {String(uniqueMedia.length).padStart(2, "0")}</span>
           </div>
         </div>
         <div className="flex justify-end gap-2">
-          {!reducedMotion && media.length > 1 && (
+          {!reducedMotion && uniqueMedia.length > 1 && (
             <button type="button" aria-label={playing ? "自動再生を停止" : "自動再生を開始"} onClick={() => setPlaying((value) => !value)} className="grid h-12 w-12 place-items-center rounded-full border border-current/20 transition hover:bg-[var(--demo-ink)] hover:text-white">
               {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </button>
