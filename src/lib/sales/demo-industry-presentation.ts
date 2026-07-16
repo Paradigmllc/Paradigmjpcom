@@ -14,6 +14,9 @@ interface PresentationProfile {
   contactTitle: string
   contactSubtitle: string
   works: { title: string; subtitle: string; eyebrow: string }
+  aboutLead: string
+  worksLead: string
+  worksDescription: string
 }
 
 const PROFILES: Record<string, PresentationProfile> = {
@@ -29,6 +32,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     contactTitle: "店舗情報・アクセス",
     contactSubtitle: "所在地、地図、最新情報の確認先をご案内します。",
     works: { title: "店の景色", subtitle: "写真とともに、お店の雰囲気をご紹介します。", eyebrow: "SCENES" },
+    aboutLead: "料理と空間をつくる、日々のこと。",
+    worksLead: "写真から伝わる、\nお店の空気。",
+    worksDescription: "料理や店内の写真を通じて、その場所で過ごす時間や細部のこだわりをご紹介します。",
   },
   beauty_salon: {
     nav: { home: "ホーム", about: "私たちについて", services: "メニュー", works: "スタイル", faq: "よくある質問", contact: "ご予約・アクセス" },
@@ -42,6 +48,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     contactTitle: "ご予約・アクセス",
     contactSubtitle: "所在地と正式なご予約・お問い合わせ方法をご案内します。",
     works: { title: "スタイル", subtitle: "施術や空間のイメージをご紹介します。", eyebrow: "STYLE" },
+    aboutLead: "髪と日常に寄り添う、サロンの考え方。",
+    worksLead: "仕上がりの先にある、\n心地よい時間。",
+    worksDescription: "スタイル、施術、空間の写真を通じて、サロンで過ごす時間を具体的にご紹介します。",
   },
   dental: {
     nav: { home: "ホーム", about: "医院について", services: "診療案内", works: "院内紹介", faq: "よくある質問", contact: "アクセス" },
@@ -55,6 +64,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     contactTitle: "アクセス・お問い合わせ",
     contactSubtitle: "所在地と正式な受診・お問い合わせ方法をご案内します。",
     works: { title: "院内紹介", subtitle: "院内の設備や雰囲気をご紹介します。", eyebrow: "CLINIC" },
+    aboutLead: "安心して相談できる、身近な医院へ。",
+    worksLead: "診療を支える、\n院内の環境。",
+    worksDescription: "受付、待合、診療空間など、来院前に確認したい院内の様子をご紹介します。",
   },
   construction: {
     nav: { home: "ホーム", about: "私たちについて", services: "事業案内", works: "施工・仕事", faq: "よくある質問", contact: "お問い合わせ" },
@@ -68,6 +80,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     contactTitle: "お問い合わせ",
     contactSubtitle: "所在地と正式なお問い合わせ方法をご案内します。",
     works: { title: "施工・仕事", subtitle: "仕事の内容を写真とともにご紹介します。", eyebrow: "WORKS" },
+    aboutLead: "確かな仕事を支える、日々の姿勢。",
+    worksLead: "現場から見える、\n確かな仕事。",
+    worksDescription: "施工の考え方、現場の様子、仕上がりに至るまでの判断軸をご紹介します。",
   },
   retail: {
     nav: { home: "ホーム", about: "お店について", services: "商品・サービス", works: "ギャラリー", faq: "よくある質問", contact: "店舗情報" },
@@ -81,6 +96,9 @@ const PROFILES: Record<string, PresentationProfile> = {
     contactTitle: "店舗情報",
     contactSubtitle: "所在地、地図、最新情報の確認先をご案内します。",
     works: { title: "ギャラリー", subtitle: "商品や店舗の雰囲気をご紹介します。", eyebrow: "GALLERY" },
+    aboutLead: "暮らしに寄り添うものを、丁寧に選ぶ。",
+    worksLead: "商品と空間から伝わる、\n店の個性。",
+    worksDescription: "商品の表情、店内の雰囲気、季節の提案を写真とともにご紹介します。",
   },
 }
 
@@ -96,6 +114,36 @@ const DEFAULT_PROFILE: PresentationProfile = {
   contactTitle: "お問い合わせ",
   contactSubtitle: "所在地と正式なお問い合わせ方法をご案内します。",
   works: { title: "仕事・実績", subtitle: "事業や仕事の様子をご紹介します。", eyebrow: "WORKS" },
+  aboutLead: "事業を支える考え方と、日々の取り組み。",
+  worksLead: "実績から見える、\n私たちの仕事。",
+  worksDescription: "提供するサービスだけでなく、取り組み方や仕事の細部も大切な判断材料です。",
+}
+
+function resolveProfileKey(page: DemoMultiPageData): string {
+  const explicit = String(page.industry ?? "").trim()
+  if (PROFILES[explicit]) return explicit
+  const signal = `${explicit} ${page.pages.home.hero.industryLabel} ${page.companyName}`.toLowerCase()
+  if (/(飲食|レストラン|カフェ|喫茶|料理|food|restaurant|cafe|bar|bakery)/u.test(signal)) return "restaurant"
+  if (/(美容|サロン|beauty|hair|nail)/u.test(signal)) return "beauty_salon"
+  if (/(歯科|医院|クリニック|dental|clinic)/u.test(signal)) return "dental"
+  if (/(工務|建設|施工|リフォーム|construction|remodel)/u.test(signal)) return "construction"
+  if (/(小売|ショップ|販売|retail|shop)/u.test(signal)) return "retail"
+  return explicit || "default"
+}
+
+function buildNarrativeModules(page: DemoMultiPageData, profile: PresentationProfile) {
+  const existing = page.pages.home.narrativeModules ?? []
+  if (existing.length >= 3) return existing
+  const serviceModules = page.pages.services.services.slice(0, 3).map((service, index) => ({
+    eyebrow: `${profile.servicesEyebrow} 0${index + 1}`,
+    title: service.title,
+    body: service.description,
+    points: service.features.slice(0, 3),
+  }))
+  return serviceModules.length >= 3 ? serviceModules : [
+    { eyebrow: "APPROACH", title: profile.aboutLead, body: page.pages.about.story, points: page.pages.about.values.slice(0, 3).map((value) => value.title) },
+    ...serviceModules,
+  ].slice(0, 3)
 }
 
 function meaningfulMediaSections(page: DemoMultiPageData, profile: PresentationProfile): DemoContentPage["sections"] {
@@ -110,18 +158,27 @@ function meaningfulMediaSections(page: DemoMultiPageData, profile: PresentationP
 
 function socialNewsPage(page: DemoMultiPageData): DemoContentPage {
   const instagram = page.premium?.social.find((item) => item.network === "instagram")
+  const serviceSections = page.pages.services.services.slice(0, 2).map((service, index) => ({
+    id: `service-note-${index + 1}`,
+    heading: service.title,
+    body: service.description,
+    note: instagram?.href,
+  }))
   return {
     title: "お知らせ",
     subtitle: instagram ? "最新のお知らせは公式Instagramでご案内しています。" : "最新情報はこちらでご案内します。",
     eyebrow: "NEWS",
-    sections: [{
-      id: "latest-information",
-      heading: instagram ? "公式Instagram" : "最新情報",
-      body: instagram
-        ? "営業日や新しいご案内など、最新の情報は公式Instagramをご確認ください。"
-        : "正式公開後、営業案内や新しいお知らせをこちらに掲載できます。",
-      note: instagram?.href,
-    }],
+    sections: [
+      {
+        id: "latest-information",
+        heading: instagram ? "公式Instagramからのご案内" : "最新情報",
+        body: instagram
+          ? "営業日や新しいご案内など、最新の情報は公式Instagramをご確認ください。"
+          : "営業案内や新しいお知らせは、確認済みの情報をこちらに掲載します。",
+        note: instagram?.href,
+      },
+      ...serviceSections,
+    ],
     accentColor: page.meta.accentColor,
   }
 }
@@ -158,7 +215,8 @@ function distinctPremiumIntro(page: DemoMultiPageData, profile: PresentationProf
  */
 export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPageData {
   if (page.locale !== "ja") return page
-  const profile = PROFILES[String(page.industry)] ?? DEFAULT_PROFILE
+  const profileKey = resolveProfileKey(page)
+  const profile = PROFILES[profileKey] ?? DEFAULT_PROFILE
   const social = page.premium?.social[0]
   const primaryHref = social?.href ?? `/${page.slug}/contact`
   const primaryLabel = social ? `${social.label}を見る` : profile.nav.contact
@@ -191,6 +249,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         featureEyebrow: profile.featureEyebrow,
         featureHeading: profile.featureHeading,
         featureSubtitle: page.pages.services.subtitle,
+        narrativeModules: buildNarrativeModules(page, profile),
         hero: {
           ...page.pages.home.hero,
           primaryCta: { text: primaryLabel, href: primaryHref },
@@ -252,6 +311,10 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
       servicesHeading: profile.servicesHeading,
       galleryEyebrow: profile.galleryEyebrow,
       galleryHeading: profile.galleryHeading(page.companyName),
+      industryProfile: profileKey,
+      worksLead: profile.worksLead,
+      worksDescription: profile.worksDescription,
+      aboutLead: profile.aboutLead,
     },
   }
 }

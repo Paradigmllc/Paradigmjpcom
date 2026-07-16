@@ -52,6 +52,41 @@ const ART_DIRECTIONS: Record<string, DemoArtDirection> = {
     worksLayout: "journal",
     labels: { category: "お店", place: "場所", information: "店舗情報", story: "店について", gallery: "セレクション" },
   },
+  accounting: {
+    id: "corporate",
+    hero: "precision-split",
+    serviceLayout: "precision-grid",
+    worksLayout: "case-grid",
+    labels: { category: "事務所", place: "所在地", information: "ご相談・お問い合わせ", story: "事務所について", gallery: "ご支援の風景" },
+  },
+  cleaning: {
+    id: "precision",
+    hero: "editorial-split",
+    serviceLayout: "editorial-list",
+    worksLayout: "journal",
+    labels: { category: "サービス", place: "対応エリア", information: "ご相談・お問い合わせ", story: "私たちについて", gallery: "サービスの風景" },
+  },
+  consulting: {
+    id: "corporate",
+    hero: "precision-split",
+    serviceLayout: "precision-grid",
+    worksLayout: "case-grid",
+    labels: { category: "専門サービス", place: "拠点", information: "ご相談・お問い合わせ", story: "私たちについて", gallery: "ご支援の風景" },
+  },
+  "Hospitality / Food": {
+    id: "hospitality",
+    hero: "cinematic",
+    serviceLayout: "editorial-list",
+    worksLayout: "journal",
+    labels: { category: "お店", place: "場所", information: "最新情報", story: "店について", gallery: "店の景色" },
+  },
+  "E-Commerce / Retail": {
+    id: "retail",
+    hero: "editorial-split",
+    serviceLayout: "editorial-list",
+    worksLayout: "journal",
+    labels: { category: "ショップ", place: "所在地", information: "商品・お知らせ", story: "ブランドについて", gallery: "商品と空間" },
+  },
 }
 
 const CORPORATE: DemoArtDirection = {
@@ -66,8 +101,9 @@ function normalized(value: string | undefined): string {
   return (value ?? "").replace(/[\s、。！？・／/「」『』（）()]/gu, "").toLowerCase()
 }
 
-export function resolveDemoArtDirection(page: Pick<DemoMultiPageData, "industry" | "designRecipe">): DemoArtDirection {
-  const base = ART_DIRECTIONS[String(page.industry)] ?? CORPORATE
+export function resolveDemoArtDirection(page: Pick<DemoMultiPageData, "industry" | "designRecipe" | "presentation">): DemoArtDirection {
+  const profile = page.presentation?.industryProfile ?? String(page.industry)
+  const base = ART_DIRECTIONS[profile] ?? CORPORATE
   const creative = page.designRecipe?.creativeDirection
   if (!creative) return base
   return {
