@@ -1536,7 +1536,7 @@ async function main() {
       ],
     },
     { url: "https://paradigmjp.com/en/about" },
-    { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "continuation pricing", "Wise", "delivery guarantee"] },
+    { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "$2,000/month", "first 10 selected launch partners", "Wise", "delivery guarantee"] },
     { url: "https://paradigmjp.com/en/faq", markers: ["$12,000", "Which payment methods can we use?", "full setup fee is refunded"] },
     { url: "https://paradigmjp.com/en/works" },
     { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?", "The Source Pack That Keeps a Japan Launch Moving"] },
