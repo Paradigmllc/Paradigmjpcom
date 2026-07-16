@@ -54,8 +54,8 @@ export function OpportunityOfferPanel({
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-300">
               {isJa
-                ? "最初の6か月は追加月額なし。7か月目以降は契約条件に基づき月額$995。"
-                : "No additional monthly fee for the first six months; $995/month from month 7 under signed terms."}
+                ? "選定した契約先には最初の6か月を追加月額なしで提供。期間終了後の継続条件・月額は個別協議のうえ書面合意。"
+                : "For selected launch partners, the first six months are included at no additional monthly charge; continuation pricing is agreed separately after the included period."}
             </p>
 
             <div className="mt-6 rounded-xl border border-amber-300/40 bg-amber-300/10 p-5">

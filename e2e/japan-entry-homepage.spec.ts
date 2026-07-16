@@ -8,7 +8,7 @@ test.describe("Japan Entry conversion path", () => {
 
     await expect(page.getByRole("heading", { name: "Launch in Japan without hiring a local team" })).toBeVisible()
     await expect(page.getByText("$12,000", { exact: true })).toBeVisible()
-    await expect(page.getByText("$0/month for the first six months", { exact: false })).toBeVisible()
+    await expect(page.getByText("six months of managed operation are included for selected launch partners", { exact: false })).toBeVisible()
     await expect(page.getByText("$1,500", { exact: false })).toHaveCount(0)
     await expect(page.getByText("Book a free 30-min call", { exact: false })).toHaveCount(0)
   })
@@ -192,7 +192,7 @@ test.describe("Japan Entry conversion path", () => {
     ).toBeVisible()
     await expect(
       page.getByText(
-        /then \$995\/month; future-period cancellation follows the signed terms\./,
+        /then \continuation pricing\/month; continuation terms are agreed separately in writing\./,
       ),
     ).toBeVisible()
     await expect(

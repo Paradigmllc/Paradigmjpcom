@@ -156,7 +156,7 @@ export function JapanEntryProjectionSection({ data, lang }: { data: DiagnosticRe
             <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">
               <li>$12,000 {isJa ? "初期費用・一括前払い" : "setup fee, paid upfront"}</li>
               <li>{isJa ? "最初の6か月は追加月額費用なし" : "First six managed months at no additional monthly charge"}</li>
-              <li>{isJa ? "7か月目以降は署名済み条件に基づき月額$995" : "$995/month from month 7 under signed terms"}</li>
+              <li>{isJa ? "期間終了後の継続条件・月額は個別協議のうえ書面合意" : "Continuation pricing is agreed separately after the included period and is excluded from this planning model until quoted in writing"}</li>
             </ul>
           </div>
           <div>

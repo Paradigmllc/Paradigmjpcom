@@ -8,7 +8,6 @@ const STALE_ENGLISH_ANSWER =
 
 const ALLOWED_DOLLAR_VALUES = new Set([
   "$0",
-  "$995",
   "$12K",
   "$12k",
   "$12,000",
@@ -19,7 +18,7 @@ export function isSafeEnglishCommercialAnswer(answer: string): boolean {
   if (!answer.trim() || STALE_ENGLISH_ANSWER.test(answer)) return false
   if (/cancel(?:led|lation)?\s+anytime/i.test(answer)) return false
   if (
-    /\bcancellable\b|can be cancelled/i.test(answer) &&
+    /\bsubject to separate written terms\b|can be cancelled/i.test(answer) &&
     !/signed terms/i.test(answer)
   ) {
     return false
@@ -88,7 +87,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("how much") ||
     question.includes("pricing")
   ) {
-    return "Japan Entry is a fixed $12,000 setup, paid before kickoff. Managed operation is $0/month for the first six months, then $995/month from month seven. Future-period cancellation follows the signed terms. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
+    return "Japan Entry is a fixed $12,000 setup, paid before kickoff. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
   }
   if (
     question.includes("process") ||
@@ -132,7 +131,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("after") ||
     question.includes("launch")
   ) {
-    return "Six months of managed Japan operation are included at $0/month. From month seven it is $995/month; future-period cancellation follows the signed terms. Exact support channels, ownership, and response expectations are confirmed in the written scope."
+    return "For selected launch partners, the first six months of managed Japan operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Exact support channels, ownership, and response expectations are confirmed in the written scope."
   }
   if (
     question.includes("contact") ||
@@ -150,5 +149,5 @@ function getFallbackAnswerEn(question: string): string {
   ) {
     return "Paradigm LLC is a Tokyo-based Japan market-entry operator for overseas SMBs. We publish only verified company and commercial information; see https://paradigmjp.com/en/about and /en/legal."
   }
-  return "Japan Entry is a fixed $12,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review; six months at $0/month, then $995/month. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
+  return "Japan Entry is a fixed $12,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. For selected launch partners, the first six months of managed operation are included at no additional monthly charge; continuation pricing is agreed separately after the included period. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
 }

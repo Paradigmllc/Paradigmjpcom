@@ -53,7 +53,7 @@ The chosen route may be a hosted checkout, invoice, bank transfer, or qualified 
 
 ## What Paradigm can coordinate
 
-Paradigm can localize the buyer-facing information architecture, prepare Japanese copy and disclosure placement from approved source material, configure the agreed inquiry or payment handoff, and provide a documented launch checklist. The fixed Japan Entry setup is $12,000; standard monthly operation is included for the first six months, then $995/month under signed terms. Provider fees, fulfilment, advertising, legal, tax, and regulated advice remain separate. The result is a clearer path to a decision—not a guarantee that the market will buy.`
+Paradigm can localize the buyer-facing information architecture, prepare Japanese copy and disclosure placement from approved source material, configure the agreed inquiry or payment handoff, and provide a documented launch checklist. The fixed Japan Entry setup is $12,000; for selected launch partners, managed operation is included for the first six months at no additional monthly charge, then continuation pricing is agreed separately with availability and scope confirmed in writing. Provider fees, fulfilment, advertising, legal, tax, and regulated advice remain separate. The result is a clearer path to a decision—not a guarantee that the market will buy.`
   },
   {
     slug: "japan-ec-payment-fulfilment-trust",
@@ -275,4 +275,3 @@ Review repeated questions and unresolved tickets weekly. Convert stable answers 
 The goal is not to make automation look human. It is to make the Japanese buyer feel that the company knows what happens next. That is the professional standard a small SaaS team can operate consistently.`
   },
 ]
-

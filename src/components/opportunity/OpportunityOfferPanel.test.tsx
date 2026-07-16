@@ -17,7 +17,7 @@ describe("OpportunityOfferPanel", () => {
 
     expect(html).toContain("$12,000");
     expect(html).toContain("paid upfront");
-    expect(html).toContain("$995/month from month 7");
+    expect(html).toContain("continuation pricing is agreed separately after the included period");
     expect(html).toContain("available for a limited time");
     expect(html).toContain("small number of accepted companies");
     expect(html).toContain("form submission alone does not reserve a place");

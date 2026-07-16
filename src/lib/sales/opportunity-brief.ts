@@ -88,8 +88,9 @@ export function readOpportunityProjection(meta: JsonRecord | undefined): JapanEn
     !finiteNumber(candidate.estimatedMonthlyVisits) || !finiteNumber(candidate.monthlyOpportunityGapUsd) ||
     !range || !finiteNumber(range.low) || !finiteNumber(range.high) ||
     !assumptions || !["ecommerce", "saas", "service"].includes(String(assumptions.businessModel)) ||
-    !["averageOrderValueUsd", "conversionRate", "grossMargin", "currentJapanShare", "targetJapanShareMonth24", "monthlyManagedFeeUsdAfterMonth6", "setupFeeUsd"]
-      .every((key) => finiteNumber(assumptions[key]))
+    !["averageOrderValueUsd", "conversionRate", "grossMargin", "currentJapanShare", "targetJapanShareMonth24", "setupFeeUsd"]
+      .every((key) => finiteNumber(assumptions[key])) ||
+    !(assumptions.monthlyManagedFeeUsdAfterMonth6 === null || finiteNumber(assumptions.monthlyManagedFeeUsdAfterMonth6))
   ) return null
   const markets = Array.isArray(candidate.markets) ? candidate.markets : []
   const scenarios = Array.isArray(candidate.scenarios) ? candidate.scenarios : []

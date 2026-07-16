@@ -9,9 +9,9 @@ describe("chat commercial fallback", () => {
     const answer = getFallbackAnswer("How much does it cost?", "en")
 
     expect(answer).toContain("$12,000")
-    expect(answer).toContain("$995/month")
-    expect(answer).toContain("Future-period cancellation follows the signed terms")
-    expect(answer).not.toMatch(/\bcancellable\b|cancel anytime/i)
+    expect(answer).toContain("continuation pricing is agreed separately")
+    expect(answer).toContain("selected launch partners")
+    expect(answer).not.toMatch(/\bsubject to separate written terms\b|cancel anytime|995/i)
     expect(answer).not.toMatch(/free consult|¥|1,300|198,000/i)
   })
 
@@ -32,14 +32,14 @@ describe("chat commercial fallback", () => {
 
   it("rejects generated English answers with unverified prices or metrics", () => {
     expect(isSafeEnglishCommercialAnswer(
-      "Setup is $12,000, then $0 for six months and $995 after that.",
+      "Setup is $12,000, then $0 for six months and continuation pricing after that.",
     )).toBe(true)
     expect(isSafeEnglishCommercialAnswer("A starter package is $1,500.")).toBe(false)
     expect(isSafeEnglishCommercialAnswer("Trusted by 200+ clients.")).toBe(false)
-    expect(isSafeEnglishCommercialAnswer("Month seven is $995/month, cancellable.")).toBe(false)
-    expect(isSafeEnglishCommercialAnswer("Month seven is $995/month; cancel anytime.")).toBe(false)
+    expect(isSafeEnglishCommercialAnswer("Month seven is continuation pricing is agreed separately, subject to separate written terms.")).toBe(false)
+    expect(isSafeEnglishCommercialAnswer("Month seven is continuation pricing is agreed separately; cancel anytime.")).toBe(false)
     expect(isSafeEnglishCommercialAnswer(
-      "Month seven is $995/month and can be cancelled for future periods under the signed terms.",
+      "Month seven is continuation pricing is agreed separately and can be cancelled for future periods under the signed terms.",
     )).toBe(true)
   })
 })

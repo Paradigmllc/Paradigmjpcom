@@ -39,7 +39,7 @@ describe("Japanese public content safety", () => {
           {
             price: "$12,000",
             features:
-              "$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms",
+              "six months of managed operation are included for selected launch partners\nContinuation pricing is agreed separately after the included period; availability and scope are confirmed in writing",
           },
         ],
       },

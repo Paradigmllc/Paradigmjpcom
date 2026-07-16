@@ -12,7 +12,7 @@ The production offer and public promise are fixed:
 
 - `USD 12,000` one-time setup.
 - Standard monthly service is included for the first six months; month seven is
-  `USD 995/month` unless the signed agreement says otherwise.
+  continuation pricing is agreed separately after the included period in the signed scope.
 - Payment is collected only from the invoice or payment instruction issued
   after fit review: Wise, bank transfer, USDC, or credit card through a Stripe
   invoice/payment link. The invoice is authoritative for the recipient,
@@ -118,7 +118,7 @@ Keystatic/Payload, verify all of the following before publishing:
 2. Every public article has non-empty body content, a locale, and a canonical
    route; no placeholder or internal diagnostic metadata is exposed.
 3. `/en/services`, `/en/pricing`, and `/en/contact` agree on `$12,000`, six
-   included months, and `$995/month` from month seven.
+   included months for selected launch partners, and separately agreed continuation terms after the included period.
 4. `/en/pricing`, `/en/contact`, `/en/faq`, and `/en/legal` list Wise, bank
    transfer, USDC, and credit card via Stripe invoice/payment link, and use the
    same Start Date and 14-business-day full-refund condition.

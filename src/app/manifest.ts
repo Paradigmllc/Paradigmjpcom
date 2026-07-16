@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Paradigm Japan Entry",
     short_name: "Paradigm",
-    description: "$12,000 fixed Japan Entry setup, six months at $0, then $995/month for fast-decision global SMBs.",
+    description: "$12,000 fixed Japan Entry setup, six months included for selected launch partners, then continuation pricing is agreed separately for fast-decision global SMBs.",
     start_url: "/en",
     display: "standalone",
     orientation: "portrait",

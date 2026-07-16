@@ -66,8 +66,6 @@ describe("Japan Entry structured data", () => {
         priceCurrency: "USD",
         priceSpecification: [
           expect.objectContaining({ price: "12000", priceCurrency: "USD" }),
-          expect.objectContaining({ price: "0", unitText: "MONTH" }),
-          expect.objectContaining({ price: "995", unitText: "MONTH" }),
         ],
       },
     })
