@@ -1757,11 +1757,12 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard` **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。PR **#350**をmainへmergeし、正式`npm run release:prod`を完走。deployment **ex45lqezddv4wuignvxxx5jo**、DB **89/89**、CMS publish、Traefik / Cloudflare origin lock、Realtime / Twenty worker、Sales health JSON `ok:true`、公開smokeまで全gate pass。
 - 公開確認済み: `/en/package`、`/en/faq`、`/en/about`、`/en/pricing`、`/en/contact` がHTTP **200**で、Async-first delivery、Notion/Trello workspace、Loom、one active request、two business daysの文言を確認。公開ページに未確定の`$2,000`、`$995`、`10 companies`、`10 slots`は存在しない。既存Twentyテスト変更は未コミットのまま保全・復元した。
 
-## CURRENT STATUS - 2026-07-16 契約パケット・SOW/SLA境界の明文化（実装・ローカル検証完了 / release pending）
+## CURRENT STATUS - 2026-07-16 契約パケット・SOW/SLA境界の明文化（本番反映・公開確認済み）
 
 - 添付の契約構成を、SSORという未標準の略語ではなく、MSA / Setup SOW / Order Form + SLA / 必要時のDPA・NDA・USDC payment addendumとして整理し、`/en/package`に契約パケットの5段階、`/en/faq`に契約書類とChange Requestの説明を追加した。未確定の継続料金やFounding枠数は記載していない。
 - `/en/terms`では、書面スコープ優先、検収・変更管理、顧客専用成果物とParadigmの再利用可能な制作基盤、個人データ・AI支援の人による確認境界を明文化した。公開運用Runbookにも電子署名記録、署名権限、版管理、レビュー期間、変更依頼、秘密情報の保管境界を追加した。
-- AIチャットの知識・フォールバックもSOW/MSA/SLA/DPA/NDA/検収/Change Requestへ対応。検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、TypeScript、Quality Guard **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。本番releaseと公開確認は次工程。
+- AIチャットの知識・フォールバックもSOW/MSA/SLA/DPA/NDA/検収/Change Requestへ対応。検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、TypeScript、Quality Guard **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。PR **#353**をmainへmergeし、正式`npm run release:prod`を完走。初回実行は対象migrationのschema reload通知が一時失敗したが、DBテーブル存在とNOTIFY成功を確認後に再実行し、deployment **w2cdklpr4m66tajcq4l717nu**、DB **89/89**、CMS publish、Traefik / Cloudflare origin lock、Realtime / Twenty worker、Sales health JSON `ok:true`、公開smokeまで全gate pass。
+- 公開確認済み: `/en/package`、`/en/faq`、`/en/terms`、`/en/pricing` がHTTP **200**で、MSA / Setup SOW / Order Form + SLA / DPA・NDA・payment addendum、検収・Change Request、AI/data境界の文言を確認。公開ページに未確定の`$2,000`、`$995`、`Founding 10`は存在しない。既存Twentyテスト変更は未コミットのまま保全・復元した。
 
 ## CURRENT STATUS - 2026-07-16 Customer-copy cleanup after live QA (実装・対象テスト完了 / 本番release待ち / 外部送信0)
 
