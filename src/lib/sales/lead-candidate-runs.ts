@@ -156,6 +156,19 @@ export async function markLeadCandidateRunFailed(runId: string, error: unknown):
   await updateRun(runId, { status: "failed", error_message: errorMessage(error), completed_at: nowIso() })
 }
 
+export function leadCandidateRunLifecycle(input: {
+  discovered: number
+  verified: number
+  verifyLimit: number
+  failed: number
+  cancelRequested: boolean
+}): { hasMore: boolean; status: "running" | "completed" | "partial" | "cancelled" } {
+  if (input.cancelRequested) return { hasMore: false, status: "cancelled" }
+  const hasMore = input.discovered > 0 && input.verified < input.verifyLimit
+  if (hasMore) return { hasMore: true, status: "running" }
+  return { hasMore: false, status: input.failed > 0 ? "partial" : "completed" }
+}
+
 export async function refreshLeadCandidateRunCounts(runId: string): Promise<{ hasMore: boolean; failures: Array<{ key: string; reason: string }> }> {
   const sb = getSb()
   const [discoveredRes, scoredRes, awaitingReviewRes, formMissingRes, promotedRes, reviewRes, rejectedRes, skippedRes, failedRes, matched, sourceQualified, formsChecked, formsQualified, twentySynced, operatorApproved, operatorRejected, runRes] = await Promise.all([
@@ -175,7 +188,7 @@ export async function refreshLeadCandidateRunCounts(runId: string): Promise<{ ha
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("twenty_synced", true),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("review_status", "approved"),
     sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("review_status", "rejected"),
-    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("verify_limit").eq("id", runId).single(),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("verify_limit, cancel_requested").eq("id", runId).single(),
   ])
   const counts = new Map<string, number>()
   counts.set("discovered", discoveredRes.count ?? 0)
@@ -189,10 +202,15 @@ export async function refreshLeadCandidateRunCounts(runId: string): Promise<{ ha
   counts.set("failed", failedRes.count ?? 0)
   if (runRes.error) throw new Error(runRes.error.message)
   const verified = TERMINAL_ITEM_STATUSES.reduce((sum, status) => sum + (counts.get(status) ?? 0), 0)
-  const hasMore = (counts.get("discovered") ?? 0) > 0 && verified < Number(runRes.data.verify_limit ?? 0)
-  const status = hasMore ? "running" : (counts.get("failed") ?? 0) > 0 ? "partial" : "completed"
+  const lifecycle = leadCandidateRunLifecycle({
+    discovered: counts.get("discovered") ?? 0,
+    verified,
+    verifyLimit: Number(runRes.data.verify_limit ?? 0),
+    failed: counts.get("failed") ?? 0,
+    cancelRequested: runRes.data.cancel_requested === true,
+  })
   await updateRun(runId, {
-    status,
+    status: lifecycle.status,
     verified_count: verified,
     matched_technology_count: matched.count ?? 0,
     scored_count: (counts.get("scored") ?? 0) + (counts.get("awaiting_review") ?? 0) + (counts.get("form_missing") ?? 0) + (counts.get("promoted") ?? 0),
@@ -207,11 +225,11 @@ export async function refreshLeadCandidateRunCounts(runId: string): Promise<{ ha
     operator_approved_count: operatorApproved.count ?? 0,
     operator_rejected_count: operatorRejected.count ?? 0,
     failure_count: counts.get("failed") ?? 0,
-    completed_at: hasMore ? null : nowIso(),
+    completed_at: lifecycle.hasMore ? null : nowIso(),
   })
   const failures = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("domain, error_message").eq("run_id", runId).eq("status", "failed").limit(30)
   return {
-    hasMore,
+    hasMore: lifecycle.hasMore,
     failures: ((failures.data ?? []) as Array<{ domain: string; error_message: string | null }>).map((row) => ({ key: row.domain, reason: row.error_message ?? "failed" })),
   }
 }

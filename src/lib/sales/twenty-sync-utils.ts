@@ -10,6 +10,7 @@ export interface TwentyRecord {
   domainName?: TwentyLinkField | null
   paradigmReportUrl?: TwentyLinkField | null
   paradigmFormUrl?: TwentyLinkField | null
+  paradigmOutreachTargetUrl?: TwentyLinkField | null
   paradigmCustomerPortalUrl?: TwentyLinkField | null
   paradigmSalesMaterialUrl?: TwentyLinkField | null
   paradigmDemoUrl?: TwentyLinkField | null

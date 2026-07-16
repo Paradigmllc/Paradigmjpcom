@@ -10,6 +10,7 @@ import {
 import { requireTwentyAuth } from "./twenty-health"
 import {
   twentyFetch,
+  linkField,
   type TwentyMutationResponse,
   type TwentyRecord,
   type TwentySyncResult,
@@ -115,10 +116,8 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
 
   return {
     name: company.company_name,
-    paradigmFormUrl: {
-      primaryLinkLabel: formUrl ? "確認済みフォーム" : "",
-      primaryLinkUrl: formUrl ?? "",
-    },
+    paradigmFormUrl: linkField(formUrl ? "確認済みフォーム" : "", formUrl),
+    paradigmOutreachTargetUrl: linkField(formUrl ? "営業先（確認済みフォーム）" : "", formUrl),
     paradigmCountryName: countrySelectValue(company.target_country),
     // Twenty 2.14 restores SELECT options from its application manifest at boot.
     // Use an existing stable value and describe the OSS lane in the lead evidence.
@@ -198,6 +197,7 @@ export function listLeadTwentyReadbackIssues(
   if (company.id !== expectedCompanyId) issues.push("company_id_mismatch")
   if (company.paradigmCountryName !== expectedText(payload, "paradigmCountryName")) issues.push("country_mismatch")
   if (canonicalLink(actualLink(company.paradigmFormUrl)) !== canonicalLink(expectedLink(payload, "paradigmFormUrl"))) issues.push("form_url_mismatch")
+  if (canonicalLink(actualLink(company.paradigmOutreachTargetUrl)) !== canonicalLink(expectedLink(payload, "paradigmOutreachTargetUrl"))) issues.push("outreach_target_url_mismatch")
   if (company.paradigmLeadStatus !== expectedText(payload, "paradigmLeadStatus")) issues.push("lead_status_mismatch")
   if (company.paradigmNextAction !== expectedText(payload, "paradigmNextAction")) issues.push("next_action_mismatch")
   const expectedSummary = record(payload.paradigmKarteSummary).markdown

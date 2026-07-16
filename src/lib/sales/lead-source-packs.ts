@@ -10,6 +10,9 @@ const COMMON_CRAWL_PROVIDER_URL = "https://commoncrawl.org/url-index"
 const COMMON_CRAWL_TERMS_URL = "https://commoncrawl.org/terms-of-use"
 const SBIR_PROVIDER_URL = "https://www.sbir.gov/data-resources"
 const SBIR_SOURCE_URL = "https://data.www.sbir.gov/mod_awarddatapublic_no_abstract/award_data_no_abstract.csv"
+const STARTUP_SG_PROVIDER_URL = "https://www.startupsg.gov.sg/directory/startups/"
+const STARTUP_SG_SOURCE_URL = "https://www.startupsg.gov.sg/api/v0/search/profiles/startup?inactive%5B%5D=0&type=listing&size=100&sort=id"
+const STARTUP_SG_TERMS_URL = "https://www.startupsg.gov.sg/terms-of-use/"
 const PACK_VERSION = 1
 const PACK_LIMIT = 250
 
@@ -346,9 +349,57 @@ function buildSbirPack(): LeadSourcePack {
   }
 }
 
+function buildStartupSgPack(): LeadSourcePack {
+  const fieldMapping = {
+    startup_sg_directory: "true",
+    startup_sg_page_size: "100",
+    startup_sg_max_records: "4000",
+    startup_sg_employee_max: "200",
+    external_id: "external_id",
+    company_name: "company_name",
+    website_url: "website_url",
+    employee_count: "employee_count",
+    business_type: "business_type",
+    source_page_url: "source_page_url",
+    source_page_allowed_hosts: "www.startupsg.gov.sg",
+    is_sme: "is_sme",
+    is_for_profit: "is_for_profit",
+  }
+  const fingerprint = JSON.stringify({ sourceUrl: STARTUP_SG_SOURCE_URL, fieldMapping, version: PACK_VERSION })
+  return {
+    id: "startup-sg-official-startup-directory-sg",
+    version: PACK_VERSION,
+    name: `Startup SG 公式スタートアップSMB候補 / シンガポール / v${PACK_VERSION}`,
+    countryCode: "SG",
+    marketLabel: "シンガポール",
+    region: "東南アジア",
+    provider: "Startup SG / Enterprise Singapore",
+    providerUrl: STARTUP_SG_PROVIDER_URL,
+    description: "Startup SG公開ディレクトリAPIから、公式サイトと従業員レンジ1〜200名が明示された現役スタートアップを取得します。商材説明・業種・市場展開は品質判定に使い、メール・電話・担当者など個人情報は取り込みません。",
+    sourceType: "official_directory",
+    sourceUrl: STARTUP_SG_SOURCE_URL,
+    sourceFormat: "json",
+    trustTier: 3,
+    fieldMapping,
+    licenseName: "Startup SG public directory terms and robots policy",
+    licenseUrl: STARTUP_SG_TERMS_URL,
+    licenseCheckedAt: "2026-07-16",
+    maxRecords: 4_000,
+    querySha256: createHash("sha256").update(fingerprint).digest("hex"),
+    criteria: [
+      "Startup SG公式公開ディレクトリに掲載中",
+      "公式サイトURLと従業員レンジ1〜200名が明示",
+      "企業説明・業種・投資段階を商材適合の一次根拠として保存",
+      "メール・電話・担当者など個人情報は取り込まない",
+      "Twenty昇格前に公式サイトで企業本人性・商材・実フォーム・日本未進出を再検証",
+    ],
+  }
+}
+
 const PACKS = [
   ...CORDIS_PROGRAMS.flatMap((program) => CORDIS_MARKETS.map((market) => buildCordisPack(program, market))),
   buildSbirPack(),
+  buildStartupSgPack(),
   ...COMMON_CRAWL_MARKETS.flatMap((market) => COMMON_CRAWL_SIGNALS.map((signal) => buildCommonCrawlPack(market, signal))),
   ...TARGET_MARKETS.map(buildWikidataPack),
 ]

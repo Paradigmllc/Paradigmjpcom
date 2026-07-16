@@ -308,6 +308,10 @@ export function twentyCompanyHomePayload(
       primaryLinkLabel: karte.formUrl ? "フォームURL" : "",
       primaryLinkUrl: karte.formUrl ?? "",
     },
+    paradigmOutreachTargetUrl: {
+      primaryLinkLabel: karte.formUrl ? "営業先（フォーム）" : "",
+      primaryLinkUrl: karte.formUrl ?? "",
+    },
     paradigmDemoUrl: {
       primaryLinkLabel: karte.demoUrl ? "デモURL" : "",
       primaryLinkUrl: karte.demoUrl ?? "",

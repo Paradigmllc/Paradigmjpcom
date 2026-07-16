@@ -17,6 +17,7 @@ export interface HomepageQualityProfile {
   organizationTypes: string[]
   visibleText: string
   productEvidence?: FirstPartyProductEvidence
+  japanPresenceSignals?: string[]
 }
 
 export interface LeadQualityGate {
@@ -35,12 +36,12 @@ type SourceWithConfig = LeadSourceRecord & { source: LeadSourceConfig }
 
 const LEGAL_TOKENS = new Set(["inc", "incorporated", "llc", "ltd", "limited", "plc", "corp", "corporation", "company", "co", "pty", "gmbh", "group", "holdings", "the"])
 const EXCLUDED_BUSINESS_RE = /non[ -]?profit|charity|foundation|government|municipal|university|college|school|museum|news(?:paper)?|magazine|publisher|publication|media company|real estate agency|recruit(?:ment|ing)|job board/i
-const ENTERPRISE_RE = /publicly traded|stock exchange|investor relations|annual report|fortune 500|global offices|over \d{3,} employees/i
+const ENTERPRISE_RE = /publicly traded|stock exchange|investor relations|annual report|fortune 500|global offices|over \d{3,} employees|shipped (?:over )?(?:one |two |three |four |five |six |seven |eight |nine |ten |\d+ )?billions? of units|(?:nasdaq|nyse)\s*[:：]/i
 const SMB_MARKER_RE = /founder-led|founded by|family-owned|family owned|independent business|independently owned|small team|boutique|owner-operated|私たちの小さなチーム/i
 const SAAS_STRONG_RE = /software as a service|saas|cloud platform|api documentation/i
 const SAAS_PRODUCT_RE = /software|platform|dashboard|workspace|automation|developer tool|business application/i
 const SAAS_CONVERSION_RE = /pricing|free trial|request a demo|book a demo|subscription plan/i
-const COMMERCE_RE = /add to cart|buy now|shop now|shipping|returns|checkout|product catalog|online store/i
+const COMMERCE_RE = /add to cart|buy now|shop now|shipping (?:&|and) returns|gift certificates?|checkout|product catalog|online store/i
 const PRODUCT_SCHEMA_RE = /^(?:product|individualproduct|productgroup)$/i
 const PRODUCT_CATALOG_RE = /our products?|product portfolio|product range|product catalogue|product catalog|unsere produkte|produktportfolio|gamme de produits|nos produits|vara produkter|produktutbud/iu
 const PRODUCT_MAKER_RE = /we (?:design|develop|engineer|manufacture|produce|build)\b|(?:designs|develops|engineers|manufactures|produces) (?:advanced |innovative |next-generation |next generation )?(?:products?|devices?|equipment|systems?|instruments?|materials?|hardware|technology)|manufacturer of|entwickelt und (?:produziert|fertigt)|hersteller (?:von|für)|développe et (?:fabrique|produit)|fabricant (?:de|d')|utvecklar och tillverkar|tillverkare av/iu
@@ -48,6 +49,31 @@ const MAX_HOMEPAGE_BYTES = 1_500_000
 
 function unique(values: string[]): string[] {
   return [...new Set(values.map((value) => value.replace(/\s+/g, " ").trim()).filter(Boolean))].slice(0, 20)
+}
+
+export function detectFirstPartyJapanPresence(html: string, pageUrl: string): string[] {
+  const $ = load(html)
+  const page = new URL(pageUrl)
+  const signals: string[] = []
+  $("link[hreflang],a[hreflang]").each((_index, element) => {
+    const hreflang = ($(element).attr("hreflang") ?? "").trim().toLowerCase()
+    if (hreflang === "ja" || hreflang.startsWith("ja-")) signals.push(`hreflang:${hreflang}`)
+  })
+  $("a[href]").each((_index, element) => {
+    const label = $(element).text().replace(/\s+/g, " ").trim()
+    if (!/^(?:日本語|Japanese|Japan)$/iu.test(label)) return
+    try {
+      const target = new URL($(element).attr("href") ?? "", page)
+      if (target.hostname.toLowerCase().replace(/^www\./, "") !== page.hostname.toLowerCase().replace(/^www\./, "")) return
+      signals.push(`localized_navigation:${label}:${target.pathname}`)
+    } catch (error) {
+      console.warn("[lead-quality-gate] invalid Japan localization link skipped:", error)
+    }
+  })
+  const visible = $("body").text().replace(/\s+/g, " ").trim().slice(0, 40_000)
+  const office = /(?:Japan|Tokyo|Osaka)\s+(?:office|headquarters|subsidiary)|(?:日本法人|日本支社|東京オフィス|大阪オフィス)/iu.exec(visible)?.[0]
+  if (office) signals.push(`japan_office:${office}`)
+  return unique(signals).slice(0, 10)
 }
 
 export async function readLimitedText(response: Response, maxBytes: number): Promise<string> {
@@ -162,6 +188,7 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
   const $ = load(html)
   const structured = jsonLdOrganizations(html)
   const productEvidence = extractFirstPartyProductEvidence(html, fetched.url)
+  const japanPresenceSignals = detectFirstPartyJapanPresence(html, fetched.url)
   const title = $("title").first().text().replace(/\s+/g, " ").trim()
   const description = ($("meta[name='description']").attr("content") ?? $("meta[property='og:description']").attr("content") ?? "").replace(/\s+/g, " ").trim()
   const siteNames = [
@@ -179,6 +206,7 @@ export async function fetchHomepageQualityProfile(url: string, timeoutMs = 8_000
     organizationTypes: structured.types,
     visibleText,
     productEvidence,
+    japanPresenceSignals,
   }
 }
 
@@ -301,6 +329,7 @@ export function evaluateLeadQualityGate(input: {
   if (sourceRecord.country_code !== sourceRecord.source.country_code) rejectedReasons.push("source_country_mismatch")
   if (!businessPassed) rejectedReasons.push(isForProfit === false ? "non_profit" : `excluded_business:${excludedType}`)
   if (enterprise) rejectedReasons.push("enterprise_signal")
+  if ((homepage.japanPresenceSignals ?? []).length > 0) rejectedReasons.push("existing_japan_presence")
   const reviewReasons: string[] = []
   if (!countryPassed && sourceRecord.country_code === sourceRecord.source.country_code) reviewReasons.push("country_site_signal_missing")
   if (!smbPassed && !enterprise) reviewReasons.push("smb_evidence_missing")

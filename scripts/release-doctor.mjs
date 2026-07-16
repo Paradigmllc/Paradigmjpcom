@@ -402,7 +402,7 @@ function checkStaticReleaseRules() {
   const aiLeadReview = fs.existsSync("src/lib/sales/lead-candidate-ai-smb-review.ts")
     ? fs.readFileSync("src/lib/sales/lead-candidate-ai-smb-review.ts", "utf8")
     : ""
-  const productFitRetryMigrationPath = "supabase/migrations/20260715233000_lead_source_product_evidence_retry.sql"
+  const productFitRetryMigrationPath = "supabase/migrations/20260716000000_lead_source_balance_retry.sql"
   const productFitRetryMigration = fs.existsSync(productFitRetryMigrationPath)
     ? fs.readFileSync(productFitRetryMigrationPath, "utf8")
     : ""
@@ -425,7 +425,10 @@ function checkStaticReleaseRules() {
     && productFitRetryMigration.includes("ARRAY['ai_evidence_review_failed']::text[]")
     && productFitRetryMigration.includes("jsonb_array_length(prior_item.quality_gate->'aiReview'->'evidenceQuotes') >= 2")
     && productFitRetryMigration.includes("jsonb_array_length(prior_item.quality_gate->'aiReview'->'riskFlags') = 0")
-    && noLoginDeploy.includes("20260715233000_lead_source_product_evidence_retry.sql")
+    && productFitRetryMigration.includes("prior_item.quality_gate->'aiReview'->>'error' LIKE '%Insufficient Balance%'")
+    && productFitRetryMigration.includes("prior_item.quality_gate->'aiReview'->'riskFlags' = '[\"review_failed\"]'::jsonb")
+    && productFitRetryMigration.includes("prior_item.quality_gate->'aiReview'->'evidenceQuotes' = '[]'::jsonb")
+    && noLoginDeploy.includes("20260716000000_lead_source_balance_retry.sql")
     && noLoginDeploy.includes("applyLeadSourceProductEvidenceRetryMigration")
     && preDeployProductEvidenceRetryIndex
       > noLoginDeploy.indexOf("await applySalesOptionalColumnRepairMigration(envs)")
@@ -660,6 +663,9 @@ function checkStaticReleaseRules() {
   const leadSourceZipAdapter = fs.existsSync("src/lib/sales/lead-source-zip-csv.ts")
     ? fs.readFileSync("src/lib/sales/lead-source-zip-csv.ts", "utf8")
     : ""
+  const startupSgAdapter = fs.existsSync("src/lib/sales/lead-source-startupsg.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-startupsg.ts", "utf8")
+    : ""
   if (
     leadSourcePacksMigration.includes("source_pack_query_sha256")
     && leadSourcePacksMigration.includes("idx_sales_lead_source_configs_pack_version")
@@ -669,8 +675,14 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyLeadSourceCountryPacksMigration")
     && leadSourcePacksService.includes("PACK_LIMIT = 250")
     && leadSourcePacksService.includes("European Commission CORDIS")
+    && leadSourcePacksService.includes("Startup SG / Enterprise Singapore")
     && leadSourcePacksService.includes("FILTER NOT EXISTS { ?company wdt:P576 ?dissolved }")
     && leadSourceZipAdapter.includes("MAX_ENTRY_ROWS = 500_000")
+    && startupSgAdapter.includes('STARTUP_SG_HOST = "www.startupsg.gov.sg"')
+    && startupSgAdapter.includes("MAX_RESPONSE_BYTES")
+    && startupSgAdapter.includes("employeeCount > employeeMax")
+    && !startupSgAdapter.includes("emailAddresses:")
+    && !startupSgAdapter.includes("contactNumber:")
     && leadInventoryRunner.includes("Twenty同期・文面生成・レポート生成・外部送信は0件")
     && leadSourcePacksRoute.includes("terms_checked: false")
     && leadSourcePacksRoute.includes("approval_status: \"draft\"")
@@ -1292,6 +1304,7 @@ select case when
   position('ai_evidence_review_failed' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
   and position('evidenceQuotes' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
   and position('riskFlags' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
+  and position('Insufficient Balance' in pg_get_functiondef('public.sales_claim_lead_source_records(text,uuid[],integer)'::regprocedure)) > 0
 then 1 else 0 end;
 " 2>/dev/null || true)"
   if [ "$lead_claim_guard" = "1" ]; then

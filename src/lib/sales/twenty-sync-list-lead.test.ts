@@ -30,6 +30,7 @@ describe("listLeadTwentyPayload", () => {
     expect(payload.paradigmKarteSummary).toEqual(expect.objectContaining({
       markdown: expect.stringContaining("レポート・文面・Opportunity・送信は未生成"),
     }))
+    expect(payload.paradigmOutreachTargetUrl).toEqual({ primaryLinkLabel: "営業先（確認済みフォーム）", primaryLinkUrl: "https://example.myshopify.com/pages/contact" })
   })
 
   it("stores the approved initial message as a human-review-only Twenty summary", () => {
@@ -141,6 +142,7 @@ describe("listLeadTwentyPayload", () => {
       id: "twenty-1",
       paradigmCountryName: null,
       paradigmFormUrl: { primaryLinkUrl: "https://example.com/contact" },
+      paradigmOutreachTargetUrl: { primaryLinkUrl: "https://example.com/contact" },
       paradigmLeadStatus: payload.paradigmLeadStatus as string,
       paradigmNextAction: payload.paradigmNextAction as string,
       paradigmKarteSummary: summary,
@@ -168,6 +170,7 @@ describe("listLeadTwentyPayload", () => {
       id: "twenty-2",
       paradigmCountryName: payload.paradigmCountryName as string,
       paradigmFormUrl: payload.paradigmFormUrl as { primaryLinkUrl: string },
+      paradigmOutreachTargetUrl: payload.paradigmOutreachTargetUrl as { primaryLinkUrl: string },
       paradigmLeadStatus: payload.paradigmLeadStatus as string,
       paradigmNextAction: payload.paradigmNextAction as string,
       paradigmKarteSummary: payload.paradigmKarteSummary as { markdown: string },
@@ -204,10 +207,12 @@ describe("listLeadTwentyPayload", () => {
     expect(listLeadTwentyReadbackIssues({
       ...base,
       paradigmFormUrl: { primaryLinkUrl: "https://coronis.es/es/contacto" },
+      paradigmOutreachTargetUrl: { primaryLinkUrl: "https://coronis.es/es/contacto" },
     }, "twenty-normalized", payload)).toEqual([])
     expect(listLeadTwentyReadbackIssues({
       ...base,
       paradigmFormUrl: { primaryLinkUrl: "https://coronis.es/es/otra" },
+      paradigmOutreachTargetUrl: { primaryLinkUrl: "https://coronis.es/es/contacto" },
     }, "twenty-normalized", payload)).toContain("form_url_mismatch")
   })
 
