@@ -1723,3 +1723,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 共通UIへverified logo優先・未提供時は文字頭文字ではなく視覚的なBrand Mark、初期ローディング、Framer Motionのページ遷移／reveal、Emblaのギャラリースライダー、モバイルdrawer、SNSアイコンリンクを実装。既存依存のみを利用し、Three.jsの無差別追加は行わず量産時の表示速度を維持する。
 - HomeへJOURNAL/UPDATEカードを追加し、サービス説明と公式SNS導線を記事風に再構成。ニュースページを3項目以上の決定論的な編集層へ拡張。顧客向けフッターから素材権利確認の内部注意文を除去し、提案用UIの注意事項は既存の最上部プレビューバーへ分離した。
 - 対象Vitest **7 files / 34 tests pass**、TypeScript、対象ESLint、Quality Guard **0 errors / 66 existing warnings**、`git diff --check` pass。外部送信、候補追加、Twenty同期、実企業DEMO再生成は未実行。
+## CURRENT STATUS - 2026-07-16 Japan Entry scope envelope expansion (implemented / local verification complete)
+
+- Attached scope proposalを、確定済みの公開商条件（セットアップ **$12,000固定**、選定先のみ最初の6か月運用込み、継続月額は個別書面合意）に合わせて、`/en/package`の7ワークストリームへ反映した。市場機会分析、Web基盤、決済、Social Media、ローンチ素材、顧客ワークスペース、規制準備・ローンチ管理を明示し、標準範囲としてページ数・ワード数・チャネル数・初期素材数を記載した。
+- 月額運用は、最大4ページ/5,000ワード、同時1件のクリエイティブ依頼、最大2 Social Mediaチャネル、標準依頼の48営業時間以内着手を「標準運用目安」として表示。広告費、外部SaaS/決済、法務・税務・許認可、物流、常時CS、営業代行、大規模開発、成果保証を除外リストへ追加した。未確定の継続月額（添付資料の例示額を含む）は公開していない。
+- FAQ、英語AIチャット知識・フォールバック、公開リリースRunbookも同じ範囲・除外・「書面スコープが最終」の原則へ同期した。日本語サイトの国内Web制作ポジションと、既存Twenty関連の未コミット変更は変更していない。
+- 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 warnings）、production build **408/408 pages**。本番反映はこのブランチでのコミット・正式`release:prod`・公開URL確認後に行う。

@@ -27,6 +27,16 @@ The production offer and public promise are fixed:
   rankings, traffic, conversion, or revenue.
 - The public audience is fast-decision SMBs in North America, the UK, Europe,
   and Australia. Employee count and industry are not eligibility gates.
+- The standard setup envelope is: Japan Opportunity analysis; one Japanese LP
+  plus normally eight to ten core pages and 15,000–20,000 source words;
+  payment setup coordination; up to two Social Media channels; launch creative;
+  a Notion or Trello client workspace; regulatory-readiness coordination; and
+  launch management/handover. The signed scope is authoritative.
+- During the included operating period, publish only the written operating
+  boundaries: normally up to four pages or 5,000 words per month, one active
+  creative request at a time, up to two Social Media channels, and a
+  48-business-hour start commitment for standard requests. Do not publish a
+  continuation price unless it has been agreed in writing.
 - The free utility uses public signals and self-reported answers. It must never
   claim private monthly visits, country traffic share, or revenue when those
   values are not publicly observable.
