@@ -21,6 +21,7 @@ export function DemoPremiumV3Layout({
   brand,
   presentation,
   social = [],
+  showRecruit = false,
   privatePreview,
   children,
 }: {
@@ -32,6 +33,7 @@ export function DemoPremiumV3Layout({
   quality?: DemoQualityReport
   presentation?: Pick<DemoMeta, "proposalNotice" | "primaryCtaLabel" | "primaryCtaHref" | "footerDescription" | "footerOwner" | "brandLogoUrl">
   social?: DemoPremiumExperience["social"]
+  showRecruit?: boolean
   privatePreview?: { expiresAt: string; assetStatus: "unreviewed" | "private_proposal" | "consented" | "blocked" }
   children: React.ReactNode
 }) {
@@ -102,7 +104,7 @@ export function DemoPremiumV3Layout({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <PremiumV3Magnetic className="hidden md:inline-block">
-              <a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-11 items-center gap-2 bg-[var(--demo-ink)] px-5 text-xs font-bold text-white transition-colors hover:bg-[var(--demo-accent)]">{isInstagram && <FaInstagram className="h-4 w-4" aria-hidden="true" />}{ctaLabel}<ArrowUpRight className="h-4 w-4" /></a>
+              <a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-11 items-center gap-2 bg-[var(--demo-ink)] px-3 text-xs font-bold text-white transition-colors hover:bg-[var(--demo-accent)] sm:px-5">{isInstagram && <FaInstagram className="h-4 w-4" aria-hidden="true" />}<span className="hidden min-[430px]:inline">{ctaLabel}</span><ArrowUpRight className="h-4 w-4" /></a>
             </PremiumV3Magnetic>
             <button type="button" aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center border border-[var(--demo-line)] xl:hidden">{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
@@ -121,7 +123,7 @@ export function DemoPremiumV3Layout({
           <div className="grid gap-12 border-b border-white/15 pb-14 lg:grid-cols-[1.2fr_.8fr_.8fr]">
             <div><div className="flex items-center gap-4"><PremiumV3BrandMark accent={accent} label={`${companyName} ロゴ`} /><p className="text-4xl tracking-[-.03em] sm:text-5xl [font-family:var(--demo-font-display)]">{companyName}</p></div><p className="mt-6 max-w-lg text-sm leading-7 text-white/58">{presentation?.footerDescription ?? `${companyName}の事業・サービスをご紹介します。`}</p></div>
             <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-white/35">Pages</p><div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3">{navLinks.map((link) => <a key={link.href} href={link.href} className="text-sm text-white/68 transition hover:text-white">{link.label}</a>)}</div></div>
-            <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-white/35">Information</p><div className="mt-5 grid gap-3 text-sm text-white/68"><a href={`${basePath}/news`}>お知らせ</a><a href={`${basePath}/recruit`}>採用情報</a><a href={`${basePath}/privacy`}>プライバシーポリシー</a><a href={`${basePath}/terms`}>利用条件</a><a href={`${basePath}/commerce`}>特定商取引法に基づく表記</a></div>{social.length > 0 && <div className="mt-7 flex flex-wrap gap-2">{social.map((item) => <a key={`${item.network}-${item.href}`} href={item.href} target="_blank" rel="noopener noreferrer" aria-label={`${item.label}を開く`} className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white/70 transition hover:border-white hover:bg-white hover:text-black">{socialIcon(item.network)}</a>)}</div>}</div>
+            <div><p className="text-[10px] font-bold uppercase tracking-[.28em] text-white/35">Information</p><div className="mt-5 grid gap-3 text-sm text-white/68"><a href={`${basePath}/news`}>お知らせ</a>{showRecruit && <a href={`${basePath}/recruit`}>採用情報</a>}<a href={`${basePath}/privacy`}>プライバシーポリシー</a><a href={`${basePath}/terms`}>利用条件</a><a href={`${basePath}/commerce`}>特定商取引法に基づく表記</a></div>{social.length > 0 && <div className="mt-7 flex flex-wrap gap-2">{social.map((item) => <a key={`${item.network}-${item.href}`} href={item.href} target="_blank" rel="noopener noreferrer" aria-label={`${item.label}を開く`} className="grid h-10 w-10 place-items-center rounded-full border border-white/20 text-white/70 transition hover:border-white hover:bg-white hover:text-black">{socialIcon(item.network)}</a>)}</div>}</div>
           </div>
           <div className="flex flex-col gap-3 pt-7 text-[10px] tracking-[.08em] text-white/38 sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} {presentation?.footerOwner ?? companyName}</p><p>{privatePreview ? "Concept preview" : ""}</p></div>
         </div>
