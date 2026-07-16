@@ -1784,3 +1784,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 公開DEMOの実表示で残っていた「生成イメージ」と公開情報取得メタ文（`確認済みの公開情報では`等）を、サービス本文・ナラティブ・ニュース・フッターへ流さない共通サニタイズを追加した。顧客向けの編集ラベルと短い事業紹介へ置換する。
 - 対象Vitest **2 files / 9 tests**、TypeScript、`git diff --check`を通過。PR **#357**（公開情報メタ文除去）とPR **#358**（生成イメージ／コンセプト素材ラベル除去）をmainへマージし、正式`npm run release:prod`のpre/post gateを通過した。deployment **zyk3rvrjupohnboiu1w5rn7h**、DB **89/89**、公開smoke、Twenty、Sales health JSON `ok:true`を確認した。
 - 公開`https://demo.paradigmjp.com/cafe-sosomu`をPC・モバイルで再確認。顧客画面に`生成イメージ`、`確認済みの公開情報では`、エキテン権利確認メモ、`コンサルティング`は0件。モバイルはviewport **390px / documentWidth 390px / overflow false**、ブラウザerror **0件**。候補追加、Twenty同期、公開URL発行、外部送信は行っていない。
+
+## CURRENT STATUS - 2026-07-16 Premium V3 Hero Deck（本番反映・操作確認済み / 外部送信0）
+
+- 「単一画像＋単一背景」でテンプレ感が出ていたファーストビューを、共通`PremiumV3HeroDeck`へ置換した。ヒーロー素材とギャラリー素材を正規化・重複排除したうえで最大5枚を一つの実スライダーにまとめ、Emblaのスワイプ、前後操作、ドット選択、自動再生／停止、進捗表示、Framer Motionの状態遷移を実装した。
+- 業種・アートディレクションに応じて、飲食店等は`cinematic`、企業・歯科等は`split`へ切り替え。アクセント色の放射背景、グリッド／光彩レイヤー、画像の彩度・コントラスト、左右分割の順序を共通レンダラーで変え、全企業に同じ静的ヒーローを流さない。
+- 対象Vitest **3 files / 11 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、production build **408/408 pages**を通過。PR **#362**をmainへマージし、正式`npm run release:prod`を完了。初回は既存migrationのSSH接続断で停止したが、preflightで滞留デプロイなし・環境健全を確認後に1回だけ再開し、deployment **kir0tb0hk948sqw13g055stx**、DB **91/91**、公開smoke、Twenty、Sales health JSON `ok:true`を確認した。
+- 公開`https://demo.paradigmjp.com/cafe-sosomu`でHeroに**3 / 3**スライド、`スライダー操作`、次スライド操作後の選択状態を確認。モバイルviewport **390px / documentWidth 390px / overflow false**、ブラウザerror **0件**。外部送信、Twenty同期、コンテンツ再生成は行っていない。
