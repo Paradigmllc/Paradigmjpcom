@@ -3,6 +3,10 @@ import { callDeepSeek } from "@/lib/deepseek"
 import { INDUSTRIES } from "./types"
 import type { JapanMarketAudit } from "./sources/japan-market-audit"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
+import {
+  groundManualPositioningConcept,
+  MANUAL_OUTREACH_PLAYBOOKS,
+} from "./manual-japan-entry-playbook"
 
 const profileSchema = z.object({
   companyName: z.string().min(2).max(120),
@@ -18,6 +22,12 @@ const profileSchema = z.object({
   industry: z.enum(INDUSTRIES),
   productContext: z.string().min(12).max(700),
   observedFacts: z.array(z.string().min(3).max(240)).min(1).max(10),
+  outreachPlaybook: z.enum(MANUAL_OUTREACH_PLAYBOOKS),
+  positioningConcept: z.object({
+    sourcePhrase: z.string().min(3).max(180),
+    japaneseHeadline: z.string().min(4).max(60),
+    japaneseSupportLine: z.string().min(8).max(140),
+  }).strict().nullable(),
 }).strict()
 
 type ParsedManualCompanyProfile = z.infer<typeof profileSchema>
@@ -70,6 +80,7 @@ export function groundManualCompanyProfile(input: {
     companyName,
     productContext: input.productContext,
     observedFacts: publicEvidenceFacts(input.productContext),
+    positioningConcept: groundManualPositioningConcept(input.profile.positioningConcept, input.productContext),
     isJapaneseCompany,
     japanEntryFitStatus: isJapaneseCompany ? "rejected" : input.profile.japanEntryFitStatus,
     japanEntryFitConfidence: isJapaneseCompany ? 100 : input.profile.japanEntryFitConfidence,
@@ -101,6 +112,8 @@ export async function analyzeManualCompanyProfile(input: {
         "SMB qualified means public evidence is consistent with a small or midsize operating company; uncertainty must be review_required.",
         "Japan-entry fit qualified means the offer can plausibly be sold to this non-Japanese company based on its actual product/service and public site, not assumed demand.",
         "Use ISO-3166 alpha-2 countryCode or null. Japanese companies must be isJapaneseCompany=true and japanEntryFitStatus=rejected.",
+        "Choose exactly one outreachPlaybook from the allowed list based only on the public product evidence.",
+        "For positioningConcept, create a stored draft Japanese positioning concept only when it can be grounded in one exact sourcePhrase copied from productContext. Translate or reframe only that supplied meaning; do not add demand, outcomes, superiority, numbers, customers, or Japan-market fit. Return null when a grounded concept is not possible.",
       ].join(" "),
     },
     {
@@ -109,12 +122,14 @@ export async function analyzeManualCompanyProfile(input: {
         domain: input.domain,
         fallbackCompanyName: input.fallbackCompanyName,
         publicWebsiteEvidence: evidenceText,
+        groundedProductContext: input.productContext,
         japanReadinessAudit: {
           score: input.audit.score,
           status: input.audit.status,
           pagesChecked: input.audit.pages_checked,
         },
         allowedIndustries: INDUSTRIES,
+        allowedOutreachPlaybooks: MANUAL_OUTREACH_PLAYBOOKS,
         outputKeys: Object.keys(profileSchema.shape),
       }),
     },

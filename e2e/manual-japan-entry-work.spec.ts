@@ -20,11 +20,23 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
   const submitted: string[] = []
   await page.route(/\/api\/work$/, async (route) => {
     if (route.request().method() === "GET") {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, items: [], metrics: [] }) })
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          items: [],
+          metrics: [],
+          angleMetrics: [],
+          sources: [{ slug: "manual_input", name: "Manual input", tier: "s_plus", roles: ["discovery"], sectors: ["all"], source_url: null, access_mode: "manual_review", priority: 1, active: true, notes: "Direct operator input" }],
+        }),
+      })
       return
     }
-    const { url, variant } = route.request().postDataJSON() as { url: string; variant: string }
+    const { url, variant, angle, sourceSlug } = route.request().postDataJSON() as { url: string; variant: string; angle: string; sourceSlug: string }
     expect(variant).toBe("auto")
+    expect(angle).toBe("auto")
+    expect(sourceSlug).toBe("manual_input")
     submitted.push(url)
     const domain = new URL(url).hostname
     await route.fulfill({
@@ -58,6 +70,13 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
           message_variant_requested: "estimate_off_price_off",
           message_variant: "estimate_off_price_off",
           message_variant_fallback_reason: null,
+          message_angle_requested: "problem",
+          message_angle: "problem",
+          message_angle_fallback_reason: null,
+          outreach_playbook: "saas_ai_devtool",
+          qualification_ledger: {},
+          master_lead_ledger: {},
+          source_attributions: [{ id: `${domain}-source`, work_id: domain, source_slug: "manual_input", source_page_url: "", observed_on: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() }],
           report_data: {},
           report_url: "https://paradigmjp.com/en/work-report/11111111-1111-4111-8111-111111111111",
           twenty_company_id: null,
@@ -78,16 +97,18 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
 
   await page.goto("/work")
   await expect(page.getByRole("heading", { name: "海外SMBの初回営業準備" })).toBeVisible()
-  await expect(page.getByText(/初回文面は4セル実験として/)).toBeVisible()
+  await expect(page.getByText(/初回文面は「推定あり／なし × 価格あり／なし」の4セル/)).toBeVisible()
   await expect(page.getByRole("button", { name: "自動均等割付" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "自動安定割付" })).toBeVisible()
   await expect(page.getByRole("button", { name: "推定あり・価格あり" })).toBeVisible()
+  await expect(page.getByLabel("企業を見つけた営業ソース")).toHaveValue("manual_input")
   await page.getByLabel("解析する海外企業URL").fill("https://one.example\nhttps://two.example")
   await page.getByRole("button", { name: "解析を開始" }).click()
   await expect.poll(() => submitted.sort()).toEqual(["https://one.example", "https://two.example"])
   await expect(page.getByText("one.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("two.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("自動送信: なし").first()).toBeVisible()
-  await expect(page.getByText("問い合わせフォーム初回文面（未送信・推定なし・価格なし）").first()).toBeVisible()
+  await expect(page.getByText("問い合わせフォーム初回文面（未送信・推定なし・価格なし・問題提起型）").first()).toBeVisible()
   await expect(page.locator("[data-nextjs-dialog], .vite-error-overlay, #webpack-dev-server-client-overlay")).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
   expect(consoleErrors).toEqual([])

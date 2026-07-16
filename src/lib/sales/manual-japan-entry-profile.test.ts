@@ -34,6 +34,12 @@ describe("manual company Japan exclusion", () => {
         industry: "Technology / IT",
         productContext: "Invented AI outcomes that were not present on the website.",
         observedFacts: ["Invented customer outcome"],
+        outreachPlaybook: "saas_ai_devtools",
+        positioningConcept: {
+          sourcePhrase: "Workflow software for independent retailers",
+          japaneseHeadline: "独立系小売向けワークフロー",
+          japaneseSupportLine: "在庫調整を支えるソフトウェアの日本語ポジショニング案です。",
+        },
       },
     })
 
@@ -43,6 +49,7 @@ describe("manual company Japan exclusion", () => {
       "Inventory coordination",
     ])
     expect(JSON.stringify(grounded)).not.toContain("Invented")
+    expect(grounded.positioningConcept?.sourcePhrase).toBe("Workflow software for independent retailers")
   })
 
   it("does not retain an unobserved model-generated company name", () => {
@@ -65,6 +72,8 @@ describe("manual company Japan exclusion", () => {
         industry: "Technology / IT",
         productContext: "Invented claim",
         observedFacts: ["Invented customer outcome"],
+        outreachPlaybook: "saas_ai_devtools",
+        positioningConcept: null,
       },
     })
 

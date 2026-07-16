@@ -39,6 +39,8 @@ describe("manual work first-touch generation integration", () => {
         industry: "Technology / IT",
         productContext: "Model summary must not be used",
         observedFacts: ["Public evidence"],
+        outreachPlaybook: "saas_ai_devtools",
+        positioningConcept: null,
       },
       evidence: {
         companyName: "Example",
@@ -58,11 +60,11 @@ describe("manual work first-touch generation integration", () => {
         return {
           ok: true,
           text: JSON.stringify({
-            candidates: ["direct", "decision", "customer-path"].map((angle) => ({
+            candidates: ["direct", "decision", "customer-path"].map(() => ({
               message,
               fact_ids: ["japan-audit-language", "japan-audit-jpy"],
               product_evidence: "subscription analytics platform for independent retailers",
-              angle,
+              angle: "problem",
             })),
           }),
         }

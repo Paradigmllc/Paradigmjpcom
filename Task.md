@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-16 Manual Japan Entry 訴求角度・業種playbook・営業ソース台帳（本番release・read-back完了 / 履歴0件 / 外部送信0）
+
+- `/work`の既存4セルへ、問題提起・競合比較・推定機会・モックアップの4訴求角度を追加した。競合公開根拠、公開rank由来のモデル値、公開原文に紐づく保存済み日本語ポジショニング案がない角度は問題提起型へfail-closedで戻し、希望角度・実効角度・理由をDB履歴へ保存する。
+- SaaS/AI/DevTools、Web3、cyber/B2B infra、education/membership、research/data/media、creator tools、gaming、premium hobby ecommerce、hospitality SaaS、marketplace、genericの11業種playbookを実装した。初回文面は企業固有の公開事実、既存の4セル・`initial_interest`契約、100〜160語、4段落、URL/添付/通話提案/自動送信なしを維持する。
+- 添付の営業リスト生成台帳を独立した手動ソースマスターとして実装した。39ソース、複数ソース帰属、root-domain重複防止、企業発見/成長タイミング/支払力/ Japan Fit/法人確認/問い合わせ経路の6段階、Observed/Modeled/Hypothesis分離を専用DBへ保存する。ソースの能力だけで企業固有のtrigger・商業実績・法的実体を確認済みにしない。collector、scheduler、既存automation接続、送信経路は追加していない。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **192 files / 882 tests**、production build **408/408 pages**、production-mode Playwright PC/Pixel 7 **2/2**がpass。PR **#363** / main **5af86224**を統合し、正式`npm run release:prod`のdeployment **naz7dq1j6hboomdz92h4u1xv**を完走。DB **91/91**、active source **39**、専用3 tableのRLS **3/3**、work履歴 **0**、source link **0**、`sent=true` **0**、Twenty worker restart **0**、Sales health JSON `ok:true`、公開smokeを確認した。未認証`/api/work`は401、実ブラウザの`/work`は`/admin/login`へ遷移し、error overlay/console error/mobile横overflowは0。企業URL投入、Twenty company作成、フォーム・メール等の外部送信は0件。
+
 ## CURRENT STATUS - 2026-07-16 Manual Japan Entry 問い合わせ文面4セル実験（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
 - `/work`へ問い合わせフォーム専用の4セル（推定あり／なし × 価格あり／なし）を追加した。domainからの安定自動割付と明示セル選択に対応し、各履歴へ希望セル・実効セル・フォールバック理由をDB保存する。全セルで企業固有の公開事実とFounder／海外展開責任者への転送依頼を必須にし、自動送信経路は追加していない。
@@ -1777,6 +1784,20 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 公開DEMOの実表示で残っていた「生成イメージ」と公開情報取得メタ文（`確認済みの公開情報では`等）を、サービス本文・ナラティブ・ニュース・フッターへ流さない共通サニタイズを追加した。顧客向けの編集ラベルと短い事業紹介へ置換する。
 - 対象Vitest **2 files / 9 tests**、TypeScript、`git diff --check`を通過。PR **#357**（公開情報メタ文除去）とPR **#358**（生成イメージ／コンセプト素材ラベル除去）をmainへマージし、正式`npm run release:prod`のpre/post gateを通過した。deployment **zyk3rvrjupohnboiu1w5rn7h**、DB **89/89**、公開smoke、Twenty、Sales health JSON `ok:true`を確認した。
 - 公開`https://demo.paradigmjp.com/cafe-sosomu`をPC・モバイルで再確認。顧客画面に`生成イメージ`、`確認済みの公開情報では`、エキテン権利確認メモ、`コンサルティング`は0件。モバイルはviewport **390px / documentWidth 390px / overflow false**、ブラウザerror **0件**。候補追加、Twenty同期、公開URL発行、外部送信は行っていない。
+
+## CURRENT STATUS - 2026-07-16 Premium V3 Hero Deck（本番反映・操作確認済み / 外部送信0）
+
+- 「単一画像＋単一背景」でテンプレ感が出ていたファーストビューを、共通`PremiumV3HeroDeck`へ置換した。ヒーロー素材とギャラリー素材を正規化・重複排除したうえで最大5枚を一つの実スライダーにまとめ、Emblaのスワイプ、前後操作、ドット選択、自動再生／停止、進捗表示、Framer Motionの状態遷移を実装した。
+- 業種・アートディレクションに応じて、飲食店等は`cinematic`、企業・歯科等は`split`へ切り替え。アクセント色の放射背景、グリッド／光彩レイヤー、画像の彩度・コントラスト、左右分割の順序を共通レンダラーで変え、全企業に同じ静的ヒーローを流さない。
+- 対象Vitest **3 files / 11 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、production build **408/408 pages**を通過。PR **#362**をmainへマージし、正式`npm run release:prod`を完了。初回は既存migrationのSSH接続断で停止したが、preflightで滞留デプロイなし・環境健全を確認後に1回だけ再開し、deployment **kir0tb0hk948sqw13g055stx**、DB **91/91**、公開smoke、Twenty、Sales health JSON `ok:true`を確認した。
+- 公開`https://demo.paradigmjp.com/cafe-sosomu`でHeroに**3 / 3**スライド、`スライダー操作`、次スライド操作後の選択状態を確認。モバイルviewport **390px / documentWidth 390px / overflow false**、ブラウザerror **0件**。外部送信、Twenty同期、コンテンツ再生成は行っていない。
+
+## CURRENT STATUS - 2026-07-16 Japan Entry $2,000/month / first 10 launch-partner campaign (implementation verified; pending production release)
+
+- Added a reusable, high-visibility campaign diagram to `/en/pricing` and `/en/package`: `$12,000` one-time setup → months 1–6 at `$0/month` because the standard `$2,000/month` managed-operation fee is waived → month 7 onward at `$2,000/month` under the signed terms.
+- Campaign copy states that eligibility is limited to the first 10 selected launch partners and confirmed in writing. The same terms are synchronized across the English homepage, contact application, FAQ, terms, refund policy, About, manifest, JSON-LD, chatbot fallback/knowledge, and CMS seed blocks. No Japanese domestic Japan Entry page was changed.
+- Verification completed: JSON parse, targeted Vitest **5 files / 33 tests**, TypeScript `tsc --noEmit`, Quality Guard **0 errors / existing warnings**, `npm run build` compiled successfully and generated **408/408 pages**, `git diff --check` passed. Existing user change `src/lib/sales/twenty-sync-list-lead.test.ts` remains unstaged and untouched.
+- Next gate: commit/push, PR merge, formal `npm run release:prod`, then public read-back of `/en`, `/en/pricing`, `/en/package`, `/en/faq`, `/en/terms`, `/en/refund`, and `/en/contact` for the campaign strings and diagram anchor.
 ## CURRENT STATUS - 2026-07-16 Japan Entry $2,000/month / first 10 launch-partner campaign (本番release・read-back完了)
 
 - Added a reusable, high-visibility campaign diagram to `/en/pricing` and `/en/package`: `$12,000` one-time setup → months 1–6 at `$0/month` because the standard `$2,000/month` managed-operation fee is waived → month 7 onward at `$2,000/month` under the signed terms.

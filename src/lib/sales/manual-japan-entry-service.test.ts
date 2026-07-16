@@ -21,6 +21,8 @@ const qualifiedProfile: ManualCompanyProfile = {
   industry: "Technology / IT",
   productContext: "A public software platform for small business teams.",
   observedFacts: ["Offers a software platform"],
+  outreachPlaybook: "saas_ai_devtools",
+  positioningConcept: null,
 }
 
 const verifiedForm = {

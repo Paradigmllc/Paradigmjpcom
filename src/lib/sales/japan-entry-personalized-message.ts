@@ -4,6 +4,8 @@ import type { BusinessModel, JapanEntryProjection } from "./japan-entry-projecti
 import { criticMessages, generationMessages } from "./japan-entry-personalized-message-prompts";
 import type { JapanEntryMessagePurpose } from "./japan-entry-personalized-message-prompts";
 import type { JapanEntryInitialInterestOptions } from "./japan-entry-message-options";
+import type { ManualMessageAngle } from "./manual-japan-entry-angle";
+import type { ManualOutreachPlaybook, ManualPositioningConcept } from "./manual-japan-entry-playbook";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
   getJapanEntryMessageMode,
@@ -44,6 +46,9 @@ interface GenerateInput {
   competitorAnalysis?: unknown;
   purpose?: JapanEntryMessagePurpose;
   initialInterestOptions?: JapanEntryInitialInterestOptions;
+  messageAngle?: ManualMessageAngle;
+  outreachPlaybook?: ManualOutreachPlaybook;
+  positioningConcept?: ManualPositioningConcept | null;
 }
 
 type LlmCaller = typeof callDeepSeek;
@@ -185,6 +190,7 @@ export async function generatePersonalizedJapanEntryMessage(
   }
   const facts = buildJapanEntryPersonalizationFacts(input.audit, input.businessModel, input.projection, {
     competitorAnalysis: input.competitorAnalysis,
+    positioningConcept: input.positioningConcept,
   });
   if (facts.length === 0) {
     return { ok: false, error: "No high-signal Japan-specific public fact is available for personalized copy" };
@@ -207,6 +213,8 @@ export async function generatePersonalizedJapanEntryMessage(
       facts,
       purpose,
       initialInterestOptions: input.initialInterestOptions,
+      messageAngle: input.messageAngle,
+      candidateAngle: candidate.angle,
     }),
   });
 
@@ -258,7 +266,15 @@ export async function generatePersonalizedJapanEntryMessage(
   const criticize = async (candidates: typeof valid) => {
     const criticized = await callStructured({
       stage: "critic",
-      messages: criticMessages(input.companyName, facts, candidates.map((item) => item.candidate), mode, purpose, input.initialInterestOptions),
+      messages: criticMessages(
+        input.companyName,
+        facts,
+        candidates.map((item) => item.candidate),
+        mode,
+        purpose,
+        input.initialInterestOptions,
+        input.messageAngle,
+      ),
       schema: criticSchema,
       caller,
     });
