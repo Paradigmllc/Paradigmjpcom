@@ -1,10 +1,10 @@
-## CURRENT STATUS - 2026-07-16 Manual Japan Entry 問い合わせ文面4セル実験（ローカル検証完了 / 本番release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-16 Manual Japan Entry 問い合わせ文面4セル実験（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
 - `/work`へ問い合わせフォーム専用の4セル（推定あり／なし × 価格あり／なし）を追加した。domainからの安定自動割付と明示セル選択に対応し、各履歴へ希望セル・実効セル・フォールバック理由をDB保存する。全セルで企業固有の公開事実とFounder／海外展開責任者への転送依頼を必須にし、自動送信経路は追加していない。
 - 推定ありセルはTranco / Cloudflare Radar / Common Crawl / sitemapの公開シグナルを既存projectionロジックへ渡し、初年度の幅を「公開シグナルと保守的仮定に基づくモデル値・実売上ではない・成果保証ではない」と明示する。公開rankを確認できない場合は、価格条件を変えずに推定なしセルへfail-closedで切り替える。
 - 価格ありセルは現行の確定条件`$12,000 fixed`と`first six months included`だけを許可する。添付文面にあった未確認のfounding-company枠、通常月額、7か月目以降、前払い条件、希少性は生成promptと決定論reviewの両方で拒否する。SaaS/AI/DevTools、Web3、premium ecommerceの業態角度も、実際に取得した公開事実だけを使用する。
 - 手動フォーム送信済み、返信、Founder転送、商談化をoperatorが記録でき、4セル別の返信率・転送率・商談化率を手動送信数を分母に表示する。下流成果は手動送信後だけ記録可能で、送信解除時は下流成果も消すDB制約・API・UIを実装した。
-- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **188 files / 869 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。agent-browserでPC/390pxとも4セル・評価表・入力UIを確認し、error overlayなし、mobile横overflow 0。正式`npm run release:prod`、本番migration/read-back、未認証API/画面確認はPR統合後に実行する。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **188 files / 869 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。PR **#351** / main **6f92c6e5**を統合し、正式`npm run release:prod`のdeployment **k45ektcogiybfao0vipbgxsz**を完走。main **6f92c6e5**を含む本番container **668c0f3d**はhealthyで、DB **89/89**、4セル用7列、成果制約、RLS、自動送信0、Twenty worker restart 0、Sales health JSON `ok:true`、post-deploy smokeを確認した。認証付き`/api/work`はHTTP 200・履歴0件・metrics 4セル・手動送信0件、未認証APIは401。未認証`/work`はNext.js streaming redirect後に実ブラウザで`/admin/login`を表示し、workbench本文は非表示。企業URL投入、Twenty追加、フォーム・メール等の外部送信は実行していない。
 
 ## CURRENT STATUS - 2026-07-16 Twenty営業先URLバックフィル（本番release・read-back完了 / 外部送信0）
 
