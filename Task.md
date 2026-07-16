@@ -1,3 +1,8 @@
+## CURRENT STATUS - 2026-07-16 Twenty営業先URLバックフィル（本番read-back完了 / 外部送信0）
+
+- 既存Twenty 2,981社の旧`paradigmFormUrl`を一度だけ判定し、ポータル（エキテン397件）は掲載ページを`営業先URL`へ移してフォーム列を空にし、フォーム系（codex_verification 540件）は確認済みフォームを`営業先URL`へ複製した。read-backはポータル397件・フォーム558件で営業先URLが埋まり、送信系テーブル・送信経路は変更していない。
+- `scripts/twenty-sales-companies-view.sql`へ同じ処理をidempotentに追加したため、今後のreleaseでも旧データが残っていれば自動修復される。
+
 ## CURRENT STATUS - 2026-07-15 Manual Japan Entry 文面・診断品質hardening（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
 - `/work`の初回文面を既存の`initial_interest`契約へ統一した。初回は100〜160語・4段落・公開ページ根拠のみで、価格、支払条件、Japan Entry Packageの売り込み、URL、添付、通話提案を禁止し、詳細分析を受け取る意思だけを確認する。生成時の`productContext`はDeepSeekが書き直した要約ではなく、企業公開ページから直接抽出した原文へ固定した。

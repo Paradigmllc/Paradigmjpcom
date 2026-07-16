@@ -326,6 +326,28 @@ begin
   execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlPrimaryLinkUrl" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlSecondaryLinks" jsonb', company_schema);
 
+  -- Migrate legacy portal/form links into the explicit operator-facing target column.
+  -- This is idempotent and keeps existing Twenty records immediately actionable.
+  execute format($sql$
+    update %I.company company
+    set "paradigmOutreachTargetUrlPrimaryLinkLabel" = case
+          when "paradigmSourceName" in ('ekiten', 'houzz', 'jmty') then '営業先（ポータル掲載ページ）'
+          else '営業先（確認済みフォーム）'
+        end,
+        "paradigmOutreachTargetUrlPrimaryLinkUrl" = "paradigmFormUrlPrimaryLinkUrl",
+        "paradigmFormUrlPrimaryLinkLabel" = case
+          when "paradigmSourceName" in ('ekiten', 'houzz', 'jmty') then ''
+          else "paradigmFormUrlPrimaryLinkLabel"
+        end,
+        "paradigmFormUrlPrimaryLinkUrl" = case
+          when "paradigmSourceName" in ('ekiten', 'houzz', 'jmty') then ''
+          else "paradigmFormUrlPrimaryLinkUrl"
+        end,
+        "updatedAt" = now()
+    where nullif("paradigmFormUrlPrimaryLinkUrl", '') is not null
+      and nullif("paradigmOutreachTargetUrlPrimaryLinkUrl", '') is null
+  $sql$, company_schema);
+
   update core."view"
   set name = 'Japan Entry 候補',
       "updatedAt" = now()
