@@ -75,7 +75,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     },
     stats: [
       { value: "$12K", label: "fixed setup" },
-      { value: "6", label: "months included for selected launch partners" },
+      { value: "$0/mo", label: "months 1–6 for the first 10 selected launch partners" },
       { value: "14", label: "business-day delivery guarantee" },
       JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
     ],
@@ -100,9 +100,9 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
         price: "$12,000",
         period: "one-time",
         description:
-          "A market-ready launch with six months of managed Japan operation included at no additional monthly charge.",
+          "A market-ready launch with a standard $2,000/month managed-operation layer. For the first 10 selected launch partners, months 1–6 are $0/month.",
         features:
-          "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nsix months of managed operation are included for selected launch partners\nContinuation pricing is agreed separately after the included period; availability and scope are confirmed in writing",
+          "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
         ctaLabel: "Apply for Japan Entry — $12K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,

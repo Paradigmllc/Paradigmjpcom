@@ -23,7 +23,7 @@ describe("public English Japan Entry copy", () => {
   const strings = collectStrings(messages)
 
   it("does not advertise the retired free or low-price offers", () => {
-    const retiredOffer = /free (?:consult|audit|diagnosis|intro)|\$(?:1,500|2,000|3,000|5,000|8,000)|purchasing power parity|ppp-adjusted|¥(?:19,800|29,800|49,800|79,800|198,000|300,000|500,000|800,000)/i
+    const retiredOffer = /free (?:consult|audit|diagnosis|intro)|\$(?:1,500|3,000|5,000|8,000)|purchasing power parity|ppp-adjusted|¥(?:19,800|29,800|49,800|79,800|198,000|300,000|500,000|800,000)/i
     const violations = strings.filter(({ value }) => retiredOffer.test(value))
 
     expect(violations).toEqual([])
@@ -32,7 +32,10 @@ describe("public English Japan Entry copy", () => {
   it("keeps the fixed commercial terms consistent", () => {
     expect(messages.pricingPage.fixedPlanName).toBe("Japan Entry Package")
     expect(messages.pricingPage.heroDesc).toContain("$12,000")
-    expect(messages.pricingPage.heroDesc).toContain("continuation pricing is agreed separately")
+    expect(messages.pricingPage.heroDesc).toContain("$2,000/month")
+    expect(messages.pricingPage.heroDesc).toContain("first 10 selected launch partners")
+    expect(messages.packagePage.campaign.steps[1].price).toBe("$0/mo")
+    expect(messages.packagePage.campaign.steps[2].price).toBe("$2,000/mo")
     expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for Japan Entry — $12K")
     expect(messages.cta.primary).toBe("Apply — $12K")
     expect(messages.lpWeb.plans.map((plan) => plan.name)).toEqual([
@@ -160,9 +163,9 @@ describe("public English Japan Entry copy", () => {
     const copy = JSON.stringify(jaMessages.homeEn)
     for (const term of [
       "$12,000",
-      "six months included for selected launch partners",
-      "continuation pricing is agreed separately",
-      "Continuation scope is agreed separately after the included period.",
+      "$2,000/month",
+      "first 10 selected launch partners",
+      "standard managed operation from month 7 onward",
       "Month-one target: 20 qualified launches",
       "not a customer outcome guarantee",
     ]) {
@@ -206,7 +209,7 @@ describe("public English Japan Entry copy", () => {
     const priceToken = /\$(?:\d{1,3}(?:,\d{3})+|\d+)(?:K)?/g
     const prices = new Set(strings.flatMap(({ value }) => value.match(priceToken) ?? []))
 
-    expect([...prices].sort()).toEqual(["$12,000", "$12K"])
+    expect([...prices].sort()).toEqual(["$0", "$12,000", "$12K", "$2,000"])
   })
 
   it("contains no accidental Japanese copy outside the locale-switch label", () => {

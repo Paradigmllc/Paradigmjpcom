@@ -2045,7 +2045,7 @@
       "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
       "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
       "ctaPrimary": "Apply for Japan Entry — $12K",
-      "ctaPrimaryNote": "$12,000 setup · six months included for selected launch partners · then continuation pricing is agreed separately",
+      "ctaPrimaryNote": "$12,000 setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month · month 7 onward $2,000/month",
       "ctaSecondary": "Review fixed scope",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
@@ -2094,10 +2094,10 @@
       "metric1Label": "business-day delivery guarantee from the recorded Start Date",
       "metric2Value": "$12K",
       "metric2Label": "fixed setup price in USD",
-      "metric3Value": "6",
-      "metric3Label": "first six months of managed operation included for selected launch partners",
-      "metric4Value": "continuation pricing",
-      "metric4Label": "continuation terms after the included period",
+      "metric3Value": "$0/mo",
+      "metric3Label": "months 1–6 for the first 10 selected launch partners",
+      "metric4Value": "$2,000/mo",
+      "metric4Label": "standard managed operation from month 7 onward",
       "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
     },
     "report": {
@@ -2129,16 +2129,16 @@
         },
         "growth": {
           "name": "Months 1–6",
-          "price": "Included",
-          "desc": "Managed operation included for selected launch partners during months 1–6.",
+          "price": "$0/mo",
+          "desc": "The standard $2,000/month managed-operation fee is waived during months 1–6 for the first 10 selected launch partners.",
           "feature1": "Localized site sections plus MEO foundation",
           "feature2": "LINE / inquiry flow and AI support setup",
           "feature3": "30-day launch improvement sprint"
         },
         "scale": {
           "name": "Month 7 onward",
-          "price": "Agreed separately",
-          "desc": "Continuation scope is agreed separately after the included period.",
+          "price": "$2,000/mo",
+          "desc": "Standard managed operation from month 7 onward under the signed terms.",
           "feature1": "Expanded localization and conversion optimization",
           "feature2": "AI customer support and operations automation",
           "feature3": "Executive report with next-quarter Japan roadmap"
@@ -2156,13 +2156,13 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$12,000 one-time setup. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$12,000 one-time setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
       "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "The agreed handover materials and ownership are documented in scope. The managed operation is included for six months for selected launch partners, then continuation pricing is agreed separately; availability and scope are confirmed in writing."
+      "a8": "The agreed handover materials and ownership are documented in scope. The first 10 selected launch partners receive months 1–6 at $0/month, then managed operation is $2,000/month from month 7 onward under the signed terms; availability and scope are confirmed in writing."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",

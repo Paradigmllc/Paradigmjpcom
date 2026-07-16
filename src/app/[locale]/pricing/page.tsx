@@ -22,6 +22,7 @@ import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import { JapanMarketUrgency } from "@/components/japan-entry/JapanMarketUrgency"
 import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
+import JapanEntryCampaign, { type CampaignCopy } from "@/components/japan-entry/JapanEntryCampaign"
 import { coerceLocale, assertLocale } from "@/lib/cms/filters"
 import {
   formatPricePPP,
@@ -82,6 +83,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const packageCopy = isJapanEntry
     ? await getTranslations({ locale: "en", namespace: "packagePage" })
     : null
+  const campaign = packageCopy ? packageCopy.raw("campaign") as CampaignCopy : null
   const visualContextLocale = locale === "ja" ? "ja" : "en"
   const visualContextT = await getTranslations({ locale: visualContextLocale, namespace: "home" })
   const faqPairs = locale === "ja"
@@ -271,6 +273,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
           )}
         </div>
       </section>
+
+      {campaign && <JapanEntryCampaign copy={campaign} source="pricing" />}
 
       {packageCopy && (
         <section className="border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-8 sm:px-8 lg:px-12" aria-label={packageCopy("navLabel")}>
