@@ -28,6 +28,7 @@ type TimelineStep = { label: string; title: string; body: string }
 type OperationItem = { title: string; body: string }
 type CapacityItem = { label: string; value: string }
 type AsyncPoint = { title: string; body: string }
+type ContractStep = { label: string; title: string; body: string }
 type CommercialItem = { label: string; value: string }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -55,6 +56,7 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
   const summary = t.raw("summary") as SummaryItem[]
   const workstreams = t.raw("workstreams") as Workstream[]
   const timeline = t.raw("timeline.steps") as TimelineStep[]
+  const contractSteps = t.raw("contract.steps") as ContractStep[]
   const operations = t.raw("operations.items") as OperationItem[]
   const capacity = t.raw("operations.capacity") as CapacityItem[]
   const asyncPoints = t.raw("async.points") as AsyncPoint[]
@@ -136,6 +138,28 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
               </FadeIn>
             ))}
           </ol>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-paradigm-paper px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="contract-title">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <FadeIn className="max-w-3xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("contract.eyebrow")}</p>
+            <h2 id="contract-title" className="font-display text-[28px] leading-[1.1] text-paradigm-ink md:text-[44px]">{t("contract.title")}</h2>
+            <p className="mt-5 text-[14px] leading-[1.85] text-paradigm-ink-soft">{t("contract.desc")}</p>
+          </FadeIn>
+          <ol className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {contractSteps.map((step, index) => (
+              <FadeIn key={step.label} delay={index * 0.04} as="li" className="rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5">
+                <span className="font-display text-3xl text-paradigm-accent">{step.label}</span>
+                <h3 className="mt-5 font-display text-[18px] leading-[1.2] text-paradigm-ink">{step.title}</h3>
+                <p className="mt-3 text-[12px] leading-[1.75] text-paradigm-ink-soft">{step.body}</p>
+              </FadeIn>
+            ))}
+          </ol>
+          <FadeIn className="mt-6 rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5 text-[13px] leading-[1.8] text-paradigm-ink-soft md:p-6">
+            {t("contract.handover")}
+          </FadeIn>
         </div>
       </section>
 

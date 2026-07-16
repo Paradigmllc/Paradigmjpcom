@@ -17,6 +17,9 @@ describe("Japan Entry package detail copy", () => {
   it("makes the delivery and operating boundaries explicit", () => {
     expect(page.timeline.steps).toHaveLength(5)
     expect(page.timeline.desc).toContain("Start Date")
+    expect(page.contract.steps).toHaveLength(5)
+    expect(JSON.stringify(page.contract)).toContain("Setup SOW")
+    expect(JSON.stringify(page.contract)).toContain("Order Form + SLA")
     expect(page.operations.items).toHaveLength(8)
     expect(page.operations.capacity.some((item) => item.value.includes("48 business hours"))).toBe(true)
     expect(page.operations.capacity).toHaveLength(4)
