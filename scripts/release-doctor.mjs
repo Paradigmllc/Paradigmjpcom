@@ -663,6 +663,9 @@ function checkStaticReleaseRules() {
   const leadSourceZipAdapter = fs.existsSync("src/lib/sales/lead-source-zip-csv.ts")
     ? fs.readFileSync("src/lib/sales/lead-source-zip-csv.ts", "utf8")
     : ""
+  const startupSgAdapter = fs.existsSync("src/lib/sales/lead-source-startupsg.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-startupsg.ts", "utf8")
+    : ""
   if (
     leadSourcePacksMigration.includes("source_pack_query_sha256")
     && leadSourcePacksMigration.includes("idx_sales_lead_source_configs_pack_version")
@@ -672,8 +675,14 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyLeadSourceCountryPacksMigration")
     && leadSourcePacksService.includes("PACK_LIMIT = 250")
     && leadSourcePacksService.includes("European Commission CORDIS")
+    && leadSourcePacksService.includes("Startup SG / Enterprise Singapore")
     && leadSourcePacksService.includes("FILTER NOT EXISTS { ?company wdt:P576 ?dissolved }")
     && leadSourceZipAdapter.includes("MAX_ENTRY_ROWS = 500_000")
+    && startupSgAdapter.includes('STARTUP_SG_HOST = "www.startupsg.gov.sg"')
+    && startupSgAdapter.includes("MAX_RESPONSE_BYTES")
+    && startupSgAdapter.includes("employeeCount > employeeMax")
+    && !startupSgAdapter.includes("emailAddresses:")
+    && !startupSgAdapter.includes("contactNumber:")
     && leadInventoryRunner.includes("Twenty同期・文面生成・レポート生成・外部送信は0件")
     && leadSourcePacksRoute.includes("terms_checked: false")
     && leadSourcePacksRoute.includes("approval_status: \"draft\"")

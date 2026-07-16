@@ -7,7 +7,7 @@ describe("lead source packs", () => {
 
     expect(packs.map((pack) => pack.countryCode)).toEqual(expect.arrayContaining(["US", "GB", "AU", "SG", "AE"]))
     expect(new Set(packs.map((pack) => pack.id)).size).toBe(packs.length)
-    expect(packs).toHaveLength(119)
+    expect(packs).toHaveLength(120)
     expect(packs.every((pack) => pack.version === 1 && pack.maxRecords <= 50_000)).toBe(true)
     expect(packs.every((pack) => /^[a-f0-9]{64}$/.test(pack.querySha256))).toBe(true)
   })
@@ -30,6 +30,25 @@ describe("lead source packs", () => {
     expect(pack.fieldMapping).not.toHaveProperty("contact_name")
     expect(pack.fieldMapping).not.toHaveProperty("contact_email")
     expect(pack.criteria.join(" ")).toContain("ライブサイト")
+  })
+
+  it("includes the official Startup SG directory with bounded SMB and no-contact-PII mapping", () => {
+    const pack = getLeadSourcePack("startup-sg-official-startup-directory-sg")
+    if (!pack) throw new Error("Startup SG source pack is missing")
+
+    expect(pack).toMatchObject({ sourceType: "official_directory", sourceFormat: "json", trustTier: 3, maxRecords: 4_000 })
+    expect(pack.sourceUrl).toContain("www.startupsg.gov.sg/api/v0/search/profiles/startup")
+    expect(pack.fieldMapping).toMatchObject({
+      startup_sg_directory: "true",
+      startup_sg_page_size: "100",
+      startup_sg_employee_max: "200",
+      company_name: "company_name",
+      website_url: "website_url",
+      employee_count: "employee_count",
+    })
+    expect(pack.fieldMapping).not.toHaveProperty("email")
+    expect(pack.fieldMapping).not.toHaveProperty("phone")
+    expect(pack.criteria.join(" ")).toContain("日本未進出")
   })
 
   it("uses bounded Common Crawl shards without treating URL text as final qualification", () => {

@@ -62,6 +62,8 @@ describe("lead source preflight release wiring", () => {
     expect(doctor).toContain("source_pack_query_sha256")
     expect(doctor).toContain("sales_lead_inventory_runs_no_delivery_check")
     expect(doctor).toContain("European Commission CORDIS")
+    expect(doctor).toContain("Startup SG / Enterprise Singapore")
+    expect(doctor).toContain('STARTUP_SG_HOST = \"www.startupsg.gov.sg\"')
     expect(doctor).toContain("bounded, attributed and no-delivery")
   })
 })
