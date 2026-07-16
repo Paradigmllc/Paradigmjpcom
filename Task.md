@@ -1735,3 +1735,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 月額運用は、最大4ページ/5,000ワード、同時1件のクリエイティブ依頼、最大2 Social Mediaチャネル、標準依頼の48営業時間以内着手を「標準運用目安」として表示。広告費、外部SaaS/決済、法務・税務・許認可、物流、常時CS、営業代行、大規模開発、成果保証を除外リストへ追加した。未確定の継続月額（添付資料の例示額を含む）は公開していない。
 - FAQ、英語AIチャット知識・フォールバック、公開リリースRunbookも同じ範囲・除外・「書面スコープが最終」の原則へ同期した。日本語サイトの国内Web制作ポジションと、既存Twenty関連の未コミット変更は変更していない。
 - 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 warnings）、production build **408/408 pages**。PR **#347**をmainへマージし、正式`npm run release:prod`（deployment `rxh9k70ocn9qyyro3n1sfrx6`）のpre/post gate、DB **89/89**、Traefik、Cloudflare origin lock、Twenty、Sales health JSON `ok:true`、公開smokeを通過。`/en/package`と主要英語ページで新しい標準範囲・除外・継続価格非公開をHTTP 200確認した。
+
+## CURRENT STATUS - 2026-07-16 Premium V3 customer-surface hardening (実装・ローカル検証完了 / 本番release待ち / 外部送信0)
+
+- 業種推定後も残っていた旧 `industryLabel`、保存済み企業向けブランド、生成レシピの不整合を共通層で修正。飲食店・歯科・美容等は、業種別カテゴリ名、配色、ナビ、ヒーロー構成、サービス／作品ラベルを強制し、飲食店へ「コンサルティング」「仕事・実績」「サロン用モザイク」が流れない。
+- 顧客向け画面からエキテン掲載素材・権利確認・提案用素材などの内部文言を除去。プレビューバーの非公開注意だけを残し、画像 `alt/caption` は業種別の自然な編集ラベルへ置換する。ヒーロー／ギャラリー／モザイク／Emblaスライダーは正規化URLで重複排除し、同一画像の連続表示を防止する。
+- `demo-public-surface.ts` の決定論的サニタイズを追加し、LLM再生成なしで既存DEMOにも読込時適用する。新規依存は追加せず、既存のFramer Motion / Emblaを継続利用する。
+- 検証済み: 対象Vitest **7 files / 35 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 67 existing warnings**、production build **408/408 pages**、`git diff --check`。このブランチでは候補追加・Twenty同期・外部送信・公開URL発行は行っていない。
