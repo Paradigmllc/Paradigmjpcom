@@ -5,7 +5,7 @@ const PACKAGE_ITEMS = {
   en: [
     "Market and offer framing",
     "Japan-facing LP / HP localization",
-    "SNS launch setup for up to two priority channels",
+    "Social Media launch setup for up to two priority channels",
     "Sourced market and competitor report",
     "Trust and regulatory-applicability coordination",
     "Inquiry or eligible payment routing",
@@ -55,7 +55,7 @@ export function OpportunityOfferPanel({
             <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-300">
               {isJa
                 ? "選定した契約先には最初の6か月を追加月額なしで提供。期間終了後の継続条件・月額は個別協議のうえ書面合意。"
-                : "For selected launch partners, the first six months are included at no additional monthly charge; continuation pricing is agreed separately after the included period."}
+                : "The standard Managed Japan Desk fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month; month 7 onward is $2,000/month under the signed terms."}
             </p>
 
             <div className="mt-6 rounded-xl border border-amber-300/40 bg-amber-300/10 p-5">
@@ -65,7 +65,7 @@ export function OpportunityOfferPanel({
               <p className="mt-2 text-sm font-semibold leading-6 text-white">
                 {isJa
                   ? "6か月の月額無料は、審査を通過した数組だけが対象です。"
-                  : "The six-month $0 monthly-fee period is available for a limited time to a small number of accepted companies."}
+                  : "The six-month $0 monthly-fee period is available to the first 10 selected launch partners."}
               </p>
               <p className="mt-2 text-xs leading-5 text-zinc-300">
                 {isJa
