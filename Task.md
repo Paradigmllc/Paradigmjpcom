@@ -1798,3 +1798,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - Campaign copy states that eligibility is limited to the first 10 selected launch partners and confirmed in writing. The same terms are synchronized across the English homepage, contact application, FAQ, terms, refund policy, About, manifest, JSON-LD, chatbot fallback/knowledge, and CMS seed blocks. No Japanese domestic Japan Entry page was changed.
 - Verification completed: JSON parse, targeted Vitest **5 files / 33 tests**, TypeScript `tsc --noEmit`, Quality Guard **0 errors / existing warnings**, `npm run build` compiled successfully and generated **408/408 pages**, `git diff --check` passed. Existing user change `src/lib/sales/twenty-sync-list-lead.test.ts` remains unstaged and untouched.
 - Next gate: commit/push, PR merge, formal `npm run release:prod`, then public read-back of `/en`, `/en/pricing`, `/en/package`, `/en/faq`, `/en/terms`, `/en/refund`, and `/en/contact` for the campaign strings and diagram anchor.
+
+## CURRENT STATUS - 2026-07-16 Screenshot-to-code型 visual grammar（実装・ローカル検証完了 / 本番release待ち / 外部送信0）
+
+- `abi/screenshot-to-code`を本番の1社ごとのコード生成器として直結せず、スクリーンショットから抽出した構図・配色・モチーフ・モーションを決定論的な共通レンダラーへ落とす方式で反映した。これにより同じ業種でも企業シードの`paletteMood`、`signatureMotif`、`motion`、`density`、`heroComposition`を顧客画面全体へ渡す。
+- `DemoPremiumV3Layout`に視覚文法のdata属性と共通Atmosphereレイヤー（オーブ、リング、グリッド、モチーフ別の線・枠・オフセット）を追加。既存のHero Deckはアクティブスライドの状態変化、配色別split背景、画像の状態ズームを適用し、ヒーローだけでなく下層ページも同じデザインファミリーで変化する。
+- 新規依存・外部送信・Twenty同期・企業データ再生成は行っていない。既存のFramer Motion、Embla、CSSの範囲で実装し、reduced-motionとモバイル表示を維持する。
+- 検証済み: 対象Vitest **3 files / 11 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、production build **408/408 pages**、`git diff --check`。次のgateはfeature branchのcommit/push、PR、正式release、`/cafe-sosomu`の公開fingerprint確認。
