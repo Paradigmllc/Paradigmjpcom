@@ -103,7 +103,7 @@ export function PremiumV3HeroDeck({
     <div ref={emblaRef} className="premium-hero-deck__viewport h-full overflow-hidden" aria-roledescription="carousel" aria-label={`${title}のビジュアルスライダー`}>
       <div className="flex h-full touch-pan-y">
         {slides.map((item, index) => (
-          <div className="premium-hero-deck__slide relative min-w-0 flex-[0_0_100%] overflow-hidden" key={`${item.src}-${index}`} role="group" aria-roledescription="slide" aria-label={`${index + 1} / ${slides.length}`}>
+          <div className={`premium-hero-deck__slide relative min-w-0 flex-[0_0_100%] overflow-hidden ${selectedIndex === index ? "is-active" : ""}`} key={`${item.src}-${index}`} role="group" aria-roledescription="slide" aria-label={`${index + 1} / ${slides.length}`} aria-hidden={selectedIndex !== index}>
             <PremiumV3Media media={item} priority={index === 0} className="absolute inset-0" sizes={isSplit ? "(max-width: 1024px) 100vw, 58vw" : "100vw"} />
             <div className="premium-hero-deck__image-wash absolute inset-0" aria-hidden="true" />
             <div className="premium-hero-deck__slide-number absolute bottom-7 right-7 text-[10px] font-bold tracking-[.28em] text-white/70 sm:bottom-10 sm:right-10">{String(index + 1).padStart(2, "0")}</div>

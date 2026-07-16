@@ -6,7 +6,7 @@ import { useEffect, useState, type CSSProperties } from "react"
 import { AnimatePresence, MotionConfig, motion } from "framer-motion"
 import { ArrowUpRight, Menu, X } from "lucide-react"
 import { FaFacebookF, FaInstagram, FaLine, FaTiktok, FaXTwitter, FaYoutube } from "react-icons/fa6"
-import type { DemoBrandSystem, DemoMeta, DemoPremiumExperience, DemoQualityReport } from "@/lib/sales/demo-site-types"
+import type { DemoBrandSystem, DemoCreativeDirection, DemoMeta, DemoPremiumExperience, DemoQualityReport } from "@/lib/sales/demo-site-types"
 import { PremiumV3Magnetic, PremiumV3ScrollProgress } from "./PremiumV3Motion"
 import { PremiumV3BrandMark } from "./PremiumV3BrandMark"
 
@@ -19,6 +19,7 @@ export function DemoPremiumV3Layout({
   companyName,
   accent,
   brand,
+  creativeDirection,
   presentation,
   social = [],
   showRecruit = false,
@@ -30,6 +31,7 @@ export function DemoPremiumV3Layout({
   companyName: string
   accent: string
   brand: DemoBrandSystem
+  creativeDirection?: DemoCreativeDirection
   quality?: DemoQualityReport
   presentation?: Pick<DemoMeta, "proposalNotice" | "primaryCtaLabel" | "primaryCtaHref" | "footerDescription" | "footerOwner" | "brandLogoUrl">
   social?: DemoPremiumExperience["social"]
@@ -57,6 +59,14 @@ export function DemoPremiumV3Layout({
     "--demo-line": brand.line,
     fontFamily: brand.bodyFont,
   }
+  const creativeAttributes = {
+    "data-demo-palette": creativeDirection?.paletteMood ?? "warm-neutral",
+    "data-demo-motif": creativeDirection?.signatureMotif ?? "hairline",
+    "data-demo-motion": creativeDirection?.motion ?? "editorial",
+    "data-demo-density": creativeDirection?.density ?? "balanced",
+    "data-demo-hero": creativeDirection?.heroComposition ?? "cinematic",
+    "data-demo-type": creativeDirection?.typographyStyle ?? "humanist-sans",
+  }
 
   useEffect(() => setMenuOpen(false), [pathname])
   useEffect(() => {
@@ -78,7 +88,13 @@ export function DemoPremiumV3Layout({
 
   return (
     <MotionConfig reducedMotion="user" transition={{ ease: [0.22, 1, 0.36, 1] }}>
-    <div className="demo-v3-shell min-h-dvh bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-demo-site="premium-v3" data-brand-system={brand.id}>
+    <div className="demo-v3-shell relative min-h-dvh overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-demo-site="premium-v3" data-brand-system={brand.id} {...creativeAttributes}>
+      <div className="premium-v3-atmosphere" aria-hidden="true">
+        <span className="premium-v3-atmosphere__orb premium-v3-atmosphere__orb--one" />
+        <span className="premium-v3-atmosphere__orb premium-v3-atmosphere__orb--two" />
+        <span className="premium-v3-atmosphere__ring" />
+        <span className="premium-v3-atmosphere__grid" />
+      </div>
       <PremiumV3ScrollProgress />
       <AnimatePresence>
         {isLoading && <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }} className="fixed inset-0 z-[80] grid place-items-center bg-[var(--demo-surface)]" role="status" aria-live="polite" aria-label={`${companyName}を読み込み中`}>
@@ -89,7 +105,7 @@ export function DemoPremiumV3Layout({
           </div>
         </motion.div>}
       </AnimatePresence>
-      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className={`sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl transition-[box-shadow,background-color] duration-500 ${isScrolled ? "shadow-[0_16px_40px_-28px_var(--demo-ink)] bg-[color:var(--demo-surface)]/96" : ""}`} aria-label="メインナビゲーション">
+      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className={`relative z-20 sticky top-0 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl transition-[box-shadow,background-color] duration-500 ${isScrolled ? "shadow-[0_16px_40px_-28px_var(--demo-ink)] bg-[color:var(--demo-surface)]/96" : ""}`} aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[78px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
           <motion.a href={basePath} whileHover={{ x: 3 }} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
             {presentation?.brandLogoUrl ? (
@@ -117,8 +133,8 @@ export function DemoPremiumV3Layout({
           </motion.div>
         )}
       </AnimatePresence>
-      <motion.main key={pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.55 }}>{children}</motion.main>
-      <footer className="bg-[var(--demo-ink)] px-5 py-16 text-white sm:px-10 sm:py-20 lg:px-16">
+      <motion.main className="relative z-10" key={pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.55 }}>{children}</motion.main>
+      <footer className="relative z-10 bg-[var(--demo-ink)] px-5 py-16 text-white sm:px-10 sm:py-20 lg:px-16">
         <div className="mx-auto max-w-[1380px]">
           <div className="grid gap-12 border-b border-white/15 pb-14 lg:grid-cols-[1.2fr_.8fr_.8fr]">
             <div><div className="flex items-center gap-4"><PremiumV3BrandMark accent={accent} label={`${companyName} ロゴ`} /><p className="text-4xl tracking-[-.03em] sm:text-5xl [font-family:var(--demo-font-display)]">{companyName}</p></div><p className="mt-6 max-w-lg text-sm leading-7 text-white/58">{presentation?.footerDescription ?? `${companyName}の事業・サービスをご紹介します。`}</p></div>
