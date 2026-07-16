@@ -126,6 +126,34 @@ function getFallbackAnswerEn(question: string): string {
     return "Included in the standard setup envelope: Japan Opportunity analysis, a Japanese landing page plus normally eight to ten core pages, payment setup coordination, up to two Social Media channels, launch creative, a Notion or Trello workspace, regulatory-readiness coordination, launch verification, and handover. The signed scope is final; legal, tax, banking, licensing, logistics, advertising, specialist advice, and provider approval remain separate."
   }
   if (
+    question.includes("async") ||
+    question.includes("notion") ||
+    question.includes("trello") ||
+    question.includes("loom") ||
+    question.includes("meeting") ||
+    question.includes("zoom") ||
+    question.includes("interpret") ||
+    question.includes("translation")
+  ) {
+    return "Paradigm is async-first: each client gets a private Notion workspace by default (or Trello), with Home, Request Queue, Launch Roadmap, Deliverables, Approvals, Reports, and a Loom archive. You can queue as many Japan-related requests as needed, with one primary request active at a time. New requests are acknowledged within one business day and normally enter active production within two business days; client-side waits pause the clock. Kickoff and decision meetings can use Zoom with translated captions or AI interpretation where available; the written English scope and post-call summary take precedence."
+  }
+  if (
+    question.includes("sow") ||
+    question.includes("statement of work") ||
+    question.includes("msa") ||
+    question.includes("order form") ||
+    question.includes("sla") ||
+    question.includes("dpa") ||
+    question.includes("nda") ||
+    question.includes("contract") ||
+    question.includes("agreement") ||
+    question.includes("acceptance") ||
+    question.includes("change request") ||
+    question.includes("electronic signature")
+  ) {
+    return "The public site is an overview, not the contract. Before kickoff, the written record may include master service terms, a Setup SOW, an Order Form and service schedule/SLA, plus a DPA, NDA, or payment addendum when needed. The SOW records the fixed setup deliverables, dependencies, acceptance criteria, exclusions, and change-control path. A material change or new deliverable is a written Change Request. Signed terms and the written post-call summary take precedence over an informal chat message."
+  }
+  if (
     question.includes("support") ||
     question.includes("maintenance") ||
     question.includes("after") ||

@@ -27,6 +27,8 @@ type Workstream = { number: string; title: string; summary: string; deliverables
 type TimelineStep = { label: string; title: string; body: string }
 type OperationItem = { title: string; body: string }
 type CapacityItem = { label: string; value: string }
+type AsyncPoint = { title: string; body: string }
+type ContractStep = { label: string; title: string; body: string }
 type CommercialItem = { label: string; value: string }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -54,8 +56,10 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
   const summary = t.raw("summary") as SummaryItem[]
   const workstreams = t.raw("workstreams") as Workstream[]
   const timeline = t.raw("timeline.steps") as TimelineStep[]
+  const contractSteps = t.raw("contract.steps") as ContractStep[]
   const operations = t.raw("operations.items") as OperationItem[]
   const capacity = t.raw("operations.capacity") as CapacityItem[]
+  const asyncPoints = t.raw("async.points") as AsyncPoint[]
   const commercial = t.raw("commercial.items") as CommercialItem[]
   const notIncluded = t.raw("notIncluded.items") as string[]
 
@@ -137,6 +141,28 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
         </div>
       </section>
 
+      <section className="relative overflow-hidden bg-paradigm-paper px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="contract-title">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <FadeIn className="max-w-3xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("contract.eyebrow")}</p>
+            <h2 id="contract-title" className="font-display text-[28px] leading-[1.1] text-paradigm-ink md:text-[44px]">{t("contract.title")}</h2>
+            <p className="mt-5 text-[14px] leading-[1.85] text-paradigm-ink-soft">{t("contract.desc")}</p>
+          </FadeIn>
+          <ol className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {contractSteps.map((step, index) => (
+              <FadeIn key={step.label} delay={index * 0.04} as="li" className="rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5">
+                <span className="font-display text-3xl text-paradigm-accent">{step.label}</span>
+                <h3 className="mt-5 font-display text-[18px] leading-[1.2] text-paradigm-ink">{step.title}</h3>
+                <p className="mt-3 text-[12px] leading-[1.75] text-paradigm-ink-soft">{step.body}</p>
+              </FadeIn>
+            ))}
+          </ol>
+          <FadeIn className="mt-6 rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5 text-[13px] leading-[1.8] text-paradigm-ink-soft md:p-6">
+            {t("contract.handover")}
+          </FadeIn>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden bg-paradigm-paper px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="operations-title">
         <div className="relative z-10 mx-auto max-w-6xl">
           <FadeIn className="max-w-3xl">
@@ -174,6 +200,34 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
                 </div>
               ))}
             </dl>
+          </FadeIn>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden border-y border-paradigm-line bg-paradigm-paper-deep px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="async-title">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <FadeIn className="max-w-3xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("async.eyebrow")}</p>
+            <h2 id="async-title" className="font-display text-[28px] leading-[1.1] text-paradigm-ink md:text-[44px]">{t("async.title")}</h2>
+            <p className="mt-5 text-[14px] leading-[1.85] text-paradigm-ink-soft">{t("async.desc")}</p>
+          </FadeIn>
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {asyncPoints.map((point, index) => (
+              <FadeIn key={point.title} delay={index * 0.04}>
+                <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper p-5 md:p-6">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-paradigm-ink text-[10px] font-semibold text-paradigm-paper">{index + 1}</span>
+                    <div>
+                      <h3 className="font-display text-[19px] leading-[1.2] text-paradigm-ink">{point.title}</h3>
+                      <p className="mt-3 text-[13px] leading-[1.75] text-paradigm-ink-soft">{point.body}</p>
+                    </div>
+                  </div>
+                </article>
+              </FadeIn>
+            ))}
+          </div>
+          <FadeIn className="mt-6 rounded-lg border border-paradigm-accent/30 bg-paradigm-ink p-5 text-paradigm-paper md:p-6">
+            <p className="text-[13px] leading-[1.8] text-paradigm-paper/80">{t("async.meetingPolicy")}</p>
           </FadeIn>
         </div>
       </section>

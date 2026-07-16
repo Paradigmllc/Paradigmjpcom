@@ -3,6 +3,7 @@ import { callDeepSeek, type DeepSeekMessage, type DeepSeekResponse } from "@/lib
 import type { BusinessModel, JapanEntryProjection } from "./japan-entry-projection";
 import { criticMessages, generationMessages } from "./japan-entry-personalized-message-prompts";
 import type { JapanEntryMessagePurpose } from "./japan-entry-personalized-message-prompts";
+import type { JapanEntryInitialInterestOptions } from "./japan-entry-message-options";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
   getJapanEntryMessageMode,
@@ -42,6 +43,7 @@ interface GenerateInput {
   audit: unknown;
   competitorAnalysis?: unknown;
   purpose?: JapanEntryMessagePurpose;
+  initialInterestOptions?: JapanEntryInitialInterestOptions;
 }
 
 type LlmCaller = typeof callDeepSeek;
@@ -204,6 +206,7 @@ export async function generatePersonalizedJapanEntryMessage(
       factIds: candidate.fact_ids,
       facts,
       purpose,
+      initialInterestOptions: input.initialInterestOptions,
     }),
   });
 
@@ -255,7 +258,7 @@ export async function generatePersonalizedJapanEntryMessage(
   const criticize = async (candidates: typeof valid) => {
     const criticized = await callStructured({
       stage: "critic",
-      messages: criticMessages(input.companyName, facts, candidates.map((item) => item.candidate), mode, purpose),
+      messages: criticMessages(input.companyName, facts, candidates.map((item) => item.candidate), mode, purpose, input.initialInterestOptions),
       schema: criticSchema,
       caller,
     });

@@ -628,7 +628,7 @@
       },
       {
         "title": "2. Formation and written scope",
-        "body": "An engagement begins only after Paradigm confirms fit, the parties accept the written scope, the payment terms are agreed, and an authorized person accepts the start conditions. The written scope records included modules, exclusions, dependencies, acceptance criteria, ownership, support expectations, and any staged payment."
+        "body": "An engagement begins only after Paradigm confirms fit, the parties accept the written scope, the payment terms are agreed, and an authorized person accepts the start conditions. The commercial record may comprise master service terms, a Setup Statement of Work (SOW), an Order Form and service schedule/SLA, plus a DPA, NDA, or payment addendum when needed. The specific signed documents record included modules, exclusions, dependencies, acceptance criteria, ownership, support expectations, and any staged payment; they control over a public overview or informal chat."
       },
       {
         "title": "3. Fixed setup and monthly service",
@@ -644,7 +644,7 @@
       },
       {
         "title": "6. Client responsibilities and change control",
-        "body": "The client provides accurate product information, rights-cleared assets, access, decisions, approvals, and a responsive owner. Client-requested scope changes, missing inputs, approval holds, provider review, or third-party dependencies are recorded and may pause the delivery clock or require a written change order."
+        "body": "The client provides accurate product information, rights-cleared assets, access, decisions, approvals, and a responsive owner. The SOW records the deliverables, approver, acceptance criteria, review window, and change-control path. Client-requested scope changes, new deliverables, missing inputs, approval holds, provider review, or third-party dependencies are recorded and may pause the delivery clock or require a written Change Request."
       },
       {
         "title": "7. Boundaries, compliance, and specialist advice",
@@ -652,14 +652,18 @@
       },
       {
         "title": "8. Ownership, confidentiality, and acceptable use",
-        "body": "Client materials remain the client's responsibility. The written scope states what is handed over and what remains Paradigm's reusable tooling, templates, know-how, or third-party/OSS material. Each party protects the other's non-public information and may use it only to perform or receive the engagement. The service may not be used for unlawful, deceptive, infringing, abusive, or malicious activity."
+        "body": "Client materials remain the client's responsibility. Subject to full payment and the written scope, client-specific copy, creative, and reports are handed over with the agreed ownership or usage rights. Paradigm retains its reusable portal structures, templates, automation code, design systems, prompts, methods, know-how, and third-party/OSS material. Each party protects the other's non-public information and may use it only to perform or receive the engagement. The service may not be used for unlawful, deceptive, infringing, abusive, or malicious activity."
       },
       {
-        "title": "9. Performance boundaries and liability",
+        "title": "9. Data processing and AI-assisted work",
+        "body": "When the engagement involves personal data, customer lists, unpublished product information, or regulated content, the parties document the processing purpose, access, storage, retention, deletion, subprocessors, and incident route in a DPA or the written scope as appropriate. AI tools may assist drafting, translation, routing, or analysis, but material commercial, legal, regulatory, and approval decisions remain subject to human review. Clients must not provide data they are not authorized to share, and no third-party rights or model output is guaranteed without the agreed review."
+      },
+      {
+        "title": "10. Performance boundaries and liability",
         "body": "The delivery guarantee concerns the agreed implementation and handover, not a promise of ranking, traffic, country share, conversion, customers, or revenue. Except for fraud, wilful misconduct, confidentiality breach, or liability that cannot legally be limited, Paradigm's aggregate liability is capped at the setup fees paid for the affected engagement. Nothing here removes mandatory rights under applicable law."
       },
       {
-        "title": "10. Suspension, cancellation, and governing law",
+        "title": "11. Suspension, cancellation, and governing law",
         "body": "Either party may end the engagement as permitted by the signed terms. Future monthly periods can be cancelled under their notice and effective-date rules; earned fees and committed third-party costs remain payable. Paradigm may suspend access for non-payment, security risk, or unlawful use. These terms are governed by the laws of Japan, with the Tokyo District Court as the agreed first-instance forum where legally permitted.",
         "contact": {
           "name": "Paradigm LLC",
@@ -1045,6 +1049,14 @@
         "a": "We review fit, authority, timeline, source context, and launch constraints. A submitted application is not acceptance of an engagement. If the package fits, we confirm scope, dependencies, terms, and the start date before work begins."
       },
       {
+        "q": "Which documents govern the engagement?",
+        "a": "The public site is an overview, not the contract. Before kickoff, the agreed record may include master service terms, a Setup SOW, an Order Form and service schedule/SLA, plus a DPA, NDA, or payment addendum when needed. The written scope and signed terms—not a chat message—control the engagement."
+      },
+      {
+        "q": "How do you handle acceptance and change requests?",
+        "a": "The Setup SOW records the deliverables, dependencies, approver, acceptance criteria, review window, and change-control path. A request that changes the accepted direction, adds a new deliverable, or depends on new access is logged as a Change Request and scheduled or priced separately in writing."
+      },
+      {
         "q": "What must be ready before kickoff?",
         "a": "Prepare the current offer, brand and product source material, required account access, a preferred launch date, and one empowered approver. We also need to know which claims, payment flows, fulfilment steps, or regulated features require specialist review."
       },
@@ -1359,6 +1371,19 @@
         { "label": "Day 14", "title": "Launch and hand over", "body": "The agreed route goes live with owners, open dependencies, operating notes, and the next decision recorded." }
       ]
     },
+    "contract": {
+      "eyebrow": "Written engagement record",
+      "title": "Every promise belongs in the right document.",
+      "desc": "The public page explains the offer. Before work begins, the commercial record is assembled in a short, reviewable document stack. The signed documents—not a chat message—control the engagement.",
+      "steps": [
+        { "label": "01", "title": "Fit review and proposal", "body": "We confirm decision authority, the offer, inputs, dependencies, payment rail, and whether the fixed package is a fit. An application is not contract acceptance." },
+        { "label": "02", "title": "MSA / service terms", "body": "Master terms cover confidentiality, security, ownership, reusable tooling, liability, suspension, termination, and governing law." },
+        { "label": "03", "title": "Setup SOW", "body": "The Statement of Work records the USD 12,000 setup scope: pages, words, channels, assets, responsibilities, dependencies, acceptance criteria, exclusions, and change control." },
+        { "label": "04", "title": "Order Form + SLA", "body": "For selected launch partners, the Order Form records the included operating period and any separately agreed continuation terms. The service schedule defines queue rules, one active request, business-hour response, and pause conditions." },
+        { "label": "05", "title": "DPA / NDA / payment addendum", "body": "Only when needed: data-processing terms, confidentiality before disclosure, or USDC network and refund-routing details. The invoice is the payment instruction; public forms never collect credentials." }
+      ],
+      "handover": "Electronic signature and kickoff follow only after the final written scope, payment instructions, approver, and required inputs are confirmed."
+    },
     "operations": {
       "eyebrow": "Months 1–6 included",
       "title": "What happens after launch.",
@@ -1382,6 +1407,18 @@
         { "label": "Social Media", "value": "Up to 2 channels" },
         { "label": "Response start", "value": "Within 48 business hours" }
       ]
+    },
+    "async": {
+      "eyebrow": "Async-first delivery",
+      "title": "Decisions in writing. Production in the queue.",
+      "desc": "The default operating model is a dedicated client workspace plus short Loom updates. You can submit as many Japan-related requests as you need; one primary request stays in active production at a time so priorities remain visible.",
+      "points": [
+        { "title": "A private client workspace", "body": "Each client receives an isolated Notion workspace by default, or Trello if preferred. It includes Home, Request Queue, Launch Roadmap, Deliverables, Approvals, Reports, and a Meeting & Loom archive." },
+        { "title": "One active request at a time", "body": "Requests can be queued without an artificial request-count cap. Large work is split into reviewable tasks; a change to the original requirement becomes a new request, and client-side waits pause the delivery clock." },
+        { "title": "Loom plus a written record", "body": "When useful, we attach a short Loom explaining the approach, what changed, the Japan-specific reason, and what needs approval. Owners, decisions, dependencies, and acceptance remain in the written workspace." },
+        { "title": "Meetings for decisions, not status theatre", "body": "Kickoff, key approvals, and material blockers can use Zoom. Normal updates stay async. Translated captions or AI interpretation may assist live calls where available, but they are not the source of contractual or regulatory truth." }
+      ],
+      "meetingPolicy": "Typical cadence: a 45–60 minute kickoff, an optional 30-minute setup check-in every two weeks, and a 30-minute monthly review after launch. New requests are acknowledged within one business day and normally enter active production within two business days. Small and medium delivery ranges are agreed per request."
     },
     "notIncluded": {
       "eyebrow": "Boundaries that protect the scope",

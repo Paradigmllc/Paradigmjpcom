@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-16 Manual Japan Entry 問い合わせ文面4セル実験（ローカル検証完了 / 本番release前 / 外部送信0）
+
+- `/work`へ問い合わせフォーム専用の4セル（推定あり／なし × 価格あり／なし）を追加した。domainからの安定自動割付と明示セル選択に対応し、各履歴へ希望セル・実効セル・フォールバック理由をDB保存する。全セルで企業固有の公開事実とFounder／海外展開責任者への転送依頼を必須にし、自動送信経路は追加していない。
+- 推定ありセルはTranco / Cloudflare Radar / Common Crawl / sitemapの公開シグナルを既存projectionロジックへ渡し、初年度の幅を「公開シグナルと保守的仮定に基づくモデル値・実売上ではない・成果保証ではない」と明示する。公開rankを確認できない場合は、価格条件を変えずに推定なしセルへfail-closedで切り替える。
+- 価格ありセルは現行の確定条件`$12,000 fixed`と`first six months included`だけを許可する。添付文面にあった未確認のfounding-company枠、通常月額、7か月目以降、前払い条件、希少性は生成promptと決定論reviewの両方で拒否する。SaaS/AI/DevTools、Web3、premium ecommerceの業態角度も、実際に取得した公開事実だけを使用する。
+- 手動フォーム送信済み、返信、Founder転送、商談化をoperatorが記録でき、4セル別の返信率・転送率・商談化率を手動送信数を分母に表示する。下流成果は手動送信後だけ記録可能で、送信解除時は下流成果も消すDB制約・API・UIを実装した。
+- TypeScript、対象ESLint、Quality Guard **0 errors**、全Vitest **188 files / 869 tests**、production build **408/408 pages**、Playwright PC/Pixel 7 **2/2**がpass。agent-browserでPC/390pxとも4セル・評価表・入力UIを確認し、error overlayなし、mobile横overflow 0。正式`npm run release:prod`、本番migration/read-back、未認証API/画面確認はPR統合後に実行する。
+
 ## CURRENT STATUS - 2026-07-16 Twenty営業先URLバックフィル（本番release・read-back完了 / 外部送信0）
 
 - 既存Twenty 2,981社の旧`paradigmFormUrl`を一度だけ判定し、ポータル（エキテン397件）は掲載ページを`営業先URL`へ移してフォーム列を空にし、フォーム系（codex_verification 564件）は確認済みフォームを`営業先URL`へ複製した。live read-backは営業先URLがポータル397件・フォーム564件で埋まり、送信系テーブル・送信経路は変更していない。
@@ -1735,10 +1743,22 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 月額運用は、最大4ページ/5,000ワード、同時1件のクリエイティブ依頼、最大2 Social Mediaチャネル、標準依頼の48営業時間以内着手を「標準運用目安」として表示。広告費、外部SaaS/決済、法務・税務・許認可、物流、常時CS、営業代行、大規模開発、成果保証を除外リストへ追加した。未確定の継続月額（添付資料の例示額を含む）は公開していない。
 - FAQ、英語AIチャット知識・フォールバック、公開リリースRunbookも同じ範囲・除外・「書面スコープが最終」の原則へ同期した。日本語サイトの国内Web制作ポジションと、既存Twenty関連の未コミット変更は変更していない。
 - 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit`、`npm run quality:guard`（0 errors / 66 warnings）、production build **408/408 pages**。PR **#347**をmainへマージし、正式`npm run release:prod`（deployment `rxh9k70ocn9qyyro3n1sfrx6`）のpre/post gate、DB **89/89**、Traefik、Cloudflare origin lock、Twenty、Sales health JSON `ok:true`、公開smokeを通過。`/en/package`と主要英語ページで新しい標準範囲・除外・継続価格非公開をHTTP 200確認した。
-
 ## CURRENT STATUS - 2026-07-16 Premium V3 customer-surface hardening (実装・ローカル検証完了 / 本番release待ち / 外部送信0)
 
 - 業種推定後も残っていた旧 `industryLabel`、保存済み企業向けブランド、生成レシピの不整合を共通層で修正。飲食店・歯科・美容等は、業種別カテゴリ名、配色、ナビ、ヒーロー構成、サービス／作品ラベルを強制し、飲食店へ「コンサルティング」「仕事・実績」「サロン用モザイク」が流れない。
 - 顧客向け画面からエキテン掲載素材・権利確認・提案用素材などの内部文言を除去。プレビューバーの非公開注意だけを残し、画像 `alt/caption` は業種別の自然な編集ラベルへ置換する。ヒーロー／ギャラリー／モザイク／Emblaスライダーは正規化URLで重複排除し、同一画像の連続表示を防止する。
 - `demo-public-surface.ts` の決定論的サニタイズを追加し、LLM再生成なしで既存DEMOにも読込時適用する。新規依存は追加せず、既存のFramer Motion / Emblaを継続利用する。
 - 検証済み: 対象Vitest **7 files / 35 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 67 existing warnings**、production build **408/408 pages**、`git diff --check`。このブランチでは候補追加・Twenty同期・外部送信・公開URL発行は行っていない。
+
+## CURRENT STATUS - 2026-07-16 DesignJoy型の非同期運用設計（本番反映・公開確認済み）
+
+- 添付の運用案を、英語Japan Entryのパッケージページへ反映した。専用Notionワークスペース（希望時Trello）、Home / Request Queue / Launch Roadmap / Deliverables / Approvals / Reports / Meeting & Loom Archive、キュー無制限・同時1件、依頼の1営業日以内確認と原則2営業日以内のアクティブ着手、顧客側待機による時計停止、Loomと書面記録、会議を意思決定に限定する方針を明記した。
+- Zoomの翻訳字幕・AI通訳は補助に限定し、契約・規制上の意味は英語の書面スコープ、検収記録、通話後サマリーを優先することを、パッケージ、AIチャット知識・フォールバック、公開運用Runbookへ同期した。カード情報・銀行認証情報・秘密鍵をNotion/Trello/Loomへ保存しない運用境界もRunbookへ追加した。
+- 検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard` **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。PR **#350**をmainへmergeし、正式`npm run release:prod`を完走。deployment **ex45lqezddv4wuignvxxx5jo**、DB **89/89**、CMS publish、Traefik / Cloudflare origin lock、Realtime / Twenty worker、Sales health JSON `ok:true`、公開smokeまで全gate pass。
+- 公開確認済み: `/en/package`、`/en/faq`、`/en/about`、`/en/pricing`、`/en/contact` がHTTP **200**で、Async-first delivery、Notion/Trello workspace、Loom、one active request、two business daysの文言を確認。公開ページに未確定の`$2,000`、`$995`、`10 companies`、`10 slots`は存在しない。既存Twentyテスト変更は未コミットのまま保全・復元した。
+
+## CURRENT STATUS - 2026-07-16 契約パケット・SOW/SLA境界の明文化（実装・ローカル検証完了 / release pending）
+
+- 添付の契約構成を、SSORという未標準の略語ではなく、MSA / Setup SOW / Order Form + SLA / 必要時のDPA・NDA・USDC payment addendumとして整理し、`/en/package`に契約パケットの5段階、`/en/faq`に契約書類とChange Requestの説明を追加した。未確定の継続料金やFounding枠数は記載していない。
+- `/en/terms`では、書面スコープ優先、検収・変更管理、顧客専用成果物とParadigmの再利用可能な制作基盤、個人データ・AI支援の人による確認境界を明文化した。公開運用Runbookにも電子署名記録、署名権限、版管理、レビュー期間、変更依頼、秘密情報の保管境界を追加した。
+- AIチャットの知識・フォールバックもSOW/MSA/SLA/DPA/NDA/検収/Change Requestへ対応。検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、TypeScript、Quality Guard **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。本番releaseと公開確認は次工程。
