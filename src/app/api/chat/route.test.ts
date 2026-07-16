@@ -9,7 +9,8 @@ describe("chat commercial fallback", () => {
     const answer = getFallbackAnswer("How much does it cost?", "en")
 
     expect(answer).toContain("$12,000")
-    expect(answer).toContain("continuation pricing is agreed separately")
+    expect(answer).toContain("$2,000/month")
+    expect(answer).toContain("first 10 selected launch partners")
     expect(answer).toContain("selected launch partners")
     expect(answer).not.toMatch(/\bsubject to separate written terms\b|cancel anytime|995/i)
     expect(answer).not.toMatch(/free consult|¥|1,300|198,000/i)
@@ -32,7 +33,7 @@ describe("chat commercial fallback", () => {
 
   it("rejects generated English answers with unverified prices or metrics", () => {
     expect(isSafeEnglishCommercialAnswer(
-      "Setup is $12,000, then $0 for six months and continuation pricing after that.",
+      "Setup is $12,000, then $0 for six months and $2,000/month from month seven under the signed terms.",
     )).toBe(true)
     expect(isSafeEnglishCommercialAnswer("A starter package is $1,500.")).toBe(false)
     expect(isSafeEnglishCommercialAnswer("Trusted by 200+ clients.")).toBe(false)

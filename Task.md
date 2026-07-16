@@ -1791,3 +1791,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 業種・アートディレクションに応じて、飲食店等は`cinematic`、企業・歯科等は`split`へ切り替え。アクセント色の放射背景、グリッド／光彩レイヤー、画像の彩度・コントラスト、左右分割の順序を共通レンダラーで変え、全企業に同じ静的ヒーローを流さない。
 - 対象Vitest **3 files / 11 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、production build **408/408 pages**を通過。PR **#362**をmainへマージし、正式`npm run release:prod`を完了。初回は既存migrationのSSH接続断で停止したが、preflightで滞留デプロイなし・環境健全を確認後に1回だけ再開し、deployment **kir0tb0hk948sqw13g055stx**、DB **91/91**、公開smoke、Twenty、Sales health JSON `ok:true`を確認した。
 - 公開`https://demo.paradigmjp.com/cafe-sosomu`でHeroに**3 / 3**スライド、`スライダー操作`、次スライド操作後の選択状態を確認。モバイルviewport **390px / documentWidth 390px / overflow false**、ブラウザerror **0件**。外部送信、Twenty同期、コンテンツ再生成は行っていない。
+
+## CURRENT STATUS - 2026-07-16 Japan Entry $2,000/month / first 10 launch-partner campaign (implementation verified; pending production release)
+
+- Added a reusable, high-visibility campaign diagram to `/en/pricing` and `/en/package`: `$12,000` one-time setup → months 1–6 at `$0/month` because the standard `$2,000/month` managed-operation fee is waived → month 7 onward at `$2,000/month` under the signed terms.
+- Campaign copy states that eligibility is limited to the first 10 selected launch partners and confirmed in writing. The same terms are synchronized across the English homepage, contact application, FAQ, terms, refund policy, About, manifest, JSON-LD, chatbot fallback/knowledge, and CMS seed blocks. No Japanese domestic Japan Entry page was changed.
+- Verification completed: JSON parse, targeted Vitest **5 files / 33 tests**, TypeScript `tsc --noEmit`, Quality Guard **0 errors / existing warnings**, `npm run build` compiled successfully and generated **408/408 pages**, `git diff --check` passed. Existing user change `src/lib/sales/twenty-sync-list-lead.test.ts` remains unstaged and untouched.
+- Next gate: commit/push, PR merge, formal `npm run release:prod`, then public read-back of `/en`, `/en/pricing`, `/en/package`, `/en/faq`, `/en/terms`, `/en/refund`, and `/en/contact` for the campaign strings and diagram anchor.
