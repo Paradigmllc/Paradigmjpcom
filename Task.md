@@ -1763,3 +1763,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `/en/terms`では、書面スコープ優先、検収・変更管理、顧客専用成果物とParadigmの再利用可能な制作基盤、個人データ・AI支援の人による確認境界を明文化した。公開運用Runbookにも電子署名記録、署名権限、版管理、レビュー期間、変更依頼、秘密情報の保管境界を追加した。
 - AIチャットの知識・フォールバックもSOW/MSA/SLA/DPA/NDA/検収/Change Requestへ対応。検証済み: `messages/en.json` parse、対象Vitest **2 files / 7 tests**、TypeScript、Quality Guard **0 errors / 66 existing warnings**、`git diff --check`、production build **408/408 pages**。PR **#353**をmainへmergeし、正式`npm run release:prod`を完走。初回実行は対象migrationのschema reload通知が一時失敗したが、DBテーブル存在とNOTIFY成功を確認後に再実行し、deployment **w2cdklpr4m66tajcq4l717nu**、DB **89/89**、CMS publish、Traefik / Cloudflare origin lock、Realtime / Twenty worker、Sales health JSON `ok:true`、公開smokeまで全gate pass。
 - 公開確認済み: `/en/package`、`/en/faq`、`/en/terms`、`/en/pricing` がHTTP **200**で、MSA / Setup SOW / Order Form + SLA / DPA・NDA・payment addendum、検収・Change Request、AI/data境界の文言を確認。公開ページに未確定の`$2,000`、`$995`、`Founding 10`は存在しない。既存Twentyテスト変更は未コミットのまま保全・復元した。
+
+## CURRENT STATUS - 2026-07-16 Customer-copy cleanup after live QA (実装・対象テスト完了 / 本番release待ち / 外部送信0)
+
+- 公開DEMOの実表示で残っていた「生成イメージ」と公開情報取得メタ文（`確認済みの公開情報では`等）を、サービス本文・ナラティブ・ニュース・フッターへ流さない共通サニタイズを追加した。顧客向けの編集ラベルと短い事業紹介へ置換する。
+- 対象Vitest **2 files / 9 tests**、TypeScript、`git diff --check`を通過。候補追加、Twenty同期、公開URL発行、外部送信は行っていない。

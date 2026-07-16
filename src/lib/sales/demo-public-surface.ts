@@ -6,9 +6,16 @@ import type { DemoPremiumMedia } from "./demo-site-types"
  * should read like a finished business website.
  */
 const INTERNAL_SURFACE_COPY = /(エキテン掲載素材|掲載素材|権利確認|権利未確認|権利者|公開[・、/]?納品|非公開提案|提案用|レビュー用|素材確認|rights?[- ]?(?:check|review|clear)|proposal[- ]?(?:only|asset|image)|private[- ]?proposal|reviewed[- ]?asset)/iu
+const SOURCE_METADATA_COPY = /(確認済みの公開情報では|登録公式URL|取得日|スクレイピング|公式公開アカウントから取得|PageSpeed|ページ速度)/iu
 
 export function isInternalDemoCopy(value: string | null | undefined): boolean {
   return Boolean(value && INTERNAL_SURFACE_COPY.test(value))
+}
+
+export function sanitizeDemoCopy(value: string | undefined, fallback: string): string {
+  const normalized = value?.replace(/\s+/gu, " ").trim() ?? ""
+  if (!normalized || isInternalDemoCopy(normalized) || SOURCE_METADATA_COPY.test(normalized)) return fallback
+  return normalized
 }
 
 export function canonicalDemoMediaSrc(source: string): string {
@@ -25,8 +32,7 @@ export function canonicalDemoMediaSrc(source: string): string {
 }
 
 function cleanText(value: string | undefined, fallback: string): string {
-  const normalized = value?.replace(/\s+/gu, " ").trim() ?? ""
-  return normalized && !isInternalDemoCopy(normalized) ? normalized : fallback
+  return sanitizeDemoCopy(value, fallback)
 }
 
 /**

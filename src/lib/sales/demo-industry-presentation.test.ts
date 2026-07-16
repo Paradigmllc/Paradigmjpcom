@@ -110,4 +110,30 @@ describe("applyIndustryPresentation", () => {
     expect(JSON.stringify(page.premium)).not.toMatch(/エキテン掲載素材|権利確認前|提案用素材/u)
     expect(page.premium?.intro.note).not.toMatch(/提案用|権利確認/u)
   })
+
+  it("removes source metadata from service copy and keeps the footer editorial", () => {
+    const base = buildDemoMultiPageData({
+      id: "company-4",
+      company_name: "料理屋メタサンプル",
+      domain: "demo-only.invalid",
+      slug: "metadata-restaurant",
+      industry: "restaurant",
+      prefecture: "東京都",
+      report_locale: "ja",
+      meta: {},
+    } as Parameters<typeof buildDemoMultiPageData>[0], {
+      slug: "metadata-restaurant",
+      company_id: "company-4",
+      report_locale: "ja",
+    } as unknown as Parameters<typeof buildDemoMultiPageData>[1]) as DemoMultiPageData
+    base.pages.services.services[0] = {
+      ...base.pages.services.services[0],
+      description: "確認済みの公開情報では、営業日と営業時間は公式Instagramの最新案内を確認、東京都の店舗です。",
+    }
+
+    const page = applyIndustryPresentation(base)
+
+    expect(JSON.stringify(page.pages.services)).not.toMatch(/確認済みの公開情報では|取得日|PageSpeed/u)
+    expect(page.meta.footerDescription).toContain("料理と空間をつくる")
+  })
 })

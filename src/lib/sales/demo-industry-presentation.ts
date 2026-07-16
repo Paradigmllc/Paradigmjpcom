@@ -1,5 +1,5 @@
 import type { DemoContentPage, DemoMultiPageData } from "./demo-site-types"
-import { sanitizeDemoMedia } from "./demo-public-surface"
+import { sanitizeDemoCopy, sanitizeDemoMedia } from "./demo-public-surface"
 
 type NavKey = "home" | "about" | "services" | "works" | "faq" | "contact"
 
@@ -253,6 +253,21 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         ).slice(0, 8),
       }
     : page.premium
+  const publicServices = page.pages.services.services.map((service) => ({
+    ...service,
+    description: sanitizeDemoCopy(service.description, `${service.title}についてご案内します。`),
+    features: service.features
+      .map((feature) => sanitizeDemoCopy(feature, ""))
+      .filter(Boolean),
+  }))
+  const publicPage: DemoMultiPageData = {
+    ...page,
+    premium: publicMedia,
+    pages: {
+      ...page.pages,
+      services: { ...page.pages.services, services: publicServices },
+    },
+  }
   const social = page.premium?.social[0]
   const primaryHref = social?.href ?? `/${page.slug}/contact`
   const primaryLabel = social ? `${social.label}を見る` : profile.nav.contact
@@ -268,7 +283,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
 
   return {
     ...page,
-    premium: distinctPremiumIntro({ ...page, premium: publicMedia }, profile),
+    premium: distinctPremiumIntro(publicPage, profile),
     meta: {
       ...page.meta,
       accentColor: profile.accentColor,
@@ -276,7 +291,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
       proposalNotice: "提案用デモ · 公式サイトではありません",
       primaryCtaLabel: primaryLabel,
       primaryCtaHref: primaryHref,
-      footerDescription: page.meta.description,
+      footerDescription: `${profile.aboutLead} ${page.pages.contact.address || page.pages.about.locationLabel}`.trim(),
       footerOwner: page.companyName,
       navLabels: profile.nav,
     },
@@ -287,7 +302,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         featureEyebrow: profile.featureEyebrow,
         featureHeading: profile.featureHeading,
         featureSubtitle: page.pages.services.subtitle,
-        narrativeModules: buildNarrativeModules(page, profile),
+        narrativeModules: buildNarrativeModules(publicPage, profile),
         hero: {
           ...page.pages.home.hero,
           tagline: profile.categoryLabel,
@@ -313,7 +328,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         title: profile.nav.services,
         processEyebrow: profileKey === "restaurant" ? "VISIT" : "FLOW",
         processTitle: profileKey === "restaurant" ? "店で過ごす時間。" : "ご利用の流れ。",
-        services: page.pages.services.services.map((service) => ({ ...service, priceNote: undefined })),
+        services: publicServices.map((service) => ({ ...service, priceNote: undefined })),
         ctaTitle: social ? "最新のご案内はこちら。" : "詳しく知りたい方へ。",
         ctaSubtitle: social ? "営業情報や最新のラインアップは、公式アカウントをご確認ください。" : page.pages.contact.formNote || page.pages.contact.subtitle,
         ctaText: primaryLabel,
@@ -325,7 +340,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         subtitle: profile.contactSubtitle,
       },
       works,
-      news: socialNewsPage(page),
+      news: socialNewsPage(publicPage),
       recruit: page.pages.recruit ? {
         ...page.pages.recruit,
         title: "採用情報",
