@@ -13,6 +13,7 @@ import {
 } from "./PremiumV3Primitives"
 import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
 import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
+import { canonicalDemoMediaSrc } from "@/lib/sales/demo-public-surface"
 
 export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
@@ -20,7 +21,7 @@ export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
   const direction = resolveDemoArtDirection(data)
   const basePath = `/${data.slug}`
   const visualSet = [...premium.heroMedia, ...premium.gallery]
-    .filter((item, index, items) => items.findIndex((candidate) => candidate.src === item.src) === index)
+    .filter((item, index, items) => items.findIndex((candidate) => canonicalDemoMediaSrc(candidate.src) === canonicalDemoMediaSrc(item.src)) === index)
     .slice(0, 6)
   const instagram = premium.social.find((item) => item.network === "instagram")?.href
   const mapHref = data.pages.contact.mapUrl ?? `${basePath}/contact`

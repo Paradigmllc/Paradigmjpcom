@@ -11,7 +11,8 @@ import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const direction = resolveDemoArtDirection(data)
-  if (data.industry === "beauty_salon" && direction.hero === "mosaic") return <DemoPremiumV3BeautyHome data={data} />
+  const profile = data.presentation?.industryProfile ?? data.industry
+  if (profile === "beauty_salon" && direction.hero === "mosaic") return <DemoPremiumV3BeautyHome data={data} />
 
   const premium = data.premium!
   const home = data.pages.home
@@ -26,7 +27,7 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const isExternalPrimary = /^https?:\/\//u.test(home.hero.primaryCta.href)
   const isExternalMap = /^https?:\/\//u.test(mapHref)
   const motionStyle = data.designRecipe?.motionVariant
-  const isRestaurant = data.industry === "restaurant"
+  const isRestaurant = profile === "restaurant"
   const splitHero = direction.hero !== "cinematic"
   const editorialSplit = direction.hero === "editorial-split"
   const aboutLabel = data.meta.navLabels?.about ?? (isRestaurant ? "お店について" : "私たちについて")

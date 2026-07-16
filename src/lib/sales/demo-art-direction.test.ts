@@ -15,6 +15,24 @@ describe("demo art direction", () => {
     expect(direction.labels).toEqual(expect.objectContaining({ category: "サロン", gallery: "スタイル" }))
   })
 
+  it("does not let a stale salon mosaic override an inferred restaurant profile", () => {
+    const direction = resolveDemoArtDirection({
+      industry: "consulting",
+      presentation: {
+        featureEyebrow: "",
+        featureHeading: "",
+        servicesEyebrow: "",
+        servicesHeading: "",
+        galleryEyebrow: "",
+        galleryHeading: "",
+        industryProfile: "restaurant",
+      },
+      designRecipe: { creativeDirection: { heroComposition: "mosaic", serviceLayout: "salon-catalogue", worksLayout: "salon-lookbook" } } as DemoMultiPageData["designRecipe"],
+    })
+
+    expect(direction).toEqual(expect.objectContaining({ hero: "cinematic", serviceLayout: "editorial-list", worksLayout: "journal" }))
+  })
+
   it("caps long Japanese hero copy below the oversized display scale", () => {
     const long = demoHeadlineClass("横浜・港北で四十二年、地域に寄り添いながら一人ひとりの髪を丁寧に整える美容室", "hero")
     const productionLength = demoHeadlineClass("横浜・港北で42年、地域に寄り添う美容室", "hero")

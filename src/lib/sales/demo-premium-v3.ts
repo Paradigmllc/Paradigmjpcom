@@ -59,12 +59,14 @@ export function resolveDemoBrandSystem(page: DemoMultiPageData, recipe = page.de
   // token set. Always migrate them to the current balanced art direction at
   // read time so a renderer release improves existing proposals immediately.
   const typographyStyle = recipe?.creativeDirection?.typographyStyle
-  const industrySystems = BRAND_SYSTEMS[String(page.industry)] ?? BRAND_SYSTEMS.default
+  const industryKey = page.presentation?.industryProfile ?? String(page.industry)
+  const industrySystems = BRAND_SYSTEMS[industryKey] ?? BRAND_SYSTEMS.default
   const typographySystems = typographyStyle ? TYPOGRAPHY_SYSTEMS[typographyStyle] ?? [] : []
   const industryIds = new Set(industrySystems.map((system) => system.id))
   const industryTypographySystems = typographySystems.filter((system) => industryIds.has(system.id))
   const systems = industryTypographySystems.length > 0 ? industryTypographySystems : industrySystems
-  const selected = page.brandSystem
+  const persistedBrand = page.brandSystem && industryIds.has(page.brandSystem.id) ? page.brandSystem : undefined
+  const selected = persistedBrand
     ?? systems[hash(`${page.companyId}:${recipe?.templateId ?? "default"}:${recipe?.creativeDirection?.concept ?? ""}`) % systems.length]
   const mood = recipe?.creativeDirection?.paletteMood
   return mood ? { ...selected, ...PALETTE_MOODS[mood] } : selected
@@ -206,7 +208,7 @@ export function upgradeDemoToPremiumV3(page: DemoMultiPageData, recipe = page.de
   if (!page.premium) return page
   const brandSystem = resolveDemoBrandSystem(page, recipe)
   const hasSocial = page.premium.social.length > 0
-  const isRestaurant = page.industry === "restaurant"
+  const isRestaurant = page.presentation?.industryProfile === "restaurant" || page.industry === "restaurant"
   const journeyCopy = {
     home: isRestaurant
       ? "メニュー、所在地、現在の営業案内を一つの流れで確認できます。ご来店前に必要な情報をご覧ください。"
@@ -215,8 +217,8 @@ export function upgradeDemoToPremiumV3(page: DemoMultiPageData, recipe = page.de
       ? "提供内容はメニューページで、所在地と地図はアクセスページでご確認いただけます。"
       : "業務範囲と進め方を確認したうえで、正式な相談方法と必要な準備事項をご確認ください。",
     contact: hasSocial
-      ? "所在地、地図、現在の案内はこのページで確認できます。営業や提供内容に変更がある場合は、公式SNSの最新情報もあわせてご確認ください。この提案用フォームは入力・確認の体験のみで、外部には送信されません。正式公開時には、事業者が確認した受付方法と必要項目へ切り替えます。"
-      : "所在地、地図、現在確認できる事業情報をこのページにまとめています。正式な相談方法、受付条件、必要な入力項目は事業者確認後に掲載します。この提案用フォームは入力・確認の体験のみで、外部には送信されません。正式公開前に実際の運用に合わせて切り替えます。",
+      ? "所在地、地図、現在の案内はこのページで確認できます。営業や提供内容に変更がある場合は、公式SNSの最新情報もあわせてご確認ください。お問い合わせは入力・確認まで体験でき、正式公開時には実際の受付方法へ切り替えます。"
+      : "所在地、地図、現在確認できる事業情報をこのページにまとめています。相談方法、受付条件、必要な入力項目は実際の運用に合わせてご案内します。お問い合わせは入力・確認まで体験できます。",
   }
   return {
     ...page,
