@@ -31,6 +31,16 @@ describe("Japan Entry package detail copy", () => {
     expect(page.notIncluded.items).toContain("Company incorporation, licence applications, registrations, certification, or specialist sign-off")
     expect(JSON.stringify(page.commercial)).toContain("$12,000 USD")
     expect(JSON.stringify(page.commercial)).toContain("continuation pricing is agreed separately")
+    expect(page.tracks.items).toHaveLength(3)
+    expect(page.tracks.items.map((track) => track.name)).toEqual([
+      "Japan Digital Launch",
+      "Japan Web3 Launch",
+      "Japan Commerce Launch",
+    ])
+    expect(page.queues.setup).toHaveLength(8)
+    expect(page.queues.managed.some((item) => item.includes("48 business hours"))).toBe(true)
+    expect(page.evidence.labels.map((item) => item.name)).toEqual(["Observed", "Modeled", "Hypothesis"])
+    expect(page.evidence.footer).toContain("captured_at")
   })
 
   it("does not frame stock imagery or estimates as proof", () => {

@@ -632,7 +632,7 @@
       },
       {
         "title": "3. Fixed setup and monthly service",
-        "body": "The standard Japan Entry setup is USD 12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. A different price or scope is effective only if confirmed in writing."
+        "body": "The standard Japan Entry setup is USD 12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. The Order Form records a separate Managed Operations Commencement Date after setup handover; the included operating period is measured from that date when the written scope uses this structure. Continuation pricing is agreed separately after the included period. A different price or scope is effective only if confirmed in writing."
       },
       {
         "title": "4. Payment rails, taxes, and third-party charges",
@@ -640,7 +640,7 @@
       },
       {
         "title": "5. Start Date and delivery guarantee",
-        "body": "The Start Date is recorded after written scope acceptance, cleared setup payment, complete source materials, required access, and one empowered approver are available. The agreed fixed setup is delivered within 14 business days from that recorded date. The separate Refund Policy explains the full setup-fee refund if that fixed setup is not delivered on time."
+        "body": "The Start Date is recorded after written scope acceptance, cleared setup payment, complete source materials, required access, and one empowered approver are available. The agreed fixed setup is delivered within 14 business days from that recorded date. After setup acceptance and handover, the Order Form may record a separate Managed Operations Commencement Date for the included operating period. The separate Refund Policy explains the full setup-fee refund if that fixed setup is not delivered on time."
       },
       {
         "title": "6. Client responsibilities and change control",
@@ -681,7 +681,7 @@
     "sections": [
       {
         "title": "1. What this policy covers",
-        "body": "This policy covers the fixed USD 12,000 Japan Entry setup, the first six months of included managed operation, any continuation service after the included period, and related approved work. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
+        "body": "This policy covers the fixed USD 12,000 Japan Entry setup, the first six months of included managed operation where the written Order Form provides for them, any continuation service after the included period, and related approved work. The applicable Order Form records the Managed Operations Commencement Date. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
       },
       {
         "title": "2. Full setup-fee refund for a late fixed setup",
@@ -1021,6 +1021,18 @@
         "a": "The setup fee is fixed at $12,000 USD. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party fees and approved work outside the fixed scope are separate."
       },
       {
+        "q": "When do the six included months begin?",
+        "a": "The written Order Form records the applicable Managed Operations Commencement Date. Where the package uses that structure, the six included months begin after the fixed setup is accepted and handed over—not automatically on the contract date. The signed Order Form controls the exact date and any dependency or pause rules."
+      },
+      {
+        "q": "Which launch track is right for us?",
+        "a": "Japan Digital Launch is for SaaS, AI, DevTools, education, and digital products; Japan Web3 Launch is for infrastructure, security, data, and API businesses; Japan Commerce Launch is for furniture, design, hobby, and premium cross-border commerce. All tracks share the same evidence-first market review, Japanese buyer path, workspace, QA, and handover. The Setup SOW records the track-specific acceptance checks."
+      },
+      {
+        "q": "How is setup different from managed operation?",
+        "a": "Setup is a fixed milestone queue—Opportunity Analysis, Localization Strategy, Web Build, Payments, Social Media Setup, Initial Creative, QA, and Launch. Managed operation is a separate request queue after the applicable commencement date: requests are queued, one primary request is Active at a time, standard requests normally start within 48 business hours after inputs are ready, and material changes require a written Change Request."
+      },
+      {
         "q": "What is included in the fixed setup?",
         "a": "The standard setup envelope covers Japan Opportunity analysis, a Japanese landing page plus an agreed core-page set (normally up to eight to ten pages and 15,000–20,000 source words), payment setup coordination, up to two Social Media channels, launch creative, a Notion or Trello workspace, regulatory-readiness coordination, launch management, and handover. The signed scope is the final source of truth."
       },
@@ -1074,7 +1086,7 @@
       },
       {
         "q": "How do you use public market data?",
-        "a": "Public rank, crawl, sitemap, schema, and registry signals can show visibility and market alignment. They cannot prove a company's actual monthly visits, country traffic share, or revenue. Those remain unknown unless first-party or authorized data is provided."
+        "a": "Public rank, crawl, sitemap, schema, and registry signals can show visibility and market alignment. Every material output is labelled Observed, Modeled, or Hypothesis and includes the source, capture date, confidence boundary, and next verification action. Public signals cannot prove actual monthly visits, country traffic share, or revenue; those remain unknown unless first-party or authorized data is provided."
       },
       {
         "q": "What if the package is not the right fit?",
@@ -1359,6 +1371,89 @@
         ]
       }
     ],
+    "tracks": {
+      "eyebrow": "Choose the right launch track",
+      "title": "One Japan Launch Infrastructure, three practical starting points.",
+      "desc": "Every track shares the same evidence-first market review, Japanese buyer path, client workspace, launch QA, and handover. The track only changes the specialist questions and acceptance checks recorded in the SOW.",
+      "commonLabel": "Shared across every track",
+      "common": [
+        "Public-data opportunity analysis with Observed, Modeled, and Hypothesis labels",
+        "Japanese web or LP localization, trust content, inquiry or eligible payment route",
+        "Private client workspace, approvals, change log, progress record, and handover",
+        "Social Media setup, initial launch assets, competitor context, and operating baseline",
+        "Specialist questions and external-provider dependencies recorded instead of guessed"
+      ],
+      "items": [
+        {
+          "name": "Japan Digital Launch",
+          "audience": "SaaS, AI, DevTools, education, and digital products",
+          "description": "Make a software or digital offer understandable, credible, and easy to evaluate for a Japanese buyer without turning a localization project into a full product rewrite.",
+          "focus": [
+            "Japanese demo, trial, inquiry, and onboarding path",
+            "Localized documentation, help content, and sales enablement",
+            "JPY presentation or pricing-context review where applicable",
+            "Self-serve and short-sales-cycle acceptance checks"
+          ]
+        },
+        {
+          "name": "Japan Web3 Launch",
+          "audience": "Web3 infrastructure, security, data, and API businesses",
+          "description": "Translate technical value and community context while separating implementation work from token, custody, financial, or licensing decisions that require qualified specialists.",
+          "focus": [
+            "Japanese technical documentation and partner material",
+            "Community and developer-facing content setup",
+            "First-pass applicability questions and specialist escalation",
+            "Identifiable contracting entity and decision-owner checks"
+          ]
+        },
+        {
+          "name": "Japan Commerce Launch",
+          "audience": "Furniture, design, hobby, and premium cross-border commerce",
+          "description": "Build a buyer path that makes delivery, pricing, product detail, returns, and post-purchase ownership clear before traffic is pushed into a fragile checkout.",
+          "focus": [
+            "Shipping, returns, duties, final-price, and delivery expectation copy",
+            "Product dimensions, warranty, availability, and product-page hierarchy",
+            "Payment, receipt, purchase-email, and post-purchase routing",
+            "Margin, breakage, fulfilment, and exclusive-distributor fit checks"
+          ]
+        }
+      ]
+    },
+    "queues": {
+      "eyebrow": "Two queues, one visible operating record",
+      "title": "Setup is a milestone plan. Managed operation is a request queue.",
+      "desc": "Separating these queues prevents a launch milestone from being mistaken for a monthly request, and makes the 14-business-day setup guarantee and 48-business-hour start commitment auditable.",
+      "setupLabel": "Setup Queue · fixed launch sequence",
+      "setup": [
+        { "label": "01", "title": "Opportunity Analysis", "body": "Confirm offer fit, public evidence, unknowns, decision owner, and launch assumptions." },
+        { "label": "02", "title": "Localization Strategy", "body": "Lock the Japanese buyer path, information architecture, trust content, and track-specific questions." },
+        { "label": "03", "title": "Web Build", "body": "Implement the agreed LP/HP, core pages, copy, forms, metadata, and responsive route." },
+        { "label": "04", "title": "Payments", "body": "Coordinate eligible inquiry or payment routing; provider approval and account underwriting remain external." },
+        { "label": "05", "title": "Social Media Setup", "body": "Configure up to two priority channels, profile copy, links, content pillars, and ownership." },
+        { "label": "06", "title": "Initial Creative", "body": "Prepare the agreed launch assets, adaptations, short edits, and sales or partner material." },
+        { "label": "07", "title": "QA", "body": "Check content, links, forms, tracking, accessibility, mobile layout, and acceptance criteria." },
+        { "label": "08", "title": "Launch", "body": "Publish the agreed route, record open dependencies, and hand over owners, notes, and next actions." }
+      ],
+      "managedLabel": "Managed Request Queue · included operating period",
+      "managed": [
+        "Requests are submitted in the private client workspace with an owner, priority, context, and requested decision.",
+        "The queue is not artificially capped, but one primary request is Active at a time; large work is split into reviewable tasks.",
+        "New standard requests are acknowledged within one business day and normally start within 48 business hours after required inputs are ready.",
+        "Client-side waits, missing access, provider review, and approval holds are logged as dependencies and pause the relevant clock.",
+        "A change to an accepted direction or a new deliverable becomes a written Change Request before work starts."
+      ]
+    },
+    "evidence": {
+      "eyebrow": "Evidence standard",
+      "title": "A model is useful only when its boundary is visible.",
+      "desc": "Signal Check, market reports, and opportunity views separate what was observed from what was modelled and what still needs testing. No private traffic, country share, conversion, or revenue is presented as a fact without authorized first-party data.",
+      "labels": [
+        { "name": "Observed", "body": "A dated public or authorized first-party signal with a source URL, capture record, and confidence boundary." },
+        { "name": "Modeled", "body": "A range calculated from stated assumptions, retrieval date, formula, low/base/high cases, and a clear disclaimer." },
+        { "name": "Hypothesis", "body": "A testable interpretation or friction point that is not yet proven and must have a next verification action." }
+      ],
+      "footer": "Each material claim is recorded with its source, captured_at date, confidence, assumptions where applicable, and human approval status. Use “potential uncaptured opportunity” or “conversion friction,” never an unsourced claim that a company is losing a specific amount."
+    },
     "timeline": {
       "eyebrow": "The 14-business-day build",
       "title": "A short, visible path from inputs to handover.",
