@@ -137,6 +137,125 @@ templates, automation code, prompts, design systems, methods, and OSS or
 third-party material remain Paradigm or their respective owners unless the
 written terms say otherwise.
 
+### Commercial readiness and capacity controls
+
+Before outbound activity or a proposal, record the internal definition of a
+counted contract in the CRM. A signature, a reservation, a cleared payment,
+and recognized revenue are different events; never report one as another. The
+public site does not publish a deposit amount, cohort size, or continuation
+price unless that value has been approved and written into the applicable
+Order Form.
+
+For selected launch partners, record the `Managed Operations Commencement
+Date` separately from the setup Start Date. Kickoff windows are allocated in
+the confirmed order sequence and may be staggered so that setup work does not
+overload the operating queue. The 48-business-hour start commitment applies
+after the agreed kickoff window and only when the required inputs are ready.
+
+The internal capacity model is a planning tool, not a public promise. Review
+the expected hours before accepting a wave: market strategy 8–12 hours, web
+and localization 25–35, payment/Social Media/workspace 10–15, initial assets
+10–15, and PM/QA 8–12 (normally 60–90 setup hours in total); included monthly
+operation is normally planned at 8–15 hours. Record the assigned PM/analyst,
+web/localization owner, design/video owner, and native-quality reviewer. If the
+planned capacity is unavailable, pause acceptance or narrow the SOW rather than
+promising a queue the team cannot service.
+
+### Trust stack and evidence discipline
+
+Every proposal and public proof review must pass a trust-stack checklist:
+verified Paradigm legal identity and Tokyo operating timezone; a business
+email; payment recipient and legal entity match; privacy, terms, security, and
+refund links; an identifiable operator profile; and a clear support/escalation
+route. Capability samples may include an Opportunity Snapshot, sample proposal,
+Japanese LP before/after, isolated portal demo, Loom walkthrough, workflow, and
+48-hour start rules. Label every sample “Illustrative — not a client case
+study” unless a client has authorized the name and source data.
+
+Classify every material claim as `Observed`, `Modeled`, or `Hypothesis`.
+Observed claims require a source, `captured_at`, screenshot or immutable
+snapshot where practical, confidence, and human approval. Modeled claims also
+require assumptions, retrieval date, formula, low/base/high cases, confidence,
+and a disclaimer. Hypotheses require a next verification action. Use “potential
+uncaptured opportunity”, “modeled opportunity”, or “conversion friction”; do
+not tell a prospect that an unsourced amount is being lost. The report reader
+must be able to identify the claim, classification, source, date, confidence,
+and next action in under 30 seconds.
+
+Maintain an expert/partner inventory for work that cannot be performed by
+Paradigm: international/IT counsel, tax adviser, administrative or permit
+expert, EC/import specialist, payment implementer, Japanese copy reviewer, web
+engineer, and video/design support. For each partner record industries,
+estimated fee, response time, NDA status, English availability, and whether the
+work is direct or outsourced. Expert fees are passed through at cost unless the
+written scope says otherwise; coordination and implementation belong in the
+approved operating scope. “Leave legal or payment to experts” is not a public
+claim until this inventory has a real reachable partner.
+
+### Client onboarding, acceptance, and offboarding
+
+The intake checklist must name one decision-maker/approver, confirm who can
+grant brand and web access, list product/price and existing analytics, provide
+approved terms and past materials, identify payment and fulfilment owners, and
+state a client response target of five business days. Client waits are recorded
+in the queue and excluded from the relevant delivery clock. Keep client pages,
+Drive folders, Loom links, and credentials isolated per client; export the
+accepted record and revoke guest access on termination.
+
+Track-specific acceptance is explicit in the SOW. Digital offers must have a
+live or testable product, a clear price and buyer path, Japan accessibility,
+and a self-serve or short-sales-cycle route. Web3 work requires an identifiable
+contracting entity, a decision owner, commercial fees, and a B2B or low-risk
+scope; anonymous DAOs, token-only treasury, licensing, custody, or solicitation
+are not silently included. Commerce work requires viable cross-border shipping,
+rich product assets, Japan delivery/returns ownership, workable margin, and no
+exclusive distributor conflict; impossible logistics, fragile low-margin goods,
+or all-fulfilment-in-monthly-scope requests are rejected or rescoped.
+
+At handover, export the final deliverables, Japanese copy, account and
+permission list, Social Media ownership, analytics and measurement notes,
+content calendar, manuals, unfinished tasks, open dependencies, and next
+recommendations. Retain reusable templates, automation, ComfyUI workflows,
+scoring logic, portal structure, and know-how unless the signed terms expressly
+transfer them.
+
+### Funnel, outreach, and measurement controls
+
+The internal funnel stages are: `Identified → Qualified → Form Located →
+Submitted → Delivered/Unknown → Reply → Positive Reply → Meeting Booked →
+Meeting Held → Proposal Sent → Contract Signed → Deposit Paid → Fully Paid →
+Kickoff Scheduled`. Report counts and elapsed time by stage; do not infer a
+payment or contract from a form submission. Positive replies receive an
+immediate standardized response plus a tailored answer, available timezone
+slots, pre-meeting material, same-day proposal/invoice where appropriate, and a
+short reserve window only when the written process supports it.
+
+Any European or UK contact-form outreach is reviewed as direct marketing. Keep
+the source record, purpose, legitimate-interest assessment where relied upon,
+minimum personal data, first-contact reason, opt-out text, Do Not Contact list,
+retention/deletion date, and country-specific review. Exclude support, legal,
+security, and privacy forms from prospecting; do not bypass CAPTCHA or a site's
+stated restrictions. Initial messages must identify the sender and provide a
+plain opt-out. Do not launch a wave until the privacy and suppression checks
+pass.
+
+Use leading indicators (source coverage, evidence completeness, Japanese path
+readiness, qualified replies, response time, accepted setup scope) separately
+from lagging indicators (qualified inquiries, activation, paid conversion,
+repeat usage, and client-supplied revenue). Define the 30/60/90-day review in
+the Order Form or operating plan: 30 days for foundation and measurement, 60
+for initial content/channel tests and message learning, and 90 for continue,
+stop, or scale decisions. No indicator is a revenue guarantee.
+
+### Tax and settlement review
+
+Before issuing an invoice, verify the contracting entity, customer business or
+consumer status, service nature and place of supply, currency, tax
+classification, VAT/GST or tax ID needs, Wise recipient, USDC network and JPY
+conversion record, card/payment-provider fees, refund FX treatment, third-party
+recharges, and revenue-recognition treatment with the tax adviser. Never state
+that an overseas customer automatically makes a service zero-rated or tax-free.
+
 ## Required production settings
 
 The following values belong in the Coolify production environment, never in git

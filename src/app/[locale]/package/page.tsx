@@ -30,6 +30,9 @@ type CapacityItem = { label: string; value: string }
 type AsyncPoint = { title: string; body: string }
 type ContractStep = { label: string; title: string; body: string }
 type CommercialItem = { label: string; value: string }
+type Track = { name: string; audience: string; description: string; focus: string[] }
+type QueueStep = { label: string; title: string; body: string }
+type EvidenceLabel = { name: string; body: string }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale: rawLocale } = await params
@@ -55,6 +58,11 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
   const t = await getTranslations({ locale: "en", namespace: "packagePage" })
   const summary = t.raw("summary") as SummaryItem[]
   const workstreams = t.raw("workstreams") as Workstream[]
+  const tracks = t.raw("tracks.items") as Track[]
+  const sharedTrackPoints = t.raw("tracks.common") as string[]
+  const setupQueue = t.raw("queues.setup") as QueueStep[]
+  const managedQueue = t.raw("queues.managed") as string[]
+  const evidenceLabels = t.raw("evidence.labels") as EvidenceLabel[]
   const timeline = t.raw("timeline.steps") as TimelineStep[]
   const contractSteps = t.raw("contract.steps") as ContractStep[]
   const operations = t.raw("operations.items") as OperationItem[]
@@ -121,6 +129,36 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
         </div>
       </section>
 
+      <section className="relative overflow-hidden border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="tracks-title">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <FadeIn className="max-w-3xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("tracks.eyebrow")}</p>
+            <h2 id="tracks-title" className="font-display text-[28px] leading-[1.1] text-paradigm-ink md:text-[44px]">{t("tracks.title")}</h2>
+            <p className="mt-5 text-[14px] leading-[1.85] text-paradigm-ink-soft">{t("tracks.desc")}</p>
+          </FadeIn>
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            {tracks.map((track, index) => (
+              <FadeIn key={track.name} delay={index * 0.04}>
+                <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper p-6">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-accent">{track.audience}</p>
+                  <h3 className="mt-3 font-display text-[22px] leading-[1.15] text-paradigm-ink">{track.name}</h3>
+                  <p className="mt-3 text-[13px] leading-[1.75] text-paradigm-ink-soft">{track.description}</p>
+                  <ul className="mt-5 space-y-3 border-t border-paradigm-line/70 pt-5">
+                    {track.focus.map((item) => <li key={item} className="flex gap-3 text-[12px] leading-[1.7] text-paradigm-ink-soft"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden /><span>{item}</span></li>)}
+                  </ul>
+                </article>
+              </FadeIn>
+            ))}
+          </div>
+          <FadeIn className="mt-6 rounded-lg border border-paradigm-line bg-paradigm-paper p-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-accent">{t("tracks.commonLabel")}</p>
+            <ul className="mt-4 grid gap-3 md:grid-cols-2">
+              {sharedTrackPoints.map((item) => <li key={item} className="flex gap-3 text-[13px] leading-[1.7] text-paradigm-ink-soft"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden /><span>{item}</span></li>)}
+            </ul>
+          </FadeIn>
+        </div>
+      </section>
+
       <section className="relative overflow-hidden border-y border-paradigm-line bg-paradigm-paper-deep px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="timeline-title">
         <div className="relative z-10 mx-auto max-w-6xl">
           <FadeIn className="max-w-3xl">
@@ -138,6 +176,30 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
               </FadeIn>
             ))}
           </ol>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="queues-title">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <FadeIn className="max-w-3xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("queues.eyebrow")}</p>
+            <h2 id="queues-title" className="font-display text-[28px] leading-[1.1] text-paradigm-ink md:text-[44px]">{t("queues.title")}</h2>
+            <p className="mt-5 text-[14px] leading-[1.85] text-paradigm-ink-soft">{t("queues.desc")}</p>
+          </FadeIn>
+          <div className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-accent">{t("queues.setupLabel")}</p>
+              <ol className="mt-4 grid gap-3 sm:grid-cols-2">
+                {setupQueue.map((step) => <li key={step.label} className="rounded-lg border border-paradigm-line bg-paradigm-paper p-4"><span className="font-display text-2xl text-paradigm-accent">{step.label}</span><h3 className="mt-3 font-display text-[18px] text-paradigm-ink">{step.title}</h3><p className="mt-2 text-[12px] leading-[1.7] text-paradigm-ink-soft">{step.body}</p></li>)}
+              </ol>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-accent">{t("queues.managedLabel")}</p>
+              <ul className="mt-4 space-y-3 rounded-lg border border-paradigm-line bg-paradigm-paper p-5">
+                {managedQueue.map((item) => <li key={item} className="flex gap-3 text-[13px] leading-[1.75] text-paradigm-ink-soft"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden /><span>{item}</span></li>)}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -229,6 +291,20 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
           <FadeIn className="mt-6 rounded-lg border border-paradigm-accent/30 bg-paradigm-ink p-5 text-paradigm-paper md:p-6">
             <p className="text-[13px] leading-[1.8] text-paradigm-paper/80">{t("async.meetingPolicy")}</p>
           </FadeIn>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden border-b border-paradigm-line bg-paradigm-paper px-5 py-16 sm:px-8 sm:py-20 lg:px-12" aria-labelledby="evidence-title">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <FadeIn className="max-w-3xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("evidence.eyebrow")}</p>
+            <h2 id="evidence-title" className="font-display text-[28px] leading-[1.1] text-paradigm-ink md:text-[44px]">{t("evidence.title")}</h2>
+            <p className="mt-5 text-[14px] leading-[1.85] text-paradigm-ink-soft">{t("evidence.desc")}</p>
+          </FadeIn>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {evidenceLabels.map((item, index) => <FadeIn key={item.name} delay={index * 0.04}><article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5"><span className="inline-flex rounded-full border border-paradigm-line bg-paradigm-paper px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-accent">{item.name}</span><p className="mt-4 text-[13px] leading-[1.75] text-paradigm-ink-soft">{item.body}</p></article></FadeIn>)}
+          </div>
+          <FadeIn className="mt-6 rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5 text-[13px] leading-[1.8] text-paradigm-ink-soft md:p-6">{t("evidence.footer")}</FadeIn>
         </div>
       </section>
 
