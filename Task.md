@@ -1,3 +1,12 @@
+## CURRENT STATUS - 2026-07-18 Twenty会社一覧復旧 + Manual Work DeepSeek残高不足リカバリー（本番release完了 / 外部送信0）
+
+- Twentyの会社一覧が`Unknown operand IS for TEXT filter`でクラッシュした原因は、TEXT型`paradigmCountryName`へ不正な`IS`フィルターが保存されていたこと。正規化処理を`CONTAINS`へ変更し、履歴上の`IS`/`CONTAINS`を削除後に正しい1行だけを再作成する。release-doctorにもTEXT互換演算子の静的回帰ゲートを追加した。
+- 本番Twenty DBはTEXT×`IS` **0件**、`paradigmCountryName=日本`の`CONTAINS` **1件**。Chrome実画面で`営業リスト · 398`、`国名 : 日本`、会社行表示、エラー境界なしを確認。Twenty HTTP 200、server/worker running、worker restart **0**。企業データ本体は変更していない。
+- `/work`の`screenshottocode.com`解析失敗は、DeepSeek公式`/user/balance`の`is_available=false`、USD残高 **-0.14** が原因。公式APIのHTTP 402 / `Insufficient Balance`を生JSONではなく日本語の実務メッセージへ変換し、画面上部へ残高不足バナー、失敗カードへ`再解析`を追加した。
+- 同じ失敗URLを再実行すると、既存の永続履歴を`processing/fetching`へ戻して再利用し、新しい会社・履歴を重複作成しない。失敗結果を成功toastにしない。DeepSeek公式API一択、既存の初回文面・診断レポート・海外SMB・根拠・Twenty同期ゲート、自動送信0は維持する。
+- 本番DB read-backは対象履歴 **1件**、`status=failed / stage=failed / twenty_sync_status=skipped / sent=false / initial_message=null / report_url=null`。残高補充は決済を伴うため未実行。補充後に履歴の`再解析`を押すまでTwenty追加、初回文面、診断レポート、フォーム・メール等の外部送信は実行されない。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、対象Vitest **3 files / 19 tests**、全Vitest **196 files / 896 tests**、production build **408/408 pages**がpass。PR **#384 / #387**、最終main **6fcc5a02**。Twenty復旧deployment **qaowhx68d50u48svy5aivqb6**、再解析UI deployment **sjgg9st07sq0quwm0opns2pg**を正式`npm run release:prod`で完走し、最終container **n8i2sjiqvr2d8hrzppop2m2i-220512158009**はhealthy。DB **91/91**、Sales health JSON `ok:true`、Twenty HTTP 200、Realtime、Traefik、公開smokeを含む最終`release gate passed`を確認した。本番work chunk `page-e55002da28abb3b8.js`にも残高不足バナーと`再解析`をread-backした。
+
 ## CURRENT STATUS - 2026-07-17 Manual Japan Entry 市場・企業別commercial lens（本番release・認証境界read-back完了 / 外部送信0）
 
 - 共有されたChatGPT壁打ちを、国別の一律値下げではなく「国は調査優先度、最終判断は企業固有の外貨売上・海外顧客・資金調達・Founder-led・従業員規模・海外展開の公開根拠」という内部審査原則として反映した。SG/AE、PL/MY/MX、EE/CZ/CL、TR/IN/BR/ZAをグローバル優先・Regional主要母集団・高精度少数・企業厳選へ分類し、その他の海外市場も対象外にせず企業別評価へ戻す。
