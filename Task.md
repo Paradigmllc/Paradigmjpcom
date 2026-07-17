@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-18 SMB demo低解像度メディア排除・公開フォールバック修正（本番release前 / 外部送信0）
+
+- Ekiten等のポータル由来画像が`129x129`/`304x304`等の小型派生画像のままHeroへ引き伸ばされる問題を確認した。生成時にHero **1200x720未満**、Gallery **900x600未満**、`size=1to1_*`/thumbnail系URL、寸法欠落をfail-closedで除外し、ブラウザ読込後のnatural sizeでも再検査する。
+- 低品質画像を無理に拡大せず、素材が基準未達の場合は企業名・権利注記・ポータル素材を表示しない抽象的なブランドビジュアルへフォールバックする。フォールバックはHero/Galleryの枠を埋め、Hero washの背後に隠れないよう表示レイヤーも修正した。
+- 立川歯科医院の公開デモで、低解像度の実画像が`img`として残らず、フォールバックを含む2フレーム構成、HTTP **200**、console/page error **0**、横overflow **0**を確認した。最終コードはPR **#383/#385/#386/#389**でmainへ統合済み。正式`npm run release:prod`とpost-deploy smokeをmain **f0a9cb00**で再実行するまで、実務運用の品質合格とは扱わない。
+- 既存ポータル画像の権利・解像度が不十分な企業は、承認済み高解像度素材を取得するまで公開画像を使わない。Twentyへの追加、実企業へのDEMO送信、フォーム・メール等の外部送信は実行していない。
+
 ## CURRENT STATUS - 2026-07-18 Twenty会社一覧復旧 + Manual Work DeepSeek残高不足リカバリー（本番release完了 / 外部送信0）
 
 - Twentyの会社一覧が`Unknown operand IS for TEXT filter`でクラッシュした原因は、TEXT型`paradigmCountryName`へ不正な`IS`フィルターが保存されていたこと。正規化処理を`CONTAINS`へ変更し、履歴上の`IS`/`CONTAINS`を削除後に正しい1行だけを再作成する。release-doctorにもTEXT互換演算子の静的回帰ゲートを追加した。
