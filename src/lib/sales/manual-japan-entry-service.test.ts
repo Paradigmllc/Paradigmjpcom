@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   buildManualInitialMessageInput,
+  isRetryableManualWork,
   manualWorkEligibility,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
@@ -36,6 +37,11 @@ const verifiedForm = {
 }
 
 describe("manual Japan Entry work safety gates", () => {
+  it("allows failed persistent work to be analyzed again without creating a duplicate", () => {
+    expect(isRetryableManualWork({ status: "failed" })).toBe(true)
+    expect(isRetryableManualWork({ status: "completed" })).toBe(false)
+  })
+
   it("normalizes one public company domain", () => {
     expect(normalizeManualWorkUrl("acme.com/about")).toEqual({
       inputUrl: "acme.com/about",

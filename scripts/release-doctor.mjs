@@ -744,6 +744,12 @@ function checkStaticReleaseRules() {
   const manualWorkService = fs.existsSync("src/lib/sales/manual-japan-entry-service.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-service.ts", "utf8")
     : ""
+  const manualWorkHistoryItem = fs.existsSync("src/components/work/ManualWorkHistoryItem.tsx")
+    ? fs.readFileSync("src/components/work/ManualWorkHistoryItem.tsx", "utf8")
+    : ""
+  const manualWorkDeepSeekGateway = fs.existsSync("src/lib/deepseek.ts")
+    ? fs.readFileSync("src/lib/deepseek.ts", "utf8")
+    : ""
   const manualWorkHelpers = fs.existsSync("src/lib/sales/manual-japan-entry-workflow-helpers.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-workflow-helpers.ts", "utf8")
     : ""
@@ -788,6 +794,9 @@ function checkStaticReleaseRules() {
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
+    && manualWorkService.includes('return item.status === "failed"')
+    && manualWorkHistoryItem.includes("再解析")
+    && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
     && manualWorkReport.includes("matchContentTemplate")
@@ -798,9 +807,9 @@ function checkStaticReleaseRules() {
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has grounded four-cell and evidence-gated angle copy, industry and market lenses, company-evidence-only commercial signals, a separate source master, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires grounded four-cell and angle copy, industry and market lenses, company-evidence-only commercial signals, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"

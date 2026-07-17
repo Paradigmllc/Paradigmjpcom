@@ -79,6 +79,10 @@ export function ManualJapanEntryWorkConsole({
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
   const queueValues = Object.values(queue)
   const finished = queueValues.filter((value) => value === "done" || value === "error").length
+  const deepSeekBalanceBlocked = items.some((item) => item.status === "failed" && (
+    item.error_message?.includes("DeepSeek APIの残高不足")
+    || item.error_message?.includes("Insufficient Balance")
+  ))
   const sourceBySlug = useMemo(() => new Map(sources.map((source) => [source.slug, source])), [sources])
   const selectedSource = sourceBySlug.get(sourceSlug)
 
@@ -115,7 +119,12 @@ export function ManualJapanEntryWorkConsole({
     if (urls.length > MAX_URLS) return toast.error(`1回の上限は${MAX_URLS}件です`)
     setQueue(Object.fromEntries(urls.map((url) => [url, "waiting" as const])))
     setRunning(true)
-    await runWithConcurrency(urls, CONCURRENCY, async (url) => {
+    await runWithConcurrency(urls, CONCURRENCY, processUrl)
+    setRunning(false)
+    await refreshHistory(true)
+  }
+
+  const processUrl = async (url: string) => {
       setQueue((current) => ({ ...current, [url]: "processing" }))
       try {
         const response = await fetch("/api/work", {
@@ -126,6 +135,7 @@ export function ManualJapanEntryWorkConsole({
         const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; error?: string }
         if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
         setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
+        if (body.item.status === "failed") throw new Error(body.item.error_message ?? `${url} の解析に失敗しました`)
         setQueue((current) => ({ ...current, [url]: "done" }))
         toast.success(body.duplicate ? `${url} は既存履歴またはTwentyにあります` : `${url} の解析が完了しました`)
       } catch (error) {
@@ -134,9 +144,17 @@ export function ManualJapanEntryWorkConsole({
         toast.error(error instanceof Error ? error.message : `${url} の解析に失敗しました`)
       }
       await refreshHistory(true)
-    })
-    setRunning(false)
-    await refreshHistory(true)
+  }
+
+  const retry = async (item: ManualJapanEntryWorkRow) => {
+    setQueue({ [item.canonical_url]: "processing" })
+    setRunning(true)
+    try {
+      await processUrl(item.canonical_url)
+    } finally {
+      setRunning(false)
+      await refreshHistory(true)
+    }
   }
 
   const copy = async (value: string, label: string) => {
@@ -182,7 +200,7 @@ export function ManualJapanEntryWorkConsole({
         <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-emerald-400 text-slate-950">P</span><span>Paradigm Revenue Operations</span></div>
-            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className="inline-flex items-center gap-1.5 text-emerald-300"><CircleDot className="size-3.5" />{running ? "Analysis running" : "System ready"}</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${deepSeekBalanceBlocked ? "text-amber-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{running ? "Analysis running" : deepSeekBalanceBlocked ? "DeepSeek balance required" : "System ready"}</span></div>
           </div>
         </div>
       </div>
@@ -200,6 +218,8 @@ export function ManualJapanEntryWorkConsole({
             <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">履歴</a>
           </nav>
         </motion.header>
+
+        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek APIの残高不足で解析を停止しています</p><p>DeepSeek Platformで残高を補充後、失敗した履歴の「再解析」を押してください。履歴を再利用するため、同じ企業は重複登録されません。</p></div>}
 
         <div className="mt-7"><ManualWorkOverview items={items} /></div>
 
@@ -229,7 +249,7 @@ export function ManualJapanEntryWorkConsole({
           <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">根拠不足は自動降格</p><p className="mt-1 text-xs leading-5 text-slate-600">初回文面は「推定あり／なし × 価格あり／なし」の4セル。根拠不足時は安全な条件へ戻します。</p></div></div>
         </section>
 
-        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} sources={sources} historyError={historyError} running={running} updatingOutcome={updatingOutcome} onRefresh={() => void refreshHistory()} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
+        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} sources={sources} historyError={historyError} running={running} updatingOutcome={updatingOutcome} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
       </div>
     </main>
   )
