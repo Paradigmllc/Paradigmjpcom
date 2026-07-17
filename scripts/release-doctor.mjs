@@ -701,6 +701,10 @@ function checkStaticReleaseRules() {
   const twentySelectOptionsScript = fs.existsSync(twentySelectOptionsScriptPath)
     ? fs.readFileSync(twentySelectOptionsScriptPath, "utf8")
     : ""
+  const twentyMetadataDbApplyPath = "src/lib/sales/twenty-crm-metadata-db-apply.ts"
+  const twentyMetadataDbApply = fs.existsSync(twentyMetadataDbApplyPath)
+    ? fs.readFileSync(twentyMetadataDbApplyPath, "utf8")
+    : ""
   if (
     portalTwentyOptionsMigration.includes("('source', 'houzz'")
     && portalTwentyOptionsMigration.includes("('source', 'ekiten'")
@@ -709,10 +713,13 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyPortalTwentySourceOptionsMigration")
     && twentySelectOptionsScript.includes("('paradigmSourceName', 'エキテン', 'ekiten'")
     && noLoginDeploy.includes("applyTwentySelectOptionsScript")
+    && twentyMetadataDbApply.includes("operand in ('IS', 'CONTAINS')")
+    && twentyMetadataDbApply.includes("values (gen_random_uuid(), $1, 'CONTAINS'")
+    && !twentyMetadataDbApply.includes("values (gen_random_uuid(), $1, 'IS'")
   ) {
-    pass("portal Twenty source options and CRM field metadata are present and release-wired")
+    pass("portal Twenty source options, type-compatible text filters and CRM field metadata are present and release-wired")
   } else {
-    fail("portal Twenty source options require Houzz, Ekiten, Jmty values, CRM field metadata and release wiring")
+    fail("portal Twenty source options require Houzz, Ekiten, Jmty values, type-compatible text filters, CRM field metadata and release wiring")
   }
 
   const manualWorkMigrationPath = "supabase/migrations/20260715031327_manual_japan_entry_work.sql"
