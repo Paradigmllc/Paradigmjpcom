@@ -1,0 +1,127 @@
+"use client"
+
+import { motion } from "framer-motion"
+import { Check, CheckCircle2, Copy, ExternalLink, FileText, LoaderCircle, MessageSquareText, Send, Waypoints } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { MANUAL_MESSAGE_ANGLE_LABELS } from "@/lib/sales/manual-japan-entry-angle"
+import { MANUAL_MESSAGE_VARIANT_LABELS } from "@/lib/sales/manual-japan-entry-experiment"
+import { MANUAL_OUTREACH_PLAYBOOK_LABELS, type ManualPositioningConcept } from "@/lib/sales/manual-japan-entry-playbook"
+import { MANUAL_SOURCE_ROLE_LABELS, type ManualLeadSourceCatalogRow, type ManualQualificationLedger } from "@/lib/sales/manual-japan-entry-source-ledger"
+import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
+
+const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
+  processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
+}
+
+const stageCopy: Record<ManualJapanEntryWorkRow["stage"], string> = {
+  fetching: "公開ページ取得", classifying: "海外SMB判定", form_discovery: "フォーム探索", copy_generation: "初回文面生成",
+  report_generation: "診断レポート生成", twenty_sync: "Twenty同期", complete: "完了", failed: "失敗",
+}
+
+export type ManualWorkOutcome = "manually_sent" | "reply_received" | "founder_forwarded" | "meeting_converted"
+
+function positioningConcept(profile: Record<string, unknown>): ManualPositioningConcept | null {
+  const value = profile.positioningConcept
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const record = value as Record<string, unknown>
+  if (typeof record.sourcePhrase !== "string" || typeof record.japaneseHeadline !== "string" || typeof record.japaneseSupportLine !== "string") return null
+  return { sourcePhrase: record.sourcePhrase, japaneseHeadline: record.japaneseHeadline, japaneseSupportLine: record.japaneseSupportLine }
+}
+
+function qualificationStages(value: ManualJapanEntryWorkRow["qualification_ledger"]) {
+  return Object.entries(value as Partial<ManualQualificationLedger>).filter(
+    (entry): entry is [keyof ManualQualificationLedger, ManualQualificationLedger[keyof ManualQualificationLedger]] => Boolean(entry[1]),
+  )
+}
+
+function statusClasses(status: ManualJapanEntryWorkRow["status"]): string {
+  if (status === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (status === "failed" || status === "rejected") return "border-red-200 bg-red-50 text-red-700"
+  if (status === "needs_review") return "border-amber-200 bg-amber-50 text-amber-800"
+  if (status === "processing") return "border-blue-200 bg-blue-50 text-blue-700"
+  return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
+export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, onCopy, onUpdateOutcome }: {
+  item: ManualJapanEntryWorkRow
+  sourceBySlug: Map<string, ManualLeadSourceCatalogRow>
+  updatingOutcome: string | null
+  onCopy: (value: string, label: string) => void
+  onUpdateOutcome: (item: ManualJapanEntryWorkRow, outcome: ManualWorkOutcome, value: boolean) => void
+}) {
+  const concept = positioningConcept(item.profile)
+  const stages = qualificationStages(item.qualification_ledger)
+  const verifiedStages = stages.filter(([, stage]) => stage.status === "verified").length
+  const qualificationProgress = stages.length ? Math.round((verifiedStages / 6) * 100) : 0
+  const outcomes = [
+    ["manually_sent", "手動フォーム送信済み", Boolean(item.manually_sent_at)],
+    ["reply_received", "返信あり", Boolean(item.reply_received_at)],
+    ["founder_forwarded", "Founder転送あり", Boolean(item.founder_forwarded_at)],
+    ["meeting_converted", "商談化", Boolean(item.meeting_converted_at)],
+  ] as const
+
+  return (
+    <motion.article layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_-38px_rgba(15,23,42,0.55)] transition-shadow hover:shadow-[0_22px_70px_-40px_rgba(15,23,42,0.5)]">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_220px]">
+        <div className="min-w-0 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${statusClasses(item.status)}`}>{statusCopy[item.status]}</span>
+                {item.status === "processing" && <Badge variant="outline" className="border-blue-200 text-blue-700">{stageCopy[item.stage]}</Badge>}
+                <span className="text-xs text-slate-600">{new Date(item.created_at).toLocaleString("ja-JP")}</span>
+              </div>
+              <h3 className="mt-3 truncate font-display text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{item.company_name ?? item.domain}</h3>
+              <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
+              {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-1.5">
+            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600">{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}</Badge>
+            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600">{MANUAL_MESSAGE_ANGLE_LABELS[item.message_angle]}</Badge>
+            <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">{MANUAL_OUTREACH_PLAYBOOK_LABELS[item.outreach_playbook]}</Badge>
+            {item.source_attributions.map((source) => <Badge key={source.id} variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">{sourceBySlug.get(source.source_slug)?.name ?? source.source_slug}</Badge>)}
+          </div>
+
+          {(item.error_message || item.message_variant_fallback_reason || item.message_angle_fallback_reason) && (
+            <div className="mt-5 space-y-2">
+              {item.error_message && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{item.error_message}</p>}
+              {item.message_variant_fallback_reason && <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">{item.message_variant_fallback_reason}</p>}
+              {item.message_angle_fallback_reason && <p className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">{item.message_angle_fallback_reason}</p>}
+            </div>
+          )}
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Market</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.country_code ?? "未確定"} · SMB {item.smb_confidence ?? "—"}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Japan entry</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.japan_entry_fit_status ?? "解析中"} · {item.japan_entry_fit_confidence ?? "—"}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Evidence</p><p className="mt-1 text-sm font-semibold text-slate-700">6段階 {verifiedStages}/6 · 出典 {item.source_attributions.length}</p></div>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {stages.length > 0 && <details className="group rounded-xl border border-slate-200"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 marker:hidden"><Waypoints className="size-4 text-slate-500" />営業リード6段階の確認状況<span className="ml-auto text-xs font-normal text-slate-600">{qualificationProgress}%</span></summary><div className="grid gap-2 border-t border-slate-100 p-3 md:grid-cols-2 xl:grid-cols-3">{stages.map(([role, stage]) => <div key={role} className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600"><div className="flex items-center justify-between gap-2"><span className="font-semibold text-slate-700">{MANUAL_SOURCE_ROLE_LABELS[role]}</span>{stage.status === "verified" && <Check className="size-3.5 text-emerald-600" />}</div><p className="mt-1">{stage.evidence[0]}</p></div>)}</div></details>}
+            {concept && <details className="rounded-xl border border-violet-200 bg-violet-50/50"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-violet-900 marker:hidden"><FileText className="size-4" />保存済み日本語ポジショニング案（未公開ドラフト）</summary><div className="border-t border-violet-100 px-4 py-3"><p className="font-semibold text-slate-900">{concept.japaneseHeadline}</p><p className="mt-1 text-sm leading-6 text-slate-600">{concept.japaneseSupportLine}</p><p className="mt-2 text-xs text-slate-600">公開原文: {concept.sourcePhrase}</p></div></details>}
+            {item.initial_message && <details className="rounded-xl border border-slate-200"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 marker:hidden"><MessageSquareText className="size-4 text-slate-400" />問い合わせフォーム初回文面（未送信・{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}・{MANUAL_MESSAGE_ANGLE_LABELS[item.message_angle]}）</summary><div className="border-t border-slate-100 bg-slate-50/70 p-4"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.initial_message}</p><Button variant="outline" size="sm" className="mt-3 rounded-lg bg-white" onClick={() => onCopy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button></div></details>}
+          </div>
+        </div>
+
+        <aside className="border-t border-slate-200 bg-slate-50/80 p-5 lg:border-l lg:border-t-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Outcome tracking</p>
+          <div className="mt-4 space-y-2">
+            {outcomes.map(([outcome, label, active], index) => <button key={outcome} type="button" disabled={updatingOutcome !== null || (outcome !== "manually_sent" && !item.manually_sent_at)} onClick={() => onUpdateOutcome(item, outcome, !active)} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${active ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
+              <span className={`grid size-6 shrink-0 place-items-center rounded-full ${active ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}>{updatingOutcome === `${item.id}:${outcome}` ? <LoaderCircle className="size-3.5 animate-spin" /> : active ? <CheckCircle2 className="size-3.5" /> : <span className="font-mono text-[9px]">{index + 1}</span>}</span>{label}
+            </button>)}
+          </div>
+          <div className="mt-5 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-600">
+            <p className="flex items-center gap-2 font-semibold text-slate-700"><Send className="size-3.5" />自動送信: なし</p>
+            <p className="mt-1">Twenty: {item.twenty_sync_status}</p>
+          </div>
+        </aside>
+      </div>
+    </motion.article>
+  )
+}
