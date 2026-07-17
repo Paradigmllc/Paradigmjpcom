@@ -21,7 +21,7 @@ export function normalizeDemoMediaUrl(source: string): string {
 
 function PremiumMediaFallback({ media, className, label }: { media?: DemoPremiumMedia; className: string; label: string }) {
   return (
-    <div className={`${className} relative overflow-hidden bg-[radial-gradient(circle_at_22%_20%,rgba(69,185,190,.55),transparent_42%),radial-gradient(circle_at_82%_76%,rgba(255,255,255,.14),transparent_34%),linear-gradient(135deg,#071c22,#173a40_58%,#0e2429)]`} role="img" aria-label={label}>
+    <div className={`${className} relative z-10 overflow-hidden bg-[radial-gradient(circle_at_22%_20%,rgba(69,185,190,.55),transparent_42%),radial-gradient(circle_at_82%_76%,rgba(255,255,255,.14),transparent_34%),linear-gradient(135deg,#071c22,#173a40_58%,#0e2429)]`} role="img" aria-label={label}>
       <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,transparent_48%,rgba(255,255,255,.14)_48.2%,transparent_48.5%),linear-gradient(25deg,transparent_0%,transparent_68%,rgba(255,255,255,.1)_68.2%,transparent_68.5%)]" />
       <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/20 shadow-[0_0_0_24px_rgba(255,255,255,.03),0_0_0_48px_rgba(255,255,255,.025)]" />
       <div className="absolute left-[17%] top-[16%] h-[58%] w-px bg-white/20" />
