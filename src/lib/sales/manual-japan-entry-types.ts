@@ -35,6 +35,36 @@ export type ManualWorkStage = (typeof MANUAL_WORK_STAGES)[number]
 export type QualificationStatus = "qualified" | "review_required" | "rejected"
 export type TwentySyncStatus = "not_started" | "skipped" | "synced" | "failed" | "duplicate"
 
+export const MANUAL_COMMERCIAL_SIGNAL_KINDS = [
+  "foreign_currency_revenue",
+  "global_customers",
+  "funding",
+  "founder_led",
+  "employee_range",
+  "international_operations",
+] as const
+export type ManualCommercialSignalKind = (typeof MANUAL_COMMERCIAL_SIGNAL_KINDS)[number]
+
+export interface ManualCommercialSignal {
+  kind: ManualCommercialSignalKind
+  sourcePhrase: string
+  detail: string
+}
+
+export type ManualMarketPriority = "global_priority" | "regional_core" | "precision" | "selective" | "individual_review"
+export type ManualCommercialEvidenceStatus = "observed" | "partial" | "unverified"
+
+export interface ManualMarketLens {
+  priority: ManualMarketPriority
+  label: string
+  rationale: string
+  focusIndustries: string[]
+  commercialEvidenceStatus: ManualCommercialEvidenceStatus
+  commercialSignalCount: number
+  pricingPolicy: "no_automatic_country_adjustment"
+  requiresHumanReview: true
+}
+
 export interface ManualCompanyProfile {
   companyName: string
   countryCode: string | null
@@ -51,6 +81,8 @@ export interface ManualCompanyProfile {
   observedFacts: string[]
   outreachPlaybook: ManualOutreachPlaybook
   positioningConcept: ManualPositioningConcept | null
+  commercialSignals?: ManualCommercialSignal[]
+  marketLens?: ManualMarketLens
 }
 
 export interface ManualJapanEntryWorkRow {

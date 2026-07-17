@@ -743,6 +743,9 @@ function checkStaticReleaseRules() {
   const manualWorkReport = fs.existsSync("src/lib/sales/manual-japan-entry-report.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-report.ts", "utf8")
     : ""
+  const manualMarketLens = fs.existsSync("src/lib/sales/manual-japan-entry-market-lens.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-market-lens.ts", "utf8")
+    : ""
   const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
     ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
     : ""
@@ -782,11 +785,15 @@ function checkStaticReleaseRules() {
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
     && manualWorkReport.includes("matchContentTemplate")
     && manualWorkReport.includes('evidence_contract: "public-pages-only"')
+    && manualWorkReport.includes("manual_commercial_signals")
+    && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
+    && manualMarketLens.includes("groundManualCommercialSignals")
+    && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has grounded four-cell and evidence-gated angle copy, industry playbooks, a separate source master, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has grounded four-cell and evidence-gated angle copy, industry and market lenses, company-evidence-only commercial signals, a separate source master, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires grounded four-cell and angle copy, industry playbooks, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires grounded four-cell and angle copy, industry and market lenses, company-evidence-only commercial signals, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"

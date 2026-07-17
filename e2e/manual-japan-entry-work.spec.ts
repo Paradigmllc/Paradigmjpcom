@@ -56,7 +56,7 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
           status: "needs_review",
           stage: "complete",
           company_name: domain,
-          country_code: "US",
+          country_code: "PL",
           is_japanese_company: false,
           smb_status: "qualified",
           smb_confidence: 82,
@@ -65,7 +65,12 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
           business_model: "saas",
           industry: "Technology / IT",
           product_context: "Public product context",
-          profile: {}, evidence: {}, form_discovery: {},
+          profile: {
+            commercialSignals: [
+              { kind: "global_customers", sourcePhrase: "Customers in 30 countries", detail: "Public customer footprint" },
+              { kind: "funding", sourcePhrase: "Backed by Example Ventures", detail: "Public funding statement" },
+            ],
+          }, evidence: {}, form_discovery: {},
           form_url: `https://${domain}/contact`,
           initial_message: `Hello ${domain}`,
           message_review: {},
@@ -118,6 +123,9 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
   await expect(page.getByText("one.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("two.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("自動送信: なし").first()).toBeVisible()
+  await expect(page.getByText("PL · Regional主要母集団").first()).toBeVisible()
+  await expect(page.getByText("商業根拠 2件 · 出典 1").first()).toBeVisible()
+  await expect(page.getByText("市場・企業別の優先判断").first()).toBeVisible()
   await expect(page.getByText("問い合わせフォーム初回文面（未送信・推定なし・価格なし・問題提起型）").first()).toBeVisible()
   const history = page.locator("#history")
   await history.getByLabel("企業名またはドメインを検索").fill("one.example")

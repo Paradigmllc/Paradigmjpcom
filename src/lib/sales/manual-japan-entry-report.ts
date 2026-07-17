@@ -7,6 +7,7 @@ import type { FormDiscoveryResult } from "./sources/form-discovery"
 import type { JapanMarketAudit, JapanMarketAuditStatus } from "./sources/japan-market-audit"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
 import type { ManualMasterLeadLedger, ManualQualificationLedger } from "./manual-japan-entry-source-ledger"
+import { buildManualMarketLens, MANUAL_COMMERCIAL_SIGNAL_LABELS } from "./manual-japan-entry-market-lens"
 
 const GAP_META: Record<string, { statusKey: keyof JapanMarketAuditStatus; title: string }> = {
   "japan-audit-language": {
@@ -162,6 +163,11 @@ export async function buildManualJapanEntryReport(input: {
   const gaps = gapRows(input.profile, input.audit)
   const topGaps = gaps.slice(0, 3)
   const coverage = buildSourceCoverage(input)
+  const commercialSignals = input.profile.commercialSignals ?? []
+  const marketLens = input.profile.marketLens ?? buildManualMarketLens({
+    countryCode: input.profile.countryCode,
+    commercialSignals,
+  })
   const contentTemplate = await matchContentTemplate({
     reportLocale: "en",
     targetCountry: input.profile.countryCode,
@@ -229,6 +235,28 @@ export async function buildManualJapanEntryReport(input: {
           detail: input.profile.productContext,
           whyItMatters: "The Japan offer must match the company’s publicly described product and operating model.",
         },
+        {
+          id: "market-lens",
+          label: "Market operating lens",
+          value: `${input.profile.countryCode ?? "Unconfirmed"} / ${marketLens.label}`,
+          source: "Deterministic country playbook; not a pricing recommendation",
+          category: "company",
+          tone: marketLens.priority === "individual_review" ? "warning" : "neutral",
+          detail: `${marketLens.rationale}${marketLens.focusIndustries.length ? ` Focus categories: ${marketLens.focusIndustries.join(", ")}.` : ""}`,
+          whyItMatters: "Country context guides research priority only and never changes the existing offer automatically.",
+        },
+        {
+          id: "commercial-evidence",
+          label: "Company-level commercial evidence",
+          value: commercialSignals.length > 0 ? `${commercialSignals.length} grounded public signal(s)` : "Unverified",
+          source: "Exact phrases from the company public website",
+          category: "company",
+          tone: commercialSignals.length >= 2 ? "good" : commercialSignals.length === 1 ? "neutral" : "warning",
+          detail: commercialSignals.length > 0
+            ? commercialSignals.map((signal) => `${MANUAL_COMMERCIAL_SIGNAL_LABELS[signal.kind]}: ${signal.sourcePhrase}`).join(" | ")
+            : "Foreign-currency revenue, global customers, funding, founder-led ownership, employee range, and international operations were not confirmed in the bounded public-page evidence.",
+          whyItMatters: "These signals support human prioritization only; they do not prove budget, willingness to buy, or a price tier.",
+        },
         ...(input.profile.positioningConcept ? [{
           id: "draft-japanese-positioning",
           label: "Draft Japanese positioning concept",
@@ -280,6 +308,7 @@ export async function buildManualJapanEntryReport(input: {
       nextActions: [
         "Human-review the generated first-touch message before sending.",
         "Confirm the target company, country, product wording, and public form route.",
+        "Verify payment capacity, contracting entity, decision maker, and any commercial signal with an appropriate primary source before quoting.",
         ...(input.qualificationLedger?.legal_verification.status === "pending"
           ? ["Verify the active contracting entity in an official company registry before treating the lead as send-ready."]
           : []),
@@ -292,6 +321,8 @@ export async function buildManualJapanEntryReport(input: {
       source_url: input.sourceUrl,
       japan_market_audit: input.audit,
       manual_company_profile: input.profile,
+      manual_market_lens: marketLens,
+      manual_commercial_signals: commercialSignals,
       outreach_playbook: input.profile.outreachPlaybook,
       draft_japanese_positioning_concept: input.profile.positioningConcept,
       manual_source_qualification_ledger: input.qualificationLedger ?? null,

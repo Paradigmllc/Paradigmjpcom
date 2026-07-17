@@ -10,7 +10,7 @@ import {
 export type ManualWorkQueueState = Record<string, "waiting" | "processing" | "done" | "error">
 
 const workflowSteps = [
-  ["01", "企業確認", "海外SMBとJapan Entry適合を判定"],
+  ["01", "企業確認", "海外SMB・市場優先度・企業別の商業根拠を判定"],
   ["02", "営業準備", "フォーム・初回文面・診断を生成"],
   ["03", "手動実行", "Twentyで確認し人が送信結果を記録"],
 ] as const
