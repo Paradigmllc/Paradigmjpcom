@@ -1,9 +1,9 @@
-## CURRENT STATUS - 2026-07-17 Manual Japan Entry 市場・企業別commercial lens（実装・ローカル検証完了 / release待ち / 外部送信0）
+## CURRENT STATUS - 2026-07-17 Manual Japan Entry 市場・企業別commercial lens（本番release・認証境界read-back完了 / 外部送信0）
 
 - 共有されたChatGPT壁打ちを、国別の一律値下げではなく「国は調査優先度、最終判断は企業固有の外貨売上・海外顧客・資金調達・Founder-led・従業員規模・海外展開の公開根拠」という内部審査原則として反映した。SG/AE、PL/MY/MX、EE/CZ/CL、TR/IN/BR/ZAをグローバル優先・Regional主要母集団・高精度少数・企業厳選へ分類し、その他の海外市場も対象外にせず企業別評価へ戻す。
 - DeepSeek V4 Proへ商業シグナル候補を追加したが、`productContext`内の原文と完全一致し、種別ごとの決定論patternにも合格した引用だけをprofileへ保存する。モデル生成の説明文は破棄し、予算・支払能力は別途確認が必要という固定注意文へ置換する。取得できない場合は`unverified`のままにし、推測で補完しない。
 - 既存のprofile JSONと`master_lead_ledger`へmarket lens、原文引用、Founder-led、従業員、funding、海外顧客/外貨売上の確認値を保存し、`/work`履歴と診断レポートで市場分類・重点業種・企業別公開根拠を表示する。価格は`no_automatic_country_adjustment`として、既存の確定条件を国だけで自動変更しない。壁打ち内のRegional/Lite金額や販売枠は商品条件へ固定していない。
-- TypeScript、対象ESLint、release-doctor静的規約、Quality Guard **0 errors / 68 existing warnings**、対象Vitest **5 files / 17 tests**、全Vitest **195 files / 890 tests**、production build **408/408 pages**、Playwright Chromium/mobile **2/2**がpass。E2Eで市場分類、商業根拠件数、Zero-send、WCAG重大/深刻違反0、console error 0、overlay 0、横overflow 0を確認した。正式releaseと本番read-backは未実行。企業URL投入、Twenty追加、フォーム・メール等の外部送信は0件。
+- TypeScript、対象ESLint、release-doctor静的規約、Quality Guard **0 errors / 68 existing warnings**、対象Vitest **6 files / 17 tests**、全Vitest **195 files / 890 tests**、production build **408/408 pages**、Playwright Chromium/mobile **2/2**がpass。E2Eで市場分類、商業根拠件数、Zero-send、WCAG重大/深刻違反0、console error 0、overlay 0、横overflow 0を確認した。PR **#381** / main **d154e861**を統合し、正式`npm run release:prod`のdeployment **qlbw70c6804404a2i560zmgk**を完走。mainを含む本番container **n8i2sjiqvr2d8hrzppop2m2i-014622627236**はhealthyで、DB **91/91**、手動送信0制約/RLS、Twenty worker restart 0、Realtime healthy、Sales health JSON `ok:true`、公開smokeを確認した。未認証`/api/work`は401、`/work`は`/admin/login`への遷移指示をread-backした。実企業URL投入、Twenty追加、フォーム・メール等の外部送信は0件。
 
 ## CURRENT STATUS - 2026-07-17 Manual Japan Entry Workbench UI/UXプロ刷新（本番release・認証境界read-back完了 / DB外部送信0）
 
