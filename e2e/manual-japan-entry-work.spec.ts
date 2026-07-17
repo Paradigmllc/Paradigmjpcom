@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test"
+import AxeBuilder from "@axe-core/playwright"
 
 const LOCAL_ADMIN_PASSWORD = "lead-factory-e2e-admin-password"
 
 test("accepts multiple new URLs and keeps each result visible", async ({ page }, testInfo) => {
+  test.setTimeout(90_000)
   const baseUrl = String(testInfo.project.use.baseURL ?? "")
   test.skip(
     !/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl),
@@ -73,7 +75,7 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
           message_angle_requested: "problem",
           message_angle: "problem",
           message_angle_fallback_reason: null,
-          outreach_playbook: "saas_ai_devtool",
+          outreach_playbook: "saas_ai_devtools",
           qualification_ledger: {},
           master_lead_ledger: {},
           source_attributions: [{ id: `${domain}-source`, work_id: domain, source_slug: "manual_input", source_page_url: "", observed_on: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() }],
@@ -97,11 +99,19 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
 
   await page.goto("/work")
   await expect(page.getByRole("heading", { name: "海外SMBの初回営業準備" })).toBeVisible()
+  await expect(page.getByText("Zero-send architecture")).toBeVisible()
+  await expect(page.getByText("Operator flow")).toBeVisible()
   await expect(page.getByText(/初回文面は「推定あり／なし × 価格あり／なし」の4セル/)).toBeVisible()
   await expect(page.getByRole("button", { name: "自動均等割付" })).toBeVisible()
   await expect(page.getByRole("button", { name: "自動安定割付" })).toBeVisible()
   await expect(page.getByRole("button", { name: "推定あり・価格あり" })).toBeVisible()
   await expect(page.getByLabel("企業を見つけた営業ソース")).toHaveValue("manual_input")
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  const initialAccessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .disableRules(["region"])
+    .analyze()
+  expect(initialAccessibility.violations.filter((violation) => violation.impact === "critical" || violation.impact === "serious")).toEqual([])
   await page.getByLabel("解析する海外企業URL").fill("https://one.example\nhttps://two.example")
   await page.getByRole("button", { name: "解析を開始" }).click()
   await expect.poll(() => submitted.sort()).toEqual(["https://one.example", "https://two.example"])
@@ -109,6 +119,19 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
   await expect(page.getByText("two.example", { exact: true }).first()).toBeVisible()
   await expect(page.getByText("自動送信: なし").first()).toBeVisible()
   await expect(page.getByText("問い合わせフォーム初回文面（未送信・推定なし・価格なし・問題提起型）").first()).toBeVisible()
+  const history = page.locator("#history")
+  await history.getByLabel("企業名またはドメインを検索").fill("one.example")
+  await expect(history.getByText("one.example", { exact: true }).first()).toBeVisible()
+  await expect(history.getByText("two.example", { exact: true })).toHaveCount(0)
+  await history.getByLabel("企業名またはドメインを検索").fill("")
+  await history.getByRole("button", { name: "要確認", exact: true }).click()
+  await expect(history.getByText("one.example", { exact: true }).first()).toBeVisible()
+  await page.waitForTimeout(600)
+  const completedAccessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .disableRules(["region"])
+    .analyze()
+  expect(completedAccessibility.violations.filter((violation) => violation.impact === "critical" || violation.impact === "serious")).toEqual([])
   await expect(page.locator("[data-nextjs-dialog], .vite-error-overlay, #webpack-dev-server-client-overlay")).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
   expect(consoleErrors).toEqual([])
