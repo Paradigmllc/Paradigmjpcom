@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from "lucide-react"
 import type { DemoDesignRecipe, DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { canonicalDemoMediaSrc } from "@/lib/sales/demo-public-surface"
+import { isPremiumMediaUsable } from "@/lib/sales/demo-media-quality"
 import { demoHeadlineClass, demoHeadlineText } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media } from "./PremiumV3Media"
 import { PremiumV3Reveal, PremiumV3ScrollCue, PremiumV3TextLines } from "./PremiumV3Motion"
@@ -20,7 +21,7 @@ export function uniqueHeroMedia(media: DemoPremiumMedia[], limit = 5): DemoPremi
     const source = canonicalDemoMediaSrc(item.src)
     if (!source || seen.has(source)) return false
     seen.add(source)
-    return true
+    return isPremiumMediaUsable(item, "hero")
   }).slice(0, limit)
 }
 
@@ -102,8 +103,8 @@ export function PremiumV3HeroDeck({
   const track = (
     <div ref={emblaRef} className="premium-hero-deck__viewport h-full overflow-hidden" aria-roledescription="carousel" aria-label={`${title}のビジュアルスライダー`}>
       <div className="flex h-full touch-pan-y">
-        {slides.map((item, index) => (
-          <div className={`premium-hero-deck__slide relative min-w-0 flex-[0_0_100%] overflow-hidden ${selectedIndex === index ? "is-active" : ""}`} key={`${item.src}-${index}`} role="group" aria-roledescription="slide" aria-label={`${index + 1} / ${slides.length}`} aria-hidden={selectedIndex !== index}>
+        {(slides.length > 0 ? slides : [undefined]).map((item, index) => (
+          <div className={`premium-hero-deck__slide relative min-w-0 flex-[0_0_100%] overflow-hidden ${selectedIndex === index ? "is-active" : ""}`} key={`${item?.src ?? "fallback"}-${index}`} role="group" aria-roledescription="slide" aria-label={`${index + 1} / ${Math.max(slides.length, 1)}`} aria-hidden={selectedIndex !== index}>
             <PremiumV3Media media={item} priority={index === 0} className="absolute inset-0" sizes={isSplit ? "(max-width: 1024px) 100vw, 58vw" : "100vw"} />
             <div className="premium-hero-deck__image-wash absolute inset-0" aria-hidden="true" />
             <div className="premium-hero-deck__slide-number absolute bottom-7 right-7 text-[10px] font-bold tracking-[.28em] text-white/70 sm:bottom-10 sm:right-10">{String(index + 1).padStart(2, "0")}</div>

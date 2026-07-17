@@ -303,7 +303,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
   const publicMedia = page.premium
     ? {
         ...page.premium,
-        heroMedia: sanitizeDemoMedia(page.premium.heroMedia, page.companyName, profile.sceneHeadings).slice(0, 5),
+        heroMedia: sanitizeDemoMedia(page.premium.heroMedia, page.companyName, profile.sceneHeadings, "hero").slice(0, 5),
         gallery: sanitizeDemoMedia(
           [...page.premium.gallery, ...page.premium.heroMedia],
           page.companyName,

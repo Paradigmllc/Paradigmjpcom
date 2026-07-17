@@ -7,11 +7,14 @@ import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
 import type { DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { PremiumV3Media } from "./PremiumV3Media"
 import { canonicalDemoMediaSrc } from "@/lib/sales/demo-public-surface"
+import { isPremiumMediaUsable } from "@/lib/sales/demo-media-quality"
 
 const AUTOPLAY_MS = 5600
 
 export function PremiumV3MediaCarousel({ media, label, variant = "wide" }: { media: DemoPremiumMedia[]; label: string; variant?: "wide" | "compact" }) {
-  const uniqueMedia = media.filter((item, index, items) => items.findIndex((candidate) => canonicalDemoMediaSrc(candidate.src) === canonicalDemoMediaSrc(item.src)) === index)
+  const uniqueMedia = media
+    .filter((item) => isPremiumMediaUsable(item, "gallery"))
+    .filter((item, index, items) => items.findIndex((candidate) => canonicalDemoMediaSrc(candidate.src) === canonicalDemoMediaSrc(item.src)) === index)
   const reducedMotion = useReducedMotion()
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: uniqueMedia.length > 1, align: "center", skipSnaps: false })
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -58,7 +61,7 @@ export function PremiumV3MediaCarousel({ media, label, variant = "wide" }: { med
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [clearTimer, scheduleNext])
 
-  if (uniqueMedia.length === 0) return null
+  if (uniqueMedia.length === 0) return <div className="relative min-h-[300px] overflow-hidden"><PremiumV3Media media={undefined} className="absolute inset-0" /><span className="absolute bottom-5 left-6 text-xs font-bold tracking-[.22em] text-white/60">{label}</span></div>
   const active = uniqueMedia[selectedIndex] ?? uniqueMedia[0]
 
   return (
