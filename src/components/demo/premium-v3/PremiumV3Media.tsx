@@ -21,11 +21,18 @@ export function normalizeDemoMediaUrl(source: string): string {
 
 function PremiumMediaFallback({ media, className, label }: { media?: DemoPremiumMedia; className: string; label: string }) {
   return (
-    <div className={`${className} relative overflow-hidden bg-[radial-gradient(circle_at_18%_20%,color-mix(in_srgb,var(--demo-accent)_38%,transparent),transparent_42%),linear-gradient(135deg,var(--demo-ink),#2c3538_56%,var(--demo-accent-dark))]`} role="img" aria-label={label}>
-      <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full border border-white/15" />
-      <div className="absolute bottom-8 left-8 h-px w-20 bg-[var(--demo-accent)]" />
-      <div className="absolute bottom-7 left-8 text-[10px] font-bold uppercase tracking-[.34em] text-white/55">{media?.eyebrow ?? "SCENE"}</div>
-      <div className="absolute bottom-7 right-8 text-[9px] font-bold tracking-[.28em] text-white/35">VISUAL / 01</div>
+    <div className={`${className} relative overflow-hidden bg-[radial-gradient(circle_at_22%_20%,rgba(69,185,190,.55),transparent_42%),radial-gradient(circle_at_82%_76%,rgba(255,255,255,.14),transparent_34%),linear-gradient(135deg,#071c22,#173a40_58%,#0e2429)]`} role="img" aria-label={label}>
+      <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,transparent_48%,rgba(255,255,255,.14)_48.2%,transparent_48.5%),linear-gradient(25deg,transparent_0%,transparent_68%,rgba(255,255,255,.1)_68.2%,transparent_68.5%)]" />
+      <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/20 shadow-[0_0_0_24px_rgba(255,255,255,.03),0_0_0_48px_rgba(255,255,255,.025)]" />
+      <div className="absolute left-[17%] top-[16%] h-[58%] w-px bg-white/20" />
+      <div className="absolute left-[17%] top-[16%] h-px w-[44%] bg-white/20" />
+      <div className="absolute left-8 top-8 max-w-[15rem] sm:left-10 sm:top-10">
+        <p className="text-[9px] font-bold uppercase tracking-[.34em] text-white/55">{media?.eyebrow ?? "SCENE"} / EDITION 01</p>
+        <p className="mt-4 text-sm leading-7 text-white/70">{label}</p>
+      </div>
+      <div className="absolute bottom-7 left-8 h-px w-20 bg-[var(--demo-accent)] sm:left-10" />
+      <div className="absolute bottom-6 right-8 text-[clamp(5rem,16vw,12rem)] font-light leading-none tracking-[-.12em] text-white/12 sm:right-10">01</div>
+      <div className="absolute bottom-7 left-8 text-[9px] font-bold tracking-[.28em] text-white/45 sm:left-10">VISUAL FIELD / {media?.title ?? "CURATED"}</div>
     </div>
   )
 }
