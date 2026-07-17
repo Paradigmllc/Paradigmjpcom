@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, CheckCircle2, Copy, ExternalLink, FileText, Globe2, LoaderCircle, MessageSquareText, Send, Waypoints } from "lucide-react"
+import { Check, CheckCircle2, Copy, ExternalLink, FileText, Globe2, LoaderCircle, MessageSquareText, RefreshCw, Send, Waypoints } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MANUAL_MESSAGE_ANGLE_LABELS } from "@/lib/sales/manual-japan-entry-angle"
@@ -63,10 +63,12 @@ function statusClasses(status: ManualJapanEntryWorkRow["status"]): string {
   return "border-slate-200 bg-slate-50 text-slate-600"
 }
 
-export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, onCopy, onUpdateOutcome }: {
+export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, retrying, onRetry, onCopy, onUpdateOutcome }: {
   item: ManualJapanEntryWorkRow
   sourceBySlug: Map<string, ManualLeadSourceCatalogRow>
   updatingOutcome: string | null
+  retrying: boolean
+  onRetry: (item: ManualJapanEntryWorkRow) => void
   onCopy: (value: string, label: string) => void
   onUpdateOutcome: (item: ManualJapanEntryWorkRow, outcome: ManualWorkOutcome, value: boolean) => void
 }) {
@@ -98,6 +100,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, onC
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
+              {item.status === "failed" && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}再解析</Button>}
               {item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
               {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
             </div>

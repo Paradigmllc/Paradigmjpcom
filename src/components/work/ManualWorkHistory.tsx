@@ -17,13 +17,14 @@ const filters: Array<{ value: ManualWorkHistoryFilter; label: string }> = [
   { value: "failed", label: "失敗・対象外" },
 ]
 
-export function ManualWorkHistory({ items, sources, historyError, running, updatingOutcome, onRefresh, onCopy, onUpdateOutcome }: {
+export function ManualWorkHistory({ items, sources, historyError, running, updatingOutcome, onRefresh, onRetry, onCopy, onUpdateOutcome }: {
   items: ManualJapanEntryWorkRow[]
   sources: ManualLeadSourceCatalogRow[]
   historyError: string | null
   running: boolean
   updatingOutcome: string | null
   onRefresh: () => void
+  onRetry: (item: ManualJapanEntryWorkRow) => void
   onCopy: (value: string, label: string) => void
   onUpdateOutcome: (item: ManualJapanEntryWorkRow, outcome: ManualWorkOutcome, value: boolean) => void
 }) {
@@ -66,7 +67,7 @@ export function ManualWorkHistory({ items, sources, historyError, running, updat
       ) : filteredItems.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center"><p className="font-semibold text-slate-700">条件に一致する履歴がありません</p><button type="button" onClick={() => { setFilter("all"); setQuery("") }} className="mt-2 text-sm font-semibold text-blue-700 hover:underline">絞り込みを解除</button></div>
       ) : (
-        <div className="grid gap-4">{filteredItems.map((item) => <ManualWorkHistoryItem key={item.id} item={item} sourceBySlug={sourceBySlug} updatingOutcome={updatingOutcome} onCopy={onCopy} onUpdateOutcome={onUpdateOutcome} />)}</div>
+        <div className="grid gap-4">{filteredItems.map((item) => <ManualWorkHistoryItem key={item.id} item={item} sourceBySlug={sourceBySlug} updatingOutcome={updatingOutcome} retrying={running} onRetry={onRetry} onCopy={onCopy} onUpdateOutcome={onUpdateOutcome} />)}</div>
       )}
     </section>
   )

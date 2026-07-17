@@ -67,6 +67,22 @@ interface RawDeepSeekUsage {
   cache_miss_tokens?: number
 }
 
+const DEEPSEEK_BALANCE_ERROR = "DeepSeek APIの残高不足で解析を停止しました。残高を補充後、解析履歴の「再解析」を実行してください。"
+
+export function normalizeDeepSeekError(status: number, raw: string, statusText = ""): string {
+  let detail = raw.trim()
+  if (detail.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(detail) as { error?: { message?: unknown } }
+      if (typeof parsed.error?.message === "string") detail = parsed.error.message.trim()
+    } catch (error) {
+      console.warn("[llm] DeepSeek error response was malformed JSON:", error)
+    }
+  }
+  if (status === 402 || /insufficient balance/i.test(detail)) return DEEPSEEK_BALANCE_ERROR
+  return detail || statusText || `DeepSeek API error (${status})`
+}
+
 export function normalizeDeepSeekUsage(usage?: RawDeepSeekUsage): DeepSeekResponse["usage"] {
   if (!usage) return undefined
   return {
@@ -130,7 +146,7 @@ async function callOnce(
     })
     if (!res.ok) {
       const text = await res.text().catch(() => "")
-      return { ok: false, error: text || res.statusText, status: res.status }
+      return { ok: false, error: normalizeDeepSeekError(res.status, text, res.statusText), status: res.status }
     }
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>
