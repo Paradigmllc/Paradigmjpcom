@@ -1,13 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { CheckCircle2, LoaderCircle, Play, XCircle } from "lucide-react"
+import { CheckCircle2, CircleDot, Database, LockKeyhole, ShieldCheck } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Toaster, toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import {
   summarizeManualWorkExperiment,
   type ManualExperimentMetric,
@@ -19,12 +15,11 @@ import {
   type ManualMessageAngleSelection,
 } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
-import {
-  MANUAL_SOURCE_ROLE_LABELS,
-  type ManualLeadSourceCatalogRow,
-} from "@/lib/sales/manual-japan-entry-source-ledger"
+import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
 import { ManualWorkExperimentControls } from "./ManualWorkExperimentControls"
 import { ManualWorkHistory } from "./ManualWorkHistory"
+import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
+import { ManualWorkOverview } from "./ManualWorkOverview"
 
 const MAX_URLS = 20
 const CONCURRENCY = 3
@@ -49,14 +44,11 @@ export async function runWithConcurrency<T>(
   await Promise.all(workers)
 }
 
-type QueueState = Record<string, "waiting" | "processing" | "done" | "error">
-
 function mergeItems(current: ManualJapanEntryWorkRow[], incoming: ManualJapanEntryWorkRow[]): ManualJapanEntryWorkRow[] {
   const byId = new Map(current.map((item) => [item.id, item]))
   for (const item of incoming) byId.set(item.id, item)
   return [...byId.values()].sort((a, b) => b.created_at.localeCompare(a.created_at))
 }
-
 
 export function ManualJapanEntryWorkConsole({
   initialItems,
@@ -80,13 +72,17 @@ export function ManualJapanEntryWorkConsole({
   const [sources, setSources] = useState(initialSources)
   const [sourceSlug, setSourceSlug] = useState("manual_input")
   const [sourcePageUrl, setSourcePageUrl] = useState("")
-  const [queue, setQueue] = useState<QueueState>({})
+  const [queue, setQueue] = useState<ManualWorkQueueState>({})
   const [running, setRunning] = useState(false)
   const [updatingOutcome, setUpdatingOutcome] = useState<string | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(initialHistoryError)
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
   const queueValues = Object.values(queue)
   const finished = queueValues.filter((value) => value === "done" || value === "error").length
+  const deepSeekBalanceBlocked = items.some((item) => item.status === "failed" && (
+    item.error_message?.includes("DeepSeek APIの残高不足")
+    || item.error_message?.includes("Insufficient Balance")
+  ))
   const sourceBySlug = useMemo(() => new Map(sources.map((source) => [source.slug, source])), [sources])
   const selectedSource = sourceBySlug.get(sourceSlug)
 
@@ -121,10 +117,14 @@ export function ManualJapanEntryWorkConsole({
   const start = async () => {
     if (urls.length === 0) return toast.error("海外企業のURLを1件以上入力してください")
     if (urls.length > MAX_URLS) return toast.error(`1回の上限は${MAX_URLS}件です`)
-    const initialQueue = Object.fromEntries(urls.map((url) => [url, "waiting" as const]))
-    setQueue(initialQueue)
+    setQueue(Object.fromEntries(urls.map((url) => [url, "waiting" as const])))
     setRunning(true)
-    await runWithConcurrency(urls, CONCURRENCY, async (url) => {
+    await runWithConcurrency(urls, CONCURRENCY, processUrl)
+    setRunning(false)
+    await refreshHistory(true)
+  }
+
+  const processUrl = async (url: string) => {
       setQueue((current) => ({ ...current, [url]: "processing" }))
       try {
         const response = await fetch("/api/work", {
@@ -135,6 +135,7 @@ export function ManualJapanEntryWorkConsole({
         const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; error?: string }
         if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
         setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
+        if (body.item.status === "failed") throw new Error(body.item.error_message ?? `${url} の解析に失敗しました`)
         setQueue((current) => ({ ...current, [url]: "done" }))
         toast.success(body.duplicate ? `${url} は既存履歴またはTwentyにあります` : `${url} の解析が完了しました`)
       } catch (error) {
@@ -143,9 +144,17 @@ export function ManualJapanEntryWorkConsole({
         toast.error(error instanceof Error ? error.message : `${url} の解析に失敗しました`)
       }
       await refreshHistory(true)
-    })
-    setRunning(false)
-    await refreshHistory(true)
+  }
+
+  const retry = async (item: ManualJapanEntryWorkRow) => {
+    setQueue({ [item.canonical_url]: "processing" })
+    setRunning(true)
+    try {
+      await processUrl(item.canonical_url)
+    } finally {
+      setRunning(false)
+      await refreshHistory(true)
+    }
   }
 
   const copy = async (value: string, label: string) => {
@@ -185,105 +194,62 @@ export function ManualJapanEntryWorkConsole({
   }
 
   return (
-    <main className="min-h-dvh bg-[#f7f8fa] px-4 py-8 text-zinc-950 sm:px-6 lg:px-8">
-      <Toaster richColors position="top-center" />
-      <div className="mx-auto max-w-7xl space-y-6">
-        <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Manual Japan Entry Workbench</p>
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">海外SMBの初回営業準備</h1>
-          <p className="max-w-3xl text-sm leading-6 text-zinc-600 sm:text-base">
-            完全新規の企業URLを解析し、フォーム・初回文面・診断レポートを履歴保存します。日本企業は除外し、条件を満たす企業だけTwentyへ未送信リストとして追加します。
-          </p>
-          <p className="max-w-3xl rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-950 sm:text-sm">
-            初回文面は「推定あり／なし × 価格あり／なし」の4セルと、問題提起・競合比較・推定機会・モックアップの訴求角度を別々に記録します。競合・推定・モックアップは実証拠がある場合だけ使い、URL・添付・通話提案・自動送信はありません。
-          </p>
+    <main className="min-h-dvh bg-[#f6f7f9] text-slate-950">
+      <Toaster richColors position="top-center" toastOptions={{ classNames: { success: "!text-emerald-900" } }} />
+      <div className="border-b border-white/10 bg-slate-950 text-white">
+        <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-emerald-400 text-slate-950">P</span><span>Paradigm Revenue Operations</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${deepSeekBalanceBlocked ? "text-amber-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{running ? "Analysis running" : deepSeekBalanceBlocked ? "DeepSeek balance required" : "System ready"}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+        <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Manual Japan Entry Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">Zero-send architecture</span></div>
+            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">海外SMBの初回営業準備</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">完全新規の企業URLから、公開根拠・フォーム・初回文面・診断レポートを一つの永続ワークスペースへ。条件を満たす海外企業だけをTwentyの未送信リストへ追加します。</p>
+          </div>
+          <nav aria-label="ワークベンチ内ナビゲーション" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+            <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">新規解析</a>
+            <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">生成条件</a>
+            <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">履歴</a>
+          </nav>
         </motion.header>
 
-        <ManualWorkExperimentControls
-          variant={variant}
-          angle={angle}
-          running={running}
-          metrics={metrics}
-          angleMetrics={angleMetrics}
-          onVariantChange={setVariant}
-          onAngleChange={setAngle}
-        />
+        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek APIの残高不足で解析を停止しています</p><p>DeepSeek Platformで残高を補充後、失敗した履歴の「再解析」を押してください。履歴を再利用するため、同じ企業は重複登録されません。</p></div>}
 
-        <Card className="rounded-2xl border-zinc-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl">企業URLを入力</CardTitle>
-            <CardDescription>改行・スペース・カンマ区切り。最大20件、3件ずつ並列処理します。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-2 text-sm font-medium">
-                <span>企業を見つけたソース</span>
-                <select
-                  value={sourceSlug}
-                  onChange={(event) => setSourceSlug(event.target.value)}
-                  disabled={running}
-                  aria-label="企業を見つけた営業ソース"
-                  className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {sources.map((source) => <option key={source.slug} value={source.slug}>{source.name} / {source.tier.toUpperCase()}</option>)}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm font-medium">
-                <span>掲載・発見ページURL（任意）</span>
-                <Input value={sourcePageUrl} onChange={(event) => setSourcePageUrl(event.target.value)} placeholder="https://source.example/company" disabled={running} aria-label="営業ソースの掲載ページURL" />
-              </label>
-            </div>
-            {selectedSource && (
-              <p className="rounded-lg bg-zinc-50 px-3 py-2 text-xs leading-5 text-zinc-600">
-                役割: {selectedSource.roles.map((role) => MANUAL_SOURCE_ROLE_LABELS[role]).join("・")}。{selectedSource.notes}
-              </p>
-            )}
-            <Textarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={"https://example.com\nhttps://another-company.com"}
-              className="min-h-36 resize-y bg-white font-mono text-sm"
-              aria-label="解析する海外企業URL"
-              disabled={running}
-            />
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className={urls.length > MAX_URLS ? "text-sm font-medium text-red-600" : "text-sm text-zinc-500"}>
-                {urls.length} / {MAX_URLS}件
-              </p>
-              <Button onClick={() => void start()} disabled={running || urls.length === 0 || urls.length > MAX_URLS} size="lg" className="w-full sm:w-auto">
-                {running ? <LoaderCircle className="animate-spin" /> : <Play />}
-                {running ? "解析中" : "解析を開始"}
-              </Button>
-            </div>
-            {queueValues.length > 0 && (
-              <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                <div className="flex items-center justify-between text-sm"><span>今回の進捗</span><span>{finished} / {queueValues.length}</span></div>
-                <div className="h-2 overflow-hidden rounded-full bg-zinc-200">
-                  <div className="h-full bg-emerald-600 transition-all" style={{ width: `${queueValues.length ? (finished / queueValues.length) * 100 : 0}%` }} />
-                </div>
-                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                  {Object.entries(queue).map(([url, state]) => (
-                    <div key={url} className="flex min-w-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs">
-                      {state === "processing" ? <LoaderCircle className="h-4 w-4 shrink-0 animate-spin text-blue-600" /> : state === "done" ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" /> : state === "error" ? <XCircle className="h-4 w-4 shrink-0 text-red-600" /> : <span className="h-2 w-2 shrink-0 rounded-full bg-zinc-300" />}
-                      <span className="truncate">{url}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="mt-7"><ManualWorkOverview items={items} /></div>
 
-        <ManualWorkHistory
-          items={items}
-          sources={sources}
-          historyError={historyError}
-          running={running}
-          updatingOutcome={updatingOutcome}
-          onRefresh={() => void refreshHistory()}
-          onCopy={(value, label) => void copy(value, label)}
-          onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)}
-        />
+        <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.75fr)] xl:items-start">
+          <ManualWorkIntake
+            input={input}
+            sourceSlug={sourceSlug}
+            sourcePageUrl={sourcePageUrl}
+            sources={sources}
+            selectedSource={selectedSource}
+            queue={queue}
+            running={running}
+            urlCount={urls.length}
+            maxUrls={MAX_URLS}
+            finished={finished}
+            onInputChange={setInput}
+            onSourceChange={setSourceSlug}
+            onSourcePageUrlChange={setSourcePageUrl}
+            onStart={() => void start()}
+          />
+          <ManualWorkExperimentControls variant={variant} angle={angle} running={running} metrics={metrics} angleMetrics={angleMetrics} onVariantChange={setVariant} onAngleChange={setAngle} />
+        </div>
+
+        <section aria-label="生成ガードレール" className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3 sm:p-5">
+          <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" /><div><p className="text-xs font-semibold text-slate-800">海外SMB限定</p><p className="mt-1 text-xs leading-5 text-slate-600">日本企業と不適合企業は同期前に除外。</p></div></div>
+          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">事実と推定を分離</p><p className="mt-1 text-xs leading-5 text-slate-600">Observed / Modeled / Hypothesisを保存。</p></div></div>
+          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">根拠不足は自動降格</p><p className="mt-1 text-xs leading-5 text-slate-600">初回文面は「推定あり／なし × 価格あり／なし」の4セル。根拠不足時は安全な条件へ戻します。</p></div></div>
+        </section>
+
+        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} sources={sources} historyError={historyError} running={running} updatingOutcome={updatingOutcome} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
       </div>
     </main>
   )

@@ -6,6 +6,36 @@
 - キュー完了後は品質ゲートを通過した場合だけ7日限定の未公開URLを自動発行し、TwentyへDEMO URL・期限・品質スコア・未送信状態をread-back同期する。失敗時は会社メタデータを`failed`へ可視化し、外部送信は常に`false`。
 - TypeScript、Lint、Quality Guard **0 errors / 69 existing warnings**、全Vitest **196 files / 891 tests**、production build **408/408 pages**がpass。実候補への生成投入・Twenty更新・外部送信はこの実装確認では実行していない。
 
+## CURRENT STATUS - 2026-07-18 SMB demo低解像度メディア排除・公開フォールバック修正（本番release完了 / 外部送信0）
+
+- Ekiten等のポータル由来画像が`129x129`/`304x304`等の小型派生画像のままHeroへ引き伸ばされる問題を確認した。生成時にHero **1200x720未満**、Gallery **900x600未満**、`size=1to1_*`/thumbnail系URL、寸法欠落をfail-closedで除外し、ブラウザ読込後のnatural sizeでも再検査する。
+- 低品質画像を無理に拡大せず、素材が基準未達の場合は企業名・権利注記・ポータル素材を表示しない抽象的なブランドビジュアルへフォールバックする。フォールバックはHero/Galleryの枠を埋め、Hero washの背後に隠れないよう表示レイヤーも修正した。
+- 立川歯科医院の公開デモで、低解像度の実画像が`img`として残らず、フォールバックを含む2フレーム構成、HTTP **200**、console/page error **0**、横overflow **0**、フォールバック高さ **720px**を確認した。ほさか歯科・Cafe SOSOMUもHTTP **200**、`img=0`、フォールバック表示をread-backした。最終コードはPR **#383/#385/#386/#389**でmainへ統合し、正式`npm run release:prod`、DB **91/91**、公開smoke、Sales health JSON `ok:true`をmain **2aa63930**で完走した。deployment **lof28c30dicaipa77byrchye**、最新container **n8i2sjiqvr2d8hrzppop2m2i-222443218462**はhealthy。
+- 既存ポータル画像の権利・解像度が不十分な企業は、承認済み高解像度素材を取得するまで公開画像を使わない。Twentyへの追加、実企業へのDEMO送信、フォーム・メール等の外部送信は実行していない。
+
+## CURRENT STATUS - 2026-07-18 Twenty会社一覧復旧 + Manual Work DeepSeek残高不足リカバリー（本番release完了 / 外部送信0）
+
+- Twentyの会社一覧が`Unknown operand IS for TEXT filter`でクラッシュした原因は、TEXT型`paradigmCountryName`へ不正な`IS`フィルターが保存されていたこと。正規化処理を`CONTAINS`へ変更し、履歴上の`IS`/`CONTAINS`を削除後に正しい1行だけを再作成する。release-doctorにもTEXT互換演算子の静的回帰ゲートを追加した。
+- 本番Twenty DBはTEXT×`IS` **0件**、`paradigmCountryName=日本`の`CONTAINS` **1件**。Chrome実画面で`営業リスト · 398`、`国名 : 日本`、会社行表示、エラー境界なしを確認。Twenty HTTP 200、server/worker running、worker restart **0**。企業データ本体は変更していない。
+- `/work`の`screenshottocode.com`解析失敗は、DeepSeek公式`/user/balance`の`is_available=false`、USD残高 **-0.14** が原因。公式APIのHTTP 402 / `Insufficient Balance`を生JSONではなく日本語の実務メッセージへ変換し、画面上部へ残高不足バナー、失敗カードへ`再解析`を追加した。
+- 同じ失敗URLを再実行すると、既存の永続履歴を`processing/fetching`へ戻して再利用し、新しい会社・履歴を重複作成しない。失敗結果を成功toastにしない。DeepSeek公式API一択、既存の初回文面・診断レポート・海外SMB・根拠・Twenty同期ゲート、自動送信0は維持する。
+- 本番DB read-backは対象履歴 **1件**、`status=failed / stage=failed / twenty_sync_status=skipped / sent=false / initial_message=null / report_url=null`。残高補充は決済を伴うため未実行。補充後に履歴の`再解析`を押すまでTwenty追加、初回文面、診断レポート、フォーム・メール等の外部送信は実行されない。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、対象Vitest **3 files / 19 tests**、全Vitest **196 files / 896 tests**、production build **408/408 pages**がpass。PR **#384 / #387**、最終main **6fcc5a02**。Twenty復旧deployment **qaowhx68d50u48svy5aivqb6**、再解析UI deployment **sjgg9st07sq0quwm0opns2pg**を正式`npm run release:prod`で完走し、最終container **n8i2sjiqvr2d8hrzppop2m2i-220512158009**はhealthy。DB **91/91**、Sales health JSON `ok:true`、Twenty HTTP 200、Realtime、Traefik、公開smokeを含む最終`release gate passed`を確認した。本番work chunk `page-e55002da28abb3b8.js`にも残高不足バナーと`再解析`をread-backした。
+
+## CURRENT STATUS - 2026-07-17 Manual Japan Entry 市場・企業別commercial lens（本番release・認証境界read-back完了 / 外部送信0）
+
+- 共有されたChatGPT壁打ちを、国別の一律値下げではなく「国は調査優先度、最終判断は企業固有の外貨売上・海外顧客・資金調達・Founder-led・従業員規模・海外展開の公開根拠」という内部審査原則として反映した。SG/AE、PL/MY/MX、EE/CZ/CL、TR/IN/BR/ZAをグローバル優先・Regional主要母集団・高精度少数・企業厳選へ分類し、その他の海外市場も対象外にせず企業別評価へ戻す。
+- DeepSeek V4 Proへ商業シグナル候補を追加したが、`productContext`内の原文と完全一致し、種別ごとの決定論patternにも合格した引用だけをprofileへ保存する。モデル生成の説明文は破棄し、予算・支払能力は別途確認が必要という固定注意文へ置換する。取得できない場合は`unverified`のままにし、推測で補完しない。
+- 既存のprofile JSONと`master_lead_ledger`へmarket lens、原文引用、Founder-led、従業員、funding、海外顧客/外貨売上の確認値を保存し、`/work`履歴と診断レポートで市場分類・重点業種・企業別公開根拠を表示する。価格は`no_automatic_country_adjustment`として、既存の確定条件を国だけで自動変更しない。壁打ち内のRegional/Lite金額や販売枠は商品条件へ固定していない。
+- TypeScript、対象ESLint、release-doctor静的規約、Quality Guard **0 errors / 68 existing warnings**、対象Vitest **6 files / 17 tests**、全Vitest **195 files / 890 tests**、production build **408/408 pages**、Playwright Chromium/mobile **2/2**がpass。E2Eで市場分類、商業根拠件数、Zero-send、WCAG重大/深刻違反0、console error 0、overlay 0、横overflow 0を確認した。PR **#381** / main **d154e861**を統合し、正式`npm run release:prod`のdeployment **qlbw70c6804404a2i560zmgk**を完走。mainを含む本番container **n8i2sjiqvr2d8hrzppop2m2i-014622627236**はhealthyで、DB **91/91**、手動送信0制約/RLS、Twenty worker restart 0、Realtime healthy、Sales health JSON `ok:true`、公開smokeを確認した。未認証`/api/work`は401、`/work`は`/admin/login`への遷移指示をread-backした。実企業URL投入、Twenty追加、フォーム・メール等の外部送信は0件。
+
+## CURRENT STATUS - 2026-07-17 Manual Japan Entry Workbench UI/UXプロ刷新（本番release・認証境界read-back完了 / DB外部送信0）
+
+- `/work`を、設定カードの縦積みから業務司令塔型のUIへ再構成した。永続履歴・要確認・フォーム発見・Twenty追加・手動送信・商談化の6指標、入力から手動成果記録までのoperator flow、ゼロ送信・海外SMB限定・根拠不足fail-closedをfirst viewportで判断できる。
+- 新規解析は既存の最大20 URL / 3並列、営業ソース帰属、4文面セル、4訴求角度を維持し、生成条件を高密度な選択パネルへ統合した。履歴には企業名/ドメイン検索、要確認/Twenty追加/手動送信/失敗の状態絞り込み、企業別の根拠・文面・診断・成果stepperを追加した。API、DB schema、生成prompt、Twenty同期条件、自動送信経路は変更していない。
+- `/work`専用の日本語`lang`、管理画面title、`noindex` metadataを追加。PC/Pixel 7の2社同時解析E2Eで、初期画面と解析後履歴のWCAG 2.2 AA重大/深刻違反0、console error 0、Next error overlay 0、横overflow 0を確認した。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、全Vitest **194 files / 887 tests**、production build **408/408 pages**がpass。PR **#377** / main **e4dac7c5**を統合し、正式`npm run release:prod`のdeployment **czijgruedlcb6gexjpx2kj3v**を完走。main **e4dac7c5**を含む本番container **n8i2sjiqvr2d8hrzppop2m2i-004803353307**はhealthyで、DB **91/91**、手動送信0制約、Twenty worker restart 0、Sales health JSON `ok:true`、Realtime、Traefik、公開smokeを含むrelease gate通過を確認した。未認証`/api/work`は401、実ブラウザの`/work`は`/admin/login`へ遷移し、workbench本文は非表示。実企業URL投入、Twenty company作成、フォーム・メール等の外部送信は実行していない。
+
 ## CURRENT STATUS - 2026-07-16 Manual Japan Entry 訴求角度・業種playbook・営業ソース台帳（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
 - `/work`の既存4セルへ、問題提起・競合比較・推定機会・モックアップの4訴求角度を追加した。競合公開根拠、公開rank由来のモデル値、公開原文に紐づく保存済み日本語ポジショニング案がない角度は問題提起型へfail-closedで戻し、希望角度・実効角度・理由をDB履歴へ保存する。
@@ -1825,3 +1855,20 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `OpportunityOfferPanel`、Japan Entryスコア結果、診断提案、診断ROIカード、英語メッセージの価格・Social Media表記を更新し、旧`continuation pricing`表現を除去した。既存のJA固有コンテンツは変更していない。
 - 英語ブログへ`managed-japan-desk-six-months-included`を追加した。2,000文字超の本文、価格表、月次キューの対象範囲・除外、Notion/Trelloでの依頼、48 business hoursの着手目安、成果保証なし、外部費用の扱いを明記し、`/japan-entry/application-handover.svg`の図解を紐付けた。既存英語記事の同条件も同期した。
 - 変更後のJSON parse、対象Vitest **8 files / 45 tests**、TypeScript、Quality Guard **0 errors / 68 existing warnings**、`git diff --check`を確認済み。PR **#370**をmainへ統合し、正式`npm run release:prod`のdeployment **lvtja0qx41i474xd8ktjdfcd**を完走。DB **91/91**、CMS英語記事 **23件**、Traefik/Cloudflare origin lock、Realtime、Twenty worker restart 0、Sales health JSON `ok:true`、公開smokeを確認した。公開read-backでは主要英語ページと`/en/blog/managed-japan-desk-six-months-included`がHTTP **200**、記事本文・価格表・`$12,000`・`$2,000/month`・`first 10 selected launch partners`・図解SVGを確認した。企業追加、フォーム・メール・SNS等の外部送信は実行していない。
+## CURRENT STATUS - 2026-07-16 Hospitality premium design family（本番release・PC/mobile実画面QA完了 / 外部送信0）
+
+- 既存の飲食店DEMOを汎用SMB構成から分離し、`PremiumV3HospitalityHome`、`PremiumV3HospitalityAbout`、`PremiumV3HospitalityServices`の3ページ専用構成へ切り替えた。Hero、店舗情報、料理・メニュー、来店体験、店内シーン、ジャーナル、FAQ、アクセスCTAをひと続きの来店導線として再構成し、重複画像はrenderer側でcanonical sourceをdedupeする。
+- 画像・スライダー・Embla、Framer Motionのreveal/parallax/stagger、非対称メニューカード、暗転したritual chapter、縦組みindex、レスポンシブ用の専用CSSを追加。飲食店に「コンサルティング」「仕事・実績」などの汎用語を出さず、既存の確認済みデータだけで内容を組み立てる。
+- `abi/screenshot-to-code`の実際の生成物を実行した、という過去の説明は事実ではない。今回の変更は同OSSの未導入を隠さず、既存の本番rendererに手作業で実装したproduction design familyである。API keyなしで生成器を動かしたことにはしていない。
+- TypeScript、対象ESLint、対象Vitest **3 files / 12 tests**、production build **408/408 pages**、Quality Guard **0 errors / 68 existing warnings**をpass。PR **#372 / #373**をmainへ統合し、正式`npm run release:prod`のdeployment **g111xq9qqr7yaphiquvp2du2**（scene copy修正を含む）でDB **91/91**、public smoke、Sales health JSON `ok:true`、Twenty worker restart 0、origin lock、post-deploy gateをpassした。`demo.paradigmjp.com/cafe-sosomu`のHome/About/Services/Works/ContactをPC・390pxで確認し、横overflow 0、console/page error 0、内部提案語（生成イメージ・エキテン掲載素材・権利確認前）0件をread-backした。外部送信、Twenty更新、候補投入は0件。
+## CURRENT STATUS - 2026-07-17 Premium V3 業種別コンポジション再設計（実装中 / 外部送信0）
+
+- 既存の「飲食店以外は共通ホーム・共通下層」という構造を、歯科・施工・小売・専門サービスの4系統へ分離した。各系統でヒーロー後の情報設計、サービスカード、工程、写真ギャラリー、FAQ/CTAの役割を変え、業種不整合な「コンサルティング」「仕事・実績」固定文言を表示しない。
+- `PremiumV3IndustryHome` / `PremiumV3IndustryInnerPages` を追加し、画像はヒーロー・ギャラリーを正規化した一意集合から使う。既存のFramer Motion/Embla/Next Imageを再利用し、スライダー、reveal、parallax、レスポンシブを業種構成へ組み込んだ。
+- `tsc --noEmit`、対象ESLint、`git diff --check`、Quality Guard 0 errors（既存68 warnings）を確認済み。まだ本番release・公開PC/mobile QA前のため、量産適用を完了扱いにしない。外部送信、Twenty追加、フォーム送信は0件。
+## CURRENT STATUS - 2026-07-17 Premium V3 業種別プロ構成・公開QA（本番release完了 / 外部送信0）
+
+- screenshot-to-codeの自動出力を量産パイプラインへ無検証投入するのではなく、既存の公開事実・業種判定・権利サニタイズを入力に、歯科医院／建設・施工／ショップ／専門サービスを別情報設計のrendererへ分岐した。飲食・美容の専用構成も維持し、各業種でhero deck、媒体重複除去、Framer Motionのreveal/stagger、Embla carousel、parallax、FAQ、CTA、レスポンシブを実行する。
+- 業種解決後のブラウザtitleとFAQも決定論的に補正。例えば歯科は「ほさか歯科 | 歯科医院」、FAQは初診・診療内容・予約・アクセスへ統一し、汎用の「商品・サービス」文言を残さない。Worksの内部向け権利・提案文言も公開前に除去する。
+- `npm exec tsc -- --noEmit`、対象Vitest（industry presentation 4/4、Premium V3 11/11）、`git diff --check`、Quality Guard **0 errors / 68 existing warnings**を確認。正式`npm run release:prod`はdeployment **h129va7es2a3hwz6dzq7kjmh**、DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik、Cloudflare origin lock、Twenty worker restart 0を含む`release gate passed`。
+- 実企業デモ`https://demo.paradigmjp.com/ほさか歯科`をPlaywrightでPC（1440）／モバイル（390）のホーム・医院について・診療案内・院内紹介・アクセス全10経路を確認。全HTTP 200、横overflow 0、console/page error 0、内部向け語句0。スクリーンショットでhero、業種別診療カード、動的FAQ、院内カルーセルを目視確認した。Twenty追加、フォーム、メール、電話、その他外部送信は0件。

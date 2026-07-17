@@ -1,6 +1,7 @@
 import type { JapanEntryProjection } from "./japan-entry-projection"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 import type { JapanMarketAudit } from "./sources/japan-market-audit"
+import type { ManualCommercialSignal } from "./manual-japan-entry-types"
 
 export const MANUAL_SOURCE_ROLES = [
   "discovery",
@@ -80,10 +81,10 @@ export interface ManualMasterLeadLedger {
   source_date: string
   trigger_event: null
   trigger_date: null
-  founder_led: null
-  employee_range: null
-  funding_signal: null
-  revenue_signal: null
+  founder_led: boolean | null
+  employee_range: string | null
+  funding_signal: string | null
+  revenue_signal: string | null
   pricing: null
   commercial_product: boolean
   japan_category_demand: null
@@ -127,6 +128,11 @@ interface SourceLedgerCompanyProfile {
   observedFacts: string[]
   outreachPlaybook: string
   positioningConcept: unknown
+  commercialSignals?: ManualCommercialSignal[]
+}
+
+function signalPhrase(profile: SourceLedgerCompanyProfile, kind: ManualCommercialSignal["kind"]): string | null {
+  return profile.commercialSignals?.find((signal) => signal.kind === kind)?.sourcePhrase ?? null
 }
 
 function annualScenario(projection: JapanEntryProjection | null, scenario: "conservative" | "base" | "upside"): number | null {
@@ -158,6 +164,9 @@ export function buildManualSourceLedgers(input: {
   const discoveryEvidence = sourceReference
     ? [`${input.source.name}: ${sourceReference}`]
     : input.source.slug === "manual_input" ? [`Operator-entered company URL: https://${input.domain}`] : []
+  const commercialSignals = input.profile.commercialSignals ?? []
+  const observedCommercialEvidence = commercialSignals.map((signal) => `Observed on company public page: ${signal.sourcePhrase}`)
+  const revenueEvidence = signalPhrase(input.profile, "foreign_currency_revenue")
 
   return {
     qualification: {
@@ -173,9 +182,9 @@ export function buildManualSourceLedgers(input: {
       },
       commercial_proof: {
         status: "pending",
-        evidence: [input.source.roles.includes("commercial_proof")
+        evidence: [...observedCommercialEvidence, input.source.roles.includes("commercial_proof")
           ? "This source can provide commercial proof, but pricing, revenue, fees, reviews, or installs still require company-specific verification."
-          : "Payment capacity and business traction remain unverified."],
+          : "Final payment capacity and business traction still require separate verification."],
       },
       japan_fit: {
         status: input.audit.pages_checked.length > 0 && input.profile.japanEntryFitStatus === "qualified" ? "verified" : "pending",
@@ -208,10 +217,10 @@ export function buildManualSourceLedgers(input: {
       source_date: input.sourceDate,
       trigger_event: null,
       trigger_date: null,
-      founder_led: null,
-      employee_range: null,
-      funding_signal: null,
-      revenue_signal: null,
+      founder_led: signalPhrase(input.profile, "founder_led") ? true : null,
+      employee_range: signalPhrase(input.profile, "employee_range"),
+      funding_signal: signalPhrase(input.profile, "funding"),
+      revenue_signal: revenueEvidence,
       pricing: null,
       commercial_product: input.profile.productContext.length >= 12,
       japan_category_demand: null,
@@ -233,9 +242,9 @@ export function buildManualSourceLedgers(input: {
       submitted_at: null,
       status: "manual_review",
       evidence_classes: {
-        observed: [...input.profile.observedFacts, ...localizationFriction, ...(input.form.formUrl ? [input.form.formUrl] : [])],
+        observed: [...input.profile.observedFacts, ...commercialSignals.map((signal) => signal.sourcePhrase), ...localizationFriction, ...(input.form.formUrl ? [input.form.formUrl] : [])],
         modeled: input.projection ? [input.projection.modelVersion] : [],
-        hypothesis: ["Category demand, payment capacity, legal entity, and local competitors require separate verification."],
+        hypothesis: ["Category demand, final payment capacity, legal entity, and local competitors require separate verification."],
       },
     },
   }

@@ -5,8 +5,13 @@ import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal } from "./PremiumV3Primitives"
 import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
+import { PremiumV3HospitalityAbout } from "./PremiumV3HospitalityInnerPages"
+import { PremiumV3IndustryAbout } from "./PremiumV3IndustryInnerPages"
 
 export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
+  const profile = data.presentation?.industryProfile ?? String(data.industry)
+  if (profile === "restaurant") return <PremiumV3HospitalityAbout data={data} />
+  if (["dental", "construction", "retail", "accounting", "cleaning", "consulting"].includes(profile)) return <PremiumV3IndustryAbout data={data} />
   const premium = data.premium!
   const about = data.pages.about
   const media = premium.gallery.length > 0 ? premium.gallery : premium.heroMedia

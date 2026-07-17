@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest"
-import { cacheHitRatio, callDeepSeek, normalizeDeepSeekUsage } from "./deepseek"
+import { cacheHitRatio, callDeepSeek, normalizeDeepSeekError, normalizeDeepSeekUsage } from "./deepseek"
 
 beforeEach(() => {
   process.env.DEEPSEEK_API_KEY = "test-key"
@@ -95,6 +95,28 @@ describe("callDeepSeek フォールバックチェーン", () => {
     expect(r.ok).toBe(true)
     expect(r.usedModel).toBe("deepseek-v4-pro")
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("turns a 402 provider payload into an actionable Japanese balance message", async () => {
+    const fetchMock = vi.fn(async () => new Response(
+      JSON.stringify({ error: { message: "Insufficient Balance", type: "unknown_error" } }),
+      { status: 402 },
+    ))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const result = await callDeepSeek(
+      [{ role: "user", content: "hi" }],
+      { model: "deepseek-v4-pro", modelPolicy: "strict" },
+    )
+
+    expect(result).toMatchObject({ ok: false, status: 402 })
+    expect(result.error).toBe("DeepSeek APIの残高不足で解析を停止しました。残高を補充後、解析履歴の「再解析」を実行してください。")
+    expect(result.error).not.toContain("{\"error\"")
+  })
+
+  it("normalizes a balance error even when the provider status is not 402", () => {
+    expect(normalizeDeepSeekError(400, '{"error":{"message":"Insufficient Balance"}}'))
+      .toContain("残高不足")
   })
 
   it("chain policy also ignores configured intermediary providers", async () => {

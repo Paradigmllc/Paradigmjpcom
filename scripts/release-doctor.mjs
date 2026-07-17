@@ -701,6 +701,10 @@ function checkStaticReleaseRules() {
   const twentySelectOptionsScript = fs.existsSync(twentySelectOptionsScriptPath)
     ? fs.readFileSync(twentySelectOptionsScriptPath, "utf8")
     : ""
+  const twentyMetadataDbApplyPath = "src/lib/sales/twenty-crm-metadata-db-apply.ts"
+  const twentyMetadataDbApply = fs.existsSync(twentyMetadataDbApplyPath)
+    ? fs.readFileSync(twentyMetadataDbApplyPath, "utf8")
+    : ""
   if (
     portalTwentyOptionsMigration.includes("('source', 'houzz'")
     && portalTwentyOptionsMigration.includes("('source', 'ekiten'")
@@ -709,10 +713,13 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyPortalTwentySourceOptionsMigration")
     && twentySelectOptionsScript.includes("('paradigmSourceName', 'エキテン', 'ekiten'")
     && noLoginDeploy.includes("applyTwentySelectOptionsScript")
+    && twentyMetadataDbApply.includes("operand in ('IS', 'CONTAINS')")
+    && twentyMetadataDbApply.includes("values (gen_random_uuid(), $1, 'CONTAINS'")
+    && !twentyMetadataDbApply.includes("values (gen_random_uuid(), $1, 'IS'")
   ) {
-    pass("portal Twenty source options and CRM field metadata are present and release-wired")
+    pass("portal Twenty source options, type-compatible text filters and CRM field metadata are present and release-wired")
   } else {
-    fail("portal Twenty source options require Houzz, Ekiten, Jmty values, CRM field metadata and release wiring")
+    fail("portal Twenty source options require Houzz, Ekiten, Jmty values, type-compatible text filters, CRM field metadata and release wiring")
   }
 
   const manualWorkMigrationPath = "supabase/migrations/20260715031327_manual_japan_entry_work.sql"
@@ -737,11 +744,20 @@ function checkStaticReleaseRules() {
   const manualWorkService = fs.existsSync("src/lib/sales/manual-japan-entry-service.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-service.ts", "utf8")
     : ""
+  const manualWorkHistoryItem = fs.existsSync("src/components/work/ManualWorkHistoryItem.tsx")
+    ? fs.readFileSync("src/components/work/ManualWorkHistoryItem.tsx", "utf8")
+    : ""
+  const manualWorkDeepSeekGateway = fs.existsSync("src/lib/deepseek.ts")
+    ? fs.readFileSync("src/lib/deepseek.ts", "utf8")
+    : ""
   const manualWorkHelpers = fs.existsSync("src/lib/sales/manual-japan-entry-workflow-helpers.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-workflow-helpers.ts", "utf8")
     : ""
   const manualWorkReport = fs.existsSync("src/lib/sales/manual-japan-entry-report.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-report.ts", "utf8")
+    : ""
+  const manualMarketLens = fs.existsSync("src/lib/sales/manual-japan-entry-market-lens.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-market-lens.ts", "utf8")
     : ""
   const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
     ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
@@ -778,15 +794,22 @@ function checkStaticReleaseRules() {
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
+    && manualWorkService.includes('return item.status === "failed"')
+    && manualWorkHistoryItem.includes("再解析")
+    && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
     && manualWorkReport.includes("matchContentTemplate")
     && manualWorkReport.includes('evidence_contract: "public-pages-only"')
+    && manualWorkReport.includes("manual_commercial_signals")
+    && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
+    && manualMarketLens.includes("groundManualCommercialSignals")
+    && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has grounded four-cell and evidence-gated angle copy, industry playbooks, a separate source master, operator-recorded outcomes, evidence-only reports, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires grounded four-cell and angle copy, industry playbooks, manual outcome metrics, evidence-only reports, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"

@@ -19,7 +19,7 @@ describe("manual company Japan exclusion", () => {
       domain: "example.com",
       fallbackCompanyName: "Example",
       evidenceText: "Example | Workflow software for independent retailers",
-      productContext: "Workflow software for independent retailers | Inventory coordination",
+      productContext: "Workflow software for independent retailers | Inventory coordination | We serve customers in 30 countries",
       profile: {
         companyName: "Example",
         countryCode: "US",
@@ -40,16 +40,25 @@ describe("manual company Japan exclusion", () => {
           japaneseHeadline: "独立系小売向けワークフロー",
           japaneseSupportLine: "在庫調整を支えるソフトウェアの日本語ポジショニング案です。",
         },
+        commercialSignals: [
+          { kind: "global_customers", sourcePhrase: "customers in 30 countries", detail: "The public page states an international customer footprint." },
+          { kind: "funding", sourcePhrase: "Raised $10M", detail: "This statement was invented by the model." },
+        ],
       },
     })
 
-    expect(grounded.productContext).toBe("Workflow software for independent retailers | Inventory coordination")
+    expect(grounded.productContext).toBe("Workflow software for independent retailers | Inventory coordination | We serve customers in 30 countries")
     expect(grounded.observedFacts).toEqual([
       "Workflow software for independent retailers",
       "Inventory coordination",
+      "We serve customers in 30 countries",
     ])
     expect(JSON.stringify(grounded)).not.toContain("Invented")
     expect(grounded.positioningConcept?.sourcePhrase).toBe("Workflow software for independent retailers")
+    expect(grounded.commercialSignals).toEqual([
+      { kind: "global_customers", sourcePhrase: "customers in 30 countries", detail: "海外顧客を示す公開原文です。予算・支払能力は別途確認が必要です。" },
+    ])
+    expect(grounded.marketLens).toMatchObject({ priority: "individual_review", commercialEvidenceStatus: "partial" })
   })
 
   it("does not retain an unobserved model-generated company name", () => {
@@ -74,6 +83,7 @@ describe("manual company Japan exclusion", () => {
         observedFacts: ["Invented customer outcome"],
         outreachPlaybook: "saas_ai_devtools",
         positioningConcept: null,
+        commercialSignals: [],
       },
     })
 

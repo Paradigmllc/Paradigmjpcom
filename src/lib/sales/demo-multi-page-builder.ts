@@ -12,6 +12,7 @@ import type {
   DemoFAQItem,
   DemoPremiumExperience,
 } from "./demo-site-types"
+import { filterPremiumMedia } from "./demo-media-quality"
 import type { Industry, ReportLocale } from "./types"
 import {
   buildAboutStory,
@@ -464,7 +465,8 @@ function buildPremiumExperience(
       objectPosition: typeof item.objectPosition === "string" ? item.objectPosition : undefined,
     }]
   })
-  if (media.length < 3) return null
+  const qualityMedia = filterPremiumMedia(media, "hero")
+  if (qualityMedia.length < 3) return null
 
   const style: DemoPremiumExperience["style"] = industry === "restaurant"
     ? "editorial-cafe"
@@ -480,8 +482,8 @@ function buildPremiumExperience(
 
   return {
     style,
-    heroMedia: media.slice(0, 5),
-    gallery: media.slice(0, 8),
+    heroMedia: qualityMedia.slice(0, 5),
+    gallery: qualityMedia.slice(0, 8),
     intro: {
       eyebrow: home.featureEyebrow ?? "OUR STORY",
       title: home.featureHeading ?? home.hero.title,

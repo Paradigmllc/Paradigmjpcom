@@ -10,8 +10,9 @@ import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 import { analyzeDemoQualitySignals } from "./demo-quality-signals"
 import { visualGrammar } from "./demo-creative-direction"
+import { isPremiumMediaUsable, isLikelyLowResolutionSource } from "./demo-media-quality"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.8"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-17.1"
 export const DEMO_QUALITY_THRESHOLD = 94
 export const DEMO_VISUAL_SIMILARITY_THRESHOLD = 0.8
 const DEMO_LARGE_BATCH_EXISTING_COUNT = 300
@@ -228,14 +229,11 @@ export function evaluateDemoQuality(
     ...(page.premium?.gallery ?? []),
   ].map((item) => item.src)).size
   if (uniquePremiumMedia < 3) hardBlockers.push("visual_media_repetition")
-  const primaryMedia = page.premium?.heroMedia[0]
-  const missingOrLowResolution = primaryMedia?.kind === "image"
-    && (typeof primaryMedia.width !== "number"
-      || typeof primaryMedia.height !== "number"
-      || primaryMedia.width < 1_200
-      || primaryMedia.height < 720)
-  if (recipe.creativeDirection.heroComposition !== "mosaic"
-    && (missingOrLowResolution || isLikelyThumbnail(primaryMedia?.src ?? ""))) {
+  const heroMedia = page.premium?.heroMedia ?? []
+  const galleryMedia = page.premium?.gallery ?? []
+  const unsafeHeroMedia = heroMedia.some((item) => !isPremiumMediaUsable(item, "hero"))
+  const unsafeGalleryMedia = galleryMedia.some((item) => !isPremiumMediaUsable(item, "gallery"))
+  if (unsafeHeroMedia || unsafeGalleryMedia) {
     hardBlockers.push("hero_media_resolution_risk")
   }
   if (page.pages.services.services.length < 2) warnings.push("service_detail_thin")
@@ -316,11 +314,7 @@ export function visualGrammarSimilarity(
   return matches / fields.length
 }
 
-function isLikelyThumbnail(value: string): boolean {
-  if (!value) return false
-  if (/[?&](?:w|width|size|sz)=([1-3]?\d{1,2})(?:&|$)/iu.test(value)) return true
-  return /(?:^|[/?&_.-])(?:thumb|thumbnail|small|1to1_[sm])(?:[/_.?&-]|$)/iu.test(value)
-}
+export const isLikelyThumbnail = isLikelyLowResolutionSource
 
 export function fingerprint(value: unknown): string {
   const input = stableStringify(value)

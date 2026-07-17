@@ -65,6 +65,10 @@ async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWor
   })
 }
 
+export function isRetryableManualWork(item: Pick<ManualJapanEntryWorkRow, "status">): boolean {
+  return item.status === "failed"
+}
+
 export async function processManualJapanEntryUrl(
   rawUrl: string,
   variantSelection: ManualMessageVariantSelection = "auto",
@@ -84,16 +88,25 @@ export async function processManualJapanEntryUrl(
   const sourceCatalog = await findManualLeadSource(sourceInput.sourceSlug)
   if (!sourceCatalog) throw new Error("選択した営業ソースは台帳に存在しません")
   const existing = await findManualWorkByDomain(normalized.domain)
-  if (existing) {
+  if (existing && !isRetryableManualWork(existing)) {
     await attachManualWorkSource(existing.id, sourceInput)
     return { item: existing, duplicate: true }
   }
 
-  let work = await createManualWork({
-    ...normalized,
-    messageVariantRequested: requestedVariant,
-    messageAngleRequested: requestedAngle,
-  })
+  let work = existing
+    ? await updateManualWork(existing.id, {
+        status: "processing",
+        stage: "fetching",
+        error_message: null,
+        twenty_sync_status: "not_started",
+        message_variant_requested: requestedVariant,
+        message_angle_requested: requestedAngle,
+      })
+    : await createManualWork({
+        ...normalized,
+        messageVariantRequested: requestedVariant,
+        messageAngleRequested: requestedAngle,
+      })
   try {
     await attachManualWorkSource(work.id, sourceInput)
     try {

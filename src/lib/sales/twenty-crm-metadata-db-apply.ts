@@ -168,7 +168,7 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
           delete from core."viewFilter"
           where "viewId" = $1
             and "fieldMetadataId" = $2
-            and operand = 'IS'
+            and operand in ('IS', 'CONTAINS')
             and value = $3::jsonb
         `,
         [target.viewId, target.fieldMetadataId, filterValue],
@@ -177,7 +177,7 @@ export async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmVie
         `
           insert into core."viewFilter" (
             "universalIdentifier", "fieldMetadataId", operand, value, "viewId", "workspaceId", "applicationId"
-          ) values (gen_random_uuid(), $1, 'IS', $2::jsonb, $3, $4, $5)
+          ) values (gen_random_uuid(), $1, 'CONTAINS', $2::jsonb, $3, $4, $5)
         `,
         [target.fieldMetadataId, filterValue, target.viewId, target.workspaceId, target.applicationId],
       )
