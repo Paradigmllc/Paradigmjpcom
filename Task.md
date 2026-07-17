@@ -1835,3 +1835,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 既存の「飲食店以外は共通ホーム・共通下層」という構造を、歯科・施工・小売・専門サービスの4系統へ分離した。各系統でヒーロー後の情報設計、サービスカード、工程、写真ギャラリー、FAQ/CTAの役割を変え、業種不整合な「コンサルティング」「仕事・実績」固定文言を表示しない。
 - `PremiumV3IndustryHome` / `PremiumV3IndustryInnerPages` を追加し、画像はヒーロー・ギャラリーを正規化した一意集合から使う。既存のFramer Motion/Embla/Next Imageを再利用し、スライダー、reveal、parallax、レスポンシブを業種構成へ組み込んだ。
 - `tsc --noEmit`、対象ESLint、`git diff --check`、Quality Guard 0 errors（既存68 warnings）を確認済み。まだ本番release・公開PC/mobile QA前のため、量産適用を完了扱いにしない。外部送信、Twenty追加、フォーム送信は0件。
+## CURRENT STATUS - 2026-07-17 Premium V3 業種別プロ構成・公開QA（本番release完了 / 外部送信0）
+
+- screenshot-to-codeの自動出力を量産パイプラインへ無検証投入するのではなく、既存の公開事実・業種判定・権利サニタイズを入力に、歯科医院／建設・施工／ショップ／専門サービスを別情報設計のrendererへ分岐した。飲食・美容の専用構成も維持し、各業種でhero deck、媒体重複除去、Framer Motionのreveal/stagger、Embla carousel、parallax、FAQ、CTA、レスポンシブを実行する。
+- 業種解決後のブラウザtitleとFAQも決定論的に補正。例えば歯科は「ほさか歯科 | 歯科医院」、FAQは初診・診療内容・予約・アクセスへ統一し、汎用の「商品・サービス」文言を残さない。Worksの内部向け権利・提案文言も公開前に除去する。
+- `npm exec tsc -- --noEmit`、対象Vitest（industry presentation 4/4、Premium V3 11/11）、`git diff --check`、Quality Guard **0 errors / 68 existing warnings**を確認。正式`npm run release:prod`はdeployment **h129va7es2a3hwz6dzq7kjmh**、DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik、Cloudflare origin lock、Twenty worker restart 0を含む`release gate passed`。
+- 実企業デモ`https://demo.paradigmjp.com/ほさか歯科`をPlaywrightでPC（1440）／モバイル（390）のホーム・医院について・診療案内・院内紹介・アクセス全10経路を確認。全HTTP 200、横overflow 0、console/page error 0、内部向け語句0。スクリーンショットでhero、業種別診療カード、動的FAQ、院内カルーセルを目視確認した。Twenty追加、フォーム、メール、電話、その他外部送信は0件。
