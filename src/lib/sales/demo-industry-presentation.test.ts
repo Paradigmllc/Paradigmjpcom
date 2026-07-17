@@ -106,6 +106,13 @@ describe("applyIndustryPresentation", () => {
     expect(page.presentation?.industryProfile).toBe("dental")
     expect(page.pages.home.hero.industryLabel).toBe("歯科医院")
     expect(page.pages.about.industryLabel).toBe("歯科医院")
+    expect(page.meta.title).toBe("ほさか歯科 | 歯科医院")
+    expect(page.pages.faq?.sections.slice(0, 4).map((section) => section.heading)).toEqual([
+      "初診時に確認しておくことは？",
+      "診療内容を教えてください",
+      "予約やお問い合わせの方法は？",
+      "医院へのアクセスを教えてください",
+    ])
     expect(page.premium?.heroMedia).toHaveLength(2)
     expect(JSON.stringify(page.premium)).not.toMatch(/エキテン掲載素材|権利確認前|提案用素材|生成イメージ/u)
     expect(page.premium?.intro.note).not.toMatch(/提案用|権利確認/u)

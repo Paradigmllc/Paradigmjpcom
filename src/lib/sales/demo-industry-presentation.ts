@@ -141,6 +141,64 @@ const DEFAULT_PROFILE: PresentationProfile = {
   worksDescription: "提供するサービスだけでなく、取り組み方や仕事の細部も大切な判断材料です。",
 }
 
+const CUSTOMER_FACING_FAQ: Record<string, Array<{ heading: string; body: string }>> = {
+  restaurant: [
+    { heading: "予約や営業日の確認方法は？", body: "営業日、営業時間、予約方法は公式の最新案内をご確認ください。" },
+    { heading: "どのようなメニューがありますか？", body: "現在ご用意しているメニューや季節の案内は、メニューページと公式のお知らせでご確認いただけます。" },
+    { heading: "お店へのアクセスを教えてください", body: "所在地と地図はアクセスページに掲載しています。ご来店前に最新の案内をご確認ください。" },
+    { heading: "最新情報はどこで見られますか？", body: "営業に関する最新情報は、公式アカウントまたは店舗からの案内をご確認ください。" },
+  ],
+  beauty_salon: [
+    { heading: "予約やメニューの確認方法は？", body: "予約方法、受付状況、メニューの詳細は公式の最新案内をご確認ください。" },
+    { heading: "初めて利用する場合の流れは？", body: "ご予約から施術当日までの流れは、サービスページと公式の案内でご確認いただけます。" },
+    { heading: "サロンへのアクセスを教えてください", body: "所在地と地図はアクセスページに掲載しています。ご来店前に最新の案内をご確認ください。" },
+    { heading: "最新のスタイルや空き状況は？", body: "最新のスタイルや営業情報は、公式アカウントまたはサロンからの案内をご確認ください。" },
+  ],
+  dental: [
+    { heading: "初診時に確認しておくことは？", body: "診療内容、持ち物、受診方法は医院からの最新案内をご確認ください。" },
+    { heading: "診療内容を教えてください", body: "現在確認できる診療内容は診療案内ページにまとめています。適応や詳細は医院へご確認ください。" },
+    { heading: "予約やお問い合わせの方法は？", body: "予約方法と受付時間は、医院の公式案内をご確認ください。" },
+    { heading: "医院へのアクセスを教えてください", body: "所在地と地図はアクセスページに掲載しています。来院前に最新の案内をご確認ください。" },
+  ],
+  construction: [
+    { heading: "相談から着工までの流れは？", body: "ご相談、現地確認、提案、契約、施工の流れはサービスページでご案内しています。" },
+    { heading: "対応エリアを教えてください", body: "対応エリアは案件や内容によって異なるため、所在地とご相談内容を添えてお問い合わせください。" },
+    { heading: "費用や工期はどのように決まりますか？", body: "現地の状況とご要望を確認したうえで、内容に応じて正式にご案内します。" },
+    { heading: "施工後の相談はできますか？", body: "施工後の確認やメンテナンスについては、正式な案内と契約内容をご確認ください。" },
+  ],
+  retail: [
+    { heading: "取扱商品を教えてください", body: "現在のラインアップや季節の商品は、商品ページと公式の最新案内をご確認ください。" },
+    { heading: "営業時間と定休日は？", body: "営業時間と定休日は、来店前に店舗からの最新案内をご確認ください。" },
+    { heading: "在庫や取り置きについて確認できますか？", body: "在庫や取り置きの可否は商品によって異なるため、店舗へ直接ご確認ください。" },
+    { heading: "店舗へのアクセスを教えてください", body: "所在地と地図は店舗情報ページに掲載しています。" },
+  ],
+  default: [
+    { heading: "提供内容を教えてください", body: "現在確認できる提供内容はサービスページにまとめています。詳細は正式な案内をご確認ください。" },
+    { heading: "相談の進め方は？", body: "ご相談から実行までの流れは、サービスページでステップごとにご案内しています。" },
+    { heading: "対応エリアや対象を教えてください", body: "対応範囲は内容によって異なるため、現在の案内をご確認のうえお問い合わせください。" },
+    { heading: "お問い合わせ方法は？", body: "お問い合わせページから、正式な窓口と確認方法をご覧いただけます。" },
+  ],
+}
+
+function rewriteCustomerFacingFaq(
+  sections: DemoContentPage["sections"],
+  profileKey: string,
+): DemoContentPage["sections"] {
+  const copy = CUSTOMER_FACING_FAQ[profileKey] ?? CUSTOMER_FACING_FAQ.default
+  const rewritten = sections.map((section, index) => {
+    const replacement = copy[index]
+    return replacement ? { ...section, heading: replacement.heading, body: replacement.body } : section
+  })
+  return copy.slice(rewritten.length).reduce<DemoContentPage["sections"]>((result, replacement, index) => [
+    ...result,
+    {
+      id: `faq-customer-${rewritten.length + index + 1}`,
+      heading: replacement.heading,
+      body: replacement.body,
+    },
+  ], rewritten)
+}
+
 function resolveProfileKey(page: DemoMultiPageData): string {
   const explicit = String(page.industry ?? "").trim()
   if (PROFILES[explicit]) return explicit
@@ -286,6 +344,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
     premium: distinctPremiumIntro(publicPage, profile),
     meta: {
       ...page.meta,
+      title: `${page.companyName} | ${profile.categoryLabel}`,
       accentColor: profile.accentColor,
       accentColorDark: profile.accentColorDark,
       proposalNotice: "提案用デモ · 公式サイトではありません",
@@ -295,7 +354,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
       footerOwner: page.companyName,
       navLabels: profile.nav,
     },
-    pages: {
+      pages: {
       ...page.pages,
       home: {
         ...page.pages.home,
@@ -341,6 +400,9 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
       },
       works,
       news: socialNewsPage(publicPage),
+      faq: page.pages.faq
+        ? { ...page.pages.faq, sections: rewriteCustomerFacingFaq(page.pages.faq.sections, profileKey) }
+        : page.pages.faq,
       recruit: page.pages.recruit ? {
         ...page.pages.recruit,
         title: "採用情報",
