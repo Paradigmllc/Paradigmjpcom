@@ -23,7 +23,7 @@ export function PremiumV3PageHero({
   title: string
   subtitle: string
   eyebrow: string
-  media: DemoPremiumMedia
+  media?: DemoPremiumMedia
   mediaGallery?: DemoPremiumMedia[]
   recipe?: DemoDesignRecipe
   variant?: DemoArtDirection["hero"]

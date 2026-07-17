@@ -92,9 +92,9 @@ describe("applyIndustryPresentation", () => {
     base.premium = {
       style: "professional",
       heroMedia: [
-        { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_m", alt: "エキテン掲載素材", caption: "生成イメージ", kind: "image" },
-        { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_l", alt: "同じ写真", caption: "権利確認前", kind: "image" },
-        { src: "/clinic-2.jpg", alt: "受付", caption: "受付", kind: "image" },
+        { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_m", alt: "エキテン掲載素材", caption: "生成イメージ", kind: "image", width: 1_600, height: 1_000 },
+        { src: "https://image.ekiten.jp/shop/3/photo.jpg?1to1_l", alt: "同じ写真", caption: "権利確認前", kind: "image", width: 1_600, height: 1_000 },
+        { src: "/clinic-2.jpg", alt: "受付", caption: "受付", kind: "image", width: 1_600, height: 1_000 },
       ],
       gallery: [],
       intro: { eyebrow: "STORY", title: "ほさか歯科", body: "ご案内", note: "提案用素材" },

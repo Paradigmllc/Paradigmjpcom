@@ -17,7 +17,7 @@ function profileOf(data: DemoMultiPageData): IndustryProfile {
   return "professional"
 }
 
-function mediaAt(media: DemoPremiumMedia[], index: number, fallback: DemoPremiumMedia): DemoPremiumMedia {
+function mediaAt(media: DemoPremiumMedia[], index: number, fallback?: DemoPremiumMedia): DemoPremiumMedia | undefined {
   return media[index % Math.max(media.length, 1)] ?? fallback
 }
 

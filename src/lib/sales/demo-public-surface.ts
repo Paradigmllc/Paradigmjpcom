@@ -1,4 +1,5 @@
 import type { DemoPremiumMedia } from "./demo-site-types"
+import { isPremiumMediaUsable, type DemoMediaQualityRole } from "./demo-media-quality"
 
 /**
  * Internal asset-review notes must never leak into a customer-facing demo.
@@ -21,7 +22,7 @@ export function sanitizeDemoCopy(value: string | undefined, fallback: string): s
 export function canonicalDemoMediaSrc(source: string): string {
   try {
     const url = new URL(source)
-    if (url.hostname === "image.ekiten.jp" && /^\?\d+to\d+_[a-z]+$/iu.test(url.search)) {
+    if (url.hostname === "image.ekiten.jp" && /^(?:\?\d+to\d+_[a-z]+|\?size=1to1_[a-z]+)$/iu.test(url.search)) {
       url.search = ""
     }
     return url.toString()
@@ -44,9 +45,11 @@ export function sanitizeDemoMedia(
   media: DemoPremiumMedia[],
   companyName: string,
   labels: string[],
+  role: DemoMediaQualityRole = "gallery",
 ): DemoPremiumMedia[] {
   const seen = new Set<string>()
   return media.flatMap((item, index) => {
+    if (!isPremiumMediaUsable(item, role)) return []
     const source = canonicalDemoMediaSrc(item.src)
     if (!source || seen.has(source)) return []
     seen.add(source)

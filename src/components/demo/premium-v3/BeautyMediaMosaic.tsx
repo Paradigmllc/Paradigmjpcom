@@ -3,6 +3,7 @@
 import type { DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { PremiumV3Media } from "./PremiumV3Media"
 import { canonicalDemoMediaSrc } from "@/lib/sales/demo-public-surface"
+import { isPremiumMediaUsable } from "@/lib/sales/demo-media-quality"
 
 type MosaicHeight = "home" | "page" | "compact"
 export type BeautyMosaicLayout = "grid" | "editorial" | "strip" | "lookbook"
@@ -28,6 +29,7 @@ export function BeautyMediaMosaic({
 }) {
   const compact = height === "compact"
   const visibleMedia = media
+    .filter((item) => isPremiumMediaUsable(item, "gallery"))
     .filter((item, index, items) => items.findIndex((candidate) => canonicalDemoMediaSrc(candidate.src) === canonicalDemoMediaSrc(item.src)) === index)
     .slice(0, layout === "grid" ? 6 : 4)
   const gridClass = layout === "editorial"
@@ -62,13 +64,13 @@ export function BeautyMediaMosaic({
   return (
     <div className={`relative flex h-full items-center overflow-hidden bg-[var(--demo-ink)] ${HEIGHT_CLASSES[height]}`} role="group" aria-label={label}>
       <div className={`grid h-full w-full gap-2 ${gridClass}`}>
-        {visibleMedia.map((item, index) => (
+        {visibleMedia.length > 0 ? visibleMedia.map((item, index) => (
           <figure key={`${item.src}-${index}`} className={`group relative min-h-24 overflow-hidden bg-white/8 ${figureClass(index)}`}>
             <PremiumV3Media media={item} priority={priority && index === 0} className="absolute inset-0" sizes={compact ? "(max-width:1024px) 46vw, 22vw" : "(max-width:1024px) 46vw, 16vw"} />
             <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
             <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/62 to-transparent px-3 pb-3 pt-8 text-[10px] leading-5 text-white/72">{item.alt}</figcaption>
           </figure>
-        ))}
+        )) : <div className="relative col-span-full row-span-full min-h-72 overflow-hidden"><PremiumV3Media media={undefined} className="absolute inset-0" /><span className="absolute bottom-5 left-6 text-xs font-bold tracking-[.22em] text-white/60">{label}</span></div>}
       </div>
       <span className="absolute bottom-3 right-5 text-[9px] font-bold tracking-[.24em] text-white/40">{layout === "editorial" ? "STORY NOTES" : layout === "strip" ? "SERVICE DETAILS" : layout === "lookbook" ? "SALON LOOKBOOK" : compact ? "SALON DETAILS" : "INSIDE THE SALON"}</span>
     </div>

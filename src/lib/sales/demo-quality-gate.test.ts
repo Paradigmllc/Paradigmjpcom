@@ -424,7 +424,7 @@ describe("demo quality gate", () => {
     expect(quality.assessmentStage).toBe("structural_preflight")
   })
 
-  it("fails closed on unknown hero dimensions but permits a low-resolution mosaic", () => {
+  it("fails closed on unknown hero dimensions for every composition", () => {
     const basePage = fixture()
     basePage.premium!.heroMedia[0] = {
       src: "https://image.example.test/reviewed-source.jpg",
@@ -448,7 +448,7 @@ describe("demo quality gate", () => {
     ]))
 
     expect(splitQuality.hardBlockers).toContain("hero_media_resolution_risk")
-    expect(mosaicQuality.hardBlockers).not.toContain("hero_media_resolution_risk")
+    expect(mosaicQuality.hardBlockers).toContain("hero_media_resolution_risk")
   })
 
   it("detects candidates that only change template IDs but render the same visual grammar", () => {
