@@ -1,9 +1,9 @@
-## CURRENT STATUS - 2026-07-17 Manual Japan Entry Workbench UI/UXプロ刷新（実装・ローカル検証完了 / release待ち / 外部送信0）
+## CURRENT STATUS - 2026-07-17 Manual Japan Entry Workbench UI/UXプロ刷新（本番release・認証境界read-back完了 / DB外部送信0）
 
 - `/work`を、設定カードの縦積みから業務司令塔型のUIへ再構成した。永続履歴・要確認・フォーム発見・Twenty追加・手動送信・商談化の6指標、入力から手動成果記録までのoperator flow、ゼロ送信・海外SMB限定・根拠不足fail-closedをfirst viewportで判断できる。
 - 新規解析は既存の最大20 URL / 3並列、営業ソース帰属、4文面セル、4訴求角度を維持し、生成条件を高密度な選択パネルへ統合した。履歴には企業名/ドメイン検索、要確認/Twenty追加/手動送信/失敗の状態絞り込み、企業別の根拠・文面・診断・成果stepperを追加した。API、DB schema、生成prompt、Twenty同期条件、自動送信経路は変更していない。
 - `/work`専用の日本語`lang`、管理画面title、`noindex` metadataを追加。PC/Pixel 7の2社同時解析E2Eで、初期画面と解析後履歴のWCAG 2.2 AA重大/深刻違反0、console error 0、Next error overlay 0、横overflow 0を確認した。
-- TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、全Vitest **194 files / 887 tests**、production build **408/408 pages**がpass。正式releaseと本番read-backは未実行。企業URL投入、Twenty追加、フォーム・メール等の外部送信は0件。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 68 existing warnings**、全Vitest **194 files / 887 tests**、production build **408/408 pages**がpass。PR **#377** / main **e4dac7c5**を統合し、正式`npm run release:prod`のdeployment **czijgruedlcb6gexjpx2kj3v**を完走。main **e4dac7c5**を含む本番container **n8i2sjiqvr2d8hrzppop2m2i-004803353307**はhealthyで、DB **91/91**、手動送信0制約、Twenty worker restart 0、Sales health JSON `ok:true`、Realtime、Traefik、公開smokeを含むrelease gate通過を確認した。未認証`/api/work`は401、実ブラウザの`/work`は`/admin/login`へ遷移し、workbench本文は非表示。実企業URL投入、Twenty company作成、フォーム・メール等の外部送信は実行していない。
 
 ## CURRENT STATUS - 2026-07-16 Manual Japan Entry 訴求角度・業種playbook・営業ソース台帳（本番release・read-back完了 / 履歴0件 / 外部送信0）
 
