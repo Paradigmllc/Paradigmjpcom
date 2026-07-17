@@ -2,7 +2,14 @@ import { z } from "zod"
 import { callDeepSeek } from "@/lib/deepseek"
 import { INDUSTRIES } from "./types"
 import type { JapanMarketAudit } from "./sources/japan-market-audit"
-import type { ManualCompanyProfile } from "./manual-japan-entry-types"
+import {
+  MANUAL_COMMERCIAL_SIGNAL_KINDS,
+  type ManualCompanyProfile,
+} from "./manual-japan-entry-types"
+import {
+  buildManualMarketLens,
+  groundManualCommercialSignals,
+} from "./manual-japan-entry-market-lens"
 import {
   groundManualPositioningConcept,
   MANUAL_OUTREACH_PLAYBOOKS,
@@ -28,6 +35,11 @@ const profileSchema = z.object({
     japaneseHeadline: z.string().min(4).max(60),
     japaneseSupportLine: z.string().min(8).max(140),
   }).strict().nullable(),
+  commercialSignals: z.array(z.object({
+    kind: z.enum(MANUAL_COMMERCIAL_SIGNAL_KINDS),
+    sourcePhrase: z.string().min(3).max(180),
+    detail: z.string().min(3).max(180).optional().default("Human verification required"),
+  }).strict()).max(6).default([]),
 }).strict()
 
 type ParsedManualCompanyProfile = z.infer<typeof profileSchema>
@@ -74,6 +86,7 @@ export function groundManualCompanyProfile(input: {
     countryCode: input.profile.countryCode,
     llmJapanese: input.profile.isJapaneseCompany,
   })
+  const commercialSignals = groundManualCommercialSignals(input.profile.commercialSignals, input.productContext)
 
   return {
     ...input.profile,
@@ -81,6 +94,8 @@ export function groundManualCompanyProfile(input: {
     productContext: input.productContext,
     observedFacts: publicEvidenceFacts(input.productContext),
     positioningConcept: groundManualPositioningConcept(input.profile.positioningConcept, input.productContext),
+    commercialSignals,
+    marketLens: buildManualMarketLens({ countryCode: input.profile.countryCode, commercialSignals }),
     isJapaneseCompany,
     japanEntryFitStatus: isJapaneseCompany ? "rejected" : input.profile.japanEntryFitStatus,
     japanEntryFitConfidence: isJapaneseCompany ? 100 : input.profile.japanEntryFitConfidence,
@@ -114,6 +129,7 @@ export async function analyzeManualCompanyProfile(input: {
         "Use ISO-3166 alpha-2 countryCode or null. Japanese companies must be isJapaneseCompany=true and japanEntryFitStatus=rejected.",
         "Choose exactly one outreachPlaybook from the allowed list based only on the public product evidence.",
         "For positioningConcept, create a stored draft Japanese positioning concept only when it can be grounded in one exact sourcePhrase copied from productContext. Translate or reframe only that supplied meaning; do not add demand, outcomes, superiority, numbers, customers, or Japan-market fit. Return null when a grounded concept is not possible.",
+        "For commercialSignals, return only signals whose sourcePhrase is copied exactly from groundedProductContext. Do not infer payment capacity. Use an empty array unless the phrase itself explicitly states foreign-currency revenue, global customers, funding, founder-led ownership, employee count, or international operations.",
       ].join(" "),
     },
     {
@@ -130,6 +146,8 @@ export async function analyzeManualCompanyProfile(input: {
         },
         allowedIndustries: INDUSTRIES,
         allowedOutreachPlaybooks: MANUAL_OUTREACH_PLAYBOOKS,
+        allowedCommercialSignalKinds: MANUAL_COMMERCIAL_SIGNAL_KINDS,
+        commercialSignalShape: { kind: "allowed kind", sourcePhrase: "exact quote", detail: "brief interpretation" },
         outputKeys: Object.keys(profileSchema.shape),
       }),
     },
@@ -138,7 +156,7 @@ export async function analyzeManualCompanyProfile(input: {
     modelPolicy: "strict",
     responseFormat: "json_object",
     temperature: 0.1,
-    maxTokens: 2_000,
+    maxTokens: 2_400,
     thinking: "disabled",
     timeoutMs: 120_000,
   })

@@ -37,6 +37,10 @@ describe("manual Japan Entry source and qualification ledger", () => {
         observedFacts: ["Public software platform"],
         outreachPlaybook: "saas_ai_devtools",
         positioningConcept: null,
+        commercialSignals: [
+          { kind: "global_customers", sourcePhrase: "Customers in 30 countries", detail: "Public international customer statement" },
+          { kind: "founder_led", sourcePhrase: "Founder-led company", detail: "Public ownership statement" },
+        ],
       },
       audit: {
         engine: "local_heuristic",
@@ -63,6 +67,10 @@ describe("manual Japan Entry source and qualification ledger", () => {
     expect(result.master.legal_entity).toBeNull()
     expect(result.master.japan_category_demand).toBeNull()
     expect(result.master.evidence_classes.observed).toContain("Public software platform")
+    expect(result.master.evidence_classes.observed).toContain("Customers in 30 countries")
+    expect(result.master.founder_led).toBe(true)
+    expect(result.master.revenue_signal).toBeNull()
+    expect(result.qualification.commercial_proof.evidence[0]).toContain("Customers in 30 countries")
     expect(result.master.evidence_classes.modeled).toEqual([])
     expect(result.master.evidence_classes.hypothesis[0]).toContain("require separate verification")
   })

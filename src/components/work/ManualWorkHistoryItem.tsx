@@ -1,14 +1,15 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, CheckCircle2, Copy, ExternalLink, FileText, LoaderCircle, MessageSquareText, Send, Waypoints } from "lucide-react"
+import { Check, CheckCircle2, Copy, ExternalLink, FileText, Globe2, LoaderCircle, MessageSquareText, Send, Waypoints } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MANUAL_MESSAGE_ANGLE_LABELS } from "@/lib/sales/manual-japan-entry-angle"
 import { MANUAL_MESSAGE_VARIANT_LABELS } from "@/lib/sales/manual-japan-entry-experiment"
 import { MANUAL_OUTREACH_PLAYBOOK_LABELS, type ManualPositioningConcept } from "@/lib/sales/manual-japan-entry-playbook"
 import { MANUAL_SOURCE_ROLE_LABELS, type ManualLeadSourceCatalogRow, type ManualQualificationLedger } from "@/lib/sales/manual-japan-entry-source-ledger"
-import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
+import { buildManualMarketLens, MANUAL_COMMERCIAL_SIGNAL_LABELS } from "@/lib/sales/manual-japan-entry-market-lens"
+import type { ManualCommercialSignal, ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 
 const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
   processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
@@ -27,6 +28,25 @@ function positioningConcept(profile: Record<string, unknown>): ManualPositioning
   const record = value as Record<string, unknown>
   if (typeof record.sourcePhrase !== "string" || typeof record.japaneseHeadline !== "string" || typeof record.japaneseSupportLine !== "string") return null
   return { sourcePhrase: record.sourcePhrase, japaneseHeadline: record.japaneseHeadline, japaneseSupportLine: record.japaneseSupportLine }
+}
+
+function commercialSignals(profile: Record<string, unknown>): ManualCommercialSignal[] {
+  if (!Array.isArray(profile.commercialSignals)) return []
+  return profile.commercialSignals.flatMap((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return []
+    const record = value as Record<string, unknown>
+    if (
+      typeof record.kind !== "string"
+      || !Object.prototype.hasOwnProperty.call(MANUAL_COMMERCIAL_SIGNAL_LABELS, record.kind)
+      || typeof record.sourcePhrase !== "string"
+      || typeof record.detail !== "string"
+    ) return []
+    return [{
+      kind: record.kind as ManualCommercialSignal["kind"],
+      sourcePhrase: record.sourcePhrase,
+      detail: record.detail,
+    }]
+  })
 }
 
 function qualificationStages(value: ManualJapanEntryWorkRow["qualification_ledger"]) {
@@ -51,6 +71,8 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, onC
   onUpdateOutcome: (item: ManualJapanEntryWorkRow, outcome: ManualWorkOutcome, value: boolean) => void
 }) {
   const concept = positioningConcept(item.profile)
+  const signals = commercialSignals(item.profile)
+  const marketLens = buildManualMarketLens({ countryCode: item.country_code, commercialSignals: signals })
   const stages = qualificationStages(item.qualification_ledger)
   const verifiedStages = stages.filter(([, stage]) => stage.status === "verified").length
   const qualificationProgress = stages.length ? Math.round((verifiedStages / 6) * 100) : 0
@@ -97,13 +119,23 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, onC
           )}
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Market</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.country_code ?? "未確定"} · SMB {item.smb_confidence ?? "—"}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Market</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.country_code ?? "未確定"} · {marketLens.label}</p><p className="mt-1 text-xs text-slate-600">SMB {item.smb_confidence ?? "—"} / 企業別判断</p></div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Japan entry</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.japan_entry_fit_status ?? "解析中"} · {item.japan_entry_fit_confidence ?? "—"}</p></div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Evidence</p><p className="mt-1 text-sm font-semibold text-slate-700">6段階 {verifiedStages}/6 · 出典 {item.source_attributions.length}</p></div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Evidence</p><p className="mt-1 text-sm font-semibold text-slate-700">商業根拠 {signals.length}件 · 出典 {item.source_attributions.length}</p><p className="mt-1 text-xs text-slate-600">6段階 {verifiedStages}/6</p></div>
           </div>
 
           <div className="mt-5 space-y-2">
             {stages.length > 0 && <details className="group rounded-xl border border-slate-200"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 marker:hidden"><Waypoints className="size-4 text-slate-500" />営業リード6段階の確認状況<span className="ml-auto text-xs font-normal text-slate-600">{qualificationProgress}%</span></summary><div className="grid gap-2 border-t border-slate-100 p-3 md:grid-cols-2 xl:grid-cols-3">{stages.map(([role, stage]) => <div key={role} className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600"><div className="flex items-center justify-between gap-2"><span className="font-semibold text-slate-700">{MANUAL_SOURCE_ROLE_LABELS[role]}</span>{stage.status === "verified" && <Check className="size-3.5 text-emerald-600" />}</div><p className="mt-1">{stage.evidence[0]}</p></div>)}</div></details>}
+            <details className="rounded-xl border border-blue-200 bg-blue-50/40">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-blue-950 marker:hidden"><Globe2 className="size-4" />市場・企業別の優先判断<span className="ml-auto text-xs font-normal text-blue-800">{signals.length > 0 ? `公開根拠 ${signals.length}件` : "要追加確認"}</span></summary>
+              <div className="border-t border-blue-100 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-800">{marketLens.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">{marketLens.rationale}</p>
+                {marketLens.focusIndustries.length > 0 && <p className="mt-2 text-xs text-slate-600">重点カテゴリ: {marketLens.focusIndustries.join(" / ")}</p>}
+                {signals.length > 0 ? <div className="mt-3 grid gap-2 sm:grid-cols-2">{signals.map((signal) => <div key={`${signal.kind}:${signal.sourcePhrase}`} className="rounded-lg border border-blue-100 bg-white p-3"><p className="text-xs font-semibold text-blue-900">{MANUAL_COMMERCIAL_SIGNAL_LABELS[signal.kind]}</p><p className="mt-1 text-xs leading-5 text-slate-600">公開原文: {signal.sourcePhrase}</p></div>)}</div> : <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">外貨売上・海外顧客・資金調達・Founder-led・従業員規模・海外展開は、取得した公開原文では確認できていません。</p>}
+                <p className="mt-3 text-xs font-medium text-slate-600">市場レンズは既存の価格条件を自動変更しません。契約主体・支払能力・意思決定者は人が確認します。</p>
+              </div>
+            </details>
             {concept && <details className="rounded-xl border border-violet-200 bg-violet-50/50"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-violet-900 marker:hidden"><FileText className="size-4" />保存済み日本語ポジショニング案（未公開ドラフト）</summary><div className="border-t border-violet-100 px-4 py-3"><p className="font-semibold text-slate-900">{concept.japaneseHeadline}</p><p className="mt-1 text-sm leading-6 text-slate-600">{concept.japaneseSupportLine}</p><p className="mt-2 text-xs text-slate-600">公開原文: {concept.sourcePhrase}</p></div></details>}
             {item.initial_message && <details className="rounded-xl border border-slate-200"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 marker:hidden"><MessageSquareText className="size-4 text-slate-400" />問い合わせフォーム初回文面（未送信・{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}・{MANUAL_MESSAGE_ANGLE_LABELS[item.message_angle]}）</summary><div className="border-t border-slate-100 bg-slate-50/70 p-4"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.initial_message}</p><Button variant="outline" size="sm" className="mt-3 rounded-lg bg-white" onClick={() => onCopy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button></div></details>}
           </div>

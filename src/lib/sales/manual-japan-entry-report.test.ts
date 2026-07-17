@@ -24,7 +24,7 @@ const audit = {
 function profile(businessModel: ManualCompanyProfile["businessModel"]): ManualCompanyProfile {
   return {
     companyName: "Acme",
-    countryCode: "US",
+    countryCode: "PL",
     isJapaneseCompany: false,
     smbStatus: "qualified",
     smbConfidence: 85,
@@ -38,6 +38,10 @@ function profile(businessModel: ManualCompanyProfile["businessModel"]): ManualCo
     observedFacts: ["Public offer exists"],
     outreachPlaybook: businessModel === "ecommerce" ? "premium_hobby_ecommerce" : "general_online_smb",
     positioningConcept: null,
+    commercialSignals: [
+      { kind: "global_customers", sourcePhrase: "Customers in 30 countries", detail: "Public customer footprint" },
+      { kind: "funding", sourcePhrase: "Backed by Example Ventures", detail: "Public funding statement" },
+    ],
   }
 }
 
@@ -60,6 +64,10 @@ describe("manual Japan Entry diagnostic report", () => {
     expect(report.meta).not.toHaveProperty("japan_entry_projection")
     expect(JSON.stringify(report)).not.toMatch(/monthly visits|monthly revenue|opportunity loss/i)
     expect(report.meta).toMatchObject({ manual_work: true, evidence_contract: "public-pages-only" })
+    expect(report.meta).toMatchObject({
+      manual_market_lens: { priority: "regional_core", pricingPolicy: "no_automatic_country_adjustment" },
+    })
+    expect(JSON.stringify(report.intelligence.signals)).toMatch(/Regional主要母集団|Customers in 30 countries|Backed by Example Ventures/)
     expect(report.content_template.appeal_angle).toBe("japan_entry")
     expect(report.source_coverage).toMatchObject({ score: 100, collected: 5, missing: 0 })
   })
