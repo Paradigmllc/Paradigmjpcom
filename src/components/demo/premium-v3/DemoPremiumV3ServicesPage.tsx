@@ -7,9 +7,12 @@ import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Rev
 import { DemoPremiumV3BeautyServices } from "./DemoPremiumV3BeautyServices"
 import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 import { PremiumV3HospitalityServices } from "./PremiumV3HospitalityInnerPages"
+import { PremiumV3IndustryServices } from "./PremiumV3IndustryInnerPages"
 
 export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData }) {
-  if ((data.presentation?.industryProfile ?? data.industry) === "restaurant") return <PremiumV3HospitalityServices data={data} />
+  const baseProfile = data.presentation?.industryProfile ?? String(data.industry)
+  if (baseProfile === "restaurant") return <PremiumV3HospitalityServices data={data} />
+  if (["dental", "construction", "retail", "accounting", "cleaning", "consulting"].includes(baseProfile)) return <PremiumV3IndustryServices data={data} />
   const direction = resolveDemoArtDirection(data)
   const profile = data.presentation?.industryProfile ?? data.industry
   if (profile === "beauty_salon" && direction.serviceLayout === "salon-catalogue") return <DemoPremiumV3BeautyServices data={data} />

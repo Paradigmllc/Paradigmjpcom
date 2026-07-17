@@ -1823,3 +1823,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 画像・スライダー・Embla、Framer Motionのreveal/parallax/stagger、非対称メニューカード、暗転したritual chapter、縦組みindex、レスポンシブ用の専用CSSを追加。飲食店に「コンサルティング」「仕事・実績」などの汎用語を出さず、既存の確認済みデータだけで内容を組み立てる。
 - `abi/screenshot-to-code`の実際の生成物を実行した、という過去の説明は事実ではない。今回の変更は同OSSの未導入を隠さず、既存の本番rendererに手作業で実装したproduction design familyである。API keyなしで生成器を動かしたことにはしていない。
 - TypeScript、対象ESLint、対象Vitest **3 files / 12 tests**、production build **408/408 pages**、Quality Guard **0 errors / 68 existing warnings**をpass。PR **#372 / #373**をmainへ統合し、正式`npm run release:prod`のdeployment **g111xq9qqr7yaphiquvp2du2**（scene copy修正を含む）でDB **91/91**、public smoke、Sales health JSON `ok:true`、Twenty worker restart 0、origin lock、post-deploy gateをpassした。`demo.paradigmjp.com/cafe-sosomu`のHome/About/Services/Works/ContactをPC・390pxで確認し、横overflow 0、console/page error 0、内部提案語（生成イメージ・エキテン掲載素材・権利確認前）0件をread-backした。外部送信、Twenty更新、候補投入は0件。
+## CURRENT STATUS - 2026-07-17 Premium V3 業種別コンポジション再設計（実装中 / 外部送信0）
+
+- 既存の「飲食店以外は共通ホーム・共通下層」という構造を、歯科・施工・小売・専門サービスの4系統へ分離した。各系統でヒーロー後の情報設計、サービスカード、工程、写真ギャラリー、FAQ/CTAの役割を変え、業種不整合な「コンサルティング」「仕事・実績」固定文言を表示しない。
+- `PremiumV3IndustryHome` / `PremiumV3IndustryInnerPages` を追加し、画像はヒーロー・ギャラリーを正規化した一意集合から使う。既存のFramer Motion/Embla/Next Imageを再利用し、スライダー、reveal、parallax、レスポンシブを業種構成へ組み込んだ。
+- `tsc --noEmit`、対象ESLint、`git diff --check`、Quality Guard 0 errors（既存68 warnings）を確認済み。まだ本番release・公開PC/mobile QA前のため、量産適用を完了扱いにしない。外部送信、Twenty追加、フォーム送信は0件。
