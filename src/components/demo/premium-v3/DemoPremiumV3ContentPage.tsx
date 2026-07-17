@@ -5,6 +5,7 @@ import { FaInstagram } from "react-icons/fa6"
 import type { DemoContentPage, DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal } from "./PremiumV3Primitives"
+import { PremiumV3IndustryWorks } from "./PremiumV3IndustryInnerPages"
 
 type ContentPageKey = "works" | "news" | "faq" | "recruit" | "privacy" | "terms" | "commerce"
 
@@ -30,10 +31,11 @@ function WorksPage({ data, page }: { data: DemoMultiPageData; page: DemoContentP
   const media = pageMedia(data)
   const hero = media[0] ?? data.premium!.heroMedia[0]
   const motionStyle = data.designRecipe?.motionVariant
-  const profile = data.presentation?.industryProfile ?? data.industry
+  const profile = data.presentation?.industryProfile ?? String(data.industry)
   const isRestaurant = profile === "restaurant"
   const direction = resolveDemoArtDirection(data)
   if (direction.worksLayout === "salon-lookbook") return <BeautyWorksPage data={data} page={page} />
+  if (["dental", "construction", "retail", "accounting", "cleaning", "consulting"].includes(profile)) return <PremiumV3IndustryWorks data={data} page={page} />
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
       {pageHero(data, page, hero)}
