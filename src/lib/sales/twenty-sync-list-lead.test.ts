@@ -27,6 +27,7 @@ describe("listLeadTwentyPayload", () => {
       paradigmDataStatus: null,
       paradigmReportUrl: { primaryLinkLabel: "", primaryLinkUrl: "" },
     })
+    expect(payload.paradigmOutreachTargetUrl).toEqual({ primaryLinkLabel: "営業先（確認済みフォーム）", primaryLinkUrl: "https://example.myshopify.com/pages/contact" })
     expect(payload.paradigmKarteSummary).toEqual(expect.objectContaining({
       markdown: expect.stringContaining("レポート・文面・Opportunity・送信は未生成"),
     }))

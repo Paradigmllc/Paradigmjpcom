@@ -17,6 +17,16 @@ export function normalizeDemoMediaUrl(source: string): string {
   return source
 }
 
+export function isGeneratedDemoVisualUrl(source: string): boolean {
+  try {
+    const url = new URL(source)
+    return url.pathname.includes("/api/sales/demo-visuals/")
+  } catch (error) {
+    console.error("[demo-media] generated visual URL check failed:", error)
+    return false
+  }
+}
+
 export function PremiumV3Media({ media, priority = false, className = "", sizes = "(max-width: 1024px) 100vw, 60vw" }: { media: DemoPremiumMedia; priority?: boolean; className?: string; sizes?: string }) {
   const reducedMotion = useReducedMotion()
   const source = normalizeDemoMediaUrl(media.src)
@@ -25,7 +35,9 @@ export function PremiumV3Media({ media, priority = false, className = "", sizes 
   }
   return (
     <motion.div className={`${className} overflow-hidden`} initial={reducedMotion ? false : { scale: 1.035 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ duration: 1.35, ease: [0.22, 1, 0.36, 1] }}>
-      <Image src={source} alt={media.alt} fill priority={priority} sizes={sizes} className="object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />
+      {isGeneratedDemoVisualUrl(source)
+        ? <motion.img src={source} alt={media.alt} loading={priority ? "eager" : "lazy"} className="h-full w-full object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />
+        : <Image src={source} alt={media.alt} fill priority={priority} sizes={sizes} className="object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />}
     </motion.div>
   )
 }

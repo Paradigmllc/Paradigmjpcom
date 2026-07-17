@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { CheckCircle2, DatabaseZap, ExternalLink, Images, LoaderCircle, RefreshCw, Send } from "lucide-react"
+import { CheckCircle2, DatabaseZap, ExternalLink, Images, LoaderCircle, RefreshCw, Send, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import type { DemoReviewedAsset } from "@/lib/sales/demo-private-access"
 import type { Industry } from "@/lib/sales/types"
@@ -92,6 +92,7 @@ export function PortalCandidateConsole() {
   const [bulkConfirmed, setBulkConfirmed] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
+  const [generatedBusy, setGeneratedBusy] = useState(false)
 
   const refresh = useCallback(async (nextSource: PortalSource = source, nextPage: number = page) => {
     setLoading(true)
@@ -152,6 +153,34 @@ export function PortalCandidateConsole() {
       setBulkBusy(false)
       setBulkProgress(null)
       setBulkConfirmed(false)
+    }
+  }
+
+  async function queueGeneratedVisualCandidates() {
+    const companyIds = bulkQueueCandidates
+      .map((candidate) => candidate.companyId)
+      .filter((companyId): companyId is string => Boolean(companyId))
+    if (companyIds.length === 0) return toast.error("DEMO生成対象のcompanyIdがありません。先に候補を保存してください")
+    setGeneratedBusy(true)
+    try {
+      const response = await fetch("/api/sales/demo-site/list-candidates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyIds, locale: "ja" }),
+      })
+      const payload = await response.json() as { ok?: boolean; queued?: number; reused?: number; rejected?: number; error?: string }
+      if (!response.ok && response.status !== 202 && response.status !== 422) throw new Error(payload.error ?? "生成ビジュアルDEMOの投入に失敗しました")
+      if ((payload.rejected ?? 0) > 0) {
+        toast.warning(`生成ビジュアルDEMO: キュー${payload.queued ?? 0}件 / 再利用${payload.reused ?? 0}件 / 審査基準外${payload.rejected ?? 0}件`)
+      } else {
+        toast.success(`生成ビジュアルDEMO: ${payload.queued ?? 0}件をキューへ追加しました。品質ゲート後にTwentyへ同期します。`)
+      }
+      await refresh(source, page)
+    } catch (error) {
+      console.error("[portal-console] generated visual queue failed:", error)
+      toast.error(error instanceof Error ? error.message : "生成ビジュアルDEMOの投入に失敗しました")
+    } finally {
+      setGeneratedBusy(false)
     }
   }
 
@@ -225,6 +254,18 @@ export function PortalCandidateConsole() {
               {bulkBusy ? "投入中…" : `${bulkQueueCandidates.length}件を一括生成投入`}
             </button>
           </div>
+        </div>
+      </div>
+      <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-5">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <h3 className="text-sm font-semibold text-violet-950">元画像を使わない高品質ビジュアルDEMO</h3>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-violet-900">ポータルの低解像度画像・権利未確認画像は使用せず、業種別の高解像度生成ビジュアル6点で構成します。掲載スナップショットの事実だけを本文に使い、品質ゲート通過後に7日限定URLとTwentyのDEMO URLを自動同期します。外部送信はありません。</p>
+          </div>
+          <button type="button" disabled={loading || generatedBusy || bulkQueueCandidates.every((candidate) => !candidate.companyId)} onClick={() => void queueGeneratedVisualCandidates()} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-700 px-5 text-sm font-bold text-white disabled:opacity-40">
+            {generatedBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {generatedBusy ? "生成キュー投入中…" : `${bulkQueueCandidates.filter((candidate) => candidate.companyId).length}件を生成ビジュアルで投入`}
+          </button>
         </div>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
