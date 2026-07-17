@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-18 ポータル候補 -> 業種別生成ビジュアルDEMO -> Twenty自動同期（実装・検証済み / 本番反映前 / 外部送信0）
+
+- ポータル候補のうち、`list_only=true`、独自HPなし、ブラウザ確認済みスナップショット、`smbFit.eligible=true`、`ready_for_review`、大企業シグナルなしの候補だけを新API `/api/sales/demo-site/list-candidates` へ最大300件投入できるようにした。既存の低解像度ポータル画像・権利未確認素材はDEMO素材へ流さない。
+- 候補ごとに6点の1600×1000業種別SVGビジュアルを決定論的に生成する。外部画像取得・検索/SNSスクレイピング・有料APIは使わず、候補の掲載スナップショットから確認済み事実だけを構成案へ渡す。業種別SVG APIは `/api/sales/demo-visuals/[slug]/[index]`。
+- 診断レポートが存在しないlist-only候補でも、監査結果や数値を捏造せず「掲載情報をもとにした構成案」として生成できるフォールバックを追加した。顧客向け本文から「公開データ分析」「提案用フォーム」「改善後イメージ」などの内部表現を除去し、飲食・歯科・美容などの業種表示を維持する。
+- キュー完了後は品質ゲートを通過した場合だけ7日限定の未公開URLを自動発行し、TwentyへDEMO URL・期限・品質スコア・未送信状態をread-back同期する。失敗時は会社メタデータを`failed`へ可視化し、外部送信は常に`false`。
+- TypeScript、Lint、Quality Guard **0 errors / 69 existing warnings**、全Vitest **196 files / 891 tests**、production build **408/408 pages**がpass。実候補への生成投入・Twenty更新・外部送信はこの実装確認では実行していない。
+
 ## CURRENT STATUS - 2026-07-18 SMB demo低解像度メディア排除・公開フォールバック修正（本番release完了 / 外部送信0）
 
 - Ekiten等のポータル由来画像が`129x129`/`304x304`等の小型派生画像のままHeroへ引き伸ばされる問題を確認した。生成時にHero **1200x720未満**、Gallery **900x600未満**、`size=1to1_*`/thumbnail系URL、寸法欠落をfail-closedで除外し、ブラウザ読込後のnatural sizeでも再検査する。

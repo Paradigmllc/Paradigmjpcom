@@ -19,6 +19,7 @@ import { readValidatedDemoSourceManifest } from "./demo-source-policy"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 import { buildDemoCreativeDirection, readCreativeDirection } from "./demo-creative-direction"
+import { buildListCandidateDiagnostic } from "./demo-list-candidate-report"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
@@ -62,14 +63,41 @@ export async function generateFullStackDemo(
       if (!sourceReview.ok) return failure(`Source manifest rejected: ${sourceReview.errors.join(", ")}`)
     }
 
+    const companyMeta = company.meta as Record<string, unknown> | null
+    const generationMeta = companyMeta && typeof companyMeta.demo_generation === "object" && !Array.isArray(companyMeta.demo_generation)
+      ? companyMeta.demo_generation as Record<string, unknown>
+      : {}
+    const generatedVisualMode = generationMeta.mode === "generated_visual"
     const { fetchDiagnosticReport } = await import("./diagnostic")
     const { localeToRegion } = await import("./types")
     const effectiveLocale = (locale ?? company.report_locale ?? "ja") as ReportLocale
-    const diagnostic = await fetchDiagnosticReport({
+    let diagnostic = await fetchDiagnosticReport({
       slug: company.slug ?? "",
       region: localeToRegion(effectiveLocale),
       reportLocale: effectiveLocale,
     })
+    if (!diagnostic && generatedVisualMode) {
+      const rootMeta = companyMeta ?? {}
+      const directSnapshot = rootMeta.portal_snapshot
+      const rawMeta = rootMeta.raw && typeof rootMeta.raw === "object" && !Array.isArray(rootMeta.raw)
+        ? rootMeta.raw as Record<string, unknown>
+        : {}
+      const snapshot = directSnapshot && typeof directSnapshot === "object" && !Array.isArray(directSnapshot)
+        ? directSnapshot as Record<string, unknown>
+        : rawMeta.portal_snapshot && typeof rawMeta.portal_snapshot === "object" && !Array.isArray(rawMeta.portal_snapshot)
+          ? rawMeta.portal_snapshot as Record<string, unknown>
+          : {}
+      const text = (value: unknown): string => typeof value === "string" ? value.trim() : ""
+      diagnostic = buildListCandidateDiagnostic({
+        companyName: company.company_name,
+        slug: company.slug ?? company.id,
+        industry: company.industry as Parameters<typeof buildListCandidateDiagnostic>[0]["industry"],
+        prefecture: company.prefecture ?? (text(snapshot.prefecture) || text(snapshot.address) || null),
+        locale: effectiveLocale,
+        category: text(snapshot.category) || company.industry || "",
+        description: text(snapshot.description),
+      })
+    }
     if (!diagnostic) return failure("No diagnostic report found for this company")
 
     const profile: CompanyProfile = {
@@ -84,7 +112,6 @@ export async function generateFullStackDemo(
     }
     const templates = selectTemplateCandidates(profile, diagnostic, 3)
     const existingSignatures = await fetchExistingSignatures(sb, companyId)
-    const companyMeta = company.meta as Record<string, unknown> | null
     const rights = buildProposalRightsManifest(companyMeta?.demo_media)
     const sharedEnhancement = (options.enhanceWithAI ?? true) && templates[0]
       ? await enhanceDemoWithDeepSeek(

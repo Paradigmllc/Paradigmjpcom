@@ -19,6 +19,16 @@ export function normalizeDemoMediaUrl(source: string): string {
   return source
 }
 
+export function isGeneratedDemoVisualUrl(source: string): boolean {
+  try {
+    const url = new URL(source)
+    return url.pathname.includes("/api/sales/demo-visuals/")
+  } catch (error) {
+    console.error("[demo-media] generated visual URL check failed:", error)
+    return false
+  }
+}
+
 function PremiumMediaFallback({ media, className, label }: { media?: DemoPremiumMedia; className: string; label: string }) {
   return (
     <div className={`${className} z-10 overflow-hidden bg-[radial-gradient(circle_at_22%_20%,rgba(69,185,190,.55),transparent_42%),radial-gradient(circle_at_82%_76%,rgba(255,255,255,.14),transparent_34%),linear-gradient(135deg,#071c22,#173a40_58%,#0e2429)]`} role="img" aria-label={label}>
@@ -54,16 +64,18 @@ export function PremiumV3Media({ media, priority = false, className = "", sizes 
   }
   return (
     <motion.div className={`${className} overflow-hidden`} initial={reducedMotion ? false : { scale: 1.035 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ duration: 1.35, ease: [0.22, 1, 0.36, 1] }}>
-      <Image src={source} alt={media.alt} fill priority={priority} sizes={sizes} onLoad={(event) => {
-        const { naturalWidth, naturalHeight } = event.currentTarget
-        if (naturalWidth < 1_200 || naturalHeight < 720) {
-          console.warn("[demo-media] rejected low-resolution asset at render time", { source, naturalWidth, naturalHeight })
+      {isGeneratedDemoVisualUrl(source)
+        ? <motion.img src={source} alt={media.alt} loading={priority ? "eager" : "lazy"} className="h-full w-full object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />
+        : <Image src={source} alt={media.alt} fill priority={priority} sizes={sizes} onLoad={(event) => {
+          const { naturalWidth, naturalHeight } = event.currentTarget
+          if (naturalWidth < 1_200 || naturalHeight < 720) {
+            console.warn("[demo-media] rejected low-resolution asset at render time", { source, naturalWidth, naturalHeight })
+            setImageState("fallback")
+          }
+        }} onError={(error) => {
+          console.error("[demo-media] failed to load image", { source, error })
           setImageState("fallback")
-        }
-      }} onError={(error) => {
-        console.error("[demo-media] failed to load image", { source, error })
-        setImageState("fallback")
-      }} className="object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />
+        }} className="object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />}
     </motion.div>
   )
 }

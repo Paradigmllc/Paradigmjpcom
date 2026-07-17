@@ -18,9 +18,8 @@ import {
   processAssetPhase,
   processSyncPhase,
 } from "./enrichment-jobs-runner-phases";
-import { generateFullStackDemo } from "./demo-page-service";
-import { readValidatedDemoSourceManifest } from "./demo-source-policy";
 import { processJapanEntryReportJob } from "./japan-entry-report-job";
+import { processDemoGenerationJob } from "./enrichment-demo-job";
 
 export type { EnrichmentRunResult };
 
@@ -258,62 +257,6 @@ async function completeJob(
       );
     }
   }
-}
-
-async function processDemoGenerationJob(
-  sb: ServiceSupabase,
-  job: SalesEnrichmentJob,
-  company: SalesCompany,
-): Promise<{ ok: boolean; error?: string }> {
-  const sourceReview = readValidatedDemoSourceManifest(company.meta);
-  if (!sourceReview.ok)
-    return {
-      ok: false,
-      error: `source manifest rejected: ${sourceReview.errors.join(", ")}`,
-    };
-
-  const locale = job.input_payload.locale === "en" ? "en" : "ja";
-  const result = await generateFullStackDemo(company.id, locale, {
-    publicationMode: "private_review",
-    sourcePolicy: "reviewed_manifest",
-    enhanceWithAI: true,
-    notify: false,
-  });
-  if (!result.ok || !result.slug)
-    return { ok: false, error: result.error ?? "demo quality gate failed" };
-
-  const resultPayload: JsonRecord = {
-    slug: result.slug,
-    canonical_url: result.demoUrl,
-    quality_score: result.qualityScore ?? null,
-    quality_report: result.qualityReport ?? null,
-    generation_candidates: result.candidates ?? [],
-    publication_status: result.publicationStatus ?? "private_review",
-    source_policy: "reviewed_manifest",
-    sending_enabled: false,
-  };
-  const { error } = await sb
-    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-    .update({
-      status: "completed",
-      result_payload: resultPayload,
-      completed_at: nowIso(),
-      locked_at: null,
-      lock_owner: null,
-    })
-    .eq("id", job.id);
-  if (error) return { ok: false, error: error.message };
-
-  await logDiagnosisEvent(sb, {
-    companyId: company.id,
-    jobId: job.id,
-    eventType: "private_demo_ready",
-    status: "success",
-    title: "非公開デモの品質審査が完了しました",
-    message: result.demoUrl ?? undefined,
-    payload: resultPayload,
-  });
-  return { ok: true };
 }
 
 // ── Orchestrator: runs all 5 phases sequentially, preserves partial results ──

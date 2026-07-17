@@ -68,6 +68,12 @@ export function buildDemoMultiPageData(
   const industryLabel = isJa ? (cfg.labelJa ?? "コンサルティング") : (cfg.labelEn ?? "Consulting")
   const metaObj = (company.meta ?? {}) as Record<string, unknown>
   const publicFacts = (metaObj.public_facts ?? {}) as Record<string, unknown>
+  const generatedVisualMode = Boolean(
+    metaObj.demo_generation
+    && typeof metaObj.demo_generation === "object"
+    && !Array.isArray(metaObj.demo_generation)
+    && (metaObj.demo_generation as Record<string, unknown>).mode === "generated_visual",
+  )
   const hasOfficialSocial = typeof metaObj.official_instagram_url === "string"
     || typeof metaObj.official_facebook_url === "string"
   const verifiedFacts = [
@@ -99,9 +105,13 @@ export function buildDemoMultiPageData(
 
   const homeHero = {
     title: heroTitle,
-    subtitle: isJa
-      ? "御社の公開データを分析し、集客力を最大化する構成で再設計しました。下記は改善後のイメージです。"
-      : "Redesigned based on your public data to maximize customer acquisition. This is the improved version.",
+    subtitle: generatedVisualMode
+      ? (isJa
+        ? "事業内容、場所、提供内容が自然につながる順序で、訪れる前の理解を整えました。"
+        : "The offer, place, and context are arranged in a clear sequence before a visitor takes the next step.")
+      : isJa
+        ? "御社の公開データを分析し、集客力を最大化する構成で再設計しました。下記は改善後のイメージです。"
+        : "Redesigned based on your public data to maximize customer acquisition. This is the improved version.",
     tagline: industryLabel,
     companyName: name,
     industryLabel,
@@ -180,7 +190,7 @@ export function buildDemoMultiPageData(
       id: `ba-${i}`,
       label: cleanFs(act?.headline, titles[i] ?? "", 90),
       beforeDescription: beforeDescriptions[i] ?? "",
-      afterDescription: cleanFs(act?.body, isJa ? "改善後の理想状態" : "Improved state after redesign", 180),
+      afterDescription: cleanFs(act?.body, generatedVisualMode ? (isJa ? "読み手が内容を理解しやすい状態" : "A clearer visitor journey") : (isJa ? "改善後の理想状態" : "Improved state after redesign"), 180),
       beforeImageUrl: null,
       afterImageUrl: null,
       severity: (act?.severity ?? "info") as DemoBeforeAfterItem["severity"],
@@ -272,8 +282,8 @@ export function buildDemoMultiPageData(
     services: dataDrivenServices,
     process: isJa
       ? [
-          { step: 1, title: "ヒアリング", description: "現状の課題と目標をお伺いし、最適なプランをご提案します。" },
-          { step: 2, title: "設計・提案", description: "分析結果をもとに、具体的な改善計画とスケジュールを作成します。" },
+          { step: 1, title: "ご案内", description: generatedVisualMode ? "事業内容と利用者が知りたい情報を整理します。" : "現状の課題と目標をお伺いし、最適なプランをご提案します。" },
+          { step: 2, title: generatedVisualMode ? "情報設計" : "設計・提案", description: generatedVisualMode ? "サービス、場所、よくある質問を読みやすい順序にまとめます。" : "分析結果をもとに、具体的な改善計画とスケジュールを作成します。" },
           { step: 3, title: "実装", description: "最新の技術とデザインで、計画を形にします。進捗は随時共有します。" },
           { step: 4, title: "運用・改善", description: "公開後も効果測定と改善を継続し、長期的な成長をサポートします。" },
         ]
@@ -308,13 +318,17 @@ export function buildDemoMultiPageData(
     address,
     calBookingUrl: "",
     calDirectUrl: "",
-    formNote: isJa
-      ? hasOfficialSocial
-        ? "最新の案内は公式SNSをご確認ください。この提案用フォームは入力体験のみで、外部には送信されません。"
-        : "正式な相談方法と受付条件は事業者確認後に掲載します。この提案用フォームは入力体験のみで、外部には送信されません。"
-      : hasOfficialSocial
-        ? "Check the official social profile for current information. This proposal form is interactive but does not submit data."
-        : "The official inquiry method and acceptance criteria require operator confirmation. This proposal form does not submit data.",
+    formNote: generatedVisualMode
+      ? (isJa
+        ? "正式なお問い合わせ方法は公開前に確認して掲載します。"
+        : "The official contact method will be confirmed before launch.")
+      : isJa
+        ? hasOfficialSocial
+          ? "最新の案内は公式SNSをご確認ください。この提案用フォームは入力体験のみで、外部には送信されません。"
+          : "正式な相談方法と受付条件は事業者確認後に掲載します。この提案用フォームは入力体験のみで、外部には送信されません。"
+        : hasOfficialSocial
+          ? "Check the official social profile for current information. This proposal form is interactive but does not submit data."
+          : "The official inquiry method and acceptance criteria require operator confirmation. This proposal form does not submit data.",
     formEnabled: false,
     mapUrl: typeof publicFacts.address === "string" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : undefined,
     accentColor,
@@ -359,9 +373,9 @@ export function buildDemoMultiPageData(
       services: servicesPage,
       contact: contactPage,
       works: {
-        title: isJa ? "実績・事例" : "Work & Cases",
-        subtitle: isJa ? "実際の写真と実績情報を確認後に公開するページです。" : "This page will be completed after verified project details and image rights are confirmed.",
-        eyebrow: isJa ? "掲載構成案" : "Proposed structure",
+        title: generatedVisualMode ? (isJa ? "サービスの風景" : "The experience") : (isJa ? "実績・事例" : "Work & Cases"),
+        subtitle: generatedVisualMode ? (isJa ? "提供内容や空間の印象を、写真と文章でゆっくりご覧いただけます。" : "Explore the offer and atmosphere through a considered visual story.") : (isJa ? "実際の写真と実績情報を確認後に公開するページです。" : "This page will be completed after verified project details and image rights are confirmed."),
+        eyebrow: generatedVisualMode ? (isJa ? "DETAILS" : "DETAILS") : (isJa ? "掲載構成案" : "Proposed structure"),
         sections: worksSections,
         accentColor,
       },
