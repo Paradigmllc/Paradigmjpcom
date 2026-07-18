@@ -14,6 +14,7 @@ import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 import { generatedDemoVisualUrl } from "./demo-generated-visual"
 import { siteUrl } from "./routing"
+import { buildPrivateProposalMedia } from "./demo-proposal-media"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -181,49 +182,6 @@ function isDemoMultiPageData(value: unknown): value is DemoMultiPageData {
     && isRecord(value.pages.about)
     && isRecord(value.pages.services)
     && isRecord(value.pages.contact)
-}
-
-/**
- * Private proposal pages may use the operator-reviewed source photos carried
- * in the rights manifest. They must never leak into a public/published page;
- * the caller therefore gates this helper with the preview access state.
- */
-export function buildPrivateProposalMedia(
-  manifest: unknown,
-  companyName: string,
-  slug: string,
-  industry: Industry | string | null,
-): DemoPremiumMedia[] {
-  if (!isRecord(manifest) || manifest.status === "blocked" || !Array.isArray(manifest.assets)) return []
-
-  return manifest.assets.flatMap((asset, index) => {
-    if (!isRecord(asset) || asset.kind !== "image" || typeof asset.source !== "string") return []
-    let source: URL
-    try {
-      source = new URL(asset.source)
-    } catch (error) {
-      console.error("[demo-generator] proposal image URL is invalid:", error)
-      return []
-    }
-    if (source.protocol !== "https:") return []
-    const variant = (index % 6) + 1
-    return [{
-      src: source.toString(),
-      fallbackSrc: generatedDemoVisualUrl({
-        origin: siteUrl(),
-        slug,
-        industry: industry ?? "consulting",
-        variant,
-      }),
-      alt: `${companyName}の実績写真 ${index + 1}`,
-      kind: "image" as const,
-      width: 1200,
-      height: 900,
-      caption: "実績写真",
-      title: "実績写真",
-      eyebrow: "WORKS",
-    }]
-  }).slice(0, 6)
 }
 
 /**
