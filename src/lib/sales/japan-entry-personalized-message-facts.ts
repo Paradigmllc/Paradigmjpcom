@@ -15,6 +15,8 @@ type JsonRecord = Record<string, unknown>;
 export interface JapanEntryPersonalizationContext {
   competitorAnalysis?: unknown;
   positioningConcept?: ManualPositioningConcept | null;
+  companyFacts?: string[];
+  companySourceUrl?: string | null;
 }
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -119,6 +121,19 @@ export function buildJapanEntryPersonalizationFacts(
   if (!status || pages.length === 0) return [];
   const confidence = pages.length >= 3 ? 0.76 : 0.58;
   const facts: JapanEntryPersonalizationFact[] = [];
+
+  const companySource = httpsUrl(context?.companySourceUrl) ?? "Company public website"
+  for (const [index, value] of (context?.companyFacts ?? []).slice(0, 4).entries()) {
+    const statement = value.trim().slice(0, 260)
+    if (!statement) continue
+    facts.push({
+      id: `company-observed-${index + 1}`,
+      statement,
+      source: companySource,
+      confidence: 0.82,
+      anchors: [statement],
+    })
+  }
 
   if (typeof status.japanese_language_missing === "boolean") {
     facts.push(auditFact({

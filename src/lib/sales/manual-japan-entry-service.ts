@@ -23,6 +23,7 @@ import {
   attachManualWorkSource,
   findManualLeadSource,
   findManualWorkByDomain,
+  listRecentManualMessages,
   updateManualWork,
 } from "./manual-japan-entry-store"
 import {
@@ -237,12 +238,14 @@ export async function processManualJapanEntryUrl(
       stage: "copy_generation",
     })
 
+    const priorMessages = await listRecentManualMessages(80, work.id)
     const generated = await generatePersonalizedJapanEntryMessage(buildManualInitialMessageInput({
       profile,
       evidence,
       variant: effectiveVariant,
       angle: resolvedAngle.angle,
       projection: marketProjection.projection,
+      priorMessages,
     }))
     const messageReview = {
       ...jsonRecord(generated.review),
@@ -256,6 +259,11 @@ export async function processManualJapanEntryUrl(
       message_angle_fallback_reason: resolvedAngle.fallbackReason,
       outreach_playbook: profile.outreachPlaybook,
       positioning_concept_prepared: Boolean(profile.positioningConcept),
+      strategy: generated.strategy ?? null,
+      candidates: generated.candidates ?? [],
+      selected_index: generated.selectedIndex ?? null,
+      evidence_pack: generated.evidencePack ?? [],
+      similarity: generated.similarity ?? null,
     }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
     work = await updateManualWork(work.id, {

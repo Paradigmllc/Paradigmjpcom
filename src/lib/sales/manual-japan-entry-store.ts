@@ -52,6 +52,33 @@ export async function listManualJapanEntryWork(limit = 100): Promise<ManualJapan
   return hydrateSources((data ?? []).map(row))
 }
 
+export async function listRecentManualMessages(limit = 80, excludeId?: string): Promise<Array<{
+  id: string
+  companyName: string | null
+  domain: string
+  message: string
+}>> {
+  let query = client()
+    .from(DB_TABLES.MANUAL_JAPAN_ENTRY_WORK)
+    .select("id,company_name,domain,initial_message")
+    .not("initial_message", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(Math.max(1, Math.min(limit, 200)))
+  if (excludeId) query = query.neq("id", excludeId)
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  return (data ?? []).flatMap((value) => {
+    const record = value as Record<string, unknown>
+    if (typeof record.id !== "string" || typeof record.domain !== "string" || typeof record.initial_message !== "string") return []
+    return [{
+      id: record.id,
+      companyName: typeof record.company_name === "string" ? record.company_name : null,
+      domain: record.domain,
+      message: record.initial_message,
+    }]
+  })
+}
+
 export async function listManualLeadSourceCatalog(): Promise<ManualLeadSourceCatalogRow[]> {
   const { data, error } = await client()
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_SOURCE_CATALOG)

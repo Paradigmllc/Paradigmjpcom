@@ -60,11 +60,26 @@ describe("manual work first-touch generation integration", () => {
         return {
           ok: true,
           text: JSON.stringify({
+            strategy: {
+              primary_observation: "Example describes subscription analytics for independent retailers.",
+              why_now: "Japan applicability remains unverified from the checked pages.",
+              japanese_segment: "Independent retail operators evaluating inventory analytics.",
+              japan_gap: "The checked pages did not show a Japanese-language customer path.",
+              opportunity_angle: "Validate the buyer evaluation path before market entry.",
+              offer_relevance: "A public-evidence analysis can test the entry hypothesis.",
+              tone: "Direct and low pressure.",
+              cta: "Ask permission to send the analysis.",
+              country_adaptation: "Business-formal without nationality assumptions.",
+              prohibited_claims: ["Measured demand", "Guaranteed revenue"],
+            },
             candidates: ["direct", "decision", "customer-path"].map(() => ({
               message,
               fact_ids: ["japan-audit-language", "japan-audit-jpy"],
               product_evidence: "subscription analytics platform for independent retailers",
               angle: "problem",
+              opening_style: "public-observation-led",
+              diagnostic_focus: "Japanese-language evaluation path",
+              cta_type: "founder_forward",
             })),
           }),
         }

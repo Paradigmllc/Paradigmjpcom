@@ -26,6 +26,10 @@ export interface JapanEntryMessageReview {
   editorialScores: { specificity: number; naturalness: number; credibility: number; executiveRelevance: number };
   rationale: string;
   riskFlags: string[];
+  uniquenessScore?: number;
+  maxSimilarity?: number;
+  matchedMessageId?: string | null;
+  candidateCount?: number;
 }
 
 function numericTokens(value: string): string[] {
@@ -105,7 +109,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   }
 
   if (!message.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("Company name is missing"); score -= 20; }
-  if (!/Sato/i.test(message) || !/Paradigm LLC in Japan/i.test(message)) { issues.push("Sato and Paradigm LLC introduction is incomplete"); score -= 20; }
+  if (!/Sato/i.test(message) || !/Paradigm LLC/i.test(message) || !/\bJapan\b/i.test(message)) { issues.push("Sato, Paradigm LLC, and Japan introduction is incomplete"); score -= 20; }
   if (purpose === "commercial_offer" && !/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
   if (productEvidence.length < 3 || !input.productContext.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
   else if (!message.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
@@ -136,27 +140,34 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     issues.push("The mockup angle must identify the positioning concept as an unpublished draft"); score -= 40;
   }
 
-  if (paragraphs.length !== 4) { issues.push("Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
+  const validParagraphCount = customInitialInterest ? paragraphs.length >= 3 && paragraphs.length <= 4 : paragraphs.length === 4;
+  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain three or four short paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
   else {
     const expectedIntro = "Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.";
     const productParagraph = paragraphs[1] ?? "";
-    if ((paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
-    if (
-      !productParagraph.startsWith("I reviewed")
-      || !productParagraph.toLowerCase().includes(input.companyName.toLowerCase())
-      || !productParagraph.toLowerCase().includes(productEvidence.toLowerCase())
-    ) { issues.push("Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
-    if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph)) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
-    if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext)) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
+    const productSection = customInitialInterest
+      ? paragraphs.find((paragraph) => paragraph.toLowerCase().includes(productEvidence.toLowerCase())) ?? message
+      : productParagraph;
+    if (!customInitialInterest && (paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
+    if (!productSection.toLowerCase().includes(input.companyName.toLowerCase()) || !productSection.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push(customInitialInterest ? "Company name and grounded product understanding are required" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
+    if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
     const unsupportedProductTerms = ["need", "needs", "pain point", "pain points", "challenge", "challenges", "demand"];
     const unsupportedTerms = unsupportedProductTerms.filter(
-      (term) => productParagraph.toLowerCase().includes(term) && !input.productContext.toLowerCase().includes(term),
+      (term) => productSection.toLowerCase().includes(term) && !input.productContext.toLowerCase().includes(term),
     );
     if (unsupportedTerms.length > 0) { issues.push(`Unsupported product-context terms in paragraph 2: ${unsupportedTerms.join(", ")}`); score -= 35; }
-    if (!selected.some((fact) => includesAny(paragraphs[2] ?? "", fact.anchors))) { issues.push("Japan-specific diagnosis must be in paragraph 3"); score -= 20; }
+    if (!selected.some((fact) => includesAny(customInitialInterest ? message : paragraphs[2] ?? "", fact.anchors))) { issues.push(customInitialInterest ? "A selected Japan-specific diagnosis must be reflected in the message" : "Japan-specific diagnosis must be in paragraph 3"); score -= 20; }
     if (purpose === "initial_interest") {
-      const approvedClose = initialInterestClose(initialInterestOptions);
-      if (paragraphs[3] !== approvedClose) { issues.push("Initial-interest CTA must use the approved permission-based close exactly"); score -= 25; }
+      if (customInitialInterest) {
+        const finalParagraph = paragraphs.at(-1) ?? "";
+        if (!/(?:share|send|receive|forward|right person|appropriate person)/i.test(finalParagraph) || !/(?:analysis|opportunity snapshot|brief)/i.test(finalParagraph)) {
+          issues.push("Initial-interest CTA must offer only the analysis through a permission or routing question"); score -= 25;
+        }
+      } else {
+        const approvedClose = initialInterestClose(initialInterestOptions);
+        if (paragraphs[3] !== approvedClose) { issues.push("Initial-interest CTA must use the approved permission-based close exactly"); score -= 25; }
+      }
     } else {
       const approvedOfferLead = "Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap.";
       if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
@@ -185,7 +196,8 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const hasCallCta = /15-minute (?:call|conversation|meeting)/i.test(message);
   if (!hasAnalysisCta && !hasCallCta) { issues.push("Low-pressure report or 15-minute CTA is missing"); score -= 10; }
   if (hasAnalysisCta && hasCallCta) { issues.push("CTA must offer either a detailed analysis or a 15-minute call, not both"); score -= 10; }
-  if (/(?:https?:\/\/|www\.|\[[^\]]+\]\([^)]+\)|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b)/i.test(message)) { issues.push("URL, link, or email is prohibited"); score = 0; }
+  if (/(?:https?:\/\/|www\.|\[[^\]]+\]\([^)]+\)|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b)/i.test(message)) { issues.push("URL, link, domain, or email is prohibited"); score = 0; }
+  if (/(?:^|\n)\s*(?:source|sources|reference|references|citation|citations)\s*:|\baccording to\b|\[[0-9]{1,3}\]|\((?:source|ref(?:erence)?)[^)]+\)/im.test(message)) { issues.push("Sources, citations, and reference markers are prohibited in form copy"); score = 0; }
   const messageWithoutNegatedGuarantees = message.replace(
     /(?:\bnot|\bno|\bdoes not|\bdo not|\bcannot|\bnever)\s+(?:be\s+)?guarantee(?:d|s|ing)?/gi,
     "",
@@ -215,7 +227,8 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (useAnnual && !/(?:not observed revenue|not measured revenue)/i.test(message)) { issues.push("The annual estimate must state that it is not observed revenue"); score -= 35; }
     if (useAnnual && !/(?:not guaranteed|no guarantee|not.*guaranteed performance)/i.test(message)) { issues.push("The annual estimate must state that performance is not guaranteed"); score -= 35; }
     if (!useAnnual && (!/public-signal/i.test(message) || !/not measured (?:analytics|traffic|revenue|sales)/i.test(message))) { issues.push("Quantified mode must identify public-signal estimates as not measured analytics"); score -= 35; }
-    const diagnosisNumbers = new Set(numericTokens(paragraphs[2] ?? "").map(normalizeNumber));
+    const diagnosisText = customInitialInterest ? message : paragraphs[2] ?? "";
+    const diagnosisNumbers = new Set(numericTokens(diagnosisText).map(normalizeNumber));
     const missingModeledValues = selected
       .filter((fact) => fact.id.startsWith("modeled-"))
       .flatMap((fact) => numericTokens(fact.statement).map(normalizeNumber))
@@ -226,8 +239,8 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     }
     const opportunityFact = selected.find((fact) => fact.id === (useAnnual ? "modeled-annual-opportunity-range" : "modeled-monthly-opportunity-gap"));
     const requiredCurrencyValue = opportunityFact?.anchors.find((anchor) => /^\$\d/.test(anchor));
-    if (requiredCurrencyValue && !(paragraphs[2] ?? "").includes(requiredCurrencyValue)) {
-      issues.push("The modeled opportunity value must retain its exact USD currency label in paragraph 3");
+    if (requiredCurrencyValue && !diagnosisText.includes(requiredCurrencyValue)) {
+      issues.push(customInitialInterest ? "The modeled opportunity value must retain its exact USD currency label" : "The modeled opportunity value must retain its exact USD currency label in paragraph 3");
       score -= 35;
     }
   } else if (selectedModeled || (purpose === "initial_interest" && initialInterestOptions.includeEstimate)) { issues.push("Audit mode must not use incomplete modeled metrics"); score -= 45; }
