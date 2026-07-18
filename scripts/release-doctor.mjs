@@ -747,6 +747,9 @@ function checkStaticReleaseRules() {
   const manualWorkHistoryItem = fs.existsSync("src/components/work/ManualWorkHistoryItem.tsx")
     ? fs.readFileSync("src/components/work/ManualWorkHistoryItem.tsx", "utf8")
     : ""
+  const manualWorkPage = fs.existsSync("src/app/work/page.tsx")
+    ? fs.readFileSync("src/app/work/page.tsx", "utf8")
+    : ""
   const manualWorkDeepSeekGateway = fs.existsSync("src/lib/deepseek.ts")
     ? fs.readFileSync("src/lib/deepseek.ts", "utf8")
     : ""
@@ -796,6 +799,7 @@ function checkStaticReleaseRules() {
     && !manualWorkService.includes('purpose: "commercial_offer"')
     && manualWorkService.includes('return item.status === "failed"')
     && manualWorkHistoryItem.includes("再解析")
+    && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
@@ -807,9 +811,9 @@ function checkStaticReleaseRules() {
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has login return routing, grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires login return routing, grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"

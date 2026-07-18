@@ -10,7 +10,7 @@ import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-
 export const dynamic = "force-dynamic"
 
 export default async function ManualJapanEntryWorkPage() {
-  if (!(await isCurrentRequestAdmin())) redirect("/admin/login")
+  if (!(await isCurrentRequestAdmin())) redirect("/admin/login?redirect=%2Fwork")
   let items: ManualJapanEntryWorkRow[] = []
   let metrics: ManualExperimentMetric[] = summarizeManualWorkExperiment([])
   let angleMetrics: ManualAngleMetric[] = summarizeManualWorkAngles([])
