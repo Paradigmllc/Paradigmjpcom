@@ -16,7 +16,7 @@ import { generatedDemoVisualUrl } from "./demo-generated-visual"
 import { siteUrl } from "./routing"
 import { buildPrivateProposalMedia } from "./demo-proposal-media"
 import { applyDemoDesignSpec, readPersistedDemoDesignSpec } from "./demo-design-spec-runtime"
-
+import { ensureGeneratedVisualMedia } from "./demo-visual-fallback"
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
  * falling back to building from sales_companies data.
@@ -315,8 +315,9 @@ export async function fetchDemoMultiPageData(
             artifact_admin: meta.artifact_admin,
           } as DemoMultiPageData["meta"],
         })
+        const presentedWithVisuals = ensureGeneratedVisualMedia(presented, { origin: siteUrl(), slug: themePage.slug, industry: visualIndustry })
         const designSpec = readPersistedDemoDesignSpec(meta.design_spec)
-        const personalized = designSpec ? applyDemoDesignSpec(presented, designSpec) : presented
+        const personalized = designSpec ? applyDemoDesignSpec(presentedWithVisuals, designSpec) : presentedWithVisuals
         return applyDemoAdminOverrides(upgradeDemoToPremiumV3(personalized))
       }
 
