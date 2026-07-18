@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { generateDemoDesign, buildDesignInput } from "@/lib/sales/demo-design-generator"
+import { validateDesignSpec } from "@/lib/sales/demo-design-prompts"
 import type { DesignPromptInput } from "@/lib/sales/demo-design-prompts"
 import { isAuthorizedOperatorRequest } from "@/lib/api-security"
 
@@ -70,7 +71,14 @@ export async function POST(
   }
 
   const { slug } = await params
-  const body = await req.json().catch(() => ({})) as Record<string, unknown>
+  let body: Record<string, unknown>
+  try {
+    const parsed = await req.json()
+    body = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+  } catch (error) {
+    console.error(`[demo-designs/${slug}] request body parse failed:`, error)
+    return NextResponse.json({ error: "invalid JSON body" }, { status: 400 })
+  }
   const locale = (typeof body.locale === "string" ? body.locale : "ja") as "ja" | "en"
 
   try {
@@ -119,9 +127,19 @@ export async function POST(
       return NextResponse.json({ error: "insufficient company data" }, { status: 400 })
     }
 
-    const result = await generateDemoDesign(input, slug)
+    const imported = body.spec
+    const importedValidation = imported ? validateDesignSpec(imported) : null
+    if (imported && (!importedValidation?.ok || !importedValidation.spec)) {
+      console.error(`[demo-designs/${slug}] imported screenshot-to-code spec rejected:`, importedValidation?.errors)
+      return NextResponse.json({ error: "invalid design spec", details: importedValidation?.errors }, { status: 422 })
+    }
+
+    const result = importedValidation?.spec
+      ? { ok: true as const, spec: importedValidation.spec, source: "screenshot-to-code" as const }
+      : { ...(await generateDemoDesign(input, slug)), source: "deepseek" as const }
     if (!result.ok || !result.spec) {
-      return NextResponse.json({ error: result.error ?? "generation failed" }, { status: 500 })
+      const failure = "error" in result ? result.error : undefined
+      return NextResponse.json({ error: failure ?? "generation failed" }, { status: 500 })
     }
 
     // Store the generated spec in theme_demo_pages
@@ -136,6 +154,7 @@ export async function POST(
           meta: {
             ...((typeof companyData.meta === "object" && companyData.meta !== null) ? companyData.meta as Record<string, unknown> : {}),
             design_spec: result.spec,
+            design_spec_source: result.source,
             design_philosophy: result.spec.design_philosophy,
             generated_at: new Date().toISOString(),
           },

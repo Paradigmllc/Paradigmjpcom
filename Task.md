@@ -1905,3 +1905,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 記事カードに残っていた内部的な`PREVIEW`表記を顧客向けの`更新情報`へ変更した。記事・サイドバー・CTAの導線と業種別コピー／3レイアウト分岐は維持し、顧客画面から管理用ラベルを除去した。
 - PR **#413**をmainへ統合し、正式`npm run release:prod`のdeployment **a8bfzm1jicy2hujb5x9s4g2g**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
 - 実企業デモを公開read-backし、`/news`はHTTP **200**、サイドバー **1件**、記事カード **4件**、問い合わせCTA **1件**。ホームはJournal **1セクション**、ニュース導線 **11件**、問い合わせCTA **2件**。`記事サンプル`／`サンプル記事`／`PREVIEW`は **0件**、`更新情報`を確認。外部送信は0件。
+
+## CURRENT STATUS - 2026-07-18 DesignSpec runtime bridge（実装中 / 本番release前 / 外部送信0）
+
+- これまで保存されるだけで公開レンダラーが無視していた`meta.design_spec`を、`demo-design-spec-runtime.ts`で厳格に検証し、公開用の型付きデータへ投影する経路を追加した。DeepSeekの6軸（色、書体、レイアウト、ナビ、モーション、密度）を`DemoCreativeDirection`、`DemoBrandSystem`、ページ別のhero／サービス／記事／FAQへ反映し、任意JSXやCSSを公開面へ流さない。
+- 企業名・業種に反する文言、内部提案語、スクリーンショット由来の管理語を公開コピーからfail-closedで除外。保存済み仕様が不正な場合は従来の業種別データへ戻る。`DemoPremiumV3Layout`にはdesign specのnavigation styleも渡し、floating／hidden drawer／sidebar等の差分を実行する。
+- `/api/demo-designs/[slug]`へ検証済みの外部`spec`インポート経路を追加。`abi/screenshot-to-code`のOSS本体は、現時点ではローカルclone・独自backend・モデルAPIキーが必要で、当リポジトリに実行済みとして偽装していない。OSSから出力したJSONを`x-admin-secret`経由で取り込み、同じ品質ゲートと公開レンダラーで使える設計にした。
+- 検証済み: `npm exec -- tsc --noEmit`、`npm run lint`、対象Vitest **3 files / 11 tests**。次のgateはproduction build、Quality Guard、commit/push/PR、正式`npm run release:prod`、実企業デモのPC/mobile公開read-back。企業追加、Twenty同期、フォーム・メール等の外部送信は0件。
