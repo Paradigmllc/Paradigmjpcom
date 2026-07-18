@@ -375,24 +375,31 @@ export async function runEnrichmentJobs(
     if (claimed) claimedJobs.push(job);
   }
 
-  // Process claimed jobs in parallel with Promise.allSettled
-  const results = await Promise.allSettled(
-    claimedJobs.map(async (job) => {
-      let result: { ok: boolean; error?: string };
-      try {
-        result = await processJob(sb, job);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(
-          "[sales-enrichment] job processing exception:",
-          job.id,
-          message,
-        );
-        result = { ok: false, error: `exception: ${message}` };
-      }
-      return { job, result };
-    }),
-  );
+  // DEMO jobs call Twenty for a write plus read-back. Keep that lane bounded
+  // so a 32-item drain cannot trip Twenty's rate window and circuit breaker.
+  const processConcurrency = jobTypes.includes("demo_generate") ? 4 : claimedJobs.length;
+  const results: PromiseSettledResult<{ job: SalesEnrichmentJob; result: { ok: boolean; error?: string } }>[] = [];
+  for (let index = 0; index < claimedJobs.length; index += Math.max(1, processConcurrency)) {
+    const chunk = claimedJobs.slice(index, index + Math.max(1, processConcurrency));
+    const chunkResults = await Promise.allSettled(
+      chunk.map(async (job) => {
+        let result: { ok: boolean; error?: string };
+        try {
+          result = await processJob(sb, job);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(
+            "[sales-enrichment] job processing exception:",
+            job.id,
+            message,
+          );
+          result = { ok: false, error: `exception: ${message}` };
+        }
+        return { job, result };
+      }),
+    );
+    results.push(...chunkResults);
+  }
 
   for (const settled of results) {
     if (settled.status === "rejected") {
