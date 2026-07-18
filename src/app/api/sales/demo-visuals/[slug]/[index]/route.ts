@@ -26,7 +26,11 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=31536000, immutable",
+      // Keep a short edge lifetime: the generator is shared by every existing
+      // demo, so a visual-quality fix must reach old URLs without regenerating
+      // hundreds of database rows.
+      "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+      "X-Demo-Visual-Version": "2026-07-18-visuals-2",
       "X-Robots-Tag": "noindex, nofollow, noarchive",
     },
   })

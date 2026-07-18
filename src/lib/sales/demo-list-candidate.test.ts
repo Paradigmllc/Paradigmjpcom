@@ -67,6 +67,21 @@ describe("list candidate demo gate", () => {
     expect(manifest.facts.map((fact) => fact.key)).toEqual(expect.arrayContaining(["business_name", "service", "address"]))
   })
 
+  it("prefers operator-verified portal photos when the snapshot contains them", () => {
+    const candidate = company({
+      ...eligibleMeta,
+      portal_snapshot: {
+        ...eligibleMeta.portal_snapshot,
+        images: [1, 2, 3].map((index) => ({ url: `https://cdn.example.jp/work-${index}.webp`, alt: `施工写真 ${index}` })),
+      },
+    })
+    const manifest = buildListCandidateVisualManifest(candidate)
+    expect(manifest.assetStrategy).toBe("reviewed_real_assets")
+    expect(manifest.assets.slice(0, 3).every((asset) => asset.useBasis === "private_proposal")).toBe(true)
+    expect(manifest.assets.slice(0, 3).every((asset) => asset.sourceUrl.includes("cdn.example.jp"))).toBe(true)
+    expect(manifest.assets.slice(3).every((asset) => asset.useBasis === "generated")).toBe(true)
+  })
+
   it("rejects a candidate with an enterprise signal or a website", () => {
     const rejected = company({
       ...eligibleMeta,

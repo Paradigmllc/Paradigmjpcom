@@ -37,6 +37,11 @@ interface PortalSnapshotShape {
   }
 }
 
+interface SnapshotImageShape {
+  url: string
+  alt: string
+}
+
 export interface ListCandidateEligibility {
   eligible: boolean
   reasons: string[]
@@ -60,6 +65,28 @@ function record(value: unknown): JsonRecord {
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
+}
+
+function snapshotImages(value: unknown, companyName: string): SnapshotImageShape[] {
+  if (!Array.isArray(value)) return []
+  const seen = new Set<string>()
+  return value.flatMap((entry, index) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return []
+    const item = entry as Record<string, unknown>
+    const rawUrl = stringValue(item.url)
+    if (!rawUrl) return []
+    let url: URL
+    try {
+      url = new URL(rawUrl)
+    } catch (error) {
+      console.error("[list-candidate-demo] invalid portal image URL:", error)
+      return []
+    }
+    if (url.protocol !== "https:" || seen.has(url.toString())) return []
+    seen.add(url.toString())
+    const alt = stringValue(item.alt) || `${companyName}の仕事の風景 ${index + 1}`
+    return [{ url: url.toString(), alt: alt.slice(0, 240) }]
+  }).slice(0, 6)
 }
 
 function snapshotFromMeta(meta: unknown): PortalSnapshotShape | null {
@@ -135,6 +162,7 @@ export function buildListCandidateVisualManifest(
   const name = stringValue(snapshot.companyName) || company.company_name
   const industry = industryFor(company, snapshot)
   const location = stringValue(snapshot.address) || stringValue(snapshot.prefecture) || stringValue(company.prefecture)
+  const realImages = snapshotImages(snapshot.images, name)
   const facts = [
     fact("business_name", name, sourceId),
     fact("service", stringValue(snapshot.category), sourceId),
@@ -142,26 +170,46 @@ export function buildListCandidateVisualManifest(
     fact("address", location, sourceId),
   ].filter((value): value is NonNullable<typeof value> => Boolean(value))
   const generatedAt = new Date().toISOString()
-  const assets = [1, 2, 3, 4, 5, 6].map((variant) => ({
-    id: `generated-${company.id.slice(0, 10)}-${variant}`,
-    kind: "image" as const,
-    sourceUrl: generatedDemoVisualUrl({ origin: siteUrl(), slug: company.slug ?? company.id, industry, variant }),
-    ownerLabel: "Paradigm generated visual",
-    sourceAccount: "deterministic SVG visual generator",
-    useBasis: "generated" as const,
-    officialSource: false,
-    peopleVisible: false,
-    watermarkVisible: false,
-    alt: `${name}の${stringValue(snapshot.category) || industry}を表現するビジュアル ${variant}`,
-    width: 1600,
-    height: 1000,
-    notes: `${locale === "ja" ? "業種別生成ビジュアル" : "Industry-specific generated visual"} / ${industry}`,
-  }))
+  const assets = [1, 2, 3, 4, 5, 6].map((variant) => {
+    const sourceImage = realImages[variant - 1]
+    if (sourceImage) {
+      return {
+        id: `portal-image-${company.id.slice(0, 10)}-${variant}`,
+        kind: "image" as const,
+        sourceUrl: sourceImage.url,
+        ownerLabel: name,
+        sourceAccount: sourceUrl,
+        useBasis: "private_proposal" as const,
+        officialSource: true,
+        peopleVisible: false,
+        watermarkVisible: false,
+        alt: sourceImage.alt,
+        width: 1600,
+        height: 1000,
+        notes: sourceImage.alt,
+      }
+    }
+    return {
+      id: `generated-${company.id.slice(0, 10)}-${variant}`,
+      kind: "image" as const,
+      sourceUrl: generatedDemoVisualUrl({ origin: siteUrl(), slug: company.slug ?? company.id, industry, variant }),
+      ownerLabel: "Paradigm generated visual",
+      sourceAccount: "deterministic SVG visual generator",
+      useBasis: "generated" as const,
+      officialSource: false,
+      peopleVisible: false,
+      watermarkVisible: false,
+      alt: `${name}の${stringValue(snapshot.category) || industry}を表現するビジュアル ${variant}`,
+      width: 1600,
+      height: 1000,
+      notes: `${locale === "ja" ? "業種別ビジュアル" : "Industry-specific visual"} / ${industry}`,
+    }
+  })
   const manifest = {
     version: "2026-07-13.1" as const,
     mode: "reviewed_manifest" as const,
     collectionPolicy: "no_automated_fetch" as const,
-    assetStrategy: "licensed_library" as const,
+    assetStrategy: realImages.length > 0 ? "reviewed_real_assets" as const : "licensed_library" as const,
     sources: [{
       id: sourceId,
       type: "operator_verified" as const,

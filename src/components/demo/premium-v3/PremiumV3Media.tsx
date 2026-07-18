@@ -6,13 +6,16 @@ import { useEffect, useState } from "react"
 import type { DemoPremiumMedia } from "@/lib/sales/demo-site-types"
 import { isPremiumMediaUsable } from "@/lib/sales/demo-media-quality"
 
+const GENERATED_VISUAL_VERSION = "2026-07-18-visuals-2"
+
 export function normalizeDemoMediaUrl(source: string): string {
   try {
     const url = new URL(source)
     if (url.hostname === "image.ekiten.jp" && /^(?:\?\d+to\d+_[a-z]+|\?size=1to1_[a-z]+)$/iu.test(url.search)) {
       url.search = ""
-      return url.toString()
     }
+    if (url.pathname.includes("/api/sales/demo-visuals/")) url.searchParams.set("v", GENERATED_VISUAL_VERSION)
+    return url.toString()
   } catch (error) {
     console.error("[demo-media] invalid media URL:", error)
   }
