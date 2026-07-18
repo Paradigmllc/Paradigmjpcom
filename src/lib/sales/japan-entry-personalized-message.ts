@@ -8,6 +8,12 @@ import type { ManualMessageAngle } from "./manual-japan-entry-angle";
 import type { ManualOutreachPlaybook, ManualPositioningConcept } from "./manual-japan-entry-playbook";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
+  manualMessageSimilarity,
+  reviewManualMessageDistinctness,
+  type ManualMessageSimilarityReview,
+  type PriorManualMessage,
+} from "./manual-japan-entry-message-similarity";
+import {
   getJapanEntryMessageMode,
   reviewPersonalizedJapanEntryMessage,
   type JapanEntryMessageReview,
@@ -33,6 +39,42 @@ export interface PersonalizedJapanEntryMessageResult {
   review?: JapanEntryMessageReview;
   usage?: DeepSeekResponse["usage"];
   error?: string;
+  strategy?: ManualMessageStrategy;
+  candidates?: ManualGeneratedMessageCandidate[];
+  selectedIndex?: number;
+  evidencePack?: ManualMessageEvidence[];
+  similarity?: ManualMessageSimilarityReview;
+}
+
+export interface ManualMessageStrategy {
+  primaryObservation: string;
+  whyNow: string;
+  japaneseSegment: string;
+  japanGap: string;
+  opportunityAngle: string;
+  offerRelevance: string;
+  tone: string;
+  cta: string;
+  countryAdaptation: string;
+  prohibitedClaims: string[];
+}
+
+export interface ManualGeneratedMessageCandidate {
+  message: string;
+  factIds: string[];
+  productEvidence: string;
+  angle: string;
+  openingStyle: string;
+  diagnosticFocus: string;
+  ctaType: string;
+}
+
+export interface ManualMessageEvidence {
+  id: string;
+  statement: string;
+  source: string;
+  confidence: number;
+  classification: "observed" | "modeled" | "hypothesis";
 }
 
 interface GenerateInput {
@@ -49,6 +91,9 @@ interface GenerateInput {
   messageAngle?: ManualMessageAngle;
   outreachPlaybook?: ManualOutreachPlaybook;
   positioningConcept?: ManualPositioningConcept | null;
+  observedFacts?: string[];
+  sourceUrl?: string | null;
+  priorMessages?: PriorManualMessage[];
 }
 
 type LlmCaller = typeof callDeepSeek;
@@ -58,10 +103,27 @@ const candidateSchema = z.object({
   fact_ids: z.array(z.string().min(1)).min(1).max(6),
   product_evidence: z.string().min(3).max(180),
   angle: z.string().min(1).max(300),
+  opening_style: z.string().min(1).max(120).default("legacy_unspecified"),
+  diagnostic_focus: z.string().min(1).max(240).default("legacy_unspecified"),
+  cta_type: z.enum(["permission_to_send", "right_person", "founder_forward", "legacy_unspecified"]).default("legacy_unspecified"),
+}).strict();
+
+const strategySchema = z.object({
+  primary_observation: z.string().min(1).max(400),
+  why_now: z.string().min(1).max(400),
+  japanese_segment: z.string().min(1).max(300),
+  japan_gap: z.string().min(1).max(400),
+  opportunity_angle: z.string().min(1).max(300),
+  offer_relevance: z.string().min(1).max(400),
+  tone: z.string().min(1).max(160),
+  cta: z.string().min(1).max(240),
+  country_adaptation: z.string().min(1).max(240),
+  prohibited_claims: z.array(z.string().min(1).max(180)).max(12),
 }).strict();
 
 const generationSchema = z.object({
-  candidates: z.array(candidateSchema).length(3),
+  strategy: strategySchema.optional(),
+  candidates: z.array(candidateSchema).min(1).max(3),
 }).strict();
 
 const repairSchema = z.object({
@@ -151,6 +213,8 @@ function buildReview(input: {
   selected: { candidate: z.infer<typeof candidateSchema>; safety: ReturnType<typeof reviewPersonalizedJapanEntryMessage> };
   criticized: z.infer<typeof criticSchema>;
   attempts: number;
+  similarity?: ManualMessageSimilarityReview;
+  candidateCount: number;
 }): JapanEntryMessageReview {
   const editorial = {
     specificity: input.criticized.scores.specificity,
@@ -177,7 +241,44 @@ function buildReview(input: {
     editorialScores: editorial,
     rationale: input.criticized.rationale,
     riskFlags,
+    uniquenessScore: Math.round((1 - (input.similarity?.maxSimilarity ?? 0)) * 100),
+    maxSimilarity: input.similarity?.maxSimilarity ?? 0,
+    matchedMessageId: input.similarity?.matchedMessageId ?? null,
+    candidateCount: input.candidateCount,
   };
+}
+
+function publicStrategy(value: z.infer<typeof strategySchema> | undefined, input: GenerateInput): ManualMessageStrategy {
+  return {
+    primaryObservation: value?.primary_observation ?? input.productContext ?? "Public product evidence",
+    whyNow: value?.why_now ?? "Japan applicability remains unverified",
+    japaneseSegment: value?.japanese_segment ?? "Relevant Japanese buyers require validation",
+    japanGap: value?.japan_gap ?? "The checked public pages do not yet establish a Japan customer path",
+    opportunityAngle: value?.opportunity_angle ?? "Evidence-led Japan validation",
+    offerRelevance: value?.offer_relevance ?? "A public-evidence opportunity analysis can test the hypothesis",
+    tone: value?.tone ?? "Direct, respectful, and low pressure",
+    cta: value?.cta ?? "Permission to share the analysis",
+    countryAdaptation: value?.country_adaptation ?? "Business-formal without nationality assumptions",
+    prohibitedClaims: value?.prohibited_claims ?? ["Measured demand", "Guaranteed revenue", "Legal conclusions"],
+  };
+}
+
+function publicCandidate(candidate: z.infer<typeof candidateSchema>): ManualGeneratedMessageCandidate {
+  return {
+    message: candidate.message.trim(),
+    factIds: candidate.fact_ids,
+    productEvidence: candidate.product_evidence,
+    angle: candidate.angle,
+    openingStyle: candidate.opening_style,
+    diagnosticFocus: candidate.diagnostic_focus,
+    ctaType: candidate.cta_type,
+  };
+}
+
+function hasDifferentiationMetadata(candidate: z.infer<typeof candidateSchema>): boolean {
+  return candidate.opening_style !== "legacy_unspecified"
+    && candidate.diagnostic_focus !== "legacy_unspecified"
+    && candidate.cta_type !== "legacy_unspecified";
 }
 
 export async function generatePersonalizedJapanEntryMessage(
@@ -191,6 +292,8 @@ export async function generatePersonalizedJapanEntryMessage(
   const facts = buildJapanEntryPersonalizationFacts(input.audit, input.businessModel, input.projection, {
     competitorAnalysis: input.competitorAnalysis,
     positioningConcept: input.positioningConcept,
+    companyFacts: input.observedFacts,
+    companySourceUrl: input.sourceUrl,
   });
   if (facts.length === 0) {
     return { ok: false, error: "No high-signal Japan-specific public fact is available for personalized copy" };
@@ -216,6 +319,9 @@ export async function generatePersonalizedJapanEntryMessage(
       messageAngle: input.messageAngle,
       candidateAngle: candidate.angle,
     }),
+    similarity: purpose === "initial_interest"
+      ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [] })
+      : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
   });
 
   const generated = await callStructured({
@@ -229,9 +335,24 @@ export async function generatePersonalizedJapanEntryMessage(
   if (!generated.ok) {
     return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate generation failed: ${generated.error}` };
   }
+  if (purpose === "initial_interest" && !generated.data.strategy) {
+    return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro did not return the required company-specific message strategy" };
+  }
+  if (purpose === "initial_interest" && generated.data.candidates.some((candidate) => !hasDifferentiationMetadata(candidate))) {
+    return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro did not return complete candidate differentiation metadata" };
+  }
 
   const reviewedCandidates = generated.data.candidates.map(inspectCandidate);
-  let valid = reviewedCandidates.filter((item) => item.safety.passed);
+  let valid: typeof reviewedCandidates = [];
+  for (const item of reviewedCandidates) {
+    if (!item.safety.passed || !item.similarity.passed) continue;
+    const duplicatesPriorCandidate = purpose === "initial_interest" && valid.some((prior) =>
+      prior.candidate.opening_style === item.candidate.opening_style
+      || prior.candidate.diagnostic_focus === item.candidate.diagnostic_focus
+      || prior.candidate.cta_type === item.candidate.cta_type
+      || manualMessageSimilarity(item.candidate.message, prior.candidate.message, [input.companyName]) >= 0.45);
+    if (!duplicatesPriorCandidate) valid.push(item);
+  }
   if (valid.length === 0) {
     const strongest = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
     if (!strongest) {
@@ -241,7 +362,7 @@ export async function generatePersonalizedJapanEntryMessage(
       stage: "repair",
       messages: generationMessages(input, facts, mode, {
         candidate: strongest.candidate,
-        issues: strongest.safety.issues,
+        issues: [...strongest.safety.issues, ...strongest.similarity.reasons],
       }),
       schema: repairSchema,
       caller,
@@ -253,11 +374,11 @@ export async function generatePersonalizedJapanEntryMessage(
       return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
     }
     const repairedCandidate = inspectCandidate(repaired.data.candidate);
-    if (!repairedCandidate.safety.passed) {
+    if (!repairedCandidate.safety.passed || !repairedCandidate.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(repairedCandidate.candidate))) {
       return {
         ok: false,
         usage: totalUsage,
-        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety gate after one targeted repair: ${repairedCandidate.safety.issues.join("; ")}`,
+        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety or uniqueness gate after one targeted repair: ${[...repairedCandidate.safety.issues, ...repairedCandidate.similarity.reasons].join("; ")}`,
       };
     }
     valid = [repairedCandidate];
@@ -292,9 +413,27 @@ export async function generatePersonalizedJapanEntryMessage(
     return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro critic selected an invalid candidate" };
   }
 
-  const review = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts });
+  const strategy = publicStrategy(generated.data.strategy, input);
+  const evidencePack = facts.map((fact): ManualMessageEvidence => ({
+    id: fact.id,
+    statement: fact.statement,
+    source: fact.source,
+    confidence: fact.confidence,
+    classification: fact.id.startsWith("modeled-") ? "modeled" : fact.id.startsWith("company-observed-") || fact.id.startsWith("japan-audit-") ? "observed" : "hypothesis",
+  }));
+  const review = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts, similarity: selected.similarity, candidateCount: valid.length });
   if (review.passed) {
-    return { ok: true, message: selected.candidate.message.trim(), review, usage: totalUsage };
+    return {
+      ok: true,
+      message: selected.candidate.message.trim(),
+      review,
+      usage: totalUsage,
+      strategy,
+      candidates: valid.map((item) => publicCandidate(item.candidate)),
+      selectedIndex: criticized.data.selected_index,
+      evidencePack,
+      similarity: selected.similarity,
+    };
   }
   if (repairUsed) {
     return { ok: false, review, usage: totalUsage, error: review.issues[0] };
@@ -316,11 +455,11 @@ export async function generatePersonalizedJapanEntryMessage(
     return { ok: false, review, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
   }
   const repairedCandidate = inspectCandidate(repaired.data.candidate);
-  if (!repairedCandidate.safety.passed) {
+  if (!repairedCandidate.safety.passed || !repairedCandidate.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(repairedCandidate.candidate))) {
     return {
       ok: false,
       usage: totalUsage,
-      error: `DeepSeek V4 Pro targeted repair failed the deterministic safety gate: ${repairedCandidate.safety.issues.join("; ")}`,
+      error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${[...repairedCandidate.safety.issues, ...repairedCandidate.similarity.reasons].join("; ")}`,
     };
   }
 
@@ -332,6 +471,8 @@ export async function generatePersonalizedJapanEntryMessage(
     selected: repairedCandidate,
     criticized: repairedCritic.data,
     attempts: totalAttempts,
+    similarity: repairedCandidate.similarity,
+    candidateCount: 1,
   });
   if (!repairedReview.passed) {
     return { ok: false, review: repairedReview, usage: totalUsage, error: repairedReview.issues[0] };
@@ -341,5 +482,10 @@ export async function generatePersonalizedJapanEntryMessage(
     message: repairedCandidate.candidate.message.trim(),
     review: repairedReview,
     usage: totalUsage,
+    strategy,
+    candidates: [publicCandidate(repairedCandidate.candidate)],
+    selectedIndex: 0,
+    evidencePack,
+    similarity: repairedCandidate.similarity,
   };
 }

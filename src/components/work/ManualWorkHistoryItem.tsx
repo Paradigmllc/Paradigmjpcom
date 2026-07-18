@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, CheckCircle2, Copy, ExternalLink, FileText, Globe2, LoaderCircle, MessageSquareText, RefreshCw, Send, Waypoints } from "lucide-react"
+import { Check, CheckCircle2, ExternalLink, FileText, Globe2, LoaderCircle, RefreshCw, Send, Waypoints } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MANUAL_MESSAGE_ANGLE_LABELS } from "@/lib/sales/manual-japan-entry-angle"
@@ -10,6 +10,7 @@ import { MANUAL_OUTREACH_PLAYBOOK_LABELS, type ManualPositioningConcept } from "
 import { MANUAL_SOURCE_ROLE_LABELS, type ManualLeadSourceCatalogRow, type ManualQualificationLedger } from "@/lib/sales/manual-japan-entry-source-ledger"
 import { buildManualMarketLens, MANUAL_COMMERCIAL_SIGNAL_LABELS } from "@/lib/sales/manual-japan-entry-market-lens"
 import type { ManualCommercialSignal, ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
+import { ManualMessageIntelligence } from "./ManualMessageIntelligence"
 
 const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
   processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
@@ -140,7 +141,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               </div>
             </details>
             {concept && <details className="rounded-xl border border-violet-200 bg-violet-50/50"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-violet-900 marker:hidden"><FileText className="size-4" />保存済み日本語ポジショニング案（未公開ドラフト）</summary><div className="border-t border-violet-100 px-4 py-3"><p className="font-semibold text-slate-900">{concept.japaneseHeadline}</p><p className="mt-1 text-sm leading-6 text-slate-600">{concept.japaneseSupportLine}</p><p className="mt-2 text-xs text-slate-600">公開原文: {concept.sourcePhrase}</p></div></details>}
-            {item.initial_message && <details className="rounded-xl border border-slate-200"><summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 marker:hidden"><MessageSquareText className="size-4 text-slate-400" />問い合わせフォーム初回文面（未送信・{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}・{MANUAL_MESSAGE_ANGLE_LABELS[item.message_angle]}）</summary><div className="border-t border-slate-100 bg-slate-50/70 p-4"><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.initial_message}</p><Button variant="outline" size="sm" className="mt-3 rounded-lg bg-white" onClick={() => onCopy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button></div></details>}
+            <ManualMessageIntelligence item={item} onCopy={onCopy} />
           </div>
         </div>
 
