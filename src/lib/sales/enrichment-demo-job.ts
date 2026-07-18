@@ -8,6 +8,76 @@ import { syncDemoCandidateToTwenty } from "./demo-twenty-sync"
 import { demoSiteUrl } from "./routing"
 import { logDiagnosisEvent } from "./enrichment-jobs-runner-phases"
 
+type ReusedDemo = {
+  slug: string
+  qualityScore: number | null
+  qualityReport: JsonRecord | null
+}
+
+function normalizedCompanyIdentity(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[\s\u3000]/g, "")
+    .replace(/[()（）「」『』。、・,.，\-ー_/]/g, "")
+}
+
+/**
+ * A portal re-sync can create a fresh list-only company row while a previous
+ * row already owns the clean URL. Reuse only when the owner is the same
+ * normalized business name; never bridge two different businesses.
+ */
+async function reuseExistingSameBusinessDemo(
+  sb: ServiceSupabase,
+  company: SalesCompany,
+  generationError: string,
+  assets: NonNullable<ReturnType<typeof readValidatedDemoSourceManifest>["manifest"]>["assets"],
+): Promise<ReusedDemo | null> {
+  const match = generationError.match(/Clean URL conflict: \/(.+?) is already assigned to another company/)
+  const slug = match?.[1]?.trim()
+  if (!slug) return null
+
+  const { data: page, error: pageError } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .select("slug, company_id, quality_score, quality_report")
+    .eq("slug", slug)
+    .maybeSingle()
+  if (pageError) {
+    console.error("[sales-enrichment] existing demo lookup failed:", pageError.message)
+    return null
+  }
+  if (!page?.company_id || page.company_id === company.id) return null
+
+  const { data: owner, error: ownerError } = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .select("company_name")
+    .eq("id", page.company_id)
+    .maybeSingle()
+  if (ownerError) {
+    console.error("[sales-enrichment] existing demo owner lookup failed:", ownerError.message)
+    return null
+  }
+  if (!owner?.company_name || normalizedCompanyIdentity(owner.company_name) !== normalizedCompanyIdentity(company.company_name)) {
+    console.error("[sales-enrichment] clean URL conflict kept fail-closed for different business:", {
+      companyId: company.id,
+      companyName: company.company_name,
+      ownerName: owner?.company_name ?? null,
+      slug,
+    })
+    return null
+  }
+
+  const access = await activateTemporaryUnlistedDemo({ slug, ttlDays: 7, assets })
+  const qualityReport = page.quality_report && typeof page.quality_report === "object" && !Array.isArray(page.quality_report)
+    ? page.quality_report as JsonRecord
+    : null
+  return {
+    slug: access.urlSlug,
+    qualityScore: typeof page.quality_score === "number" ? page.quality_score : null,
+    qualityReport,
+  }
+}
+
 export async function processDemoGenerationJob(
   sb: ServiceSupabase,
   job: SalesEnrichmentJob,
@@ -41,18 +111,26 @@ export async function processDemoGenerationJob(
     enhanceWithAI: true,
     notify: false,
   })
-  if (!result.ok || !result.slug) {
+  const reused = !result.ok && generatedVisualMode
+    ? await reuseExistingSameBusinessDemo(sb, company, result.error ?? "demo quality gate failed", sourceReview.manifest!.assets)
+    : null
+  if ((!result.ok || !result.slug) && !reused) {
     const error = result.error ?? "demo quality gate failed"
     await markGeneratedVisualFailure(error)
     return { ok: false, error }
   }
 
-  let canonicalUrl = result.demoUrl
+  const resultSlug = reused?.slug ?? result.slug!
+  const resultQualityScore = reused?.qualityScore ?? result.qualityScore ?? null
+  const resultQualityReport = reused?.qualityReport ?? result.qualityReport ?? null
+  let canonicalUrl = reused ? `${demoSiteUrl()}/${encodeURIComponent(resultSlug)}` : result.demoUrl
   let previewExpiresAt: string | null = null
   let twentySync: JsonRecord | null = null
   if (generatedVisualMode) {
     try {
-      const access = await activateTemporaryUnlistedDemo({ slug: result.slug, ttlDays: 7, assets: sourceReview.manifest!.assets })
+      const access = reused
+        ? { urlSlug: resultSlug, expiresAt: previewExpiresAt ?? new Date(Date.now() + 7 * 86_400_000).toISOString() }
+        : await activateTemporaryUnlistedDemo({ slug: resultSlug, ttlDays: 7, assets: sourceReview.manifest!.assets })
       previewExpiresAt = access.expiresAt
       canonicalUrl = `${demoSiteUrl()}/${encodeURIComponent(access.urlSlug)}`
       const sync = await syncDemoCandidateToTwenty({
@@ -60,8 +138,8 @@ export async function processDemoGenerationJob(
         jobId: job.id,
         previewUrl: canonicalUrl,
         expiresAt: access.expiresAt,
-        slug: result.slug,
-        qualityScore: result.qualityScore ?? null,
+        slug: resultSlug,
+        qualityScore: resultQualityScore,
         sourcePolicy: "list_candidate_generated_visual",
       })
       twentySync = { ok: sync.ok, configured: sync.configured, company_id: sync.companyId ?? null, error: sync.error ?? null }
@@ -79,11 +157,11 @@ export async function processDemoGenerationJob(
   }
 
   const resultPayload: JsonRecord = {
-    slug: result.slug,
+    slug: resultSlug,
     canonical_url: canonicalUrl,
     preview_expires_at: previewExpiresAt,
-    quality_score: result.qualityScore ?? null,
-    quality_report: result.qualityReport ?? null,
+    quality_score: resultQualityScore,
+    quality_report: resultQualityReport,
     generation_candidates: result.candidates ?? [],
     publication_status: result.publicationStatus ?? "private_review",
     source_policy: typeof job.input_payload.source_policy === "string" ? job.input_payload.source_policy : "reviewed_manifest",
@@ -110,7 +188,7 @@ export async function processDemoGenerationJob(
           mode: "generated_visual",
           status: "ready",
           readyAt: new Date().toISOString(),
-          qualityScore: result.qualityScore ?? null,
+          qualityScore: resultQualityScore,
           previewUrl: canonicalUrl,
           expiresAt: previewExpiresAt,
           sendingEnabled: false,
@@ -131,4 +209,3 @@ export async function processDemoGenerationJob(
   })
   return { ok: true }
 }
-
