@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+from io import BytesIO
 import json
 import os
 from contextlib import asynccontextmanager
@@ -10,6 +12,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 
 import websockets
 from fastapi import FastAPI, Header, HTTPException
+from PIL import Image, ImageStat
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -18,6 +21,7 @@ PORT = int(os.environ.get("SCREENSHOT_TO_CODE_PORT", "7002"))
 UPSTREAM_DIR = "/opt/screenshot-to-code/backend"
 UPSTREAM_COMMIT = os.environ.get("SCREENSHOT_TO_CODE_UPSTREAM_COMMIT", "unknown")
 SHARED_SECRET = os.environ.get("SCREENSHOT_TO_CODE_SHARED_SECRET", "").strip()
+VISUAL_MODE = os.environ.get("SCREENSHOT_TO_CODE_VISUAL_MODE", "metadata-text").strip().lower()
 upstream_process: asyncio.subprocess.Process | None = None
 upstream_log_task: asyncio.Task[None] | None = None
 
@@ -97,6 +101,35 @@ async def _drain_upstream_logs() -> None:
             print(f"[screenshot-to-code-upstream] {message}", flush=True)
 
 
+def _image_metadata(data_url: str, index: int) -> str:
+    if not data_url.startswith("data:image/"):
+        return f"Screenshot {index}: HTTPS image URL supplied; dimensions are unavailable in text-only mode."
+    try:
+        encoded = data_url.split(",", 1)[1]
+        image = Image.open(BytesIO(base64.b64decode(encoded))).convert("RGB")
+        width, height = image.size
+        mean = ImageStat.Stat(image).mean
+        palette = ", ".join(f"rgb({round(channel)})" for channel in mean)
+        orientation = "portrait" if height > width else "landscape" if width > height else "square"
+        return f"Screenshot {index}: {width}x{height}px, {orientation}, average color {palette}."
+    except Exception as error:
+        print(f"[screenshot-to-code-gateway] image metadata skipped: {error}", flush=True)
+        return f"Screenshot {index}: image bytes were supplied but metadata could not be decoded."
+
+
+def _build_generation_input(request: GenerateRequest) -> tuple[str, Dict[str, Any]]:
+    if VISUAL_MODE == "image":
+        return "image", {"text": request.prompt, "images": request.image_data_urls, "videos": []}
+    metadata = "\n".join(_image_metadata(value, index + 1) for index, value in enumerate(request.image_data_urls))
+    text = (
+        f"{request.prompt}\n\n"
+        "Visual source note: DeepSeek V4 API is text-only. Generate from the screenshot metadata below "
+        "and the design system, keep the requested industry terminology, and do not invent unrelated services.\n"
+        f"{metadata}"
+    ).strip()
+    return "text", {"text": text, "images": [], "videos": []}
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     await _start_upstream()
@@ -123,19 +156,21 @@ async def health() -> Dict[str, Any]:
         "service": "screenshot-to-code",
         "upstream_commit": UPSTREAM_COMMIT,
         "provider": "deepseek-chat-completions-adapter",
+        "visual_mode": VISUAL_MODE,
     }
 
 
 @app.post("/generate")
 async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | None = Header(default=None)) -> Dict[str, Any]:
     _authorize(x_screenshot_to_code_secret)
+    input_mode, prompt_content = _build_generation_input(request)
     payload = {
         "generatedCodeConfig": "html_tailwind",
-        "inputMode": "image",
+        "inputMode": input_mode,
         "generationType": "create",
         "isImageGenerationEnabled": False,
         "isAssetExtractionEnabled": False,
-        "prompt": {"text": request.prompt, "images": request.image_data_urls, "videos": []},
+        "prompt": prompt_content,
         "history": [],
         "designSystem": request.design_system,
     }
@@ -171,6 +206,7 @@ async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | 
         "upstream_commit": UPSTREAM_COMMIT,
         "provider": "deepseek-chat-completions-adapter",
         "model": os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro"),
+        "visual_mode": VISUAL_MODE,
     }
 
 

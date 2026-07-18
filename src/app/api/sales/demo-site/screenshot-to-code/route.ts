@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     upstreamCommit: record.upstream_commit ?? null,
     provider: record.provider ?? null,
     model: record.model ?? null,
+    visualMode: record.visual_mode ?? null,
     previewUrl: previewToken ? `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(data.slug)}?token=${encodeURIComponent(previewToken)}` : null,
   }, { headers: { "Cache-Control": "private, no-store" } })
 }
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
       upstream_commit: generated.upstreamCommit,
       provider: generated.provider,
       model: generated.model,
+      visual_mode: generated.visualMode,
       source: "abi/screenshot-to-code",
       preview_token: randomUUID(),
     }
@@ -135,6 +137,7 @@ export async function POST(request: NextRequest) {
         upstreamCommit: artifact.upstream_commit,
         provider: artifact.provider,
         model: artifact.model,
+        visualMode: artifact.visual_mode,
         generatedAt: artifact.generated_at,
       },
       previewUrl: `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(artifact.preview_token)}`,

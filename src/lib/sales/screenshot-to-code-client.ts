@@ -12,6 +12,7 @@ export interface ScreenshotToCodeResult {
   upstreamCommit: string
   provider: string
   model: string
+  visualMode: string
 }
 
 interface ScreenshotToCodeResponse {
@@ -20,6 +21,7 @@ interface ScreenshotToCodeResponse {
   upstream_commit?: unknown
   provider?: unknown
   model?: unknown
+  visual_mode?: unknown
   detail?: unknown
 }
 
@@ -80,6 +82,7 @@ export async function generateScreenshotToCode(
       upstreamCommit: typeof payload.upstream_commit === "string" ? payload.upstream_commit : "unknown",
       provider: typeof payload.provider === "string" ? payload.provider : "unknown",
       model: typeof payload.model === "string" ? payload.model : "unknown",
+      visualMode: typeof payload.visual_mode === "string" ? payload.visual_mode : "unknown",
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
