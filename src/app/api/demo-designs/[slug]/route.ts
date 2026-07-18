@@ -5,11 +5,14 @@
  * POST — Triggers DeepSeek generation of a new design spec (admin auth)
  */
 import { NextRequest, NextResponse } from "next/server"
+import { randomUUID } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { generateDemoDesign, buildDesignInput } from "@/lib/sales/demo-design-generator"
 import { validateDesignSpec } from "@/lib/sales/demo-design-prompts"
 import type { DesignPromptInput } from "@/lib/sales/demo-design-prompts"
 import { isAuthorizedOperatorRequest } from "@/lib/api-security"
+import { generateScreenshotToCode } from "@/lib/sales/screenshot-to-code-client"
+import { demoSiteUrl } from "@/lib/sales/routing"
 
 export const dynamic = "force-dynamic"
 
@@ -142,6 +145,22 @@ export async function POST(
       return NextResponse.json({ error: failure ?? "generation failed" }, { status: 500 })
     }
 
+    const rawScreenshotUrls = body.screenshot_data_urls
+    const screenshotDataUrls = Array.isArray(rawScreenshotUrls)
+      ? rawScreenshotUrls.filter((value): value is string => typeof value === "string" && value.length <= 8_000_000 && (value.startsWith("data:image/") || value.startsWith("https://")))
+      : []
+    if (rawScreenshotUrls !== undefined && (!Array.isArray(rawScreenshotUrls) || rawScreenshotUrls.length < 1 || rawScreenshotUrls.length > 3 || screenshotDataUrls.length !== rawScreenshotUrls.length)) {
+      return NextResponse.json({ error: "screenshot_data_urls must contain 1-3 data:image or HTTPS images" }, { status: 400 })
+    }
+    const screenshotToCode = screenshotDataUrls.length > 0
+      ? await generateScreenshotToCode({
+          imageDataUrls: screenshotDataUrls,
+          prompt: `${companyData.company_name}の公開提案用サイト。${typeof body.screenshot_prompt === "string" ? body.screenshot_prompt : ""}`.trim(),
+          designSystem: typeof body.screenshot_design_system === "string" ? body.screenshot_design_system : undefined,
+        })
+      : null
+    const screenshotPreviewToken = screenshotToCode ? randomUUID() : null
+
     // Store the generated spec in theme_demo_pages
     const { error: upsertErr } = await sb
       .from("theme_demo_pages")
@@ -155,6 +174,19 @@ export async function POST(
             ...((typeof companyData.meta === "object" && companyData.meta !== null) ? companyData.meta as Record<string, unknown> : {}),
             design_spec: result.spec,
             design_spec_source: result.source,
+            ...(screenshotToCode ? {
+              screenshot_to_code: {
+                status: "review",
+                code: screenshotToCode.code,
+                code_bytes: Buffer.byteLength(screenshotToCode.code, "utf8"),
+                generated_at: new Date().toISOString(),
+                upstream_commit: screenshotToCode.upstreamCommit,
+                provider: screenshotToCode.provider,
+                model: screenshotToCode.model,
+                source: "abi/screenshot-to-code",
+                preview_token: screenshotPreviewToken,
+              },
+            } : {}),
             design_philosophy: result.spec.design_philosophy,
             generated_at: new Date().toISOString(),
           },
@@ -169,7 +201,19 @@ export async function POST(
       console.error(`[demo-designs/${slug}] upsert error:`, upsertErr.message)
     }
 
-    return NextResponse.json(result.spec, { status: 201 })
+    return NextResponse.json({
+      ...result.spec,
+      screenshotToCode: screenshotToCode ? {
+        status: "review",
+        codeBytes: Buffer.byteLength(screenshotToCode.code, "utf8"),
+        upstreamCommit: screenshotToCode.upstreamCommit,
+        provider: screenshotToCode.provider,
+        model: screenshotToCode.model,
+        previewUrl: screenshotPreviewToken
+          ? `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(screenshotPreviewToken)}`
+          : null,
+      } : null,
+    }, { status: 201 })
   } catch (e) {
     console.error(`[demo-designs/${slug}] unexpected:`, e)
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })

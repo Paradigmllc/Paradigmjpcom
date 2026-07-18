@@ -132,6 +132,14 @@ export interface DemoGenerateOutput {
   publicationStatus?: DemoPublicationStatus
   candidates?: DemoCandidateSummary[]
   qualityReport?: DemoQualityReport
+  screenshotToCode?: {
+    status: "review"
+    codeBytes: number
+    upstreamCommit: string
+    provider: string
+    model: string
+    previewUrl: string
+  } | null
   error?: string
 }
 

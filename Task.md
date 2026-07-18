@@ -1927,3 +1927,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 実画像が承認済みでない既存DEMOで、空のCSSフォールバックへ落ちる経路を修正。`ensureGeneratedVisualMedia`がhero 3枚・gallery 4枚を業種別の1600×1000 self-hosted SVGビジュアルで補完し、企業名・業種ラベル・alt・キャプションを型付きで保持する。承認済みの高解像度実画像がある場合はそれを優先し、低解像度・未承認素材だけを生成ビジュアルへ置換する。
 - PR **#420**をmainへ統合し、正式`npm run release:prod`のdeployment **pb1ugzgkzmzacamq2gl72272**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
 - 公開`https://demo.paradigmjp.com/cafe-sosomu`をブラウザで再読込し、heroスライダーのHTMLに`/api/sales/demo-visuals/cafe-sosomu/1..4`の画像要素が存在すること、画像APIがHTTP **200**・`image/svg+xml`・`x-demo-visual-version: 2026-07-18-visuals-2`を返すこと、空のCSSカードではなく料理・店内を表現するビジュアルが表示されることを目視確認。外部送信・Twenty追加は0件。
+
+## CURRENT STATUS - 2026-07-19 abi/screenshot-to-code実務実行ゲート（実装・型検査完了 / 本番sidecar deploy待ち / 外部送信0）
+
+- これまでのDesignSpec取り込みbridgeだけではなく、`abi/screenshot-to-code`を固定commit `9df864afbf7de0ca0baa0cdc5cb9a3a1c04d43e7`からDocker build時に取得し、公式backendのprompt生成・agent tool loop・WebSocket `/generate-code`を実行する専用gatewayを追加した。
+- 本番DeepSeekキーしかないため、OSSのOpenAI Responses経路を捨てずに、OSSのprompt／agent／tool runtimeへDeepSeek Chat Completionsを差し込むprovider adapterを追加。4 variantの重複課金はgateway起動時に1 variantへ制限し、画像・任意JSXを公開へ直接流さず、生成物は`theme_demo_pages.meta.screenshot_to_code`へ`review`状態で保存する。
+- Next側に認証済み`/api/sales/demo-site/screenshot-to-code`（POST生成／GET状態確認）と、既存`/api/demo-designs/[slug]`・`/api/sales/demo-site/generate`からの任意screenshot入力経路を追加。秘密はサーバー間ヘッダーのみで、送信・公開・Twenty同期は実行しない。
+- `docker-compose.screenshot-to-code.yml`、Coolify service provisioner、`.env.example`、client unit testを追加。`npm exec -- tsc --noEmit`、対象Vitest **2 files / 5 tests**、Python gateway `py_compile`を確認済み。次のgateはcommit/push後にCoolify sidecarを起動し、`/health`、DeepSeek経由の実生成、Next APIからの保存read-backを確認する。

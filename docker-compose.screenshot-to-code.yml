@@ -1,0 +1,38 @@
+# Private screenshot-to-code runtime.
+#
+# The image clones abi/screenshot-to-code at the pinned commit in its Dockerfile
+# and exposes only the authenticated gateway on the shared Coolify network.
+services:
+  screenshot-to-code:
+    build:
+      context: .
+      dockerfile: services/screenshot-to-code-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_API_BASE: ${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-pro}
+      SCREENSHOT_TO_CODE_SHARED_SECRET: ${SCREENSHOT_TO_CODE_SHARED_SECRET}
+      SCREENSHOT_TO_CODE_PORT: "7002"
+      SCREENSHOT_TO_CODE_UPSTREAM_PORT: "7001"
+    expose:
+      - "7002"
+    networks:
+      coolify:
+        aliases:
+          - screenshot-to-code
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+          cpus: "2.0"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  coolify:
+    external: true
