@@ -303,6 +303,8 @@ export interface DemoMultiPageData {
 
 export interface DemoPremiumMedia {
   src: string
+  /** Self-hosted scene used when a reviewed source photo is too small or unavailable. */
+  fallbackSrc?: string
   alt: string
   kind: "image" | "video"
   width?: number

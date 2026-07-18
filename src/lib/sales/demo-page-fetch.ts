@@ -12,6 +12,8 @@ import { isTemporaryUnlistedDemoActive, verifyDemoPreviewToken, type DemoAssetRe
 import { buildPremiumAssetNote } from "./demo-asset-note"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
+import { generatedDemoVisualUrl } from "./demo-generated-visual"
+import { siteUrl } from "./routing"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -231,10 +233,17 @@ export async function fetchDemoMultiPageData(
           ? themePage.asset_review as unknown as DemoAssetReview
           : null
         const logo = review?.assets.find((asset) => asset.kind === "logo")
+        const visualIndustry = typeof themePage.site_payload.industry === "string" ? themePage.site_payload.industry : "consulting"
         const approvedMedia = review?.assets
           .filter((asset) => asset.kind !== "logo")
-          .map((asset) => ({
+          .map((asset, index) => ({
             src: asset.sourceUrl,
+            fallbackSrc: generatedDemoVisualUrl({
+              origin: siteUrl(),
+              slug: themePage.slug,
+              industry: visualIndustry,
+              variant: (index % 6) + 1,
+            }),
             alt: asset.alt,
             kind: asset.kind === "video" ? "video" as const : "image" as const,
             width: asset.width,

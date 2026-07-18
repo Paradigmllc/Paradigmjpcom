@@ -33,6 +33,12 @@ export function isGeneratedDemoVisualUrl(source: string): boolean {
 }
 
 function PremiumMediaFallback({ media, className, label }: { media?: DemoPremiumMedia; className: string; label: string }) {
+  if (media?.fallbackSrc) {
+    return <div className={`${className} relative z-10 overflow-hidden bg-black`} role="img" aria-label={label}>
+      <img src={media.fallbackSrc} alt={label} loading="lazy" className="h-full w-full object-cover" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/5" />
+    </div>
+  }
   return (
     <div className={`${className} z-10 overflow-hidden bg-[radial-gradient(circle_at_22%_20%,rgba(69,185,190,.55),transparent_42%),radial-gradient(circle_at_82%_76%,rgba(255,255,255,.14),transparent_34%),linear-gradient(135deg,#071c22,#173a40_58%,#0e2429)]`} role="img" aria-label={label}>
       <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(115deg,transparent_0%,transparent_48%,rgba(255,255,255,.14)_48.2%,transparent_48.5%),linear-gradient(25deg,transparent_0%,transparent_68%,rgba(255,255,255,.1)_68.2%,transparent_68.5%)]" />
