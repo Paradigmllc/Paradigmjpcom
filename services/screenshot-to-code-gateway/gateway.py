@@ -19,6 +19,7 @@ UPSTREAM_DIR = "/opt/screenshot-to-code/backend"
 UPSTREAM_COMMIT = os.environ.get("SCREENSHOT_TO_CODE_UPSTREAM_COMMIT", "unknown")
 SHARED_SECRET = os.environ.get("SCREENSHOT_TO_CODE_SHARED_SECRET", "").strip()
 upstream_process: asyncio.subprocess.Process | None = None
+upstream_log_task: asyncio.Task[None] | None = None
 
 
 class GenerateRequest(BaseModel):
@@ -38,7 +39,7 @@ class GenerateRequest(BaseModel):
 
 
 async def _start_upstream() -> None:
-    global upstream_process
+    global upstream_process, upstream_log_task
     env = os.environ.copy()
     env["IS_PROD"] = "true"
     env["NUM_VARIANTS"] = "1"
@@ -51,9 +52,10 @@ async def _start_upstream() -> None:
         str(UPSTREAM_PORT),
         cwd=UPSTREAM_DIR,
         env=env,
-        stdout=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
+    upstream_log_task = asyncio.create_task(_drain_upstream_logs())
     for _ in range(90):
         if upstream_process.returncode is not None:
             raise RuntimeError(f"upstream exited during startup: {upstream_process.returncode}")
@@ -68,14 +70,31 @@ async def _start_upstream() -> None:
 
 
 async def _stop_upstream() -> None:
-    if upstream_process is None or upstream_process.returncode is not None:
+    global upstream_log_task
+    if upstream_process is not None and upstream_process.returncode is None:
+        upstream_process.terminate()
+        try:
+            await asyncio.wait_for(upstream_process.wait(), timeout=15)
+        except asyncio.TimeoutError:
+            upstream_process.kill()
+            await upstream_process.wait()
+    if upstream_log_task is not None:
+        upstream_log_task.cancel()
+        try:
+            await upstream_log_task
+        except asyncio.CancelledError:
+            pass
+        upstream_log_task = None
+
+
+async def _drain_upstream_logs() -> None:
+    process = upstream_process
+    if process is None or process.stdout is None:
         return
-    upstream_process.terminate()
-    try:
-        await asyncio.wait_for(upstream_process.wait(), timeout=15)
-    except asyncio.TimeoutError:
-        upstream_process.kill()
-        await upstream_process.wait()
+    async for line in process.stdout:
+        message = line.decode("utf-8", errors="replace").rstrip()
+        if message:
+            print(f"[screenshot-to-code-upstream] {message}", flush=True)
 
 
 @asynccontextmanager
