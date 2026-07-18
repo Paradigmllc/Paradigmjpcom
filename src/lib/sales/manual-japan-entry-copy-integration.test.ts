@@ -70,7 +70,7 @@ describe("manual work first-touch generation integration", () => {
               tone: "Direct and low pressure.",
               cta: "Ask permission to send the analysis.",
               country_adaptation: "Business-formal without nationality assumptions.",
-              prohibited_claims: ["Measured demand", "Guaranteed revenue"],
+              prohibited_claims: "Measured demand; Guaranteed revenue",
             },
             candidates: ["direct", "decision", "customer-path"].map(() => ({
               message,
@@ -99,6 +99,7 @@ describe("manual work first-touch generation integration", () => {
 
     expect(result).toMatchObject({ ok: true, review: { passed: true, score: 96 } })
     expect(result.message).toBe(message)
+    expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
     expect(result.message).toContain("Could you forward this to the founder")
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })
