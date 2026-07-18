@@ -48,7 +48,7 @@ function ArticleCard({ data, section, index, featured = false, dark = false }: {
       <PremiumV3Media media={media} className="absolute inset-0 transition duration-700 group-hover:scale-[1.04]" sizes={featured ? "(max-width:1024px) 100vw, 52vw" : "(max-width:768px) 100vw, 34vw"} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
       <span className="absolute left-5 top-5 bg-white/92 px-3 py-2 text-[10px] font-bold tracking-[.22em] text-black">{String(index + 1).padStart(2, "0")} / {copy.category}</span>
-      <span className="absolute bottom-5 left-5 right-5 text-xs font-semibold tracking-[.08em] text-white/78">記事サンプル · 最新情報</span>
+      <span className="absolute bottom-5 left-5 right-5 text-xs font-semibold tracking-[.08em] text-white/78">最新のご案内</span>
     </a>
     <div className={`flex flex-col justify-between p-6 sm:p-8 ${featured ? "lg:p-11" : "min-h-64"}`}>
       <div>
@@ -67,7 +67,7 @@ function JournalRail({ data, copy, sections, dark = false }: { data: DemoMultiPa
       <div className={`flex items-center gap-3 text-xs font-bold uppercase tracking-[.3em] ${dark ? "text-white/52" : "text-[var(--demo-accent)]"}`}><BookOpen className="h-4 w-4" />{copy.eyebrow}</div>
       <h2 className={`${demoHeadlineClass(copy.title)} mt-6 font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{copy.title}</h2>
       <p className={`mt-6 max-w-sm text-sm leading-8 ${dark ? "text-white/62" : "text-[var(--demo-muted)]"}`}>{copy.description}</p>
-      <div className={`mt-9 border-y py-5 text-xs tracking-[.1em] ${dark ? "border-white/15 text-white/55" : "border-[var(--demo-line)] text-[var(--demo-muted)]"}`}><span className="font-bold">{String(sections.length).padStart(2, "0")}</span> 件のサンプル記事</div>
+      <div className={`mt-9 border-y py-5 text-xs tracking-[.1em] ${dark ? "border-white/15 text-white/55" : "border-[var(--demo-line)] text-[var(--demo-muted)]"}`}><span className="font-bold">{String(sections.length).padStart(2, "0")}</span> 件のご案内</div>
     </div>
     <div className="mt-10 space-y-3">
       <a href={`/${data.slug}/news`} className={`inline-flex min-h-12 w-full items-center justify-between px-5 text-sm font-bold ${dark ? "bg-white text-black" : "bg-[var(--demo-ink)] text-white"}`}>お知らせ一覧を見る<ArrowRight className="h-4 w-4" /></a>
