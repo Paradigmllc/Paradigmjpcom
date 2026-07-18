@@ -12,6 +12,7 @@ import {
   type DemoSourceManifest,
 } from "./demo-source-policy"
 import { generatedDemoVisualUrl } from "./demo-generated-visual"
+import { mapWithConcurrency } from "./demo-batch-wave"
 import { INDUSTRIES, type Industry, type ReportLocale, type SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -321,7 +322,7 @@ export async function queuePortalListCandidatesDemo(
     candidates.push(...page)
   }
   const byId = new Map(candidates.map((candidate) => [candidate.id, candidate]))
-  return Promise.all(candidateIds.map(async (candidateId) => {
+  return mapWithConcurrency(candidateIds, 4, async (candidateId) => {
     const candidate = byId.get(candidateId)
     if (!candidate) return { ok: false, candidateId, companyId: "", companyName: "", error: "候補が見つかりません" }
     try {
@@ -330,5 +331,5 @@ export async function queuePortalListCandidatesDemo(
       console.error(`[list-candidate-demo] portal candidate ${candidateId} failed:`, error)
       return { ok: false, candidateId, companyId: candidate.companyId ?? "", companyName: "", error: error instanceof Error ? error.message : "DEMOキュー投入に失敗しました" }
     }
-  }))
+  })
 }
