@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { buildDemoMultiPageData } from "./demo-multi-page-builder"
@@ -14,12 +15,13 @@ import {
 import { selectTemplateCandidates, type CompanyProfile } from "./demo-template-selector"
 import type { DemoCandidateSummary, DemoCreativeDirection, DemoGenerateOutput, DemoMultiPageData } from "./demo-site-types"
 import type { ReportLocale } from "./types"
-import { buildDemoUrl } from "./routing"
+import { buildDemoUrl, demoSiteUrl } from "./routing"
 import { readValidatedDemoSourceManifest } from "./demo-source-policy"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 import { buildDemoCreativeDirection, readCreativeDirection } from "./demo-creative-direction"
 import { buildListCandidateDiagnostic } from "./demo-list-candidate-report"
+import { generateScreenshotToCode } from "./screenshot-to-code-client"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
@@ -33,6 +35,11 @@ export interface DemoGenerationOptions {
   publicationMode?: "public" | "private_review"
   sourcePolicy?: "legacy" | "reviewed_manifest"
   notify?: boolean
+  screenshotToCode?: {
+    imageDataUrls: string[]
+    prompt?: string
+    designSystem?: string
+  }
 }
 
 /**
@@ -172,6 +179,10 @@ export async function generateFullStackDemo(
     selected.page.publicationStatus = publicationStatus
     const slug = selected.page.slug
     const demoUrl = qualityPassed ? buildDemoUrl(effectiveLocale === "en" ? "en" : "ja", slug) : null
+    const screenshotToCode = options.screenshotToCode
+      ? await generateScreenshotToCode(options.screenshotToCode)
+      : null
+    const screenshotPreviewToken = screenshotToCode ? randomUUID() : null
 
     const { data: slugOwner, error: slugOwnerError } = await sb
       .from(DB_TABLES.THEME_DEMO_PAGES)
@@ -193,6 +204,19 @@ export async function generateFullStackDemo(
         templateId: selected.page.templateId,
         industry: company.industry,
         prefecture: company.prefecture,
+        ...(screenshotToCode ? {
+          screenshot_to_code: {
+            status: "review",
+            code: screenshotToCode.code,
+            code_bytes: Buffer.byteLength(screenshotToCode.code, "utf8"),
+            generated_at: new Date().toISOString(),
+            upstream_commit: screenshotToCode.upstreamCommit,
+            provider: screenshotToCode.provider,
+            model: screenshotToCode.model,
+            source: "abi/screenshot-to-code",
+            preview_token: screenshotPreviewToken,
+          },
+        } : {}),
       },
       company_id: companyId,
       site_payload: selected.page,
@@ -246,6 +270,14 @@ export async function generateFullStackDemo(
       publicationStatus,
       candidates: candidates.map(({ summary }) => summary),
       qualityReport: selected.page.quality,
+      screenshotToCode: screenshotToCode ? {
+        status: "review",
+        codeBytes: Buffer.byteLength(screenshotToCode.code, "utf8"),
+        upstreamCommit: screenshotToCode.upstreamCommit,
+        provider: screenshotToCode.provider,
+        model: screenshotToCode.model,
+        previewUrl: `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(screenshotPreviewToken ?? "")}`,
+      } : null,
       error: qualityPassed ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
     }
   } catch (error) {
