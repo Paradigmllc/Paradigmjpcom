@@ -134,6 +134,11 @@ const generationSchema = z.object({
   candidates: z.array(candidateSchema).min(1).max(3),
 }).strict();
 
+const initialInterestGenerationSchema = z.object({
+  strategy: strategySchema,
+  candidates: z.array(candidateSchema).min(1).max(3),
+}).strict();
+
 const repairSchema = z.object({
   candidate: candidateSchema,
 }).strict();
@@ -335,7 +340,7 @@ export async function generatePersonalizedJapanEntryMessage(
   const generated = await callStructured({
     stage: "generation",
     messages: generationMessages(input, facts, mode),
-    schema: generationSchema,
+    schema: purpose === "initial_interest" ? initialInterestGenerationSchema : generationSchema,
     caller,
   });
   totalAttempts += generated.attempts;
