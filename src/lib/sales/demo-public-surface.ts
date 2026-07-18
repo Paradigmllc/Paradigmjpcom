@@ -49,14 +49,15 @@ export function sanitizeDemoMedia(
 ): DemoPremiumMedia[] {
   const seen = new Set<string>()
   return media.flatMap((item, index) => {
-    if (!isPremiumMediaUsable(item, role)) return []
     const source = canonicalDemoMediaSrc(item.src)
+    const normalizedItem = { ...item, src: source }
+    if (!isPremiumMediaUsable(normalizedItem, role)) return []
     if (!source || seen.has(source)) return []
     seen.add(source)
     const label = labels[index % Math.max(labels.length, 1)] ?? "風景"
     const fallback = `${companyName} ${label}`
     return [{
-      ...item,
+      ...normalizedItem,
       src: source,
       alt: cleanText(item.alt, fallback),
       caption: cleanText(item.caption, label),

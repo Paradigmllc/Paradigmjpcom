@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { buildPrivateProposalMedia } from "./demo-proposal-media"
+import { sanitizeDemoMedia } from "./demo-public-surface"
 
 describe("buildPrivateProposalMedia", () => {
   it("uses reviewed HTTPS proposal photos and keeps generated fallbacks", () => {
@@ -25,7 +26,7 @@ describe("buildPrivateProposalMedia", () => {
     }, "株式会社第一リフォーム", "株式会社第一リフォーム", "construction")
 
     expect(media).toHaveLength(1)
-    expect(media[0]?.src).toContain("image.ekiten.jp")
+    expect(media[0]?.src).toBe("https://image.ekiten.jp/shop/6281715/photo.jpg")
     expect(media[0]?.fallbackSrc).toContain("/api/sales/demo-visuals/")
     expect(media[0]?.alt).toBe("株式会社第一リフォームの実績写真 1")
     expect(media[0]?.width).toBe(1200)
@@ -33,5 +34,18 @@ describe("buildPrivateProposalMedia", () => {
 
   it("fails closed for blocked manifests", () => {
     expect(buildPrivateProposalMedia({ status: "blocked", assets: [] }, "店舗", "shop", "retail")).toEqual([])
+  })
+
+  it("normalizes portal derivatives before the hero quality gate", () => {
+    const media = sanitizeDemoMedia([{
+      src: "https://image.ekiten.jp/shop/6281715/photo.jpg?size=1to1_m",
+      alt: "施工写真",
+      kind: "image",
+      width: 1200,
+      height: 900,
+    }], "株式会社第一リフォーム", ["仕事の現場"], "hero")
+
+    expect(media).toHaveLength(1)
+    expect(media[0]?.src).toBe("https://image.ekiten.jp/shop/6281715/photo.jpg")
   })
 })
