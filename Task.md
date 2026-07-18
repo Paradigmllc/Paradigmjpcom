@@ -1921,3 +1921,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `/api/demo-designs/[slug]`へ検証済みの外部`spec`インポート経路を追加。`abi/screenshot-to-code`のOSS本体は、現時点ではローカルclone・独自backend・モデルAPIキーが必要で、当リポジトリに実行済みとして偽装していない。OSSから出力したJSONを`x-admin-secret`経由で取り込み、同じ品質ゲートと公開レンダラーで使える設計にした。
 - 検証済み: `npm exec -- tsc --noEmit`、`npm run lint`、対象Vitest **3 files / 11 tests**、`npm run quality:guard` **0 errors / 71 existing warnings**、`npm run build` **408/408 pages**、`git diff --check`。PR **#416**をmainへ統合し、正式`npm run release:prod`のdeployment **jjcaw7pfi4d4jqd7jw6ho1nm**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
 - 公開read-backで`https://demo.paradigmjp.com/cafe-sosomu`、`/株式会社第一リフォーム`、`/ほさか歯科`を再取得し、Premium V3の`data-demo-site`に加えて企業別`data-demo-nav`（minimal / sticky / transparent）、palette、typeがHTMLへ反映されていることを確認。配信JSにも`navStyle`実装を確認した。企業追加、Twenty同期、フォーム・メール等の外部送信は0件。
+
+## CURRENT STATUS - 2026-07-18 Empty visual fallback hardening（本番release・公開目視確認完了 / 外部送信0）
+
+- 実画像が承認済みでない既存DEMOで、空のCSSフォールバックへ落ちる経路を修正。`ensureGeneratedVisualMedia`がhero 3枚・gallery 4枚を業種別の1600×1000 self-hosted SVGビジュアルで補完し、企業名・業種ラベル・alt・キャプションを型付きで保持する。承認済みの高解像度実画像がある場合はそれを優先し、低解像度・未承認素材だけを生成ビジュアルへ置換する。
+- PR **#420**をmainへ統合し、正式`npm run release:prod`のdeployment **pb1ugzgkzmzacamq2gl72272**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
+- 公開`https://demo.paradigmjp.com/cafe-sosomu`をブラウザで再読込し、heroスライダーのHTMLに`/api/sales/demo-visuals/cafe-sosomu/1..4`の画像要素が存在すること、画像APIがHTTP **200**・`image/svg+xml`・`x-demo-visual-version: 2026-07-18-visuals-2`を返すこと、空のCSSカードではなく料理・店内を表現するビジュアルが表示されることを目視確認。外部送信・Twenty追加は0件。
