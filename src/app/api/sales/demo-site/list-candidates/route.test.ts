@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   dispatch: vi.fn(),
   getSupabase: vi.fn(),
   queue: vi.fn(),
+  portalQueue: vi.fn(),
 }))
 
 vi.mock("next/server", async (importOriginal) => ({
@@ -15,7 +16,7 @@ vi.mock("next/server", async (importOriginal) => ({
 }))
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/sales/demo-batch-drain", () => ({ dispatchDemoBatchDrain: mocks.dispatch }))
-vi.mock("@/lib/sales/demo-list-candidate", () => ({ queueListCandidateDemoForCompany: mocks.queue }))
+vi.mock("@/lib/sales/demo-list-candidate", () => ({ queueListCandidateDemoForCompany: mocks.queue, queuePortalListCandidatesDemo: mocks.portalQueue }))
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getSupabase }))
 
 import { POST } from "./route"
@@ -34,6 +35,7 @@ beforeEach(() => {
   mocks.authorize.mockResolvedValue(true)
   mocks.dispatch.mockResolvedValue({ ok: true, status: 200 })
   mocks.queue.mockResolvedValue({ ok: true, companyId, companyName: "サンプル", status: "queued" })
+  mocks.portalQueue.mockResolvedValue([{ ok: true, candidateId: companyId, companyId, companyName: "サンプル", status: "queued" }])
 })
 
 describe("list candidate demo route", () => {
@@ -68,5 +70,19 @@ describe("list candidate demo route", () => {
     expect(response.status).toBe(401)
     expect(mocks.getSupabase).not.toHaveBeenCalled()
   })
-})
 
+  it("resolves portal candidate ids before queueing generated visuals", async () => {
+    const builder = query([])
+    mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue(builder) })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/demo-site/list-candidates", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ candidateIds: [companyId], locale: "ja" }),
+    }))
+    const body = await response.json()
+    expect(response.status).toBe(202)
+    expect(body).toMatchObject({ ok: true, queued: 1, rejected: 0, sourcePolicy: "list_candidate_generated_visual" })
+    expect(mocks.portalQueue).toHaveBeenCalledWith([companyId], "ja", "list_candidate_generated_visual", expect.any(String))
+    await vi.waitFor(() => expect(mocks.dispatch).toHaveBeenCalledTimes(1))
+  })
+})

@@ -1,6 +1,9 @@
 import { siteUrl } from "./routing"
 import { findCompanyById } from "./companies"
 import { enqueueCompanyEnrichment } from "./enrichment-jobs"
+import type { CandidateListItem } from "./lead-candidate-list"
+import { listPortalCandidates, readPortalSnapshot } from "./portal-sources/service"
+import { syncPortalCandidateToTwenty } from "./portal-sources/twenty-sync"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import {
@@ -42,6 +45,7 @@ export interface ListCandidateEligibility {
 export interface ListCandidateQueueResult {
   ok: boolean
   companyId: string
+  candidateId?: string
   companyName: string
   jobId?: string
   status?: string
@@ -96,7 +100,15 @@ export function evaluateListCandidateForDemo(company: SalesCompany): ListCandida
   if (!snapshot) reasons.push("ブラウザ確認済みポータルスナップショットがありません")
   const enterpriseSignals = Array.isArray(snapshot?.smbFit?.enterpriseSignals) ? snapshot?.smbFit?.enterpriseSignals : []
   if (enterpriseSignals.length > 0) reasons.push(`大企業シグナル: ${enterpriseSignals.slice(0, 3).map(String).join("、")}`)
-  if (snapshot?.smbFit?.eligible !== true || snapshot.status !== "ready_for_review") reasons.push("SMB意思決定シグナルの審査基準未達です")
+  const proposalOnly = snapshot?.status === "decision_fit_unverified"
+    && !snapshot.websiteUrl
+    && enterpriseSignals.length === 0
+    && stringValue(snapshot.address).length > 0
+    && stringValue(snapshot.description).length >= 80
+    && Array.isArray(snapshot.images)
+    && snapshot.images.length >= 3
+  const reviewedReady = snapshot?.smbFit?.eligible === true && snapshot.status === "ready_for_review"
+  if (!reviewedReady && !proposalOnly) reasons.push("SMB意思決定シグナルまたは掲載情報量の審査基準未達です")
   if (!stringValue(snapshot?.companyName) || !stringValue(snapshot?.category)) reasons.push("事業者名または業種情報が不足しています")
   const listingUrl = stringValue(meta.portal_listing_url) || stringValue(snapshot?.listingUrl)
   if (!isHttps(listingUrl)) reasons.push("根拠となるポータルURLがHTTPSではありません")
@@ -262,4 +274,61 @@ export async function queueListCandidateDemo(
   const company = await findCompanyById(companyId)
   if (!company) return { ok: false, companyId, companyName: "", error: "company not found" }
   return queueListCandidateDemoForCompany(company, locale, triggeredBy, waveId)
+}
+
+function candidateSyncCompanyId(candidate: CandidateListItem): string {
+  const meta = record(candidate.meta)
+  const sync = record(meta.portal_twenty_sync)
+  return stringValue(sync.companyId) || stringValue(candidate.companyId)
+}
+
+/** Resolve a portal candidate to its current list-only company before queueing. */
+export async function queuePortalListCandidateDemo(
+  candidate: CandidateListItem,
+  locale: "ja" | "en" = "ja",
+  triggeredBy = "list_candidate_generated_visual",
+  waveId?: string,
+): Promise<ListCandidateQueueResult> {
+  const candidateId = candidate.id
+  const snapshot = readPortalSnapshot(candidate)
+  if (!snapshot) return { ok: false, candidateId, companyId: candidate.companyId ?? "", companyName: "", error: "ポータル取得スナップショットがありません" }
+
+  let companyId = candidateSyncCompanyId(candidate)
+  let company = companyId ? await findCompanyById(companyId) : null
+  if (company && evaluateListCandidateForDemo(company).eligible) {
+    return { ...(await queueListCandidateDemoForCompany(company, locale, triggeredBy, waveId)), candidateId }
+  }
+
+  const synced = await syncPortalCandidateToTwenty(candidate, true)
+  if (!synced.ok || !synced.companyId) {
+    return { ok: false, candidateId, companyId, companyName: snapshot.companyName, error: synced.error ?? "候補企業のTwenty同期に失敗しました" }
+  }
+  companyId = synced.companyId
+  company = await findCompanyById(companyId)
+  if (!company) return { ok: false, candidateId, companyId, companyName: snapshot.companyName, error: "Twenty同期後の会社レコードを取得できません" }
+  return { ...(await queueListCandidateDemoForCompany(company, locale, triggeredBy, waveId)), candidateId }
+}
+
+export async function queuePortalListCandidatesDemo(
+  candidateIds: string[],
+  locale: "ja" | "en" = "ja",
+  triggeredBy = "list_candidate_generated_visual",
+  waveId?: string,
+): Promise<ListCandidateQueueResult[]> {
+  const candidates: CandidateListItem[] = []
+  for (let index = 0; index < candidateIds.length; index += 100) {
+    const page = await listPortalCandidates(undefined, Math.min(100, candidateIds.length - index), { ids: candidateIds.slice(index, index + 100) })
+    candidates.push(...page)
+  }
+  const byId = new Map(candidates.map((candidate) => [candidate.id, candidate]))
+  return Promise.all(candidateIds.map(async (candidateId) => {
+    const candidate = byId.get(candidateId)
+    if (!candidate) return { ok: false, candidateId, companyId: "", companyName: "", error: "候補が見つかりません" }
+    try {
+      return await queuePortalListCandidateDemo(candidate, locale, triggeredBy, waveId)
+    } catch (error) {
+      console.error(`[list-candidate-demo] portal candidate ${candidateId} failed:`, error)
+      return { ok: false, candidateId, companyId: candidate.companyId ?? "", companyName: "", error: error instanceof Error ? error.message : "DEMOキュー投入に失敗しました" }
+    }
+  }))
 }
