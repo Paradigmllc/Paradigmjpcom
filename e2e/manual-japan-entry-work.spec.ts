@@ -72,8 +72,15 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
             ],
           }, evidence: {}, form_discovery: {},
           form_url: `https://${domain}/contact`,
-          initial_message: `Hello ${domain}`,
-          message_review: {},
+          initial_message: `${domain} documents an API-first retail analytics workflow. I’m Sato from Paradigm LLC in Japan.\n\nThe checked public pages did not show a Japanese-language evaluation path, so Japan applicability remains a hypothesis rather than an observed result.\n\nI mapped this buyer-path question in a short Japan opportunity analysis. Are you the right person for me to send it to?`,
+          message_review: {
+            score: 96,
+            uniquenessScore: 91,
+            selected_index: 0,
+            strategy: { primaryObservation: "API-first retail analytics workflow", whyNow: "Japan applicability remains unverified", japaneseSegment: "Independent Japanese retail operators", japanGap: "No Japanese-language evaluation path was observed", opportunityAngle: "Validate the buyer evaluation path", cta: "Ask for the right recipient", countryAdaptation: "Business-formal without nationality assumptions" },
+            candidates: [{ message: `Selected ${domain}`, openingStyle: "product-led", ctaType: "right_person" }, { message: `Alternative ${domain}`, openingStyle: "decision-led", ctaType: "founder_forward" }],
+            evidence_pack: [{ id: "japan-audit-language", statement: "No Japanese-language customer path was observed.", source: `https://${domain}`, confidence: 0.76, classification: "observed" }],
+          },
           message_variant_requested: "estimate_off_price_off",
           message_variant: "estimate_off_price_off",
           message_variant_fallback_reason: null,
@@ -126,7 +133,11 @@ test("accepts multiple new URLs and keeps each result visible", async ({ page },
   await expect(page.getByText("PL · Regional主要母集団").first()).toBeVisible()
   await expect(page.getByText("商業根拠 2件 · 出典 1").first()).toBeVisible()
   await expect(page.getByText("市場・企業別の優先判断").first()).toBeVisible()
-  await expect(page.getByText("問い合わせフォーム初回文面（未送信・推定なし・価格なし・問題提起型）").first()).toBeVisible()
+  await expect(page.getByText("企業別フォーム文面（未送信）").first()).toBeVisible()
+  await expect(page.getByText("品質 96").first()).toBeVisible()
+  await expect(page.getByText("固有性 91").first()).toBeVisible()
+  await expect(page.getByText("企業別メッセージ戦略").first()).toBeVisible()
+  await expect(page.getByText("使用可能な根拠・出典（内部確認専用）").first()).toBeVisible()
   const history = page.locator("#history")
   await history.getByLabel("企業名またはドメインを検索").fill("one.example")
   await expect(history.getByText("one.example", { exact: true }).first()).toBeVisible()

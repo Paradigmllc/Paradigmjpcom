@@ -1905,3 +1905,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 記事カードに残っていた内部的な`PREVIEW`表記を顧客向けの`更新情報`へ変更した。記事・サイドバー・CTAの導線と業種別コピー／3レイアウト分岐は維持し、顧客画面から管理用ラベルを除去した。
 - PR **#413**をmainへ統合し、正式`npm run release:prod`のdeployment **a8bfzm1jicy2hujb5x9s4g2g**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
 - 実企業デモを公開read-backし、`/news`はHTTP **200**、サイドバー **1件**、記事カード **4件**、問い合わせCTA **1件**。ホームはJournal **1セクション**、ニュース導線 **11件**、問い合わせCTA **2件**。`記事サンプル`／`サンプル記事`／`PREVIEW`は **0件**、`更新情報`を確認。外部送信は0件。
+## CURRENT STATUS - 2026-07-18 Manual Work企業別フォーム文面フルパーソナライズ（実装・release前 / 外部送信0）
+
+- `/work`の初回文面生成を、固定の冒頭・固定CTA・4段落テンプレートから、企業公開事実、業種playbook、国別の業務トーン、日本で想定する顧客、未検証ギャップ、訴求角度、CTAを先に構造化する企業別message strategyへ変更した。国籍から需要・行動・商業事実を推定せず、公開根拠にない市場適合は仮説として扱う。
+- DeepSeek V4 Proは1〜3候補を生成し、構成・診断焦点・CTAが実質的に異なる候補だけを残す。会社名を除去した3-gram類似度で過去80件と比較し、58%以上の使い回し文面をfail-closed停止する。候補間も45%以上の同型案を除外し、決定論的安全ゲート後に別のDeepSeek批評で92/100・各軸22/25以上の1案だけを採用する。
+- フォーム本文ではURL、domain、出典名、`Source:`、`according to`、引用脚注、メール、添付、予約リンクを禁止し、検出時はscore 0で停止する。出典URLは生成・批評payloadから除外し、内部用evidence packとしてのみDB履歴へ保存する。`message_review`へstrategy、候補、採用index、根拠、品質、固有性を永続化し、`/work`で採用文・選定情報・内部根拠・有効な代替案を表示する。
+- 既存automationとは分離、海外SMB限定、日本企業除外、1〜20 URL・3件並列、外部自動送信0、適格時のみTwenty未送信リスト追加という境界は変更していない。TypeScript、対象ESLint、対象Vitest **6 files / 43 tests**、全Vitest **202 files / 913 tests**、Quality Guard **0 errors / 71 existing warnings**、production build **408/408 pages**、Playwright Chromium/Pixel 7 **2/2**（WCAG重大/深刻0、console error 0、overlay 0、横overflow 0）がpass。正式releaseと本番read-backはこの項目更新後に記録する。

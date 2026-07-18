@@ -82,6 +82,7 @@ export function buildManualInitialMessageInput(input: {
   variant?: ManualMessageVariant
   angle?: ManualMessageAngle
   projection?: Awaited<ReturnType<typeof collectManualMarketProjection>>["projection"]
+  priorMessages?: Parameters<typeof generatePersonalizedJapanEntryMessage>[0]["priorMessages"]
 }): Parameters<typeof generatePersonalizedJapanEntryMessage>[0] {
   const variant = input.variant ?? "estimate_off_price_off"
   return {
@@ -97,5 +98,8 @@ export function buildManualInitialMessageInput(input: {
     messageAngle: input.angle ?? "problem",
     outreachPlaybook: input.profile.outreachPlaybook,
     positioningConcept: input.profile.positioningConcept,
+    observedFacts: input.profile.observedFacts,
+    sourceUrl: input.evidence.sourceUrl,
+    priorMessages: input.priorMessages,
   }
 }
