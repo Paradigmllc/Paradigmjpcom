@@ -1,22 +1,34 @@
 import { createHash } from "node:crypto"
+import { renderGeneratedScene } from "./demo-generated-scenes"
 
 const INDUSTRY_LABELS: Record<string, string> = {
-  restaurant: "DINING / PLACE",
-  dental: "CARE / WELLNESS",
-  beauty_salon: "BEAUTY / RITUAL",
-  construction: "CRAFT / BUILD",
-  retail: "STORE / OBJECTS",
-  cleaning: "CARE / HOME",
-  accounting: "ADVISORY / TRUST",
-  consulting: "STUDIO / THINKING",
+  restaurant: "飲食店",
+  dental: "歯科・クリニック",
+  beauty_salon: "美容サロン",
+  construction: "建設・リフォーム",
+  retail: "ショップ・小売",
+  cleaning: "暮らしのサービス",
+  accounting: "会計・税務",
+  consulting: "専門サービス",
+}
+
+const SCENE_LABELS: Record<string, string[]> = {
+  restaurant: ["店内の光", "一皿の時間", "季節の素材", "カウンターの景色", "香りの余韻", "夜のしつらえ"],
+  dental: ["受付と待合", "診療の環境", "安心の設計", "院内の光", "ケアの時間", "通いやすさ"],
+  beauty_salon: ["サロンの光", "スタイルの提案", "施術の時間", "鏡越しの景色", "素材と質感", "日常の余白"],
+  construction: ["素材と光", "現場の仕事", "仕上がり", "住まいの表情", "手仕事の細部", "地域の景色"],
+  retail: ["選ぶ時間", "店内の景色", "商品の質感", "季節の提案", "手に取る理由", "暮らしの余白"],
+  cleaning: ["整える時間", "清潔の設計", "暮らしの景色", "細部の仕事", "安心の手触り", "日々の余白"],
+  accounting: ["相談の時間", "資料と対話", "判断の景色", "仕事の細部", "信頼の設計", "次の一手"],
+  consulting: ["相談の時間", "仕事の景色", "考える場所", "細部の設計", "対話の余白", "次の一手"],
 }
 
 const PALETTES = [
-  ["#0d1b2a", "#1b4965", "#cae9ff", "#f6ae2d"],
-  ["#201a23", "#5a3d5c", "#f5d0fe", "#f59e0b"],
-  ["#102a2c", "#1e5b5c", "#d7f9f1", "#e9c46a"],
-  ["#1d1d1f", "#4d4d4d", "#f5f5f0", "#d97706"],
-  ["#161b33", "#344e8c", "#dbeafe", "#fb7185"],
+  { deep: "#111b20", mid: "#31525b", paper: "#f1e9d8", accent: "#d59a46" },
+  { deep: "#231c20", mid: "#6d4750", paper: "#f5e5dd", accent: "#d08b6f" },
+  { deep: "#102426", mid: "#2e6a6b", paper: "#e3f1ea", accent: "#d8b363" },
+  { deep: "#1e2021", mid: "#5b5147", paper: "#f2eee3", accent: "#c88739" },
+  { deep: "#17203a", mid: "#3f638f", paper: "#e4eff5", accent: "#e78479" },
 ] as const
 
 function escapeXml(value: string): string {
@@ -29,7 +41,7 @@ function escapeXml(value: string): string {
   })[character] ?? character)
 }
 
-function paletteFor(seed: string): readonly [string, string, string, string] {
+function paletteFor(seed: string): (typeof PALETTES)[number] {
   const hash = createHash("sha256").update(seed).digest().readUInt32BE(0)
   return PALETTES[hash % PALETTES.length] ?? PALETTES[0]
 }
@@ -38,26 +50,16 @@ function safeIndex(value: number): number {
   return Number.isInteger(value) && value >= 1 && value <= 6 ? value : 1
 }
 
-function motif(industry: string, accent: string, muted: string, index: number): string {
-  const offset = (index * 37) % 180
-  if (industry === "restaurant") {
-    return `<circle cx="1260" cy="255" r="150" fill="none" stroke="${accent}" stroke-width="2"/><circle cx="1260" cy="255" r="95" fill="none" stroke="${accent}" stroke-width="12" opacity=".55"/><path d="M1260 105v300M1110 255h300" stroke="${muted}" stroke-width="2" opacity=".7"/>`
-  }
-  if (industry === "dental") {
-    return `<path d="M1220 100c-45 0-83 35-83 87 0 72 39 164 83 164s83-92 83-164c0-52-38-87-83-87Z" fill="none" stroke="${accent}" stroke-width="10"/><path d="M1165 196h110M1220 141v110" stroke="${muted}" stroke-width="2" opacity=".75"/>`
-  }
-  if (industry === "beauty_salon") {
-    return `<path d="M1190 95c145 40 155 180 10 310-80-52-115-150-10-310Z" fill="none" stroke="${accent}" stroke-width="4"/><path d="M1200 120c-28 110-13 188 0 270M1240 122c45 105 42 179 12 260" stroke="${muted}" stroke-width="3" opacity=".7"/>`
-  }
-  if (industry === "construction") {
-    return `<path d="M1110 360 1290 ${145 + offset % 60} 1470 360Z" fill="none" stroke="${accent}" stroke-width="8"/><path d="M1160 320h260M1210 270h160M1260 215v145" stroke="${muted}" stroke-width="3" opacity=".75"/>`
-  }
-  if (industry === "retail") {
-    return `<rect x="1110" y="115" width="300" height="300" rx="150" fill="none" stroke="${accent}" stroke-width="9"/><path d="M1200 175v175M1320 175v175M1150 255h220" stroke="${muted}" stroke-width="2" opacity=".75"/>`
-  }
-  return `<path d="M1110 350 1260 120l150 230-150 230Z" fill="none" stroke="${accent}" stroke-width="7"/><path d="M1110 350h300M1260 120v460" stroke="${muted}" stroke-width="2" opacity=".7"/>`
+function sceneLabel(industry: string, variant: number): string {
+  return SCENE_LABELS[industry]?.[variant - 1] ?? SCENE_LABELS.consulting[variant - 1] ?? "仕事の景色"
 }
 
+/**
+ * Deterministic, self-hosted editorial imagery for candidates without an
+ * approved source photo. This is intentionally a layered scene rather than a
+ * text card or abstract placeholder, so every existing demo improves when the
+ * route is deployed—without an LLM call or an external image dependency.
+ */
 export function buildGeneratedDemoVisualSvg(input: {
   slug: string
   industry?: string | null
@@ -66,41 +68,34 @@ export function buildGeneratedDemoVisualSvg(input: {
 }): string {
   const variant = safeIndex(input.variant)
   const industry = input.industry?.trim() || "consulting"
-  const label = input.label?.trim() || INDUSTRY_LABELS[industry] || "LOCAL BUSINESS / STORY"
-  const [background, surface, paper, accent] = paletteFor(`${input.slug}:${industry}:${variant}`)
-  const safeLabel = escapeXml(label.toUpperCase().slice(0, 36))
-  const safeIndustryLabel = escapeXml((INDUSTRY_LABELS[industry] || "LOCAL BUSINESS / STORY").toUpperCase())
-  const safeVariant = String(variant).padStart(2, "0")
-  const motifMarkup = motif(industry, accent, paper, variant)
+  const businessLabel = input.label?.trim() || INDUSTRY_LABELS[industry] || "地域の事業者"
+  const categoryLabel = INDUSTRY_LABELS[industry] || "専門サービス"
+  const palette = paletteFor(`${input.slug}:${industry}:${variant}`)
+  const safeBusinessLabel = escapeXml(businessLabel.slice(0, 80))
+  const safeCategoryLabel = escapeXml(categoryLabel)
+  const safeSceneLabel = escapeXml(sceneLabel(industry, variant))
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
-  <title id="title">${safeLabel} generated visual ${safeVariant}</title>
-  <desc id="desc">A high-resolution editorial visual direction for a local business website.</desc>
+  <title id="title">${safeBusinessLabel} — ${safeSceneLabel}</title>
+  <desc id="desc">${safeCategoryLabel}の空間と仕事を表現した、高解像度の業種別イメージです。</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${background}"/><stop offset="1" stop-color="${surface}"/></linearGradient>
-    <radialGradient id="glow" cx="72%" cy="22%" r="70%"><stop stop-color="${accent}" stop-opacity=".45"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient>
-    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="${paper}" stroke-opacity=".1" stroke-width="1"/></pattern>
+    <linearGradient id="scene" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${palette.deep}"/><stop offset=".52" stop-color="${palette.mid}"/><stop offset="1" stop-color="#0b1012"/></linearGradient>
+    <radialGradient id="light" cx="78%" cy="18%" r="78%"><stop stop-color="${palette.accent}" stop-opacity=".42"/><stop offset=".45" stop-color="${palette.accent}" stop-opacity=".12"/><stop offset="1" stop-color="${palette.accent}" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#fff" stop-opacity="0"/><stop offset=".48" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
     <filter id="blur"><feGaussianBlur stdDeviation="48"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 .08"/></feComponentTransfer></filter>
+    <pattern id="fineGrid" width="56" height="56" patternUnits="userSpaceOnUse"><path d="M56 0H0V56" fill="none" stroke="${palette.paper}" stroke-opacity=".055" stroke-width="1"/></pattern>
   </defs>
-  <rect width="1600" height="1000" fill="url(#bg)"/>
-  <rect width="1600" height="1000" fill="url(#grid)"/>
-  <circle cx="1190" cy="195" r="270" fill="${accent}" opacity=".16" filter="url(#blur)"/>
-  <rect width="1600" height="1000" fill="url(#glow)"/>
-  <path d="M0 790C270 650 410 920 710 780s455-220 890-15V1000H0Z" fill="${paper}" opacity=".06"/>
-  <g transform="translate(94 100)" fill="${paper}">
-    <text x="0" y="0" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="7" fill="${accent}">${safeLabel}</text>
-    <text x="0" y="76" font-family="Georgia, serif" font-size="68" font-weight="400" letter-spacing="-1">A place with</text>
-    <text x="0" y="152" font-family="Georgia, serif" font-size="68" font-weight="400" letter-spacing="-1">a point of view.</text>
-    <rect x="0" y="212" width="360" height="2" fill="${paper}" opacity=".45"/>
-    <text x="0" y="270" font-family="Arial, sans-serif" font-size="18" letter-spacing="2" opacity=".78">VISUAL DIRECTION / ${safeVariant}</text>
-    <text x="0" y="304" font-family="Arial, sans-serif" font-size="14" letter-spacing="3" opacity=".58">${safeIndustryLabel}</text>
-  </g>
-  <g transform="translate(0 0)">${motifMarkup}</g>
-  <g fill="${paper}" opacity=".74" font-family="Arial, sans-serif" font-size="16" letter-spacing="4">
-    <text x="96" y="906">LOCAL / DISTINCT / CONSIDERED</text>
-    <text x="1450" y="906" text-anchor="end">${safeVariant} — 06</text>
-  </g>
-  <rect x="94" y="850" width="70" height="3" fill="${accent}"/>
+  <rect width="1600" height="1000" fill="#111"/>
+  <rect width="1600" height="1000" fill="url(#light)"/>
+  <circle cx="1240" cy="190" r="310" fill="${palette.accent}" opacity=".2" filter="url(#blur)"/>
+  ${renderGeneratedScene(industry, palette, variant)}
+  <rect width="1600" height="1000" fill="url(#sheen)" opacity=".22"/>
+  <rect width="1600" height="1000" fill="url(#fineGrid)" opacity=".32"/>
+  <rect width="1600" height="1000" filter="url(#grain)" opacity=".35"/>
+  <path d="M0 0h1600v14H0Z" fill="${palette.accent}" opacity=".75"/>
+  <path d="M96 896h210" stroke="${palette.paper}" stroke-opacity=".46" stroke-width="2"/>
+  <circle cx="96" cy="896" r="5" fill="${palette.accent}"/>
 </svg>`
 }
 

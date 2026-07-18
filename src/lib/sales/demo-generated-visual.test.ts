@@ -5,8 +5,11 @@ describe("generated demo visuals", () => {
   it("renders a substantial, escaped SVG for an industry variant", () => {
     const svg = buildGeneratedDemoVisualSvg({ slug: "sample", industry: "restaurant", variant: 2, label: "Cafe <sample>" })
     expect(svg).toContain('width="1600" height="1000"')
-    expect(svg).toContain("DINING / PLACE")
-    expect(svg).toContain("CAFE &lt;SAMPLE&gt;")
+    expect(svg).toContain("飲食店")
+    expect(svg).toContain("Cafe &lt;sample&gt;")
+    expect(svg).toContain("一皿の時間")
+    expect(svg).not.toContain("A place with")
+    expect(svg).not.toContain("CRAFT / BUILD")
     expect(svg.length).toBeGreaterThan(2_000)
   })
 
