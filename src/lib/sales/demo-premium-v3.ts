@@ -63,13 +63,14 @@ export function resolveDemoBrandSystem(page: DemoMultiPageData, recipe = page.de
   const industrySystems = BRAND_SYSTEMS[industryKey] ?? BRAND_SYSTEMS.default
   const typographySystems = typographyStyle ? TYPOGRAPHY_SYSTEMS[typographyStyle] ?? [] : []
   const industryIds = new Set(industrySystems.map((system) => system.id))
+  const customSpecBrand = page.brandSystem?.id.startsWith("spec-") ? page.brandSystem : undefined
   const industryTypographySystems = typographySystems.filter((system) => industryIds.has(system.id))
   const systems = industryTypographySystems.length > 0 ? industryTypographySystems : industrySystems
-  const persistedBrand = page.brandSystem && industryIds.has(page.brandSystem.id) ? page.brandSystem : undefined
+  const persistedBrand = customSpecBrand ?? (page.brandSystem && industryIds.has(page.brandSystem.id) ? page.brandSystem : undefined)
   const selected = persistedBrand
     ?? systems[hash(`${page.companyId}:${recipe?.templateId ?? "default"}:${recipe?.creativeDirection?.concept ?? ""}`) % systems.length]
   const mood = recipe?.creativeDirection?.paletteMood
-  return mood ? { ...selected, ...PALETTE_MOODS[mood] } : selected
+  return customSpecBrand ? selected : mood ? { ...selected, ...PALETTE_MOODS[mood] } : selected
 }
 
 function sentence(value: string): string {

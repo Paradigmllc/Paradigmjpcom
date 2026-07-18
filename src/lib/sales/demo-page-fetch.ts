@@ -15,6 +15,7 @@ import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 import { generatedDemoVisualUrl } from "./demo-generated-visual"
 import { siteUrl } from "./routing"
 import { buildPrivateProposalMedia } from "./demo-proposal-media"
+import { applyDemoDesignSpec, readPersistedDemoDesignSpec } from "./demo-design-spec-runtime"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -289,7 +290,7 @@ export async function fetchDemoMultiPageData(
               },
             }
           : undefined
-        return applyDemoAdminOverrides(upgradeDemoToPremiumV3(applyIndustryPresentation({
+        const presented = applyIndustryPresentation({
           ...themePage.site_payload,
           premium,
           designRecipe: isRecord(themePage.design_recipe)
@@ -313,7 +314,10 @@ export async function fetchDemoMultiPageData(
             brandLogoUrl: logo?.sourceUrl ?? themePage.site_payload.meta.brandLogoUrl,
             artifact_admin: meta.artifact_admin,
           } as DemoMultiPageData["meta"],
-        })))
+        })
+        const designSpec = readPersistedDemoDesignSpec(meta.design_spec)
+        const personalized = designSpec ? applyDemoDesignSpec(presented, designSpec) : presented
+        return applyDemoAdminOverrides(upgradeDemoToPremiumV3(personalized))
       }
 
       const { data: company } = await sb
@@ -344,9 +348,11 @@ export async function fetchDemoMultiPageData(
               diagnostic,
             ),
           )
+          const designSpec = readPersistedDemoDesignSpec(meta.design_spec)
+          const personalized = designSpec ? applyDemoDesignSpec(generated, designSpec) : generated
           return applyDemoAdminOverrides({
-            ...generated,
-            meta: { ...generated.meta, artifact_admin: meta.artifact_admin } as DemoMultiPageData["meta"],
+            ...personalized,
+            meta: { ...personalized.meta, artifact_admin: meta.artifact_admin } as DemoMultiPageData["meta"],
           })
         }
       }

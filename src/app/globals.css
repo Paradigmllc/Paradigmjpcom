@@ -682,6 +682,19 @@ body.no-grain::before { display: none; }
   opacity: .28;
 }
 
+[data-demo-site="premium-v3"][data-demo-nav="hidden-drawer"] nav > div > div:nth-child(2),
+[data-demo-site="premium-v3"][data-demo-nav="sidebar"] nav > div > div:nth-child(2) {
+  display: none;
+}
+
+[data-demo-site="premium-v3"][data-demo-nav="mega-menu"] nav > div > div:nth-child(2) {
+  gap: 1.5rem;
+}
+
+[data-demo-site="premium-v3"][data-demo-nav="sidebar"] nav {
+  border-left: 2px solid var(--demo-accent);
+}
+
 @keyframes premiumV3AtmosphereFloat {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(-2rem, 1.5rem, 0) scale(1.08); }

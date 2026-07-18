@@ -67,6 +67,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
       accent={accentColor ?? "#742f32"}
       brand={resolveDemoBrandSystem(demoData)}
       creativeDirection={demoData.designRecipe?.creativeDirection}
+      navStyle={demoData.designRecipe?.navStyle}
       quality={demoData.quality}
       presentation={demoData.meta}
       social={demoData.premium?.social}

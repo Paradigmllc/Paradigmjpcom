@@ -20,6 +20,7 @@ export function DemoPremiumV3Layout({
   accent,
   brand,
   creativeDirection,
+  navStyle = "classic-top",
   presentation,
   social = [],
   showRecruit = false,
@@ -32,6 +33,7 @@ export function DemoPremiumV3Layout({
   accent: string
   brand: DemoBrandSystem
   creativeDirection?: DemoCreativeDirection
+  navStyle?: string
   quality?: DemoQualityReport
   presentation?: Pick<DemoMeta, "proposalNotice" | "primaryCtaLabel" | "primaryCtaHref" | "footerDescription" | "footerOwner" | "brandLogoUrl">
   social?: DemoPremiumExperience["social"]
@@ -66,6 +68,7 @@ export function DemoPremiumV3Layout({
     "data-demo-density": creativeDirection?.density ?? "balanced",
     "data-demo-hero": creativeDirection?.heroComposition ?? "cinematic",
     "data-demo-type": creativeDirection?.typographyStyle ?? "humanist-sans",
+    "data-demo-nav": navStyle,
   }
 
   useEffect(() => setMenuOpen(false), [pathname])
@@ -105,7 +108,7 @@ export function DemoPremiumV3Layout({
           </div>
         </motion.div>}
       </AnimatePresence>
-      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className={`relative z-20 sticky top-0 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl transition-[box-shadow,background-color] duration-500 ${isScrolled ? "shadow-[0_16px_40px_-28px_var(--demo-ink)] bg-[color:var(--demo-surface)]/96" : ""}`} aria-label="メインナビゲーション">
+      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className={`relative z-20 sticky ${navStyle === "floating-minimal" ? "top-3 mx-3 rounded-full border shadow-[0_18px_50px_-34px_var(--demo-ink)] sm:mx-6 lg:mx-10" : "top-0 border-b"} border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl transition-[box-shadow,background-color] duration-500 ${isScrolled ? "shadow-[0_16px_40px_-28px_var(--demo-ink)] bg-[color:var(--demo-surface)]/96" : ""}`} aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[78px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
           <motion.a href={basePath} whileHover={{ x: 3 }} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
             {presentation?.brandLogoUrl ? (
