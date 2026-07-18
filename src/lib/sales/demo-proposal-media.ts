@@ -2,6 +2,7 @@ import type { DemoPremiumMedia } from "./demo-site-types"
 import { generatedDemoVisualUrl } from "./demo-generated-visual"
 import { siteUrl } from "./routing"
 import type { Industry } from "./types"
+import { canonicalDemoMediaSrc } from "./demo-public-surface"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
@@ -32,7 +33,10 @@ export function buildPrivateProposalMedia(
     if (source.protocol !== "https:") return []
     const variant = (index % 6) + 1
     return [{
-      src: source.toString(),
+      // Ekiten's `size=1to1_m` query selects a derivative even though the
+      // canonical path serves the 1200px original. Normalize before the
+      // quality gate so reviewed source photos are not discarded as thumbs.
+      src: canonicalDemoMediaSrc(source.toString()),
       fallbackSrc: generatedDemoVisualUrl({
         origin: siteUrl(),
         slug,
