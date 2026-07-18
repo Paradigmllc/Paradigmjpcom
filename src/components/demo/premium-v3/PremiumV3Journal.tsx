@@ -52,7 +52,7 @@ function ArticleCard({ data, section, index, featured = false, dark = false }: {
     </a>
     <div className={`flex flex-col justify-between p-6 sm:p-8 ${featured ? "lg:p-11" : "min-h-64"}`}>
       <div>
-        <div className={`flex items-center gap-3 text-[10px] font-bold tracking-[.2em] ${dark ? "text-white/45" : "text-[var(--demo-muted)]"}`}><CalendarDays className="h-3.5 w-3.5" />{copy.category}<span aria-hidden="true">·</span><span>PREVIEW</span></div>
+        <div className={`flex items-center gap-3 text-[10px] font-bold tracking-[.2em] ${dark ? "text-white/45" : "text-[var(--demo-muted)]"}`}><CalendarDays className="h-3.5 w-3.5" />{copy.category}<span aria-hidden="true">·</span><span>更新情報</span></div>
         <h3 className={`${demoHeadlineClass(section.heading, featured ? "section" : "card")} mt-5 font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{section.heading}</h3>
         <p className={`mt-5 text-sm leading-8 ${dark ? "text-white/62" : "text-[var(--demo-muted)]"}`}>{articleBody(section)}</p>
       </div>
