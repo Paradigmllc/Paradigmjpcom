@@ -150,6 +150,7 @@ async function main() {
     DEEPSEEK_API_BASE: appEnvs.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1",
     DEEPSEEK_MODEL: appEnvs.DEEPSEEK_MODEL || "deepseek-v4-pro",
     SCREENSHOT_TO_CODE_SHARED_SECRET: sharedSecret,
+    SCREENSHOT_TO_CODE_VISUAL_MODE: appEnvs.SCREENSHOT_TO_CODE_VISUAL_MODE || "metadata-text",
   }
 
   let runtime
