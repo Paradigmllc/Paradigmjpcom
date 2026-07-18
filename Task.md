@@ -1,7 +1,7 @@
 ## CURRENT STATUS - 2026-07-18 実候補DEMO投入・Twenty同期（本番read-back / 外部送信0）
 
 - 前回の「実装済み」状態では実候補へのキュー投入が未実行で、さらにポータル候補IDと`portal_twenty_sync.companyId`の紐付け差異により、TwentyのDEMO URLが空欄に見えるケースが残っていた。候補IDを正規化して現在のlist-only会社へ解決するPR **#394** と、同名の既存クリーンURLを同一事業者名確認後だけ再利用するPR **#395** をmainへ統合した。
-- 2026-07-18本番でエキテン適格候補を実投入。最初のwave **50件**は`completed=50 / failed=0 / qualityPassed=50`、Twenty同期`ok=50/50`、7日限定URLをread-back。続くwaveを含む投入済み**377件**は、現時点で`completed=262 / failed=0`まで確認済み（残りはTwentyレート窓による再試行待ち）。既存同名ページを再利用した場合も対象会社へTwenty URL・未送信ステータスを同期する。
+- 2026-07-18本番でエキテン適格候補を実投入。最初のwave **50件**は`completed=50 / failed=0 / qualityPassed=50`、Twenty同期`ok=50/50`、7日限定URLをread-back。続くwaveを含む投入済み**377件**は`completed=377 / failed=0 / queued=0`、品質通過`350件`、Twenty同期`ok=377/377`まで確認済み。既存同名ページを再利用した場合も対象会社へTwenty URL・未送信ステータスを同期する。
 - 大量処理でTwentyレート制限を踏まないよう、DEMO生成ドレインとポータル候補解決を4件並列へ制限するPR **#396** をmainへ統合し、正式`npm run release:prod`を完走。外部送信は常に`false`。失敗115件はレート制限起因で再試行可能な状態へ戻している。
 
 ## CURRENT STATUS - 2026-07-18 ポータル候補 -> 業種別生成ビジュアルDEMO -> Twenty自動同期（本番release・公開read-back完了 / 外部送信0）
