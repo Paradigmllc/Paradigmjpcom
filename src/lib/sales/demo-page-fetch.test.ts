@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildPrivateProposalMedia } from "./demo-page-fetch"
+import { buildPrivateProposalMedia } from "./demo-proposal-media"
 
 describe("buildPrivateProposalMedia", () => {
   it("uses reviewed HTTPS proposal photos and keeps generated fallbacks", () => {
