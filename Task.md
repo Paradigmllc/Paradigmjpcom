@@ -1893,3 +1893,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 全Premium V3デモのヘッダーに`お知らせ`（英語は`Journal`）を追加し、ニュースページへ直接遷移できるようにした。`buildNews`も歯科・施工・小売・飲食・専門サービスで記事見出しを分岐し、飲食店へ「コンサルティング」等の不整合文言を流さない。
 - 検証済み: `npm exec -- tsc --noEmit`、`npm run lint`、対象Vitest **1 file / 3 tests**、`npm run quality:guard` **0 errors / 70 existing warnings**、`npm run build` **408/408 pages**、`git diff --check`。PR **#409**をmainへ統合し、正式`npm run release:prod`のdeployment **oi19s1e0yrhkx46muhxbzkbm**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認。
 - 実企業デモ`https://demo.paradigmjp.com/株式会社第一リフォーム`をブラウザでread-back。ホームのJournalセクション **1件**、ニュースリンク **11件**、業種見出し「PROJECT JOURNAL／仕事の背景まで、丁寧に。」、施工カテゴリ・4件のサンプル記事を確認。`/株式会社第一リフォーム/news`ではサイドバー **1件**、記事カード **4件**、問い合わせCTAリンク **4件**を確認し、実画像付きの画面を目視確認した。フォーム・メール・SNS・電話・郵送など外部送信は0件。
+
+## CURRENT STATUS - 2026-07-18 Journal customer-copy cleanup（最終本番反映・実画面read-back完了 / 外部送信0）
+
+- 顧客へ見せる画面に内部管理語が混ざらないよう、Journalの件数表示を「サンプル記事」から「ご案内」へ変更し、記事カードにも内部提案・権利確認・生成メタデータを出さない状態を確認した。実際の提案ページとして、お知らせ一覧・サイドバー・問い合わせCTAを維持している。
+- PR **#411**をmainへ統合し、正式`npm run release:prod`のdeployment **agohyc6slfygoavke50fioer**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
+- 実企業デモのニュースページを再読込し、サイドバー **1件**、記事カード **4件**、問い合わせCTA **4件**、`記事サンプル`／`サンプル記事` **0件**をread-back確認。フォーム・メール・SNS・電話・郵送など外部送信は0件。
