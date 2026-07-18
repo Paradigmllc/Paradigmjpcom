@@ -32,6 +32,16 @@ export function isGeneratedDemoVisualUrl(source: string): boolean {
   }
 }
 
+function isDirectPortalImageUrl(source: string): boolean {
+  try {
+    const url = new URL(source)
+    return url.protocol === "https:" && url.hostname === "image.ekiten.jp"
+  } catch (error) {
+    console.error("[demo-media] portal image URL check failed:", error)
+    return false
+  }
+}
+
 function PremiumMediaFallback({ media, className, label }: { media?: DemoPremiumMedia; className: string; label: string }) {
   if (media?.fallbackSrc) {
     return <div className={`${className} relative z-10 overflow-hidden bg-black`} role="img" aria-label={label}>
@@ -60,6 +70,7 @@ export function PremiumV3Media({ media, priority = false, className = "", sizes 
   const reducedMotion = useReducedMotion()
   const [imageState, setImageState] = useState<"ready" | "fallback">("ready")
   const source = media ? normalizeDemoMediaUrl(media.src) : ""
+  const directPortalImage = isDirectPortalImageUrl(source)
 
   useEffect(() => {
     setImageState("ready")
@@ -75,7 +86,7 @@ export function PremiumV3Media({ media, priority = false, className = "", sizes 
     <motion.div className={`${className} overflow-hidden`} initial={reducedMotion ? false : { scale: 1.035 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ duration: 1.35, ease: [0.22, 1, 0.36, 1] }}>
       {isGeneratedDemoVisualUrl(source)
         ? <motion.img src={source} alt={media.alt} loading={priority ? "eager" : "lazy"} className="h-full w-full object-cover transition-transform duration-[1800ms] ease-out group-hover:scale-[1.055]" style={{ objectPosition: media.objectPosition ?? "center" }} />
-        : <Image src={source} alt={media.alt} fill priority={priority} sizes={sizes} onLoad={(event) => {
+        : <Image src={source} alt={media.alt} fill priority={priority} sizes={sizes} unoptimized={directPortalImage} onLoad={(event) => {
           const { naturalWidth, naturalHeight } = event.currentTarget
           if (naturalWidth < 1_200 || naturalHeight < 720) {
             console.warn("[demo-media] rejected low-resolution asset at render time", { source, naturalWidth, naturalHeight })
