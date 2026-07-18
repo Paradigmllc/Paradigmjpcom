@@ -5,7 +5,7 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { generateScreenshotToCode, isScreenshotToCodeConfigured } from "@/lib/sales/screenshot-to-code-client"
-import { demoSiteUrl } from "@/lib/sales/routing"
+import { siteUrl } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     provider: record.provider ?? null,
     model: record.model ?? null,
     visualMode: record.visual_mode ?? null,
-    previewUrl: previewToken ? `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(data.slug)}?token=${encodeURIComponent(previewToken)}` : null,
+    previewUrl: previewToken ? `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(data.slug)}?token=${encodeURIComponent(previewToken)}` : null,
   }, { headers: { "Cache-Control": "private, no-store" } })
 }
 
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         visualMode: artifact.visual_mode,
         generatedAt: artifact.generated_at,
       },
-      previewUrl: `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(artifact.preview_token)}`,
+      previewUrl: `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(artifact.preview_token)}`,
       sendingEnabled: false,
     }, { status: 201, headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {

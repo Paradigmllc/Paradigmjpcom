@@ -15,7 +15,7 @@ import {
 import { selectTemplateCandidates, type CompanyProfile } from "./demo-template-selector"
 import type { DemoCandidateSummary, DemoCreativeDirection, DemoGenerateOutput, DemoMultiPageData } from "./demo-site-types"
 import type { ReportLocale } from "./types"
-import { buildDemoUrl, demoSiteUrl } from "./routing"
+import { buildDemoUrl, siteUrl } from "./routing"
 import { readValidatedDemoSourceManifest } from "./demo-source-policy"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
@@ -276,7 +276,7 @@ export async function generateFullStackDemo(
         upstreamCommit: screenshotToCode.upstreamCommit,
         provider: screenshotToCode.provider,
         model: screenshotToCode.model,
-        previewUrl: `${demoSiteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(screenshotPreviewToken ?? "")}`,
+        previewUrl: `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(screenshotPreviewToken ?? "")}`,
       } : null,
       error: qualityPassed ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
     }
