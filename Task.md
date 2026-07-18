@@ -1886,3 +1886,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 顧客向け画面には権利・提案用メタデータを出さず、実画像のalt/captionは企業名と業種別の自然な編集ラベルへ統一。既存DEMOも再生成せず、読込時の共通レンダラーで反映する。
 - 検証済み: 対象Vitest **4 files / 11 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 70 existing warnings**。PR **#406**（品質ゲート前正規化）と**#407**（確認済みポータル画像の直接読み込み）をmainへ統合し、正式`npm run release:prod`のdeployment **dpurhyd3ll2viiauwbipv9p5**でDB **91/91**、公開smoke、Sales health JSON `ok:true`、Traefik/Cloudflare origin lock、Realtime、Twenty worker restart 0、post-deploy gateをpassした。
 - 実企業デモ`https://demo.paradigmjp.com/株式会社第一リフォーム`をブラウザで再読込し、iframe内`img` **9件中9件**が`https://image.ekiten.jp/shop/6281715/...jpg`の実画像URLであること、ファーストビューにも実写真が表示されることをread-back確認。フォーム・メール・SNS・電話・郵送など外部送信は0件。
+
+## CURRENT STATUS - 2026-07-18 Journal / Blog・業種別記事導線の追加（本番release・実画面QA完了 / 外部送信0）
+
+- 以前の要件で不足していた「お知らせ／ブログのサンプル記事」「サイドバー」「記事一覧・問い合わせCTA」を共通`PremiumV3Journal`として追加。施工・歯科・小売・専門サービス・美容は業種別の見出し・カテゴリ・説明へ切り替え、飲食店の既存Journal導線とも矛盾しないようにした。ホームは`Editorial / Dark / Offset`の3レイアウトを企業ごとの`compositionVariant + rhythmVariant`から決定し、背景色・カード比率・サイドレールの位置を固定テンプレから分散。記事ページは4件のサンプルカード、記事一覧CTA、問い合わせCTA、画像付きカードを表示する。
+- 全Premium V3デモのヘッダーに`お知らせ`（英語は`Journal`）を追加し、ニュースページへ直接遷移できるようにした。`buildNews`も歯科・施工・小売・飲食・専門サービスで記事見出しを分岐し、飲食店へ「コンサルティング」等の不整合文言を流さない。
+- 検証済み: `npm exec -- tsc --noEmit`、`npm run lint`、対象Vitest **1 file / 3 tests**、`npm run quality:guard` **0 errors / 70 existing warnings**、`npm run build` **408/408 pages**、`git diff --check`。PR **#409**をmainへ統合し、正式`npm run release:prod`のdeployment **oi19s1e0yrhkx46muhxbzkbm**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認。
+- 実企業デモ`https://demo.paradigmjp.com/株式会社第一リフォーム`をブラウザでread-back。ホームのJournalセクション **1件**、ニュースリンク **11件**、業種見出し「PROJECT JOURNAL／仕事の背景まで、丁寧に。」、施工カテゴリ・4件のサンプル記事を確認。`/株式会社第一リフォーム/news`ではサイドバー **1件**、記事カード **4件**、問い合わせCTAリンク **4件**を確認し、実画像付きの画面を目視確認した。フォーム・メール・SNS・電話・郵送など外部送信は0件。
