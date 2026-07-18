@@ -270,20 +270,17 @@ export async function fetchDemoMultiPageData(
             height: asset.height,
             caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes || asset.ownerLabel,
           })) ?? []
+        const preferredMedia = proposalMedia.length > 0 ? proposalMedia : approvedMedia
         const premium = themePage.site_payload.premium
           ? {
               ...themePage.site_payload.premium,
               style: "premium-v2" as const,
-              heroMedia: approvedMedia.length > 0
-                ? approvedMedia.slice(0, 3)
-                : proposalMedia.length > 0
-                  ? proposalMedia.slice(0, 3)
+              heroMedia: preferredMedia.length > 0
+                ? preferredMedia.slice(0, 3)
                 : withGeneratedFallback(themePage.site_payload.premium.heroMedia),
-              gallery: approvedMedia.length >= 3
-                ? approvedMedia
-                : proposalMedia.length >= 3
-                  ? [...proposalMedia, ...withGeneratedFallback(themePage.site_payload.premium.gallery)].slice(0, 5)
-                  : withGeneratedFallback([...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5)),
+              gallery: preferredMedia.length > 0
+                ? [...preferredMedia, ...withGeneratedFallback(themePage.site_payload.premium.gallery)].slice(0, 5)
+                : withGeneratedFallback(themePage.site_payload.premium.gallery.slice(0, 5)),
               intro: {
                 ...themePage.site_payload.premium.intro,
                 ...(approvedMedia.length > 0
