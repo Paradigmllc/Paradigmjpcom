@@ -5,8 +5,8 @@
 services:
   screenshot-to-code:
     build:
-      context: .
-      dockerfile: services/screenshot-to-code-gateway/Dockerfile
+      context: ./services/screenshot-to-code-gateway
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
