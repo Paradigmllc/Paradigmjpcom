@@ -6,6 +6,13 @@
 - TypeScript、対象ESLint、Quality Guard **0 errors / 71 existing warnings**、対象Vitest **3 files / 31 tests**、全Vitest **203 files / 916 tests**、production build **408/408 pages**がpass。PC/Pixel 7 E2E **2/2**、WCAG重大/深刻違反0、console error 0、overlay 0、横overflow 0を確認した。
 - 正式`npm run release:prod`のdeployment **r2vj4t8r64hcgov7cpdi7evq**を完走。DB **91/91**、Sales health HTTP 200 JSON `ok:true`、Twenty HTTP 200、worker restart 0、Realtime healthy、Traefik、公開smoke、zero-send DB制約を含む`release gate passed`。デプロイ後mainコードの本番DeepSeek synthetic smokeは品質 **100/100**、独自性 **96/100**、strategy・候補選択・URL/ドメインなし・出典なし・商業条件なしを全項目pass。実企業URL投入、Twenty会社作成、フォーム・メール等の外部送信は0件。
 
+## CURRENT STATUS - 2026-07-19 `/work`ログイン後の戻り先修正（本番release・read-back完了 / 外部送信0）
+
+- 未認証`/work`が`/admin/login`だけへ遷移し、Payloadログイン成功後に既定の管理画面へ進んでいた。原因は`/work`側がPayload標準の`redirect`検索パラメータを渡していなかったこと。本番HTMLでも修正前は`NEXT_REDIRECT;replace;/admin/login;307`を確認した。
+- `src/app/work/page.tsx`の未認証遷移を`/admin/login?redirect=%2Fwork`へ変更した。Payload 3.85のLogin viewはこの値を`getSafeRedirect`で同一originの安全な戻り先として扱うため、ログイン成功後は`/work`へ戻る。解析・Twenty同期・zero-send制約には変更なし。
+- 同じ欠陥を再発させないため、release-doctorへlogin return routingの静的ゲート、Vitest wiring検査、Playwrightの未認証ブラウザ遷移テストを追加した。TypeScript、対象ESLint、全Vitest **204 files / 917 tests**、Quality Guard **0 errors / 71 existing warnings**、production build **408/408 pages**、ローカルproduction E2E **1/1**がpass。
+- PR **#422** / main **13c44314**を統合し、正式`npm run release:prod`のdeployment **dxmygqh5s52rod8dglmda8d8**を完走。DB **91/91**、Sales health HTTP 200 JSON `ok:true`、Twenty HTTP 200、worker restart 0、Realtime healthy、Traefik、公開smokeを含む`release gate passed`。本番`/work` HTMLから`NEXT_REDIRECT;replace;/admin/login?redirect=%2Fwork;307`をread-backした。企業解析、Twenty会社作成、フォーム・メール等の外部送信は0件。
+
 ## CURRENT STATUS - 2026-07-18 実候補DEMO投入・Twenty同期（本番read-back / 外部送信0）
 
 - 前回の「実装済み」状態では実候補へのキュー投入が未実行で、さらにポータル候補IDと`portal_twenty_sync.companyId`の紐付け差異により、TwentyのDEMO URLが空欄に見えるケースが残っていた。候補IDを正規化して現在のlist-only会社へ解決するPR **#394** と、同名の既存クリーンURLを同一事業者名確認後だけ再利用するPR **#395** をmainへ統合した。
