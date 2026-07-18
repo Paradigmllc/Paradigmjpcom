@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-18 Manual Work企業別フォーム文面フルパーソナライズ（本番release・DeepSeek実生成完了 / 外部送信0）
+
+- `/work`の初回問い合わせ文面を、企業・業種・国ごとの公開根拠から毎回組み立てる二段階生成へ刷新した。DeepSeekは先に企業固有の観察、Why now、日本側想定セグメント、公開ページ上のJapan gap、仮説表現、CTA、国別トーン、禁止主張をstrategy化し、構成・診断軸・CTAが実質的に異なる候補を1〜3件生成する。決定論の根拠・禁則・92/100品質・過去80件との類似度ゲートを通過後、criticが採用文面を選ぶ。
+- フォーム本文にはURL、ドメイン、出典、引用番号、`according to`、メールアドレス、添付、初回価格・支払条件を入れない。根拠URLは内部evidenceとしてDBと管理画面だけに保持する。strategy、全候補、採用理由、品質点、独自性、根拠を履歴へ永続化し、Twentyへは適格かつ未送信の会社だけを同期する。既存automationとは分離し、日本企業除外、1〜20 URL、最大3並列、自動送信0を維持する。
+- PR **#415** をmainへ統合後、本番DeepSeek実呼び出しで`prohibited_claims`が配列ではなく区切り文字列になる実レスポンスを検出した。PR **#418** で文字列を安全に配列へ正規化する互換層と回帰テストを追加し、プロンプトでもJSON配列を明示した。安全ゲートやfail-closed条件は緩和していない。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 71 existing warnings**、対象Vitest **3 files / 31 tests**、全Vitest **203 files / 916 tests**、production build **408/408 pages**がpass。PC/Pixel 7 E2E **2/2**、WCAG重大/深刻違反0、console error 0、overlay 0、横overflow 0を確認した。
+- 正式`npm run release:prod`のdeployment **r2vj4t8r64hcgov7cpdi7evq**を完走。DB **91/91**、Sales health HTTP 200 JSON `ok:true`、Twenty HTTP 200、worker restart 0、Realtime healthy、Traefik、公開smoke、zero-send DB制約を含む`release gate passed`。デプロイ後mainコードの本番DeepSeek synthetic smokeは品質 **100/100**、独自性 **96/100**、strategy・候補選択・URL/ドメインなし・出典なし・商業条件なしを全項目pass。実企業URL投入、Twenty会社作成、フォーム・メール等の外部送信は0件。
+
 ## CURRENT STATUS - 2026-07-18 実候補DEMO投入・Twenty同期（本番read-back / 外部送信0）
 
 - 前回の「実装済み」状態では実候補へのキュー投入が未実行で、さらにポータル候補IDと`portal_twenty_sync.companyId`の紐付け差異により、TwentyのDEMO URLが空欄に見えるケースが残っていた。候補IDを正規化して現在のlist-only会社へ解決するPR **#394** と、同名の既存クリーンURLを同一事業者名確認後だけ再利用するPR **#395** をmainへ統合した。
