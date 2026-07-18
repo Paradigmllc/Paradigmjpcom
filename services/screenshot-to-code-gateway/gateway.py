@@ -139,6 +139,8 @@ async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | 
                     break
     except Exception as error:
         print(f"[screenshot-to-code-gateway] generation failed: {error}")
+        if errors:
+            raise HTTPException(status_code=422, detail=errors[0]) from error
         raise HTTPException(status_code=502, detail="screenshot-to-code generation failed") from error
 
     if not completed or not code.strip():
