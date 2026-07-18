@@ -1879,3 +1879,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 業種解決後のブラウザtitleとFAQも決定論的に補正。例えば歯科は「ほさか歯科 | 歯科医院」、FAQは初診・診療内容・予約・アクセスへ統一し、汎用の「商品・サービス」文言を残さない。Worksの内部向け権利・提案文言も公開前に除去する。
 - `npm exec tsc -- --noEmit`、対象Vitest（industry presentation 4/4、Premium V3 11/11）、`git diff --check`、Quality Guard **0 errors / 68 existing warnings**を確認。正式`npm run release:prod`はdeployment **h129va7es2a3hwz6dzq7kjmh**、DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik、Cloudflare origin lock、Twenty worker restart 0を含む`release gate passed`。
 - 実企業デモ`https://demo.paradigmjp.com/ほさか歯科`をPlaywrightでPC（1440）／モバイル（390）のホーム・医院について・診療案内・院内紹介・アクセス全10経路を確認。全HTTP 200、横overflow 0、console/page error 0、内部向け語句0。スクリーンショットでhero、業種別診療カード、動的FAQ、院内カルーセルを目視確認した。Twenty追加、フォーム、メール、電話、その他外部送信は0件。
+
+## CURRENT STATUS - 2026-07-18 reviewed portal images（本番release・実画像read-back完了 / 外部送信0）
+
+- 画像が抽象プレースホルダーへ置換される原因を修正。Ekitenの`?size=1to1_m`派生URLを元画像パスへ正規化してから品質判定するよう`demo-public-surface`／`demo-proposal-media`を更新し、確認済みの`image.ekiten.jp`素材はNext Image最適化プロキシを経由せず直接読み込む。画像が未承認・欠損の場合だけ業種別生成ビジュアルを明示的なfallbackとして使う。
+- 顧客向け画面には権利・提案用メタデータを出さず、実画像のalt/captionは企業名と業種別の自然な編集ラベルへ統一。既存DEMOも再生成せず、読込時の共通レンダラーで反映する。
+- 検証済み: 対象Vitest **4 files / 11 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 70 existing warnings**。PR **#406**（品質ゲート前正規化）と**#407**（確認済みポータル画像の直接読み込み）をmainへ統合し、正式`npm run release:prod`のdeployment **dpurhyd3ll2viiauwbipv9p5**でDB **91/91**、公開smoke、Sales health JSON `ok:true`、Traefik/Cloudflare origin lock、Realtime、Twenty worker restart 0、post-deploy gateをpassした。
+- 実企業デモ`https://demo.paradigmjp.com/株式会社第一リフォーム`をブラウザで再読込し、iframe内`img` **9件中9件**が`https://image.ekiten.jp/shop/6281715/...jpg`の実画像URLであること、ファーストビューにも実写真が表示されることをread-back確認。フォーム・メール・SNS・電話・郵送など外部送信は0件。
