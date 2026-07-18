@@ -4,7 +4,7 @@ import { buildDemoPageData } from "./demo-page-builder"
 import { buildDemoMultiPageData } from "./demo-multi-page-builder"
 import { buildPersonalizedDemoData } from "./demo-personalized-builder"
 import { applyDemoAdminOverrides } from "./artifact-admin-overrides"
-import type { DemoBlock, DemoMultiPageData, DemoPageData } from "./demo-site-types"
+import type { DemoBlock, DemoMultiPageData, DemoPageData, DemoPremiumMedia } from "./demo-site-types"
 import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import type { Industry, ReportLocale } from "./types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
@@ -234,6 +234,15 @@ export async function fetchDemoMultiPageData(
           : null
         const logo = review?.assets.find((asset) => asset.kind === "logo")
         const visualIndustry = typeof themePage.site_payload.industry === "string" ? themePage.site_payload.industry : "consulting"
+        const withGeneratedFallback = (items: DemoPremiumMedia[]): DemoPremiumMedia[] => items.map((item, index) => ({
+          ...item,
+          fallbackSrc: item.fallbackSrc ?? generatedDemoVisualUrl({
+            origin: siteUrl(),
+            slug: themePage.slug,
+            industry: visualIndustry,
+            variant: (index % 6) + 1,
+          }),
+        }))
         const approvedMedia = review?.assets
           .filter((asset) => asset.kind !== "logo")
           .map((asset, index) => ({
@@ -250,21 +259,24 @@ export async function fetchDemoMultiPageData(
             height: asset.height,
             caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes || asset.ownerLabel,
           })) ?? []
-        const premium = themePage.site_payload.premium && approvedMedia.length > 0
+        const premium = themePage.site_payload.premium
           ? {
               ...themePage.site_payload.premium,
               style: "premium-v2" as const,
-              heroMedia: approvedMedia.slice(0, 3),
-              gallery: approvedMedia.length >= 3 ? approvedMedia : [...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5),
+              heroMedia: approvedMedia.length > 0
+                ? approvedMedia.slice(0, 3)
+                : withGeneratedFallback(themePage.site_payload.premium.heroMedia),
+              gallery: approvedMedia.length >= 3
+                ? approvedMedia
+                : withGeneratedFallback([...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5)),
               intro: {
                 ...themePage.site_payload.premium.intro,
-                note: buildPremiumAssetNote(
-                  review,
-                  themePage.asset_approval_status as "unreviewed" | "private_proposal" | "consented" | "blocked",
-                ),
+                ...(approvedMedia.length > 0
+                  ? { note: buildPremiumAssetNote(review, themePage.asset_approval_status as "unreviewed" | "private_proposal" | "consented" | "blocked") }
+                  : {}),
               },
             }
-          : themePage.site_payload.premium
+          : undefined
         return applyDemoAdminOverrides(upgradeDemoToPremiumV3(applyIndustryPresentation({
           ...themePage.site_payload,
           premium,
