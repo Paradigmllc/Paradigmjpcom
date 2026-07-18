@@ -3,6 +3,20 @@ import AxeBuilder from "@axe-core/playwright"
 
 const LOCAL_ADMIN_PASSWORD = "lead-factory-e2e-admin-password"
 
+test("preserves /work as the Payload login return target", async ({ page }, testInfo) => {
+  const baseUrl = String(testInfo.project.use.baseURL ?? "")
+  test.skip(
+    !/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl),
+    "This authentication redirect check runs only against a local build",
+  )
+
+  await page.goto("/work")
+  await page.waitForURL((url) => url.pathname === "/admin/login" && url.searchParams.get("redirect") === "/work")
+  const currentUrl = new URL(page.url())
+  expect(currentUrl.pathname).toBe("/admin/login")
+  expect(currentUrl.searchParams.get("redirect")).toBe("/work")
+})
+
 test("accepts multiple new URLs and keeps each result visible", async ({ page }, testInfo) => {
   test.setTimeout(90_000)
   const baseUrl = String(testInfo.project.use.baseURL ?? "")
