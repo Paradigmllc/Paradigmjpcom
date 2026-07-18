@@ -1899,3 +1899,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 顧客へ見せる画面に内部管理語が混ざらないよう、Journalの件数表示を「サンプル記事」から「ご案内」へ変更し、記事カードにも内部提案・権利確認・生成メタデータを出さない状態を確認した。実際の提案ページとして、お知らせ一覧・サイドバー・問い合わせCTAを維持している。
 - PR **#411**をmainへ統合し、正式`npm run release:prod`のdeployment **agohyc6slfygoavke50fioer**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
 - 実企業デモのニュースページを再読込し、サイドバー **1件**、記事カード **4件**、問い合わせCTA **4件**、`記事サンプル`／`サンプル記事` **0件**をread-back確認。フォーム・メール・SNS・電話・郵送など外部送信は0件。
+
+## CURRENT STATUS - 2026-07-18 Journal final label cleanup（最終release・公開read-back完了 / 外部送信0）
+
+- 記事カードに残っていた内部的な`PREVIEW`表記を顧客向けの`更新情報`へ変更した。記事・サイドバー・CTAの導線と業種別コピー／3レイアウト分岐は維持し、顧客画面から管理用ラベルを除去した。
+- PR **#413**をmainへ統合し、正式`npm run release:prod`のdeployment **a8bfzm1jicy2hujb5x9s4g2g**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Realtime、Traefik/Cloudflare origin lock、Twenty worker restart 0、post-deploy gateを確認した。
+- 実企業デモを公開read-backし、`/news`はHTTP **200**、サイドバー **1件**、記事カード **4件**、問い合わせCTA **1件**。ホームはJournal **1セクション**、ニュース導線 **11件**、問い合わせCTA **2件**。`記事サンプル`／`サンプル記事`／`PREVIEW`は **0件**、`更新情報`を確認。外部送信は0件。
