@@ -335,7 +335,7 @@ export async function generatePersonalizedJapanEntryMessage(
   const generated = await callStructured({
     stage: "generation",
     messages: generationMessages(input, facts, mode),
-    schema: generationSchema,
+    schema: purpose === "initial_interest" ? generationSchema.extend({ strategy: strategySchema }) : generationSchema,
     caller,
   });
   totalAttempts += generated.attempts;
