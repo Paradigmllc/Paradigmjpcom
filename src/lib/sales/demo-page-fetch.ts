@@ -235,8 +235,12 @@ export async function fetchDemoMultiPageData(
           : null
         const logo = review?.assets.find((asset) => asset.kind === "logo")
         const visualIndustry = typeof themePage.site_payload.industry === "string" ? themePage.site_payload.industry : "consulting"
-        const proposalManifest = isRecord(themePage.rights_manifest)
-          ? themePage.rights_manifest
+        const persistedRightsManifest = isRecord(themePage.rights_manifest) ? themePage.rights_manifest : null
+        const hasImageAssets = (value: unknown): boolean => isRecord(value)
+          && Array.isArray(value.assets)
+          && value.assets.some((asset) => isRecord(asset) && asset.kind === "image")
+        const proposalManifest = hasImageAssets(persistedRightsManifest)
+          ? persistedRightsManifest
           : themePage.site_payload.rightsManifest
         const proposalMedia = isPrivatePreview && themePage.asset_approval_status !== "blocked"
           ? buildPrivateProposalMedia(proposalManifest, themePage.site_payload.companyName, themePage.slug, visualIndustry)
