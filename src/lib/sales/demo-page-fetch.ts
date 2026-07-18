@@ -184,6 +184,49 @@ function isDemoMultiPageData(value: unknown): value is DemoMultiPageData {
 }
 
 /**
+ * Private proposal pages may use the operator-reviewed source photos carried
+ * in the rights manifest. They must never leak into a public/published page;
+ * the caller therefore gates this helper with the preview access state.
+ */
+export function buildPrivateProposalMedia(
+  manifest: unknown,
+  companyName: string,
+  slug: string,
+  industry: Industry | string | null,
+): DemoPremiumMedia[] {
+  if (!isRecord(manifest) || manifest.status === "blocked" || !Array.isArray(manifest.assets)) return []
+
+  return manifest.assets.flatMap((asset, index) => {
+    if (!isRecord(asset) || asset.kind !== "image" || typeof asset.source !== "string") return []
+    let source: URL
+    try {
+      source = new URL(asset.source)
+    } catch (error) {
+      console.error("[demo-generator] proposal image URL is invalid:", error)
+      return []
+    }
+    if (source.protocol !== "https:") return []
+    const variant = (index % 6) + 1
+    return [{
+      src: source.toString(),
+      fallbackSrc: generatedDemoVisualUrl({
+        origin: siteUrl(),
+        slug,
+        industry: industry ?? "consulting",
+        variant,
+      }),
+      alt: `${companyName}の実績写真 ${index + 1}`,
+      kind: "image" as const,
+      width: 1200,
+      height: 900,
+      caption: "実績写真",
+      title: "実績写真",
+      eyebrow: "WORKS",
+    }]
+  }).slice(0, 6)
+}
+
+/**
  * Fetch multi-page demo data by slug. Reuses the same Supabase lookup
  * logic as fetchDemoPageData but returns DemoMultiPageData for the
  * multi-page website (Home/About/Services/Contact).
@@ -234,6 +277,12 @@ export async function fetchDemoMultiPageData(
           : null
         const logo = review?.assets.find((asset) => asset.kind === "logo")
         const visualIndustry = typeof themePage.site_payload.industry === "string" ? themePage.site_payload.industry : "consulting"
+        const proposalManifest = isRecord(themePage.rights_manifest)
+          ? themePage.rights_manifest
+          : themePage.site_payload.rightsManifest
+        const proposalMedia = isPrivatePreview && themePage.asset_approval_status !== "blocked"
+          ? buildPrivateProposalMedia(proposalManifest, themePage.site_payload.companyName, themePage.slug, visualIndustry)
+          : []
         const withGeneratedFallback = (items: DemoPremiumMedia[]): DemoPremiumMedia[] => items.map((item, index) => ({
           ...item,
           fallbackSrc: item.fallbackSrc ?? generatedDemoVisualUrl({
@@ -265,10 +314,14 @@ export async function fetchDemoMultiPageData(
               style: "premium-v2" as const,
               heroMedia: approvedMedia.length > 0
                 ? approvedMedia.slice(0, 3)
+                : proposalMedia.length > 0
+                  ? proposalMedia.slice(0, 3)
                 : withGeneratedFallback(themePage.site_payload.premium.heroMedia),
               gallery: approvedMedia.length >= 3
                 ? approvedMedia
-                : withGeneratedFallback([...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5)),
+                : proposalMedia.length >= 3
+                  ? [...proposalMedia, ...withGeneratedFallback(themePage.site_payload.premium.gallery)].slice(0, 5)
+                  : withGeneratedFallback([...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5)),
               intro: {
                 ...themePage.site_payload.premium.intro,
                 ...(approvedMedia.length > 0
