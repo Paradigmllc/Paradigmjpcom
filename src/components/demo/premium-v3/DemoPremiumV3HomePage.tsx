@@ -10,11 +10,12 @@ import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art
 import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 import { PremiumV3HospitalityHome } from "./PremiumV3HospitalityHome"
 import { PremiumV3IndustryHome } from "./PremiumV3IndustryHome"
+import { PremiumV3Journal } from "./PremiumV3Journal"
 
 export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const direction = resolveDemoArtDirection(data)
   const profile = data.presentation?.industryProfile ?? String(data.industry)
-  if (profile === "beauty_salon" && direction.hero === "mosaic") return <DemoPremiumV3BeautyHome data={data} />
+  if (profile === "beauty_salon" && direction.hero === "mosaic") return <><DemoPremiumV3BeautyHome data={data} /><PremiumV3Journal data={data} /></>
   if (profile === "restaurant") return <PremiumV3HospitalityHome data={data} />
   if (["dental", "construction", "retail", "accounting", "cleaning", "consulting"].includes(profile)) return <PremiumV3IndustryHome data={data} />
 

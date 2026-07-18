@@ -97,7 +97,7 @@ export interface DemoMeta {
   footerDescription?: string
   footerOwner?: string
   brandLogoUrl?: string
-  navLabels?: Partial<Record<"home" | "about" | "services" | "works" | "faq" | "contact", string>>
+  navLabels?: Partial<Record<"home" | "about" | "services" | "works" | "news" | "faq" | "contact", string>>
 }
 
 export interface DemoPageData {

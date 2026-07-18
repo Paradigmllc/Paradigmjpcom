@@ -44,8 +44,8 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   }
 
   const defaultNavLabels = isJa
-    ? { home: "ホーム", about: "会社概要", services: "サービス", works: "実績", faq: "FAQ", contact: "お問い合わせ" }
-    : { home: "Home", about: "About", services: "Services", works: "Work", faq: "FAQ", contact: "Contact" }
+    ? { home: "ホーム", about: "会社概要", services: "サービス", works: "実績", news: "お知らせ", faq: "FAQ", contact: "お問い合わせ" }
+    : { home: "Home", about: "About", services: "Services", works: "Work", news: "Journal", faq: "FAQ", contact: "Contact" }
   const navLabels = { ...defaultNavLabels, ...demoData?.meta.navLabels }
 
   const navLinks = [
@@ -53,6 +53,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
     { label: navLabels.about, href: `${basePath}/about` },
     { label: navLabels.services, href: `${basePath}/services` },
     { label: navLabels.works, href: `${basePath}/works` },
+    { label: navLabels.news, href: `${basePath}/news` },
     { label: navLabels.faq, href: `${basePath}/faq` },
     { label: navLabels.contact, href: `${basePath}/contact` },
   ]

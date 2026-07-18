@@ -135,16 +135,26 @@ function enrichScenes(page: DemoMultiPageData): DemoContentPage {
 function buildNews(page: DemoMultiPageData): DemoContentPage {
   const instagram = page.premium?.social.find((item) => item.network === "instagram")
   const serviceNames = page.pages.services.services.map((item) => item.title).filter(Boolean).slice(0, 3).join("、")
+  const profile = page.presentation?.industryProfile ?? String(page.industry)
+  const headings = profile === "dental"
+    ? ["診療案内を更新しました", "初診の方へ", "院内環境のご紹介", "受診前の確認事項"]
+    : profile === "construction"
+      ? ["施工事例を公開しました", "現地調査から始まるリフォーム", "素材と仕上がりについて", "相談窓口のご案内"]
+      : profile === "retail"
+        ? ["今月のおすすめ", "店頭で選ぶ時間", "入荷・営業情報", "店舗情報のご案内"]
+        : profile === "restaurant"
+          ? ["季節のメニューと営業のご案内", "店内で過ごす時間", "ご来店前に確認したいこと", "公式情報について"]
+          : ["サービスのお知らせ", "ご相談の進め方", "日々の取り組み", "最新情報について"]
   return {
     title: "お知らせ",
     subtitle: instagram ? "営業案内や新しいご案内は、公式Instagramからご確認いただけます。" : "営業案内や新しい情報を、こちらでお知らせします。",
     eyebrow: "JOURNAL & INFORMATION",
     accentColor: page.meta.accentColor,
     sections: [
-      { id: "news-latest", heading: "最新のご案内", body: instagram ? "営業日、臨時のお知らせ、新しいメニューやサービスなど、現在の情報は公式Instagramで発信しています。ご来店やご利用の前に、最新の投稿をご確認ください。" : "営業日、臨時のお知らせ、新しいメニューやサービスなど、現在の情報はこちらでご案内します。", note: instagram?.href },
-      { id: "news-lineup", heading: page.meta.navLabels?.services ?? "商品・サービス", body: serviceNames ? `${page.companyName}では、${serviceNames}をご案内しています。内容や提供状況は変更される場合があるため、最新情報をご確認ください。` : `${page.companyName}の商品・サービスに関する新しいご案内を掲載します。` },
-      { id: "news-visit", heading: "ご来店・ご利用前に", body: `${page.pages.contact.address || page.pages.about.locationLabel}の情報と地図はアクセスページにまとめています。営業時間、予約、受付方法など、公開情報に記載のない事項は公式案内をご確認ください。` },
-      { id: "news-policy", heading: "正確な情報をお届けするために", body: "このページでは、事業者が確認した情報だけを掲載します。過去の案内と現在の営業内容が異なる場合は、公式SNSまたは正式なお問い合わせ窓口の最新情報を優先してください。" },
+      { id: "news-latest", heading: headings[0], body: instagram ? "営業日、臨時のお知らせ、新しいメニューやサービスなど、現在の情報は公式Instagramで発信しています。ご来店やご利用の前に、最新の投稿をご確認ください。" : "営業日、臨時のお知らせ、新しいメニューやサービスなど、現在の情報はこちらでご案内します。", note: instagram?.href },
+      { id: "news-lineup", heading: headings[1], body: serviceNames ? `${page.companyName}では、${serviceNames}をご案内しています。内容や提供状況は変更される場合があるため、最新情報をご確認ください。` : `${page.companyName}の商品・サービスに関する新しいご案内を掲載します。` },
+      { id: "news-visit", heading: headings[2], body: `${page.pages.contact.address || page.pages.about.locationLabel}の情報と地図はアクセスページにまとめています。営業時間、予約、受付方法など、公開情報に記載のない事項は公式案内をご確認ください。` },
+      { id: "news-policy", heading: headings[3], body: "このページでは、事業者が確認した情報だけを掲載します。過去の案内と現在の営業内容が異なる場合は、公式SNSまたは正式なお問い合わせ窓口の最新情報を優先してください。" },
     ],
   }
 }
