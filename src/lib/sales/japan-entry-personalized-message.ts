@@ -108,6 +108,14 @@ const candidateSchema = z.object({
   cta_type: z.enum(["permission_to_send", "right_person", "founder_forward", "legacy_unspecified"]).default("legacy_unspecified"),
 }).strict();
 
+const prohibitedClaimsSchema = z.preprocess((value) => {
+  if (typeof value !== "string") return value;
+  return value
+    .split(/(?:\n|;|\s+\|\s+)/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}, z.array(z.string().min(1).max(180)).max(12));
+
 const strategySchema = z.object({
   primary_observation: z.string().min(1).max(400),
   why_now: z.string().min(1).max(400),
@@ -118,7 +126,7 @@ const strategySchema = z.object({
   tone: z.string().min(1).max(160),
   cta: z.string().min(1).max(240),
   country_adaptation: z.string().min(1).max(240),
-  prohibited_claims: z.array(z.string().min(1).max(180)).max(12),
+  prohibited_claims: prohibitedClaimsSchema,
 }).strict();
 
 const generationSchema = z.object({
