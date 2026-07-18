@@ -53,6 +53,14 @@ function isQueueableCandidate(candidate: PortalCandidateView): boolean {
   return candidate.reviewStatus === "ready_for_review" && candidate.status !== "promoted" && !candidate.websiteUrl && candidate.images.length >= 3
 }
 
+function isGeneratedVisualCandidate(candidate: PortalCandidateView): boolean {
+  return !candidate.websiteUrl
+    && !["has_website", "enterprise_like", "insufficient_content"].includes(candidate.reviewStatus)
+    && Boolean(candidate.address)
+    && candidate.description.trim().length >= 80
+    && candidate.images.length >= 3
+}
+
 function buildReviewedAssets(candidate: PortalCandidateView, selectedUrls: string[]): DemoReviewedAsset[] {
   return selectedUrls.map((url, index) => ({
     id: `portal-${candidate.source}-${candidate.id.slice(0, 8)}-${index + 1}`,
@@ -125,6 +133,10 @@ export function PortalCandidateConsole() {
     () => candidates.filter(isQueueableCandidate).slice(0, BULK_QUEUE_LIMIT),
     [candidates],
   )
+  const generatedVisualCandidates = useMemo(
+    () => candidates.filter(isGeneratedVisualCandidate).slice(0, BULK_QUEUE_LIMIT),
+    [candidates],
+  )
 
   async function queueReadyCandidates() {
     if (!bulkConfirmed) return toast.error("公式プロフィール・人物/透かしなし画像の確認にチェックしてください")
@@ -157,16 +169,14 @@ export function PortalCandidateConsole() {
   }
 
   async function queueGeneratedVisualCandidates() {
-    const companyIds = bulkQueueCandidates
-      .map((candidate) => candidate.companyId)
-      .filter((companyId): companyId is string => Boolean(companyId))
-    if (companyIds.length === 0) return toast.error("DEMO生成対象のcompanyIdがありません。先に候補を保存してください")
+    const candidateIds = generatedVisualCandidates.map((candidate) => candidate.id)
+    if (candidateIds.length === 0) return toast.error("掲載情報が揃った生成対象候補がありません")
     setGeneratedBusy(true)
     try {
       const response = await fetch("/api/sales/demo-site/list-candidates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyIds, locale: "ja" }),
+        body: JSON.stringify({ candidateIds, locale: "ja" }),
       })
       const payload = await response.json() as { ok?: boolean; queued?: number; reused?: number; rejected?: number; error?: string }
       if (!response.ok && response.status !== 202 && response.status !== 422) throw new Error(payload.error ?? "生成ビジュアルDEMOの投入に失敗しました")
@@ -262,9 +272,9 @@ export function PortalCandidateConsole() {
             <h3 className="text-sm font-semibold text-violet-950">元画像を使わない高品質ビジュアルDEMO</h3>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-violet-900">ポータルの低解像度画像・権利未確認画像は使用せず、業種別の高解像度生成ビジュアル6点で構成します。掲載スナップショットの事実だけを本文に使い、品質ゲート通過後に7日限定URLとTwentyのDEMO URLを自動同期します。外部送信はありません。</p>
           </div>
-          <button type="button" disabled={loading || generatedBusy || bulkQueueCandidates.every((candidate) => !candidate.companyId)} onClick={() => void queueGeneratedVisualCandidates()} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-700 px-5 text-sm font-bold text-white disabled:opacity-40">
+          <button type="button" disabled={loading || generatedBusy || generatedVisualCandidates.length === 0} onClick={() => void queueGeneratedVisualCandidates()} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-700 px-5 text-sm font-bold text-white disabled:opacity-40">
             {generatedBusy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generatedBusy ? "生成キュー投入中…" : `${bulkQueueCandidates.filter((candidate) => candidate.companyId).length}件を生成ビジュアルで投入`}
+            {generatedBusy ? "生成キュー投入中…" : `${generatedVisualCandidates.length}件を生成ビジュアルで投入`}
           </button>
         </div>
       </div>

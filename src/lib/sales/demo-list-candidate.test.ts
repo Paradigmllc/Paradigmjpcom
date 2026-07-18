@@ -81,5 +81,22 @@ describe("list candidate demo gate", () => {
     expect(result.eligible).toBe(false)
     expect(result.reasons.join(" ")).toMatch(/独自HP|大企業|SMB/u)
   })
-})
 
+  it("accepts a decision-fit-unverified proposal candidate when the public profile is sufficiently grounded", () => {
+    const candidate = company({
+      ...eligibleMeta,
+      portal_snapshot: {
+        ...eligibleMeta.portal_snapshot,
+        description: "地域に根ざした小規模サロンとして、カット、カラー、ヘッドスパ、髪質改善、着付けまで予約制で丁寧に提供しています。初めての方にも落ち着いた時間をご案内し、日々の髪の悩みに合わせたスタイルを提案しています。",
+        status: "decision_fit_unverified",
+        images: [
+          { url: "https://image.example.jp/1.jpg", alt: "外観" },
+          { url: "https://image.example.jp/2.jpg", alt: "店内" },
+          { url: "https://image.example.jp/3.jpg", alt: "施術" },
+        ],
+        smbFit: { eligible: false, enterpriseSignals: [], decisionSignals: [], reasons: ["意思決定者未確認"] },
+      },
+    })
+    expect(evaluateListCandidateForDemo(candidate).eligible).toBe(true)
+  })
+})

@@ -180,7 +180,7 @@ export async function syncPortalCandidateToTwenty(
     return { ok: true, candidateId: candidate.id, companyName, status: "reused", companyId: previous.companyId, twentyCompanyId: previous.twentyCompanyId }
   }
   const listEligible = Boolean(snapshot && (snapshot.status === "ready_for_review" || isPortalPrivateProposalEligible(snapshot)))
-  if (candidate.status === "promoted" || !snapshot || !listEligible) {
+  if ((candidate.status === "promoted" && !force) || !snapshot || !listEligible) {
     const result: PortalTwentySyncResult = { ok: true, candidateId: candidate.id, companyName, status: "skipped", error: "SMB適合・独自HPなし・情報量の基準を満たしていません" }
     await persistCandidateSync(candidate, { ...previous, status: "skipped", lastAttemptAt: new Date().toISOString(), error: result.error }, candidate.companyId)
     await writeSyncLog(candidate, result)
