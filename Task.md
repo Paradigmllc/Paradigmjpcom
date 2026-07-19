@@ -1926,3 +1926,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 本番DeepSeekキーしかないため、OSSのOpenAI Responses経路を捨てずに、OSSのprompt／agent／tool runtimeへDeepSeek Chat Completionsを差し込むprovider adapterを追加。4 variantの重複課金はgateway起動時に1 variantへ制限し、画像・任意JSXを公開へ直接流さず、生成物は`theme_demo_pages.meta.screenshot_to_code`へ`review`状態で保存する。
 - Next側に認証済み`/api/sales/demo-site/screenshot-to-code`（POST生成／GET状態確認）と、既存`/api/demo-designs/[slug]`・`/api/sales/demo-site/generate`からの任意screenshot入力経路を追加。秘密はサーバー間ヘッダーのみで、送信・公開・Twenty同期は実行しない。
 - `docker-compose.screenshot-to-code.yml`、Coolify service provisioner、`.env.example`、client unit testを追加。`npm exec -- tsc --noEmit`、対象Vitest **2 files / 5 tests**、Python gateway `py_compile`を確認済み。次のgateはcommit/push後にCoolify sidecarを起動し、`/health`、DeepSeek経由の実生成、Next APIからの保存read-backを確認する。
+## CURRENT STATUS - 2026-07-19 screenshot-to-code OSS実務導入（本番サイドカー・非送信レビュー生成）
+
+- `abi/screenshot-to-code`をコミット `9df864afbf7de0ca0baa0cdc5cb9a3a1c04d43e7` へ固定した専用サイドカーを、`coolify`ネットワーク上で本番稼働させた。Coolify Service APIの現在のプロジェクト/サーバーscopeでは422となるため、`scripts/deploy-screenshot-to-code.mjs`が管理ホストへ冪等にプロビジョニングし、メインアプリの再起動・readiness確認まで行う。
+- DeepSeek V4は公式APIがテキスト入力のみのため、既定モードは画像を送ったふりをしない`metadata-text`（PILで寸法・向き・平均色を抽出し、OSS本体へ明示的な視覚メタデータとして渡す）に固定。真のピクセル視覚生成はvision providerを設定した場合だけ`image`モードを選べる。生成物は必ず`review`・7日限定・noindexで、外部送信/納品/公開は自動実行しない。
+- 本番sidecar `/health`は`ok=true`、provider `deepseek-chat-completions-adapter`、model `deepseek-v4-pro`、visual mode `metadata-text`をread-back。実企業`Cafe SOSOMU`でPOST生成を実行し、HTTP **201**、OSS upstream code **26,970 bytes**、status `review`、`sendingEnabled=false`を確認した。レビューHTMLはメインアプリのtoken-gated previewでHTTP **200**、`X-Robots-Tag: noindex, nofollow, noarchive`を返す。
+- 生成プレビューはuntrusted HTMLとして、専用CSP `script-src 'none' / connect-src 'none' / form-action 'none'`をproxyとrouteの両方で適用し、同じHTMLを実行可能なページとして公開しない。TypeScript、対象テスト、`git diff --check`、正式`npm run release:prod`と公開read-backを完了させる。
+- 外部へのメール、SNS、電話、郵送、ポータルDM、問い合わせフォーム送信、Twentyへの新規追加はこの導入検証では実行していない。

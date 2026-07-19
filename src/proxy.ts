@@ -100,6 +100,15 @@ export function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+  // Screenshot-to-code artifacts are untrusted review HTML.  Keep their
+  // preview surface completely inert even though the application-wide CSP
+  // allows the inline bootstrap required by normal Next.js pages.
+  if (pathname.startsWith("/api/sales/demo-site/screenshot-to-code/preview/")) {
+    response.headers.set(
+      "Content-Security-Policy",
+      "default-src 'none'; style-src 'unsafe-inline' https:; img-src data: https:; font-src data: https:; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'",
+    );
+  }
   if (isNonIndexablePath(pathname) || request.nextUrl.searchParams.get("draft") === "true") {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
