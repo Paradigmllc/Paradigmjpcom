@@ -138,6 +138,7 @@ export interface DemoGenerateOutput {
     upstreamCommit: string
     provider: string
     model: string
+    visionAnalyzed: boolean
     previewUrl: string
   } | null
   error?: string

@@ -4,6 +4,7 @@ export interface ScreenshotToCodeInput {
   imageDataUrls: string[]
   prompt?: string
   designSystem?: string
+  requireVision?: boolean
 }
 
 export interface ScreenshotToCodeResult {
@@ -13,6 +14,7 @@ export interface ScreenshotToCodeResult {
   provider: string
   model: string
   visualMode: string
+  visionAnalyzed: boolean
 }
 
 interface ScreenshotToCodeResponse {
@@ -22,6 +24,7 @@ interface ScreenshotToCodeResponse {
   provider?: unknown
   model?: unknown
   visual_mode?: unknown
+  vision_analyzed?: unknown
   detail?: unknown
 }
 
@@ -62,6 +65,7 @@ export async function generateScreenshotToCode(
         image_data_urls: input.imageDataUrls,
         prompt: input.prompt ?? "",
         design_system: input.designSystem ?? null,
+        require_vision: input.requireVision === true,
       }),
       signal: controller.signal,
     })
@@ -83,6 +87,7 @@ export async function generateScreenshotToCode(
       provider: typeof payload.provider === "string" ? payload.provider : "unknown",
       model: typeof payload.model === "string" ? payload.model : "unknown",
       visualMode: typeof payload.visual_mode === "string" ? payload.visual_mode : "unknown",
+      visionAnalyzed: payload.vision_analyzed === true,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

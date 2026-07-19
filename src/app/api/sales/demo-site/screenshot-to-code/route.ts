@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
     provider: record.provider ?? null,
     model: record.model ?? null,
     visualMode: record.visual_mode ?? null,
+    visionAnalyzed: record.vision_analyzed === true,
     expiresAt,
     previewUrl: previewToken ? `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(data.slug)}?token=${encodeURIComponent(previewToken)}` : null,
   }, { headers: { "Cache-Control": "private, no-store" } })
@@ -118,6 +119,7 @@ export async function POST(request: NextRequest) {
       provider: generated.provider,
       model: generated.model,
       visual_mode: generated.visualMode,
+      vision_analyzed: generated.visionAnalyzed,
       source: "abi/screenshot-to-code",
       preview_token: randomUUID(),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),

@@ -228,6 +228,45 @@ export async function captureWebsiteScreenshot(
   }
 }
 
+/**
+ * Capture a source page as an in-memory data URL for a private visual
+ * reproduction run. The bytes are never persisted to the customer-facing
+ * demo; only a hash/metadata record is stored by the caller.
+ */
+export async function captureWebsiteScreenshotDataUrl(input: {
+  targetUrl: string
+  viewport?: ScreenshotViewport
+}): Promise<{
+  ok: true
+  dataUrl: string
+  provider: ScreenshotEvidence["provider"]
+  width: number
+  height: number
+  sha256: string
+} | { ok: false; error: string }> {
+  const size = viewportSize({ viewport: input.viewport ?? "desktop" })
+  try {
+    const capture =
+      (await captureWithPlaywright({ targetUrl: input.targetUrl, ...size })) ??
+      (await captureWithOutreachWorker({ targetUrl: input.targetUrl, ...size })) ??
+      (await captureWithSteel({ targetUrl: input.targetUrl }))
+    if (!capture) return { ok: false, error: "No screenshot provider available" }
+    const { createHash } = await import("node:crypto")
+    const sha256 = createHash("sha256").update(capture.buffer).digest("hex")
+    return {
+      ok: true,
+      dataUrl: `data:image/png;base64,${capture.buffer.toString("base64")}`,
+      provider: capture.provider,
+      width: size.width,
+      height: size.height,
+      sha256,
+    }
+  } catch (error) {
+    console.error("[visual-evidence] in-memory screenshot capture failed:", error)
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}
+
 function evidenceIsFresh(meta: Record<string, unknown>, viewport: VisualEvidenceSlot, maxAgeDays: number): boolean {
   const visual = asRecord(meta.visual_evidence)
   const screenshots = asRecord(visual.screenshots)
