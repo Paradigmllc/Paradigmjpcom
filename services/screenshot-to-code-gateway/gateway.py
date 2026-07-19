@@ -22,7 +22,7 @@ UPSTREAM_DIR = "/opt/screenshot-to-code/backend"
 UPSTREAM_COMMIT = os.environ.get("SCREENSHOT_TO_CODE_UPSTREAM_COMMIT", "unknown")
 SHARED_SECRET = os.environ.get("SCREENSHOT_TO_CODE_SHARED_SECRET", "").strip()
 VISUAL_MODE = os.environ.get("SCREENSHOT_TO_CODE_VISUAL_MODE", "metadata-text").strip().lower()
-GENERATED_CODE_CONFIG = os.environ.get("SCREENSHOT_TO_CODE_GENERATED_CODE_CONFIG", "html_css").strip().lower()
+GENERATED_CODE_CONFIG = os.environ.get("SCREENSHOT_TO_CODE_GENERATED_CODE_CONFIG", "html_tailwind").strip().lower()
 upstream_process: asyncio.subprocess.Process | None = None
 upstream_log_task: asyncio.Task[None] | None = None
 
