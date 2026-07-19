@@ -149,14 +149,16 @@ async function main() {
     DEEPSEEK_API_KEY: deepseekKey,
     DEEPSEEK_API_BASE: appEnvs.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1",
     DEEPSEEK_MODEL: appEnvs.DEEPSEEK_MODEL || "deepseek-v4-pro",
-    GEMINI_API_KEY: appEnvs.GEMINI_API_KEY || "",
-    GEMINI_VISION_MODEL: appEnvs.GEMINI_VISION_MODEL || "gemini-2.0-flash",
-    VISION_API_KEY: appEnvs.VISION_API_KEY || "",
-    VISION_API_BASE: appEnvs.VISION_API_BASE || "",
-    VISION_MODEL: appEnvs.VISION_MODEL || "",
+    // DeepSeek-only production contract: never copy a separately billed
+    // Vision credential into the sidecar. DOM/CSS evidence is the visual input.
+    GEMINI_API_KEY: "",
+    GEMINI_VISION_MODEL: "",
+    VISION_API_KEY: "",
+    VISION_API_BASE: "",
+    VISION_MODEL: "",
     SCREENSHOT_TO_CODE_SHARED_SECRET: sharedSecret,
-    SCREENSHOT_TO_CODE_VISUAL_MODE: appEnvs.SCREENSHOT_TO_CODE_VISUAL_MODE || "vision-text",
-    SCREENSHOT_TO_CODE_REQUIRE_VISION: appEnvs.SCREENSHOT_TO_CODE_REQUIRE_VISION || "false",
+    SCREENSHOT_TO_CODE_VISUAL_MODE: "metadata-text",
+    SCREENSHOT_TO_CODE_REQUIRE_VISION: "false",
   }
 
   let runtime
