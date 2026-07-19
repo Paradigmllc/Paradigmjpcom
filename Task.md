@@ -1944,7 +1944,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 ## CURRENT STATUS - 2026-07-19 screenshot-to-code OSS実務導入（本番サイドカー・非送信レビュー生成）
 
 - `abi/screenshot-to-code`をコミット `9df864afbf7de0ca0baa0cdc5cb9a3a1c04d43e7` へ固定した専用サイドカーを、`coolify`ネットワーク上で本番稼働させた。Coolify Service APIの現在のプロジェクト/サーバーscopeでは422となるため、`scripts/deploy-screenshot-to-code.mjs`が管理ホストへ冪等にプロビジョニングし、メインアプリの再起動・readiness確認まで行う。
-- DeepSeek V4は公式APIがテキスト入力のみのため、既定モードは画像を送ったふりをしない`metadata-text`（PILで寸法・向き・平均色を抽出し、OSS本体へ明示的な視覚メタデータとして渡す）に固定。生成スタックはCDN依存の`html_tailwind`ではなく、レビューCSP下でも表示できる自己完結`html_css`を既定化した。真のピクセル視覚生成はvision providerを設定した場合だけ`image`モードを選べる。生成物は必ず`review`・7日限定・noindexで、外部送信/納品/公開は自動実行しない。
+- DeepSeek V4は公式APIがテキスト入力のみのため、既定モードは画像を送ったふりをしない`metadata-text`（PILで寸法・向き・平均色を抽出し、OSS本体へ明示的な視覚メタデータとして渡す）に固定。生成スタックは実運用で成功を確認した`html_tailwind`を使い、レビュー専用の一時面でTailwind CDNとアニメーションを許可する。真のピクセル視覚生成はvision providerを設定した場合だけ`image`モードを選べる。生成物は必ず`review`・7日限定・noindexで、外部送信/納品/公開は自動実行しない。
 - 本番sidecar `/health`は`ok=true`、provider `deepseek-chat-completions-adapter`、model `deepseek-v4-pro`、visual mode `metadata-text`をread-back。実企業`Cafe SOSOMU`でPOST生成を実行し、HTTP **201**、OSS upstream code **26,970 bytes**、status `review`、`sendingEnabled=false`を確認した。レビューHTMLはメインアプリのtoken-gated previewでHTTP **200**、`X-Robots-Tag: noindex, nofollow, noarchive`を返す。
 - 生成プレビューはuntrusted HTMLとして、専用CSP `script-src 'none' / connect-src 'none' / form-action 'none'`をproxyとrouteの両方で適用し、同じHTMLを実行可能なページとして公開しない。生成物自身にも7日有効期限を保存し、期限切れはtoken一致でも404へfail-closedする。TypeScript、対象テスト、`git diff --check`、正式`npm run release:prod`と公開read-backを完了させる。
 - 外部へのメール、SNS、電話、郵送、ポータルDM、問い合わせフォーム送信、Twentyへの新規追加はこの導入検証では実行していない。
