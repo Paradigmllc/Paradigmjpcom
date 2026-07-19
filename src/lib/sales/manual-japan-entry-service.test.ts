@@ -8,6 +8,7 @@ import {
   selectBestManualFormResult,
 } from "./manual-japan-entry-service"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
+import type { FormDiscoveryResult } from "./sources/form-discovery"
 
 const qualifiedProfile: ManualCompanyProfile = {
   companyName: "Acme",
@@ -27,12 +28,20 @@ const qualifiedProfile: ManualCompanyProfile = {
   positioningConcept: null,
 }
 
-const verifiedForm = {
+const verifiedForm: FormDiscoveryResult = {
   formUrl: "https://acme.com/contact",
   method: "crawl4ai" as const,
   verification: "form" as const,
   confidence: 94,
-  inspection: null,
+  inspection: {
+    status: "form",
+    reason: "verified_contact_fields",
+    fields: ["name", "email", "message", "submit"],
+    formCount: 1,
+    action: "https://acme.com/contact",
+    sameOrigin: true,
+    trustedProvider: false,
+  },
   candidates: ["https://acme.com/contact"],
   traceMs: 20,
 }
@@ -41,7 +50,7 @@ describe("manual Japan Entry work safety gates", () => {
   it("allows failed persistent work to be analyzed again without creating a duplicate", () => {
     expect(isRetryableManualWork({ status: "failed" })).toBe(true)
     expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "failed" })).toBe(true)
-    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(false)
+    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(true)
     expect(isRetryableManualWork({ status: "failed", manually_sent_at: "2026-07-19T00:00:00.000Z" })).toBe(false)
     expect(isRetryableManualWork({ status: "completed" })).toBe(false)
   })
@@ -132,6 +141,20 @@ describe("manual Japan Entry work safety gates", () => {
 
     expect(selectBestManualFormResult([baseline, crawlVerified])).toEqual(baseline)
     expect(selectBestManualFormResult([{ ...baseline, verification: "fallback", confidence: 20 }, crawlVerified])).toEqual(crawlVerified)
-    expect(selectBestManualFormResult([{ ...baseline, verification: "fallback", confidence: 20 }, crawlPageOnly])).toEqual(crawlPageOnly)
+    expect(selectBestManualFormResult([{ ...baseline, verification: "fallback", confidence: 20 }, crawlPageOnly])).toEqual({
+      ...crawlPageOnly,
+      formUrl: null,
+    })
+  })
+
+  it("rejects a form label when the fetched page does not contain verified fields", () => {
+    const result = manualWorkEligibility({
+      profile: qualifiedProfile,
+      form: { ...verifiedForm, inspection: { ...verifiedForm.inspection!, status: "page", fields: [] } },
+      messageOk: true,
+      messagePassed: true,
+    })
+
+    expect(result).toEqual({ eligible: false, reasons: ["A high-confidence public form was not verified"] })
   })
 })

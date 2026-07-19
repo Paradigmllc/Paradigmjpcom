@@ -49,7 +49,15 @@ async function reportFor(businessModel: ManualCompanyProfile["businessModel"]) {
   return buildManualJapanEntryReport({
     profile: profile(businessModel),
     audit,
-    form: { formUrl: "https://acme.com/contact", method: "crawl4ai", verification: "form", confidence: 94, inspection: null, candidates: [], traceMs: 10 },
+    form: {
+      formUrl: "https://acme.com/contact",
+      method: "crawl4ai",
+      verification: "form",
+      confidence: 94,
+      inspection: { status: "form", reason: "verified_contact_fields", fields: ["name", "email", "message", "submit"], formCount: 1, action: "https://acme.com/contact", sameOrigin: true, trustedProvider: false },
+      candidates: [],
+      traceMs: 10,
+    },
     initialMessage: "A reviewable permission-based first touch",
     messageReview: { passed: true, score: 96, purpose: "initial_interest" },
     reportUrl: "https://paradigmjp.com/en/work-report/token",
@@ -93,5 +101,28 @@ describe("manual Japan Entry diagnostic report", () => {
     const rendered = JSON.stringify(report.japanReadiness.gaps)
     expect(rendered).toMatch(/Japanese-language customer path/)
     expect(rendered).not.toMatch(/JPY pricing|Japan delivery terms|Japan-specific delivery|Japan-local payment|commerce disclosure|Tokushoho/i)
+  })
+
+  it("never exposes a page-only contact candidate as a form link", () => {
+    const report = buildManualJapanEntryReport({
+      profile: profile("saas"),
+      audit,
+      form: {
+        formUrl: "https://screenshottocode.com/contact",
+        method: "llm",
+        verification: "page",
+        confidence: 70,
+        inspection: { status: "page", reason: "contact_page_only", fields: [], formCount: 0, action: null, sameOrigin: false, trustedProvider: false },
+        candidates: ["https://screenshottocode.com/contact"],
+        traceMs: 10,
+      },
+      initialMessage: "A reviewable permission-based first touch",
+      messageReview: { passed: true, score: 96 },
+      reportUrl: "https://paradigmjp.com/en/work-report/token",
+      sourceUrl: "https://screenshottocode.com/",
+    })
+
+    expect(report.contactRoute).toMatchObject({ url: null, status: "missing" })
+    expect(report.sourceCoverage.items.find((item) => item.slug === "verified-contact-form")?.status).toBe("missing")
   })
 })

@@ -75,8 +75,7 @@ export function isRetryableManualWork(
   const hasRecordedOutcome = Boolean(
     item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at,
   )
-  return (item.status === "failed" && !hasRecordedOutcome)
-    || (item.status === "needs_review" && item.twenty_sync_status === "failed")
+  return !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
 }
 
 export function buildManualWorkRetryPatch(
@@ -332,6 +331,16 @@ export async function processManualJapanEntryUrl(
       projection: marketProjection.projection,
       priorMessages,
     }))
+    const generationError = generated.ok
+      ? null
+      : (generated.error ?? "Initial message generation failed").slice(0, 1_500)
+    if (generationError) {
+      console.warn("[manual-work] initial message generation did not pass:", {
+        id: work.id,
+        domain: normalized.domain,
+        error: generationError,
+      })
+    }
     const messageReview = {
       ...jsonRecord(generated.review),
       purpose: "initial_interest",
@@ -349,13 +358,17 @@ export async function processManualJapanEntryUrl(
       selected_index: generated.selectedIndex ?? null,
       evidence_pack: generated.evidencePack ?? [],
       similarity: generated.similarity ?? null,
+      generation_status: generated.ok ? "passed" : "failed",
+      generation_error: generationError,
+      generation_usage: generated.usage ?? null,
+      generated_at: new Date().toISOString(),
     }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
     work = await updateManualWork(work.id, {
       initial_message: generated.message ?? null,
       message_review: messageReview,
       stage: "report_generation",
-      error_message: generated.ok ? null : generated.error ?? "Initial message generation failed",
+      error_message: generationError,
     })
 
     const report = await buildManualJapanEntryReport({
@@ -375,13 +388,17 @@ export async function processManualJapanEntryUrl(
       messageOk: generated.ok,
       messagePassed: generated.review?.passed === true,
     })
+    const blockingReasons = [
+      ...(generationError ? [`Initial message generation failed: ${generationError}`] : []),
+      ...eligibility.reasons,
+    ].filter((reason, index, reasons) => reasons.indexOf(reason) === index)
     work = await updateManualWork(work.id, {
       report_data: report,
       report_url: reportUrl,
       stage: eligibility.eligible ? "twenty_sync" : "complete",
       status: eligibility.eligible ? "processing" : "needs_review",
       twenty_sync_status: eligibility.eligible ? "not_started" : "skipped",
-      error_message: eligibility.eligible ? null : eligibility.reasons.join("; "),
+      error_message: eligibility.eligible ? null : blockingReasons.join("; ").slice(0, 2_000),
     })
     if (!eligibility.eligible || !form.formUrl || !generated.message) {
       return { item: work, duplicate: false }

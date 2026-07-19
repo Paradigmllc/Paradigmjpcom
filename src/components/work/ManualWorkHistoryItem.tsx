@@ -79,6 +79,8 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
   const stages = qualificationStages(item.qualification_ledger)
   const verifiedStages = stages.filter(([, stage]) => stage.status === "verified").length
   const qualificationProgress = stages.length ? Math.round((verifiedStages / 6) * 100) : 0
+  const hasRecordedOutcome = Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
+  const retryable = !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
   const outcomes = [
     ["manually_sent", "手動フォーム送信済み", Boolean(item.manually_sent_at)],
     ["reply_received", "返信あり", Boolean(item.reply_received_at)],
@@ -101,8 +103,9 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              {((item.status === "failed" && !item.manually_sent_at && !item.reply_received_at && !item.founder_forwarded_at && !item.meeting_converted_at) || (item.status === "needs_review" && item.twenty_sync_status === "failed")) && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{item.twenty_sync_status === "failed" ? "Twenty再同期" : "再解析"}</Button>}
+              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{item.twenty_sync_status === "failed" ? "Twenty再同期" : "再解析"}</Button>}
               {item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
+              {!item.form_url && item.stage === "complete" && <Badge variant="outline" className="h-8 border-amber-200 bg-amber-50 px-3 text-amber-800">フォーム未確認</Badge>}
               {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
             </div>
           </div>
