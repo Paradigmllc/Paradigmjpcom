@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 import { generatePersonalizedJapanEntryMessage } from "../src/lib/sales/japan-entry-personalized-message";
+import {
+  inspectManualFormCopyEnvelope,
+  MANUAL_FORM_SENDER,
+} from "../src/lib/sales/manual-japan-entry-copy-envelope";
 
 if (!process.env.DEEPSEEK_API_KEY?.trim()) {
   throw new Error("DEEPSEEK_API_KEY is required for the Japan Entry form-copy smoke test");
@@ -51,6 +55,8 @@ if (!result.ok || !result.message || !result.review?.passed) {
   }));
 }
 
+const envelope = inspectManualFormCopyEnvelope(result.message, "AtlasMetric");
+const withoutApprovedEmail = result.message.replaceAll(MANUAL_FORM_SENDER.email, "");
 const checks = {
   companyName: result.message.includes("AtlasMetric"),
   productSpecific: /subscription analytics|independent retailers|inventory forecasting|replenishment/i.test(result.message),
@@ -60,11 +66,14 @@ const checks = {
   uniqueness: (result.review.uniquenessScore ?? 0) >= 90,
   noUrlOrDomain: !/(?:https?:\/\/|www\.|atlasmetric\.example)/i.test(result.message),
   noCitation: !/(?:according to|source:|citation|出典|参照元)/i.test(result.message),
-  noEmailAddress: !/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(result.message),
+  copyReadyGreeting: envelope.greetingValid,
+  copyReadySignature: envelope.signatureValid,
+  approvedSenderEmailOnce: result.message.split(MANUAL_FORM_SENDER.email).length === 2,
+  noUnapprovedEmailAddress: !/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(withoutApprovedEmail),
   noAttachment: !/(?:attached|attachment|添付|資料をお送り)/i.test(result.message),
   noCommercialTerms: !/(?:[$€£¥￥]\s?\d|\bUSD\b|\bJPY\b|12,?000|setup fee|pricing|price|料金|価格)/i.test(result.message),
   noPlaceholder: !/(?:\[[^\]\n]+\]|［[^］\n]+］|【[^】\n]+】|\{[^{}\n]+\}|<[^<>\n]+>|__[A-Z0-9_ -]+__|\bTBD\b|\bPLACEHOLDER\b)/i.test(result.message),
-  fourParagraphs: result.message.split(/\n\s*\n/).filter(Boolean).length === 4,
+  personalizedBodyParagraphs: envelope.bodyParagraphs.length >= 3 && envelope.bodyParagraphs.length <= 4,
 };
 
 if (Object.values(checks).some((passed) => !passed)) {

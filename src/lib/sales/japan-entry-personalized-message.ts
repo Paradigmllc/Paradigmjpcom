@@ -6,6 +6,7 @@ import type { JapanEntryMessagePurpose } from "./japan-entry-personalized-messag
 import type { JapanEntryInitialInterestOptions } from "./japan-entry-message-options";
 import type { ManualMessageAngle } from "./manual-japan-entry-angle";
 import type { ManualOutreachPlaybook, ManualPositioningConcept } from "./manual-japan-entry-playbook";
+import { withManualFormCopyReadyEnvelope } from "./manual-japan-entry-copy-envelope";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
   manualMessageSimilarity,
@@ -23,7 +24,6 @@ export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
 export type { JapanEntryMessageReview } from "./japan-entry-personalized-message-review";
-
 const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 22;
@@ -45,7 +45,6 @@ export interface PersonalizedJapanEntryMessageResult {
   evidencePack?: ManualMessageEvidence[];
   similarity?: ManualMessageSimilarityReview;
 }
-
 export interface ManualMessageStrategy {
   primaryObservation: string;
   whyNow: string;
@@ -58,7 +57,6 @@ export interface ManualMessageStrategy {
   countryAdaptation: string;
   prohibitedClaims: string[];
 }
-
 export interface ManualGeneratedMessageCandidate {
   message: string;
   factIds: string[];
@@ -68,7 +66,6 @@ export interface ManualGeneratedMessageCandidate {
   diagnosticFocus: string;
   ctaType: string;
 }
-
 export interface ManualMessageEvidence {
   id: string;
   statement: string;
@@ -76,7 +73,6 @@ export interface ManualMessageEvidence {
   confidence: number;
   classification: "observed" | "modeled" | "hypothesis";
 }
-
 interface GenerateInput {
   companyName: string;
   industry: string | null;
@@ -313,24 +309,27 @@ export async function generatePersonalizedJapanEntryMessage(
   let totalUsage: DeepSeekResponse["usage"];
   let repairUsed = false;
 
-  const inspectCandidate = (candidate: z.infer<typeof candidateSchema>) => ({
-    candidate,
-    safety: reviewPersonalizedJapanEntryMessage({
-      message: candidate.message,
-      companyName: input.companyName,
-      productContext,
-      productEvidence: candidate.product_evidence,
-      factIds: candidate.fact_ids,
-      facts,
-      purpose,
-      initialInterestOptions: input.initialInterestOptions,
-      messageAngle: input.messageAngle,
-      candidateAngle: candidate.angle,
-    }),
-    similarity: purpose === "initial_interest"
-      ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [] })
-      : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
-  });
+  const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>) => {
+    const candidate = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(rawCandidate, input.companyName) : rawCandidate;
+    return {
+      candidate,
+      safety: reviewPersonalizedJapanEntryMessage({
+        message: candidate.message,
+        companyName: input.companyName,
+        productContext,
+        productEvidence: candidate.product_evidence,
+        factIds: candidate.fact_ids,
+        facts,
+        purpose,
+        initialInterestOptions: input.initialInterestOptions,
+        messageAngle: input.messageAngle,
+        candidateAngle: candidate.angle,
+      }),
+      similarity: purpose === "initial_interest"
+        ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [] })
+        : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
+    };
+  };
 
   const generated = await callStructured({
     stage: "generation",

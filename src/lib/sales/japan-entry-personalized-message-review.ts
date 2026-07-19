@@ -6,6 +6,10 @@ import {
   type JapanEntryInitialInterestOptions,
 } from "./japan-entry-message-options";
 import type { ManualMessageAngle } from "./manual-japan-entry-angle";
+import {
+  inspectManualFormCopyEnvelope,
+  MANUAL_FORM_SENDER,
+} from "./manual-japan-entry-copy-envelope";
 
 const BASE_MIN_WORDS = 100;
 const BASE_MAX_WORDS = 160;
@@ -83,16 +87,19 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   candidateAngle?: string;
 }): { passed: boolean; score: number; issues: string[]; wordCount: number; factIds: string[] } {
   const message = input.message.trim();
-  const words = message.split(/\s+/).filter(Boolean);
-  const paragraphs = message.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+  const purpose = input.purpose ?? "commercial_offer";
+  const initialInterestOptions = input.initialInterestOptions ?? DEFAULT_INITIAL_INTEREST_OPTIONS;
+  const customInitialInterest = purpose === "initial_interest";
+  const envelope = customInitialInterest ? inspectManualFormCopyEnvelope(message, input.companyName) : null;
+  const substantiveMessage = envelope?.body ?? message;
+  const words = substantiveMessage.split(/\s+/).filter(Boolean);
+  const paragraphs = envelope?.bodyParagraphs
+    ?? message.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
   const issues: string[] = [];
   let score = 100;
   const factMap = new Map(input.facts.map((fact) => [fact.id, fact]));
   const selected = input.factIds.map((id) => factMap.get(id)).filter((fact): fact is JapanEntryPersonalizationFact => Boolean(fact));
   const productEvidence = input.productEvidence.trim();
-  const purpose = input.purpose ?? "commercial_offer";
-  const initialInterestOptions = input.initialInterestOptions ?? DEFAULT_INITIAL_INTEREST_OPTIONS;
-  const customInitialInterest = purpose === "initial_interest";
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
@@ -109,7 +116,16 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   }
 
   if (!message.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("Company name is missing"); score -= 20; }
-  if (!/Sato/i.test(message) || !/Paradigm LLC/i.test(message) || !/\bJapan\b/i.test(message)) { issues.push("Sato, Paradigm LLC, and Japan introduction is incomplete"); score -= 20; }
+  if (customInitialInterest) {
+    const senderEmailCount = message.match(new RegExp(MANUAL_FORM_SENDER.email.replace(".", "\\."), "gi"))?.length ?? 0;
+    if (!envelope?.greetingValid) { issues.push("Copy-ready company greeting is missing or altered"); score = 0; }
+    if (!envelope?.signatureValid || senderEmailCount !== 1) { issues.push("Approved Tomohiro H sender signature is missing or altered"); score = 0; }
+    if (/\bSato\b/i.test(message)) { issues.push("Legacy sender name Sato is prohibited"); score = 0; }
+    if (!paragraphs[0]?.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("The first body paragraph must open with a company-specific observation"); score -= 25; }
+    if (/(?:I(?:'|’)m|I am)\s+Tomohiro H/i.test(substantiveMessage)) { issues.push("The sender biography must not be repeated inside the personalized body"); score -= 20; }
+  } else if (!/Sato/i.test(message) || !/Paradigm LLC/i.test(message) || !/\bJapan\b/i.test(message)) {
+    issues.push("Sato, Paradigm LLC, and Japan introduction is incomplete"); score -= 20;
+  }
   if (purpose === "commercial_offer" && !/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
   if (productEvidence.length < 3 || !input.productContext.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
   else if (!message.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
@@ -190,13 +206,16 @@ export function reviewPersonalizedJapanEntryMessage(input: {
       ? "This initial-interest variant must not include commercial terms, package scope, or a call offer"
       : "Initial-interest message must not include commercial terms, package scope, or a call offer"); score -= 45;
   }
-  if (!/\?\s*$/.test(message)) { issues.push("Message must end with a yes/no question"); score -= 10; }
+  if (!/\?\s*$/.test(substantiveMessage)) { issues.push("Message body must end with a yes/no question before the signature"); score -= 10; }
   if (!/public(?:ly)?/i.test(message)) { issues.push("Public-page provenance is missing"); score -= 10; }
   const hasAnalysisCta = /(?:detailed(?: Japan opportunity)? (?:analysis|report)|one-page Japan Opportunity Snapshot)/i.test(message);
   const hasCallCta = /15-minute (?:call|conversation|meeting)/i.test(message);
   if (!hasAnalysisCta && !hasCallCta) { issues.push("Low-pressure report or 15-minute CTA is missing"); score -= 10; }
   if (hasAnalysisCta && hasCallCta) { issues.push("CTA must offer either a detailed analysis or a 15-minute call, not both"); score -= 10; }
-  if (/(?:https?:\/\/|www\.|\[[^\]]+\]\([^)]+\)|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b)/i.test(message)) { issues.push("URL, link, domain, or email is prohibited"); score = 0; }
+  const restrictedLinkText = customInitialInterest
+    ? message.replace(new RegExp(MANUAL_FORM_SENDER.email.replace(".", "\\."), "gi"), "")
+    : message;
+  if (/(?:https?:\/\/|www\.|\[[^\]]+\]\([^)]+\)|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b)/i.test(restrictedLinkText)) { issues.push("URL, link, domain, or unapproved email is prohibited"); score = 0; }
   if (/(?:^|\n)\s*(?:source|sources|reference|references|citation|citations)\s*:|\baccording to\b|\[[0-9]{1,3}\]|\((?:source|ref(?:erence)?)[^)]+\)/im.test(message)) { issues.push("Sources, citations, and reference markers are prohibited in form copy"); score = 0; }
   const messageWithoutNegatedGuarantees = message.replace(
     /(?:\bnot|\bno|\bdoes not|\bdo not|\bcannot|\bnever)\s+(?:be\s+)?guarantee(?:d|s|ing)?/gi,

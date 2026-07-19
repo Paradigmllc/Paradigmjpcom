@@ -14,6 +14,8 @@ export interface ManualMessageSimilarityReview {
 
 const COMMON_COPY = [
   /hello,?\s+i(?:'|’)m\s+sato[^.?!]*[.?!]?/gi,
+  /^hello\s+[^\n,]{1,160}\s+team,\s*$/gim,
+  /best regards,\s*tomohiro h\s*paradigm llc\s*contact@paradigmjp\.com/gi,
   /paradigm\s+llc(?:\s+in\s+japan)?/gi,
   /japan\s+opportunity\s+(?:analysis|snapshot|brief)/gi,
 ]
