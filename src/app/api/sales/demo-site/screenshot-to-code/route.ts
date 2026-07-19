@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
   }
   const record = artifact as Record<string, unknown>
   const previewToken = typeof record.preview_token === "string" ? record.preview_token : null
+  const expiresAt = typeof record.expires_at === "string" ? record.expires_at : null
   return NextResponse.json({
     ok: true,
     slug: data.slug,
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
     provider: record.provider ?? null,
     model: record.model ?? null,
     visualMode: record.visual_mode ?? null,
+    expiresAt,
     previewUrl: previewToken ? `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(data.slug)}?token=${encodeURIComponent(previewToken)}` : null,
   }, { headers: { "Cache-Control": "private, no-store" } })
 }
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
       visual_mode: generated.visualMode,
       source: "abi/screenshot-to-code",
       preview_token: randomUUID(),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     }
     const { error: updateError } = await sb
       .from(DB_TABLES.THEME_DEMO_PAGES)
@@ -138,6 +141,7 @@ export async function POST(request: NextRequest) {
         provider: artifact.provider,
         model: artifact.model,
         visualMode: artifact.visual_mode,
+        expiresAt: artifact.expires_at,
         generatedAt: artifact.generated_at,
       },
       previewUrl: `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(artifact.preview_token)}`,

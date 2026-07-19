@@ -28,7 +28,8 @@ export async function GET(
   const artifact = meta.screenshot_to_code && typeof meta.screenshot_to_code === "object" && !Array.isArray(meta.screenshot_to_code)
     ? meta.screenshot_to_code as Record<string, unknown>
     : null
-  if (!artifact || artifact.preview_token !== token || typeof artifact.code !== "string" || artifact.status !== "review") {
+  const expiresAt = artifact && typeof artifact.expires_at === "string" ? artifact.expires_at : null
+  if (!artifact || artifact.preview_token !== token || typeof artifact.code !== "string" || artifact.status !== "review" || (expiresAt !== null && Date.parse(expiresAt) <= Date.now())) {
     return new NextResponse("Not found", { status: 404 })
   }
 
