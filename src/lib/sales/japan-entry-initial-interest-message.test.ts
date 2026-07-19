@@ -39,13 +39,22 @@ function review(message: string) {
 describe("initial-interest form message safety", () => {
   it("accepts a light first contact without price, URL, or existing-report claims", () => {
     const message = `${opening}\n\n${product}\n\n${diagnosis}\n\nIf useful, I can share a more detailed Japan opportunity analysis based on public evidence. Would you be open to receiving it?`;
-    expect(review(message)).toMatchObject({ passed: true, score: 100 });
+    const result = review(message);
+    expect(result.issues).toEqual([]);
+    expect(result).toMatchObject({ passed: true, score: 100 });
+  });
+
+  it("accepts a company-specific opening when options are omitted", () => {
+    const message = `I reviewed Example’s subscription analytics platform for independent retailers, including the inventory insights described publicly, to understand what a Japan evaluation could verify.\n\nI’m Sato from Paradigm LLC in Japan. We help overseas companies assess Japanese market entry using public evidence before making a larger commitment.\n\nIn a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.\n\nIf useful, I can share a more detailed Japan opportunity analysis based on this public evidence. Would you be open to receiving it?`;
+    const result = review(message);
+    expect(result.issues).toEqual([]);
+    expect(result).toMatchObject({ passed: true, score: 100 });
   });
 
   it("rejects commercial terms in the light first contact", () => {
     const message = `${opening}\n\n${product}\n\n${diagnosis}\n\nOur Japan Entry Package is $12,000 paid upfront. Would you be open to receiving a report?`;
     const result = review(message);
     expect(result.passed).toBe(false);
-    expect(result.issues).toContain("Initial-interest message must not include commercial terms, package scope, or a call offer");
+    expect(result.issues).toContain("This initial-interest variant must not include commercial terms, package scope, or a call offer");
   });
 });

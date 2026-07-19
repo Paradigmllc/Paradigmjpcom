@@ -92,7 +92,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const productEvidence = input.productEvidence.trim();
   const purpose = input.purpose ?? "commercial_offer";
   const initialInterestOptions = input.initialInterestOptions ?? DEFAULT_INITIAL_INTEREST_OPTIONS;
-  const customInitialInterest = purpose === "initial_interest" && Boolean(input.initialInterestOptions);
+  const customInitialInterest = purpose === "initial_interest";
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
