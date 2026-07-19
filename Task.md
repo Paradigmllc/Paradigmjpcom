@@ -1979,3 +1979,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `/api/sales/demo-site/screenshot-to-code/site`（認証済みPOST/GET）、token・7日失効・noindexのページ別レビューURL、同一レビュー内のページ遷移、`/ja/admin/demo-assets`の全ページ生成コンソールを追加した。保存先は既存`theme_demo_pages.meta.screenshot_to_code_site`で、`sending_enabled=false`・未公開を強制し、Twenty同期・メール・SNS・電話・郵送・フォーム送信は起動しない。
 - GatewayはGeminiまたはOpenAI互換Vision providerを画像解析に使用し、Vision必須リクエストをキー未設定・解析失敗時に503/502でfail-closedする。DeepSeek V4のテキスト生成だけで画像を読んだことにする経路は全ページ再現では許可しない。Coolify application envのread-backでは`GEMINI_API_KEY`、`VISION_API_KEY`、`OPENAI_API_KEY`、`GOOGLE_API_KEY`が未設定のため、本番での全ページ生成はVisionキー設定まで意図的に停止する。
 - 検証済み: Python `py_compile`、`npm exec -- tsc --noEmit`、対象Vitest **2 files / 4 tests**、対象ESLint、Quality Guard **0 errors / 73 warnings**、`git diff --check`、production build **408/408 pages**。外部送信・実企業への新規DEMO生成・Twenty追加は0件。
+## CURRENT STATUS - 2026-07-19 DeepSeek専用DOM/CSS根拠モード（実装中 / 外部Vision課金0 / 外部送信0）
+
+- `screenshot-to-code`の全ページ再現経路を、追加のVision API課金なしで動かせるようにした。Playwrightで対象ページをPC・モバイル双方から撮影し、同じブラウザ実行結果から表示要素・computed style・レスポンシブ矩形・画像寸法・CSSヒントを取得して、48KB以内の検証済みDOM/CSS根拠としてDeepSeekへ渡す。画像理解ができると偽装せず、DeepSeekはコード生成に専念する。
+- 生成リクエストが`require_vision=false`の場合、Vision providerの環境変数が存在しても外部Vision APIを呼ばない fail-closed 制御をgatewayへ追加した。Visionは明示的な旧経路でのみ任意利用でき、通常の全ページDEMO生成は`dom-css`モードで実行する。生成物・Twentyメタデータ・管理画面へ根拠モードとPC/モバイルの取得件数を表示し、品質ゲートでもDOM根拠の有無を検査する。
+- `visualEvidenceMode`は`dom-css` / `vision+dom-css` / `metadata`として保存する。原本DOMはDBへ保存せず、生成時だけDeepSeekへ渡す。`sending_enabled=false`、7日限定レビューURL、外部フォーム・メール・SNS・電話・郵送・ポータルDM送信なしを維持する。
+- TypeScript、Python構文チェックを実施済み。次の完了条件は対象Vitest/ESLint、Quality Guard、production build、本番release、screenshot-to-code sidecar再デプロイ、healthと公開URLのread-backであり、DeepSeek以外のAPIキー追加や課金は行わない。

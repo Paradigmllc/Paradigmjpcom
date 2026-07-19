@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     generatedAt: artifact.generated_at ?? null,
     expiresAt: artifact.expires_at ?? null,
     visionRequired: artifact.vision_required === true,
+    visualEvidenceMode: artifact.visual_evidence_mode ?? "metadata",
     quality: artifact.quality ?? null,
     discovery: artifact.discovery ?? null,
     pages: pages.map((page) => ({ id: page.id, path: page.path, title: page.title, quality: page.quality ?? null, previewUrl: token && typeof page.id === "string" ? previewUrl(data.slug, token, page.id) : null })),
@@ -93,7 +94,8 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const artifact = {
       ...generated,
-      vision_required: true,
+      vision_required: generated.visionRequired,
+      visual_evidence_mode: generated.visualEvidenceMode,
       preview_token: token,
       expires_at: expiresAt,
       source: "abi/screenshot-to-code",
@@ -119,7 +121,7 @@ export async function POST(request: NextRequest) {
       slug: company.slug,
       companyId: company.id,
       companyName: company.company_name,
-      artifact: { status: generated.status, expiresAt, quality: generated.quality, discovery: generated.discovery, visionRequired: true },
+      artifact: { status: generated.status, expiresAt, quality: generated.quality, discovery: generated.discovery, visionRequired: generated.visionRequired, visualEvidenceMode: generated.visualEvidenceMode },
       previewUrl: previewUrl(company.slug, token),
       pages: generated.pages.map((page) => ({ id: page.id, path: page.path, title: page.title, quality: page.quality, previewUrl: previewUrl(company.slug, token, page.id) })),
       sendingEnabled: false,

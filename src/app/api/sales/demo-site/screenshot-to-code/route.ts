@@ -22,6 +22,7 @@ const requestSchema = z.object({
   image_data_urls: z.array(imageSchema).min(1).max(3),
   prompt: z.string().max(6_000).default(""),
   design_system: z.string().max(12_000).optional(),
+  visual_evidence: z.string().max(48_000).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
     provider: record.provider ?? null,
     model: record.model ?? null,
     visualMode: record.visual_mode ?? null,
+    visualEvidenceMode: record.visual_evidence_mode ?? "metadata",
     visionAnalyzed: record.vision_analyzed === true,
     expiresAt,
     previewUrl: previewToken ? `${siteUrl()}/api/sales/demo-site/screenshot-to-code/preview/${encodeURIComponent(data.slug)}?token=${encodeURIComponent(previewToken)}` : null,
@@ -108,6 +110,7 @@ export async function POST(request: NextRequest) {
       imageDataUrls: parsed.data.image_data_urls,
       prompt: `${company.company_name}の公開提案用サイト。${parsed.data.prompt}`.trim(),
       designSystem: parsed.data.design_system,
+      visualEvidence: parsed.data.visual_evidence,
     })
     const previousMeta = page.meta && typeof page.meta === "object" && !Array.isArray(page.meta) ? page.meta as Record<string, unknown> : {}
     const artifact = {
@@ -119,6 +122,7 @@ export async function POST(request: NextRequest) {
       provider: generated.provider,
       model: generated.model,
       visual_mode: generated.visualMode,
+      visual_evidence_mode: generated.visualEvidenceMode,
       vision_analyzed: generated.visionAnalyzed,
       source: "abi/screenshot-to-code",
       preview_token: randomUUID(),
@@ -143,6 +147,7 @@ export async function POST(request: NextRequest) {
         provider: artifact.provider,
         model: artifact.model,
         visualMode: artifact.visual_mode,
+        visualEvidenceMode: artifact.visual_evidence_mode,
         expiresAt: artifact.expires_at,
         generatedAt: artifact.generated_at,
       },

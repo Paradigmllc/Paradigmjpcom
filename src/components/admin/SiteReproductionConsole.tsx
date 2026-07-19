@@ -17,7 +17,7 @@ interface SiteResult {
   status?: string
   slug?: string
   previewUrl?: string
-  artifact?: { quality?: { score?: number; passed?: boolean; blockers?: string[]; warnings?: string[] }; discovery?: Record<string, number>; visionRequired?: boolean }
+  artifact?: { quality?: { score?: number; passed?: boolean; blockers?: string[]; warnings?: string[] }; discovery?: Record<string, number>; visionRequired?: boolean; visualEvidenceMode?: string }
   pages?: SitePageResult[]
   error?: string
 }
@@ -60,9 +60,9 @@ export function SiteReproductionConsole() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[.22em] text-fuchsia-700">Vision-led site reproduction</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">全ページ・スクショ準拠DEMO生成</h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">公開サイトの同一ドメイン内ページを巡回し、PC・モバイルを撮影。画像対応解析を通してページごとに生成し、品質ゲート合格分だけ7日間の非公開レビューURLで確認します。外部送信・公開・Twenty同期は起動しません。</p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">公開サイトの同一ドメイン内ページを巡回し、PC・モバイルを撮影。ブラウザのDOM/CSS・画像メタデータを検証済み根拠としてDeepSeekでページごとに生成し、品質ゲート合格分だけ7日間の非公開レビューURLで確認します。外部送信・公開・Twenty同期は起動しません。</p>
         </div>
-        <div className="rounded-2xl bg-fuchsia-50 px-4 py-3 text-xs leading-6 text-fuchsia-950"><strong>Vision必須:</strong> 画像を読めない場合は成功扱いにしません。</div>
+        <div className="rounded-2xl bg-fuchsia-50 px-4 py-3 text-xs leading-6 text-fuchsia-950"><strong>DeepSeek専用:</strong> 追加のVision API課金なし。DOM/CSS根拠と撮影結果を品質ゲートで確認します。</div>
       </div>
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <label className="block text-sm font-semibold">company_id<input value={companyId} onChange={(event) => setCompanyId(event.target.value)} className="field mt-2" placeholder="Twenty / sales_companies のUUID" /></label>
@@ -73,7 +73,7 @@ export function SiteReproductionConsole() {
       <button type="button" disabled={busy} onClick={() => void run()} className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-xl bg-fuchsia-700 px-6 text-sm font-bold text-white disabled:opacity-50"><Sparkles className="h-4 w-4" />{busy ? "巡回・撮影・解析・生成中…" : "全ページを再現生成"}</button>
       {result && <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5" aria-live="polite">
         <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-bold">結果: {result.status ?? "unknown"}</p>{result.previewUrl && <a href={result.previewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-4 py-2 text-xs font-bold text-white"><Eye className="h-4 w-4" />全体プレビュー</a>}</div>
-        {quality && <div className="mt-4 grid gap-3 sm:grid-cols-4"><Metric label="総合品質" value={`${quality.score ?? 0}/100`} /><Metric label="判定" value={quality.passed ? "合格" : "要確認"} /><Metric label="生成ページ" value={String(result.pages?.length ?? 0)} /><Metric label="Vision" value={result.artifact?.visionRequired ? "必須" : "未使用"} /></div>}
+        {quality && <div className="mt-4 grid gap-3 sm:grid-cols-4"><Metric label="総合品質" value={`${quality.score ?? 0}/100`} /><Metric label="判定" value={quality.passed ? "合格" : "要確認"} /><Metric label="生成ページ" value={String(result.pages?.length ?? 0)} /><Metric label="視覚根拠" value={result.artifact?.visualEvidenceMode === "vision+dom-css" ? "Vision+DOM" : "DOM/CSS"} /></div>}
         {result.artifact?.discovery && <p className="mt-4 text-xs text-slate-600">巡回: {result.artifact.discovery.discovered ?? 0}件 / 生成: {result.artifact.discovery.generated ?? 0}件 / 撮影: {result.artifact.discovery.captured ?? 0}件</p>}
         {quality?.blockers?.map((blocker) => <p key={blocker} className="mt-2 text-xs font-semibold text-red-700">公開停止: {blocker}</p>)}
         <div className="mt-4 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">{result.pages?.map((page) => <div key={page.id} className="flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"><div><p className="font-semibold">{page.title}</p><p className="text-xs text-slate-500">{page.path} / {page.quality?.score ?? 0}/100</p>{page.quality?.blockers?.map((blocker) => <p key={blocker} className="mt-1 text-xs text-red-700">{blocker}</p>)}</div>{page.previewUrl && <a href={page.previewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold"><ExternalLink className="h-3.5 w-3.5" />このページ</a>}</div>)}</div>
