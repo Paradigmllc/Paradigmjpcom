@@ -1985,3 +1985,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 生成リクエストが`require_vision=false`の場合、Vision providerの環境変数が存在しても外部Vision APIを呼ばない fail-closed 制御をgatewayへ追加した。Visionは明示的な旧経路でのみ任意利用でき、通常の全ページDEMO生成は`dom-css`モードで実行する。生成物・Twentyメタデータ・管理画面へ根拠モードとPC/モバイルの取得件数を表示し、品質ゲートでもDOM根拠の有無を検査する。
 - `visualEvidenceMode`は`dom-css` / `vision+dom-css` / `metadata`として保存する。原本DOMはDBへ保存せず、生成時だけDeepSeekへ渡す。`sending_enabled=false`、7日限定レビューURL、外部フォーム・メール・SNS・電話・郵送・ポータルDM送信なしを維持する。
 - TypeScript、Python構文チェックを実施済み。次の完了条件は対象Vitest/ESLint、Quality Guard、production build、本番release、screenshot-to-code sidecar再デプロイ、healthと公開URLのread-backであり、DeepSeek以外のAPIキー追加や課金は行わない。
+## CURRENT STATUS - 2026-07-19 DeepSeek専用DOM/CSS根拠モード（本番反映完了 / 外部Vision課金0 / 外部送信0）
+
+- `screenshot-to-code`の全ページ再現経路は、追加のVision API課金なしで動作する。Playwrightで対象ページをPC・モバイル双方から撮影し、同じブラウザ実行結果から表示要素・computed style・レスポンシブ矩形・画像寸法・CSSヒントを取得して、48KB以内の検証済みDOM/CSS根拠としてDeepSeekへ渡す。画像理解ができると偽装せず、DeepSeekはコード生成に専念する。
+- 生成リクエストが`require_vision=false`の場合、Vision providerの環境変数が存在しても外部Vision APIを呼ばない。production sidecarにはVisionキーを渡さず、`require_vision=false`・`metadata-text`を強制する。生成物・Twentyメタデータ・管理画面へ根拠モードを表示し、品質ゲートでもDOM根拠の有無を検査する。
+- TypeScript、Python構文、対象Vitest **4/4**、変更ファイルESLint、Quality Guard **0 errors / 73 warnings**、production build **408/408 pages**を通過。正式`npm run release:prod`はDB **91/91**、公開smoke、Sales health `ok:true`、Twenty、Realtime、Traefikを含む`release gate passed`。sidecar deployment **ullqecv7h463m9u8ygpa50f5**はhealthyで、`vision_provider=null`、`vision_ready=false`、Visionキー空をread-backした。公開read-backはreadiness **200**、サイト再現API未認証 **401**、無効preview **404**、既存DEMO **200**。DeepSeek以外のAPIキー追加・課金、実企業へのDEMO生成、外部送信は行っていない。
