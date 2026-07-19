@@ -213,7 +213,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     issues.push(`Remove prohibited phrase exactly: ${promotionalMatch[0]}`);
     score -= 35;
   }
-  if (/(?:\bpotentially\b|may cause|could cause|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints)/i.test(message)) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
+  if (/(?:\bpotentially\b|may cause|could cause|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i.test(message)) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
 
   const selectedModeled = selected.some((fact) => fact.id.startsWith("modeled-"));
   const mode = getJapanEntryMessageMode(input.facts);
