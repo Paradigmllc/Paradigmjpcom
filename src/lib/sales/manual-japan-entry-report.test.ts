@@ -60,21 +60,29 @@ async function reportFor(businessModel: ManualCompanyProfile["businessModel"]) {
 describe("manual Japan Entry diagnostic report", () => {
   it("uses observed ecommerce gaps without inventing traffic, revenue, or loss", async () => {
     const report = await reportFor("ecommerce")
-    expect(report.total_loss).toBe("0")
-    expect(report.meta).not.toHaveProperty("japan_entry_projection")
+    expect(report.schemaVersion).toBe("manual_japan_entry_v2")
+    expect(report.reportKind).toBe("manual_japan_entry_evidence_brief")
     expect(JSON.stringify(report)).not.toMatch(/monthly visits|monthly revenue|opportunity loss/i)
-    expect(report.meta).toMatchObject({ manual_work: true, evidence_contract: "public-pages-only" })
-    expect(report.meta).toMatchObject({
-      manual_market_lens: { priority: "regional_core", pricingPolicy: "no_automatic_country_adjustment" },
+    expect(report.provenance).toMatchObject({
+      evidenceContract: "public-pages-only",
+      legacyTemplateUsed: false,
+      automaticSendAllowed: false,
     })
-    expect(JSON.stringify(report.intelligence.signals)).toMatch(/Regional主要母集団|Customers in 30 countries|Backed by Example Ventures/)
-    expect(report.content_template.appeal_angle).toBe("japan_entry")
-    expect(report.source_coverage).toMatchObject({ score: 100, collected: 5, missing: 0 })
+    expect(report.market).toMatchObject({
+      priority: "regional_core",
+      pricingPolicy: "no_automatic_country_adjustment",
+    })
+    expect(JSON.stringify(report.market.commercialSignals)).toMatch(/Customers in 30 countries|Backed by Example Ventures/)
+    expect(report.sourceCoverage).toMatchObject({ score: 100, collected: 5, missing: 0 })
+    expect(report.outreach).toMatchObject({ purpose: "initial_interest", qualityPassed: true, neverSent: true })
+    expect(report).not.toHaveProperty("content_template")
+    expect(report).not.toHaveProperty("acts")
+    expect(report).not.toHaveProperty("total_loss")
   })
 
   it("never applies ecommerce-only gaps to a SaaS company", async () => {
     const report = await reportFor("saas")
-    const rendered = JSON.stringify({ acts: report.acts, journey: report.visitor_journey, painPoints: report.intelligence.painPoints })
+    const rendered = JSON.stringify(report.japanReadiness.gaps)
     expect(rendered).toMatch(/Japanese-language customer path/)
     expect(rendered).toMatch(/JPY pricing/)
     expect(rendered).not.toMatch(/Japan delivery terms|Japan-specific delivery|Japan-local payment|PayPay|Paidy|konbini|commerce disclosure|Tokushoho/i)
@@ -82,7 +90,7 @@ describe("manual Japan Entry diagnostic report", () => {
 
   it("limits service-company findings to the language customer path", async () => {
     const report = await reportFor("service")
-    const rendered = JSON.stringify({ acts: report.acts, journey: report.visitor_journey, painPoints: report.intelligence.painPoints })
+    const rendered = JSON.stringify(report.japanReadiness.gaps)
     expect(rendered).toMatch(/Japanese-language customer path/)
     expect(rendered).not.toMatch(/JPY pricing|Japan delivery terms|Japan-specific delivery|Japan-local payment|commerce disclosure|Tokushoho/i)
   })

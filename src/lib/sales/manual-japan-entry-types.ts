@@ -1,4 +1,4 @@
-import type { DiagnosticReportData } from "./diagnostic"
+import type { ManualJapanEntryReportData } from "./manual-japan-entry-report-types"
 import type { Industry } from "./types"
 import type { BusinessModel } from "./japan-entry-projection"
 import type { ManualMessageVariant } from "./manual-japan-entry-experiment"
@@ -119,7 +119,7 @@ export interface ManualJapanEntryWorkRow {
   qualification_ledger: ManualQualificationLedger | Record<string, never>
   master_lead_ledger: ManualMasterLeadLedger | Record<string, never>
   source_attributions: ManualWorkSourceAttribution[]
-  report_data: DiagnosticReportData | Record<string, never>
+  report_data: ManualJapanEntryReportData | Record<string, unknown>
   report_url: string | null
   twenty_company_id: string | null
   twenty_sync_status: TwentySyncStatus
