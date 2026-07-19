@@ -1,9 +1,12 @@
-## CURRENT STATUS - 2026-07-19 `/work` DeepSeek解析schema互換・Twenty保存read-back/recovery（本番release準備完了 / 外部送信0）
+## CURRENT STATUS - 2026-07-19 `/work` DeepSeek解析schema互換・Twenty保存read-back/recovery（本番release・実解析完了 / 外部送信0）
 
 - `screenshottocode.com`の再解析で、DeepSeekが`number`を数値文字列、evidence配列を区切り文字列、`businessModel`を`ecomerce`、`positioningConcept`を`{ concept: ... }`として返し、厳格Zod schemaへ直接投入されて失敗していた。出力型を明示し、既知の安全な揺れだけをbounded normalization、未知形は事実を追加しないshape-only repairを最大1回だけ実行する。壊れたJSONも同じ1回上限で修復し、失敗時は生Zod/SyntaxErrorではなく該当フィールドだけを返す。
 - モデルが返した`productContext`・`observedFacts`は採用せず、取得済み公開ページ本文へ強制固定する。信頼度は0〜100整数、evidenceは最大8件・各240文字、未知enum・非数値・範囲外は引き続きfail-closed。初回文面の実API smokeも`commercial_offer`から実際の`/work`と同じ`initial_interest`へ変更し、URL/ドメイン・出典・メール・添付・価格条件なし、strategy、候補、品質92以上、独自性90以上を検査する。
 - Twenty同期はcreate/PATCH応答だけで成功にせず、会社ID、企業名、フォームURL、診断URL、国、業種、source、未対応status、next action、SMB/Japan Fit score、初回文面全文をlive read-backして一致した場合だけ`synced`にする。途中作成会社IDを履歴へ保存し、次回は同じIDへTwentyだけ再同期する。保存済み文面・診断・成果timestampは再生成で上書きしない。
-- TypeScript、対象ESLint、Quality Guard **0 errors / 74 existing warnings**、重点Vitest **8 files / 50 tests**、全Vitest **207 files / 936 tests**、production build **408/408 pages**、release-doctor local static gateがpass。外部送信経路は追加せず、海外SMB限定、専用履歴、`initial_interest`、`sent=false`制約を維持する。本番release・実DeepSeek再解析・Twenty本番read-backはこの後に実行する。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 74 existing warnings**、重点Vitest **8 files / 50 tests**、全Vitest **207 files / 936 tests**、production build **408/408 pages**、release-doctor local static gateがpass。外部送信経路は追加せず、海外SMB限定、専用履歴、`initial_interest`、`sent=false`制約を維持する。
+- PR **#442** / main **9c30eabf**を統合し、正式`npm run release:prod`のdeployment **snwngtnii8gn0fzernonknzv**を完走。本番container **n8i2sjiqvr2d8hrzppop2m2i-025543035739**はmain image `9c30eabf`でhealthy、DB **91/91**、Sales health HTTP 200 JSON `ok:true`、Twenty HTTP 200、worker restart 0、Realtime healthy、Traefik、公開smoke、zero-send制約を含む`release gate passed`を確認した。
+- 本番で既存履歴`screenshottocode.com`（ID `40c23b3b-fa0e-4540-9f1d-09082d67bb93`）を再解析し、schema errorを再発させず同じ履歴の`attempts=2 / stage=complete`まで完走した。企業名・SaaS・公開product context、フォーム候補、診断レポートを保存したが、国・SMB・Japan Entry適合と実フォームが未検証、文面gate未通過のため`needs_review`へfail-closed。Twentyは本番read-backで同domain **0社**、`twenty_sync_status=skipped`、`sent=false`、手動送信・返信・転送・商談timestampは全てnull。公開レポートURLはHTTP **200**。
+- 本番DeepSeek公式APIの`initial_interest` smokeは品質 **96/100**、安全性 **100/100**、独自性 **97/100**、企業固有事実・strategy・候補・4段落を満たし、URL/ドメイン・出典・メール・添付・価格条件・placeholderは全て0。`screenshottocode.com`をTwentyへ無理に通さなかった理由はモデル/API障害ではなく、企業根拠と文面のproduction gate未達。次の実運用は、国・法人・SMB・実フォームを確認できる新規海外URLを投入してTwenty未送信read-backまで確認する。
 
 ## CURRENT STATUS - 2026-07-18 Manual Work企業別フォーム文面フルパーソナライズ（本番release・DeepSeek実生成完了 / 外部送信0）
 
