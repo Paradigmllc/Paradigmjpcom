@@ -15,6 +15,21 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).not.toContain("Paragraph 4 must be exactly")
   })
 
+  it("uses the company-strategy contract when initial-interest options are omitted", () => {
+    const messages = generationMessages({
+      companyName: "Example",
+      industry: "SaaS / AI / Developer Tools",
+      productContext: "Example provides an API-first fraud review workflow for marketplaces.",
+      targetCountry: "US",
+      businessModel: "saas",
+      purpose: "initial_interest",
+    }, [fact], "audit")
+
+    expect(messages[0]?.content).toContain("Build the strategy before drafting")
+    expect(messages[0]?.content).toContain("strategy:{primary_observation")
+    expect(messages[0]?.content).not.toContain("Paragraph 1 must be exactly")
+  })
+
   it("never exposes internal evidence sources to generation or critic payloads", () => {
     const messages = generationMessages({ companyName: "Example", industry: "SaaS / AI / Developer Tools", productContext: "Example provides an API-first fraud review workflow for marketplaces.", targetCountry: "US", businessModel: "saas", purpose: "initial_interest", initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true }, messageAngle: "problem", outreachPlaybook: "saas_ai_devtools" }, [fact], "audit")
     const payload = messages[1]?.content ?? ""
