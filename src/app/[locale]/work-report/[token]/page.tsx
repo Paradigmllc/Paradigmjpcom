@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { z } from "zod"
-import DiagnosticReport from "@/components/diagnostic/DiagnosticReport"
-import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
-import { ensureSafeDiagnosticReport } from "@/lib/sales/diagnostic/safe-report"
+import ManualJapanEntryReport from "@/components/work-report/ManualJapanEntryReport"
+import { resolveManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-legacy"
 import { findManualWorkByReportToken } from "@/lib/sales/manual-japan-entry-store"
 
 export const dynamic = "force-dynamic"
@@ -26,7 +25,7 @@ export default async function ManualWorkReportPage({ params }: Props) {
   } catch (error) {
     console.error("[work-report] fetch failed:", error)
   }
-  if (!item || !item.report_url || !("company_name" in item.report_data)) notFound()
-  const data = ensureSafeDiagnosticReport(item.report_data as DiagnosticReportData, token, "en")
-  return <DiagnosticReport data={data} locale="en" />
+  if (!item || !item.report_url) notFound()
+  const data = resolveManualJapanEntryReportData(item)
+  return <ManualJapanEntryReport data={data} />
 }

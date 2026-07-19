@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-19 `/work`診断レポートV2完全分離（実装・本番DBロールバック検証完了 / 正式release前 / 外部送信0）
+
+- `/work`専用レポートが、通常営業レポート用の`DiagnosticReportData`・`matchContentTemplate`・共通`DiagnosticReport`へ接続されていたため、SaaS企業にもDB先頭のrestaurantテンプレートが選ばれる欠陥を確定した。旧Opportunity Brief生成器は現行フローに入っていなかったが、旧汎用データ契約・renderer・テンプレート選択が残っていた。
+- `/work`を`manual_japan_entry_v2`専用契約へ完全分離した。企業・海外SMB/Japan Fit判定、市場/企業別commercial evidence、business-model別Japan導線、検証済みフォーム、初回文面品質/独自性、evidence coverage、operator next action、guardrailを専用データとして保存し、旧`acts`・`total_loss`・`content_template`等を生成しない。レポート画面も専用の証拠ブリーフUIへ置換し、旧`DiagnosticReport`をimportしない。
+- 既存の`manual_japan_entry_work.report_data`を全面V2化するデータmigrationを追加した。新テーブルは増やさず既存RLS/`service_role`境界を維持し、過去行は旧キーを残さず再構築する。未移行・部分移行行を開いても、route側が保存済みprofile/audit/form/messageからV2を再構築するため旧画面へ戻らない。
+- release gateはmigration wiring、旧import不在、専用renderer、V2 provenance、`legacyTemplateUsed=false`、`automaticSendAllowed=false`、`sent=false`、旧キー不在を静的・本番DB・公開URLで検査する。本番DB上の`BEGIN -> migration -> assertion -> ROLLBACK`では既存レポート **1件**を変換し、`schema_ok / legacy_blocked / autosend_blocked / old_key_removed`を全て確認した。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 75 existing warnings**、release-doctor local static gate、専用Vitest **4 files / 6 tests**、全Vitest **211 files / 947 tests**、production build **408/408 pages**がpass。海外SMB限定、公開ページ根拠、初回文面のURL/出典禁止、Twenty未送信保存、人間確認、自動送信0は変更していない。次はPR統合後、正式`npm run release:prod`でmigration適用・公開レポート・Twenty/DB/zero-sendをread-backする。
+
 ## CURRENT STATUS - 2026-07-19 `/work` DeepSeek解析schema互換・Twenty保存read-back/recovery（本番release・実解析完了 / 外部送信0）
 
 - `screenshottocode.com`の再解析で、DeepSeekが`number`を数値文字列、evidence配列を区切り文字列、`businessModel`を`ecomerce`、`positioningConcept`を`{ concept: ... }`として返し、厳格Zod schemaへ直接投入されて失敗していた。出力型を明示し、既知の安全な揺れだけをbounded normalization、未知形は事実を追加しないshape-only repairを最大1回だけ実行する。壊れたJSONも同じ1回上限で修復し、失敗時は生Zod/SyntaxErrorではなく該当フィールドだけを返す。

@@ -738,6 +738,10 @@ function checkStaticReleaseRules() {
   const manualSourceLedgerMigration = fs.existsSync(manualSourceLedgerMigrationPath)
     ? fs.readFileSync(manualSourceLedgerMigrationPath, "utf8")
     : ""
+  const manualReportV2MigrationPath = "supabase/migrations/20260719032800_manual_japan_entry_report_v2.sql"
+  const manualReportV2Migration = fs.existsSync(manualReportV2MigrationPath)
+    ? fs.readFileSync(manualReportV2MigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -767,6 +771,15 @@ function checkStaticReleaseRules() {
     : ""
   const manualWorkReport = fs.existsSync("src/lib/sales/manual-japan-entry-report.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-report.ts", "utf8")
+    : ""
+  const manualWorkReportTypes = fs.existsSync("src/lib/sales/manual-japan-entry-report-types.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-report-types.ts", "utf8")
+    : ""
+  const manualWorkReportPage = fs.existsSync("src/app/[locale]/work-report/[token]/page.tsx")
+    ? fs.readFileSync("src/app/[locale]/work-report/[token]/page.tsx", "utf8")
+    : ""
+  const manualWorkReportRenderer = fs.existsSync("src/components/work-report/ManualJapanEntryReport.tsx")
+    ? fs.readFileSync("src/components/work-report/ManualJapanEntryReport.tsx", "utf8")
     : ""
   const manualMarketLens = fs.existsSync("src/lib/sales/manual-japan-entry-market-lens.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-market-lens.ts", "utf8")
@@ -800,6 +813,11 @@ function checkStaticReleaseRules() {
     && manualSourceLedgerMigration.includes("no collector, scheduler, or send path")
     && noLoginDeploy.includes("20260716181500_manual_japan_entry_source_ledger.sql")
     && noLoginDeploy.includes("applyManualJapanEntrySourceLedgerMigration")
+    && manualReportV2Migration.includes("manual_japan_entry_v2")
+    && manualReportV2Migration.includes("legacyTemplateUsed")
+    && manualReportV2Migration.includes("automaticSendAllowed")
+    && noLoginDeploy.includes("20260719032800_manual_japan_entry_report_v2.sql")
+    && noLoginDeploy.includes("applyManualJapanEntryReportV2Migration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
@@ -821,17 +839,25 @@ function checkStaticReleaseRules() {
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
-    && manualWorkReport.includes("matchContentTemplate")
-    && manualWorkReport.includes('evidence_contract: "public-pages-only"')
-    && manualWorkReport.includes("manual_commercial_signals")
+    && manualWorkReport.includes("MANUAL_JAPAN_ENTRY_REPORT_SCHEMA")
+    && !manualWorkReport.includes("matchContentTemplate")
+    && !manualWorkReport.includes("DiagnosticReportData")
+    && manualWorkReportTypes.includes('"manual_japan_entry_v2"')
+    && manualWorkReportTypes.includes("legacyTemplateUsed: false")
+    && manualWorkReportTypes.includes("automaticSendAllowed: false")
+    && manualWorkReportPage.includes("ManualJapanEntryReport")
+    && manualWorkReportPage.includes("resolveManualJapanEntryReportData")
+    && !manualWorkReportPage.includes("ensureSafeDiagnosticReport")
+    && !manualWorkReportPage.includes('components/diagnostic/DiagnosticReport')
+    && manualWorkReportRenderer.includes("Never sent automatically")
     && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
     && manualMarketLens.includes("groundManualCommercialSignals")
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has login return routing, grounded copy/report logic, bounded DeepSeek repair, retryable Twenty read-back, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has a dedicated V2 evidence report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires login return routing, grounded copy/report logic, bounded DeepSeek repair, retryable Twenty read-back, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires a dedicated V2 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1378,12 +1404,24 @@ select case when
   )
   and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_work'::regclass)
   and not exists (select 1 from public.manual_japan_entry_work where sent is distinct from false)
+  and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where report_url is not null
+      and (
+        report_data ->> 'schemaVersion' is distinct from 'manual_japan_entry_v2'
+        or report_data ->> 'reportKind' is distinct from 'manual_japan_entry_evidence_brief'
+        or report_data #>> '{provenance,legacyTemplateUsed}' is distinct from 'false'
+        or report_data #>> '{provenance,automaticSendAllowed}' is distinct from 'false'
+        or report_data ? 'content_template'
+      )
+  )
 then 1 else 0 end;
 " 2>/dev/null || true)"
   if [ "$manual_copy_experiment_guard" = "1" ]; then
-    echo "OK manual copy experiment columns/angle playbooks/outcome constraint/RLS/zero-send guard"
+    echo "OK manual copy experiment/report V2/angle playbooks/outcome constraint/RLS/zero-send guard"
   else
-    echo "FAIL manual copy experiment columns/angle playbooks/outcome constraint/RLS/zero-send guard"
+    echo "FAIL manual copy experiment/report V2/angle playbooks/outcome constraint/RLS/zero-send guard"
     fail=1
   fi
 
@@ -1615,6 +1653,13 @@ async function checkSalesHealth() {
   pass(`Sales health HTTP ${res.status} JSON ok`)
 }
 
+function latestManualWorkReportPath() {
+  const command = "docker exec supabase-db-1 psql -U postgres -d postgres -Atc \"select '/en/work-report/' || report_token::text from public.manual_japan_entry_work where report_url is not null order by updated_at desc limit 1\""
+  const result = run("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), command])
+  const reportPath = result.output.trim()
+  return result.status === 0 && /^\/en\/work-report\/[0-9a-f-]{36}$/i.test(reportPath) ? reportPath : null
+}
+
 async function checkPostDeployUrls() {
   if (SKIP_REMOTE) {
     section("Post-deploy smoke")
@@ -1701,6 +1746,16 @@ async function checkPostDeployUrls() {
     timeoutMs: 25_000,
     rejectReportError: true,
   })
+  const manualReportPath = latestManualWorkReportPath()
+  if (manualReportPath) {
+    await fetchCheck("manual Japan Entry V2 evidence report", `${BASE_URL}${manualReportPath}`, {
+      timeoutMs: 25_000,
+      rejectReportError: true,
+      mustContain: ["Private evidence brief", "Manual Japan Entry Workbench", "Never sent automatically", "manual_japan_entry_v2"],
+    })
+  } else {
+    warn("manual Japan Entry report smoke skipped because no stored report exists")
+  }
   await fetchCheck("Twenty", TWENTY_URL, { timeoutMs: 20_000 })
   await fetchUnauthorizedCheck("Infrastructure dashboard", `${BASE_URL}/api/infra`)
   await fetchUnauthorizedCheck("Infrastructure status", `${BASE_URL}/api/infra/status`)

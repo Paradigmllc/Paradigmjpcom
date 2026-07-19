@@ -1,54 +1,57 @@
-import { matchContentTemplate } from "./content-templates"
-import type { DiagnosticReportData } from "./diagnostic"
-import { formatExpiry } from "./diagnostic/checks"
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message"
-import type { SourceCoverageItem } from "./source-coverage"
+import type { SourceCoverageItem, SourceCoverageSnapshot } from "./source-coverage"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 import type { JapanMarketAudit, JapanMarketAuditStatus } from "./sources/japan-market-audit"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
 import type { ManualMasterLeadLedger, ManualQualificationLedger } from "./manual-japan-entry-source-ledger"
-import { buildManualMarketLens, MANUAL_COMMERCIAL_SIGNAL_LABELS } from "./manual-japan-entry-market-lens"
+import { buildManualMarketLens } from "./manual-japan-entry-market-lens"
+import type {
+  ManualJapanEntryReportData,
+  ManualReportDecisionStatus,
+  ManualReportGap,
+} from "./manual-japan-entry-report-types"
+import { MANUAL_JAPAN_ENTRY_REPORT_SCHEMA } from "./manual-japan-entry-report-types"
 
 const GAP_META: Record<string, { statusKey: keyof JapanMarketAuditStatus; title: string }> = {
-  "japan-audit-language": {
-    statusKey: "japanese_language_missing",
-    title: "Japanese-language customer path",
-  },
-  "japan-audit-jpy": {
-    statusKey: "jpy_currency_missing",
-    title: "Customer-facing JPY pricing",
-  },
-  "japan-audit-shipping": {
-    statusKey: "japan_shipping_missing",
-    title: "Japan delivery terms",
-  },
-  "japan-audit-payments": {
-    statusKey: "local_payments_missing",
-    title: "Japan-local payment references",
-  },
-  "japan-audit-commerce-disclosure": {
-    statusKey: "tokushoho_missing",
-    title: "Japan-specific commerce disclosure",
-  },
+  "japan-audit-language": { statusKey: "japanese_language_missing", title: "Japanese-language customer path" },
+  "japan-audit-jpy": { statusKey: "jpy_currency_missing", title: "Customer-facing JPY pricing" },
+  "japan-audit-shipping": { statusKey: "japan_shipping_missing", title: "Japan delivery terms" },
+  "japan-audit-payments": { statusKey: "local_payments_missing", title: "Japan-local payment references" },
+  "japan-audit-commerce-disclosure": { statusKey: "tokushoho_missing", title: "Japan-specific commerce disclosure" },
 }
 
-interface ReportGap {
-  id: string
-  title: string
-  detail: string
-  confidence: number
-  source: string
-}
+const MARKET_COPY = {
+  global_priority: {
+    label: "Global-priority market",
+    rationale: "Prioritize companies with visible international sales capability and a clear owner for expansion decisions.",
+  },
+  regional_core: {
+    label: "Regional core market",
+    rationale: "Prioritize export-ready product companies with visible evidence of international customers or operations.",
+  },
+  precision: {
+    label: "Precision market",
+    rationale: "Use a smaller, evidence-led list and favor founder accessibility over raw market volume.",
+  },
+  selective: {
+    label: "Selective market",
+    rationale: "Advance only companies with explicit international traction or commercial proof on their public pages.",
+  },
+  individual_review: {
+    label: "Company-level review",
+    rationale: "Judge the company on its product, international proof, and decision structure rather than country-level purchasing power.",
+  },
+} as const
 
-function gapRows(profile: ManualCompanyProfile, audit: JapanMarketAudit): ReportGap[] {
+function reportGaps(profile: ManualCompanyProfile, audit: JapanMarketAudit): ManualReportGap[] {
   return buildJapanEntryPersonalizationFacts(audit, profile.businessModel).flatMap((fact) => {
     const meta = GAP_META[fact.id]
     if (!meta || audit.status[meta.statusKey] !== true) return []
     return [{
       id: fact.id,
       title: meta.title,
-      detail: fact.statement,
-      confidence: fact.confidence,
+      observation: fact.statement,
+      confidence: Math.round(fact.confidence * 100),
       source: fact.source,
     }]
   })
@@ -65,24 +68,18 @@ function buildSourceCoverage(input: {
   initialMessage: string | null
   messageReview: Record<string, unknown>
   sourceUrl: string
-  qualificationLedger?: ManualQualificationLedger
-  masterLeadLedger?: ManualMasterLeadLedger
-}) {
+}): SourceCoverageSnapshot {
   const messagePassed = Boolean(input.initialMessage) && input.messageReview.passed === true
-  const messageVariant = typeof input.messageReview.message_variant === "string"
-    ? input.messageReview.message_variant
-    : "estimate_off_price_off"
-  const priceCell = messageVariant === "estimate_off_price_on" || messageVariant === "estimate_on_price_on"
   const items: SourceCoverageItem[] = [
     sourceItem({
       slug: "company-public-website",
       label: "Company public website",
       category: "company",
       status: input.sourceUrl ? "collected" : "missing",
-      detail: `Company and product wording collected from ${input.sourceUrl}.`,
-      meaning: "The company description and first-touch product evidence must come from the company’s own public pages.",
+      detail: "Company and product wording was collected from the company’s own public website.",
+      meaning: "The product description and personalized first-touch evidence must come from first-party pages.",
       missingConsequence: "Without first-party wording, personalized outreach remains blocked.",
-      nextStep: "Recheck the public website if the company changes its offer or positioning.",
+      nextStep: "Recheck the website if the offer or positioning changes.",
     }),
     sourceItem({
       slug: "deepseek-company-classification",
@@ -90,30 +87,20 @@ function buildSourceCoverage(input: {
       category: "analysis",
       status: "collected",
       detail: `Country=${input.profile.countryCode ?? "unconfirmed"}; SMB=${input.profile.smbStatus} (${input.profile.smbConfidence}/100); Japan Entry fit=${input.profile.japanEntryFitStatus} (${input.profile.japanEntryFitConfidence}/100).`,
-      meaning: "Classification separates overseas SMB prospects from Japanese or uncertain companies; confidence is shown rather than hidden.",
-      missingConsequence: "An uncertain company must remain in manual review.",
-      nextStep: "Human-review country, SMB status, and offer fit before any outreach.",
+      meaning: "Confidence is shown so uncertain classifications stay in operator review.",
+      missingConsequence: "An uncertain company cannot be treated as send-ready.",
+      nextStep: "Review the country, SMB status, and offer fit before outreach.",
     }),
     sourceItem({
       slug: "japan-market-public-page-audit",
       label: "Japan public-page readiness audit",
       category: "analysis",
       status: input.audit.pages_checked.length > 0 ? "collected" : "missing",
-      detail: `${input.audit.pages_checked.length} public page(s) checked; only business-model-relevant observations are shown.`,
-      meaning: "The bounded audit identifies what the checked pages did or did not show; it does not establish demand, legal applicability, or non-compliance.",
-      missingConsequence: "Without checked pages, the Japan Entry diagnosis would be generic.",
-      nextStep: "Validate commercial and legal requirements with primary sources during delivery.",
+      detail: `${input.audit.pages_checked.length} public page(s) checked; only business-model-relevant observations are included.`,
+      meaning: "This bounded screen records what the checked pages did or did not show.",
+      missingConsequence: "Without checked pages, a Japan Entry diagnosis would be generic.",
+      nextStep: "Validate market, commercial, and legal requirements with primary sources during delivery.",
     }),
-    ...(input.profile.positioningConcept ? [sourceItem({
-      slug: "draft-japanese-positioning-concept",
-      label: "Stored Japanese positioning draft",
-      category: "analysis",
-      status: "collected",
-      detail: `Unpublished draft grounded in the exact public phrase “${input.profile.positioningConcept.sourcePhrase}”.`,
-      meaning: "This stored artifact is the only basis for permitting a mockup-led first touch.",
-      missingConsequence: "Without a stored draft, mockup-led wording must fall back to a public-page problem statement.",
-      nextStep: "Human-review the Japanese wording before publishing or sharing it.",
-    })] : []),
     sourceItem({
       slug: "verified-contact-form",
       label: "Verified public inquiry form",
@@ -121,7 +108,7 @@ function buildSourceCoverage(input: {
       status: input.form.verification === "form" && Boolean(input.form.formUrl) ? "collected" : "missing",
       detail: `${input.form.method} discovery; verification=${input.form.verification}; confidence=${input.form.confidence}/100.`,
       meaning: "Only a fetched page containing a usable form can enter the Twenty manual-review list.",
-      missingConsequence: "The record remains in manual review and is not added to Twenty automatically.",
+      missingConsequence: "The record remains in operator review and is never sent automatically.",
       nextStep: "Open and manually confirm the form before sending anything.",
     }),
     sourceItem({
@@ -130,18 +117,16 @@ function buildSourceCoverage(input: {
       category: "outreach",
       status: messagePassed ? "collected" : "missing",
       detail: messagePassed
-        ? `DeepSeek V4 Pro review passed at ${String(input.messageReview.score ?? "unscored")}/100; ${priceCell ? "only the approved $12,000 fixed fee and six included support months are allowed" : "price and payment terms are prohibited"}; URL, attachment, and call offers are prohibited.`
-        : "No initial-interest message passed the deterministic and editorial gates.",
-      meaning: priceCell
-        ? "This test cell asks for a founder or growth-owner forward after stating only the approved fixed commercial term."
-        : "The first touch asks permission to share a deeper analysis without commercial terms.",
-      missingConsequence: "The company cannot be added to the manual outreach list.",
-      nextStep: "Human-review the message against the cited public-page facts before sending.",
+        ? `DeepSeek V4 review passed at ${String(input.messageReview.score ?? "unscored")}/100; URL, source citation, attachment, and call offers are prohibited.`
+        : "No first-touch draft passed both deterministic and editorial gates.",
+      meaning: "The first touch is a human-reviewed initial-interest message, not an automated commercial offer.",
+      missingConsequence: "The company cannot be treated as send-ready.",
+      nextStep: "Review the draft against the public-page facts before manually submitting it.",
     }),
   ]
   const scored = items.filter((item) => item.status !== "not_applicable")
   return {
-    score: scored.length > 0 ? Math.round(scored.reduce((sum, item) => sum + item.score, 0) / scored.length) : 0,
+    score: scored.length ? Math.round(scored.reduce((sum, item) => sum + item.score, 0) / scored.length) : 0,
     collected: items.filter((item) => item.status === "collected").length,
     configured: items.filter((item) => item.status === "configured").length,
     missing: items.filter((item) => item.status === "missing").length,
@@ -149,7 +134,44 @@ function buildSourceCoverage(input: {
   }
 }
 
-export async function buildManualJapanEntryReport(input: {
+function finiteScore(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : null
+}
+
+function decisionStatus(input: {
+  profile: ManualCompanyProfile
+  form: FormDiscoveryResult
+  messagePassed: boolean
+}): ManualReportDecisionStatus {
+  if (input.profile.isJapaneseCompany || input.profile.smbStatus === "rejected" || input.profile.japanEntryFitStatus === "rejected") {
+    return "rejected"
+  }
+  if (
+    input.profile.smbStatus === "qualified"
+    && input.profile.japanEntryFitStatus === "qualified"
+    && input.form.verification === "form"
+    && Boolean(input.form.formUrl)
+    && input.messagePassed
+  ) return "qualified"
+  return "review_required"
+}
+
+function decisionReasons(input: {
+  profile: ManualCompanyProfile
+  form: FormDiscoveryResult
+  messagePassed: boolean
+}): string[] {
+  const reasons = [
+    `Overseas company check: ${input.profile.isJapaneseCompany ? "failed" : "passed"}.`,
+    `SMB classification: ${input.profile.smbStatus} (${input.profile.smbConfidence}/100).`,
+    `Japan Entry fit: ${input.profile.japanEntryFitStatus} (${input.profile.japanEntryFitConfidence}/100).`,
+    `Inquiry route: ${input.form.verification === "form" && input.form.formUrl ? "verified public form" : "operator review required"}.`,
+    `First-touch quality gate: ${input.messagePassed ? "passed" : "blocked"}.`,
+  ]
+  return reasons
+}
+
+export function buildManualJapanEntryReport(input: {
   profile: ManualCompanyProfile
   audit: JapanMarketAudit
   form: FormDiscoveryResult
@@ -159,189 +181,104 @@ export async function buildManualJapanEntryReport(input: {
   sourceUrl: string
   qualificationLedger?: ManualQualificationLedger
   masterLeadLedger?: ManualMasterLeadLedger
-}): Promise<DiagnosticReportData> {
-  const gaps = gapRows(input.profile, input.audit)
-  const topGaps = gaps.slice(0, 3)
-  const coverage = buildSourceCoverage(input)
+}): ManualJapanEntryReportData {
+  const gaps = reportGaps(input.profile, input.audit)
+  const messagePassed = Boolean(input.initialMessage) && input.messageReview.passed === true
+  const status = decisionStatus({ profile: input.profile, form: input.form, messagePassed })
   const commercialSignals = input.profile.commercialSignals ?? []
   const marketLens = input.profile.marketLens ?? buildManualMarketLens({
     countryCode: input.profile.countryCode,
     commercialSignals,
   })
-  const contentTemplate = await matchContentTemplate({
-    reportLocale: "en",
-    targetCountry: input.profile.countryCode,
-    industry: input.profile.industry,
-    assetType: "diagnostic_report",
-    appealAngle: "japan_entry",
-    templateVariant: "japan_entry",
-  })
-  const noGapCopy = "The bounded public-page screen did not identify a missing customer-path signal relevant to this business model. This is not proof of Japan readiness; commercial and legal validation are still required."
-  const acts = topGaps.length > 0
-    ? topGaps.map((gap, index) => ({
-        type: (["pain", "fear", "hope"] as const)[index] ?? "pain",
-        icon: index === 2 ? "→" : "!",
-        headline: gap.title,
-        body: gap.detail,
-        metric_label: "Checked public pages",
-        metric_value: "Not observed",
-        metric_unit: "",
-        metric_bench: "Human validation required before implementation",
-        severity: index === 0 ? "warning" as const : "info" as const,
-      }))
-    : [{
-        type: "hope" as const,
-        icon: "✓",
-        headline: "Bounded Japan customer-path screen",
-        body: noGapCopy,
-        metric_label: "Business-model-relevant public signals",
-        metric_value: "No missing signal observed",
-        metric_unit: "",
-        metric_bench: "Not a launch or compliance approval",
-        severity: "info" as const,
-      }]
+  const marketCopy = MARKET_COPY[marketLens.priority]
+  const domain = new URL(input.sourceUrl).hostname.replace(/^www\./, "")
+  const routeVerified = input.form.verification === "form" && Boolean(input.form.formUrl)
+  const reviewSummary = typeof input.messageReview.rationale === "string"
+    ? input.messageReview.rationale
+    : messagePassed ? "The draft passed deterministic and editorial review." : "The draft did not pass all quality gates."
 
   return {
-    company_name: input.profile.companyName,
-    report_locale: "en",
-    target_country: input.profile.countryCode ?? "Unknown",
-    template_variant: "japan_entry",
-    industry: input.profile.industry,
-    prefecture: null,
-    expires_at: formatExpiry("en"),
-    hook: gaps.length > 0
-      ? `${input.profile.companyName} has ${gaps.length} business-model-relevant Japan customer-path question${gaps.length === 1 ? "" : "s"} that the checked public pages did not resolve.`
-      : `${input.profile.companyName} shows no missing business-model-relevant signal in this bounded public-page screen; deeper market validation is still required.`,
-    total_loss: "0",
-    acts,
-    cta_text: "Use this evidence as the starting point for a human-reviewed Japan Entry decision, not as proof of demand, compliance, traffic, or sales.",
-    video_thumbnail: null,
-    demo_url: null,
-    screenshot_url: null,
-    visual_annotations: [],
-    visitor_journey: gaps.length > 0
-      ? gaps.slice(0, 5).map((gap) => ({ id: gap.id, label: gap.title, detail: gap.detail, status: "weak" as const }))
-      : [{ id: "bounded-screen", label: "Bounded public-page screen", detail: noGapCopy, status: "ready" as const }],
-    source_coverage: coverage,
-    intelligence: {
-      signals: [
-        {
-          id: "company-profile",
-          label: "Company profile",
-          value: `${input.profile.businessModel} / ${input.profile.industry}`,
-          source: "Company public website + DeepSeek V4 Pro classification",
-          category: "company",
-          tone: input.profile.smbStatus === "qualified" ? "good" : "warning",
-          detail: input.profile.productContext,
-          whyItMatters: "The Japan offer must match the company’s publicly described product and operating model.",
-        },
-        {
-          id: "market-lens",
-          label: "Market operating lens",
-          value: `${input.profile.countryCode ?? "Unconfirmed"} / ${marketLens.label}`,
-          source: "Deterministic country playbook; not a pricing recommendation",
-          category: "company",
-          tone: marketLens.priority === "individual_review" ? "warning" : "neutral",
-          detail: `${marketLens.rationale}${marketLens.focusIndustries.length ? ` Focus categories: ${marketLens.focusIndustries.join(", ")}.` : ""}`,
-          whyItMatters: "Country context guides research priority only and never changes the existing offer automatically.",
-        },
-        {
-          id: "commercial-evidence",
-          label: "Company-level commercial evidence",
-          value: commercialSignals.length > 0 ? `${commercialSignals.length} grounded public signal(s)` : "Unverified",
-          source: "Exact phrases from the company public website",
-          category: "company",
-          tone: commercialSignals.length >= 2 ? "good" : commercialSignals.length === 1 ? "neutral" : "warning",
-          detail: commercialSignals.length > 0
-            ? commercialSignals.map((signal) => `${MANUAL_COMMERCIAL_SIGNAL_LABELS[signal.kind]}: ${signal.sourcePhrase}`).join(" | ")
-            : "Foreign-currency revenue, global customers, funding, founder-led ownership, employee range, and international operations were not confirmed in the bounded public-page evidence.",
-          whyItMatters: "These signals support human prioritization only; they do not prove budget, willingness to buy, or a price tier.",
-        },
-        ...(input.profile.positioningConcept ? [{
-          id: "draft-japanese-positioning",
-          label: "Draft Japanese positioning concept",
-          value: input.profile.positioningConcept.japaneseHeadline,
-          source: `Company public wording: ${input.profile.positioningConcept.sourcePhrase}`,
-          category: "company" as const,
-          tone: "neutral" as const,
-          detail: `${input.profile.positioningConcept.japaneseSupportLine} This is an unpublished draft, not evidence of Japan demand or performance.`,
-          whyItMatters: "A mockup-led first touch is permitted only because this concrete draft is stored with the work record.",
-        }] : []),
-        {
-          id: "japan-public-page-screen",
-          label: "Business-model-relevant Japan signals",
-          value: `${gaps.length} missing signal(s) across ${input.audit.pages_checked.length} checked page(s)`,
-          source: "Japan market public-page audit",
-          category: "company",
-          tone: gaps.length === 0 ? "good" : "warning",
-          detail: "Only findings allowed by the classified business model are included.",
-          whyItMatters: "This keeps SaaS, service, and ecommerce diagnoses from borrowing irrelevant customer-path assumptions.",
-        },
-        {
-          id: "contact-form",
-          label: "Public inquiry route",
-          value: input.form.verification === "form" ? "Verified form" : "Needs review",
-          source: input.form.method === "crawl4ai" ? "Crawl4AI + HTML verification" : `Form discovery (${input.form.method})`,
-          category: "outreach",
-          tone: input.form.verification === "form" ? "good" : "warning",
-          detail: input.form.formUrl ?? "No verified form URL was found.",
-          whyItMatters: "A verified route is required before the record can enter the manual outreach list.",
-        },
-      ],
-      painPoints: gaps.length > 0
-        ? gaps.slice(0, 3).map((gap) => ({
-            id: gap.id,
-            title: gap.title,
-            severity: "warning" as const,
-            evidence: `${gap.detail} Source=${gap.source}; confidence=${Math.round(gap.confidence * 100)}/100.`,
-            implication: "The checked public pages leave this part of a Japan customer path unverified.",
-            recommendedAction: "Validate the requirement and implementation scope with primary evidence before delivery.",
-          }))
-        : [{
-            id: "bounded-validation",
-            title: "No missing business-model-relevant signal was observed in the bounded screen",
-            severity: "opportunity" as const,
-            evidence: noGapCopy,
-            implication: "Market demand and full launch readiness remain unverified.",
-            recommendedAction: "Continue with primary market, commercial, and legal validation before launch.",
-          }],
-      nextActions: [
-        "Human-review the generated first-touch message before sending.",
-        "Confirm the target company, country, product wording, and public form route.",
-        "Verify payment capacity, contracting entity, decision maker, and any commercial signal with an appropriate primary source before quoting.",
-        ...(input.qualificationLedger?.legal_verification.status === "pending"
-          ? ["Verify the active contracting entity in an official company registry before treating the lead as send-ready."]
-          : []),
-        "Use primary-source commercial and legal requirements during delivery; this report is not legal advice.",
-      ],
+    schemaVersion: MANUAL_JAPAN_ENTRY_REPORT_SCHEMA,
+    reportKind: "manual_japan_entry_evidence_brief",
+    generatedAt: new Date().toISOString(),
+    reportUrl: input.reportUrl,
+    company: {
+      name: input.profile.companyName,
+      domain,
+      countryCode: input.profile.countryCode,
+      businessModel: input.profile.businessModel,
+      industry: input.profile.industry,
+      productContext: input.profile.productContext,
     },
-    meta: {
-      manual_work: true,
-      evidence_contract: "public-pages-only",
-      source_url: input.sourceUrl,
-      japan_market_audit: input.audit,
-      manual_company_profile: input.profile,
-      manual_market_lens: marketLens,
-      manual_commercial_signals: commercialSignals,
-      outreach_playbook: input.profile.outreachPlaybook,
-      draft_japanese_positioning_concept: input.profile.positioningConcept,
-      manual_source_qualification_ledger: input.qualificationLedger ?? null,
-      manual_master_lead_ledger: input.masterLeadLedger ?? null,
-      form_discovery: input.form,
-      japan_entry_initial_message: input.initialMessage,
-      japan_entry_message_review: input.messageReview,
+    decision: {
+      status,
+      summary: status === "qualified"
+        ? "The public evidence meets the current manual-workbench gates. A human must still review and submit the first touch."
+        : status === "rejected"
+          ? "The company does not meet the overseas-SMB scope and must not enter the manual outreach list."
+          : "One or more evidence gates remain unresolved. Keep this record in operator review.",
+      reasons: decisionReasons({ profile: input.profile, form: input.form, messagePassed }),
+      smb: { status: input.profile.smbStatus, confidence: input.profile.smbConfidence },
+      japanEntryFit: { status: input.profile.japanEntryFitStatus, confidence: input.profile.japanEntryFitConfidence },
     },
-    contactFormUrl: input.form.formUrl,
-    content_template: {
-      title: contentTemplate.title,
-      purpose: contentTemplate.purpose,
-      quality_bar: contentTemplate.quality_bar,
-      dify_selection_rule: contentTemplate.dify_selection_rule,
-      prompt_template: contentTemplate.prompt_template,
-      offer_code: contentTemplate.offer_code,
-      appeal_angle: contentTemplate.appeal_angle,
+    market: {
+      priority: marketLens.priority,
+      label: marketCopy.label,
+      rationale: marketCopy.rationale,
+      focusIndustries: marketLens.focusIndustries,
+      commercialEvidenceStatus: marketLens.commercialEvidenceStatus,
+      commercialSignals,
+      pricingPolicy: "no_automatic_country_adjustment",
     },
-    report_url: input.reportUrl,
-    localized_report_urls: [{ label: "English", url: input.reportUrl }],
+    japanReadiness: {
+      checkedPageCount: input.audit.pages_checked.length,
+      gaps,
+      summary: gaps.length
+        ? `${gaps.length} business-model-relevant Japan customer-path question${gaps.length === 1 ? "" : "s"} were not resolved by the checked pages.`
+        : "No missing business-model-relevant signal was observed in this bounded screen. This is not proof of Japan readiness.",
+      disclaimer: input.audit.legal_disclaimer,
+    },
+    contactRoute: {
+      url: input.form.formUrl,
+      status: routeVerified ? "verified" : input.form.formUrl ? "review_required" : "missing",
+      method: input.form.method,
+      confidence: input.form.confidence,
+      reason: routeVerified
+        ? "A public page containing a usable inquiry form was fetched and verified."
+        : "A verified public inquiry form is required before manual submission.",
+    },
+    outreach: {
+      purpose: "initial_interest",
+      draft: input.initialMessage,
+      qualityPassed: messagePassed,
+      score: finiteScore(input.messageReview.score),
+      uniquenessScore: finiteScore(input.messageReview.uniquenessScore ?? input.messageReview.uniqueness_score),
+      playbook: input.profile.outreachPlaybook,
+      variant: typeof input.messageReview.message_variant === "string" ? input.messageReview.message_variant : "unrecorded",
+      angle: typeof input.messageReview.message_angle === "string" ? input.messageReview.message_angle : "unrecorded",
+      reviewSummary,
+      neverSent: true,
+    },
+    sourceCoverage: buildSourceCoverage(input),
+    qualificationLedger: input.qualificationLedger ? { ...input.qualificationLedger } : {},
+    nextActions: [
+      "Review the company, country, product wording, and every quoted public fact.",
+      "Open the verified inquiry form and check its no-solicitation language before manual submission.",
+      "Review the first-touch draft for factual accuracy, naturalness, and fit with the recipient’s business.",
+      "Verify the contracting entity, decision maker, and payment capacity before discussing commercial terms.",
+    ],
+    guardrails: [
+      "This report uses public-page evidence only and is not proof of demand, revenue, legal compliance, or purchase intent.",
+      "Country context never changes the existing offer price automatically.",
+      "The first-touch draft contains no URL or source citation and must be submitted by a human.",
+      "No automated sending path is allowed from this workbench.",
+    ],
+    provenance: {
+      evidenceContract: "public-pages-only",
+      sourceUrl: input.sourceUrl,
+      generatedBy: "manual_japan_entry_workbench",
+      legacyTemplateUsed: false,
+      automaticSendAllowed: false,
+    },
   }
 }
