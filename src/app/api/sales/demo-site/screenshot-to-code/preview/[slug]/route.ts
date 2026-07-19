@@ -38,7 +38,7 @@ export async function GET(
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "private, no-store, max-age=0",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline' https:; img-src data: https:; font-src data: https:; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline' https:; img-src data: https:; font-src data: https:; script-src https://cdn.tailwindcss.com 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'",
       "X-Content-Type-Options": "nosniff",
       "X-Robots-Tag": "noindex, nofollow, noarchive",
     },

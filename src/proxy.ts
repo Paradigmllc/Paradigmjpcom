@@ -106,7 +106,7 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/sales/demo-site/screenshot-to-code/preview/")) {
     response.headers.set(
       "Content-Security-Policy",
-      "default-src 'none'; style-src 'unsafe-inline' https:; img-src data: https:; font-src data: https:; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'",
+      "default-src 'none'; style-src 'unsafe-inline' https:; img-src data: https:; font-src data: https:; script-src https://cdn.tailwindcss.com 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'",
     );
   }
   if (isNonIndexablePath(pathname) || request.nextUrl.searchParams.get("draft") === "true") {
