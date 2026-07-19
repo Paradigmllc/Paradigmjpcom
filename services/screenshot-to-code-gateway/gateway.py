@@ -7,6 +7,8 @@ import base64
 from io import BytesIO
 import json
 import os
+import urllib.error
+import urllib.request
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Dict, List, Optional
 
@@ -23,6 +25,14 @@ UPSTREAM_COMMIT = os.environ.get("SCREENSHOT_TO_CODE_UPSTREAM_COMMIT", "unknown"
 SHARED_SECRET = os.environ.get("SCREENSHOT_TO_CODE_SHARED_SECRET", "").strip()
 VISUAL_MODE = os.environ.get("SCREENSHOT_TO_CODE_VISUAL_MODE", "metadata-text").strip().lower()
 GENERATED_CODE_CONFIG = os.environ.get("SCREENSHOT_TO_CODE_GENERATED_CODE_CONFIG", "html_tailwind").strip().lower()
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+COMPATIBLE_VISION_API_KEY = os.environ.get("VISION_API_KEY", "").strip()
+VISION_API_KEY = GEMINI_API_KEY or COMPATIBLE_VISION_API_KEY
+VISION_PROVIDER = "gemini" if GEMINI_API_KEY else "openai-compatible" if COMPATIBLE_VISION_API_KEY else None
+VISION_API_BASE = os.environ.get("VISION_API_BASE", "").strip().rstrip("/")
+VISION_MODEL = os.environ.get("VISION_MODEL", "").strip() or os.environ.get("GEMINI_VISION_MODEL", "gemini-2.0-flash").strip()
+VISION_READY = bool(VISION_API_KEY and (VISION_PROVIDER == "gemini" or VISION_API_BASE))
+VISION_REQUIRED_BY_DEFAULT = os.environ.get("SCREENSHOT_TO_CODE_REQUIRE_VISION", "false").strip().lower() == "true"
 upstream_process: asyncio.subprocess.Process | None = None
 upstream_log_task: asyncio.Task[None] | None = None
 
@@ -31,6 +41,7 @@ class GenerateRequest(BaseModel):
     image_data_urls: List[str] = Field(min_length=1, max_length=3)
     prompt: str = Field(default="", max_length=6000)
     design_system: Optional[str] = Field(default=None, max_length=12000)
+    require_vision: bool = False
 
     @field_validator("image_data_urls")
     @classmethod
@@ -118,15 +129,97 @@ def _image_metadata(data_url: str, index: int) -> str:
         return f"Screenshot {index}: image bytes were supplied but metadata could not be decoded."
 
 
-def _build_generation_input(request: GenerateRequest) -> tuple[str, Dict[str, Any]]:
+def _decode_data_url(value: str) -> tuple[str, str] | None:
+    if not value.startswith("data:image/") or "," not in value:
+        return None
+    header, encoded = value.split(",", 1)
+    mime = header[5:].split(";", 1)[0]
+    try:
+        base64.b64decode(encoded, validate=True)
+    except Exception as error:
+        print(f"[screenshot-to-code-gateway] invalid vision data URL: {error}", flush=True)
+        return None
+    return mime, encoded
+
+
+def _vision_request_body(prompt: str, image_data_urls: List[str]) -> Dict[str, Any]:
+    parts: List[Dict[str, Any]] = [{"text": prompt}]
+    for value in image_data_urls:
+        decoded = _decode_data_url(value)
+        if decoded is None:
+            continue
+        mime, encoded = decoded
+        parts.append({"inline_data": {"mime_type": mime, "data": encoded}})
+    return {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 3500},
+    }
+
+
+def _compatible_vision_request_body(prompt: str, image_data_urls: List[str]) -> Dict[str, Any]:
+    content: List[Dict[str, Any]] = [{"type": "text", "text": prompt}]
+    content.extend({"type": "image_url", "image_url": {"url": value}} for value in image_data_urls)
+    return {"model": VISION_MODEL, "messages": [{"role": "user", "content": content}], "temperature": 0.1, "max_tokens": 3500}
+
+
+async def _analyze_with_vision(request: GenerateRequest) -> str:
+    required = request.require_vision or VISION_REQUIRED_BY_DEFAULT
+    if not VISION_READY:
+        if required:
+            raise HTTPException(status_code=503, detail="vision provider is not configured")
+        return ""
+    data_urls = [value for value in request.image_data_urls if value.startswith("data:image/")]
+    if not data_urls:
+        if required:
+            raise HTTPException(status_code=422, detail="vision analysis requires data URL screenshots")
+        return ""
+    analysis_prompt = "Analyze these website screenshots for faithful code reconstruction. Describe exact layout regions, typography scale and weights, colors, spacing, navigation, imagery composition, content hierarchy, responsive differences, visible interactions, and any page-specific details. Do not invent business facts. Return concise implementation notes only."
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{VISION_MODEL}:generateContent" if VISION_PROVIDER == "gemini" else f"{VISION_API_BASE}/chat/completions"
+    body = json.dumps(_vision_request_body(analysis_prompt, data_urls) if VISION_PROVIDER == "gemini" else _compatible_vision_request_body(analysis_prompt, data_urls)).encode("utf-8")
+
+    def request() -> str:
+        req = urllib.request.Request(
+            endpoint,
+            data=body,
+            headers={"Content-Type": "application/json", **({"x-goog-api-key": VISION_API_KEY} if VISION_PROVIDER == "gemini" else {"Authorization": f"Bearer {VISION_API_KEY}"})},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=45) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as error:
+            raise RuntimeError(f"vision provider request failed: {error}") from error
+        if VISION_PROVIDER == "gemini":
+            candidates = payload.get("candidates", []) if isinstance(payload, dict) else []
+            if not isinstance(candidates, list) or not candidates or not isinstance(candidates[0], dict): return ""
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", []) if isinstance(content, dict) else []
+            return "\n".join(part.get("text", "") for part in parts if isinstance(part, dict) and isinstance(part.get("text"), str)).strip()
+        choices = payload.get("choices", []) if isinstance(payload, dict) else []
+        message = choices[0].get("message", {}) if isinstance(choices, list) and choices and isinstance(choices[0], dict) else {}
+        return str(message.get("content", "")).strip() if isinstance(message, dict) else ""
+
+    try:
+        analysis = await asyncio.to_thread(request)
+    except Exception as error:
+        print(f"[screenshot-to-code-gateway] vision analysis failed: {error}", flush=True)
+        if required:
+            raise HTTPException(status_code=502, detail="vision analysis failed") from error
+        return ""
+    if required and not analysis:
+        raise HTTPException(status_code=502, detail="vision provider returned no analysis")
+    return analysis
+
+
+def _build_generation_input(request: GenerateRequest, visual_analysis: str = "") -> tuple[str, Dict[str, Any]]:
     if VISUAL_MODE == "image":
         return "image", {"text": request.prompt, "images": request.image_data_urls, "videos": []}
     metadata = "\n".join(_image_metadata(value, index + 1) for index, value in enumerate(request.image_data_urls))
     text = (
         f"{request.prompt}\n\n"
-        "Visual source note: DeepSeek V4 API is text-only. Generate from the screenshot metadata below "
+        "Visual source note: the code model is text-only. Use the verified visual analysis below "
         "and the design system, keep the requested industry terminology, and do not invent unrelated services.\n"
-        f"{metadata}"
+        f"{visual_analysis}\n{metadata}"
     ).strip()
     return "text", {"text": text, "images": [], "videos": []}
 
@@ -159,13 +252,17 @@ async def health() -> Dict[str, Any]:
         "provider": "deepseek-chat-completions-adapter",
         "visual_mode": VISUAL_MODE,
         "generated_code_config": GENERATED_CODE_CONFIG,
+        "vision_provider": VISION_PROVIDER,
+        "vision_model": VISION_MODEL if VISION_READY else None,
+        "vision_ready": VISION_READY,
     }
 
 
 @app.post("/generate")
 async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | None = Header(default=None)) -> Dict[str, Any]:
     _authorize(x_screenshot_to_code_secret)
-    input_mode, prompt_content = _build_generation_input(request)
+    visual_analysis = await _analyze_with_vision(request)
+    input_mode, prompt_content = _build_generation_input(request, visual_analysis)
     payload = {
         "generatedCodeConfig": GENERATED_CODE_CONFIG,
         "inputMode": input_mode,
@@ -210,6 +307,9 @@ async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | 
         "model": os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro"),
         "visual_mode": VISUAL_MODE,
         "generated_code_config": GENERATED_CODE_CONFIG,
+        "vision_provider": VISION_PROVIDER,
+        "vision_model": VISION_MODEL if VISION_READY else None,
+        "vision_analyzed": bool(visual_analysis),
     }
 
 

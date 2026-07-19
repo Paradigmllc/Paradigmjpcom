@@ -26,13 +26,16 @@ describe("screenshot-to-code client", () => {
         model: "model",
       }), { status: 200, headers: { "content-type": "application/json" } }),
     )
-    await expect(generateScreenshotToCode({ imageDataUrls: ["data:image/png;base64,AA=="] })).resolves.toMatchObject({
+    await expect(generateScreenshotToCode({ imageDataUrls: ["data:image/png;base64,AA=="], requireVision: true })).resolves.toMatchObject({
       code: "<html></html>",
       upstreamCommit: "commit",
     })
     expect(fetchMock).toHaveBeenCalledWith(
       "http://screenshot-to-code:7002/generate",
-      expect.objectContaining({ headers: expect.objectContaining({ "x-screenshot-to-code-secret": "test-secret" }) }),
+      expect.objectContaining({
+        headers: expect.objectContaining({ "x-screenshot-to-code-secret": "test-secret" }),
+        body: expect.stringContaining('"require_vision":true'),
+      }),
     )
     fetchMock.mockRestore()
     if (originalUrl) process.env.SCREENSHOT_TO_CODE_URL = originalUrl

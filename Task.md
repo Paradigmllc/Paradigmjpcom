@@ -1948,3 +1948,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 本番sidecar `/health`は`ok=true`、provider `deepseek-chat-completions-adapter`、model `deepseek-v4-pro`、visual mode `metadata-text`をread-back。実企業`Cafe SOSOMU`でPOST生成を実行し、HTTP **201**、OSS upstream code **26,970 bytes**、status `review`、`sendingEnabled=false`を確認した。レビューHTMLはメインアプリのtoken-gated previewでHTTP **200**、`X-Robots-Tag: noindex, nofollow, noarchive`を返す。
 - 生成プレビューはuntrusted HTMLとして、専用CSP `script-src 'none' / connect-src 'none' / form-action 'none'`をproxyとrouteの両方で適用し、同じHTMLを実行可能なページとして公開しない。生成物自身にも7日有効期限を保存し、期限切れはtoken一致でも404へfail-closedする。TypeScript、対象テスト、`git diff --check`、正式`npm run release:prod`と公開read-backを完了させる。
 - 外部へのメール、SNS、電話、郵送、ポータルDM、問い合わせフォーム送信、Twentyへの新規追加はこの導入検証では実行していない。
+## CURRENT STATUS - 2026-07-19 全ページスクショ準拠再現パイプライン（実装・ビルド完了 / Vision設定待ち / 外部送信0）
+
+- `abi/screenshot-to-code`の固定commit runtimeを、単一ページ生成だけでなく同一originのリンク・sitemap・指定パスから最大24ページ発見する実行経路へ拡張した。各ページをPC/モバイルで撮影し、Vision解析を必須にした上でページ単位に生成する。生成後は実HTMLをPC/モバイルで再描画し、ソース画像との縮小画素比較、HTML構造、レスポンシブ、モーション、アクセシビリティ、内部文言・placeholder混入を品質ゲートする。
+- `/api/sales/demo-site/screenshot-to-code/site`（認証済みPOST/GET）、token・7日失効・noindexのページ別レビューURL、同一レビュー内のページ遷移、`/ja/admin/demo-assets`の全ページ生成コンソールを追加した。保存先は既存`theme_demo_pages.meta.screenshot_to_code_site`で、`sending_enabled=false`・未公開を強制し、Twenty同期・メール・SNS・電話・郵送・フォーム送信は起動しない。
+- GatewayはGeminiまたはOpenAI互換Vision providerを画像解析に使用し、Vision必須リクエストをキー未設定・解析失敗時に503/502でfail-closedする。DeepSeek V4のテキスト生成だけで画像を読んだことにする経路は全ページ再現では許可しない。Coolify application envのread-backでは`GEMINI_API_KEY`、`VISION_API_KEY`、`OPENAI_API_KEY`、`GOOGLE_API_KEY`が未設定のため、本番での全ページ生成はVisionキー設定まで意図的に停止する。
+- 検証済み: Python `py_compile`、`npm exec -- tsc --noEmit`、対象Vitest **2 files / 4 tests**、対象ESLint、Quality Guard **0 errors / 73 warnings**、`git diff --check`、production build **408/408 pages**。外部送信・実企業への新規DEMO生成・Twenty追加は0件。
