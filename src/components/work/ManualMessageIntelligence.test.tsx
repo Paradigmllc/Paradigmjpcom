@@ -88,11 +88,17 @@ describe("ManualMessageIntelligence", () => {
 
   it("renders and copies a saved draft", async () => {
     const onCopy = vi.fn()
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined)
     await act(async () => root.render(
       <ManualMessageIntelligence
         item={workRow({
           initial_message: "I noticed your screenshot-to-code workflow.",
-          message_review: { generation_status: "passed", passed: true, score: 96 },
+          message_review: {
+            generation_status: "passed",
+            passed: true,
+            score: 96,
+            evidence_pack: [{ id: "fact-1", statement: "Japanese-language path was not observed.", source: "Japan market public-page audit" }],
+          },
         })}
         onCopy={onCopy}
       />,
@@ -102,5 +108,6 @@ describe("ManualMessageIntelligence", () => {
     const copy = container.querySelector<HTMLButtonElement>("button")
     await act(async () => copy?.click())
     expect(onCopy).toHaveBeenCalledWith("I noticed your screenshot-to-code workflow.", "初回文面")
+    expect(consoleError).not.toHaveBeenCalled()
   })
 })

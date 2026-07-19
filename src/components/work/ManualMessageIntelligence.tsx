@@ -37,6 +37,7 @@ function records(value: unknown): JsonRecord[] {
 }
 
 function sourceLink(source: string): URL | null {
+  if (!/^https:\/\//i.test(source)) return null
   try {
     const url = new URL(source)
     return url.protocol === "https:" ? url : null
