@@ -57,4 +57,22 @@ describe("initial-interest form message safety", () => {
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("This initial-interest variant must not include commercial terms, package scope, or a call offer");
   });
+
+  it("rejects unverified buyer-behavior claims even when the public gaps are real", () => {
+    const unsafeDiagnosis = `${diagnosis} For Japanese retailers, these details often decide whether they complete a purchase.`;
+    const message = `${opening}\n\n${product}\n\n${unsafeDiagnosis}\n\nIf useful, I can share a more detailed Japan opportunity analysis based on public evidence. Would you be open to receiving it?`;
+    const result = review(message);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("Unsupported causal inference or invented package deliverable is prohibited");
+  });
+
+  it("rejects generic praise and unsupported Japanese investment claims", () => {
+    const praisedProduct = "I reviewed Example and its impressive subscription analytics platform for independent retailers, which positions Example uniquely for emerging applications.";
+    const unsafeDiagnosis = `${diagnosis} Japanese retailers are heavily investing in this category.`;
+    const message = `${opening}\n\n${praisedProduct}\n\n${unsafeDiagnosis}\n\nIf useful, I can share a more detailed Japan opportunity analysis based on public evidence. Would you be open to receiving it?`;
+    const result = review(message);
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain("Generic, promotional, invented, or unsupported market phrasing is prohibited");
+    expect(result.issues).toContain("Unsupported causal inference or invented package deliverable is prohibited");
+  });
 });
