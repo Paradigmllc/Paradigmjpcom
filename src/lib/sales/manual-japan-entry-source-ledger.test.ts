@@ -53,7 +53,15 @@ describe("manual Japan Entry source and qualification ledger", () => {
         human_review_required: true,
         legal_disclaimer: "Not legal advice",
       },
-      form: { formUrl: "https://example.com/contact", method: "dom", verification: "form", confidence: 94, inspection: null, candidates: [], traceMs: 10 },
+      form: {
+        formUrl: "https://example.com/contact",
+        method: "dom",
+        verification: "form",
+        confidence: 94,
+        inspection: { status: "form", reason: "verified_contact_fields", fields: ["name", "email", "message", "submit"], formCount: 1, action: "https://example.com/contact", sameOrigin: true, trustedProvider: false },
+        candidates: [],
+        traceMs: 10,
+      },
       projection: null,
     })
 
@@ -73,5 +81,56 @@ describe("manual Japan Entry source and qualification ledger", () => {
     expect(result.qualification.commercial_proof.evidence[0]).toContain("Customers in 30 countries")
     expect(result.master.evidence_classes.modeled).toEqual([])
     expect(result.master.evidence_classes.hypothesis[0]).toContain("require separate verification")
+  })
+
+  it("keeps an unverified contact-page candidate out of the master ledger", () => {
+    const result = buildManualSourceLedgers({
+      domain: "screenshottocode.com",
+      source,
+      sourcePageUrl: null,
+      sourceDate: "2026-07-20",
+      profile: {
+        companyName: "Screenshot to Code",
+        countryCode: "US",
+        isJapaneseCompany: false,
+        smbStatus: "review_required",
+        smbConfidence: 60,
+        smbEvidence: [],
+        japanEntryFitStatus: "review_required",
+        japanEntryFitConfidence: 60,
+        japanEntryFitEvidence: [],
+        businessModel: "saas",
+        industry: "Technology / IT",
+        productContext: "Converts screenshots into code.",
+        observedFacts: ["Converts screenshots into code"],
+        outreachPlaybook: "saas_ai_devtools",
+        positioningConcept: null,
+      },
+      audit: {
+        engine: "local_heuristic",
+        generated_at: "2026-07-20T00:00:00.000Z",
+        score: 0,
+        status: { tokushoho_missing: true, appi_missing: true, local_payments_missing: true, japanese_language_missing: true, jpy_currency_missing: true, japan_shipping_missing: true },
+        signals: { tokushoho: [], appi: [], local_payments: [], japanese_language: [], jpy_currency: [], japan_shipping: [] },
+        pages_checked: ["https://screenshottocode.com/"],
+        sales_pitch_context: "Observed page facts",
+        human_review_required: true,
+        legal_disclaimer: "Not legal advice",
+      },
+      form: {
+        formUrl: "https://screenshottocode.com/contact",
+        method: "llm",
+        verification: "page",
+        confidence: 70,
+        inspection: { status: "page", reason: "contact_page_only", fields: [], formCount: 0, action: null, sameOrigin: false, trustedProvider: false },
+        candidates: ["https://screenshottocode.com/contact"],
+        traceMs: 10,
+      },
+      projection: null,
+    })
+
+    expect(result.qualification.contact_route.status).toBe("pending")
+    expect(result.master.contact_form_url).toBeNull()
+    expect(result.master.evidence_classes.observed).not.toContain("https://screenshottocode.com/contact")
   })
 })

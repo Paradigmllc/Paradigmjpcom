@@ -42,4 +42,24 @@ describe("inspectContactFormHtml", () => {
     expect(result.status).toBe("page")
     expect(result.reason).toBe("untrusted_action")
   })
+
+  it("treats a blank client-rendered contact route as a soft 404", () => {
+    const result = inspectContactFormHtml(
+      "<html><head><title>Screenshot to Code</title></head><body><div id=\"root\"></div><script>render()</script></body></html>",
+      "https://screenshottocode.com/contact",
+      "https://screenshottocode.com",
+    )
+
+    expect(result).toMatchObject({ status: "missing", reason: "empty_or_soft_404", formCount: 0 })
+  })
+
+  it("treats an explicit not-found contact route as missing", () => {
+    const result = inspectContactFormHtml(
+      "<html><head><title>Page not found</title></head><body><h1>404</h1><p>This page does not exist.</p></body></html>",
+      "https://example.com/contact",
+      "https://example.com",
+    )
+
+    expect(result).toMatchObject({ status: "missing", reason: "empty_or_soft_404", formCount: 0 })
+  })
 })

@@ -2,6 +2,7 @@ import type { JapanEntryProjection } from "./japan-entry-projection"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 import type { JapanMarketAudit } from "./sources/japan-market-audit"
 import type { ManualCommercialSignal } from "./manual-japan-entry-types"
+import { isVerifiedManualFormResult } from "./manual-japan-entry-workflow-helpers"
 
 export const MANUAL_SOURCE_ROLES = [
   "discovery",
@@ -154,7 +155,7 @@ export function buildManualSourceLedgers(input: {
 }): { qualification: ManualQualificationLedger; master: ManualMasterLeadLedger } {
   const sourceReference = input.sourcePageUrl ?? input.source.source_url
   const auditEvidence = input.audit.pages_checked.map((url) => `Observed public page: ${url}`)
-  const formVerified = input.form.verification === "form" && input.form.confidence >= 90 && Boolean(input.form.formUrl)
+  const formVerified = isVerifiedManualFormResult(input.form)
   const localizationFriction = [
     input.audit.status.japanese_language_missing ? "Japanese-language customer path not observed" : null,
     input.profile.businessModel !== "service" && input.audit.status.jpy_currency_missing ? "Customer-facing JPY pricing not observed" : null,
@@ -234,7 +235,7 @@ export function buildManualSourceLedgers(input: {
       estimated_opportunity_base: annualScenario(input.projection, "base"),
       estimated_opportunity_high: annualScenario(input.projection, "upside"),
       confidence: Math.min(input.profile.smbConfidence, input.profile.japanEntryFitConfidence),
-      contact_form_url: input.form.formUrl,
+      contact_form_url: formVerified ? input.form.formUrl : null,
       contact_form_type: input.form.verification,
       no_solicitation: null,
       lead_score: null,
@@ -242,7 +243,7 @@ export function buildManualSourceLedgers(input: {
       submitted_at: null,
       status: "manual_review",
       evidence_classes: {
-        observed: [...input.profile.observedFacts, ...commercialSignals.map((signal) => signal.sourcePhrase), ...localizationFriction, ...(input.form.formUrl ? [input.form.formUrl] : [])],
+        observed: [...input.profile.observedFacts, ...commercialSignals.map((signal) => signal.sourcePhrase), ...localizationFriction, ...(formVerified && input.form.formUrl ? [input.form.formUrl] : [])],
         modeled: input.projection ? [input.projection.modelVersion] : [],
         hypothesis: ["Category demand, final payment capacity, legal entity, and local competitors require separate verification."],
       },

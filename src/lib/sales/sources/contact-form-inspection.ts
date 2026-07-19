@@ -4,7 +4,7 @@ import { isAllowedFormUrlForOrigin } from "./external-form-discovery"
 
 export interface ContactFormInspection {
   status: "form" | "page" | "missing"
-  reason: "verified_contact_fields" | "contact_page_only" | "no_contact_intent" | "non_contact_form" | "untrusted_action"
+  reason: "verified_contact_fields" | "contact_page_only" | "no_contact_intent" | "non_contact_form" | "untrusted_action" | "empty_or_soft_404"
   fields: Array<"name" | "email" | "message" | "submit">
   formCount: number
   action: string | null
@@ -17,6 +17,7 @@ const EMAIL_RE = /e-?mail|メール/i
 const MESSAGE_RE = /message|inquiry|enquiry|question|comment|details|description|how can we help|問い合わせ|お問い合わせ|相談内容|ご質問|備考/i
 const NAME_RE = /(?:^|[^a-z])name|full.?name|company|organization|お名前|氏名|会社名|法人名/i
 const NON_CONTACT_RE = /newsletter|subscribe|mailing.?list|search|login|sign.?in|password|coupon|discount|cart|checkout|quantity|product|variant|ニュースレター|メルマガ|検索|ログイン/i
+const SOFT_404_RE = /(?:\b404\b|page (?:was )?not found|not found|does(?:n't| not) exist|cannot be found|ページが見つかりません|お探しのページ|存在しません)/i
 
 function empty(status: ContactFormInspection["status"], reason: ContactFormInspection["reason"], formCount = 0): ContactFormInspection {
   return { status, reason, fields: [], formCount, action: null, sameOrigin: false, trustedProvider: false }
@@ -55,9 +56,14 @@ function actionSafety(origin: string, pageUrl: string, rawAction: string | undef
 export function inspectContactFormHtml(html: string, pageUrl: string, origin: string): ContactFormInspection {
   const $ = load(html)
   $("script,style,noscript,template").remove()
-  const pageText = `${new URL(pageUrl).pathname} ${$("title").text()} ${$("h1,h2").slice(0, 8).text()}`.replace(/\s+/g, " ")
-  const hasContactIntent = CONTACT_INTENT_RE.test(pageText)
+  const titleAndHeadings = `${$("title").text()} ${$("h1,h2").slice(0, 8).text()}`.replace(/\s+/g, " ").trim()
+  const visibleBodyText = $("body").text().replace(/\s+/g, " ").trim()
   const forms = $("form")
+  if (forms.length === 0 && (visibleBodyText.length < 12 || SOFT_404_RE.test(`${titleAndHeadings} ${visibleBodyText}`))) {
+    return empty("missing", "empty_or_soft_404")
+  }
+  const pageText = `${new URL(pageUrl).pathname} ${titleAndHeadings}`.replace(/\s+/g, " ")
+  const hasContactIntent = CONTACT_INTENT_RE.test(pageText)
   let sawNonContact = false
   let sawUntrusted = false
 

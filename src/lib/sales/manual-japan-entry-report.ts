@@ -11,6 +11,7 @@ import type {
   ManualReportGap,
 } from "./manual-japan-entry-report-types"
 import { MANUAL_JAPAN_ENTRY_REPORT_SCHEMA } from "./manual-japan-entry-report-types"
+import { isVerifiedManualFormResult } from "./manual-japan-entry-workflow-helpers"
 
 const GAP_META: Record<string, { statusKey: keyof JapanMarketAuditStatus; title: string }> = {
   "japan-audit-language": { statusKey: "japanese_language_missing", title: "Japanese-language customer path" },
@@ -105,7 +106,7 @@ function buildSourceCoverage(input: {
       slug: "verified-contact-form",
       label: "Verified public inquiry form",
       category: "outreach",
-      status: input.form.verification === "form" && Boolean(input.form.formUrl) ? "collected" : "missing",
+      status: isVerifiedManualFormResult(input.form) ? "collected" : "missing",
       detail: `${input.form.method} discovery; verification=${input.form.verification}; confidence=${input.form.confidence}/100.`,
       meaning: "Only a fetched page containing a usable form can enter the Twenty manual-review list.",
       missingConsequence: "The record remains in operator review and is never sent automatically.",
@@ -149,8 +150,7 @@ function decisionStatus(input: {
   if (
     input.profile.smbStatus === "qualified"
     && input.profile.japanEntryFitStatus === "qualified"
-    && input.form.verification === "form"
-    && Boolean(input.form.formUrl)
+    && isVerifiedManualFormResult(input.form)
     && input.messagePassed
   ) return "qualified"
   return "review_required"
@@ -165,7 +165,7 @@ function decisionReasons(input: {
     `Overseas company check: ${input.profile.isJapaneseCompany ? "failed" : "passed"}.`,
     `SMB classification: ${input.profile.smbStatus} (${input.profile.smbConfidence}/100).`,
     `Japan Entry fit: ${input.profile.japanEntryFitStatus} (${input.profile.japanEntryFitConfidence}/100).`,
-    `Inquiry route: ${input.form.verification === "form" && input.form.formUrl ? "verified public form" : "operator review required"}.`,
+    `Inquiry route: ${isVerifiedManualFormResult(input.form) ? "verified public form" : "operator review required"}.`,
     `First-touch quality gate: ${input.messagePassed ? "passed" : "blocked"}.`,
   ]
   return reasons
@@ -192,7 +192,7 @@ export function buildManualJapanEntryReport(input: {
   })
   const marketCopy = MARKET_COPY[marketLens.priority]
   const domain = new URL(input.sourceUrl).hostname.replace(/^www\./, "")
-  const routeVerified = input.form.verification === "form" && Boolean(input.form.formUrl)
+  const routeVerified = isVerifiedManualFormResult(input.form)
   const reviewSummary = typeof input.messageReview.rationale === "string"
     ? input.messageReview.rationale
     : messagePassed ? "The draft passed deterministic and editorial review." : "The draft did not pass all quality gates."
@@ -239,8 +239,8 @@ export function buildManualJapanEntryReport(input: {
       disclaimer: input.audit.legal_disclaimer,
     },
     contactRoute: {
-      url: input.form.formUrl,
-      status: routeVerified ? "verified" : input.form.formUrl ? "review_required" : "missing",
+      url: routeVerified ? input.form.formUrl : null,
+      status: routeVerified ? "verified" : "missing",
       method: input.form.method,
       confidence: input.form.confidence,
       reason: routeVerified

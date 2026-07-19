@@ -13,6 +13,17 @@ export interface ManualWorkEligibility {
   reasons: string[]
 }
 
+export function isVerifiedManualFormResult(result: FormDiscoveryResult): boolean {
+  const fields = new Set(result.inspection?.fields ?? [])
+  return result.verification === "form"
+    && result.confidence >= 90
+    && Boolean(result.formUrl)
+    && result.inspection?.status === "form"
+    && fields.has("email")
+    && fields.has("message")
+    && fields.has("submit")
+}
+
 export function normalizeManualWorkUrl(input: string): {
   inputUrl: string
   canonicalUrl: string
@@ -48,7 +59,7 @@ export function manualWorkEligibility(input: {
   if (input.profile.isJapaneseCompany || input.profile.countryCode === "JP") reasons.push("Japanese companies are excluded")
   if (input.profile.smbStatus !== "qualified" || input.profile.smbConfidence < 70) reasons.push("SMB classification needs review")
   if (input.profile.japanEntryFitStatus !== "qualified" || input.profile.japanEntryFitConfidence < 70) reasons.push("Japan Entry fit needs review")
-  if (input.form.verification !== "form" || input.form.confidence < 90 || !input.form.formUrl) reasons.push("A high-confidence public form was not verified")
+  if (!isVerifiedManualFormResult(input.form)) reasons.push("A high-confidence public form was not verified")
   if (!input.messageOk || !input.messagePassed) reasons.push("The initial message did not pass the production quality gate")
   return { eligible: reasons.length === 0, reasons }
 }
@@ -65,7 +76,7 @@ export function selectBestManualFormResult(
 ): FormDiscoveryResult {
   const available = results.filter((result): result is FormDiscoveryResult => Boolean(result))
   const selected = [...available].sort((a, b) => formResultRank(b) - formResultRank(a))[0]
-  return selected ?? {
+  if (!selected) return {
     formUrl: null,
     method: "none",
     verification: "none",
@@ -74,6 +85,7 @@ export function selectBestManualFormResult(
     candidates: [],
     traceMs: 0,
   }
+  return isVerifiedManualFormResult(selected) ? selected : { ...selected, formUrl: null }
 }
 
 export function buildManualInitialMessageInput(input: {

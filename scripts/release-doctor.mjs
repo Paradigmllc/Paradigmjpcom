@@ -742,6 +742,10 @@ function checkStaticReleaseRules() {
   const manualReportV2Migration = fs.existsSync(manualReportV2MigrationPath)
     ? fs.readFileSync(manualReportV2MigrationPath, "utf8")
     : ""
+  const manualFormDiagnosticsMigrationPath = "supabase/migrations/20260719211533_manual_work_verified_form_and_copy_diagnostics.sql"
+  const manualFormDiagnosticsMigration = fs.existsSync(manualFormDiagnosticsMigrationPath)
+    ? fs.readFileSync(manualFormDiagnosticsMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -759,6 +763,12 @@ function checkStaticReleaseRules() {
     : ""
   const manualWorkHistoryItem = fs.existsSync("src/components/work/ManualWorkHistoryItem.tsx")
     ? fs.readFileSync("src/components/work/ManualWorkHistoryItem.tsx", "utf8")
+    : ""
+  const manualMessageIntelligence = fs.existsSync("src/components/work/ManualMessageIntelligence.tsx")
+    ? fs.readFileSync("src/components/work/ManualMessageIntelligence.tsx", "utf8")
+    : ""
+  const contactFormInspection = fs.existsSync("src/lib/sales/sources/contact-form-inspection.ts")
+    ? fs.readFileSync("src/lib/sales/sources/contact-form-inspection.ts", "utf8")
     : ""
   const manualWorkPage = fs.existsSync("src/app/work/page.tsx")
     ? fs.readFileSync("src/app/work/page.tsx", "utf8")
@@ -824,14 +834,21 @@ function checkStaticReleaseRules() {
     && manualReportV2Migration.includes("automaticSendAllowed")
     && noLoginDeploy.includes("20260719032800_manual_japan_entry_report_v2.sql")
     && noLoginDeploy.includes("applyManualJapanEntryReportV2Migration")
+    && manualFormDiagnosticsMigration.includes("form_discovery #>> '{inspection,status}' = 'form'")
+    && manualFormDiagnosticsMigration.includes("generation_status")
+    && manualFormDiagnosticsMigration.includes("generation_error")
+    && noLoginDeploy.includes("20260719211533_manual_work_verified_form_and_copy_diagnostics.sql")
+    && noLoginDeploy.includes("applyManualWorkVerifiedFormAndCopyDiagnosticsMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
-    && manualWorkService.includes('(item.status === "failed" && !hasRecordedOutcome)')
+    && manualWorkService.includes('!hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")')
     && manualWorkService.includes('twenty_sync_status === "failed"')
+    && manualWorkService.includes("generation_status")
+    && manualWorkService.includes("generation_error")
     && manualWorkService.includes("ownedCompanyId: work.twenty_company_id")
     && manualWorkProfile.includes("normalizeManualCompanyProfile")
     && manualWorkProfile.includes("after one repair")
@@ -841,9 +858,14 @@ function checkStaticReleaseRules() {
     && manualWorkCopySmoke.includes("noUrlOrDomain")
     && manualWorkCopySmoke.includes("noCommercialTerms")
     && manualWorkHistoryItem.includes("再解析")
+    && manualWorkHistoryItem.includes("フォーム未確認")
+    && manualMessageIntelligence.includes("generation_error")
+    && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
+    && manualWorkHelpers.includes("isVerifiedManualFormResult")
+    && manualWorkHelpers.includes('result.inspection?.status === "form"')
     && manualWorkReport.includes("buildJapanEntryPersonalizationFacts")
     && manualWorkReport.includes("MANUAL_JAPAN_ENTRY_REPORT_SCHEMA")
     && !manualWorkReport.includes("matchContentTemplate")
@@ -862,6 +884,7 @@ function checkStaticReleaseRules() {
     && manualMarketLens.includes("groundManualCommercialSignals")
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
+    && contactFormInspection.includes("empty_or_soft_404")
   ) {
     pass("manual Japan Entry workbench has a dedicated V2 evidence report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, RLS and zero-send release wiring")
   } else {
@@ -1424,6 +1447,41 @@ select case when
         or report_data ? 'content_template'
       )
   )
+  ${POST_DEPLOY ? `and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where form_url is not null
+      and not (
+        form_discovery ->> 'verification' = 'form'
+        and form_discovery #>> '{inspection,status}' = 'form'
+        and case
+          when form_discovery ->> 'confidence' ~ '^\\d+(\\.\\d+)?$'
+            then (form_discovery ->> 'confidence')::numeric >= 90
+          else false
+        end
+        and jsonb_typeof(form_discovery #> '{inspection,fields}') = 'array'
+        and (form_discovery #> '{inspection,fields}') ?& array['email', 'message', 'submit']
+      )
+  )
+  and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where report_data #>> '{contactRoute,url}' is not null
+      and report_data #>> '{contactRoute,url}' is distinct from form_url
+  )
+  and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where master_lead_ledger ->> 'contact_form_url' is not null
+      and master_lead_ledger ->> 'contact_form_url' is distinct from form_url
+  )
+  and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where status in ('needs_review', 'failed')
+      and initial_message is null
+      and nullif(message_review ->> 'generation_error', '') is null
+  )` : ""}
 then 1 else 0 end;
 " 2>/dev/null || true)"
   if [ "$manual_copy_experiment_guard" = "1" ]; then
