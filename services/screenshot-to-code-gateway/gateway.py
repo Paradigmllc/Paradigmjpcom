@@ -42,6 +42,7 @@ class GenerateRequest(BaseModel):
     prompt: str = Field(default="", max_length=6000)
     design_system: Optional[str] = Field(default=None, max_length=12000)
     require_vision: bool = False
+    visual_evidence: Optional[str] = Field(default=None, max_length=48_000)
 
     @field_validator("image_data_urls")
     @classmethod
@@ -164,6 +165,11 @@ def _compatible_vision_request_body(prompt: str, image_data_urls: List[str]) -> 
 
 async def _analyze_with_vision(request: GenerateRequest) -> str:
     required = request.require_vision or VISION_REQUIRED_BY_DEFAULT
+    # The production site-reproduction lane deliberately uses only DeepSeek plus
+    # browser DOM/CSS evidence. Never call a separately billed vision provider
+    # unless a caller explicitly opts into the legacy require_vision path.
+    if not required:
+        return ""
     if not VISION_READY:
         if required:
             raise HTTPException(status_code=503, detail="vision provider is not configured")
@@ -212,14 +218,20 @@ async def _analyze_with_vision(request: GenerateRequest) -> str:
 
 
 def _build_generation_input(request: GenerateRequest, visual_analysis: str = "") -> tuple[str, Dict[str, Any]]:
-    if VISUAL_MODE == "image":
+    if VISUAL_MODE == "image" and not request.visual_evidence:
         return "image", {"text": request.prompt, "images": request.image_data_urls, "videos": []}
     metadata = "\n".join(_image_metadata(value, index + 1) for index, value in enumerate(request.image_data_urls))
+    dom_evidence = (
+        "Verified browser DOM/CSS evidence follows. Treat it as the source of truth for visible structure, computed styles, copy, links, image dimensions, and responsive geometry. Do not invent sections that are absent from the evidence.\n"
+        f"{request.visual_evidence}\n"
+        if request.visual_evidence
+        else ""
+    )
     text = (
         f"{request.prompt}\n\n"
-        "Visual source note: the code model is text-only. Use the verified visual analysis below "
-        "and the design system, keep the requested industry terminology, and do not invent unrelated services.\n"
+        "Visual source note: the code model is text-only. Use the verified visual analysis, browser evidence, and design system below; keep the requested industry terminology and do not invent unrelated services.\n"
         f"{visual_analysis}\n{metadata}"
+        f"\n{dom_evidence}"
     ).strip()
     return "text", {"text": text, "images": [], "videos": []}
 
@@ -252,6 +264,7 @@ async def health() -> Dict[str, Any]:
         "provider": "deepseek-chat-completions-adapter",
         "visual_mode": VISUAL_MODE,
         "generated_code_config": GENERATED_CODE_CONFIG,
+        "visual_evidence_supported": True,
         "vision_provider": VISION_PROVIDER,
         "vision_model": VISION_MODEL if VISION_READY else None,
         "vision_ready": VISION_READY,
@@ -310,6 +323,7 @@ async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | 
         "vision_provider": VISION_PROVIDER,
         "vision_model": VISION_MODEL if VISION_READY else None,
         "vision_analyzed": bool(visual_analysis),
+        "visual_evidence_mode": "vision" if visual_analysis else "dom-css" if request.visual_evidence else "metadata",
     }
 
 

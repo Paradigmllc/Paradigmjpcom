@@ -6,6 +6,7 @@ import { isIP } from "node:net"
 import { load } from "cheerio"
 import { captureWebsiteScreenshotDataUrl } from "./visual-evidence"
 import { generateScreenshotToCode } from "./screenshot-to-code-client"
+import { captureWebsiteDomEvidence } from "./site-dom-evidence"
 
 const MAX_PAGES = 24
 const MAX_HTML_BYTES = 2_000_000
@@ -31,6 +32,8 @@ export interface SitePageArtifact {
     desktop: { provider: string; width: number; height: number; sha256: string }
     mobile: { provider: string; width: number; height: number; sha256: string }
   }
+  visualEvidenceMode: "dom-css" | "vision+dom-css" | "metadata"
+  sourceDomEvidence: { provider: string; desktopBytes: number; mobileBytes: number; desktopElements: number; mobileElements: number; imageCount: number }
   quality: SitePageQuality
 }
 
@@ -49,7 +52,8 @@ export interface SiteReproductionArtifact {
   generatedAt: string
   expiresAt: string
   previewToken: string
-  visionRequired: true
+  visionRequired: boolean
+  visualEvidenceMode: "dom-css" | "vision+dom-css" | "metadata"
   pages: SitePageArtifact[]
   discovery: {
     requested: number
@@ -238,7 +242,7 @@ export async function discoverSitePages(input: {
   return { sourceUrl, pages, requested: requested.length, discovered: links.size }
 }
 
-export function qualityForCode(code: string, page: SitePageTarget): SitePageQuality {
+export function qualityForCode(code: string, page: SitePageTarget, options?: { visualEvidenceMode?: string }): SitePageQuality {
   const normalized = code.toLowerCase()
   const blockers: string[] = []
   const warnings: string[] = []
@@ -251,6 +255,7 @@ export function qualityForCode(code: string, page: SitePageTarget): SitePageQual
     noPlaceholderCopy: !/(?:lorem ipsum|placeholder text|coming soon|sample text)/iu.test(code),
     noInternalLanguage: !/(?:非公開提案用|権利確認前|エキテン掲載素材|内部確認)/iu.test(code),
     pageSpecific: normalized.includes(page.path.toLowerCase()) || normalized.includes(page.title.toLowerCase().slice(0, 8)),
+    domEvidence: options ? options.visualEvidenceMode === "dom-css" || options.visualEvidenceMode === "vision+dom-css" : true,
   }
   for (const [name, passed] of Object.entries(checks)) if (!passed) blockers.push(name)
   if (Buffer.byteLength(code, "utf8") < 8_000) warnings.push("code_output_is_short")
@@ -321,25 +326,32 @@ export async function generateSiteReproduction(input: {
 }): Promise<Omit<SiteReproductionArtifact, "previewToken" | "expiresAt">> {
   const discovery = await discoverSitePages(input)
   const generatedPages = await mapWithConcurrency(discovery.pages, 2, async (page) => {
-    const [desktop, mobile] = await Promise.all([
+    const [desktop, mobile, desktopDom, mobileDom] = await Promise.all([
       captureWebsiteScreenshotDataUrl({ targetUrl: page.url, viewport: "desktop" }),
       captureWebsiteScreenshotDataUrl({ targetUrl: page.url, viewport: "mobile" }),
+      captureWebsiteDomEvidence({ targetUrl: page.url, viewport: "desktop", maxBytes: 20_000 }),
+      captureWebsiteDomEvidence({ targetUrl: page.url, viewport: "mobile", maxBytes: 20_000 }),
     ])
     if (!desktop.ok) throw new Error(`${page.path}: desktop screenshot capture failed (${desktop.error})`)
     if (!mobile.ok) throw new Error(`${page.path}: mobile screenshot capture failed (${mobile.error})`)
+    if (!desktopDom.ok) throw new Error(`${page.path}: desktop DOM/CSS evidence capture failed (${desktopDom.error})`)
+    if (!mobileDom.ok) throw new Error(`${page.path}: mobile DOM/CSS evidence capture failed (${mobileDom.error})`)
+    const visualEvidence = JSON.stringify({ desktop: JSON.parse(desktopDom.evidence.evidence), mobile: JSON.parse(mobileDom.evidence.evidence) })
     const generated = await generateScreenshotToCode({
       imageDataUrls: [desktop.dataUrl, mobile.dataUrl],
-      requireVision: true,
+      requireVision: false,
+      visualEvidence,
       designSystem: input.designSystem,
       prompt: [
         `Reconstruct the premium Japanese SMB website page for ${input.companyName}.`,
         `Industry: ${input.industry || "unknown"}. Source URL path: ${page.path}. Page title: ${page.title}.`,
-        "The supplied desktop and mobile screenshots are the visual source of truth. Reproduce the visual hierarchy, spacing, typography, color system, imagery treatment, responsive behavior and motion with production-quality HTML/Tailwind.",
+        "The supplied desktop and mobile screenshots plus the verified browser DOM/CSS evidence are the source of truth. Reproduce the visual hierarchy, spacing, typography, color system, imagery treatment, responsive behavior and motion with production-quality HTML/Tailwind. Never invent a section, label, image, or business claim that is absent from the evidence.",
         "Keep this page specific to the source page. Do not add unrelated consulting, portfolio, or placeholder sections. Do not show internal proposal, rights, scraping, demo, or review language to the customer.",
         "Use Japanese copy where the source uses Japanese. Include a complete header/navigation, meaningful page content, CTA, footer, accessibility attributes, and mobile layout.",
       ].join(" "),
     })
-    const quality = qualityForCode(generated.code, page)
+    const visualEvidenceMode = generated.visualEvidenceMode === "vision" ? "vision+dom-css" : generated.visualEvidenceMode === "dom-css" ? "dom-css" : "metadata"
+    const quality = qualityForCode(generated.code, page, { visualEvidenceMode })
     const renderedVisual = await evaluateRenderedVisuals({ desktop: desktop.dataUrl, mobile: mobile.dataUrl, code: generated.code })
     if (!renderedVisual) {
       quality.blockers.push("generated_visual_render_failed")
@@ -366,6 +378,15 @@ export async function generateSiteReproduction(input: {
         desktop: { provider: desktop.provider, width: desktop.width, height: desktop.height, sha256: desktop.sha256 },
         mobile: { provider: mobile.provider, width: mobile.width, height: mobile.height, sha256: mobile.sha256 },
       },
+      visualEvidenceMode,
+      sourceDomEvidence: {
+        provider: "playwright",
+        desktopBytes: desktopDom.evidence.bytes,
+        mobileBytes: mobileDom.evidence.bytes,
+        desktopElements: desktopDom.evidence.elementCount,
+        mobileElements: mobileDom.evidence.elementCount,
+        imageCount: desktopDom.evidence.imageCount + mobileDom.evidence.imageCount,
+      },
       quality,
     } satisfies SitePageArtifact
   })
@@ -378,7 +399,8 @@ export async function generateSiteReproduction(input: {
     status: passed ? "review" : "quality_review",
     sourceUrl: discovery.sourceUrl,
     generatedAt: new Date().toISOString(),
-    visionRequired: true,
+    visionRequired: generatedPages.some((page) => page.visualEvidenceMode === "vision+dom-css"),
+    visualEvidenceMode: generatedPages.some((page) => page.visualEvidenceMode === "vision+dom-css") ? "vision+dom-css" : "dom-css",
     pages: generatedPages,
     discovery: { requested: discovery.requested, discovered: discovery.discovered, captured: generatedPages.length, generated: generatedPages.length },
     quality: { score, passed, blockers, warnings },

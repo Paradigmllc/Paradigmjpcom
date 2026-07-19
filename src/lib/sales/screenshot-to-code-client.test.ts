@@ -24,19 +24,20 @@ describe("screenshot-to-code client", () => {
         upstream_commit: "commit",
         provider: "provider",
         model: "model",
+        visual_evidence_mode: "dom-css",
       }), { status: 200, headers: { "content-type": "application/json" } }),
     )
-    await expect(generateScreenshotToCode({ imageDataUrls: ["data:image/png;base64,AA=="], requireVision: true })).resolves.toMatchObject({
+    await expect(generateScreenshotToCode({ imageDataUrls: ["data:image/png;base64,AA=="], visualEvidence: '{"desktop":{"elements":[]}}' })).resolves.toMatchObject({
       code: "<html></html>",
       upstreamCommit: "commit",
+      visualEvidenceMode: "dom-css",
     })
     expect(fetchMock).toHaveBeenCalledWith(
       "http://screenshot-to-code:7002/generate",
-      expect.objectContaining({
-        headers: expect.objectContaining({ "x-screenshot-to-code-secret": "test-secret" }),
-        body: expect.stringContaining('"require_vision":true'),
-      }),
+      expect.objectContaining({ headers: expect.objectContaining({ "x-screenshot-to-code-secret": "test-secret" }) }),
     )
+    const requestInit = fetchMock.mock.calls[0]?.[1]
+    expect(JSON.parse(String(requestInit?.body))).toMatchObject({ visual_evidence: '{"desktop":{"elements":[]}}' })
     fetchMock.mockRestore()
     if (originalUrl) process.env.SCREENSHOT_TO_CODE_URL = originalUrl
     else delete process.env.SCREENSHOT_TO_CODE_URL

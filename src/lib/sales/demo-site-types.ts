@@ -139,6 +139,7 @@ export interface DemoGenerateOutput {
     provider: string
     model: string
     visionAnalyzed: boolean
+    visualEvidenceMode: string
     previewUrl: string
   } | null
   error?: string

@@ -5,6 +5,7 @@ export interface ScreenshotToCodeInput {
   prompt?: string
   designSystem?: string
   requireVision?: boolean
+  visualEvidence?: string
 }
 
 export interface ScreenshotToCodeResult {
@@ -14,6 +15,7 @@ export interface ScreenshotToCodeResult {
   provider: string
   model: string
   visualMode: string
+  visualEvidenceMode: string
   visionAnalyzed: boolean
 }
 
@@ -24,6 +26,7 @@ interface ScreenshotToCodeResponse {
   provider?: unknown
   model?: unknown
   visual_mode?: unknown
+  visual_evidence_mode?: unknown
   vision_analyzed?: unknown
   detail?: unknown
 }
@@ -66,6 +69,7 @@ export async function generateScreenshotToCode(
         prompt: input.prompt ?? "",
         design_system: input.designSystem ?? null,
         require_vision: input.requireVision === true,
+        visual_evidence: input.visualEvidence ?? null,
       }),
       signal: controller.signal,
     })
@@ -87,6 +91,7 @@ export async function generateScreenshotToCode(
       provider: typeof payload.provider === "string" ? payload.provider : "unknown",
       model: typeof payload.model === "string" ? payload.model : "unknown",
       visualMode: typeof payload.visual_mode === "string" ? payload.visual_mode : "unknown",
+      visualEvidenceMode: typeof payload.visual_evidence_mode === "string" ? payload.visual_evidence_mode : "metadata",
       visionAnalyzed: payload.vision_analyzed === true,
     }
   } catch (error) {
