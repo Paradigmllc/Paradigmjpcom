@@ -11,6 +11,8 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).toContain("Build the strategy before drafting")
     expect(prompt).toContain("one to three candidates")
     expect(prompt).toContain("must not share the same opening")
+    expect(prompt).toContain("Tomohiro H / Paradigm LLC / contact@paradigmjp.com")
+    expect(prompt).not.toContain("identify Sato")
     expect(prompt).not.toContain("Paragraph 1 must be exactly")
     expect(prompt).not.toContain("Paragraph 4 must be exactly")
   })

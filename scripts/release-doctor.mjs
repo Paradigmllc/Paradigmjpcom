@@ -803,6 +803,9 @@ function checkStaticReleaseRules() {
   const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
     ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
     : ""
+  const manualCopyEnvelope = fs.existsSync("src/lib/sales/manual-japan-entry-copy-envelope.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-copy-envelope.ts", "utf8")
+    : ""
   if (
     manualWorkMigration.includes("CREATE TABLE IF NOT EXISTS public.manual_japan_entry_work")
     && manualWorkMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
@@ -857,6 +860,11 @@ function checkStaticReleaseRules() {
     && manualWorkCopySmoke.includes('purpose: "initial_interest"')
     && manualWorkCopySmoke.includes("noUrlOrDomain")
     && manualWorkCopySmoke.includes("noCommercialTerms")
+    && manualWorkCopySmoke.includes("copyReadySignature")
+    && manualWorkCopySmoke.includes("approvedSenderEmailOnce")
+    && manualCopyEnvelope.includes('name: "Tomohiro H"')
+    && manualCopyEnvelope.includes('company: "Paradigm LLC"')
+    && manualCopyEnvelope.includes('email: "contact@paradigmjp.com"')
     && manualWorkHistoryItem.includes("再解析")
     && manualWorkHistoryItem.includes("フォーム未確認")
     && manualMessageIntelligence.includes("generation_error")

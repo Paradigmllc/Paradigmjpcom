@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { buildManualInitialMessageInput } from "./manual-japan-entry-service"
+import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-copy-envelope"
 
 const audit = {
   engine: "local_heuristic" as const,
@@ -14,13 +15,17 @@ const audit = {
   legal_disclaimer: "Not legal advice",
 }
 
-const message = `Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.
+const message = `${manualFormGreeting("Example")}
 
-I reviewed Example and its subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage.
+Example’s public pages describe a retail analytics workflow that links inventory forecasting with replenishment decisions for independent operators, providing a concrete basis for a Japan-path review.
+
+I reviewed Example and its subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage and product pages.
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.
 
-I can share a one-page Japan Opportunity Snapshot based on this public evidence. Could you forward this to the founder or person responsible for international growth?`
+I can share a one-page Japan Opportunity Snapshot based on this public evidence. Could you forward this to the founder or person responsible for international growth?
+
+${MANUAL_FORM_SIGNATURE}`
 
 const strategy = {
   primary_observation: "Example describes subscription analytics for independent retailers.",
@@ -110,6 +115,8 @@ describe("manual work first-touch generation integration", () => {
     expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
     expect(result.message).toContain("Could you forward this to the founder")
+    expect(result.message).toMatch(/^Hello Example team,/)
+    expect(result.message).toMatch(/Best regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp\.com$/)
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })
     expect(callIndex).toBe(2)
   })
