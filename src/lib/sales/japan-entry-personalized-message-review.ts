@@ -207,13 +207,15 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     || /\bguarantee(?:d|s|ing)?\b/i.test(messageWithoutNegatedGuarantees)
   ) { issues.push("Unsupported performance or attached-material claim is prohibited"); score -= 40; }
   if (/(?:local entity|entity setup|incorporat(?:e|ion)|legal advice|tax advice|regulatory approval|licen[cs]e approval|visa support|non-?compliant|violat(?:e|es|ion)|illegal)/i.test(message)) { issues.push("Unsupported legal, entity, or violation claim is prohibited"); score -= 45; }
-  const promotionalMatch = message.match(/(?:logical next step|given that reach|i noticed your site|unlock|untapped|huge opportunity|game.changer|revolutionary|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|rel(?:y|ies) on|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i);
+  const promotionalMatch = message.match(/(?:logical next step|given that reach|i noticed your site|unlock|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|rel(?:y|ies) on|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i);
   if (promotionalMatch) {
     issues.push("Generic, promotional, invented, or unsupported market phrasing is prohibited");
     issues.push(`Remove prohibited phrase exactly: ${promotionalMatch[0]}`);
     score -= 35;
   }
-  if (/(?:\bpotentially\b|may cause|could cause|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i.test(message)) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
+  const unsupportedJapanInvestment = /Japan(?:ese)?.{0,80}(?:manufacturers?|companies|retailers?|buyers?|consumers?|customers?).{0,80}invest(?:ing|ment)/i.test(message)
+    && !selected.some((fact) => /invest(?:ing|ment)/i.test(fact.statement) && includesAny(message, fact.anchors));
+  if (/(?:\bpotentially\b|may cause|could cause|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i.test(message) || unsupportedJapanInvestment) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
 
   const selectedModeled = selected.some((fact) => fact.id.startsWith("modeled-"));
   const mode = getJapanEntryMessageMode(input.facts);
