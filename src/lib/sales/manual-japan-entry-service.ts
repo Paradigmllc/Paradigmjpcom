@@ -4,7 +4,7 @@ import { collectInitialFormDraftEvidence } from "./initial-form-draft-evidence"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
 import { collectManualMarketProjection } from "./manual-japan-entry-market-context"
-import { analyzeManualCompanyProfile } from "./manual-japan-entry-profile"
+import { analyzeManualCompanyProfile, parseManualCompanyProfile } from "./manual-japan-entry-profile"
 import {
   assignManualMessageVariant,
   isManualMessageVariant,
@@ -36,7 +36,7 @@ import {
   normalizeManualWorkUrl,
   selectBestManualFormResult,
 } from "./manual-japan-entry-workflow-helpers"
-import { syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
+import { ManualTwentySyncError, syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
 import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
@@ -66,8 +66,58 @@ async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWor
   })
 }
 
-export function isRetryableManualWork(item: Pick<ManualJapanEntryWorkRow, "status">): boolean {
-  return item.status === "failed"
+export function isRetryableManualWork(
+  item: Pick<ManualJapanEntryWorkRow, "status"> & Partial<Pick<
+    ManualJapanEntryWorkRow,
+    "twenty_sync_status" | "manually_sent_at" | "reply_received_at" | "founder_forwarded_at" | "meeting_converted_at"
+  >>,
+): boolean {
+  const hasRecordedOutcome = Boolean(
+    item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at,
+  )
+  return (item.status === "failed" && !hasRecordedOutcome)
+    || (item.status === "needs_review" && item.twenty_sync_status === "failed")
+}
+
+export function buildManualWorkRetryPatch(
+  existing: Pick<ManualJapanEntryWorkRow, "attempts">,
+  requestedVariant: ManualJapanEntryWorkRow["message_variant_requested"],
+  requestedAngle: ManualJapanEntryWorkRow["message_angle_requested"],
+): Record<string, unknown> {
+  return {
+    status: "processing",
+    stage: "fetching",
+    error_message: null,
+    twenty_sync_status: "not_started",
+    attempts: existing.attempts + 1,
+    company_name: null,
+    country_code: null,
+    is_japanese_company: null,
+    smb_status: null,
+    smb_confidence: null,
+    japan_entry_fit_status: null,
+    japan_entry_fit_confidence: null,
+    business_model: null,
+    industry: null,
+    product_context: null,
+    profile: {},
+    evidence: {},
+    form_discovery: {},
+    form_url: null,
+    initial_message: null,
+    message_review: {},
+    qualification_ledger: {},
+    master_lead_ledger: {},
+    report_data: {},
+    report_url: null,
+    message_variant_requested: requestedVariant,
+    message_variant: requestedVariant,
+    message_variant_fallback_reason: null,
+    message_angle_requested: requestedAngle,
+    message_angle: requestedAngle,
+    message_angle_fallback_reason: null,
+    outreach_playbook: "general_online_smb",
+  }
 }
 
 export async function processManualJapanEntryUrl(
@@ -94,15 +144,50 @@ export async function processManualJapanEntryUrl(
     return { item: existing, duplicate: true }
   }
 
-  let work = existing
-    ? await updateManualWork(existing.id, {
-        status: "processing",
-        stage: "fetching",
-        error_message: null,
-        twenty_sync_status: "not_started",
-        message_variant_requested: requestedVariant,
-        message_angle_requested: requestedAngle,
+  if (existing?.status === "needs_review" && existing.twenty_sync_status === "failed") {
+    await attachManualWorkSource(existing.id, sourceInput)
+    if (!existing.form_url || !existing.report_url || !existing.initial_message) {
+      const item = await updateManualWork(existing.id, {
+        status: "failed",
+        stage: "failed",
+        attempts: existing.attempts + 1,
+        twenty_sync_status: "skipped",
+        error_message: "Twenty再同期に必要な保存済みフォームURL・レポートURL・初回文面が不足しています。解析をやり直してください。",
       })
+      return { item, duplicate: false }
+    }
+    try {
+      const synced = await syncManualWorkToTwenty({
+        domain: normalized.domain,
+        profile: parseManualCompanyProfile(existing.profile),
+        formUrl: existing.form_url,
+        reportUrl: existing.report_url,
+        initialMessage: existing.initial_message,
+        ownedCompanyId: existing.twenty_company_id,
+      })
+      const item = await updateManualWork(existing.id, {
+        status: synced.status === "duplicate" ? "duplicate" : "completed",
+        stage: "complete",
+        attempts: existing.attempts + 1,
+        twenty_company_id: synced.companyId,
+        twenty_sync_status: synced.status,
+        error_message: synced.status === "duplicate" ? "This domain already exists in Twenty; no fields were overwritten." : null,
+      })
+      return { item, duplicate: synced.status === "duplicate" }
+    } catch (error) {
+      console.error("[manual-work] Twenty re-sync failed:", { id: existing.id, error })
+      const item = await updateManualWork(existing.id, {
+        attempts: existing.attempts + 1,
+        twenty_company_id: error instanceof ManualTwentySyncError ? error.companyId : existing.twenty_company_id,
+        twenty_sync_status: "failed",
+        error_message: error instanceof Error ? error.message : "Twenty re-sync failed",
+      })
+      return { item, duplicate: false }
+    }
+  }
+
+  let work = existing
+    ? await updateManualWork(existing.id, buildManualWorkRetryPatch(existing, requestedVariant, requestedAngle))
     : await createManualWork({
         ...normalized,
         messageVariantRequested: requestedVariant,
@@ -112,7 +197,7 @@ export async function processManualJapanEntryUrl(
     await attachManualWorkSource(work.id, sourceInput)
     try {
       const twentyExisting = await findTwentyCompanyByDomain(normalized.domain)
-      if (twentyExisting?.id) {
+      if (twentyExisting?.id && twentyExisting.id !== work.twenty_company_id) {
         work = await updateManualWork(work.id, {
           status: "duplicate",
           stage: "complete",
@@ -309,6 +394,7 @@ export async function processManualJapanEntryUrl(
         formUrl: form.formUrl,
         reportUrl,
         initialMessage: generated.message,
+        ownedCompanyId: work.twenty_company_id,
       })
       work = await updateManualWork(work.id, {
         status: synced.status === "duplicate" ? "duplicate" : "completed",
@@ -322,6 +408,7 @@ export async function processManualJapanEntryUrl(
       work = await updateManualWork(work.id, {
         status: "needs_review",
         stage: "complete",
+        twenty_company_id: error instanceof ManualTwentySyncError ? error.companyId : work.twenty_company_id,
         twenty_sync_status: "failed",
         error_message: error instanceof Error ? error.message : "Twenty sync failed",
       })

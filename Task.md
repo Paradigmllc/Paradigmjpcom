@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-19 `/work` DeepSeek解析schema互換・Twenty保存read-back/recovery（本番release準備完了 / 外部送信0）
+
+- `screenshottocode.com`の再解析で、DeepSeekが`number`を数値文字列、evidence配列を区切り文字列、`businessModel`を`ecomerce`、`positioningConcept`を`{ concept: ... }`として返し、厳格Zod schemaへ直接投入されて失敗していた。出力型を明示し、既知の安全な揺れだけをbounded normalization、未知形は事実を追加しないshape-only repairを最大1回だけ実行する。壊れたJSONも同じ1回上限で修復し、失敗時は生Zod/SyntaxErrorではなく該当フィールドだけを返す。
+- モデルが返した`productContext`・`observedFacts`は採用せず、取得済み公開ページ本文へ強制固定する。信頼度は0〜100整数、evidenceは最大8件・各240文字、未知enum・非数値・範囲外は引き続きfail-closed。初回文面の実API smokeも`commercial_offer`から実際の`/work`と同じ`initial_interest`へ変更し、URL/ドメイン・出典・メール・添付・価格条件なし、strategy、候補、品質92以上、独自性90以上を検査する。
+- Twenty同期はcreate/PATCH応答だけで成功にせず、会社ID、企業名、フォームURL、診断URL、国、業種、source、未対応status、next action、SMB/Japan Fit score、初回文面全文をlive read-backして一致した場合だけ`synced`にする。途中作成会社IDを履歴へ保存し、次回は同じIDへTwentyだけ再同期する。保存済み文面・診断・成果timestampは再生成で上書きしない。
+- TypeScript、対象ESLint、Quality Guard **0 errors / 74 existing warnings**、重点Vitest **8 files / 50 tests**、全Vitest **207 files / 936 tests**、production build **408/408 pages**、release-doctor local static gateがpass。外部送信経路は追加せず、海外SMB限定、専用履歴、`initial_interest`、`sent=false`制約を維持する。本番release・実DeepSeek再解析・Twenty本番read-backはこの後に実行する。
+
 ## CURRENT STATUS - 2026-07-18 Manual Work企業別フォーム文面フルパーソナライズ（本番release・DeepSeek実生成完了 / 外部送信0）
 
 - `/work`の初回問い合わせ文面を、企業・業種・国ごとの公開根拠から毎回組み立てる二段階生成へ刷新した。DeepSeekは先に企業固有の観察、Why now、日本側想定セグメント、公開ページ上のJapan gap、仮説表現、CTA、国別トーン、禁止主張をstrategy化し、構成・診断軸・CTAが実質的に異なる候補を1〜3件生成する。決定論の根拠・禁則・92/100品質・過去80件との類似度ゲートを通過後、criticが採用文面を選ぶ。

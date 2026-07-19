@@ -744,6 +744,15 @@ function checkStaticReleaseRules() {
   const manualWorkService = fs.existsSync("src/lib/sales/manual-japan-entry-service.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-service.ts", "utf8")
     : ""
+  const manualWorkProfile = fs.existsSync("src/lib/sales/manual-japan-entry-profile.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-profile.ts", "utf8")
+    : ""
+  const manualWorkTwenty = fs.existsSync("src/lib/sales/manual-japan-entry-twenty.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-twenty.ts", "utf8")
+    : ""
+  const manualWorkCopySmoke = fs.existsSync("scripts/smoke-japan-entry-form-copy.mts")
+    ? fs.readFileSync("scripts/smoke-japan-entry-form-copy.mts", "utf8")
+    : ""
   const manualWorkHistoryItem = fs.existsSync("src/components/work/ManualWorkHistoryItem.tsx")
     ? fs.readFileSync("src/components/work/ManualWorkHistoryItem.tsx", "utf8")
     : ""
@@ -797,7 +806,16 @@ function checkStaticReleaseRules() {
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
-    && manualWorkService.includes('return item.status === "failed"')
+    && manualWorkService.includes('(item.status === "failed" && !hasRecordedOutcome)')
+    && manualWorkService.includes('twenty_sync_status === "failed"')
+    && manualWorkService.includes("ownedCompanyId: work.twenty_company_id")
+    && manualWorkProfile.includes("normalizeManualCompanyProfile")
+    && manualWorkProfile.includes("after one repair")
+    && manualWorkTwenty.includes("ManualTwentySyncError")
+    && manualWorkTwenty.includes("Twenty保存確認")
+    && manualWorkCopySmoke.includes('purpose: "initial_interest"')
+    && manualWorkCopySmoke.includes("noUrlOrDomain")
+    && manualWorkCopySmoke.includes("noCommercialTerms")
     && manualWorkHistoryItem.includes("再解析")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
@@ -811,9 +829,9 @@ function checkStaticReleaseRules() {
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
   ) {
-    pass("manual Japan Entry workbench has login return routing, grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has login return routing, grounded copy/report logic, bounded DeepSeek repair, retryable Twenty read-back, verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires login return routing, grounded copy/report logic, retryable failed work, actionable DeepSeek balance errors, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires login return routing, grounded copy/report logic, bounded DeepSeek repair, retryable Twenty read-back, verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"

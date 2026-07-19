@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   buildManualInitialMessageInput,
+  buildManualWorkRetryPatch,
   isRetryableManualWork,
   manualWorkEligibility,
   normalizeManualWorkUrl,
@@ -39,7 +40,32 @@ const verifiedForm = {
 describe("manual Japan Entry work safety gates", () => {
   it("allows failed persistent work to be analyzed again without creating a duplicate", () => {
     expect(isRetryableManualWork({ status: "failed" })).toBe(true)
+    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "failed" })).toBe(true)
+    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(false)
+    expect(isRetryableManualWork({ status: "failed", manually_sent_at: "2026-07-19T00:00:00.000Z" })).toBe(false)
     expect(isRetryableManualWork({ status: "completed" })).toBe(false)
+  })
+
+  it("increments retry attempts and clears stale generated artifacts before reprocessing", () => {
+    expect(buildManualWorkRetryPatch({ attempts: 2 }, "estimate_off_price_off", "problem")).toMatchObject({
+      attempts: 3,
+      status: "processing",
+      stage: "fetching",
+      twenty_sync_status: "not_started",
+      profile: {},
+      evidence: {},
+      form_discovery: {},
+      form_url: null,
+      initial_message: null,
+      message_review: {},
+      report_data: {},
+      report_url: null,
+      message_variant: "estimate_off_price_off",
+      message_variant_fallback_reason: null,
+      message_angle: "problem",
+      message_angle_fallback_reason: null,
+      outreach_playbook: "general_online_smb",
+    })
   })
 
   it("normalizes one public company domain", () => {

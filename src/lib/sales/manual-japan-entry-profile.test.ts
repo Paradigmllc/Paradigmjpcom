@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest"
-import { groundManualCompanyProfile, hasDeterministicJapanEvidence } from "./manual-japan-entry-profile"
+import {
+  groundManualCompanyProfile,
+  hasDeterministicJapanEvidence,
+  parseManualCompanyProfile,
+} from "./manual-japan-entry-profile"
+
+function modelProfile(overrides: Record<string, unknown> = {}) {
+  return {
+    companyName: "Screenshot to Code",
+    countryCode: "US",
+    isJapaneseCompany: false,
+    smbStatus: "qualified",
+    smbConfidence: 83,
+    smbEvidence: ["Public software product and pricing are visible."],
+    japanEntryFitStatus: "qualified",
+    japanEntryFitConfidence: 78,
+    japanEntryFitEvidence: ["The product is delivered online."],
+    businessModel: "saas",
+    industry: "Technology / IT",
+    productContext: "AI-powered screenshot-to-code software for product teams.",
+    observedFacts: ["The public website describes screenshot-to-code software."],
+    outreachPlaybook: "saas_ai_devtools",
+    positioningConcept: null,
+    commercialSignals: [],
+    ...overrides,
+  }
+}
 
 describe("manual company Japan exclusion", () => {
   it("rejects .jp domains regardless of model output", () => {
@@ -88,5 +114,76 @@ describe("manual company Japan exclusion", () => {
     })
 
     expect(grounded.companyName).toBe("example.com")
+  })
+})
+
+describe("manual company DeepSeek response compatibility", () => {
+  it("normalizes the production schema drift without weakening the canonical schema", () => {
+    const parsed = parseManualCompanyProfile(modelProfile({
+      countryCode: "us",
+      isJapaneseCompany: "false",
+      smbStatus: "Qualified",
+      smbConfidence: "83",
+      smbEvidence: "Public software product is visible; Public pricing is visible",
+      japanEntryFitStatus: "review required",
+      japanEntryFitConfidence: "78%",
+      japanEntryFitEvidence: "The product is delivered online\nNo Japanese customer path was found",
+      businessModel: "ecomerce",
+      observedFacts: "Screenshot-to-code product\nPublic pricing page",
+      positioningConcept: { concept: "AIサイト制作" },
+      unexpectedModelKey: "must not pass the strict internal boundary",
+    }))
+
+    expect(parsed).toMatchObject({
+      countryCode: "US",
+      isJapaneseCompany: false,
+      smbStatus: "qualified",
+      smbConfidence: 83,
+      smbEvidence: ["Public software product is visible", "Public pricing is visible"],
+      japanEntryFitStatus: "review_required",
+      japanEntryFitConfidence: 78,
+      businessModel: "ecommerce",
+      positioningConcept: null,
+    })
+    expect(parsed.japanEntryFitEvidence).toHaveLength(2)
+    expect(parsed.observedFacts).toEqual(["Screenshot-to-code product", "Public pricing page"])
+    expect(parsed).not.toHaveProperty("unexpectedModelKey")
+  })
+
+  it("keeps evidence bounded by item count and item length", () => {
+    const parsed = parseManualCompanyProfile(modelProfile({
+      smbEvidence: Array.from({ length: 12 }, (_, index) => `Evidence ${index + 1}`),
+      japanEntryFitEvidence: `A${"b".repeat(300)}`,
+    }))
+
+    expect(parsed.smbEvidence).toHaveLength(8)
+    expect(parsed.japanEntryFitEvidence).toHaveLength(1)
+    expect(parsed.japanEntryFitEvidence[0]).toHaveLength(240)
+  })
+
+  it("preserves a complete canonical positioning concept while removing nested extras", () => {
+    const parsed = parseManualCompanyProfile(modelProfile({
+      positioningConcept: {
+        sourcePhrase: "AI-powered screenshot-to-code software",
+        japaneseHeadline: "スクリーンショットからコードへ",
+        japaneseSupportLine: "公開されている製品説明に基づく日本語ポジショニング案です。",
+        concept: "unexpected nested output",
+      },
+    }))
+
+    expect(parsed.positioningConcept).toEqual({
+      sourcePhrase: "AI-powered screenshot-to-code software",
+      japaneseHeadline: "スクリーンショットからコードへ",
+      japaneseSupportLine: "公開されている製品説明に基づく日本語ポジショニング案です。",
+    })
+  })
+
+  it.each([
+    ["confidence above the allowed range", { smbConfidence: "101" }],
+    ["non-numeric confidence", { smbConfidence: "high" }],
+    ["unknown business model", { businessModel: "marketplace" }],
+    ["non-string evidence", { smbEvidence: { claim: "Public evidence" } }],
+  ])("rejects %s", (_label, overrides) => {
+    expect(() => parseManualCompanyProfile(modelProfile(overrides))).toThrow()
   })
 })

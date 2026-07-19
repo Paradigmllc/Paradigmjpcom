@@ -44,8 +44,126 @@ const profileSchema = z.object({
 
 type ParsedManualCompanyProfile = z.infer<typeof profileSchema>
 
+const PROFILE_OUTPUT_CONTRACT = {
+  companyName: "string",
+  countryCode: "ISO-3166 alpha-2 uppercase string or null",
+  isJapaneseCompany: "boolean",
+  smbStatus: "qualified | review_required | rejected",
+  smbConfidence: "integer number from 0 to 100 (not a quoted string)",
+  smbEvidence: "JSON array of up to 8 short strings",
+  japanEntryFitStatus: "qualified | review_required | rejected",
+  japanEntryFitConfidence: "integer number from 0 to 100 (not a quoted string)",
+  japanEntryFitEvidence: "JSON array of up to 8 short strings",
+  businessModel: "ecommerce | saas | service",
+  industry: "exactly one allowedIndustries value",
+  productContext: "string",
+  observedFacts: "JSON array of 1 to 10 short strings",
+  outreachPlaybook: "exactly one allowedOutreachPlaybooks value",
+  positioningConcept: {
+    sourcePhrase: "exact phrase copied from groundedProductContext",
+    japaneseHeadline: "string",
+    japaneseSupportLine: "string",
+  },
+  commercialSignals: "JSON array; use [] when no explicit public evidence exists",
+} as const
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
+
+function boundedInteger(value: unknown): unknown {
+  if (typeof value !== "string") return value
+  const normalized = value.trim().replace(/%$/, "")
+  if (!/^\d{1,3}$/.test(normalized)) return value
+  const parsed = Number(normalized)
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 100 ? parsed : value
+}
+
+function boundedEvidence(value: unknown, maximum: number): unknown {
+  const items = typeof value === "string"
+    ? value.split(/\r?\n|\s*;\s*|\s+\|\s+|\s*•\s*/)
+    : value
+  if (!Array.isArray(items) || items.some((item) => typeof item !== "string")) return value
+  return items
+    .map((item) => item.replace(/^\s*(?:[-*]|\d+[.)])\s*/, "").trim().slice(0, 240))
+    .filter((item) => item.length >= 3)
+    .slice(0, maximum)
+}
+
+function qualificationStatus(value: unknown): unknown {
+  if (typeof value !== "string") return value
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, "_")
+  return ["qualified", "review_required", "rejected"].includes(normalized) ? normalized : value
+}
+
+function businessModel(value: unknown): unknown {
+  if (typeof value !== "string") return value
+  const normalized = value.trim().toLowerCase().replace(/[\s_-]+/g, " ")
+  if (["saas", "software", "software as a service", "ai software"].includes(normalized)) return "saas"
+  if (["ecommerce", "e commerce", "ecomerce", "online retail", "d2c"].includes(normalized)) return "ecommerce"
+  if (["service", "services", "professional service", "professional services", "consulting"].includes(normalized)) return "service"
+  return value
+}
+
+function positioningConcept(value: unknown): unknown {
+  if (value === null) return null
+  const source = record(value)
+  if (!source) return value
+  const sourcePhrase = source.sourcePhrase
+  const japaneseHeadline = source.japaneseHeadline
+  const japaneseSupportLine = source.japaneseSupportLine
+  if (typeof sourcePhrase !== "string" || typeof japaneseHeadline !== "string" || typeof japaneseSupportLine !== "string") {
+    // A partial positioning draft is optional. Dropping it is safer than inventing
+    // the missing source phrase or Japanese copy merely to satisfy the schema.
+    return null
+  }
+  return { sourcePhrase, japaneseHeadline, japaneseSupportLine }
+}
+
+export function normalizeManualCompanyProfile(value: unknown): unknown {
+  const source = record(value)
+  if (!source) return value
+  const countryCode = typeof source.countryCode === "string" && /^[a-z]{2}$/i.test(source.countryCode.trim())
+    ? source.countryCode.trim().toUpperCase()
+    : source.countryCode
+  const isJapaneseCompany = source.isJapaneseCompany === "true"
+    ? true
+    : source.isJapaneseCompany === "false"
+      ? false
+      : source.isJapaneseCompany
+  const normalized: Record<string, unknown> = {
+    ...source,
+    countryCode,
+    isJapaneseCompany,
+    smbStatus: qualificationStatus(source.smbStatus),
+    smbConfidence: boundedInteger(source.smbConfidence),
+    smbEvidence: boundedEvidence(source.smbEvidence, 8),
+    japanEntryFitStatus: qualificationStatus(source.japanEntryFitStatus),
+    japanEntryFitConfidence: boundedInteger(source.japanEntryFitConfidence),
+    japanEntryFitEvidence: boundedEvidence(source.japanEntryFitEvidence, 8),
+    businessModel: businessModel(source.businessModel),
+    observedFacts: boundedEvidence(source.observedFacts, 10),
+    positioningConcept: positioningConcept(source.positioningConcept),
+  }
+  return Object.fromEntries(Object.keys(profileSchema.shape).map((key) => [key, normalized[key]]))
+}
+
+export function parseManualCompanyProfile(value: unknown): ParsedManualCompanyProfile {
+  return profileSchema.parse(normalizeManualCompanyProfile(value))
+}
+
 function parseJson(text: string): unknown {
   return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""))
+}
+
+function parseJsonSafely(text: string): { ok: true; value: unknown } | { ok: false } {
+  try {
+    return { ok: true, value: parseJson(text) }
+  } catch {
+    return { ok: false }
+  }
 }
 
 export function hasDeterministicJapanEvidence(input: {
@@ -63,7 +181,7 @@ export function hasDeterministicJapanEvidence(input: {
 function publicEvidenceFacts(productContext: string): string[] {
   return [...new Set(productContext
     .split(" | ")
-    .map((value) => value.trim())
+    .map((value) => value.trim().slice(0, 240))
     .filter((value) => value.length >= 3))]
     .slice(0, 10)
 }
@@ -118,7 +236,7 @@ export async function analyzeManualCompanyProfile(input: {
     .filter((value): value is string => Boolean(value))
     .join(" | ")
     .slice(0, 5_000)
-  const response = await callDeepSeek([
+  const messages = [
     {
       role: "system",
       content: [
@@ -130,6 +248,7 @@ export async function analyzeManualCompanyProfile(input: {
         "Choose exactly one outreachPlaybook from the allowed list based only on the public product evidence.",
         "For positioningConcept, create a stored draft Japanese positioning concept only when it can be grounded in one exact sourcePhrase copied from productContext. Translate or reframe only that supplied meaning; do not add demand, outcomes, superiority, numbers, customers, or Japan-market fit. Return null when a grounded concept is not possible.",
         "For commercialSignals, return only signals whose sourcePhrase is copied exactly from groundedProductContext. Do not infer payment capacity. Use an empty array unless the phrase itself explicitly states foreign-currency revenue, global customers, funding, founder-led ownership, employee count, or international operations.",
+        "Follow outputContract exactly. Numeric confidence fields must be JSON numbers, evidence and fact fields must be JSON arrays, businessModel must use the exact lowercase enum, and positioningConcept must use all three named keys or be null. Do not rename keys or add keys.",
       ].join(" "),
     },
     {
@@ -148,10 +267,11 @@ export async function analyzeManualCompanyProfile(input: {
         allowedOutreachPlaybooks: MANUAL_OUTREACH_PLAYBOOKS,
         allowedCommercialSignalKinds: MANUAL_COMMERCIAL_SIGNAL_KINDS,
         commercialSignalShape: { kind: "allowed kind", sourcePhrase: "exact quote", detail: "brief interpretation" },
-        outputKeys: Object.keys(profileSchema.shape),
+        outputContract: PROFILE_OUTPUT_CONTRACT,
       }),
     },
-  ], {
+  ] as const
+  const response = await callDeepSeek([...messages], {
     model: "deepseek-v4-pro",
     modelPolicy: "strict",
     responseFormat: "json_object",
@@ -163,7 +283,75 @@ export async function analyzeManualCompanyProfile(input: {
   if (!response.ok || !response.text) {
     throw new Error(response.error ?? "DeepSeek V4 Pro company classification failed")
   }
-  const profile = profileSchema.parse(parseJson(response.text))
+  const parsedProfile = parseJsonSafely(response.text)
+  const rawProfile = parsedProfile.ok ? parsedProfile.value : response.text.slice(0, 10_000)
+  const rawProfileRecord = parsedProfile.ok ? record(rawProfile) : null
+  const groundedWireProfile = rawProfileRecord
+    ? { ...rawProfileRecord, productContext: input.productContext, observedFacts: publicEvidenceFacts(input.productContext) }
+    : rawProfile
+  const initial = parsedProfile.ok
+    ? profileSchema.safeParse(normalizeManualCompanyProfile(groundedWireProfile))
+    : null
+  let profile: ParsedManualCompanyProfile
+  if (initial?.success) {
+    profile = initial.data
+  } else {
+    const issues = initial
+      ? initial.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          code: issue.code,
+          message: issue.message,
+        }))
+      : [{ path: "$", code: "invalid_json", message: "Response was not valid JSON" }]
+    const repair = await callDeepSeek([
+      {
+        role: "system",
+        content: [
+          "Repair the supplied company-classification JSON so it follows outputContract exactly.",
+          "Return strict JSON only. Preserve the supplied meaning and evidence; do not add facts, claims, scores, countries, customers, demand, or outcomes.",
+          "Use null or an empty array for optional material that cannot be represented safely. Do not rename or add keys.",
+        ].join(" "),
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          invalidOutput: groundedWireProfile,
+          validationIssues: issues,
+          outputContract: PROFILE_OUTPUT_CONTRACT,
+          allowedIndustries: INDUSTRIES,
+          allowedOutreachPlaybooks: MANUAL_OUTREACH_PLAYBOOKS,
+          allowedCommercialSignalKinds: MANUAL_COMMERCIAL_SIGNAL_KINDS,
+          commercialSignalShape: { kind: "allowed kind", sourcePhrase: "exact quote", detail: "brief interpretation" },
+        }),
+      },
+    ], {
+      model: "deepseek-v4-pro",
+      modelPolicy: "strict",
+      responseFormat: "json_object",
+      temperature: 0,
+      maxTokens: 2_400,
+      thinking: "disabled",
+      timeoutMs: 120_000,
+    })
+    if (!repair.ok || !repair.text) {
+      throw new Error(`DeepSeek V4 Pro company classification repair failed (${issues.map((issue) => issue.path).filter(Boolean).join(", ")})`)
+    }
+    const parsedRepair = parseJsonSafely(repair.text)
+    if (!parsedRepair.ok) {
+      throw new Error("DeepSeek V4 Pro returned invalid JSON after one company-classification repair")
+    }
+    const rawRepair = parsedRepair.value
+    const rawRepairRecord = record(rawRepair)
+    const groundedRepair = rawRepairRecord
+      ? { ...rawRepairRecord, productContext: input.productContext, observedFacts: publicEvidenceFacts(input.productContext) }
+      : rawRepair
+    const repaired = profileSchema.safeParse(normalizeManualCompanyProfile(groundedRepair))
+    if (!repaired.success) {
+      const paths = [...new Set(repaired.error.issues.map((issue) => issue.path.join(".")).filter(Boolean))]
+      throw new Error(`DeepSeek V4 Pro returned an invalid company classification after one repair (${paths.join(", ")})`)
+    }
+    profile = repaired.data
+  }
   return groundManualCompanyProfile({
     profile,
     domain: input.domain,
