@@ -11,6 +11,7 @@
  *
  * 適用範囲:
  *   - LP-only (chrome 全消し): /{locale}/report/* — 顧客向け診断レポート (B36 MVP)
+ *   - LP-only (chrome 全消し): /{locale}/work-report/* — Manual Japan Entry証拠ブリーフ
  *   - LP-only (chrome 全消し): /{locale}/demo/* — 独立した顧客向けフルサイトデモ
  *   - LP-only (chrome 全消し): /p/* — レガシー営業提案ページ (旧 ProposalRenderer)
  *   - 通常 site chrome: それ以外の全ページ
@@ -38,6 +39,7 @@ import DifyChatbot from "@/components/DifyChatbot";
 import JapanMarketUrgencyBar, { type JapanMarketUrgencyCopy } from "@/components/japan-entry/JapanMarketUrgencyBar";
 import { localeContentVariant } from "@/lib/locale-map";
 import type { HeaderNav, FooterNav } from "@/lib/navigation";
+import { isStandaloneRoute } from "./standalone-routes";
 
 /**
  * SiteFooter prop shape を最小限ミラー (PayloadCMS Settings global から渡される
@@ -94,18 +96,6 @@ interface Props {
  * 判定は `pathname.includes()` ではなく `match()` で precision を上げ、
  * 例えば将来 `/about/report-format` のような同名 segment が混入しても誤爆しない.
  */
-function isLpRoute(pathname: string): boolean {
-  // /{2-letter-locale}/report/{anything} に厳密一致
-  if (/^\/[a-z]{2}\/report\//.test(pathname)) return true;
-  if (/^\/[a-z]{2}\/opportunity\//.test(pathname)) return true;
-  if (/^\/[a-z]{2}\/d\//.test(pathname)) return true;
-  if (/^\/[a-z]{2}\/demo\//.test(pathname)) return true;
-  if (/^\/[a-z]{2}\/admin(\/|$)/.test(pathname)) return true;
-  // /p/{anything} (legacy proposal pages)
-  if (/^\/p\//.test(pathname)) return true;
-  return false;
-}
-
 export default function ConditionalSiteChrome({
   children,
   locale,
@@ -125,7 +115,7 @@ export default function ConditionalSiteChrome({
     setIsDemoHostname(window.location.hostname === "demo.paradigmjp.com");
   }, []);
 
-  if (isLpRoute(pathname) || isDemoHostname) {
+  if (isStandaloneRoute(pathname) || isDemoHostname) {
     // LP モード: chrome 一切なし・i18n / theme provider は親 layout に残るので
     // ここでは children のみ返す. report page 側で独自 LP UI を組む.
     return <>{children}</>;

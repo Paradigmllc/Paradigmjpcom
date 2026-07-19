@@ -781,6 +781,12 @@ function checkStaticReleaseRules() {
   const manualWorkReportRenderer = fs.existsSync("src/components/work-report/ManualJapanEntryReport.tsx")
     ? fs.readFileSync("src/components/work-report/ManualJapanEntryReport.tsx", "utf8")
     : ""
+  const conditionalSiteChrome = fs.existsSync("src/components/aesop/ConditionalSiteChrome.tsx")
+    ? fs.readFileSync("src/components/aesop/ConditionalSiteChrome.tsx", "utf8")
+    : ""
+  const standaloneRoutes = fs.existsSync("src/components/aesop/standalone-routes.ts")
+    ? fs.readFileSync("src/components/aesop/standalone-routes.ts", "utf8")
+    : ""
   const manualMarketLens = fs.existsSync("src/lib/sales/manual-japan-entry-market-lens.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-market-lens.ts", "utf8")
     : ""
@@ -850,6 +856,8 @@ function checkStaticReleaseRules() {
     && !manualWorkReportPage.includes("ensureSafeDiagnosticReport")
     && !manualWorkReportPage.includes('components/diagnostic/DiagnosticReport')
     && manualWorkReportRenderer.includes("Never sent automatically")
+    && conditionalSiteChrome.includes("isStandaloneRoute")
+    && standaloneRoutes.includes("work-report")
     && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
     && manualMarketLens.includes("groundManualCommercialSignals")
     && manualMarketLens.includes("sourcePhrase.length < 3")
