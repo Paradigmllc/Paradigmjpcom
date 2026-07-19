@@ -64,6 +64,17 @@ function statusClasses(status: ManualJapanEntryWorkRow["status"]): string {
   return "border-slate-200 bg-slate-50 text-slate-600"
 }
 
+export function formatManualWorkCreatedAt(value: string): string {
+  const timestamp = Date.parse(value)
+  if (!Number.isFinite(timestamp)) return "日時不明"
+  const japanTime = new Date(timestamp + (9 * 60 * 60 * 1_000))
+  const date = [japanTime.getUTCFullYear(), japanTime.getUTCMonth() + 1, japanTime.getUTCDate()].join("/")
+  const time = [japanTime.getUTCHours(), japanTime.getUTCMinutes(), japanTime.getUTCSeconds()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":")
+  return `${date} ${time}`
+}
+
 export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, retrying, onRetry, onCopy, onUpdateOutcome }: {
   item: ManualJapanEntryWorkRow
   sourceBySlug: Map<string, ManualLeadSourceCatalogRow>
@@ -97,7 +108,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${statusClasses(item.status)}`}>{statusCopy[item.status]}</span>
                 {item.status === "processing" && <Badge variant="outline" className="border-blue-200 text-blue-700">{stageCopy[item.stage]}</Badge>}
-                <span className="text-xs text-slate-600">{new Date(item.created_at).toLocaleString("ja-JP")}</span>
+                <span className="text-xs text-slate-600">{formatManualWorkCreatedAt(item.created_at)}</span>
               </div>
               <h3 className="mt-3 truncate font-display text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{item.company_name ?? item.domain}</h3>
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
