@@ -22,6 +22,7 @@ UPSTREAM_DIR = "/opt/screenshot-to-code/backend"
 UPSTREAM_COMMIT = os.environ.get("SCREENSHOT_TO_CODE_UPSTREAM_COMMIT", "unknown")
 SHARED_SECRET = os.environ.get("SCREENSHOT_TO_CODE_SHARED_SECRET", "").strip()
 VISUAL_MODE = os.environ.get("SCREENSHOT_TO_CODE_VISUAL_MODE", "metadata-text").strip().lower()
+GENERATED_CODE_CONFIG = os.environ.get("SCREENSHOT_TO_CODE_GENERATED_CODE_CONFIG", "html_css").strip().lower()
 upstream_process: asyncio.subprocess.Process | None = None
 upstream_log_task: asyncio.Task[None] | None = None
 
@@ -157,6 +158,7 @@ async def health() -> Dict[str, Any]:
         "upstream_commit": UPSTREAM_COMMIT,
         "provider": "deepseek-chat-completions-adapter",
         "visual_mode": VISUAL_MODE,
+        "generated_code_config": GENERATED_CODE_CONFIG,
     }
 
 
@@ -165,7 +167,7 @@ async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | 
     _authorize(x_screenshot_to_code_secret)
     input_mode, prompt_content = _build_generation_input(request)
     payload = {
-        "generatedCodeConfig": "html_tailwind",
+        "generatedCodeConfig": GENERATED_CODE_CONFIG,
         "inputMode": input_mode,
         "generationType": "create",
         "isImageGenerationEnabled": False,
@@ -207,6 +209,7 @@ async def generate(request: GenerateRequest, x_screenshot_to_code_secret: str | 
         "provider": "deepseek-chat-completions-adapter",
         "model": os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-pro"),
         "visual_mode": VISUAL_MODE,
+        "generated_code_config": GENERATED_CODE_CONFIG,
     }
 
 
