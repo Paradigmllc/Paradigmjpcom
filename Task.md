@@ -2006,3 +2006,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 公開HTMLの`application-name`とschema.org `Product` / `Service` / `SoftwareApplication`等から商品名を根拠付きで抽出。商品名が確認できた場合は本文中の完全一致を必須にし、別途、商品名だけではない具体的な機能・workflow・顧客用途の公開原文を必須にした。
 - 推定あり本文は、幅を持たせた推定月間PVと初年度Japan opportunity range、企業別の公開ページgapを同時に使い、`not measured analytics` / `not observed revenue` / `not guaranteed performance`を決定論的gateで強制する。URL・出典名・引用記号は本文へ出さず、Tomohiro H / Paradigm LLC / `contact@paradigmjp.com`のcopy-ready署名と自動送信0を維持する。
 - `/work`履歴へ推定月間PV、業態別仮定による仮説月商、月次機会差、初年度機会レンジを表示し、実測PV・実売上・保証値ではない旨を常時表示する。対象Vitest **7 files / 50 tests**、最終差分Vitest **4 files / 10 tests**、TypeScript、変更ファイルESLint、Quality Guard **0 errors / 75 existing warnings**、`git diff --check`を通過。ローカルwebpack buildは端末競合下で36分間エラーなしのまま最適化中だったため停止し、正式releaseの隔離buildとpost-deploy gateを完了条件に残す。
+
+## CURRENT STATUS - 2026-07-20 `/work`推定機会レンジの価格gate誤判定修正（hotfix検証完了 / 本番release待ち / 自動送信0）
+
+- PR **#455**をmainへ統合し、正式`npm run release:prod`のdeployment **u12jwukhibsqbwyifmzgz6sd**でDB **91/91**、公開smoke、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime、RLS、zero-send gateをpassした。
+- 本番で`screenshottocode.com`を再解析し、Tranco rank **#2,327,599**、Common Crawl **2ページ**、推定月間PV **700–8,000**、初年度Japan opportunity range等の公開シグナルは取得できた。一方、推定機会額のUSD表記を「Package料金」と誤判定するno-price品質gateにより文面生成だけがfail-closedした。
+- no-price gateを、任意のUSD金額禁止から、`$12,000`・package/setup/service fee・有償条件・通話予約等の実際の商用条件禁止へ限定した。根拠のない任意金額は既存のnumeric allowlistで引き続き拒否する。自動の「推定あり・価格なし」セルで、根拠付き機会レンジ`$24,000–$96,000`を許可しつつ料金提示を拒否する回帰テストを追加した。
+- 対象Vitest **3 files / 34 tests**、TypeScript、変更ファイルESLint、Quality Guard、`git diff --check`を通過。次の完了条件はhotfixの正式release後に同一企業を再解析し、本文・署名・数値のgrounding・DB永続化・Twenty判定・自動送信0を本番read-backすること。

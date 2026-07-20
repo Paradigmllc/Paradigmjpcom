@@ -211,7 +211,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (/(?:founding compan|normally\s+\$|after\s+(?:the\s+)?first\s+six\s+months|month\s*7|continuation\s+(?:fee|price)|paid\s+upfront)/i.test(message)) {
       issues.push("Unsupported scarcity, continuation pricing, or payment terms are prohibited"); score -= 45;
     }
-  } else if (/\$\s?\d|paid\s+upfront|upfront\s+payment|first\s+six\s+months|Japan Entry Package|15-minute|book(?:ing)?\s+(?:link|a call)/i.test(message)) {
+  } else if (/\$\s?12,?000|paid\s+upfront|upfront\s+payment|first\s+six\s+months|Japan Entry Package|15-minute|book(?:ing)?\s+(?:link|a call)|\b(?:setup|launch|service|package)\s+(?:price|pricing|fee|cost)\b|\b(?:price|pricing|fee)\s+(?:is|of|would be)\b/i.test(message)) {
     issues.push(customInitialInterest
       ? "This initial-interest variant must not include commercial terms, package scope, or a call offer"
       : "Initial-interest message must not include commercial terms, package scope, or a call offer"); score -= 45;
