@@ -98,15 +98,16 @@ export function initialInterestGenerationPrompt(
   return [
     "You write concise, natural B2B inquiry-form messages to founders and senior decision-makers at overseas SMBs.",
     "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,angle,opening_style,diagnostic_focus,cta_type},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,angle,opening_style,diagnostic_focus,cta_type}}.",
-    "Build the strategy before drafting. Connect a supplied company observation to a specific plausible Japanese customer segment, the exact public-page gap, why a Japan opportunity analysis is relevant, and a low-friction permission or routing CTA. Label unverified market applicability as a hypothesis; never present it as fact.",
+    "Build the strategy before drafting. Connect a supplied company observation to a Japanese customer-segment hypothesis, the exact public-page gap, why a Japan opportunity analysis is relevant, and a low-friction permission or routing CTA. Every strategy field is subject to the same evidence limits as the message: when the payload does not verify a segment, demand, underserved status, discoverability, evaluation behavior, or effect, write 'Unverified' rather than inventing it.",
     "Use the supplied evidence_contract exactly. Every fact_id must be in allowed_fact_ids, every required_fact_id must be present, and no product-context or company-observed fact belongs in fact_ids because product evidence is tracked separately. Never use more than four fact_ids.",
     `The personalized body, excluding the greeting and signature, must be ${options.includePrice ? "110-175" : "60-150"} English words and contain exactly three short paragraphs separated by a blank line (\\n\\n): product observation, evidence-led Japan diagnosis, then the permission or routing CTA. Do not use headings, bullets, or Markdown.`,
     `Start with the exact standalone greeting supplied in fixed_sender.greeting. Use the first body paragraph for a company-specific observation, not a sender biography. End with this exact four-line signature and nothing after it: '${MANUAL_FORM_SIGNATURE.replaceAll("\n", " / ")}'. Do not invent a title, city, office, or company category.`,
     "Open directly with the observable company detail. The first body paragraph must contain the exact company_name and exact required_product_evidence. When supplemental_product_evidence is non-null, use its concrete capability as the only second product detail so the observation demonstrates real product understanding. Keep this paragraph free of Japan claims, audit gaps, estimates, buyer behavior, demand, outcomes, praise, or sender biography. Do not begin with I noticed, I came across, I was impressed, I am reaching out, I wanted to reach out, hope this message finds you well, or another reusable prospecting opener.",
     "Return required_product_evidence exactly as product_evidence. It describes a real capability, workflow, product category, or customer use; do not conjugate, paraphrase, shorten, or broaden it. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
     estimateRule,
+    "After a missing public-page observation, never write 'This means' and never describe what Japanese developers, teams, buyers, or customers may do or lack. Use a company-specific uncertainty sentence instead: state that whether the observed gap matters for the named product's Japan customer path remains unverified. For repair_candidate, delete the whole unsupported audience-behavior sentence; do not preserve or paraphrase it.",
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
-    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. The approved meaning is: '${initialInterestClose(options)}'. The final question must include required_cta_anchor exactly. Adapt its wording to the company, explicitly name the selected product or customer-path focus, and choose one CTA type: permission_to_send, right_person, or founder_forward. A CTA that could be pasted unchanged into another company's message is invalid. Do not offer both a report and a call.`,
+    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. The approved meaning is: '${initialInterestClose(options)}'. The last sentence ending in '?' is the final question: that sentence itself must include required_cta_anchor exactly. Mentioning that anchor only in the preceding offer sentence is invalid. The final paragraph must also include required_customer_path_anchor and state which Japan customer-path decision the analysis informs. Choose one CTA type: permission_to_send, right_person, or founder_forward. A CTA that could be pasted unchanged into another company's message is invalid. Do not offer both a report and a call.`,
     options.includePrice
       ? "Use only the exact fixed commercial term in paragraph 4. Do not add scarcity, a founding-company claim, a normal monthly price, continuation pricing, or any other commercial term."
       : "Do not mention price, payment terms, a package scope, scarcity or continuation pricing.",
@@ -115,7 +116,7 @@ export function initialInterestGenerationPrompt(
     `The classified industry playbook is '${playbook}'. ${verticalRule} Never claim a sector-specific issue that is absent from the supplied evidence.`,
     "Use only supplied facts. Do not invent products, people, outcomes, market size, legal scope, deliverables, competitors, demand, first-party analytics, or claims that a report already exists. Never say a gap causes exit, drop-off, lost sales, conversion loss, or a compliance violation.",
     "Do not use could, may, might, likely, appears, or seems in the product observation or diagnosis. State the supplied observation, then say only that Japan applicability or the customer path remains unverified. In the CTA, 'Could you forward' or 'May I send' is allowed only as the final routing or permission question; do not use a modal to invent product-market fit.",
-    "Do not praise or rank the company or product. Prohibited wording includes impressive, unique or uniquely positioned, global potential, missed opportunity, well presented, interesting detail, and emerging applications. Do not claim that Japanese companies, manufacturers, buyers, or consumers are investing, prefer, expect, need, or behave in a particular way unless that exact fact is supplied.",
+    "Do not praise, evaluate, or rank the company or product. Prohibited wording includes impressive, unique or uniquely positioned, global potential, missed opportunity, well presented, interesting detail, emerging applications, provides clear value, offers clear value, and is valuable. The product paragraph must only describe the supplied capability. Do not claim that Japanese companies, manufacturers, buyers, or consumers are investing, prefer, expect, need, or behave in a particular way unless that exact fact is supplied.",
     "This is not a partnership proposal. Never ask to explore a partnership, collaborate, work together, find synergies, discuss a strategic fit, or describe the relationship as mutually beneficial. Do not make generalized claims such as Japanese users often evaluate, typically prefer, or tend to expect something unless that exact behavior is present in a selected fact.",
     `The form message must contain no URL, domain, source name, citation, reference, footnote, attachment, Markdown, call offer, booking link, placeholder, or email address other than the exact approved sender address '${MANUAL_FORM_SENDER.email}' in the final signature. Never write Source:, Sources:, according to, citation markers, or evidence links. Sources are internal operator context only.`,
     "Use target_country only to calibrate business formality and directness. Never infer behavior, preferences, readiness, or commercial facts from nationality.",
@@ -143,10 +144,20 @@ export function generationMessages(
   const supplementalProductEvidence = purpose === "initial_interest" && input.productContext
     ? selectSupplementalProductEvidence({ companyName: input.companyName, productContext: input.productContext, productNames: input.productNames })
     : null;
-  const requiredCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
   const promptFacts = evidenceContract
     ? facts.filter((fact) => evidenceContract.allowedFactIds.includes(fact.id))
     : facts;
+  const requiredCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
+  const requiredCustomerPathAnchor = promptFacts
+    .find((fact) => fact.id.startsWith("japan-audit-"))
+    ?.anchors.map((anchor) => anchor.trim()).find((anchor) => anchor.length >= 4) ?? "Japan customer path";
+  const ctaContract = purpose === "initial_interest" ? {
+    final_question_must_contain_exact: [requiredCtaAnchor],
+    final_question_must_end_with_question_mark: true,
+    final_paragraph_must_contain_exact: [requiredCustomerPathAnchor],
+    offer_sentence_must_name_decision_focus: `${requiredCtaAnchor} ${requiredCustomerPathAnchor} decision`,
+    invalid_if_anchors_appear_only_before_final_question: true,
+  } : null;
   return [
     {
       role: "system",
@@ -172,6 +183,8 @@ export function generationMessages(
         required_product_evidence: requiredProductEvidence,
         supplemental_product_evidence: supplementalProductEvidence,
         required_cta_anchor: purpose === "initial_interest" ? requiredCtaAnchor : null,
+        required_customer_path_anchor: purpose === "initial_interest" ? requiredCustomerPathAnchor : null,
+        required_cta_contract: ctaContract,
         evidence_contract: evidenceContract,
         fixed_sender: purpose === "initial_interest" ? {
           greeting: manualFormGreeting(input.companyName),
@@ -197,6 +210,7 @@ export function generationMessages(
           editorial_feedback: repair.editorialFeedback ?? null,
           required_fact_ids: evidenceContract?.requiredFactIds ?? [],
           allowed_fact_ids: evidenceContract?.allowedFactIds ?? [],
+          required_cta_contract: ctaContract,
         } : null,
       }),
     },
@@ -217,12 +231,16 @@ export function criticMessages(
   initialInterestOptions: JapanEntryInitialInterestOptions = DEFAULT_INITIAL_INTEREST_OPTIONS,
   messageAngle: ManualMessageAngle = "problem",
   productNames: string[] = [],
+  deterministicContractsPassed = false,
 ): DeepSeekMessage[] {
   const system = [
     "You are a ruthless editor of executive B2B inquiry-form copy. Return JSON only and select the strongest candidate without rewriting it.",
     "Score only the selected candidate for specificity, naturalness, credibility, and executive_relevance from 0-25 each.",
     "A production-ready score requires all four dimensions to be at least 23 and the total to be at least 92. A score of 22 means the draft still needs a material edit; do not describe 22 as meeting the production floor.",
-    "Judge only against evidence actually supplied and required for the selected angle. Never penalize a draft for omitting a comparator, demand signal, product name, second capability, or other fact that is absent from the payload. Before claiming something is missing, quote-check the candidate against its fact_ids, product_evidence, product_names, and final question.",
+    "Judge only against evidence actually supplied and required for the selected angle. Never penalize a draft for omitting a comparator, demand signal, product name, second capability, or other fact that is absent from the payload. When product_names is empty, company_name is the valid company-or-product anchor and the absence of a separate product name must never reduce a score. Before claiming something is missing, quote-check the candidate against its fact_ids, product_evidence, product_names, required_company_or_product_anchor, and final question.",
+    deterministicContractsPassed
+      ? "Every candidate in this payload has already passed deterministic checks for grounded product evidence, exact company-or-product naming in the final question, the selected public-page audit fact, copy-ready envelope, prohibited claims, and URL/citation safety. Do not deduct points or claim any of those binary items is missing. Evaluate only whether the verified details are synthesized naturally and make the decision relevance concrete."
+      : "Independently verify the candidate against the supplied evidence and copy contract.",
     purpose === "initial_interest"
       ? "Specificity requires exact product evidence, one supplied exact product name when available, and company-specific public-page Japan evidence. Naturalness requires a readable three-or-four-paragraph personalized body inside the exact company greeting and Tomohiro H sender signature, plus a light permission-based close immediately before the signature. Credibility requires no unsupported inference. Executive relevance requires a concrete reason to accept the offered analysis."
       : "Specificity requires exact product evidence and company-specific Japan evidence. Naturalness requires readable four-paragraph flow and a non-abrupt transition from diagnosis to price. Credibility requires honest public-signal estimate labeling and no unsupported inference. Executive relevance requires a quantified decision implication when quantified mode is available and a concrete low-friction next step.",
@@ -252,6 +270,8 @@ export function criticMessages(
       content: JSON.stringify({
         company_name: companyName,
         product_names: productNames,
+        required_company_or_product_anchor: productNames.map((name) => name.trim()).find(Boolean) ?? companyName,
+        deterministic_contracts_passed: deterministicContractsPassed,
         message_mode: mode,
         message_purpose: purpose,
         initial_interest_options: purpose === "initial_interest" ? initialInterestOptions : null,

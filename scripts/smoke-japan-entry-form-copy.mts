@@ -11,9 +11,9 @@ if (!process.env.DEEPSEEK_API_KEY?.trim()) {
 }
 
 const result = await generatePersonalizedJapanEntryMessage({
-  companyName: "AtlasMetric",
-  industry: "B2B SaaS",
-  productContext: "AtlasMetric provides subscription analytics for independent retailers with inventory forecasting and replenishment insights.",
+  companyName: "Screenshot to Code",
+  industry: "SaaS / AI / Developer Tools",
+  productContext: "Convert any screenshot or design to clean code | Build User Interfaces 10x Faster | Video to Code | Screenshot to Code | Framework agnostic | Iterate & refine | Text to code | Developers love it | Ready to ship faster? | AI-powered conversion from screenshots and videos to clean, production-ready code. | Screenshot to Code supports HTML/CSS, React, Vue, Tailwind, Bootstrap, and Ionic.",
   targetCountry: "US",
   businessModel: "saas",
   purpose: "initial_interest",
@@ -21,10 +21,10 @@ const result = await generatePersonalizedJapanEntryMessage({
   messageAngle: "problem",
   outreachPlaybook: "saas_ai_devtools",
   observedFacts: [
-    "AtlasMetric provides subscription analytics for independent retailers.",
-    "The product includes inventory forecasting and replenishment insights.",
+    "Screenshot to Code converts screenshots and videos to clean code.",
+    "The product supports HTML/CSS, React, Vue, Tailwind, Bootstrap, and Ionic.",
   ],
-  sourceUrl: "https://atlasmetric.example/",
+  sourceUrl: "https://screenshottocode.com/",
   priorMessages: [
     { id: "prior-1", companyName: "PriorCo", domain: "prior.example", message: "We reviewed your public website and prepared an initial Japan market note. Could you forward this to the appropriate person?" },
   ],
@@ -40,9 +40,9 @@ const result = await generatePersonalizedJapanEntryMessage({
       appi: [],
     },
     pages_checked: [
-      "https://atlasmetric.example/",
-      "https://atlasmetric.example/pricing",
-      "https://atlasmetric.example/terms",
+      "https://screenshottocode.com/",
+      "https://screenshottocode.com/pricing",
+      "https://screenshottocode.com/terms",
     ],
   },
 });
@@ -55,16 +55,16 @@ if (!result.ok || !result.message || !result.review?.passed) {
   }));
 }
 
-const envelope = inspectManualFormCopyEnvelope(result.message, "AtlasMetric");
+const envelope = inspectManualFormCopyEnvelope(result.message, "Screenshot to Code");
 const withoutApprovedEmail = result.message.replaceAll(MANUAL_FORM_SENDER.email, "");
 const checks = {
-  companyName: result.message.includes("AtlasMetric"),
-  productSpecific: /subscription analytics|independent retailers|inventory forecasting|replenishment/i.test(result.message),
+  companyName: result.message.includes("Screenshot to Code"),
+  productSpecific: /screenshots and videos|production-ready code|HTML\/CSS|React|Vue|Tailwind|Bootstrap|Ionic/i.test(result.message),
   strategy: Boolean(result.strategy),
   candidateSet: (result.candidates?.length ?? 0) >= 1,
   editorialQuality: result.review.score >= 92,
   uniqueness: (result.review.uniquenessScore ?? 0) >= 90,
-  noUrlOrDomain: !/(?:https?:\/\/|www\.|atlasmetric\.example)/i.test(result.message),
+  noUrlOrDomain: !/(?:https?:\/\/|www\.|screenshottocode\.com)/i.test(result.message),
   noCitation: !/(?:according to|source:|citation|出典|参照元)/i.test(result.message),
   copyReadyGreeting: envelope.greetingValid,
   copyReadySignature: envelope.signatureValid,
@@ -72,6 +72,7 @@ const checks = {
   noUnapprovedEmailAddress: !/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(withoutApprovedEmail),
   noAttachment: !/(?:attached|attachment|添付|資料をお送り)/i.test(result.message),
   noCommercialTerms: !/(?:[$€£¥￥]\s?\d|\bUSD\b|\bJPY\b|12,?000|setup fee|pricing|price|料金|価格)/i.test(result.message),
+  noPromotionalNumericClaim: !/10x|10\s+times/i.test(result.message),
   noPlaceholder: !/(?:\[[^\]\n]+\]|［[^］\n]+］|【[^】\n]+】|\{[^{}\n]+\}|<[^<>\n]+>|__[A-Z0-9_ -]+__|\bTBD\b|\bPLACEHOLDER\b)/i.test(result.message),
   personalizedBodyParagraphs: envelope.bodyParagraphs.length >= 3 && envelope.bodyParagraphs.length <= 4,
 };

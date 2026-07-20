@@ -402,6 +402,7 @@ export async function generatePersonalizedJapanEntryMessage(
         input.initialInterestOptions,
         input.messageAngle,
         input.productNames,
+        true,
       ),
       schema: criticSchema,
       caller,
@@ -432,7 +433,8 @@ export async function generatePersonalizedJapanEntryMessage(
   let finalReview = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts, similarity: selected.similarity, candidateCount: valid.length });
   let repairIssues = finalReview.issues;
   for (let repairPass = 1; !finalReview.passed && repairPass <= 2; repairPass += 1) {
-    const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; make the CTA name the product or exact customer-path analysis and say what decision it informs. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
+    const exactCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
+    const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; make the final question itself contain the exact company or product anchor '${exactCtaAnchor}', and make the final paragraph contain the exact audited customer-path anchor supplied in required_cta_contract while saying what Japan customer-path decision the analysis informs. Mentioning the company or product anchor only before the final question is invalid. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
     const repaired = await callStructured({
       stage: "repair",
       messages: generationMessages(input, facts, mode, { candidate: finalCandidate.candidate, issues: repairIssues, editorialFeedback }),

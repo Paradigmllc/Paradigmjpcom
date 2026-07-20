@@ -13,6 +13,7 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).toContain("one to three candidates")
     expect(prompt).toContain("must not share the same opening")
     expect(prompt).toContain("Use the supplied evidence_contract exactly")
+    expect(prompt).toContain("that sentence itself must include required_cta_anchor exactly")
     expect(prompt).toContain("A CTA that could be pasted unchanged into another company's message is invalid")
     expect(prompt).toContain("This is not a partnership proposal")
     expect(prompt).toContain("Tomohiro H / Paradigm LLC / contact@paradigmjp.com")
@@ -48,6 +49,8 @@ describe("manual Japan Entry personalization contract", () => {
     const payload = messages[1]?.content ?? ""
     expect(payload).toContain('"required_product_evidence":"API-first fraud review workflow for marketplaces."')
     expect(payload).toContain('"requiredFactIds":["japan-audit-language"]')
+    expect(payload).toContain('"required_cta_contract":{"final_question_must_contain_exact":["Example"]')
+    expect(payload).toContain('"final_paragraph_must_contain_exact":["Japanese-language"]')
     expect(payload).not.toContain("https://example.com/contact")
     expect(payload).not.toContain('"source"')
     const criticPayload = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[1]?.content ?? ""

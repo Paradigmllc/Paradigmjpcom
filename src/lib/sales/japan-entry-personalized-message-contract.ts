@@ -60,12 +60,32 @@ function productEvidenceCandidates(input: {
     .filter((value) => evidenceTokens(value).length >= 4)
 }
 
+function primaryEvidenceScore(value: string): number {
+  const terms = evidenceTokens(value).length
+  const descriptiveBonus = /\bai-powered\b/i.test(value)
+    ? 16
+    : /\b(?:conversion|workflow|platform|software|supports?|integrates?|enables?)\b/i.test(value) ? 10 : 0
+  const imperativePenalty = /^(?:convert|build|get|try|start|ready)\b/i.test(value) ? 8 : 0
+  return terms + descriptiveBonus - imperativePenalty
+}
+
+function rankedProductEvidenceCandidates(input: {
+  companyName: string
+  productContext: string
+  productNames?: string[]
+}): string[] {
+  return productEvidenceCandidates(input)
+    .map((value, index) => ({ value, index, score: primaryEvidenceScore(value) }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((item) => item.value)
+}
+
 export function selectGroundedProductEvidence(input: {
   companyName: string
   productContext: string
   productNames?: string[]
 }): string {
-  return productEvidenceCandidates(input)[0] ?? input.productContext.trim().slice(0, 180)
+  return rankedProductEvidenceCandidates(input)[0] ?? input.productContext.trim().slice(0, 180)
 }
 
 export function selectSupplementalProductEvidence(input: {
@@ -73,7 +93,7 @@ export function selectSupplementalProductEvidence(input: {
   productContext: string
   productNames?: string[]
 }): string | null {
-  return productEvidenceCandidates(input)[1] ?? null
+  return rankedProductEvidenceCandidates(input)[1] ?? null
 }
 
 function firstFactId(facts: JapanEntryPersonalizationFact[], predicate: (fact: JapanEntryPersonalizationFact) => boolean): string | undefined {
