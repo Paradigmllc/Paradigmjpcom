@@ -75,6 +75,16 @@ describe("manual initial-interest message variants", () => {
     expect(result).toMatchObject({ passed: true, score: 100 })
   })
 
+  it("allows a grounded USD opportunity range in the automatic no-price cell", () => {
+    const options = { includeEstimate: true, includePrice: false, founderForwardCta: true }
+    const diagnosis = `${traffic.statement} ${annual.statement} A public-page review also found that the checked pages did not show a Japanese-language customer path. These modeled estimates are not observed revenue and performance is not guaranteed.`
+    const message = copyReady(diagnosis, initialInterestClose(options))
+    const result = review({ message, facts: [audit, traffic, annual], factIds: [traffic.id, annual.id, audit.id], includeEstimate: true, includePrice: false })
+
+    expect(message).toContain("$24,000–$96,000")
+    expect(result).toMatchObject({ passed: true, score: 100, issues: [] })
+  })
+
   it("rejects unsupported scarcity and continuation terms", () => {
     const options = { includeEstimate: false, includePrice: true, founderForwardCta: true }
     const unsafeClose = `${initialInterestClose(options)} This is for the first ten founding companies, and month 7 pricing will be shared later.`
