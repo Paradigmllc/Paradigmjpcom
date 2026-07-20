@@ -27,7 +27,7 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const instagram = premium.social.find((item) => item.network === "instagram")?.href
   const serviceHighlights = data.pages.services.services.slice(0, 3)
   const faq = data.pages.faq?.sections.slice(0, 3) ?? []
-  const introNote = /提案|非公開|権利確認|掲載素材|正式公開/iu.test(premium.intro.note)
+  const introNote = /提案|非公開|権利確認|掲載素材|正式公開/iu.test(premium.intro.note ?? "")
     ? "事業内容と利用前に確認したい情報を、読みやすくまとめています。"
     : premium.intro.note
   const presentation = data.presentation
