@@ -289,7 +289,7 @@ export async function fetchDemoMultiPageData(
                 ? preferredMedia.slice(0, 3)
                 : withGeneratedFallback(themePage.site_payload.premium.heroMedia),
               gallery: preferredMedia.length > 0
-                ? [...preferredMedia, ...withGeneratedFallback(themePage.site_payload.premium.gallery)].slice(0, 5)
+                ? preferredMedia.slice(0, 5)
                 : withGeneratedFallback(themePage.site_payload.premium.gallery.slice(0, 5)),
               intro: {
                 ...themePage.site_payload.premium.intro,
