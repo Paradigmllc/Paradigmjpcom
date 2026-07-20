@@ -42,6 +42,7 @@ const candidate = {
   message,
   fact_ids: ["japan-audit-language", "japan-audit-jpy"],
   product_evidence: "subscription analytics platform for independent retailers",
+  product_evidence_rendering: "subscription analytics platform for independent retailers",
   angle: "problem",
   opening_style: "public-observation-led",
   diagnostic_focus: "Japanese-language evaluation path",
@@ -100,6 +101,7 @@ describe("manual work first-touch generation integration", () => {
         ok: true,
         text: JSON.stringify({
           selected_index: 0,
+          product_evidence_faithful: true,
           scores: { specificity: 24, naturalness: 24, credibility: 24, executive_relevance: 24 },
           rationale: "Grounded, concise, and permission-based.",
           risk_flags: [],
@@ -134,6 +136,7 @@ describe("manual work first-touch generation integration", () => {
         ok: true,
         text: JSON.stringify({
           selected_index: 0,
+          product_evidence_faithful: true,
           scores: { specificity: 24, naturalness: 24, credibility: 24, executive_relevance: 24 },
           rationale: "Grounded, concise, and permission-based.",
           risk_flags: [],

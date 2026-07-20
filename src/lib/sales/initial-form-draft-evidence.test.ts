@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { extractPublicProductNames, selectRicherHomepageHtml } from "./initial-form-draft-evidence";
+import { decodePublicHtmlText, extractPublicProductNames, selectRicherHomepageHtml } from "./initial-form-draft-evidence";
 
 describe("public product-name evidence", () => {
+  it("decodes zero-padded, hexadecimal, and double-encoded company-name entities", () => {
+    expect(decodePublicHtmlText("L&#039;ABC du Parfum")).toBe("L'ABC du Parfum")
+    expect(decodePublicHtmlText("L&#x027;ABC du Parfum")).toBe("L'ABC du Parfum")
+    expect(decodePublicHtmlText("L&amp;#039;ABC du Parfum")).toBe("L'ABC du Parfum")
+  })
+
   it("extracts only named products and applications from strong public metadata", () => {
     const html = `
       <meta name="application-name" content="Screenshot to Code">
