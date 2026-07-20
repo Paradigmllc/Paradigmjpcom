@@ -208,4 +208,56 @@ describe("form-discovery", () => {
     expect(result.formUrl).toBe("https://example.com/request-a-demo")
     expect(result.verification).toBe("form")
   })
+
+  it("rejects SPA catch-all routes that return the homepage for every contact-like URL", async () => {
+    const shell = '<html><head><title>Screenshot to Code</title></head><body><main><h1>Convert screenshots into code</h1><p>AI-powered interface generation.</p></main><script>window.__APP__ = true</script></body></html>'
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://screenshottocode.com/sitemap.xml") return new Response("", { status: 404 })
+      if (url.startsWith("https://screenshottocode.com")) {
+        return new Response(shell, { status: 200, headers: { "content-type": "text/html" } })
+      }
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await discoverFormUrl({
+      homeUrl: "screenshottocode.com",
+      region: "global",
+      enableCrawl4Ai: false,
+      enableLlm: false,
+    })
+
+    expect(result).toMatchObject({
+      formUrl: null,
+      verification: "fallback",
+      outcome: "no_public_form",
+    })
+    expect(result.checkedUrlCount).toBeGreaterThan(5)
+    expect(result.outcomeReason).toContain("No usable public inquiry form")
+  })
+
+  it("rejects a Crawl4AI contact candidate when it is only the site's SPA catch-all shell", async () => {
+    const shell = '<html><body><h1>Product homepage</h1><p>Generate user interfaces from screenshots.</p></body></html>'
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://screenshottocode.com" || url === "https://screenshottocode.com/contact") {
+        return new Response(shell, { status: 200, headers: { "content-type": "text/html" } })
+      }
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await verifyExternalFormDiscoveryHit({
+      origin: "https://screenshottocode.com",
+      timeoutMs: 1_000,
+      hit: {
+        formUrl: "https://screenshottocode.com/contact",
+        candidates: ["https://screenshottocode.com/contact"],
+        confidence: 92,
+        source: "crawl4ai",
+        detail: "Crawl4AI form discovery",
+      },
+    })
+
+    expect(result).toBeNull()
+  })
 })

@@ -36,6 +36,10 @@ export interface FormDiscoveryResult {
   inspection: ContactFormInspection | null
   candidates: string[]
   traceMs: number
+  outcome?: "verified_form" | "contact_page_only" | "no_public_form" | "site_unreachable" | "invalid_origin"
+  outcomeReason?: string
+  checkedUrlCount?: number
+  checkedAt?: string
 }
 
 export interface FormDiscoveryOptions {
@@ -118,6 +122,26 @@ function uniqueUrls(urls: Iterable<string>): string[] {
   return [...new Set(urls)].slice(0, 80)
 }
 
+function documentFingerprint(html: string): string {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function spaFallbackInspection(): ContactFormInspection {
+  return {
+    status: "missing",
+    reason: "spa_fallback_duplicate",
+    fields: [],
+    formCount: 0,
+    action: null,
+    sameOrigin: false,
+    trustedProvider: false,
+  }
+}
+
 async function mapLimit<T, R>(items: readonly T[], concurrency: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const output: R[] = []
   let cursor = 0
@@ -159,7 +183,7 @@ function extractContactAnchors(origin: string, html: string): string[] {
   return uniqueUrls(hits)
 }
 
-async function fetchText(url: string, timeoutMs: number): Promise<string | null> {
+export async function fetchContactPageHtml(url: string, timeoutMs: number): Promise<string | null> {
   try {
     const res = await fetch(
       url,
@@ -179,9 +203,17 @@ async function fetchText(url: string, timeoutMs: number): Promise<string | null>
   }
 }
 
-export async function inspectContactPage(url: string, origin: string, timeoutMs: number): Promise<ContactFormInspection> {
-  const html = await fetchText(url, timeoutMs)
+export async function inspectContactPage(
+  url: string,
+  origin: string,
+  timeoutMs: number,
+  homepageHtml?: string | null,
+): Promise<ContactFormInspection> {
+  const html = await fetchContactPageHtml(url, timeoutMs)
   if (!html) return { status: "missing", reason: "no_contact_intent", fields: [], formCount: 0, action: null, sameOrigin: false, trustedProvider: false }
+  if (homepageHtml && url !== origin && documentFingerprint(html) === documentFingerprint(homepageHtml)) {
+    return spaFallbackInspection()
+  }
   return inspectContactFormHtml(html, url, origin)
 }
 
@@ -226,6 +258,7 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   const timeoutMs = opts.timeoutMs ?? 8_000
   const origin = normalizeOrigin(opts.homeUrl)
   const candidates = new Set<string>()
+  const checkedUrls = new Set<string>()
   let bestPage: string | null = null
   let bestPageMethod: DiscoveryMethod = "none"
   let bestPageConfidence = 0
@@ -245,6 +278,8 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     verification: FormDiscoveryResult["verification"],
     confidence: number,
     inspection: ContactFormInspection | null = null,
+    outcome?: FormDiscoveryResult["outcome"],
+    outcomeReason?: string,
   ): FormDiscoveryResult => ({
     formUrl,
     method,
@@ -253,36 +288,62 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     inspection,
     candidates: uniqueUrls(candidates),
     traceMs: Date.now() - started,
+    outcome: outcome ?? (verification === "form" ? "verified_form" : verification === "page" ? "contact_page_only" : "no_public_form"),
+    outcomeReason: outcomeReason ?? (verification === "form"
+      ? "A public inquiry form with usable email, message, and submit controls was verified."
+      : verification === "page"
+        ? "A contact page was found, but it does not contain a usable public inquiry form."
+        : "No usable public inquiry form was verified on the public routes checked."),
+    checkedUrlCount: checkedUrls.size,
+    checkedAt: new Date().toISOString(),
   })
 
-  if (!origin) return done(null, "none", "none", 0)
+  if (!origin) return done(null, "none", "none", 0, null, "invalid_origin", "The supplied company URL could not be normalized.")
+
+  const inspect = async (
+    url: string,
+    homepageHtml?: string | null,
+    inspectionTimeoutMs = timeoutMs,
+  ): Promise<ContactFormInspection> => {
+    checkedUrls.add(url)
+    const html = await fetchContactPageHtml(url, inspectionTimeoutMs)
+    if (!html) return { status: "missing", reason: "no_contact_intent", fields: [], formCount: 0, action: null, sameOrigin: false, trustedProvider: false }
+    if (homepageHtml && url !== origin && documentFingerprint(html) === documentFingerprint(homepageHtml)) {
+      return spaFallbackInspection()
+    }
+    return inspectContactFormHtml(html, url, origin)
+  }
+
+  checkedUrls.add(origin)
+  const homepageHtml = opts.homepageHtml ?? (await fetchContactPageHtml(origin, timeoutMs))
 
   for (const seedUrl of opts.seedUrls ?? []) {
     if (!isAllowedFormUrlForOrigin(origin, seedUrl)) continue
     candidates.add(seedUrl)
-    const pageType = await inspectContactPage(seedUrl, origin, timeoutMs)
+    const pageType = await inspect(seedUrl, homepageHtml)
     if (pageType.status === "form") return done(seedUrl, "source", "form", 96, pageType)
     if (pageType.status === "page") rememberPage(seedUrl, "source", 76, pageType)
   }
 
-  const homepageHtml = opts.homepageHtml ?? (await fetchText(origin, timeoutMs))
   if (homepageHtml) {
     for (const url of extractContactAnchors(origin, homepageHtml)) candidates.add(url)
     const best = pickBestCandidate([...candidates])
     if (best) {
-      const pageType = await inspectContactPage(best, origin, timeoutMs)
+      const pageType = await inspect(best, homepageHtml)
       if (pageType.status === "form") return done(best, "dom", "form", 94, pageType)
       if (pageType.status === "page") rememberPage(best, "dom", 72, pageType)
     }
   }
 
-  const sitemapXml = await fetchText(`${origin}/sitemap.xml`, timeoutMs)
+  const sitemapUrl = `${origin}/sitemap.xml`
+  checkedUrls.add(sitemapUrl)
+  const sitemapXml = await fetchContactPageHtml(sitemapUrl, timeoutMs)
   if (sitemapXml) {
     const contactSitemapUrls = extractSitemapUrls(sitemapXml).filter((url) => CONTACT_KEYWORDS.test(url))
     for (const url of contactSitemapUrls) candidates.add(url)
     const best = pickBestCandidate(contactSitemapUrls)
     if (best) {
-      const pageType = await inspectContactPage(best, origin, timeoutMs)
+      const pageType = await inspect(best, homepageHtml)
       if (pageType.status === "form") return done(best, "sitemap", "form", 95, pageType)
       if (pageType.status === "page") rememberPage(best, "sitemap", 74, pageType)
     }
@@ -293,7 +354,7 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     : await discoverWithCrawl4Ai({ origin, region: opts.region, timeoutMs })
   if (crawl4Ai?.formUrl) {
     for (const url of crawl4Ai.candidates) candidates.add(url)
-    const pageType = await inspectContactPage(crawl4Ai.formUrl, origin, timeoutMs)
+    const pageType = await inspect(crawl4Ai.formUrl, homepageHtml)
     if (pageType.status === "form") return done(crawl4Ai.formUrl, "crawl4ai", "form", Math.max(crawl4Ai.confidence, 90), pageType)
     if (pageType.status === "page") rememberPage(crawl4Ai.formUrl, "crawl4ai", Math.min(crawl4Ai.confidence, 74), pageType)
   }
@@ -303,7 +364,7 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   const probed = await mapLimit(paths, 3, async (path) => {
     try {
       const candidate = `${origin}${encodeURI(path)}`
-      const pageType = await inspectContactPage(candidate, origin, perPathTimeout)
+      const pageType = await inspect(candidate, homepageHtml, perPathTimeout)
       return { path, candidate, pageType }
     } catch (error) {
       console.warn("[form-discovery] heuristic path failed:", { path, error })
@@ -322,7 +383,7 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   if (opts.enableLlm !== false && candidates.size > 0) {
     const picked = await llmPickFormUrl(origin, [...candidates], timeoutMs)
     if (picked.url) {
-      const pageType = await inspectContactPage(picked.url, origin, timeoutMs)
+      const pageType = await inspect(picked.url, homepageHtml)
       if (pageType.status === "form") return done(picked.url, "llm", "form", Math.max(Math.round(picked.confidence * 100), 90), pageType)
       if (pageType.status === "page") rememberPage(picked.url, "llm", Math.min(Math.round(picked.confidence * 100), 70), pageType)
     }
@@ -333,7 +394,7 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
       const spaUrl = await opts.spaDiscover(origin)
       if (spaUrl) {
         candidates.add(spaUrl)
-        const pageType = await inspectContactPage(spaUrl, origin, timeoutMs)
+        const pageType = await inspect(spaUrl, homepageHtml)
         if (pageType.status === "form") return done(spaUrl, "spa", "form", 90, pageType)
         if (pageType.status === "page") rememberPage(spaUrl, "spa", 65, pageType)
       }
@@ -343,5 +404,8 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   }
 
   if (bestPage) return done(bestPage, bestPageMethod, "page", bestPageConfidence, bestPageInspection)
-  return done(origin, "fallback", "fallback", 20)
+  if (!homepageHtml) {
+    return done(null, "none", "none", 0, null, "site_unreachable", "The public website could not be fetched, so form availability could not be verified.")
+  }
+  return done(null, "fallback", "fallback", 20, null, "no_public_form", `No usable public inquiry form was verified after checking ${checkedUrls.size} public route${checkedUrls.size === 1 ? "" : "s"}.`)
 }

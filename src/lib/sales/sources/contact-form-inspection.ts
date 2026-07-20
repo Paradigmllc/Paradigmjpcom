@@ -4,7 +4,7 @@ import { isAllowedFormUrlForOrigin } from "./external-form-discovery"
 
 export interface ContactFormInspection {
   status: "form" | "page" | "missing"
-  reason: "verified_contact_fields" | "contact_page_only" | "no_contact_intent" | "non_contact_form" | "untrusted_action" | "empty_or_soft_404"
+  reason: "verified_contact_fields" | "contact_page_only" | "no_contact_intent" | "non_contact_form" | "untrusted_action" | "empty_or_soft_404" | "spa_fallback_duplicate"
   fields: Array<"name" | "email" | "message" | "submit">
   formCount: number
   action: string | null

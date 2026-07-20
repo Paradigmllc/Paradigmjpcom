@@ -17,6 +17,7 @@ import { siteUrl } from "./routing"
 import { buildOwnedLicensedMedia, buildPrivateProposalMedia } from "./demo-proposal-media"
 import { applyDemoDesignSpec, readPersistedDemoDesignSpec } from "./demo-design-spec-runtime"
 import { ensureGeneratedVisualMedia } from "./demo-visual-fallback"
+import { isDemoMultiPageData, isRecord } from "./demo-page-data-guards"
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
  * falling back to building from sales_companies data.
@@ -168,21 +169,6 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
     if (err instanceof Error && err.stack) console.error("[demo-generator] stack:", err.stack.slice(0, 1000))
     return null
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
-}
-
-function isDemoMultiPageData(value: unknown): value is DemoMultiPageData {
-  if (!isRecord(value) || !isRecord(value.pages)) return false
-  return typeof value.slug === "string"
-    && typeof value.companyName === "string"
-    && isRecord(value.meta)
-    && isRecord(value.pages.home)
-    && isRecord(value.pages.about)
-    && isRecord(value.pages.services)
-    && isRecord(value.pages.contact)
 }
 
 /**

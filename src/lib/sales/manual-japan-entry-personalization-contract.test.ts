@@ -11,10 +11,20 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).toContain("Build the strategy before drafting")
     expect(prompt).toContain("one to three candidates")
     expect(prompt).toContain("must not share the same opening")
+    expect(prompt).toContain("Use an evidence budget, not a data dump")
+    expect(prompt).toContain("A CTA that could be pasted unchanged into another company's message is invalid")
+    expect(prompt).toContain("This is not a partnership proposal")
     expect(prompt).toContain("Tomohiro H / Paradigm LLC / contact@paradigmjp.com")
     expect(prompt).not.toContain("identify Sato")
     expect(prompt).not.toContain("Paragraph 1 must be exactly")
     expect(prompt).not.toContain("Paragraph 4 must be exactly")
+  })
+
+  it("makes the critic reject template-shaped or data-dump copy", () => {
+    const prompt = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[0]?.content ?? ""
+    expect(prompt).toContain("Reject stock outreach openings")
+    expect(prompt).toContain("reject more than four fact_ids")
+    expect(prompt).toContain("feel written for this company")
   })
 
   it("uses the company-strategy contract when initial-interest options are omitted", () => {
