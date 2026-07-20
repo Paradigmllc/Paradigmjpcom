@@ -101,6 +101,19 @@ function textMatches(html: string, pattern: RegExp, limit: number): string[] {
   return values;
 }
 
+export function joinPublicEvidenceSegments(values: Array<string | null | undefined>, maxChars = 700): string {
+  const segments = [...new Set(values
+    .filter((value): value is string => Boolean(value && value.length >= 3))
+    .map((value) => value.replace(/\s+/g, " ").trim()))];
+  const selected: string[] = [];
+  for (const segment of segments) {
+    const candidate = [...selected, segment].join(" | ");
+    if (candidate.length > maxChars) continue;
+    selected.push(segment);
+  }
+  return selected.join(" | ");
+}
+
 function visiblePageText(html: string): string {
   return decodeHtml(html
     .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
@@ -240,10 +253,13 @@ export async function collectInitialFormDraftEvidence(input: {
     .filter((value) => value.length >= 20 && value.length <= 220);
   const companyName = credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title);
   const productNames = extractPublicProductNames(html);
-  const productContext = [...new Set([description, ...headings, ...descriptiveParagraphs, ...productNames, title]
-    .filter((value): value is string => Boolean(value && value.length >= 3)))]
-    .join(" | ")
-    .slice(0, 700);
+  const productContext = joinPublicEvidenceSegments([
+    ...productNames,
+    description,
+    ...descriptiveParagraphs,
+    ...headings,
+    title,
+  ]);
   if (productContext.length < 12) throw new Error("Homepage did not provide enough grounded product context");
   const audit = await auditJapanMarketReadiness(origin);
   if (audit.pages_checked.length === 0) throw new Error("No public pages were available for Japan-readiness evidence");

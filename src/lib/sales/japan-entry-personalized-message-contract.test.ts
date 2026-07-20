@@ -40,4 +40,17 @@ describe("initial-interest evidence contract", () => {
     expect(selectGroundedProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("AI-powered conversion from screenshots and videos to clean, production-ready code.")
     expect(selectSupplementalProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("Convert any screenshot or design to clean code")
   })
+
+  it("excludes claimed commercial outcomes and case-study headings from message evidence", () => {
+    const productContext = [
+      "Salesfire's all-in-one CRO solution can boost conversion and maximise revenue",
+      "Leverage AI to transform visitor data into sales",
+      "Salesfire x Dream Big Digital:",
+      "Connected solutions for smarter eCommerce operations",
+      "Customer journey analytics across onsite search and email",
+    ].join(" | ")
+
+    expect(selectGroundedProductEvidence({ companyName: "Salesfire", productContext })).toBe("Customer journey analytics across onsite search and email")
+    expect(selectSupplementalProductEvidence({ companyName: "Salesfire", productContext })).toBe("Connected solutions for smarter eCommerce operations")
+  })
 })

@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { decodePublicHtmlText, extractPublicProductNames, selectRicherHomepageHtml } from "./initial-form-draft-evidence";
+import { decodePublicHtmlText, extractPublicProductNames, joinPublicEvidenceSegments, selectRicherHomepageHtml } from "./initial-form-draft-evidence";
 
 describe("public product-name evidence", () => {
   it("decodes zero-padded, hexadecimal, and double-encoded company-name entities", () => {
     expect(decodePublicHtmlText("L&#039;ABC du Parfum")).toBe("L'ABC du Parfum")
     expect(decodePublicHtmlText("L&#x027;ABC du Parfum")).toBe("L'ABC du Parfum")
     expect(decodePublicHtmlText("L&amp;#039;ABC du Parfum")).toBe("L'ABC du Parfum")
+  })
+
+  it("keeps only complete public evidence segments inside the storage bound", () => {
+    expect(joinPublicEvidenceSegments([
+      "Concrete product description",
+      "A detailed capability that does not fit in the remaining space",
+      "Short workflow",
+    ], 45)).toBe("Concrete product description | Short workflow")
   })
 
   it("extracts only named products and applications from strong public metadata", () => {

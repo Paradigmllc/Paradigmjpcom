@@ -13,6 +13,7 @@ import type { ManualCommercialSignal, ManualJapanEntryWorkRow } from "@/lib/sale
 import { ManualMessageIntelligence } from "./ManualMessageIntelligence"
 import { ManualFormDiscoveryStatus } from "./ManualFormDiscoveryStatus"
 import { manualFormDiscoveryPresentation } from "@/lib/sales/manual-form-discovery-status"
+import { manualWorkOperatorNotice } from "@/lib/sales/manual-work-operator-notice"
 
 const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
   processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
@@ -96,6 +97,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
   const hasVerifiedForm = formPresentation.state === "verified_form"
   const hasRecordedOutcome = Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
   const retryable = !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
+  const operatorNotice = manualWorkOperatorNotice(item)
   const outcomes = [
     ["manually_sent", "手動フォーム送信済み", Boolean(item.manually_sent_at)],
     ["reply_received", "返信あり", Boolean(item.reply_received_at)],
@@ -132,9 +134,9 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
             {item.source_attributions.map((source) => <Badge key={source.id} variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">{sourceBySlug.get(source.source_slug)?.name ?? source.source_slug}</Badge>)}
           </div>
 
-          {(item.error_message || item.message_variant_fallback_reason || item.message_angle_fallback_reason) && (
+          {(operatorNotice || item.message_variant_fallback_reason || item.message_angle_fallback_reason) && (
             <div className="mt-5 space-y-2">
-              {item.error_message && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{item.error_message}</p>}
+              {operatorNotice && <div className={`rounded-xl border px-3 py-2 text-xs leading-5 ${operatorNotice.tone === "red" ? "border-red-200 bg-red-50 text-red-900" : operatorNotice.tone === "slate" ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-900"}`}><p className="font-semibold">{operatorNotice.title}</p><p>{operatorNotice.detail}</p></div>}
               {item.message_variant_fallback_reason && <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">{item.message_variant_fallback_reason}</p>}
               {item.message_angle_fallback_reason && <p className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">{item.message_angle_fallback_reason}</p>}
             </div>
