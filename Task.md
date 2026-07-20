@@ -2020,6 +2020,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `rights_manifest`が`owned`/`licensed`と明示するHTTPS素材だけを公開DEMOのHero/Galleryへ戻し、`proposal_only`のポータル素材は従来どおり表示せず生成フォールバックへ残す。内部の権利・提案・非公開文言は顧客向け本文へ流さない。
 - 飲食店は`designRecipe.compositionVariant`を実レンダーへ接続し、cinematic / editorial split / alternate rhythmの3構成を選択できるようにした。Cafe SOSOMUの`compositionVariant=10`はeditorial split（v1）になる。
 - 対象Vitestはこの端末のworker起動タイムアウトで再実行が不安定だったが、変更ファイルESLintと`git diff --check`は通過。正式`npm run release:prod`の最終deployment **rwfygdaomaf28vk0aaxn8x1x**は、再実行したpost-deploy gateでCloudflare origin、DB **91/91**、公開smoke、Sales health `ok:true`、Twenty/Realtime/Traefik、zero-send gateを含め全項目pass。公開`/cafe-sosomu`をread-backし、実DOMの`<img>`はowned JPEG（hero / pour-over / exterior）各3箇所のみで、抽象生成ビジュアルをDOMへ追加しない。`data-hospitality-composition="1"`、split hero、可視内部権利文言0件。Hero原本はHTTP **200 / image/jpeg / 485,223 bytes**。外部送信・Twenty変更は0件。
+- 対象Vitestはこの端末のworker起動タイムアウトで再実行が不安定だったが、変更ファイルESLintと`git diff --check`は通過。正式`npm run release:prod`の最終deployment **rwfygdaomaf28vk0aaxn8x1x**は、再実行したpost-deploy gateでCloudflare origin、DB **91/91**、公開smoke、Sales health `ok:true`、Twenty/Realtime/Traefik、zero-send gateを含め全項目pass。公開`/cafe-sosomu`をread-backし、実DOMの`<img>`はowned JPEG（hero / pour-over / exterior）各3箇所のみで、抽象生成ビジュアルをDOMへ追加しない。`data-hospitality-composition="1"`、split hero、可視内部権利文言0件。Hero原本はHTTP **200 / image/jpeg / 485,223 bytes**。外部送信・Twenty変更は0件。
 
 ## CURRENT STATUS - 2026-07-20 `/work`企業別推定文面（本番release・実企業read-back完了 / 自動送信0）
 
