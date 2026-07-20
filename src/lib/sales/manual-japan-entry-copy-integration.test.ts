@@ -23,7 +23,7 @@ I reviewed Example and its RetailScope subscription analytics platform for indep
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.
 
-I can share a one-page Japan Opportunity Snapshot based on this public evidence. Could you forward this to the founder or person responsible for international growth?
+I can share a one-page Japan Opportunity Snapshot focused on RetailScope’s Japanese-language customer path. Could you forward it to the person responsible for international growth?
 
 ${MANUAL_FORM_SIGNATURE}`
 

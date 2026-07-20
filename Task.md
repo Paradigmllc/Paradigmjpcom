@@ -2028,3 +2028,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 本番で`screenshottocode.com`を再解析し、専用DB record **40c23b3b-fa0e-4540-9f1d-09082d67bb93**をread-back。公開機能「convert any screenshot or design to clean code」、推定月間PV **700–8,000**、初年度Japan opportunity **$336–$1,115**、日本語導線・JPY表示の公開ページgapを組み込んだ初回文面が生成され、品質 **93/100**、safety **100**、uniqueness **100**、generation `passed`となった。
 - 本文は`Hello Screenshot to Code team,`から始まり、URL・ドメイン・Tranco/Common Crawl・出典・citation・Package料金・call bookingを含まず、`Best regards, / Tomohiro H / Paradigm LLC / contact@paradigmjp.com`で終了する。`not measured analytics`、`not observed revenue`、`performance is not guaranteed`を明記し、メールアドレスは1回だけ。決定論的read-back **20/20項目**が合格した。
 - 404の偽フォームを保存せず`form_url=null`へfail-closed。国・SMB・Japan fitとverified formが未確定のため`needs_review`、Twentyは意図どおり`skipped`で偽のCRM追加を行わない。`legacyTemplateUsed=false`、`sent=false`、`automaticSendAllowed=false`を確認。本番app logs直近15分は`api_work_errors=0`、`deepseek_manual_errors=0`、`process_fatals=0`。
+
+## CURRENT STATUS - 2026-07-20 `/work`初回文面の一社専用化gate（実装検証完了 / 本番release待ち / 自動送信0）
+
+- 初回文面を全データの差し込みではなく、各社で最も決定力のある最小根拠へ絞る。原則は具体的な商品・機能1件、Japan customer pathの監査gap 1件、選択したangleに必要な公開シグナルだけとし、使用根拠は最大4件、推定あり文面の監査gapは必ず1件に制限する。
+- `I noticed` / `I came across` / `I’m reaching out`等の定型的な書き出し、partnership / collaboration / synergy / work together等の提携営業、根拠のない「Japanese users often...」型の一般論を決定論的に拒否する。CTAも商品名・具体的機能または選択したcustomer-path gapを明記し、別企業へそのまま転用できる締めは不合格にする。
+- DeepSeekの生成・critic双方へ同じ一社専用化contractを追加し、既存の企業固有根拠、推定値の非実測表示、URL・出典の本文非表示、copy-ready署名、Twenty保存判定、manual zero-sendを維持する。ローカルの実reviewer smokeでは良文`100/100`、定型導入・提携文・一般論・監査gap過多・汎用CTAをそれぞれ拒否した。
+- 変更ファイルESLint、対象TypeScript検査、prompt/critic contract smoke、実reviewer smoke、Quality Guard **0 errors / 0 warnings**、`git diff --check`を通過。端末の長時間残留ブラウザ処理による高負荷でVitest worker起動がtimeoutしたため、対象Vitestとproduction buildはPRの隔離CIおよび正式`npm run release:prod`を完了条件とする。本番反映後に`screenshottocode.com`を再解析し、本文・根拠数・CTA・品質点・DB履歴・Twenty判定・自動送信0をread-backする。

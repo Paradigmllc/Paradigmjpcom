@@ -10,6 +10,7 @@ import {
   inspectManualFormCopyEnvelope,
   MANUAL_FORM_SENDER,
 } from "./manual-japan-entry-copy-envelope";
+import { reviewManualFormBespokeStyle } from "./manual-japan-entry-copy-style";
 
 const BASE_MIN_WORDS = 100;
 const BASE_MAX_WORDS = 160;
@@ -127,6 +128,19 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (/\bSato\b/i.test(message)) { issues.push("Legacy sender name Sato is prohibited"); score = 0; }
     if (!paragraphs[0]?.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("The first body paragraph must open with a company-specific observation"); score -= 25; }
     if (/(?:I(?:'|’)m|I am)\s+Tomohiro H/i.test(substantiveMessage)) { issues.push("The sender biography must not be repeated inside the personalized body"); score -= 20; }
+    const bespokeIssues = reviewManualFormBespokeStyle({
+      body: substantiveMessage,
+      openingParagraph: paragraphs[0] ?? "",
+      finalParagraph: paragraphs.at(-1) ?? "",
+      productEvidence,
+      productNames,
+      selectedFacts: selected,
+      includeEstimate: initialInterestOptions.includeEstimate,
+    });
+    if (bespokeIssues.length > 0) {
+      issues.push(...bespokeIssues);
+      score -= Math.min(70, bespokeIssues.length * 30);
+    }
   } else if (!/Sato/i.test(message) || !/Paradigm LLC/i.test(message) || !/\bJapan\b/i.test(message)) {
     issues.push("Sato, Paradigm LLC, and Japan introduction is incomplete"); score -= 20;
   }
