@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractPublicProductNames } from "./initial-form-draft-evidence";
+import { extractPublicProductNames, selectRicherHomepageHtml } from "./initial-form-draft-evidence";
 
 describe("public product-name evidence", () => {
   it("extracts only named products and applications from strong public metadata", () => {
@@ -33,4 +33,21 @@ describe("public product-name evidence", () => {
 
     expect(extractPublicProductNames(html)).toEqual([]);
   });
+
+  it("uses browser-rendered evidence when a client shell hides the actual product page", () => {
+    const direct = `<html><head><title>Screenshot to Code</title></head><body><div id="root"></div><script src="app.js"></script></body></html>`
+    const rendered = `<html><body><h1>Build User Interfaces 10x Faster</h1><h2>Video to Code</h2><p>${"AI-powered screenshot, video, and text-to-code workflow. ".repeat(14)}</p></body></html>`
+
+    expect(selectRicherHomepageHtml(direct, rendered)).toMatchObject({
+      html: rendered,
+      evidenceMode: "browser_rendered",
+    })
+  })
+
+  it("keeps direct HTML when rendered output adds no material evidence", () => {
+    const direct = `<html><body><h1>Acme Analytics</h1><p>${"Public inventory analytics workflow. ".repeat(12)}</p></body></html>`
+    const rendered = `<html><body><h1>Acme Analytics</h1><p>Public inventory analytics workflow.</p></body></html>`
+
+    expect(selectRicherHomepageHtml(direct, rendered).evidenceMode).toBe("direct_html")
+  })
 });

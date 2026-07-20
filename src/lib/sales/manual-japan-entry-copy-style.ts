@@ -2,7 +2,7 @@ import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-m
 
 const TEMPLATE_OPENING_PATTERN = /\b(?:I(?:'|’)m reaching out|I am reaching out|I wanted to reach out|I came across|I noticed|I was impressed by|hope this message finds you well|touch base|quick introduction)\b/i
 const PARTNERSHIP_PITCH_PATTERN = /\b(?:explore (?:a |the )?(?:partnership|collaboration)|potential partnership|partner with (?:you|your team)|collaborate with (?:you|your team)|work together|mutually beneficial|strategic fit|synerg(?:y|ies)|explore how we can)\b/i
-const JAPANESE_BEHAVIOR_PATTERN = /\bJapanese (?:customers?|buyers?|consumers?|users?|companies|teams?|developers?|designers?|retailers?|businesses)\b.{0,100}\b(?:often|typically|generally|tend to|prefer|expect|need|rely on|evaluate|look for|care about|value)\b/i
+const JAPANESE_BEHAVIOR_PATTERN = /\b(?:for\s+)?Japanese(?:\s+[a-z-]+){0,3}\s+(?:customers?|buyers?|consumers?|users?|companies|teams?|developers?|designers?|retailers?|businesses)\b.{0,140}\b(?:often|typically|generally|tend to|prefer|expect|need|rely on|evaluate|look for|care about|value|influence(?:s|d)?\s+(?:trial|purchase|buying|evaluation|decision)|overlook)\b/i
 
 function containsAnchor(text: string, anchors: string[]): boolean {
   const normalized = text.toLowerCase()
@@ -13,6 +13,7 @@ export function reviewManualFormBespokeStyle(input: {
   body: string
   openingParagraph: string
   finalParagraph: string
+  companyName: string
   productEvidence: string
   productNames: string[]
   selectedFacts: JapanEntryPersonalizationFact[]
@@ -33,6 +34,9 @@ export function reviewManualFormBespokeStyle(input: {
   } else if (!input.includeEstimate && auditFacts.length > 2) {
     issues.push("The no-estimate variant must use no more than two audited customer-path facts")
   }
+  if (auditFacts.some((fact) => containsAnchor(input.openingParagraph, fact.anchors))) {
+    issues.push("The opening paragraph must focus on the product observation, not merge in the Japan audit gap")
+  }
 
   const genericJapaneseBehavior = JAPANESE_BEHAVIOR_PATTERN.test(input.body)
   const groundedJapaneseBehavior = selectedFacts.some((fact) => JAPANESE_BEHAVIOR_PATTERN.test(fact.statement))
@@ -41,6 +45,7 @@ export function reviewManualFormBespokeStyle(input: {
   }
 
   const ctaFocusAnchors = [
+    input.companyName,
     input.productEvidence,
     ...input.productNames,
     ...auditFacts.flatMap((fact) => fact.anchors),

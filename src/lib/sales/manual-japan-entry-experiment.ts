@@ -36,7 +36,7 @@ export function nonEstimateVariant(variant: ManualMessageVariant): ManualMessage
 
 export function assignManualMessageVariant(domain: string): ManualMessageVariant {
   void domain
-  return "estimate_on_price_off"
+  return "estimate_off_price_off"
 }
 
 export interface ManualExperimentMetric {

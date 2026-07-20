@@ -3,6 +3,7 @@ import { normalizeDomain } from "./dedup";
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard";
 import { getProxyFetchOptions } from "./proxy-agent";
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit";
+import { fetchPageWithCrawl4Ai } from "./crawl4ai-page";
 
 type JsonRecord = Record<string, unknown>;
 const MAX_HOMEPAGE_BYTES = 1_500_000;
@@ -68,6 +69,38 @@ function textMatches(html: string, pattern: RegExp, limit: number): string[] {
     if (values.length >= limit) break;
   }
   return values;
+}
+
+function visiblePageText(html: string): string {
+  return decodeHtml(html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript\b[\s\S]*?<\/noscript>/gi, " "))
+}
+
+function samePublicHostname(left: string, right: string): boolean {
+  try {
+    return new URL(left).hostname.replace(/^www\./, "") === new URL(right).hostname.replace(/^www\./, "")
+  } catch (error) {
+    console.warn("[manual-work] ignored invalid rendered homepage URL:", { left, right, error })
+    return false
+  }
+}
+
+export function selectRicherHomepageHtml(directHtml: string, renderedHtml: string | null): {
+  html: string
+  evidenceMode: "direct_html" | "browser_rendered"
+} {
+  if (!renderedHtml) return { html: directHtml, evidenceMode: "direct_html" }
+  const directText = visiblePageText(directHtml)
+  const renderedText = visiblePageText(renderedHtml)
+  const directHeadings = textMatches(directHtml, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 12).length
+  const renderedHeadings = textMatches(renderedHtml, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 12).length
+  const materiallyRicher = renderedText.length >= Math.max(240, directText.length * 1.5)
+    && (renderedHeadings > directHeadings || renderedText.length >= directText.length + 500)
+  return materiallyRicher
+    ? { html: renderedHtml.slice(0, MAX_HOMEPAGE_BYTES), evidenceMode: "browser_rendered" }
+    : { html: directHtml, evidenceMode: "direct_html" }
 }
 
 function credibleSiteName(value: string | null): string | null {
@@ -157,13 +190,27 @@ export async function collectInitialFormDraftEvidence(input: {
   if (!contentType.includes("text/html")) throw new Error("Homepage did not return HTML");
   const declaredSize = Number(response.headers.get("content-length") ?? 0);
   if (declaredSize > MAX_HOMEPAGE_BYTES) throw new Error("Homepage HTML exceeded the evidence size limit");
-  const html = (await response.text()).slice(0, MAX_HOMEPAGE_BYTES);
+  const directHtml = (await response.text()).slice(0, MAX_HOMEPAGE_BYTES);
+  const directVisibleText = visiblePageText(directHtml);
+  const directHeadings = textMatches(directHtml, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 3);
+  const needsBrowserEvidence = directVisibleText.length < 240 || directHeadings.length === 0;
+  const renderedPage = needsBrowserEvidence
+    ? await fetchPageWithCrawl4Ai(origin, 20_000)
+    : null;
+  const sameHostRenderedHtml = renderedPage
+    && samePublicHostname(renderedPage.url, response.url)
+    ? renderedPage.html
+    : null;
+  const selected = selectRicherHomepageHtml(directHtml, sameHostRenderedHtml);
+  const html = selected.html;
   const title = textMatches(html, /<title\b[^>]*>([\s\S]*?)<\/title>/gi, 1)[0] ?? null;
   const description = metaContent(html, "description") ?? metaContent(html, "og:description");
-  const headings = textMatches(html, /<h[12]\b[^>]*>([\s\S]*?)<\/h[12]>/gi, 5);
+  const headings = textMatches(html, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 8);
+  const descriptiveParagraphs = textMatches(html, /<p\b[^>]*>([\s\S]*?)<\/p>/gi, 5)
+    .filter((value) => value.length >= 20 && value.length <= 220);
   const companyName = credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title);
   const productNames = extractPublicProductNames(html);
-  const productContext = [...new Set([description, ...headings, ...productNames, title]
+  const productContext = [...new Set([description, ...headings, ...descriptiveParagraphs, ...productNames, title]
     .filter((value): value is string => Boolean(value && value.length >= 3)))]
     .join(" | ")
     .slice(0, 700);
@@ -179,6 +226,7 @@ export async function collectInitialFormDraftEvidence(input: {
     description,
     headings,
     productNames,
+    evidenceMode: selected.evidenceMode,
     audit,
   };
 }

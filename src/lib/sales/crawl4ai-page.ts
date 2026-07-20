@@ -75,7 +75,8 @@ export async function fetchPageWithCrawl4Ai(url: string, timeoutMs: number): Pro
     crawler_config: {
       cache_mode: "BYPASS",
       page_timeout: Math.max(timeoutMs, 10_000),
-      wait_until: "domcontentloaded",
+      wait_until: "load",
+      delay_before_return_html: 2,
       scan_full_page: false,
     },
   })
