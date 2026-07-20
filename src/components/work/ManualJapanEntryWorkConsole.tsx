@@ -16,6 +16,7 @@ import {
 } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
+import { manualWorkFailureToast } from "@/lib/sales/manual-work-operator-notice"
 import { ManualWorkExperimentControls } from "./ManualWorkExperimentControls"
 import { ManualWorkHistory } from "./ManualWorkHistory"
 import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
@@ -135,8 +136,8 @@ export function ManualJapanEntryWorkConsole({
         const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; error?: string }
         if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
         setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
-        if (body.item.status === "failed") throw new Error(body.item.error_message ?? `${url} の解析に失敗しました`)
-        if (body.item.twenty_sync_status === "failed") throw new Error(body.item.error_message ?? `${url} のTwenty保存に失敗しました`)
+        if (body.item.status === "failed") throw new Error(manualWorkFailureToast(body.item))
+        if (body.item.twenty_sync_status === "failed") throw new Error(manualWorkFailureToast(body.item))
         setQueue((current) => ({ ...current, [url]: "done" }))
         toast.success(body.duplicate ? `${url} は既存履歴またはTwentyにあります` : `${url} の解析が完了しました`)
       } catch (error) {

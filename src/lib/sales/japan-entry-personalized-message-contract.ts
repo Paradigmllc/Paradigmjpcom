@@ -6,6 +6,9 @@ const EVIDENCE_STOP_WORDS = new Set([
   "a", "an", "and", "any", "for", "from", "in", "into", "of", "or", "the", "to", "with",
 ])
 
+const PRODUCT_OUTCOME_CLAIM_RE = /(?:\b(?:boost|maximi[sz]e|increase|generate|grow|scale|transform|accelerate|improve|enhance|drive)\b.{0,90}\b(?:conversion|conversions|sales|revenue|profit|growth|performance|results?)\b|\b(?:conversion|conversions|sales|revenue|profit|growth|performance)\b.{0,70}\b(?:boost|increase|maximi[sz]e|generate|grow|scale|transform|accelerate|improve|enhance|drive)\b|\bhelp you scale\b)/i
+const CASE_STUDY_HEADING_RE = /(?:\s+x\s+|:\s*$|\bcase stud(?:y|ies)\b)/i
+
 function evidenceToken(value: string): string {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "")
   if (normalized.endsWith("ies") && normalized.length > 5) return `${normalized.slice(0, -3)}y`
@@ -56,6 +59,8 @@ function productEvidenceCandidates(input: {
     .filter((value) => value.length >= 12 && value.length <= 180)
     .filter((value) => !/\d/.test(value))
     .filter((value) => !/\b(?:best|faster|fastest|leading|developers? love|ready to ship|game[- ]changer|award[- ]winning)\b/i.test(value))
+    .filter((value) => !PRODUCT_OUTCOME_CLAIM_RE.test(value))
+    .filter((value) => !CASE_STUDY_HEADING_RE.test(value))
     .filter((value) => !productNames.has(value.toLowerCase()))
     .filter((value) => evidenceTokens(value).length >= 4)
 }

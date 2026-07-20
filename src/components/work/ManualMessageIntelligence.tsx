@@ -4,6 +4,7 @@ import { AlertTriangle, Calculator, CheckCircle2, Copy, ExternalLink, MessageSqu
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
+import { manualWorkOperatorNotice } from "@/lib/sales/manual-work-operator-notice"
 
 type JsonRecord = Record<string, unknown>
 
@@ -82,15 +83,15 @@ export function ManualMessageIntelligence({ item, onCopy }: {
   onCopy: (value: string, label: string) => void
 }) {
   const review = item.message_review
-  const generationError = text(review.generation_error)
   if (!item.initial_message) {
+    const notice = manualWorkOperatorNotice(item)
     return (
       <section className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50" aria-label="フォーム文面の生成状況">
         <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-amber-950">
           <AlertTriangle className="size-4 text-amber-700" />企業別フォーム文面は未生成です
         </div>
         <div className="border-t border-amber-200 px-4 py-3 text-xs leading-5 text-amber-900">
-          <p>{generationError ?? "前回の生成結果または失敗理由が保存されていません。"}</p>
+          <p>{notice?.detail ?? "前回の生成結果が保存されていません。"}</p>
           <p className="mt-1 font-semibold">「再解析」を実行し、生成結果を保存し直してください。</p>
         </div>
       </section>

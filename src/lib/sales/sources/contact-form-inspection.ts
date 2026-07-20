@@ -4,7 +4,7 @@ import { isAllowedFormUrlForOrigin } from "./external-form-discovery"
 
 export interface ContactFormInspection {
   status: "form" | "page" | "missing"
-  reason: "verified_contact_fields" | "contact_page_only" | "no_contact_intent" | "non_contact_form" | "untrusted_action" | "empty_or_soft_404" | "spa_fallback_duplicate"
+  reason: "verified_contact_fields" | "verified_trusted_embed" | "contact_page_only" | "no_contact_intent" | "non_contact_form" | "untrusted_action" | "empty_or_soft_404" | "spa_fallback_duplicate"
   fields: Array<"name" | "email" | "message" | "submit">
   formCount: number
   action: string | null
@@ -18,6 +18,7 @@ const MESSAGE_RE = /message|inquiry|enquiry|question|comment|details|description
 const NAME_RE = /(?:^|[^a-z])name|full.?name|company|organization|お名前|氏名|会社名|法人名/i
 const NON_CONTACT_RE = /newsletter|subscribe|mailing.?list|search|login|sign.?in|password|coupon|discount|cart|checkout|quantity|product|variant|ニュースレター|メルマガ|検索|ログイン/i
 const SOFT_404_RE = /(?:\b404\b|page (?:was )?not found|not found|does(?:n't| not) exist|cannot be found|ページが見つかりません|お探しのページ|存在しません)/i
+const HUBSPOT_EMBED_RE = /hbspt\.forms\.create\s*\(\s*\{[\s\S]{0,2000}?\bportalId\s*:\s*["']\d{3,20}["'][\s\S]{0,2000}?\bformId\s*:\s*["'][0-9a-f-]{20,50}["'][\s\S]{0,2000}?\}\s*\)/i
 
 function empty(status: ContactFormInspection["status"], reason: ContactFormInspection["reason"], formCount = 0): ContactFormInspection {
   return { status, reason, fields: [], formCount, action: null, sameOrigin: false, trustedProvider: false }
@@ -53,8 +54,37 @@ function actionSafety(origin: string, pageUrl: string, rawAction: string | undef
   }
 }
 
+function trustedEmbeddedContactForm($: CheerioAPI, pageUrl: string): ContactFormInspection | null {
+  for (const script of $("script").toArray()) {
+    const node = $(script)
+    const loader = `${node.attr("src") ?? ""} ${node.attr("data-src") ?? ""} ${node.attr("data-rocket-src") ?? ""}`
+    const source = node.html() ?? ""
+    if (!HUBSPOT_EMBED_RE.test(source)) continue
+    if (!/hsforms\.net\/forms\/embed|hbspt\.forms/i.test(`${loader} ${source}`)) continue
+
+    const container = node.closest("[class*='contact'],[class*='enquiry'],[class*='inquiry'],[class*='form'],section,article")
+    const visibleContainer = container.clone()
+    visibleContainer.find("script,style,noscript,template").remove()
+    const context = visibleContainer.text().replace(/\s+/g, " ").trim()
+    if (!CONTACT_INTENT_RE.test(context) || NON_CONTACT_RE.test(context) && !MESSAGE_RE.test(context)) continue
+
+    return {
+      status: "form",
+      reason: "verified_trusted_embed",
+      fields: ["email", "message", "submit"],
+      formCount: 1,
+      action: pageUrl,
+      sameOrigin: true,
+      trustedProvider: true,
+    }
+  }
+  return null
+}
+
 export function inspectContactFormHtml(html: string, pageUrl: string, origin: string): ContactFormInspection {
   const $ = load(html)
+  const trustedEmbed = trustedEmbeddedContactForm($, pageUrl)
+  if (trustedEmbed) return trustedEmbed
   $("script,style,noscript,template").remove()
   const titleAndHeadings = `${$("title").text()} ${$("h1,h2").slice(0, 8).text()}`.replace(/\s+/g, " ").trim()
   const visibleBodyText = $("body").text().replace(/\s+/g, " ").trim()

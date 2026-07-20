@@ -43,6 +43,45 @@ describe("inspectContactFormHtml", () => {
     expect(result.reason).toBe("untrusted_action")
   })
 
+  it("verifies a HubSpot inquiry embed only when its local page section has contact intent", () => {
+    const result = inspectContactFormHtml(`
+      <html><head><title>Contact Salesfire</title></head><body>
+        <div class="form-styling form-styling-book-demo">
+          <p>Get in touch</p>
+          <div class="fl-html">
+            <script data-rocket-src="//js.hsforms.net/forms/embed/v2.js"></script>
+            <script>hbspt.forms.create({ portalId: "4313924", formId: "a2dac0a5-ede6-4246-b84b-06dbee1cdb69", region: "na1" });</script>
+          </div>
+          <p>By submitting the form you agree to be contacted regarding your enquiry.</p>
+        </div>
+      </body></html>
+    `, "https://www.salesfire.co.uk/contact-us/", "https://salesfire.co.uk")
+
+    expect(result).toMatchObject({
+      status: "form",
+      reason: "verified_trusted_embed",
+      action: "https://www.salesfire.co.uk/contact-us/",
+      sameOrigin: true,
+      trustedProvider: true,
+    })
+    expect(result.fields).toEqual(["email", "message", "submit"])
+  })
+
+  it("does not misclassify a HubSpot newsletter embed as an inquiry form", () => {
+    const result = inspectContactFormHtml(`
+      <html><head><title>Company updates</title></head><body>
+        <div class="simple-form-styling newsletter">
+          <p>Join our newsletter and subscribe for updates</p>
+          <script data-rocket-src="//js.hsforms.net/forms/embed/v2.js"></script>
+          <script>hbspt.forms.create({ portalId: "4313924", formId: "4912b5bc-51d8-42b4-b3c0-322457b7a7ca" });</script>
+        </div>
+      </body></html>
+    `, "https://www.salesfire.co.uk/", "https://salesfire.co.uk")
+
+    expect(result.status).toBe("missing")
+    expect(result.reason).toBe("no_contact_intent")
+  })
+
   it("treats a blank client-rendered contact route as a soft 404", () => {
     const result = inspectContactFormHtml(
       "<html><head><title>Screenshot to Code</title></head><body><div id=\"root\"></div><script>render()</script></body></html>",
