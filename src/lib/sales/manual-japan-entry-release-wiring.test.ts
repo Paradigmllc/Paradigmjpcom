@@ -72,6 +72,8 @@ describe("manual Japan Entry release wiring", () => {
     expect(service).not.toContain('purpose: "commercial_offer"')
     expect(service).toContain('!hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")')
     expect(service).toContain("generation_error")
+    expect(manualTwenty).toContain("twentyNumberMatches")
+    expect(manualTwenty).toContain("twentyLinkMatches")
     expect(service).toContain('twenty_sync_status === "failed"')
     expect(service).toContain("ownedCompanyId: work.twenty_company_id")
     expect(profile).toContain("normalizeManualCompanyProfile")

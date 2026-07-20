@@ -12,6 +12,8 @@ vi.mock("./twenty-sync-company-home", () => twenty);
 import {
   ManualTwentySyncError,
   syncManualWorkToTwenty,
+  twentyLinkMatches,
+  twentyNumberMatches,
 } from "./manual-japan-entry-twenty";
 
 const profile: ManualCompanyProfile = {
@@ -147,5 +149,40 @@ describe("manual work Twenty persistence", () => {
     });
     await expect(result).rejects.toBeInstanceOf(ManualTwentySyncError);
     await expect(result).rejects.toMatchObject({ companyId: "company-1" });
+  });
+});
+
+describe("manual work Twenty read-back normalization", () => {
+  it("accepts Twenty numeric fields returned as JSON numbers or PostgreSQL numeric strings", () => {
+    expect(twentyNumberMatches(85, 85)).toBe(true);
+    expect(twentyNumberMatches("85", 85)).toBe(true);
+    expect(twentyNumberMatches("80.0", 80)).toBe(true);
+  });
+
+  it("continues to fail closed for missing, malformed, or different scores", () => {
+    expect(twentyNumberMatches(null, 85)).toBe(false);
+    expect(twentyNumberMatches("85 points", 85)).toBe(false);
+    expect(twentyNumberMatches("84", 85)).toBe(false);
+  });
+
+  it("normalizes only harmless URL representation differences during read-back", () => {
+    expect(
+      twentyLinkMatches(
+        "https://abcduparfum.fr/contact",
+        "https://abcduparfum.fr/contact/",
+      ),
+    ).toBe(true);
+    expect(
+      twentyLinkMatches(
+        "https://abcduparfum.fr:443/contact#form",
+        "https://ABCduparfum.fr/contact/",
+      ),
+    ).toBe(true);
+    expect(
+      twentyLinkMatches(
+        "https://abcduparfum.fr/contact-us",
+        "https://abcduparfum.fr/contact/",
+      ),
+    ).toBe(false);
   });
 });

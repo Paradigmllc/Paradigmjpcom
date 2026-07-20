@@ -871,6 +871,8 @@ function checkStaticReleaseRules() {
     && manualWorkProfile.includes("after one repair")
     && manualWorkTwenty.includes("ManualTwentySyncError")
     && manualWorkTwenty.includes("Twenty保存確認")
+    && manualWorkTwenty.includes("twentyNumberMatches")
+    && manualWorkTwenty.includes("twentyLinkMatches")
     && manualWorkCopySmoke.includes('purpose: "initial_interest"')
     && manualWorkCopySmoke.includes("noUrlOrDomain")
     && manualWorkCopySmoke.includes("noCommercialTerms")

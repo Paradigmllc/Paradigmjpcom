@@ -16,4 +16,40 @@ describe("manual inquiry-form copy distinctness", () => {
     expect(manualMessageSimilarity(prior, next, ["Alpha", "Beta"])).toBeLessThan(0.2)
     expect(reviewManualMessageDistinctness({ message: next, companyName: "Beta", priorMessages: [{ id: "prior-1", companyName: "Alpha", domain: "alpha.example", message: prior }] }).passed).toBe(true)
   })
+
+  it("rejects drafts that swap the product paragraph but reuse the same diagnosis and routing CTA", () => {
+    const prior = `Hello Alpha team,
+
+Alpha lets customers create a bespoke perfume through online sessions and personalized kits.
+
+A review of your public pages showed no Japanese-language customer path. Whether this gap affects Alpha's Japanese customer path remains unverified.
+
+I can share a one-page Japan Opportunity Snapshot based on this public evidence to inform an Alpha Japanese-language decision. Could you forward this to the founder or person responsible for international growth at Alpha?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+    const next = `Hello Beta team,
+
+Beta provides customer journey analytics across onsite search and email.
+
+A review of your public pages showed no Japanese-language customer path. Whether this gap affects Beta's Japanese customer path remains unverified.
+
+I can share a one-page Japan Opportunity Snapshot based on this public evidence to inform a Beta Japanese-language decision. Could you forward this to the founder or person responsible for international growth at Beta?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+
+    const result = reviewManualMessageDistinctness({
+      message: next,
+      companyName: "Beta",
+      priorMessages: [{ id: "prior-1", companyName: "Alpha", domain: "alpha.example", message: prior }],
+    })
+
+    expect(result.maxSimilarity).toBeGreaterThanOrEqual(0.35)
+    expect(result.passed).toBe(false)
+  })
 })
