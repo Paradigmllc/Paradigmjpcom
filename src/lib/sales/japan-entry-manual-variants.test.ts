@@ -109,7 +109,7 @@ describe("manual initial-interest message variants", () => {
     expect(result.passed).toBe(false)
     expect(result.issues.join(" ")).toMatch(/Template-like outreach opening/)
     expect(result.issues).toContain("Partnership or collaboration pitch language is prohibited in first-touch form copy")
-    expect(result.issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact")
+    expect(result.issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
   })
 
   it("rejects an estimate draft that dumps multiple audit gaps", () => {
@@ -140,6 +140,6 @@ describe("manual initial-interest message variants", () => {
     const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: false })
 
     expect(result.passed).toBe(false)
-    expect(result.issues).toContain("The CTA must name the selected product or customer-path focus")
+    expect(result.issues).toContain("The final question must include the exact company or product anchor: Example")
   })
 })

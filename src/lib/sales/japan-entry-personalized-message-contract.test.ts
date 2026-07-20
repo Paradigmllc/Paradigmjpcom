@@ -29,14 +29,15 @@ describe("initial-interest evidence contract", () => {
 
   it("selects an exact capability phrase and tolerates only a safe inflection in review", () => {
     const productContext = "Convert any screenshot or design to clean code | Refine colors, spacing, components, and functionality with follow-up prompts | Screenshot to Code"
-    expect(selectGroundedProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("Convert any screenshot or design to clean code")
-    expect(selectSupplementalProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("Refine colors, spacing, components, and functionality with follow-up prompts")
+    expect(selectGroundedProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("Refine colors, spacing, components, and functionality with follow-up prompts")
+    expect(selectSupplementalProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("Convert any screenshot or design to clean code")
     expect(isGroundedProductEvidence(productContext, "converts any screenshot or design to clean code")).toBe(true)
     expect(isGroundedProductEvidence(productContext, "enterprise demand-generation platform")).toBe(false)
   })
 
   it("skips numeric and promotional SPA headings when selecting supplemental product evidence", () => {
     const productContext = "Convert any screenshot or design to clean code | Build User Interfaces 10x Faster | Developers love it | AI-powered conversion from screenshots and videos to clean, production-ready code."
-    expect(selectSupplementalProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("AI-powered conversion from screenshots and videos to clean, production-ready code.")
+    expect(selectGroundedProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("AI-powered conversion from screenshots and videos to clean, production-ready code.")
+    expect(selectSupplementalProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("Convert any screenshot or design to clean code")
   })
 })

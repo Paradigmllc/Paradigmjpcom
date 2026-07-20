@@ -41,18 +41,13 @@ export function reviewManualFormBespokeStyle(input: {
   const genericJapaneseBehavior = JAPANESE_BEHAVIOR_PATTERN.test(input.body)
   const groundedJapaneseBehavior = selectedFacts.some((fact) => JAPANESE_BEHAVIOR_PATTERN.test(fact.statement))
   if (genericJapaneseBehavior && !groundedJapaneseBehavior) {
-    issues.push("Generalized Japanese audience behavior is not grounded in a selected fact")
+    issues.push("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
   }
 
-  const ctaFocusAnchors = [
-    input.companyName,
-    input.productEvidence,
-    ...input.productNames,
-    ...auditFacts.flatMap((fact) => fact.anchors),
-  ]
+  const companyOrProductAnchors = [input.companyName, ...input.productNames]
   const finalQuestion = input.finalParagraph.match(/[^.!?]*\?\s*$/)?.[0] ?? input.finalParagraph
-  if (!containsAnchor(finalQuestion, ctaFocusAnchors)) {
-    issues.push("The CTA must name the selected product or customer-path focus")
+  if (!containsAnchor(finalQuestion, companyOrProductAnchors)) {
+    issues.push(`The final question must include the exact company or product anchor: ${input.productNames[0] ?? input.companyName}`)
   }
   return issues
 }

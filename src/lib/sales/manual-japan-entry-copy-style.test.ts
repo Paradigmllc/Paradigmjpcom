@@ -27,9 +27,9 @@ describe("bespoke form-copy style", () => {
     const issues = review(
       "Screenshot to Code converts screenshots to code. The audit found no Japanese-language path.",
       "Screenshot to Code converts screenshots to code.",
-      "May I send the Screenshot to Code opportunity snapshot?",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
     )
-    expect(issues).not.toContain("The CTA must name the selected product or customer-path focus")
+    expect(issues).not.toContain("The final question must include the exact company or product anchor: Screenshot to Code")
   })
 
   it("rejects a generic final question even when the preceding offer sentence names the company", () => {
@@ -38,15 +38,15 @@ describe("bespoke form-copy style", () => {
       "Screenshot to Code converts screenshots to code.",
       "I can share a Screenshot to Code opportunity snapshot. Could you forward it to the right person?",
     )
-    expect(issues).toContain("The CTA must name the selected product or customer-path focus")
+    expect(issues).toContain("The final question must include the exact company or product anchor: Screenshot to Code")
   })
 
   it("rejects ungrounded behavior claims about a qualified Japanese audience", () => {
     const issues = review(
       "Japanese front-end developers often rely on localized onboarding when evaluating tools.",
       "Screenshot to Code converts screenshots to code.",
-      "May I send the Screenshot to Code opportunity snapshot?",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
     )
-    expect(issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact")
+    expect(issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
   })
 })
