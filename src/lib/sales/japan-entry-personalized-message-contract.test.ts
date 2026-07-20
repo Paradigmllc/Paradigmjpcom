@@ -45,6 +45,8 @@ describe("initial-interest evidence contract", () => {
     const productContext = [
       "Salesfire's all-in-one CRO solution can boost conversion and maximise revenue",
       "Leverage AI to transform visitor data into sales",
+      "Significantly grow your marketing subscribers to reach more shoppers via email and SMS",
+      "Effectively re-engage shoppers with automated emails based on their real-time activity",
       "Salesfire x Dream Big Digital:",
       "Connected solutions for smarter eCommerce operations",
       "Customer journey analytics across onsite search and email",

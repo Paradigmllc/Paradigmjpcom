@@ -15,6 +15,32 @@ export class ManualTwentySyncError extends Error {
   }
 }
 
+export function twentyNumberMatches(actual: unknown, expected: number): boolean {
+  if (typeof actual === "number") return Number.isFinite(actual) && actual === expected
+  if (typeof actual !== "string" || !/^-?\d+(?:\.\d+)?$/.test(actual.trim())) return false
+  const parsed = Number(actual)
+  return Number.isFinite(parsed) && parsed === expected
+}
+
+function canonicalTwentyLink(value: string | null | undefined): string {
+  if (!value) return ""
+  try {
+    const url = new URL(value)
+    url.hash = ""
+    url.hostname = url.hostname.toLowerCase()
+    if ((url.protocol === "https:" && url.port === "443") || (url.protocol === "http:" && url.port === "80")) url.port = ""
+    if (url.pathname !== "/") url.pathname = url.pathname.replace(/\/+$/, "")
+    return url.toString()
+  } catch (error) {
+    console.error("[manual-work-twenty] invalid link during read-back comparison:", { value, error })
+    return value.trim()
+  }
+}
+
+export function twentyLinkMatches(actual: string | null | undefined, expected: string): boolean {
+  return canonicalTwentyLink(actual) === canonicalTwentyLink(expected)
+}
+
 export async function syncManualWorkToTwenty(input: {
   domain: string
   profile: ManualCompanyProfile
@@ -73,16 +99,16 @@ export async function syncManualWorkToTwenty(input: {
   const mismatches = [
     saved?.id === company.id ? null : "companyId",
     saved?.name === expected.name ? null : "name",
-    saved?.paradigmReportUrl?.primaryLinkUrl === input.reportUrl ? null : "reportUrl",
-    saved?.paradigmFormUrl?.primaryLinkUrl === input.formUrl ? null : "formUrl",
+    twentyLinkMatches(saved?.paradigmReportUrl?.primaryLinkUrl, input.reportUrl) ? null : "reportUrl",
+    twentyLinkMatches(saved?.paradigmFormUrl?.primaryLinkUrl, input.formUrl) ? null : "formUrl",
     saved?.paradigmCountryName === expected.paradigmCountryName ? null : "country",
     saved?.paradigmIndustryName === expected.paradigmIndustryName ? null : "industry",
     saved?.paradigmSourceName === expected.paradigmSourceName ? null : "source",
     saved?.paradigmSalesStatus === expected.paradigmSalesStatus ? null : "salesStatus",
     saved?.paradigmDataStatus === expected.paradigmDataStatus ? null : "dataStatus",
     saved?.paradigmNextAction === expected.paradigmNextAction ? null : "nextAction",
-    saved?.paradigmSmbScore === expected.paradigmSmbScore ? null : "smbScore",
-    saved?.paradigmOpportunityScore === expected.paradigmOpportunityScore ? null : "opportunityScore",
+    twentyNumberMatches(saved?.paradigmSmbScore, expected.paradigmSmbScore) ? null : "smbScore",
+    twentyNumberMatches(saved?.paradigmOpportunityScore, expected.paradigmOpportunityScore) ? null : "opportunityScore",
     saved?.paradigmKarteSummary?.markdown === summary ? null : "initialMessageSummary",
   ].filter((value): value is string => value !== null)
   if (mismatches.length > 0) {

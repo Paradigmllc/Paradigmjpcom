@@ -31,8 +31,8 @@ export interface TwentyRecord {
   } | null
   paradigmLeadStatus?: string | null
   paradigmTechnology?: string | null
-  paradigmOpportunityScore?: number | null
-  paradigmSmbScore?: number | null
+  paradigmOpportunityScore?: number | string | null
+  paradigmSmbScore?: number | string | null
 }
 
 export interface TwentyListResponse<T> {
