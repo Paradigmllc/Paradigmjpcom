@@ -25,7 +25,7 @@ export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-
 export type { JapanEntryMessageReview } from "./japan-entry-personalized-message-review";
 const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
-const EDITORIAL_DIMENSION_FLOOR = 22;
+const EDITORIAL_DIMENSION_FLOOR = 23;
 const STAGE_MAX_TOKENS = {
   generation: 4_000,
   repair: 2_400,
@@ -302,11 +302,12 @@ export async function generatePersonalizedJapanEntryMessage(
     return { ok: false, error: "No high-signal Japan-specific public fact is available for personalized copy" };
   }
 
-  const mode = getJapanEntryMessageMode(facts);
   const purpose = input.purpose ?? "commercial_offer";
+  const mode = purpose === "initial_interest" && input.initialInterestOptions?.includeEstimate !== true
+    ? "audit"
+    : getJapanEntryMessageMode(facts);
   let totalAttempts = 0;
   let totalUsage: DeepSeekResponse["usage"];
-  let repairUsed = false;
 
   const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>) => {
     const candidate = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(rawCandidate, input.companyName) : rawCandidate;
@@ -361,34 +362,32 @@ export async function generatePersonalizedJapanEntryMessage(
     if (!duplicatesPriorCandidate) valid.push(item);
   }
   if (valid.length === 0) {
-    const strongest = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
-    if (!strongest) {
-      return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro returned no candidate to repair" };
-    }
-    const repaired = await callStructured({
-      stage: "repair",
-      messages: generationMessages(input, facts, mode, {
-        candidate: strongest.candidate,
-        issues: [...strongest.safety.issues, ...strongest.similarity.reasons],
-      }),
-      schema: repairSchema,
-      caller,
-    });
-    repairUsed = true;
-    totalAttempts += repaired.attempts;
-    totalUsage = addUsage(totalUsage, repaired.usage);
-    if (!repaired.ok) {
-      return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
-    }
-    const repairedCandidate = inspectCandidate(repaired.data.candidate);
-    if (!repairedCandidate.safety.passed || !repairedCandidate.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(repairedCandidate.candidate))) {
-      return {
+    let repairTarget = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
+    if (!repairTarget) return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro returned no candidate to repair" };
+    for (let repairPass = 1; repairPass <= 2; repairPass += 1) {
+      const repaired = await callStructured({
+        stage: "repair",
+        messages: generationMessages(input, facts, mode, { candidate: repairTarget.candidate, issues: [...repairTarget.safety.issues, ...repairTarget.similarity.reasons] }),
+        schema: repairSchema,
+        caller,
+      });
+      totalAttempts += repaired.attempts;
+      totalUsage = addUsage(totalUsage, repaired.usage);
+      if (!repaired.ok) return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
+      const inspected = inspectCandidate(repaired.data.candidate);
+      const passed = inspected.safety.passed && inspected.similarity.passed
+        && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
+      if (passed) {
+        valid = [inspected];
+        break;
+      }
+      repairTarget = inspected;
+      if (repairPass === 2) return {
         ok: false,
         usage: totalUsage,
-        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety or uniqueness gate after one targeted repair: ${[...repairedCandidate.safety.issues, ...repairedCandidate.similarity.reasons].join("; ")}`,
+        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety or uniqueness gate after two targeted repairs: ${[...inspected.safety.issues, ...inspected.similarity.reasons].join("; ")}`,
       };
     }
-    valid = [repairedCandidate];
   }
 
   const criticize = async (candidates: typeof valid) => {
@@ -429,71 +428,43 @@ export async function generatePersonalizedJapanEntryMessage(
     confidence: fact.confidence,
     classification: fact.id.startsWith("modeled-") ? "modeled" : fact.id.startsWith("company-observed-") || fact.id.startsWith("japan-audit-") ? "observed" : "hypothesis",
   }));
-  const review = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts, similarity: selected.similarity, candidateCount: valid.length });
-  if (review.passed) {
-    return {
-      ok: true,
-      message: selected.candidate.message.trim(),
-      review,
-      usage: totalUsage,
-      strategy,
-      candidates: valid.map((item) => publicCandidate(item.candidate)),
-      selectedIndex: criticized.data.selected_index,
-      evidencePack,
-      similarity: selected.similarity,
-    };
+  let finalCandidate = selected;
+  let finalReview = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts, similarity: selected.similarity, candidateCount: valid.length });
+  let repairIssues = finalReview.issues;
+  for (let repairPass = 1; !finalReview.passed && repairPass <= 2; repairPass += 1) {
+    const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; make the CTA name the product or exact customer-path analysis and say what decision it informs. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
+    const repaired = await callStructured({
+      stage: "repair",
+      messages: generationMessages(input, facts, mode, { candidate: finalCandidate.candidate, issues: repairIssues, editorialFeedback }),
+      schema: repairSchema,
+      caller,
+    });
+    totalAttempts += repaired.attempts;
+    totalUsage = addUsage(totalUsage, repaired.usage);
+    if (!repaired.ok) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
+    const inspected = inspectCandidate(repaired.data.candidate);
+    if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {
+      repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
+      if (repairPass === 2) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };
+      finalCandidate = inspected;
+      continue;
+    }
+    const repairedCritic = await criticize([inspected]);
+    if (!repairedCritic.ok) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro repaired-draft review failed: ${repairedCritic.error}` };
+    finalCandidate = inspected;
+    finalReview = buildReview({ selected: inspected, criticized: repairedCritic.data, attempts: totalAttempts, similarity: inspected.similarity, candidateCount: 1 });
+    repairIssues = finalReview.issues;
   }
-  if (repairUsed) {
-    return { ok: false, review, usage: totalUsage, error: review.issues[0] };
-  }
-
-  const repaired = await callStructured({
-    stage: "repair",
-    messages: generationMessages(input, facts, mode, {
-      candidate: selected.candidate,
-      issues: review.issues,
-      editorialFeedback: `Score ${review.score}/100. ${review.rationale}. Material risks: ${review.riskFlags.join(", ") || "none"}. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`,
-    }),
-    schema: repairSchema,
-    caller,
-  });
-  totalAttempts += repaired.attempts;
-  totalUsage = addUsage(totalUsage, repaired.usage);
-  if (!repaired.ok) {
-    return { ok: false, review, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
-  }
-  const repairedCandidate = inspectCandidate(repaired.data.candidate);
-  if (!repairedCandidate.safety.passed || !repairedCandidate.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(repairedCandidate.candidate))) {
-    return {
-      ok: false,
-      usage: totalUsage,
-      error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${[...repairedCandidate.safety.issues, ...repairedCandidate.similarity.reasons].join("; ")}`,
-    };
-  }
-
-  const repairedCritic = await criticize([repairedCandidate]);
-  if (!repairedCritic.ok) {
-    return { ok: false, review, usage: totalUsage, error: `DeepSeek V4 Pro repaired-draft review failed: ${repairedCritic.error}` };
-  }
-  const repairedReview = buildReview({
-    selected: repairedCandidate,
-    criticized: repairedCritic.data,
-    attempts: totalAttempts,
-    similarity: repairedCandidate.similarity,
-    candidateCount: 1,
-  });
-  if (!repairedReview.passed) {
-    return { ok: false, review: repairedReview, usage: totalUsage, error: repairedReview.issues[0] };
-  }
+  if (!finalReview.passed) return { ok: false, review: finalReview, usage: totalUsage, error: finalReview.issues[0] };
   return {
     ok: true,
-    message: repairedCandidate.candidate.message.trim(),
-    review: repairedReview,
+    message: finalCandidate.candidate.message.trim(),
+    review: finalReview,
     usage: totalUsage,
     strategy,
-    candidates: [publicCandidate(repairedCandidate.candidate)],
-    selectedIndex: 0,
+    candidates: finalCandidate === selected ? valid.map((item) => publicCandidate(item.candidate)) : [publicCandidate(finalCandidate.candidate)],
+    selectedIndex: finalCandidate === selected ? criticized.data.selected_index : 0,
     evidencePack,
-    similarity: repairedCandidate.similarity,
+    similarity: finalCandidate.similarity,
   };
 }

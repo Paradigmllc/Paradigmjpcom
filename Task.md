@@ -1,9 +1,11 @@
-## CURRENT STATUS - 2026-07-20 `/work`公開フォーム探索診断・顧客向けレポートV3（実装中 / 外部送信0）
+## CURRENT STATUS - 2026-07-20 `/work` SPA企業証拠・完全オーダーメイド文面・顧客向けレポートV3（実装検証完了 / release待ち / 外部送信0）
 
 - 再探索後も「未取得」に見える問題を、URL文字列ではなく探索結果を永続表示する設計へ変更した。各実行で`outcome / outcomeReason / checkedUrlCount / checkedAt`を保存し、画面に「送信フォーム確認済み / 問い合わせページのみ / 公開フォームなし / サイト取得不可 / フォーム要確認」と理由・探索回数・確認URL数・最終時刻を表示する。リンクは`verification=form / confidence>=90 / inspection.status=form / email+message+submit`を全て満たす場合だけ表示する。
 - `screenshottocode.com`のように任意パスへ同一ホームHTMLを返すSPA catch-allを本文fingerprintで検出し、`/contact`等を問い合わせページとして採用しない。Crawl4AI候補もホーム本文との同一性を再検証し、存在しないURLは`form_url`・Twenty・公開リンクへ流さない。
 - 公開レポートを`manual_japan_entry_customer_v3 / customer_japan_entry_opportunity_report`へ刷新した。旧V2の`Private evidence brief`、workbench名、内部判定、operator action、初回営業文面、フォーム経路、自動送信状態を顧客画面から完全に除外し、企業固有のproduct snapshot、公開観察、Japan機会仮説、対象セグメント、優先施策、検証ロードマップ、推奨判断、推定値の根拠と限界、確認した公開ページだけを表示する。既存V2/旧汎用レポート行もroute上でV3へ再構築し、旧rendererは削除した。
-- 初回文面は前段の企業別bespoke品質ゲートを維持し、定型冒頭・提携文・generic Japan論・根拠詰め込み・generic CTAを拒否する。実装検証、PR、本番release、`screenshottocode.com`同一履歴の再解析・DB/UI/公開レポートread-backは継続中。フォーム・メール・SNS等の外部送信経路は追加していない。
+- `screenshottocode.com`の直接HTMLがSPA shellだけだったため、初回証拠取得をCrawl4AIの描画後HTMLへ限定fallbackし、直接HTMLより実質的に豊富な場合だけ採用する。h1-h3と説明段落から商品名・機能・workflowを抽出し、`evidenceMode=direct_html/browser_rendered`を履歴へ保存する。初回HTMLだけで企業情報が空になる経路を廃止した。
+- 初回文面は企業名、主商品根拠、補助機能、許可済み監査根拠、会社別CTAのexact contractを追加し、根拠外factの混入、定型冒頭、提携文、generic Japan論、URL/出典、generic CTAを決定論で拒否する。安全修復と編集修復を各最大2回にし、DeepSeek criticは**総合92/100以上かつ4軸すべて23/25以上**だけを保存する。自動variantは粗いPV/売上推定を毎社の初回文面へ強制せず、明示選択時だけ使用する。推定値はレポートには根拠・限界付きで維持する。
+- 実DeepSeek公式APIでScreenshot to Codeの描画後相当証拠を投入し、商品固有の`Screenshot to Code / screenshots and videos / React・Vue等`、公開ページ上の日本語導線未確認、会社名入りrouting CTA、Tomohiro H / Paradigm LLC / contact@paradigmjp.com署名を含む本文を生成。品質 **92/100（4軸23/25）**、安全性 **100/100**、独自性 **97/100**、URL/ドメイン・出典・商業条件0を確認した。TypeScript、対象ESLint、Quality Guard **0 errors / 76 existing warnings**、全Vitest **220 files / 991 tests**がpass。本番release、同一履歴の再解析、DB/UI/公開V3レポート/Twenty read-backは次工程。フォーム・メール・SNS等の外部送信経路は追加していない。
 
 ## CURRENT STATUS - 2026-07-20 `/work`実フォームfail-closed・初回文面結果永続化（本番実解析・console clean完了 / 外部送信0）
 

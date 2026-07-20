@@ -98,7 +98,10 @@ export function selectBestManualFormResult(
 
 export function buildManualInitialMessageInput(input: {
   profile: ManualCompanyProfile
-  evidence: Omit<Awaited<ReturnType<typeof collectInitialFormDraftEvidence>>, "productNames"> & { productNames?: string[] }
+  evidence: Omit<Awaited<ReturnType<typeof collectInitialFormDraftEvidence>>, "productNames" | "evidenceMode"> & {
+    productNames?: string[]
+    evidenceMode?: Awaited<ReturnType<typeof collectInitialFormDraftEvidence>>["evidenceMode"]
+  }
   variant?: ManualMessageVariant
   angle?: ManualMessageAngle
   projection?: Awaited<ReturnType<typeof collectManualMarketProjection>>["projection"]

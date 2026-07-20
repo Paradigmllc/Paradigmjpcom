@@ -17,9 +17,7 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example’s RetailScope public pages describe a retail analytics workflow that links inventory forecasting with replenishment decisions for independent operators, providing a concrete basis for a Japan-path review.
-
-I reviewed Example and its RetailScope subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage and product pages.
+Example’s public pages describe RetailScope as a subscription analytics platform for independent retailers. The documented workflow connects inventory forecasting with replenishment decisions and supplies inventory insights for independent operators, giving this review a concrete company-specific product basis.
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.
 
