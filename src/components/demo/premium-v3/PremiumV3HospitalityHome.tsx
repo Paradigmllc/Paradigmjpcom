@@ -19,6 +19,9 @@ export function PremiumV3HospitalityHome({ data }: { data: DemoMultiPageData }) 
   const contact = data.pages.contact
   const basePath = `/${data.slug}`
   const motionStyle = data.designRecipe?.motionVariant
+  const compositionVariant = Math.abs(data.designRecipe?.compositionVariant ?? 0) % 3
+  const heroVariant = compositionVariant === 1 ? "split" : "cinematic"
+  const heroSplitSide = compositionVariant === 2 ? "left" : "right"
   const media = uniqueHeroMedia([...premium.heroMedia, ...premium.gallery], 8)
   const hero = media[0] ?? premium.heroMedia[0]
   const visitMedia = media[1] ?? hero
@@ -29,7 +32,7 @@ export function PremiumV3HospitalityHome({ data }: { data: DemoMultiPageData }) 
   const isExternalMap = /^https?:\/\//u.test(mapHref)
 
   return (
-    <div className="premium-hospitality-home overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
+    <div className={`premium-hospitality-home premium-hospitality-home--v${compositionVariant} overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]`} data-hospitality-composition={compositionVariant}>
       <PremiumV3HeroDeck
         media={media}
         title={home.hero.title}
@@ -38,7 +41,8 @@ export function PremiumV3HospitalityHome({ data }: { data: DemoMultiPageData }) 
         locationLabel={home.hero.locationLabel}
         primaryCta={home.hero.primaryCta}
         secondaryCta={{ text: "お店について", href: `${basePath}/about` }}
-        variant="cinematic"
+        variant={heroVariant}
+        splitSide={heroSplitSide}
         motionStyle={motionStyle}
       />
 

@@ -1966,3 +1966,9 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 生成リクエストが`require_vision=false`の場合、Vision providerの環境変数が存在しても外部Vision APIを呼ばない fail-closed 制御をgatewayへ追加した。Visionは明示的な旧経路でのみ任意利用でき、通常の全ページDEMO生成は`dom-css`モードで実行する。生成物・Twentyメタデータ・管理画面へ根拠モードとPC/モバイルの取得件数を表示し、品質ゲートでもDOM根拠の有無を検査する。
 - `visualEvidenceMode`は`dom-css` / `vision+dom-css` / `metadata`として保存する。原本DOMはDBへ保存せず、生成時だけDeepSeekへ渡す。`sending_enabled=false`、7日限定レビューURL、外部フォーム・メール・SNS・電話・郵送・ポータルDM送信なしを維持する。
 - TypeScript、Python構文、対象Vitest **4/4**、変更ファイルESLint、Quality Guard **0 errors / 73 warnings**、production build **408/408 pages**を通過。正式`npm run release:prod`はDB **91/91**、公開smoke、Sales health `ok:true`、Twenty、Realtime、Traefikを含む`release gate passed`。sidecar deployment **ullqecv7h463m9u8ygpa50f5**はhealthyで、`vision_provider=null`、`vision_ready=false`、Visionキー空、`require_vision=false`、`metadata-text`をread-backした。公開read-backはreadiness **200**、サイト再現API未認証 **401**、無効preview **404**、既存DEMO **200**。DeepSeek以外のAPIキー追加・課金、実企業へのDEMO生成、外部送信は行っていない。
+## CURRENT STATUS - 2026-07-20 公開DEMO実レンダラー品質修正（本番反映待ち / 外部送信0）
+
+- 前回のscreenshot-to-code導入は管理用のレビュー生成経路であり、実際の公開`/cafe-sosomu`は従来のPremium V3レンダラーを使用していたため、ユーザーが見る品質へ反映されていなかった。公開ルートと`PremiumV3HospitalityHome`を直接監査し、この経路を修正している。
+- `rights_manifest`が`owned`/`licensed`と明示するHTTPS素材だけを公開DEMOのHero/Galleryへ戻し、`proposal_only`のポータル素材は従来どおり表示せず生成フォールバックへ残す。内部の権利・提案・非公開文言は顧客向け本文へ流さない。
+- 飲食店は`designRecipe.compositionVariant`を実レンダーへ接続し、cinematic / editorial split / alternate rhythmの3構成を選択できるようにした。Cafe SOSOMUの`compositionVariant=10`はeditorial split（v1）になる。
+- 対象Vitest **4/4**、変更ファイルESLint、`git diff --check`を確認。ローカル全体Next buildは既存ブラウザ負荷下で24分超無出力のため中断し、正式releaseでリモートbuild・公開read-backを行う。外部送信・Twenty変更は0件。

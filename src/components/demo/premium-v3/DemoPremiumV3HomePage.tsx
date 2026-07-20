@@ -27,6 +27,9 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const instagram = premium.social.find((item) => item.network === "instagram")?.href
   const serviceHighlights = data.pages.services.services.slice(0, 3)
   const faq = data.pages.faq?.sections.slice(0, 3) ?? []
+  const introNote = /提案|非公開|権利確認|掲載素材|正式公開/iu.test(premium.intro.note)
+    ? "事業内容と利用前に確認したい情報を、読みやすくまとめています。"
+    : premium.intro.note
   const presentation = data.presentation
   const isExternalMap = /^https?:\/\//u.test(mapHref)
   const motionStyle = data.designRecipe?.motionVariant
@@ -61,7 +64,7 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.78fr_1.22fr] lg:gap-20">
-          <PremiumV3Reveal motionStyle={motionStyle}><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">{premium.intro.eyebrow}</p><p className="mt-6 text-sm leading-8 text-[var(--demo-muted)]">{premium.intro.note}</p></PremiumV3Reveal>
+          <PremiumV3Reveal motionStyle={motionStyle}><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">{premium.intro.eyebrow}</p><p className="mt-6 text-sm leading-8 text-[var(--demo-muted)]">{introNote}</p></PremiumV3Reveal>
           <PremiumV3Reveal motionStyle={motionStyle} delay={0.08}><h2 className={`max-w-4xl whitespace-pre-line font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)] ${demoHeadlineClass(premium.intro.title)}`}>{premium.intro.title}</h2><p className="mt-8 max-w-3xl whitespace-pre-line text-base leading-9 text-[var(--demo-muted)] sm:text-lg">{premium.intro.body}</p><a href={`${basePath}/about`} className="group mt-9 inline-flex items-center gap-4 text-sm font-bold">{aboutLabel}詳しく見る<span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--demo-ink)] text-white transition group-hover:translate-x-1"><ArrowRight className="h-4 w-4" /></span></a></PremiumV3Reveal>
         </div>
       </section>
