@@ -145,6 +145,14 @@ describe("manual Japan Entry work safety gates", () => {
       ...crawlPageOnly,
       formUrl: null,
     })
+    expect(selectBestManualFormResult([
+      { ...baseline, verification: "fallback", confidence: 20, checkedUrlCount: 16 },
+      { ...crawlPageOnly, checkedUrlCount: 2 },
+    ])).toMatchObject({
+      formUrl: null,
+      verification: "page",
+      checkedUrlCount: 16,
+    })
   })
 
   it("rejects a form label when the fetched page does not contain verified fields", () => {

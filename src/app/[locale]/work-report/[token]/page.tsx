@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { z } from "zod"
 import ManualJapanEntryReport from "@/components/work-report/ManualJapanEntryReport"
-import { resolveManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-legacy"
+import { resolveManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-resolver"
 import { findManualWorkByReportToken } from "@/lib/sales/manual-japan-entry-store"
 
 export const dynamic = "force-dynamic"
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const metadata: Metadata = {
-  title: "Private Japan Entry Diagnostic | Paradigm",
+  title: "Japan Entry Opportunity Report | Paradigm",
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 }
 

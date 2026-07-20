@@ -785,6 +785,9 @@ function checkStaticReleaseRules() {
   const manualWorkReportTypes = fs.existsSync("src/lib/sales/manual-japan-entry-report-types.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-report-types.ts", "utf8")
     : ""
+  const manualWorkReportResolver = fs.existsSync("src/lib/sales/manual-japan-entry-report-resolver.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-report-resolver.ts", "utf8")
+    : ""
   const manualWorkReportPage = fs.existsSync("src/app/[locale]/work-report/[token]/page.tsx")
     ? fs.readFileSync("src/app/[locale]/work-report/[token]/page.tsx", "utf8")
     : ""
@@ -802,6 +805,9 @@ function checkStaticReleaseRules() {
     : ""
   const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
     ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
+    : ""
+  const formDiscovery = fs.existsSync("src/lib/sales/sources/form-discovery.ts")
+    ? fs.readFileSync("src/lib/sales/sources/form-discovery.ts", "utf8")
     : ""
   const manualCopyEnvelope = fs.existsSync("src/lib/sales/manual-japan-entry-copy-envelope.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-copy-envelope.ts", "utf8")
@@ -866,7 +872,8 @@ function checkStaticReleaseRules() {
     && manualCopyEnvelope.includes('company: "Paradigm LLC"')
     && manualCopyEnvelope.includes('email: "contact@paradigmjp.com"')
     && manualWorkHistoryItem.includes("再解析")
-    && manualWorkHistoryItem.includes("フォーム未確認")
+    && manualWorkHistoryItem.includes("ManualFormDiscoveryStatus")
+    && manualWorkHistoryItem.includes("再探索・再生成")
     && manualMessageIntelligence.includes("generation_error")
     && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
@@ -878,14 +885,20 @@ function checkStaticReleaseRules() {
     && manualWorkReport.includes("MANUAL_JAPAN_ENTRY_REPORT_SCHEMA")
     && !manualWorkReport.includes("matchContentTemplate")
     && !manualWorkReport.includes("DiagnosticReportData")
-    && manualWorkReportTypes.includes('"manual_japan_entry_v2"')
+    && manualWorkReportTypes.includes('"manual_japan_entry_customer_v3"')
+    && manualWorkReportTypes.includes('"customer_japan_entry_opportunity_report"')
     && manualWorkReportTypes.includes("legacyTemplateUsed: false")
     && manualWorkReportTypes.includes("automaticSendAllowed: false")
+    && manualWorkReportResolver.includes("resolveManualJapanEntryReportData")
+    && manualWorkReportResolver.includes("isManualJapanEntryReportData")
     && manualWorkReportPage.includes("ManualJapanEntryReport")
     && manualWorkReportPage.includes("resolveManualJapanEntryReportData")
     && !manualWorkReportPage.includes("ensureSafeDiagnosticReport")
     && !manualWorkReportPage.includes('components/diagnostic/DiagnosticReport')
-    && manualWorkReportRenderer.includes("Never sent automatically")
+    && manualWorkReportRenderer.includes("Japan Entry Opportunity Report")
+    && manualWorkReportRenderer.includes("Executive perspective")
+    && !manualWorkReportRenderer.includes("Private evidence brief")
+    && !manualWorkReportRenderer.includes("Never sent automatically")
     && conditionalSiteChrome.includes("isStandaloneRoute")
     && standaloneRoutes.includes("work-report")
     && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
@@ -893,10 +906,13 @@ function checkStaticReleaseRules() {
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
     && contactFormInspection.includes("empty_or_soft_404")
+    && contactFormInspection.includes("spa_fallback_duplicate")
+    && formDiscovery.includes("documentFingerprint")
+    && formDiscovery.includes('outcome: outcome ?? (verification === "form" ? "verified_form"')
   ) {
-    pass("manual Japan Entry workbench has a dedicated V2 evidence report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has a customer-facing V3 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, SPA-safe verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires a dedicated V2 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires a customer-facing V3 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, SPA-safe verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1448,8 +1464,16 @@ select case when
     from public.manual_japan_entry_work
     where report_url is not null
       and (
-        report_data ->> 'schemaVersion' is distinct from 'manual_japan_entry_v2'
-        or report_data ->> 'reportKind' is distinct from 'manual_japan_entry_evidence_brief'
+        report_data ->> 'schemaVersion' is null
+        or report_data ->> 'schemaVersion' not in ('manual_japan_entry_v2', 'manual_japan_entry_customer_v3')
+        or (
+          report_data ->> 'schemaVersion' = 'manual_japan_entry_v2'
+          and report_data ->> 'reportKind' is distinct from 'manual_japan_entry_evidence_brief'
+        )
+        or (
+          report_data ->> 'schemaVersion' = 'manual_japan_entry_customer_v3'
+          and report_data ->> 'reportKind' is distinct from 'customer_japan_entry_opportunity_report'
+        )
         or report_data #>> '{provenance,legacyTemplateUsed}' is distinct from 'false'
         or report_data #>> '{provenance,automaticSendAllowed}' is distinct from 'false'
         or report_data ? 'content_template'
@@ -1643,6 +1667,16 @@ async function fetchCheck(label, url, options = {}) {
       fail(`${label} did not contain expected marker(s): ${missingMarkers.join(", ")}`)
       return
     }
+    const forbiddenMarkers = options.mustNotContain
+      ? Array.isArray(options.mustNotContain)
+        ? options.mustNotContain
+        : [options.mustNotContain]
+      : []
+    const presentForbiddenMarkers = forbiddenMarkers.filter((marker) => text.includes(marker))
+    if (presentForbiddenMarkers.length > 0) {
+      fail(`${label} contained forbidden marker(s): ${presentForbiddenMarkers.join(", ")}`)
+      return
+    }
     pass(`${label} HTTP ${res.status}`)
     return
   }
@@ -1822,10 +1856,11 @@ async function checkPostDeployUrls() {
   })
   const manualReportPath = latestManualWorkReportPath()
   if (manualReportPath) {
-    await fetchCheck("manual Japan Entry V2 evidence report", `${BASE_URL}${manualReportPath}`, {
+    await fetchCheck("manual Japan Entry customer V3 report", `${BASE_URL}${manualReportPath}`, {
       timeoutMs: 25_000,
       rejectReportError: true,
-      mustContain: ["Private evidence brief", "Manual Japan Entry Workbench", "Never sent automatically", "manual_japan_entry_v2"],
+      mustContain: ["Japan Entry Opportunity Report", "Executive perspective", "Paradigm LLC", "manual_japan_entry_customer_v3"],
+      mustNotContain: ["Private evidence brief", "Manual Japan Entry Workbench", "Operator next actions", "Never sent automatically", "Human-reviewed first touch"],
     })
   } else {
     warn("manual Japan Entry report smoke skipped because no stored report exists")

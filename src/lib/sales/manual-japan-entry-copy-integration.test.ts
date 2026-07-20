@@ -115,7 +115,7 @@ describe("manual work first-touch generation integration", () => {
     expect(result.message).toBe(message)
     expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
-    expect(result.message).toContain("Could you forward this to the founder")
+    expect(result.message).toContain("Could you forward it to the person responsible for international growth?")
     expect(result.message).toMatch(/^Hello Example team,/)
     expect(result.message).toMatch(/Best regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp\.com$/)
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })

@@ -380,6 +380,7 @@ export async function processManualJapanEntryUrl(
       sourceUrl: evidence.sourceUrl,
       qualificationLedger: sourceLedgers.qualification,
       masterLeadLedger: sourceLedgers.master,
+      projection: marketProjection.projection,
     })
     const eligibility = manualWorkEligibility({
       profile,

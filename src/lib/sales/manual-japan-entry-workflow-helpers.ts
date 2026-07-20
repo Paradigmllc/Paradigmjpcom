@@ -85,7 +85,15 @@ export function selectBestManualFormResult(
     candidates: [],
     traceMs: 0,
   }
-  return isVerifiedManualFormResult(selected) ? selected : { ...selected, formUrl: null }
+  const recordedCounts = available.flatMap((result) => typeof result.checkedUrlCount === "number" ? [result.checkedUrlCount] : [])
+  const enriched = recordedCounts.length > 0
+    ? {
+        ...selected,
+        candidates: [...new Set(available.flatMap((result) => result.candidates))].slice(0, 80),
+        checkedUrlCount: Math.max(...recordedCounts),
+      }
+    : selected
+  return isVerifiedManualFormResult(enriched) ? enriched : { ...enriched, formUrl: null }
 }
 
 export function buildManualInitialMessageInput(input: {

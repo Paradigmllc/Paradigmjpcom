@@ -11,6 +11,8 @@ import { MANUAL_SOURCE_ROLE_LABELS, type ManualLeadSourceCatalogRow, type Manual
 import { buildManualMarketLens, MANUAL_COMMERCIAL_SIGNAL_LABELS } from "@/lib/sales/manual-japan-entry-market-lens"
 import type { ManualCommercialSignal, ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import { ManualMessageIntelligence } from "./ManualMessageIntelligence"
+import { ManualFormDiscoveryStatus } from "./ManualFormDiscoveryStatus"
+import { manualFormDiscoveryPresentation } from "@/lib/sales/manual-form-discovery-status"
 
 const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
   processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
@@ -90,6 +92,8 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
   const stages = qualificationStages(item.qualification_ledger)
   const verifiedStages = stages.filter(([, stage]) => stage.status === "verified").length
   const qualificationProgress = stages.length ? Math.round((verifiedStages / 6) * 100) : 0
+  const formPresentation = manualFormDiscoveryPresentation({ formUrl: item.form_url, formDiscovery: item.form_discovery })
+  const hasVerifiedForm = formPresentation.state === "verified_form"
   const hasRecordedOutcome = Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
   const retryable = !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
   const outcomes = [
@@ -114,9 +118,9 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{item.twenty_sync_status === "failed" ? "Twenty再同期" : "再解析"}</Button>}
-              {item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
-              {!item.form_url && item.stage === "complete" && <Badge variant="outline" className="h-8 border-amber-200 bg-amber-50 px-3 text-amber-800">フォーム未確認</Badge>}
+              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{item.twenty_sync_status === "failed" ? "Twenty再同期" : hasVerifiedForm ? "再解析" : "再探索・再生成"}</Button>}
+              {hasVerifiedForm && item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
+              {!hasVerifiedForm && item.stage === "complete" && <Badge variant="outline" className="h-8 border-slate-200 bg-slate-50 px-3 text-slate-700">{formPresentation.label}</Badge>}
               {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
             </div>
           </div>
@@ -135,6 +139,8 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               {item.message_angle_fallback_reason && <p className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">{item.message_angle_fallback_reason}</p>}
             </div>
           )}
+
+          {item.stage === "complete" && <ManualFormDiscoveryStatus item={item} />}
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Market</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.country_code ?? "未確定"} · {marketLens.label}</p><p className="mt-1 text-xs text-slate-600">SMB {item.smb_confidence ?? "—"} / 企業別判断</p></div>

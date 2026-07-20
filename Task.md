@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-20 `/work`公開フォーム探索診断・顧客向けレポートV3（実装中 / 外部送信0）
+
+- 再探索後も「未取得」に見える問題を、URL文字列ではなく探索結果を永続表示する設計へ変更した。各実行で`outcome / outcomeReason / checkedUrlCount / checkedAt`を保存し、画面に「送信フォーム確認済み / 問い合わせページのみ / 公開フォームなし / サイト取得不可 / フォーム要確認」と理由・探索回数・確認URL数・最終時刻を表示する。リンクは`verification=form / confidence>=90 / inspection.status=form / email+message+submit`を全て満たす場合だけ表示する。
+- `screenshottocode.com`のように任意パスへ同一ホームHTMLを返すSPA catch-allを本文fingerprintで検出し、`/contact`等を問い合わせページとして採用しない。Crawl4AI候補もホーム本文との同一性を再検証し、存在しないURLは`form_url`・Twenty・公開リンクへ流さない。
+- 公開レポートを`manual_japan_entry_customer_v3 / customer_japan_entry_opportunity_report`へ刷新した。旧V2の`Private evidence brief`、workbench名、内部判定、operator action、初回営業文面、フォーム経路、自動送信状態を顧客画面から完全に除外し、企業固有のproduct snapshot、公開観察、Japan機会仮説、対象セグメント、優先施策、検証ロードマップ、推奨判断、推定値の根拠と限界、確認した公開ページだけを表示する。既存V2/旧汎用レポート行もroute上でV3へ再構築し、旧rendererは削除した。
+- 初回文面は前段の企業別bespoke品質ゲートを維持し、定型冒頭・提携文・generic Japan論・根拠詰め込み・generic CTAを拒否する。実装検証、PR、本番release、`screenshottocode.com`同一履歴の再解析・DB/UI/公開レポートread-backは継続中。フォーム・メール・SNS等の外部送信経路は追加していない。
+
 ## CURRENT STATUS - 2026-07-20 `/work`実フォームfail-closed・初回文面結果永続化（本番実解析・console clean完了 / 外部送信0）
 
 - `screenshottocode.com/contact`はHTTP 200でもbody空、form/input/textarea/button/link全て0件のclient-side soft 404だった。従来はpathnameに`contact`が含まれるだけで`verification=page`候補となり、manual workflowが実フォーム未検証のURLを`form_url`・V2レポート・master lead ledgerへ保存していた。初回文面生成失敗も、後段のeligibility理由で`error_message`を上書きし、失敗理由と再実行導線を失っていた。
