@@ -20,8 +20,8 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   if (item.twenty_sync_status === "failed") {
     return {
       title: "Twentyへの保存を完了できませんでした",
-      detail: "解析結果は履歴に保存されています。接続状態を確認したうえで「Twenty再同期」を実行してください。",
-      retryLabel: "Twenty再同期",
+      detail: "解析結果は履歴に保存されています。「再解析・再生成」で公開情報から文面とレポートを作り直し、Twenty保存まで再確認できます。",
+      retryLabel: "再解析・再生成",
       tone: "red",
     }
   }

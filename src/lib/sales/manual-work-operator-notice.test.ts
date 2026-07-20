@@ -45,4 +45,11 @@ describe("manualWorkOperatorNotice", () => {
       tone: "amber",
     })
   })
+
+  it("labels a Twenty failure retry as a full regeneration", () => {
+    const notice = manualWorkOperatorNotice(row({ twenty_sync_status: "failed" }))
+
+    expect(notice?.retryLabel).toBe("再解析・再生成")
+    expect(notice?.detail).toContain("文面とレポートを作り直し")
+  })
 })

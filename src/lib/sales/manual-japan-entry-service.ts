@@ -90,6 +90,13 @@ export function isRetryableManualWork(
   return !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
 }
 
+export function shouldUseTwentyOnlyRetry(
+  item: Pick<ManualJapanEntryWorkRow, "status" | "twenty_sync_status">,
+  retryRequested: boolean,
+): boolean {
+  return !retryRequested && item.status === "needs_review" && item.twenty_sync_status === "failed"
+}
+
 export function buildManualWorkRetryPatch(
   existing: Pick<ManualJapanEntryWorkRow, "attempts">,
   requestedVariant: ManualJapanEntryWorkRow["message_variant_requested"],
@@ -164,7 +171,7 @@ export async function processManualJapanEntryUrl(
     return { item: existing, duplicate: true }
   }
 
-  if (existing?.status === "needs_review" && existing.twenty_sync_status === "failed") {
+  if (existing && shouldUseTwentyOnlyRetry(existing, Boolean(options.retryRequested))) {
     await attachManualWorkSource(existing.id, sourceInput)
     if (!existing.form_url || !existing.report_url || !existing.initial_message) {
       const item = await updateManualWork(existing.id, {

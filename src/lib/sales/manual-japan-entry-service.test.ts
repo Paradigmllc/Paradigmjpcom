@@ -7,6 +7,7 @@ import {
   manualWorkEligibility,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
+  shouldUseTwentyOnlyRetry,
 } from "./manual-japan-entry-service"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
@@ -83,6 +84,13 @@ describe("manual Japan Entry work safety gates", () => {
       message_angle_fallback_reason: null,
       outreach_playbook: "general_online_smb",
     })
+  })
+
+  it("runs a full regeneration for an explicit operator retry", () => {
+    const item = { status: "needs_review", twenty_sync_status: "failed" } as const
+
+    expect(shouldUseTwentyOnlyRetry(item, true)).toBe(false)
+    expect(shouldUseTwentyOnlyRetry(item, false)).toBe(true)
   })
 
   it("normalizes one public company domain", () => {
