@@ -54,6 +54,8 @@ function productEvidenceCandidates(input: {
     .split(/\s*\|\s*|\n+|(?<=[.!?])\s+/)
     .map((value) => cleanEvidenceSegment(value, input.companyName))
     .filter((value) => value.length >= 12 && value.length <= 180)
+    .filter((value) => !/\d/.test(value))
+    .filter((value) => !/\b(?:best|faster|fastest|leading|developers? love|ready to ship|game[- ]changer|award[- ]winning)\b/i.test(value))
     .filter((value) => !productNames.has(value.toLowerCase()))
     .filter((value) => evidenceTokens(value).length >= 4)
 }
