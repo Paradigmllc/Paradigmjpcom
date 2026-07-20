@@ -272,11 +272,15 @@ export async function fetchDemoMultiPageData(
             caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes || asset.ownerLabel,
           })) ?? []
         const ownedLicensedMedia = buildOwnedLicensedMedia(proposalManifest, themePage.site_payload.companyName, themePage.slug, visualIndustry)
+        // Public DEMOs must prefer a rights-cleared business asset over an
+        // older reviewed/generated asset already stored on the row. The
+        // latter can be a deterministic visual fallback from an earlier
+        // generation and would otherwise hide the real company imagery.
         const preferredMedia = proposalMedia.length > 0
           ? proposalMedia
-          : approvedMedia.length > 0
-            ? approvedMedia
-            : ownedLicensedMedia
+          : ownedLicensedMedia.length > 0
+            ? ownedLicensedMedia
+            : approvedMedia
         const premium = themePage.site_payload.premium
           ? {
               ...themePage.site_payload.premium,
