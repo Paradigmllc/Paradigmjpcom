@@ -50,7 +50,8 @@ export function reviewManualFormBespokeStyle(input: {
     ...input.productNames,
     ...auditFacts.flatMap((fact) => fact.anchors),
   ]
-  if (!containsAnchor(input.finalParagraph, ctaFocusAnchors)) {
+  const finalQuestion = input.finalParagraph.match(/[^.!?]*\?\s*$/)?.[0] ?? input.finalParagraph
+  if (!containsAnchor(finalQuestion, ctaFocusAnchors)) {
     issues.push("The CTA must name the selected product or customer-path focus")
   }
   return issues

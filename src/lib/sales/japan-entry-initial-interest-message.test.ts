@@ -24,7 +24,7 @@ const productEvidence = "subscription analytics platform for independent retaile
 const diagnosis = "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.";
 const opening = "Example’s public pages describe an analytics workflow built around inventory decisions for independent retailers, which makes the product scope concrete enough for a Japan-path review.";
 const product = "I reviewed Example and its subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage.";
-const tailoredClose = "If useful, I can share a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path. Would you be open to receiving it?";
+const tailoredClose = "If useful, I can share a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path. Would you be open to receiving the Example analysis?";
 
 function copyReady(...bodyParagraphs: string[]): string {
   return [manualFormGreeting("Example"), ...bodyParagraphs, MANUAL_FORM_SIGNATURE].join("\n\n");

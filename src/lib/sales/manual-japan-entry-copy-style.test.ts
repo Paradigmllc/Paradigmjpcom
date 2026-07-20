@@ -32,6 +32,15 @@ describe("bespoke form-copy style", () => {
     expect(issues).not.toContain("The CTA must name the selected product or customer-path focus")
   })
 
+  it("rejects a generic final question even when the preceding offer sentence names the company", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code. The audit found no Japanese-language path.",
+      "Screenshot to Code converts screenshots to code.",
+      "I can share a Screenshot to Code opportunity snapshot. Could you forward it to the right person?",
+    )
+    expect(issues).toContain("The CTA must name the selected product or customer-path focus")
+  })
+
   it("rejects ungrounded behavior claims about a qualified Japanese audience", () => {
     const issues = review(
       "Japanese front-end developers often rely on localized onboarding when evaluating tools.",

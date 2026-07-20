@@ -35,6 +35,7 @@ function copyReady(diagnosis: string, close: string): string {
   const bespokeClose = close
     .replace("a one-page Japan Opportunity Snapshot", "a one-page Japan Opportunity Snapshot focused on Example’s Japanese-language customer path")
     .replace("a more detailed Japan opportunity analysis", "a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
+    .replace("Could you forward this to the founder or person responsible for international growth?", "Could you forward the Example customer-path snapshot to the founder or person responsible for international growth?")
   return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, bespokeClose, MANUAL_FORM_SIGNATURE].join("\n\n")
 }
 
@@ -133,7 +134,9 @@ describe("manual initial-interest message variants", () => {
     const message = copyReady(
       "A public-page review did not show a Japanese-language customer path. This is not a finding about demand or performance; it leaves one concrete question for a Japan entry decision.",
       initialInterestClose(options),
-    ).replace(" focused on Example’s Japanese-language customer path", "")
+    )
+      .replace(" focused on Example’s Japanese-language customer path", "")
+      .replace("the Example customer-path snapshot", "it")
     const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: false })
 
     expect(result.passed).toBe(false)

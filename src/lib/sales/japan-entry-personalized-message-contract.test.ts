@@ -34,4 +34,9 @@ describe("initial-interest evidence contract", () => {
     expect(isGroundedProductEvidence(productContext, "converts any screenshot or design to clean code")).toBe(true)
     expect(isGroundedProductEvidence(productContext, "enterprise demand-generation platform")).toBe(false)
   })
+
+  it("skips numeric and promotional SPA headings when selecting supplemental product evidence", () => {
+    const productContext = "Convert any screenshot or design to clean code | Build User Interfaces 10x Faster | Developers love it | AI-powered conversion from screenshots and videos to clean, production-ready code."
+    expect(selectSupplementalProductEvidence({ companyName: "Screenshot to Code", productContext })).toBe("AI-powered conversion from screenshots and videos to clean, production-ready code.")
+  })
 })
