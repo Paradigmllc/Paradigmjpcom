@@ -829,6 +829,71 @@ body.no-grain::before { display: none; }
   isolation: isolate;
 }
 
+/* Hospitality compositions are data-driven: the same content can become an
+   editorial split, an intimate cinematic story, or a gallery-led composition.
+   This prevents every restaurant demo from collapsing into one template. */
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--demo-surface-alt) 88%, white), var(--demo-surface) 68%),
+    var(--demo-surface);
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content h1 {
+  color: var(--demo-ink);
+  max-width: 11em;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content > div:first-child {
+  color: var(--demo-muted);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content > p {
+  border-color: color-mix(in srgb, var(--demo-ink) 32%, transparent);
+  color: var(--demo-muted);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content a:first-of-type {
+  background: var(--demo-ink);
+  color: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content a:last-of-type {
+  border-color: color-mix(in srgb, var(--demo-ink) 35%, transparent);
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index {
+  background: var(--demo-ink);
+  color: white;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index .premium-hospitality-kicker,
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index span {
+  color: color-mix(in srgb, var(--demo-accent) 78%, white);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index,
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index > div {
+  border-color: rgba(255, 255, 255, .2);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-manifesto {
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--demo-accent) 17%, transparent), transparent 20rem),
+    var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-menu {
+  background: var(--demo-ink);
+  color: white;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-menu .premium-hospitality-kicker,
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-menu .premium-hospitality-link {
+  color: color-mix(in srgb, var(--demo-accent) 72%, white);
+}
+
 [data-demo-site="premium-v3"] .premium-hospitality-home::before {
   position: absolute;
   inset: 0;

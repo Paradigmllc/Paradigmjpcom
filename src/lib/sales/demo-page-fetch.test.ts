@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest"
-import { buildPrivateProposalMedia } from "./demo-proposal-media"
+import { buildOwnedLicensedMedia, buildPrivateProposalMedia } from "./demo-proposal-media"
 import { sanitizeDemoMedia } from "./demo-public-surface"
 
 describe("buildPrivateProposalMedia", () => {
+  it("uses owned or licensed photos and excludes proposal-only assets", () => {
+    const media = buildOwnedLicensedMedia({
+      status: "proposal_safe",
+      assets: [
+        { kind: "image", usage: "owned", source: "https://paradigmjp.com/demos/cafe-sosomu/hero.jpg", width: 1920, height: 1080 },
+        { kind: "image", usage: "proposal_only", source: "https://image.ekiten.jp/shop/1/photo.jpg" },
+      ],
+    }, "Cafe SOSOMU", "cafe-sosomu", "restaurant")
+
+    expect(media).toHaveLength(1)
+    expect(media[0]?.src).toBe("https://paradigmjp.com/demos/cafe-sosomu/hero.jpg")
+    expect(media[0]?.width).toBe(1920)
+  })
+
   it("uses reviewed HTTPS proposal photos and keeps generated fallbacks", () => {
     const media = buildPrivateProposalMedia({
       status: "proposal_safe",
