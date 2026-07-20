@@ -50,6 +50,18 @@ export {
   selectBestManualFormResult,
 } from "./manual-japan-entry-workflow-helpers"
 
+export class ManualWorkRetryConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ManualWorkRetryConflictError"
+  }
+}
+
+export interface ManualWorkProcessOptions {
+  retryRequested?: boolean
+  expectedWorkId?: string | null
+}
+
 function jsonRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
@@ -124,6 +136,7 @@ export async function processManualJapanEntryUrl(
   variantSelection: ManualMessageVariantSelection = "auto",
   angleSelection: ManualMessageAngleSelection = "auto",
   sourceInput: ManualWorkSourceInput = { sourceSlug: "manual_input" },
+  options: ManualWorkProcessOptions = {},
 ): Promise<{
   item: ManualJapanEntryWorkRow
   duplicate: boolean
@@ -138,6 +151,14 @@ export async function processManualJapanEntryUrl(
   const sourceCatalog = await findManualLeadSource(sourceInput.sourceSlug)
   if (!sourceCatalog) throw new Error("選択した営業ソースは台帳に存在しません")
   const existing = await findManualWorkByDomain(normalized.domain)
+  if (options.retryRequested) {
+    if (!existing || options.expectedWorkId !== existing.id) {
+      throw new ManualWorkRetryConflictError("再解析対象の履歴が更新されています。履歴を更新してからもう一度実行してください。")
+    }
+    if (!isRetryableManualWork(existing)) {
+      throw new ManualWorkRetryConflictError("この履歴は現在再解析できません。最新の状態を確認してください。")
+    }
+  }
   if (existing && !isRetryableManualWork(existing)) {
     await attachManualWorkSource(existing.id, sourceInput)
     return { item: existing, duplicate: true }

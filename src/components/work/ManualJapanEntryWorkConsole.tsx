@@ -45,6 +45,25 @@ export async function runWithConcurrency<T>(
   await Promise.all(workers)
 }
 
+export function buildManualWorkRequest(input: {
+  url: string
+  variant: ManualMessageVariantSelection
+  angle: ManualMessageAngleSelection
+  sourceSlug: string
+  sourcePageUrl: string
+  retryItem?: Pick<ManualJapanEntryWorkRow, "id">
+}): Record<string, unknown> {
+  return {
+    url: input.url,
+    variant: input.variant,
+    angle: input.angle,
+    sourceSlug: input.sourceSlug,
+    sourcePageUrl: input.sourcePageUrl,
+    retry: Boolean(input.retryItem),
+    ...(input.retryItem ? { workId: input.retryItem.id } : {}),
+  }
+}
+
 function mergeItems(current: ManualJapanEntryWorkRow[], incoming: ManualJapanEntryWorkRow[]): ManualJapanEntryWorkRow[] {
   const byId = new Map(current.map((item) => [item.id, item]))
   for (const item of incoming) byId.set(item.id, item)
@@ -125,21 +144,28 @@ export function ManualJapanEntryWorkConsole({
     await refreshHistory(true)
   }
 
-  const processUrl = async (url: string) => {
+  const processUrl = async (url: string, retryItem?: ManualJapanEntryWorkRow) => {
       setQueue((current) => ({ ...current, [url]: "processing" }))
       try {
         const response = await fetch("/api/work", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, variant, angle, sourceSlug, sourcePageUrl }),
+          body: JSON.stringify(buildManualWorkRequest({ url, variant, angle, sourceSlug, sourcePageUrl, retryItem })),
         })
         const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; error?: string }
         if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
         setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
         if (body.item.status === "failed") throw new Error(manualWorkFailureToast(body.item))
         if (body.item.twenty_sync_status === "failed") throw new Error(manualWorkFailureToast(body.item))
+        if (body.item.status === "needs_review" && !body.item.initial_message) throw new Error(manualWorkFailureToast(body.item))
         setQueue((current) => ({ ...current, [url]: "done" }))
-        toast.success(body.duplicate ? `${url} は既存履歴またはTwentyにあります` : `${url} の解析が完了しました`)
+        if (body.item.status === "needs_review") {
+          toast.warning(`${url} の文面生成まで完了しました。対象判定を確認してください`)
+        } else if (body.item.status === "rejected") {
+          toast.warning(`${url} は対象外として安全に停止しました`)
+        } else {
+          toast.success(body.duplicate ? `${url} は既存履歴またはTwentyにあります` : `${url} の解析が完了しました`)
+        }
       } catch (error) {
         console.error("[manual-work-ui] URL processing failed:", { url, error })
         setQueue((current) => ({ ...current, [url]: "error" }))
@@ -152,7 +178,7 @@ export function ManualJapanEntryWorkConsole({
     setQueue({ [item.canonical_url]: "processing" })
     setRunning(true)
     try {
-      await processUrl(item.canonical_url)
+      await processUrl(item.canonical_url, item)
     } finally {
       setRunning(false)
       await refreshHistory(true)

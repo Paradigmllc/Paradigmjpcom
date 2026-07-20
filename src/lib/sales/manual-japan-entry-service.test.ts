@@ -3,6 +3,7 @@ import {
   buildManualInitialMessageInput,
   buildManualWorkRetryPatch,
   isRetryableManualWork,
+  ManualWorkRetryConflictError,
   manualWorkEligibility,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
@@ -47,6 +48,13 @@ const verifiedForm: FormDiscoveryResult = {
 }
 
 describe("manual Japan Entry work safety gates", () => {
+  it("exposes a dedicated conflict type for stale explicit retry requests", () => {
+    expect(new ManualWorkRetryConflictError("履歴が更新されています")).toMatchObject({
+      name: "ManualWorkRetryConflictError",
+      message: "履歴が更新されています",
+    })
+  })
+
   it("allows failed persistent work to be analyzed again without creating a duplicate", () => {
     expect(isRetryableManualWork({ status: "failed" })).toBe(true)
     expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "failed" })).toBe(true)

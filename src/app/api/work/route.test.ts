@@ -57,7 +57,7 @@ describe("manual Japan Entry work API", () => {
       sourceSlug: "manual_input",
       sourcePageUrl: null,
       observedOn: null,
-    })
+    }, { retryRequested: false, expectedWorkId: null })
   })
 
   it("passes an explicit experiment cell to the processor", async () => {
@@ -71,7 +71,7 @@ describe("manual Japan Entry work API", () => {
       sourceSlug: "manual_input",
       sourcePageUrl: null,
       observedOn: null,
-    })
+    }, { retryRequested: false, expectedWorkId: null })
   })
 
   it("passes an explicit evidence-gated angle to the processor", async () => {
@@ -85,7 +85,7 @@ describe("manual Japan Entry work API", () => {
       sourceSlug: "manual_input",
       sourcePageUrl: null,
       observedOn: null,
-    })
+    }, { retryRequested: false, expectedWorkId: null })
   })
 
   it("records the selected source and listing URL without starting a collector", async () => {
@@ -103,7 +103,34 @@ describe("manual Japan Entry work API", () => {
       sourceSlug: "product_hunt",
       sourcePageUrl: "https://www.producthunt.com/products/example",
       observedOn: null,
-    })
+    }, { retryRequested: false, expectedWorkId: null })
+  })
+
+  it("passes an explicit history identity for a retry instead of silently deduplicating", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com", retry: true, workId }),
+    }))
+
+    expect(response.status).toBe(201)
+    expect(mocks.process).toHaveBeenCalledWith("https://example.com", "auto", "auto", {
+      sourceSlug: "manual_input",
+      sourcePageUrl: null,
+      observedOn: null,
+    }, { retryRequested: true, expectedWorkId: workId })
+  })
+
+  it("rejects a retry without its persistent history identity", async () => {
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com", retry: true }),
+    }))
+
+    expect(response.status).toBe(400)
+    expect(mocks.process).not.toHaveBeenCalled()
   })
 
   it("rejects implicit or malformed batches", async () => {
