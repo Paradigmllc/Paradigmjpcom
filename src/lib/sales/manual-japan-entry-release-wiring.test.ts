@@ -89,6 +89,8 @@ describe("manual Japan Entry release wiring", () => {
     expect(copyEnvelope).toContain('company: "Paradigm LLC"')
     expect(copyEnvelope).toContain('email: "contact@paradigmjp.com"')
     expect(historyItem).toContain("再解析")
+    expect(historyItem).toContain("再解析・再生成")
+    expect(service).toContain("shouldUseTwentyOnlyRetry")
     expect(historyItem).toContain("ManualFormDiscoveryStatus")
     expect(workPage).toContain('redirect("/admin/login?redirect=%2Fwork")')
     expect(deepSeek).toContain("DeepSeek APIの残高不足で解析を停止しました")

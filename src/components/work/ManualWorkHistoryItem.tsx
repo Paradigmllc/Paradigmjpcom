@@ -120,7 +120,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{item.twenty_sync_status === "failed" ? "Twenty再同期" : hasVerifiedForm ? "再解析" : "再探索・再生成"}</Button>}
+              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析・再生成`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{hasVerifiedForm ? "再解析・再生成" : "再探索・再生成"}</Button>}
               {hasVerifiedForm && item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
               {!hasVerifiedForm && item.stage === "complete" && <Badge variant="outline" className="h-8 border-slate-200 bg-slate-50 px-3 text-slate-700">{formPresentation.label}</Badge>}
               {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
