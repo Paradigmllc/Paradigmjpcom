@@ -23,7 +23,7 @@ describe("manual Japan Entry personalization contract", () => {
   })
 
   it("makes the critic reject template-shaped or data-dump copy", () => {
-    const prompt = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[0]?.content ?? ""
+    const prompt = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", product_evidence_rendering: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[0]?.content ?? ""
     expect(prompt).toContain("Reject stock outreach openings")
     expect(prompt).toContain("reject more than four fact_ids")
     expect(prompt).toContain("feel written for this company")
@@ -44,6 +44,24 @@ describe("manual Japan Entry personalization contract", () => {
     expect(messages[0]?.content).not.toContain("Paragraph 1 must be exactly")
   })
 
+  it("keeps non-English source evidence exact while requiring a faithful English rendering", () => {
+    const messages = generationMessages({
+      companyName: "Altairis",
+      industry: "Technology / IT",
+      productContext: "Altairis développe et accompagne sur le logiciel ERP/CRM Dolibarr pour la gestion d'entreprise.",
+      productNames: ["Dolibarr"],
+      targetCountry: "FR",
+      businessModel: "saas",
+      purpose: "initial_interest",
+    }, [fact], "audit")
+    const payload = messages[1]?.content ?? ""
+
+    expect(messages[0]?.content).toContain("faithful English rendering")
+    expect(messages[0]?.content).toContain("use the rendering verbatim")
+    expect(payload).toContain('"preserve_source_phrase_exactly_in_product_evidence":true')
+    expect(payload).toContain('"render_source_faithfully_in_english":true')
+  })
+
   it("never exposes internal evidence sources to generation or critic payloads", () => {
     const messages = generationMessages({ companyName: "Example", industry: "SaaS / AI / Developer Tools", productContext: "Example provides an API-first fraud review workflow for marketplaces.", targetCountry: "US", businessModel: "saas", purpose: "initial_interest", initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true }, messageAngle: "problem", outreachPlaybook: "saas_ai_devtools" }, [fact], "audit")
     const payload = messages[1]?.content ?? ""
@@ -53,7 +71,7 @@ describe("manual Japan Entry personalization contract", () => {
     expect(payload).toContain('"final_paragraph_must_contain_exact":["Japanese-language"]')
     expect(payload).not.toContain("https://example.com/contact")
     expect(payload).not.toContain('"source"')
-    const criticPayload = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[1]?.content ?? ""
+    const criticPayload = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", product_evidence_rendering: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[1]?.content ?? ""
     expect(criticPayload).not.toContain("https://example.com/contact")
     expect(criticPayload).not.toContain('"source"')
   })
@@ -63,6 +81,38 @@ describe("manual Japan Entry personalization contract", () => {
     const result = reviewPersonalizedJapanEntryMessage({ message, companyName: "Example", productContext: "Example documents an API-first fraud review workflow for marketplaces.", productEvidence: "API-first fraud review workflow", factIds: [fact.id], facts: [fact], purpose: "initial_interest", initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false }, messageAngle: "problem", candidateAngle: "problem" })
     expect(result.passed).toBe(false)
     expect(result.issues).toContain("Sources, citations, and reference markers are prohibited in form copy")
+  })
+
+  it("accepts an exact foreign-language source phrase represented by a faithful English message phrase", () => {
+    const sourceEvidence = "logiciel ERP/CRM Dolibarr pour la gestion d'entreprise"
+    const englishRendering = "Dolibarr ERP/CRM software for business management"
+    const message = `${manualFormGreeting("Altairis")}
+
+Altairis develops and supports ${englishRendering}. The public description identifies the product as business-management software rather than making a claim about results or customers.
+
+My public-page review did not show a Japanese-language customer path. Whether that observed gap matters for Altairis and its Japan customer path remains unverified, so the immediate question is whether a localized evaluation route warrants evidence-led testing.
+
+I can share a one-page Japan Opportunity Snapshot focused on Altairis's Japanese-language customer path and the market-entry decision it would inform. May I send the Altairis analysis?
+
+${MANUAL_FORM_SIGNATURE}`
+    const result = reviewPersonalizedJapanEntryMessage({
+      message,
+      companyName: "Altairis",
+      productContext: `Altairis développe et accompagne sur le ${sourceEvidence}.`,
+      productEvidence: sourceEvidence,
+      productEvidenceRendering: englishRendering,
+      productNames: ["Dolibarr"],
+      factIds: [fact.id],
+      facts: [fact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+
+    expect(result.issues).not.toContain("Product evidence is not grounded in the supplied product context")
+    expect(result.issues).not.toContain("The faithful English product-evidence rendering is missing from the message")
+    expect(result.issues).not.toContain("The opening product section must contain the company name and faithful English product-evidence rendering")
   })
 
   it("rejects speculative product-market fit while allowing a final routing question", () => {

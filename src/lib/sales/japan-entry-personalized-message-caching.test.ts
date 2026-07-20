@@ -18,6 +18,7 @@ const candidate = {
   message: "Grounded four-paragraph draft",
   fact_ids: [baseFact.id],
   product_evidence: "inventory analytics",
+  product_evidence_rendering: "inventory analytics",
   angle: "customer path",
 };
 

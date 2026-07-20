@@ -35,16 +35,46 @@ function publicOrigin(domain: string): string {
   return `https://${normalized}`;
 }
 
-function decodeHtml(value: string): string {
-  return value
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;|&#34;/gi, "\"")
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&nbsp;|&#160;/gi, " ")
+function decodeNumericHtmlEntity(entity: string): string {
+  const hexadecimal = entity.match(/^&#x([0-9a-f]{1,6});$/i)?.[1]
+  const decimal = entity.match(/^&#([0-9]{1,7});$/)?.[1]
+  const codePoint = hexadecimal
+    ? Number.parseInt(hexadecimal, 16)
+    : decimal
+      ? Number.parseInt(decimal, 10)
+      : Number.NaN
+  if (!Number.isInteger(codePoint) || codePoint <= 0 || codePoint > 0x10ffff) return " "
+  if ((codePoint >= 0xd800 && codePoint <= 0xdfff) || codePoint === 0x7f) return " "
+  return String.fromCodePoint(codePoint)
+}
+
+export function decodePublicHtmlText(value: string): string {
+  let decoded = value
+  for (let pass = 0; pass < 2; pass += 1) {
+    const next = decoded
+      .replace(/&#(?:x[0-9a-f]{1,6}|[0-9]{1,7});/gi, decodeNumericHtmlEntity)
+      .replace(/&(?:amp|quot|apos|nbsp|lt|gt|rsquo|lsquo|ldquo|rdquo);/gi, (entity) => ({
+        "&amp;": "&",
+        "&quot;": "\"",
+        "&apos;": "'",
+        "&nbsp;": " ",
+        "&lt;": "<",
+        "&gt;": ">",
+        "&rsquo;": "’",
+        "&lsquo;": "‘",
+        "&ldquo;": "“",
+        "&rdquo;": "”",
+      })[entity.toLowerCase()] ?? " ")
+    decoded = next
+    if (!/&(?:amp|#(?:x[0-9a-f]{1,6}|[0-9]{1,7}));/i.test(decoded)) break
+  }
+  return decoded
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
+
+const decodeHtml = decodePublicHtmlText
 
 function attribute(tag: string, name: string): string | null {
   const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, "i"));

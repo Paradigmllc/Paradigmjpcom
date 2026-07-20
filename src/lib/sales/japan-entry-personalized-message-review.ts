@@ -81,6 +81,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   companyName: string;
   productContext: string;
   productEvidence: string;
+  productEvidenceRendering?: string;
   productNames?: string[];
   factIds: string[];
   facts: JapanEntryPersonalizationFact[];
@@ -103,6 +104,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const factMap = new Map(input.facts.map((fact) => [fact.id, fact]));
   const selected = input.factIds.map((id) => factMap.get(id)).filter((fact): fact is JapanEntryPersonalizationFact => Boolean(fact));
   const productEvidence = input.productEvidence.trim();
+  const productEvidenceRendering = input.productEvidenceRendering?.trim() || productEvidence;
   const productNames = (input.productNames ?? [])
     .map((name) => name.trim())
     .filter((name) => name.length >= 2);
@@ -134,7 +136,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
       openingParagraph: paragraphs[0] ?? "",
       finalParagraph: paragraphs.at(-1) ?? "",
       companyName: input.companyName,
-      productEvidence,
+      productEvidence: productEvidenceRendering,
       productNames,
       selectedFacts: selected,
       includeEstimate: initialInterestOptions.includeEstimate,
@@ -147,8 +149,12 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     issues.push("Sato, Paradigm LLC, and Japan introduction is incomplete"); score -= 20;
   }
   if (purpose === "commercial_offer" && !/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
-  if (!isGroundedProductEvidence(input.productContext, productEvidence)) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
-  else if (!isGroundedProductEvidence(message, productEvidence)) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
+  const sourceEvidenceIsExact = input.productContext.toLowerCase().includes(productEvidence.toLowerCase());
+  const renderedEvidenceIsExact = message.toLowerCase().includes(productEvidenceRendering.toLowerCase());
+  if (!sourceEvidenceIsExact && !isGroundedProductEvidence(input.productContext, productEvidence)) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
+  else if (customInitialInterest && !sourceEvidenceIsExact) { issues.push("Initial-interest product evidence must preserve an exact public source phrase"); score -= 30; }
+  else if (customInitialInterest && !renderedEvidenceIsExact) { issues.push("The faithful English product-evidence rendering is missing from the message"); score -= 25; }
+  else if (!customInitialInterest && !isGroundedProductEvidence(message, productEvidence)) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
   if (customInitialInterest && productNames.length > 0 && !productNames.some((name) => substantiveMessage.toLowerCase().includes(name.toLowerCase()))) {
     issues.push("An exact public product name is available but missing from the personalized body"); score -= 30;
   }
@@ -191,10 +197,10 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     const expectedIntro = "Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.";
     const productParagraph = paragraphs[1] ?? "";
     const productSection = customInitialInterest
-      ? paragraphs.slice(0, 2).find((paragraph) => isGroundedProductEvidence(paragraph, productEvidence)) ?? paragraphs[0] ?? ""
+      ? paragraphs.slice(0, 2).find((paragraph) => paragraph.toLowerCase().includes(productEvidenceRendering.toLowerCase())) ?? paragraphs[0] ?? ""
       : productParagraph;
     if (!customInitialInterest && (paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
-    if (!productSection.toLowerCase().includes(input.companyName.toLowerCase()) || !isGroundedProductEvidence(productSection, productEvidence)) { issues.push(customInitialInterest ? "The opening product section must contain the company name and grounded product evidence" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (!productSection.toLowerCase().includes(input.companyName.toLowerCase()) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
     if (customInitialInterest) {
       const factualParagraphs = paragraphs.slice(0, -1).join(" ")

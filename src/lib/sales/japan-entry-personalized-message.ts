@@ -59,6 +59,7 @@ export interface ManualGeneratedMessageCandidate {
   message: string;
   factIds: string[];
   productEvidence: string;
+  productEvidenceRendering: string;
   angle: string;
   openingStyle: string;
   diagnosticFocus: string;
@@ -97,6 +98,7 @@ const candidateSchema = z.object({
   message: z.string().min(1).max(1_800),
   fact_ids: z.array(z.string().min(1)).min(1).max(6),
   product_evidence: z.string().min(3).max(180),
+  product_evidence_rendering: z.string().min(3).max(240),
   angle: z.string().min(1).max(300),
   opening_style: z.string().min(1).max(120).default("legacy_unspecified"),
   diagnostic_focus: z.string().min(1).max(240).default("legacy_unspecified"),
@@ -141,6 +143,7 @@ const riskFlagsSchema = z.preprocess((value) => {
 
 const criticSchema = z.object({
   selected_index: z.number().int().min(0).max(2),
+  product_evidence_faithful: z.boolean(),
   scores: z.object({
     specificity: z.number().int().min(0).max(25),
     naturalness: z.number().int().min(0).max(25),
@@ -229,14 +232,24 @@ function buildReview(input: {
   const riskFlags = input.criticized.risk_flags.filter(
     (flag) => !/(?:abrupt pricing|price placement|pricing insertion|generic (?:call to action|cta)|shallow product|flow|tone|style)/i.test(flag),
   );
+  const evidenceFaithful = input.criticized.product_evidence_faithful;
   const passed = score >= EDITORIAL_PASS_SCORE
     && Object.values(editorial).every((value) => value >= EDITORIAL_DIMENSION_FLOOR)
-    && riskFlags.length === 0;
+    && riskFlags.length === 0
+    && evidenceFaithful;
+  const issues = [
+    ...(score < EDITORIAL_PASS_SCORE || Object.values(editorial).some((value) => value < EDITORIAL_DIMENSION_FLOOR) || riskFlags.length > 0
+      ? [`DeepSeek V4 Pro editorial score did not meet the ${EDITORIAL_PASS_SCORE}/100 production quality bar`]
+      : []),
+    ...(!evidenceFaithful
+      ? ["DeepSeek V4 Pro did not verify the English product-evidence rendering as faithful to the public source phrase"]
+      : []),
+  ];
   return {
     score,
     safetyScore: input.selected.safety.score,
     passed,
-    issues: passed ? [] : [`DeepSeek V4 Pro editorial score did not meet the ${EDITORIAL_PASS_SCORE}/100 production quality bar`],
+    issues: passed ? [] : issues,
     wordCount: input.selected.safety.wordCount,
     observedFactIds: input.selected.safety.factIds,
     model: MODEL,
@@ -271,6 +284,7 @@ function publicCandidate(candidate: z.infer<typeof candidateSchema>): ManualGene
     message: candidate.message.trim(),
     factIds: candidate.fact_ids,
     productEvidence: candidate.product_evidence,
+    productEvidenceRendering: candidate.product_evidence_rendering,
     angle: candidate.angle,
     openingStyle: candidate.opening_style,
     diagnosticFocus: candidate.diagnostic_focus,
@@ -319,6 +333,7 @@ export async function generatePersonalizedJapanEntryMessage(
         productContext,
         productNames: input.productNames,
         productEvidence: candidate.product_evidence,
+        productEvidenceRendering: candidate.product_evidence_rendering,
         factIds: candidate.fact_ids,
         facts,
         purpose,

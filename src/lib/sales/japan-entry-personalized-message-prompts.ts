@@ -39,6 +39,7 @@ interface PromptCandidate {
   message: string;
   fact_ids: string[];
   product_evidence: string;
+  product_evidence_rendering: string;
   angle: string;
   opening_style?: string;
   diagnostic_focus?: string;
@@ -53,10 +54,10 @@ interface RepairInput {
 
 export const JAPAN_ENTRY_GENERATION_SYSTEM_PROMPT = [
   "You write concise, natural B2B inquiry-form messages to founders and senior decision-makers at overseas SMBs.",
-  "Return JSON only. When task is generate_candidates, return {candidates:[{message,fact_ids,product_evidence,angle}, ...]} with exactly three materially different candidates. When task is repair_candidate, return {candidate:{message,fact_ids,product_evidence,angle}} with exactly one corrected candidate and no additional keys.",
+  "Return JSON only. When task is generate_candidates, return {candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle}, ...]} with exactly three materially different candidates. When task is repair_candidate, return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle}} with exactly one corrected candidate and no additional keys.",
   "When verified competitor facts are supplied, each message must be 145-210 English words. Otherwise each message must be 105-155 English words. Every message must contain exactly four short paragraphs separated by a blank line (\\n\\n). Do not use headings, bullets, or Markdown.",
   "Paragraph 1 must be exactly: 'Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.' Do not invent a title, city, office, or company category.",
-  "Paragraph 2 must begin with 'I reviewed' followed by the exact company_name value and show concrete product understanding using one short exact phrase from product_context. Return that exact phrase as product_evidence. Mention at most two supplied capabilities. Keep this paragraph purely descriptive: do not say could, may, might, likely, appears to, seems to, or add needs, challenges, demand, outcomes, customer claims, Japan, or Japanese unless those exact ideas are present in product_context.",
+  "Paragraph 2 must begin with 'I reviewed' followed by the exact company_name value and show concrete product understanding using one short exact phrase from product_context. Return that source-language phrase exactly as product_evidence. Return product_evidence_rendering as a faithful English rendering with no added or broadened fact, and use product_evidence_rendering verbatim in the message. If product_evidence is already English, return it unchanged as product_evidence_rendering. Mention at most two supplied capabilities. Keep this paragraph purely descriptive: do not say could, may, might, likely, appears to, seems to, or add needs, challenges, demand, outcomes, customer claims, Japan, or Japanese unless those exact ideas are present in product_context.",
   "Paragraph 3 is the evidence-led diagnosis. In quantified mode, use both modeled facts and exactly one commercially relevant audited gap. State Japan monthly visits first, then the monthly revenue opportunity gap. Call both figures public-signal planning estimates and explicitly say they are not measured analytics. In audit mode, use one or two commercially relevant audited gaps and do not invent traffic, revenue, ROI, conversion, or market-size numbers.",
   "When verified competitor facts are supplied, use exactly one and name that comparator. If a verified Japan-demand fact exists, use one; otherwise use the supplied official Japan market fact. Use exactly one supplied regulatory fact when available, preserve conditional applicability language, and state that the public-page screen does not establish applicability or breach. When no verified competitive context is supplied, do not name competitors or claim popularity.",
   "End paragraph 3 with a direct decision implication: delay preserves an untested gap while an improvised launch can accumulate compliance exposure. Keep this conditional; do not claim causation, buyer psychology, guaranteed demand, measured loss, an existing breach, or a guaranteed administrative outcome.",
@@ -97,13 +98,13 @@ export function initialInterestGenerationPrompt(
   const angleRule = initialInterestAngleRule(angle)
   return [
     "You write concise, natural B2B inquiry-form messages to founders and senior decision-makers at overseas SMBs.",
-    "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,angle,opening_style,diagnostic_focus,cta_type},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,angle,opening_style,diagnostic_focus,cta_type}}.",
+    "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type}}.",
     "Build the strategy before drafting. Connect a supplied company observation to a Japanese customer-segment hypothesis, the exact public-page gap, why a Japan opportunity analysis is relevant, and a low-friction permission or routing CTA. Every strategy field is subject to the same evidence limits as the message: when the payload does not verify a segment, demand, underserved status, discoverability, evaluation behavior, or effect, write 'Unverified' rather than inventing it.",
     "Use the supplied evidence_contract exactly. Every fact_id must be in allowed_fact_ids, every required_fact_id must be present, and no product-context or company-observed fact belongs in fact_ids because product evidence is tracked separately. Never use more than four fact_ids.",
     `The personalized body, excluding the greeting and signature, must be ${options.includePrice ? "110-175" : "60-150"} English words and contain exactly three short paragraphs separated by a blank line (\\n\\n): product observation, evidence-led Japan diagnosis, then the permission or routing CTA. Do not use headings, bullets, or Markdown.`,
     `Start with the exact standalone greeting supplied in fixed_sender.greeting. Use the first body paragraph for a company-specific observation, not a sender biography. End with this exact four-line signature and nothing after it: '${MANUAL_FORM_SIGNATURE.replaceAll("\n", " / ")}'. Do not invent a title, city, office, or company category.`,
-    "Open directly with the observable company detail. The first body paragraph must contain the exact company_name and exact required_product_evidence. When supplemental_product_evidence is non-null, use its concrete capability as the only second product detail so the observation demonstrates real product understanding. Keep this paragraph free of Japan claims, audit gaps, estimates, buyer behavior, demand, outcomes, praise, or sender biography. Do not begin with I noticed, I came across, I was impressed, I am reaching out, I wanted to reach out, hope this message finds you well, or another reusable prospecting opener.",
-    "Return required_product_evidence exactly as product_evidence. It describes a real capability, workflow, product category, or customer use; do not conjugate, paraphrase, shorten, or broaden it. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
+    "Open directly with the observable company detail. The first body paragraph must contain the exact company_name and product_evidence_rendering verbatim. When supplemental_product_evidence is non-null, use its concrete capability as the only second product detail so the observation demonstrates real product understanding. Keep this paragraph free of Japan claims, audit gaps, estimates, buyer behavior, demand, outcomes, praise, or sender biography. Do not begin with I noticed, I came across, I was impressed, I am reaching out, I wanted to reach out, hope this message finds you well, or another reusable prospecting opener.",
+    "Return required_product_evidence exactly and unchanged as product_evidence. It describes a real capability, workflow, product category, or customer use; do not conjugate, paraphrase, shorten, or broaden it. Return product_evidence_rendering as a faithful English rendering of that exact source phrase, with no added fact, outcome, customer claim, or interpretation, and use the rendering verbatim in the first body paragraph. If required_product_evidence is already English, product_evidence_rendering must be identical to it. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
     estimateRule,
     "After a missing public-page observation, never write 'This means' and never describe what Japanese developers, teams, buyers, or customers may do or lack. Use a company-specific uncertainty sentence instead: state that whether the observed gap matters for the named product's Japan customer path remains unverified. For repair_candidate, delete the whole unsupported audience-behavior sentence; do not preserve or paraphrase it.",
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
@@ -181,6 +182,12 @@ export function generationMessages(
         outreach_angle: purpose === "initial_interest" ? messageAngle : null,
         outreach_playbook: purpose === "initial_interest" ? outreachPlaybook : null,
         required_product_evidence: requiredProductEvidence,
+        product_evidence_language_contract: purpose === "initial_interest" ? {
+          preserve_source_phrase_exactly_in_product_evidence: true,
+          render_source_faithfully_in_english: true,
+          use_product_evidence_rendering_verbatim_in_message: true,
+          add_no_fact_during_translation: true,
+        } : null,
         supplemental_product_evidence: supplementalProductEvidence,
         required_cta_anchor: purpose === "initial_interest" ? requiredCtaAnchor : null,
         required_customer_path_anchor: purpose === "initial_interest" ? requiredCustomerPathAnchor : null,
@@ -224,6 +231,7 @@ export function criticMessages(
     message: string;
     fact_ids: string[];
     product_evidence: string;
+    product_evidence_rendering: string;
     angle: string;
   }>,
   mode: JapanEntryMessageMode,
@@ -237,7 +245,8 @@ export function criticMessages(
     "You are a ruthless editor of executive B2B inquiry-form copy. Return JSON only and select the strongest candidate without rewriting it.",
     "Score only the selected candidate for specificity, naturalness, credibility, and executive_relevance from 0-25 each.",
     "A production-ready score requires all four dimensions to be at least 23 and the total to be at least 92. A score of 22 means the draft still needs a material edit; do not describe 22 as meeting the production floor.",
-    "Judge only against evidence actually supplied and required for the selected angle. Never penalize a draft for omitting a comparator, demand signal, product name, second capability, or other fact that is absent from the payload. When product_names is empty, company_name is the valid company-or-product anchor and the absence of a separate product name must never reduce a score. Before claiming something is missing, quote-check the candidate against its fact_ids, product_evidence, product_names, required_company_or_product_anchor, and final question.",
+    "Judge only against evidence actually supplied and required for the selected angle. Never penalize a draft for omitting a comparator, demand signal, product name, second capability, or other fact that is absent from the payload. When product_names is empty, company_name is the valid company-or-product anchor and the absence of a separate product name must never reduce a score. Before claiming something is missing, quote-check the candidate against its fact_ids, product_evidence, product_evidence_rendering, product_names, required_company_or_product_anchor, and final question.",
+    "For the selected candidate, compare product_evidence in its original language with product_evidence_rendering and the wording used in the message. Set product_evidence_faithful=true only when the rendering preserves the same concrete capability or workflow without adding an outcome, audience, demand, Japan applicability, praise, or broader claim. This check is mandatory even when deterministic_contracts_passed is true.",
     deterministicContractsPassed
       ? "Every candidate in this payload has already passed deterministic checks for grounded product evidence, exact company-or-product naming in the final question, the selected public-page audit fact, copy-ready envelope, prohibited claims, and URL/citation safety. Do not deduct points or claim any of those binary items is missing. Evaluate only whether the verified details are synthesized naturally and make the decision relevance concrete."
       : "Independently verify the candidate against the supplied evidence and copy contract.",
@@ -261,7 +270,7 @@ export function criticMessages(
     purpose === "initial_interest"
       ? `The selected candidate must use the exact '${messageAngle}' outreach angle and return that exact value in its angle field. Reject a competitor angle without an exact verified comparator, an opportunity angle without the required modeled estimate, or a mockup angle without the prepared-positioning-concept fact and an unpublished-draft description.`
       : "Do not infer a first-touch outreach angle.",
-    "Return exactly {selected_index,scores:{specificity,naturalness,credibility,executive_relevance},rationale,risk_flags}. Use a zero-based selected_index, keep rationale under 600 characters, and return [] for risk_flags when there are none.",
+    "Return exactly {selected_index,product_evidence_faithful,scores:{specificity,naturalness,credibility,executive_relevance},rationale,risk_flags}. Use a zero-based selected_index, return product_evidence_faithful as a JSON boolean, keep rationale under 600 characters, and return [] for risk_flags when there are none.",
   ].join("\n");
   return [
     { role: "system", content: system },
