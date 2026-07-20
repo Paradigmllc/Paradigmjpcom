@@ -14,7 +14,7 @@ import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 import { generatedDemoVisualUrl } from "./demo-generated-visual"
 import { siteUrl } from "./routing"
-import { buildPrivateProposalMedia } from "./demo-proposal-media"
+import { buildOwnedLicensedMedia, buildPrivateProposalMedia } from "./demo-proposal-media"
 import { applyDemoDesignSpec, readPersistedDemoDesignSpec } from "./demo-design-spec-runtime"
 import { ensureGeneratedVisualMedia } from "./demo-visual-fallback"
 /**
@@ -271,7 +271,12 @@ export async function fetchDemoMultiPageData(
             height: asset.height,
             caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes || asset.ownerLabel,
           })) ?? []
-        const preferredMedia = proposalMedia.length > 0 ? proposalMedia : approvedMedia
+        const ownedLicensedMedia = buildOwnedLicensedMedia(proposalManifest, themePage.site_payload.companyName, themePage.slug, visualIndustry)
+        const preferredMedia = proposalMedia.length > 0
+          ? proposalMedia
+          : approvedMedia.length > 0
+            ? approvedMedia
+            : ownedLicensedMedia
         const premium = themePage.site_payload.premium
           ? {
               ...themePage.site_payload.premium,

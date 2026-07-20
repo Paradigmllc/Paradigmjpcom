@@ -2013,3 +2013,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 本番で`screenshottocode.com`を再解析し、Tranco rank **#2,327,599**、Common Crawl **2ページ**、推定月間PV **700–8,000**、初年度Japan opportunity range等の公開シグナルは取得できた。一方、推定機会額のUSD表記を「Package料金」と誤判定するno-price品質gateにより文面生成だけがfail-closedした。
 - no-price gateを、任意のUSD金額禁止から、`$12,000`・package/setup/service fee・有償条件・通話予約等の実際の商用条件禁止へ限定した。根拠のない任意金額は既存のnumeric allowlistで引き続き拒否する。自動の「推定あり・価格なし」セルで、根拠付き機会レンジ`$24,000–$96,000`を許可しつつ料金提示を拒否する回帰テストを追加した。
 - 対象Vitest **3 files / 34 tests**、TypeScript、変更ファイルESLint、Quality Guard、`git diff --check`を通過。次の完了条件はhotfixの正式release後に同一企業を再解析し、本文・署名・数値のgrounding・DB永続化・Twenty判定・自動送信0を本番read-backすること。
+- TypeScript、Python構文、対象Vitest **4/4**、変更ファイルESLint、Quality Guard **0 errors / 73 warnings**、production build **408/408 pages**を通過。正式`npm run release:prod`はDB **91/91**、公開smoke、Sales health `ok:true`、Twenty、Realtime、Traefikを含む`release gate passed`。sidecar deployment **ullqecv7h463m9u8ygpa50f5**はhealthyで、`vision_provider=null`、`vision_ready=false`、Visionキー空、`require_vision=false`、`metadata-text`をread-backした。公開read-backはreadiness **200**、サイト再現API未認証 **401**、無効preview **404**、既存DEMO **200**。DeepSeek以外のAPIキー追加・課金、実企業へのDEMO生成、外部送信は行っていない。
+## CURRENT STATUS - 2026-07-20 公開DEMO実レンダラー品質修正（本番反映待ち / 外部送信0）
+
+- 前回のscreenshot-to-code導入は管理用のレビュー生成経路であり、実際の公開`/cafe-sosomu`は従来のPremium V3レンダラーを使用していたため、ユーザーが見る品質へ反映されていなかった。公開ルートと`PremiumV3HospitalityHome`を直接監査し、この経路を修正している。
+- `rights_manifest`が`owned`/`licensed`と明示するHTTPS素材だけを公開DEMOのHero/Galleryへ戻し、`proposal_only`のポータル素材は従来どおり表示せず生成フォールバックへ残す。内部の権利・提案・非公開文言は顧客向け本文へ流さない。
+- 飲食店は`designRecipe.compositionVariant`を実レンダーへ接続し、cinematic / editorial split / alternate rhythmの3構成を選択できるようにした。Cafe SOSOMUの`compositionVariant=10`はeditorial split（v1）になる。
+- 対象Vitest **4/4**、変更ファイルESLint、`git diff --check`を確認。ローカル全体Next buildは既存ブラウザ負荷下で24分超無出力のため中断し、正式releaseでリモートbuild・公開read-backを行う。外部送信・Twenty変更は0件。
