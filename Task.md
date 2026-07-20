@@ -1999,3 +1999,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `screenshot-to-code`の全ページ再現経路は、追加のVision API課金なしで動作する。Playwrightで対象ページをPC・モバイル双方から撮影し、同じブラウザ実行結果から表示要素・computed style・レスポンシブ矩形・画像寸法・CSSヒントを取得して、48KB以内の検証済みDOM/CSS根拠としてDeepSeekへ渡す。画像理解ができると偽装せず、DeepSeekはコード生成に専念する。
 - 生成リクエストが`require_vision=false`の場合、Vision providerの環境変数が存在しても外部Vision APIを呼ばない。production sidecarにはVisionキーを渡さず、`require_vision=false`・`metadata-text`を強制する。生成物・Twentyメタデータ・管理画面へ根拠モードを表示し、品質ゲートでもDOM根拠の有無を検査する。
 - TypeScript、Python構文、対象Vitest **4/4**、変更ファイルESLint、Quality Guard **0 errors / 73 warnings**、production build **408/408 pages**を通過。正式`npm run release:prod`はDB **91/91**、公開smoke、Sales health `ok:true`、Twenty、Realtime、Traefikを含む`release gate passed`。sidecar deployment **ullqecv7h463m9u8ygpa50f5**はhealthyで、`vision_provider=null`、`vision_ready=false`、Visionキー空をread-backした。公開read-backはreadiness **200**、サイト再現API未認証 **401**、無効preview **404**、既存DEMO **200**。DeepSeek以外のAPIキー追加・課金、実企業へのDEMO生成、外部送信は行っていない。
+
+## CURRENT STATUS - 2026-07-20 `/work`企業根拠・公開シグナル文面強化（実装検証完了 / 本番release待ち / 自動送信0）
+
+- 自動生成の標準セルを「推定あり・価格なし」へ変更し、明示的に推定なしを選んだ場合も、Tranco・Cloudflare Radar・Common Crawl・sitemapの無料公開シグナル収集と内部試算は全件で実行する。公開rank bandを確認できない企業は数字を作らず、従来どおり推定なし文面へfail-closedする。
+- 公開HTMLの`application-name`とschema.org `Product` / `Service` / `SoftwareApplication`等から商品名を根拠付きで抽出。商品名が確認できた場合は本文中の完全一致を必須にし、別途、商品名だけではない具体的な機能・workflow・顧客用途の公開原文を必須にした。
+- 推定あり本文は、幅を持たせた推定月間PVと初年度Japan opportunity range、企業別の公開ページgapを同時に使い、`not measured analytics` / `not observed revenue` / `not guaranteed performance`を決定論的gateで強制する。URL・出典名・引用記号は本文へ出さず、Tomohiro H / Paradigm LLC / `contact@paradigmjp.com`のcopy-ready署名と自動送信0を維持する。
+- `/work`履歴へ推定月間PV、業態別仮定による仮説月商、月次機会差、初年度機会レンジを表示し、実測PV・実売上・保証値ではない旨を常時表示する。対象Vitest **7 files / 50 tests**、最終差分Vitest **4 files / 10 tests**、TypeScript、変更ファイルESLint、Quality Guard **0 errors / 75 existing warnings**、`git diff --check`を通過。ローカルwebpack buildは端末競合下で36分間エラーなしのまま最適化中だったため停止し、正式releaseの隔離buildとpost-deploy gateを完了条件に残す。

@@ -80,7 +80,7 @@ export function ManualWorkExperimentControls({
             <legend className="flex items-center gap-2 text-sm font-semibold text-slate-800"><span className="grid size-6 place-items-center rounded-md bg-slate-100 font-mono text-[10px] text-slate-700">01</span>初回文面のテストセル</legend>
             <p className="mt-1.5 text-xs leading-5 text-slate-600">推定根拠不足時は、価格条件を維持して「推定なし」へ戻します。</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <SelectionButton active={variant === "auto"} disabled={running} label="自動均等割付" note="domain基準で安定配分" onClick={() => onVariantChange("auto")} />
+              <SelectionButton active={variant === "auto"} disabled={running} label="標準（推定あり・価格なし）" note="公開根拠がなければ安全に推定なし" onClick={() => onVariantChange("auto")} />
               {MANUAL_MESSAGE_VARIANTS.map((value) => <SelectionButton key={value} active={variant === value} disabled={running} label={MANUAL_MESSAGE_VARIANT_LABELS[value]} note={value.includes("estimate_on") ? "公開rank根拠が必要" : "推定値を使わない"} onClick={() => onVariantChange(value)} />)}
             </div>
           </fieldset>

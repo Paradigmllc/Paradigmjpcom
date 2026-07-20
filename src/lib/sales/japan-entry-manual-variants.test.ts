@@ -23,6 +23,13 @@ const annual: JapanEntryPersonalizationFact = {
   confidence: 0.3,
   anchors: ["$24,000–$96,000", "first-12-month Japan revenue opportunity", "public signals"],
 }
+const traffic: JapanEntryPersonalizationFact = {
+  id: "modeled-global-monthly-visit-range",
+  statement: "The public-signal planning model estimates a broad global monthly website-visit range of approximately 6,000–55,000; this is not measured analytics.",
+  source: "public-signals-v1",
+  confidence: 0.3,
+  anchors: ["6,000–55,000", "global monthly website-visit range", "not measured analytics"],
+}
 
 function copyReady(diagnosis: string, close: string): string {
   return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, close, MANUAL_FORM_SIGNATURE].join("\n\n")
@@ -61,9 +68,9 @@ describe("manual initial-interest message variants", () => {
 
   it("accepts a non-assertive annual estimate with its public-signal disclaimers", () => {
     const options = { includeEstimate: true, includePrice: true, founderForwardCta: true }
-    const diagnosis = `${annual.statement} A public-page review also found that the checked pages did not show a Japanese-language customer path. This modeled estimate is not observed revenue and is not guaranteed performance.`
+    const diagnosis = `${traffic.statement} ${annual.statement} A public-page review also found that the checked pages did not show a Japanese-language customer path. These modeled estimates are not observed revenue and performance is not guaranteed.`
     const message = copyReady(diagnosis, initialInterestClose(options))
-    const result = review({ message, facts: [audit, annual], factIds: [annual.id, audit.id], includeEstimate: true, includePrice: true })
+    const result = review({ message, facts: [audit, traffic, annual], factIds: [traffic.id, annual.id, audit.id], includeEstimate: true, includePrice: true })
     expect(result.issues).toEqual([])
     expect(result).toMatchObject({ passed: true, score: 100 })
   })

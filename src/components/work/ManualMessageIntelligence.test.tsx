@@ -110,4 +110,33 @@ describe("ManualMessageIntelligence", () => {
     expect(onCopy).toHaveBeenCalledWith("I noticed your screenshot-to-code workflow.", "初回文面")
     expect(consoleError).not.toHaveBeenCalled()
   })
+
+  it("shows traffic, hypothetical sales, and opportunity ranges as non-observed planning estimates", async () => {
+    await act(async () => root.render(
+      <ManualMessageIntelligence
+        item={workRow({
+          initial_message: "Copy-ready personalized draft.",
+          message_review: { generation_status: "passed", passed: true, score: 96 },
+          evidence: {
+            message_projection: {
+              monthlyVisitRange: { low: 6_000, high: 55_000 },
+              assumptions: { conversionRate: 0.012, averageOrderValueUsd: 149 },
+              monthlyOpportunityGapUsd: 1_074,
+              scenarios: [
+                { scenario: "conservative", months: Array.from({ length: 12 }, () => ({ incrementalRevenueUsd: 1_000 })) },
+                { scenario: "upside", months: Array.from({ length: 12 }, () => ({ incrementalRevenueUsd: 4_000 })) },
+              ],
+            },
+          },
+        })}
+        onCopy={vi.fn()}
+      />,
+    ))
+
+    expect(container.textContent).toContain("推定月間PV6,000–55,000")
+    expect(container.textContent).toContain("仮説月商$10,728–$98,340")
+    expect(container.textContent).toContain("月次機会差$1,074")
+    expect(container.textContent).toContain("初年度機会$12,000–$48,000")
+    expect(container.textContent).toContain("実測PV・実売上・保証値ではありません")
+  })
 })

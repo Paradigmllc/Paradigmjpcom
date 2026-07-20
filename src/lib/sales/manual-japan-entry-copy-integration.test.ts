@@ -17,9 +17,9 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example’s public pages describe a retail analytics workflow that links inventory forecasting with replenishment decisions for independent operators, providing a concrete basis for a Japan-path review.
+Example’s RetailScope public pages describe a retail analytics workflow that links inventory forecasting with replenishment decisions for independent operators, providing a concrete basis for a Japan-path review.
 
-I reviewed Example and its subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage and product pages.
+I reviewed Example and its RetailScope subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage and product pages.
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.
 
@@ -71,7 +71,8 @@ function manualGenerationInput() {
     },
     evidence: {
       companyName: "Example",
-      productContext: "Example provides a subscription analytics platform for independent retailers with inventory insights.",
+      productContext: "Example provides RetailScope, a subscription analytics platform for independent retailers with inventory insights.",
+      productNames: ["RetailScope"],
       businessModel: "saas",
       sourceUrl: "https://example.com/",
       title: "Example",

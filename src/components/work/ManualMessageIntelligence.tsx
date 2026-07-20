@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, CheckCircle2, Copy, ExternalLink, MessageSquareText, ShieldCheck, Sparkles } from "lucide-react"
+import { AlertTriangle, Calculator, CheckCircle2, Copy, ExternalLink, MessageSquareText, ShieldCheck, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
@@ -47,6 +47,36 @@ function sourceLink(source: string): URL | null {
   }
 }
 
+function projectionSnapshot(evidence: JsonRecord): Array<[string, string]> {
+  const projection = record(evidence.message_projection)
+  const visitRange = record(projection?.monthlyVisitRange)
+  const assumptions = record(projection?.assumptions)
+  const lowVisits = number(visitRange?.low)
+  const highVisits = number(visitRange?.high)
+  const conversionRate = number(assumptions?.conversionRate)
+  const averageOrderValue = number(assumptions?.averageOrderValueUsd)
+  const monthlyGap = number(projection?.monthlyOpportunityGapUsd)
+  const scenarios = records(projection?.scenarios)
+  const conservative = scenarios.find((scenario) => scenario.scenario === "conservative")
+  const upside = scenarios.find((scenario) => scenario.scenario === "upside")
+  const annualValue = (scenario: JsonRecord | undefined): number | null => {
+    const months = records(scenario?.months).slice(0, 12)
+    if (months.length < 12) return null
+    return months.reduce((sum, month) => sum + (number(month.incrementalRevenueUsd) ?? 0), 0)
+  }
+  const annualLow = annualValue(conservative)
+  const annualHigh = annualValue(upside)
+  const format = (value: number) => Math.round(value).toLocaleString("en-US")
+  const rows: Array<[string, string]> = []
+  if (lowVisits !== null && highVisits !== null) rows.push(["推定月間PV", `${format(lowVisits)}–${format(highVisits)}`])
+  if (lowVisits !== null && highVisits !== null && conversionRate !== null && averageOrderValue !== null) {
+    rows.push(["仮説月商", `$${format(lowVisits * conversionRate * averageOrderValue)}–$${format(highVisits * conversionRate * averageOrderValue)}`])
+  }
+  if (monthlyGap !== null) rows.push(["月次機会差", `$${format(monthlyGap)}`])
+  if (annualLow !== null && annualHigh !== null) rows.push(["初年度機会", `$${format(annualLow)}–$${format(annualHigh)}`])
+  return rows
+}
+
 export function ManualMessageIntelligence({ item, onCopy }: {
   item: ManualJapanEntryWorkRow
   onCopy: (value: string, label: string) => void
@@ -72,6 +102,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
   const facts = records(review.evidence_pack)
   const score = number(review.score)
   const uniqueness = number(review.uniquenessScore)
+  const projection = projectionSnapshot(item.evidence)
 
   return (
     <details className="overflow-hidden rounded-xl border border-slate-200 bg-white" open>
@@ -88,6 +119,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{item.initial_message}</p>
           <Button variant="outline" size="sm" className="mt-3 rounded-lg" onClick={() => onCopy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button>
         </div>
+        {projection.length > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4"><p className="flex items-center gap-2 text-xs font-semibold text-amber-950"><Calculator className="size-4" />無料公開シグナルによる企業別試算</p><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{projection.map(([label, value]) => <div key={label} className="rounded-lg border border-amber-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{label}</p><p className="mt-1 text-sm font-semibold text-slate-900">{value}</p></div>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-900">Tranco・Cloudflare Radar・Common Crawl・sitemap等の公開シグナルと業態別仮定による幅のある試算です。実測PV・実売上・保証値ではありません。</p></div>}
         {rows.length > 0 && <div><p className="flex items-center gap-2 text-xs font-semibold text-slate-700"><Sparkles className="size-4 text-violet-600" />企業別メッセージ戦略</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{rows.map(([label, value]) => <div key={label} className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 text-xs leading-5 text-slate-700">{value}</p></div>)}</div></div>}
         {facts.length > 0 && <details className="rounded-xl border border-slate-200 bg-white"><summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs font-semibold text-slate-700 marker:hidden"><ShieldCheck className="size-4 text-emerald-600" />使用可能な根拠・出典（内部確認専用）<span className="ml-auto font-normal text-slate-500">本文には挿入しません</span></summary><div className="grid gap-2 border-t border-slate-100 p-3 sm:grid-cols-2">{facts.map((fact, index) => { const statement = text(fact.statement); const source = text(fact.source); const link = source ? sourceLink(source) : null; return <div key={text(fact.id) ?? String(index)} className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600"><p className="text-slate-700">{statement}</p>{source && (link ? <a href={link.toString()} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:underline">出典を確認<ExternalLink className="size-3" /></a> : <p className="mt-1 text-[11px] text-slate-500">{source}</p>)}</div> })}</div></details>}
         {drafts.length > 1 && <details className="rounded-xl border border-slate-200 bg-white"><summary className="cursor-pointer list-none px-3 py-2.5 text-xs font-semibold text-slate-700 marker:hidden">代替案 {drafts.length - 1}件（採用案と構成・CTAが異なるもののみ）</summary><div className="space-y-3 border-t border-slate-100 p-3">{drafts.map((draft, index) => index === selectedIndex ? null : <div key={`${text(draft.ctaType) ?? "draft"}-${index}`} className="rounded-lg bg-slate-50 p-3"><div className="flex flex-wrap gap-1.5"><Badge variant="outline">{text(draft.openingStyle) ?? "別の導入"}</Badge><Badge variant="outline">{text(draft.ctaType) ?? "別CTA"}</Badge></div><p className="mt-2 whitespace-pre-wrap text-xs leading-5 text-slate-700">{text(draft.message)}</p>{text(draft.message) && <Button variant="outline" size="sm" className="mt-2 bg-white" onClick={() => onCopy(text(draft.message) ?? "", `代替案${index + 1}`)}><Copy />コピー</Button>}</div>)}</div></details>}
