@@ -767,6 +767,12 @@ function checkStaticReleaseRules() {
   const manualMessageIntelligence = fs.existsSync("src/components/work/ManualMessageIntelligence.tsx")
     ? fs.readFileSync("src/components/work/ManualMessageIntelligence.tsx", "utf8")
     : ""
+  const manualWorkOperatorNotice = fs.existsSync("src/lib/sales/manual-work-operator-notice.ts")
+    ? fs.readFileSync("src/lib/sales/manual-work-operator-notice.ts", "utf8")
+    : ""
+  const manualWorkConsole = fs.existsSync("src/components/work/ManualJapanEntryWorkConsole.tsx")
+    ? fs.readFileSync("src/components/work/ManualJapanEntryWorkConsole.tsx", "utf8")
+    : ""
   const contactFormInspection = fs.existsSync("src/lib/sales/sources/contact-form-inspection.ts")
     ? fs.readFileSync("src/lib/sales/sources/contact-form-inspection.ts", "utf8")
     : ""
@@ -859,6 +865,8 @@ function checkStaticReleaseRules() {
     && manualWorkService.includes("generation_status")
     && manualWorkService.includes("generation_error")
     && manualWorkService.includes("ownedCompanyId: work.twenty_company_id")
+    && manualWorkService.includes("retryRequested")
+    && manualWorkService.includes("expectedWorkId")
     && manualWorkProfile.includes("normalizeManualCompanyProfile")
     && manualWorkProfile.includes("after one repair")
     && manualWorkTwenty.includes("ManualTwentySyncError")
@@ -874,8 +882,12 @@ function checkStaticReleaseRules() {
     && manualWorkHistoryItem.includes("再解析")
     && manualWorkHistoryItem.includes("ManualFormDiscoveryStatus")
     && manualWorkHistoryItem.includes("再探索・再生成")
-    && manualMessageIntelligence.includes("generation_error")
     && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
+    && !manualMessageIntelligence.includes("generation_error")
+    && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
+    && manualWorkOperatorNotice.includes("外部送信とTwenty追加は行っていません")
+    && manualWorkConsole.includes("retry: Boolean(input.retryItem)")
+    && manualWorkConsole.includes("workId: input.retryItem.id")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
