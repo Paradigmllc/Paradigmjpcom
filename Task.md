@@ -2020,3 +2020,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `rights_manifest`が`owned`/`licensed`と明示するHTTPS素材だけを公開DEMOのHero/Galleryへ戻し、`proposal_only`のポータル素材は従来どおり表示せず生成フォールバックへ残す。内部の権利・提案・非公開文言は顧客向け本文へ流さない。
 - 飲食店は`designRecipe.compositionVariant`を実レンダーへ接続し、cinematic / editorial split / alternate rhythmの3構成を選択できるようにした。Cafe SOSOMUの`compositionVariant=10`はeditorial split（v1）になる。
 - 対象Vitest **4/4**、変更ファイルESLint、`git diff --check`を確認。ローカル全体Next buildは既存ブラウザ負荷下で24分超無出力のため中断し、正式releaseでリモートbuild・公開read-backを行う。外部送信・Twenty変更は0件。
+
+## CURRENT STATUS - 2026-07-20 `/work`企業別推定文面（本番release・実企業read-back完了 / 自動送信0）
+
+- PR **#457**をmainへ統合し、正式`npm run release:prod`のdeployment **qrcz7pd963uyakamypkqcin7**を完走。DB **91/91**、公開smoke、Sales health JSON `ok:true`、Twenty HTTP **200**・worker restart **0**、Realtime/WAL、Traefik、RLS、manual zero-send gateを含むpost-deploy `release gate passed`を確認した。
+- 本番で`screenshottocode.com`を再解析し、専用DB record **40c23b3b-fa0e-4540-9f1d-09082d67bb93**をread-back。公開機能「convert any screenshot or design to clean code」、推定月間PV **700–8,000**、初年度Japan opportunity **$336–$1,115**、日本語導線・JPY表示の公開ページgapを組み込んだ初回文面が生成され、品質 **93/100**、safety **100**、uniqueness **100**、generation `passed`となった。
+- 本文は`Hello Screenshot to Code team,`から始まり、URL・ドメイン・Tranco/Common Crawl・出典・citation・Package料金・call bookingを含まず、`Best regards, / Tomohiro H / Paradigm LLC / contact@paradigmjp.com`で終了する。`not measured analytics`、`not observed revenue`、`performance is not guaranteed`を明記し、メールアドレスは1回だけ。決定論的read-back **20/20項目**が合格した。
+- 404の偽フォームを保存せず`form_url=null`へfail-closed。国・SMB・Japan fitとverified formが未確定のため`needs_review`、Twentyは意図どおり`skipped`で偽のCRM追加を行わない。`legacyTemplateUsed=false`、`sent=false`、`automaticSendAllowed=false`を確認。本番app logs直近15分は`api_work_errors=0`、`deepseek_manual_errors=0`、`process_fatals=0`。
