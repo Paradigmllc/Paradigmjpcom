@@ -222,6 +222,7 @@ export async function processManualJapanEntryUrl(
         title: evidence.title,
         description: evidence.description,
         headings: evidence.headings,
+        productNames: evidence.productNames,
         audit: evidence.audit,
       },
       product_context: evidence.productContext,
@@ -263,9 +264,6 @@ export async function processManualJapanEntryUrl(
 
     const origin = new URL(evidence.sourceUrl).origin
     const requestedOptions = variantOptions(requestedVariant)
-    const marketProjectionPromise = requestedOptions.includeEstimate
-      ? collectManualMarketProjection({ domain: normalized.domain, profile })
-      : Promise.resolve({ visibility: null, projection: null, fallbackReason: null })
     const [baselineForm, crawl4ai, marketProjection] = await Promise.all([
       discoverFormUrl({
         homeUrl: origin,
@@ -275,7 +273,7 @@ export async function processManualJapanEntryUrl(
         timeoutMs: 10_000,
       }),
       discoverWithCrawl4Ai({ origin, region: "global", timeoutMs: 10_000 }),
-      marketProjectionPromise,
+      collectManualMarketProjection({ domain: normalized.domain, profile }),
     ])
     const verifiedCrawl4Ai = crawl4ai
       ? await verifyExternalFormDiscoveryHit({ origin, hit: crawl4ai, timeoutMs: 10_000 })
@@ -315,6 +313,7 @@ export async function processManualJapanEntryUrl(
         title: evidence.title,
         description: evidence.description,
         headings: evidence.headings,
+        productNames: evidence.productNames,
         audit: evidence.audit,
         market_visibility: marketProjection.visibility,
         message_projection: marketProjection.projection,

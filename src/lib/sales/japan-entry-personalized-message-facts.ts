@@ -232,6 +232,17 @@ export function buildJapanEntryPersonalizationFacts(
   }
 
   const japanMarket = projection?.markets.find((market) => market.code === "JP");
+  if (projection && projection.monthlyVisitRange.low > 0 && projection.monthlyVisitRange.high >= projection.monthlyVisitRange.low) {
+    const low = projection.monthlyVisitRange.low.toLocaleString("en-US");
+    const high = projection.monthlyVisitRange.high.toLocaleString("en-US");
+    facts.push({
+      id: "modeled-global-monthly-visit-range",
+      statement: `The public-signal planning model estimates a broad global monthly website-visit range of approximately ${low}–${high}; this is not measured analytics.`,
+      source: projection.modelVersion,
+      confidence: 0.3,
+      anchors: [`${low}–${high}`, "global monthly website-visit range", "not measured analytics"],
+    });
+  }
   if (projection && japanMarket && japanMarket.estimatedMonthlyVisits > 0) {
     const visits = japanMarket.estimatedMonthlyVisits.toLocaleString("en-US");
     facts.push({

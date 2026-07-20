@@ -18,6 +18,7 @@ interface PromptInput {
   companyName: string;
   industry: string | null;
   productContext: string | null;
+  productNames?: string[];
   targetCountry: string | null;
   businessModel: BusinessModel;
   purpose?: JapanEntryMessagePurpose;
@@ -85,7 +86,7 @@ export function initialInterestGenerationPrompt(
   playbook: ManualOutreachPlaybook = "general_online_smb",
 ): string {
   const estimateRule = options.includeEstimate
-    ? "Paragraph 3 must use the supplied modeled-annual-opportunity-range and exactly one relevant public-page audit fact. Preserve the exact USD range. Call it a modeled estimate based on public signals and conservative assumptions, and state that it is not observed revenue or guaranteed performance."
+    ? "Paragraph 3 must use the supplied modeled-global-monthly-visit-range, modeled-annual-opportunity-range, and exactly one relevant public-page audit fact. Preserve both exact ranges. Call both public-signal planning estimates, state that the traffic range is not measured analytics and the opportunity range is not observed revenue, and state that performance is not guaranteed."
     : "Paragraph 3 must use one or two supplied public-page audit facts that fit the business_model. Clearly say this was a public-page review. Describe only what the checked pages did or did not show. Do not use modeled traffic, revenue, ROI, conversion, popularity, buyer behavior, legal breach, or market-size numbers."
   const verticalRule = MANUAL_OUTREACH_PLAYBOOK_RULES[playbook]
   const angleRule = initialInterestAngleRule(angle)
@@ -95,7 +96,7 @@ export function initialInterestGenerationPrompt(
     "Build the strategy before drafting. Connect a supplied company observation to a specific plausible Japanese customer segment, the exact public-page gap, why a Japan opportunity analysis is relevant, and a low-friction permission or routing CTA. Label unverified market applicability as a hypothesis; never present it as fact.",
     `The personalized body, excluding the greeting and signature, must be ${options.includePrice ? "110-175" : "100-165"} English words and contain three or four short paragraphs separated by a blank line (\\n\\n). Do not use headings, bullets, or Markdown.`,
     `Start with the exact standalone greeting supplied in fixed_sender.greeting. Use the first body paragraph for a company-specific observation, not a sender biography. End with this exact four-line signature and nothing after it: '${MANUAL_FORM_SIGNATURE.replaceAll("\n", " / ")}'. Do not invent a title, city, office, or company category.`,
-    "Use the exact company_name and show concrete product understanding using one short exact phrase from product_context. Return that phrase as product_evidence. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
+    "Use the exact company_name and show concrete product understanding using one short exact phrase from product_context. Return that phrase as product_evidence. The evidence phrase must describe a real capability, workflow, product category, or customer use; a product name alone is insufficient. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
     estimateRule,
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
     `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. The approved meaning is: '${initialInterestClose(options)}'. Adapt its wording to the company and choose one CTA type: permission_to_send, right_person, or founder_forward. Do not offer both a report and a call.`,
@@ -125,8 +126,10 @@ export function generationMessages(
   const messageAngle = input.messageAngle ?? "problem";
   const outreachPlaybook = input.outreachPlaybook ?? "general_online_smb";
   const annualEstimateId = facts.find((fact) => fact.id === "modeled-annual-opportunity-range")?.id;
+  const trafficRangeId = facts.find((fact) => fact.id === "modeled-global-monthly-visit-range")?.id;
   const useAnnualEstimate = purpose === "initial_interest" && initialInterestOptions.includeEstimate && Boolean(annualEstimateId);
   const repairRequiredFactIds = repair ? [
+    useAnnualEstimate ? trafficRangeId : undefined,
     useAnnualEstimate ? annualEstimateId : undefined,
     useAnnualEstimate ? undefined : facts.find((fact) => fact.id === "modeled-japan-monthly-visits")?.id,
     useAnnualEstimate ? undefined : facts.find((fact) => fact.id === "modeled-monthly-opportunity-gap")?.id,
@@ -153,6 +156,7 @@ export function generationMessages(
         company_name: input.companyName,
         industry: input.industry,
         product_context: input.productContext,
+        product_names: input.productNames ?? [],
         target_country: input.targetCountry,
         business_model: input.businessModel,
         message_mode: mode,
@@ -202,17 +206,18 @@ export function criticMessages(
   purpose: JapanEntryMessagePurpose = "commercial_offer",
   initialInterestOptions: JapanEntryInitialInterestOptions = DEFAULT_INITIAL_INTEREST_OPTIONS,
   messageAngle: ManualMessageAngle = "problem",
+  productNames: string[] = [],
 ): DeepSeekMessage[] {
   const system = [
     "You are a ruthless editor of executive B2B inquiry-form copy. Return JSON only and select the strongest candidate without rewriting it.",
     "Score only the selected candidate for specificity, naturalness, credibility, and executive_relevance from 0-25 each.",
     "A production-ready score requires all four dimensions to be at least 22 and the total to be at least 92.",
     purpose === "initial_interest"
-      ? "Specificity requires exact product evidence and company-specific public-page Japan evidence. Naturalness requires a readable three-or-four-paragraph personalized body inside the exact company greeting and Tomohiro H sender signature, plus a light permission-based close immediately before the signature. Credibility requires no unsupported inference. Executive relevance requires a concrete reason to accept the offered analysis."
+      ? "Specificity requires exact product evidence, one supplied exact product name when available, and company-specific public-page Japan evidence. Naturalness requires a readable three-or-four-paragraph personalized body inside the exact company greeting and Tomohiro H sender signature, plus a light permission-based close immediately before the signature. Credibility requires no unsupported inference. Executive relevance requires a concrete reason to accept the offered analysis."
       : "Specificity requires exact product evidence and company-specific Japan evidence. Naturalness requires readable four-paragraph flow and a non-abrupt transition from diagnosis to price. Credibility requires honest public-signal estimate labeling and no unsupported inference. Executive relevance requires a quantified decision implication when quantified mode is available and a concrete low-friction next step.",
     "When verified competitor facts are supplied, reject a candidate that does not name one exact comparator. When verified demand or an official market fact is supplied, reward one exact positive-pressure signal. When regulatory facts are supplied, reject a candidate that omits the conditional enforcement/change pressure or fails to state that the screen does not establish applicability or breach.",
     purpose === "initial_interest" && initialInterestOptions.includeEstimate
-      ? "For the selected estimate variant, require the exact supplied annual opportunity range, its public-signal and conservative-assumption basis, an explicit not-observed-revenue and not-guaranteed-performance disclaimer, and one relevant audited customer-path observation. Reject placeholders or measured-analytics wording."
+      ? "For the selected estimate variant, require the exact supplied global monthly visit range and annual opportunity range, their public-signal and conservative-assumption basis, explicit not-measured-analytics, not-observed-revenue and not-guaranteed-performance disclaimers, and one relevant audited customer-path observation. Reject placeholders or measured-analytics wording."
       : "In quantified mode, reject candidates that omit the exact supplied value of either modeled figure, replace a value with a placeholder, present modeled figures as observed analytics, or fail to connect the figures to one relevant audited customer-path gap. In audit mode, reject invented traffic, revenue, ROI, conversion, or market-size numbers.",
     "Penalize generic praise, vague product references, mechanical metric insertion, repeated phrasing, dense disclaimers, unsupported inference, abrupt pricing, jargon, and sales clichés.",
     "risk_flags are only for material factual or safety failures: invented facts, unsupported numeric claims, modeled figures presented as measured, guarantees, legal conclusions, prohibited URLs/materials, or contradictions with supplied facts.",
@@ -232,6 +237,7 @@ export function criticMessages(
       role: "user",
       content: JSON.stringify({
         company_name: companyName,
+        product_names: productNames,
         message_mode: mode,
         message_purpose: purpose,
         initial_interest_options: purpose === "initial_interest" ? initialInterestOptions : null,

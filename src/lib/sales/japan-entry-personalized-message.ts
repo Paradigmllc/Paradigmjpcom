@@ -19,7 +19,6 @@ import {
   reviewPersonalizedJapanEntryMessage,
   type JapanEntryMessageReview,
 } from "./japan-entry-personalized-message-review";
-
 export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
@@ -32,7 +31,6 @@ const STAGE_MAX_TOKENS = {
   repair: 2_400,
   critic: 1_200,
 } as const;
-
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
   message?: string;
@@ -77,6 +75,7 @@ interface GenerateInput {
   companyName: string;
   industry: string | null;
   productContext: string | null;
+  productNames?: string[];
   targetCountry: string | null;
   businessModel: BusinessModel;
   projection?: JapanEntryProjection;
@@ -317,6 +316,7 @@ export async function generatePersonalizedJapanEntryMessage(
         message: candidate.message,
         companyName: input.companyName,
         productContext,
+        productNames: input.productNames,
         productEvidence: candidate.product_evidence,
         factIds: candidate.fact_ids,
         facts,
@@ -402,6 +402,7 @@ export async function generatePersonalizedJapanEntryMessage(
         purpose,
         input.initialInterestOptions,
         input.messageAngle,
+        input.productNames,
       ),
       schema: criticSchema,
       caller,

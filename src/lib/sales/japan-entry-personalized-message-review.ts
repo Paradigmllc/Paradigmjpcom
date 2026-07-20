@@ -68,7 +68,7 @@ function includesAny(value: string, candidates: string[]): boolean {
 
 export function getJapanEntryMessageMode(facts: JapanEntryPersonalizationFact[]): JapanEntryMessageMode {
   const ids = new Set(facts.map((fact) => fact.id));
-  return ids.has("modeled-annual-opportunity-range")
+  return (ids.has("modeled-global-monthly-visit-range") && ids.has("modeled-annual-opportunity-range"))
     || (ids.has("modeled-japan-monthly-visits") && ids.has("modeled-monthly-opportunity-gap"))
     ? "quantified"
     : "audit";
@@ -79,6 +79,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   companyName: string;
   productContext: string;
   productEvidence: string;
+  productNames?: string[];
   factIds: string[];
   facts: JapanEntryPersonalizationFact[];
   purpose?: JapanEntryMessagePurpose;
@@ -100,6 +101,9 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const factMap = new Map(input.facts.map((fact) => [fact.id, fact]));
   const selected = input.factIds.map((id) => factMap.get(id)).filter((fact): fact is JapanEntryPersonalizationFact => Boolean(fact));
   const productEvidence = input.productEvidence.trim();
+  const productNames = (input.productNames ?? [])
+    .map((name) => name.trim())
+    .filter((name) => name.length >= 2);
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
@@ -129,6 +133,12 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (purpose === "commercial_offer" && !/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
   if (productEvidence.length < 3 || !input.productContext.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
   else if (!message.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
+  if (customInitialInterest && productNames.length > 0 && !productNames.some((name) => substantiveMessage.toLowerCase().includes(name.toLowerCase()))) {
+    issues.push("An exact public product name is available but missing from the personalized body"); score -= 30;
+  }
+  if (customInitialInterest && productNames.some((name) => name.toLowerCase() === productEvidence.toLowerCase())) {
+    issues.push("Product evidence must describe a concrete capability or workflow, not only repeat the product name"); score -= 25;
+  }
   if (selected.length === 0) { issues.push("No valid Japan-specific fact was selected"); score -= 40; }
   else if (!selected.some((fact) => includesAny(message, fact.anchors))) { issues.push("Selected Japan-specific fact is not reflected in the message"); score -= 30; }
   if (!selected.some((fact) => fact.id.startsWith("japan-audit-"))) { issues.push("No audited Japan-specific page observation was selected"); score -= 35; }
@@ -241,10 +251,14 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (mode === "quantified") {
     const selectedIds = new Set(selected.map((fact) => fact.id));
     const annualAvailable = input.facts.some((fact) => fact.id === "modeled-annual-opportunity-range");
-    const useAnnual = purpose === "initial_interest" && initialInterestOptions.includeEstimate && annualAvailable;
+    const trafficRangeAvailable = input.facts.some((fact) => fact.id === "modeled-global-monthly-visit-range");
+    const useAnnual = purpose === "initial_interest" && initialInterestOptions.includeEstimate && annualAvailable && trafficRangeAvailable;
+    if (purpose === "initial_interest" && initialInterestOptions.includeEstimate && !trafficRangeAvailable) { issues.push("The selected estimate variant requires a public-signal global traffic range"); score -= 45; }
+    if (useAnnual && !selectedIds.has("modeled-global-monthly-visit-range")) { issues.push("The selected estimate variant requires the modeled global monthly visit range"); score -= 45; }
     if (useAnnual && !selectedIds.has("modeled-annual-opportunity-range")) { issues.push("The selected estimate variant requires the modeled annual opportunity range"); score -= 45; }
     if (!useAnnual && (!selectedIds.has("modeled-japan-monthly-visits") || !selectedIds.has("modeled-monthly-opportunity-gap"))) { issues.push("Quantified mode requires both Japan visits and opportunity-gap facts"); score -= 45; }
     if (useAnnual && !/(?:public signals?|public-signal)/i.test(message)) { issues.push("The annual estimate must state its public-signal basis"); score -= 35; }
+    if (useAnnual && !/(?:not measured analytics|not measured (?:traffic|visits)|not first-party analytics)/i.test(message)) { issues.push("The traffic estimate must state that it is not measured analytics"); score -= 35; }
     if (useAnnual && !/(?:not observed revenue|not measured revenue)/i.test(message)) { issues.push("The annual estimate must state that it is not observed revenue"); score -= 35; }
     if (useAnnual && !/(?:not guaranteed|no guarantee|not.*guaranteed performance)/i.test(message)) { issues.push("The annual estimate must state that performance is not guaranteed"); score -= 35; }
     if (!useAnnual && (!/public-signal/i.test(message) || !/not measured (?:analytics|traffic|revenue|sales)/i.test(message))) { issues.push("Quantified mode must identify public-signal estimates as not measured analytics"); score -= 35; }

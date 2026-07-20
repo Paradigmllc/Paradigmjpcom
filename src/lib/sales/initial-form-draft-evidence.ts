@@ -79,6 +79,61 @@ function credibleSiteName(value: string | null): string | null {
   return cleaned;
 }
 
+const PRODUCT_SCHEMA_TYPES = new Set([
+  "Product",
+  "Service",
+  "SoftwareApplication",
+  "WebApplication",
+  "MobileApplication",
+]);
+
+function productName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = decodeHtml(value).replace(/\s+/g, " ").trim();
+  if (
+    normalized.length < 2
+    || normalized.length > 100
+    || /^(?:home|service|services|product|products|software|platform|official site)$/i.test(normalized)
+  ) return null;
+  return normalized;
+}
+
+function collectStructuredProductNames(value: unknown, names: Set<string>): void {
+  if (Array.isArray(value)) {
+    for (const item of value) collectStructuredProductNames(item, names);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  const data = value as JsonRecord;
+  const rawType = data["@type"];
+  const types = Array.isArray(rawType)
+    ? rawType.filter((item): item is string => typeof item === "string")
+    : typeof rawType === "string" ? [rawType] : [];
+  if (types.some((type) => PRODUCT_SCHEMA_TYPES.has(type))) {
+    const name = productName(data.name);
+    if (name) names.add(name);
+  }
+  for (const nested of Object.values(data)) collectStructuredProductNames(nested, names);
+}
+
+export function extractPublicProductNames(html: string): string[] {
+  const names = new Set<string>();
+  for (const key of ["application-name", "apple-mobile-web-app-title"]) {
+    const name = productName(metaContent(html, key));
+    if (name) names.add(name);
+  }
+  for (const match of html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    const source = decodeHtml(match[1] ?? "").trim();
+    if (!source) continue;
+    try {
+      collectStructuredProductNames(JSON.parse(source), names);
+    } catch (error) {
+      console.warn("[manual-work] ignored malformed JSON-LD while extracting product names:", error);
+    }
+  }
+  return [...names].slice(0, 5);
+}
+
 function inferBusinessModel(industry: string | null, techStack: unknown, productContext: string): BusinessModel {
   const text = `${industry ?? ""} ${initialDraftTechnologyNames(techStack).join(" ")} ${productContext}`.toLowerCase();
   if (/shopify|e-?commerce|online store|shop|retail|collection|cart/.test(text)) return "ecommerce";
@@ -107,7 +162,8 @@ export async function collectInitialFormDraftEvidence(input: {
   const description = metaContent(html, "description") ?? metaContent(html, "og:description");
   const headings = textMatches(html, /<h[12]\b[^>]*>([\s\S]*?)<\/h[12]>/gi, 5);
   const companyName = credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title);
-  const productContext = [...new Set([description, ...headings, title]
+  const productNames = extractPublicProductNames(html);
+  const productContext = [...new Set([description, ...headings, ...productNames, title]
     .filter((value): value is string => Boolean(value && value.length >= 3)))]
     .join(" | ")
     .slice(0, 700);
@@ -122,6 +178,7 @@ export async function collectInitialFormDraftEvidence(input: {
     title,
     description,
     headings,
+    productNames,
     audit,
   };
 }

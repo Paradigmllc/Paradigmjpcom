@@ -35,12 +35,8 @@ export function nonEstimateVariant(variant: ManualMessageVariant): ManualMessage
 }
 
 export function assignManualMessageVariant(domain: string): ManualMessageVariant {
-  let hash = 2_166_136_261
-  for (const character of domain.toLowerCase()) {
-    hash ^= character.charCodeAt(0)
-    hash = Math.imul(hash, 16_777_619)
-  }
-  return MANUAL_MESSAGE_VARIANTS[(hash >>> 0) % MANUAL_MESSAGE_VARIANTS.length] ?? "estimate_off_price_off"
+  void domain
+  return "estimate_on_price_off"
 }
 
 export interface ManualExperimentMetric {
