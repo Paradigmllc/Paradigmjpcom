@@ -1,10 +1,11 @@
-## CURRENT STATUS - 2026-07-21 `/work`最大10,000社連続キュー・単一drain lease・DeepSeek工程別Cache可視化（実装検証完了 / 本番release待ち / 外部送信0）
+## CURRENT STATUS - 2026-07-21 `/work`最大10,000社連続キュー・単一drain lease・DeepSeek工程別Cache可視化（本番release・DB読戻し完了 / 外部送信0）
 
 - 1回500URLの安全上限は維持しつつ、最大 **20バッチ / 10,000社**を先行登録できるDBキューへ拡張した。複数`queued`を許可し、Postgres advisory lockとpartial unique indexで`running`は常に1バッチだけ。完了イベントが次の最古バッチを原子的に昇格・自動dispatchするため、4,000社は8×500を先に登録して連続処理できる。
 - browserとserver、startup recoveryが同時にdrainしても並列数が倍増しないようbatch単位の6分leaseを追加した。item claimは従来どおり`FOR UPDATE SKIP LOCKED`・同時3件・10分reclaim。dispatchは0/0.5/1.5秒のbounded retry、container起動時は3秒後と旧lease失効後の370秒後に一度ずつ復旧し、cron・常駐poller・自動送信を追加しない。
 - `/work`は待機・実行中のバッチ数/会社数、前方バッチ数、`queued/running`を表示する。バックグラウンド解析中も次の500件を登録可能で、キュー満杯は日本語409、Realtimeで待機バッチの昇格と次active batchへ追従する。
 - 企業分類のDeepSeek model・request数・input/output・Cache Hit/Miss token・所要時間を`profile.analysisUsage`へ保存し、既存の文面`generation_usage`と合算した追跡済みCache Hit率を会社カードへ表示する。単価はUIに固定せずtoken実績を正本とする。既存20社の$0.00359/社は文面生成だけの実績であり、新規解析から分類工程も可視化される。
-- 検証: 対象 **8 files / 23 tests**、最終重点 **7 files / 26 tests**、全Vitest **233 files / 1,078 tests**、TypeScript、ESLint、Quality Guard **0 errors / 77 existing warnings**、release-doctor static contract、production build **408/408 pages** pass。次はPR統合後、正式`npm run release:prod`でmigration・single-running index・3 RPC・公開`/work`・Twenty/Realtime/zero-sendをread-backする。
+- PR **#506** / main **a00b377b**を統合し、正式`npm run release:prod`のdeployment **a10d4gys2dtni0cl1uyb37o4**を完走。本番container **n8i2sjiqvr2d8hrzppop2m2i-100514036775**はmain imageでhealthy。DB **93/93**、公開Ready、Sales health JSON `ok:true`、Twenty HTTP 200 / worker restart 0、Realtime、RLS、Traefik、zero-sendを含むrelease gateがpassした。
+- 本番DB read-backは`running=0 / queued=0`、lease列2/2、queue RPC 3/3、single-running index 1、旧single-active index 0、`sent` violation 0。さらにtransaction内の2バッチ模擬で「1件目自動昇格→running 1 / queued 1→drain二重claim拒否→lease解放→1件目完了→2件目自動昇格→running 1 / queued 0」を確認し、rollback後の永続行0。検証全体は対象 **8 files / 23 tests**、最終重点 **7 files / 26 tests**、全Vitest **233 files / 1,078 tests**、TypeScript、ESLint、Quality Guard **0 errors / 77 existing warnings**、production build **408/408 pages** pass。未実施なのは実URLによる100→500→4,000件/24h soakであり、処理能力と本番機構は確認済みだが4,000件/日SLAの認定はsoak後とする。
 
 ## CURRENT STATUS - 2026-07-21 `/work`20社canary・Twenty完全読戻し・DeepSeek Cache/処理能力実測（500件operator-ready / 外部送信0）
 
