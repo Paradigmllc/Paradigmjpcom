@@ -35,6 +35,7 @@ import {
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
+import { boundedGeneratedEvidence } from "./manual-generated-evidence-schema"
 export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
@@ -105,10 +106,6 @@ interface GenerateInput {
 }
 
 type LlmCaller = DeepSeekStructuredCaller;
-const boundedGeneratedEvidence = (maximum: number) => z.preprocess(
-  (value) => typeof value === "string" ? value.trim().slice(0, maximum) : value,
-  z.string().min(3).max(maximum),
-)
 const candidateSchema = z.object({
   message: z.string().min(1).max(1_800),
   fact_ids: z.array(z.string().min(1)).min(1).max(6),

@@ -143,4 +143,15 @@ contact@paradigmjp.com`
     expect(result.passed).toBe(false)
     expect(result.reasons.join(" ")).toContain("Repeated phrase")
   })
+
+  it("does not treat a repeated legal company identity as reusable template copy", () => {
+    const result = reviewManualMessageDistinctness({
+      message: "Affirmo Technology Pte Ltd documents an IoT tracking workflow that Affirmo Technology Pte Ltd provides for logistics teams.",
+      companyName: "Affirmo Technology Pte Ltd",
+      priorMessages: [],
+    })
+
+    expect(result.passed).toBe(true)
+    expect(result.reasons).toEqual([])
+  })
 })
