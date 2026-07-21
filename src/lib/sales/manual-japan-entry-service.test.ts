@@ -11,6 +11,7 @@ import {
   shouldUseTwentyOnlyRetry,
 } from "./manual-japan-entry-service"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
+import { isExplicitManualWorkArtifactRefresh } from "./manual-work-recovery-policy"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 
 const qualifiedProfile: ManualCompanyProfile = {
@@ -75,6 +76,13 @@ describe("manual Japan Entry work safety gates", () => {
     })).toBe(true)
     expect(isRetryableManualWork({ status: "failed", manually_sent_at: "2026-07-19T00:00:00.000Z" })).toBe(false)
     expect(isRetryableManualWork({ status: "rejected", message_review: { generation_status: "failed" } })).toBe(false)
+    expect(isRetryableManualWork({ status: "completed" })).toBe(false)
+  })
+
+  it("allows an explicit artifact refresh for untouched completed work without exposing routine recovery", () => {
+    expect(isExplicitManualWorkArtifactRefresh({ status: "completed" }, true)).toBe(true)
+    expect(isExplicitManualWorkArtifactRefresh({ status: "completed" }, false)).toBe(false)
+    expect(isExplicitManualWorkArtifactRefresh({ status: "completed", manually_sent_at: "2026-07-21T00:00:00.000Z" }, true)).toBe(false)
     expect(isRetryableManualWork({ status: "completed" })).toBe(false)
   })
 
