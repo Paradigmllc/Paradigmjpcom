@@ -2039,3 +2039,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 価格改定コミット`750d1cc7`をPR **#479**でmainへ統合し、残存していたDeepSeek構造化プロンプトの`setup_fee_usd`数値リテラルも`13_000`へ補正してPR **#482**で統合した。正式`npm run release:prod`の価格改定deployment **m1etrz5qse1k2lh1euvtg74i**とプロンプト補正deployment **d12cbf9tvmp48ploewmexd07**を完走した。DB **93/93**、日本語/英語CMS公開、英語Blog **23記事**、Traefik/Cloudflare origin lock、RLS/Realtime/zero-send、Sales health JSON `ok:true`を含むrelease gateがpassした。
 - 本番公開read-backは`/en`、`/en/pricing`、`/en/package`、`/en/contact`、`/en/faq`、`/en/legal`、`/en/terms`、`/en/refund`、`/en/tools/japan-entry-score`が全てHTTP **200**。各bodyに`$13,000`/`$13K`が存在し、旧`$12,000`/`$12K`は0件。英語ホームJSON-LDは`price=13000`、旧`price=12000`なし、`$2,000/month`と`$0/month`も確認済み。
 - 検証は全Vitest **225 files / 1,033 tests**、追加対象Vitest **4 files / 41 tests**、TypeScript clean、Quality Guard **0 errors / 76 existing warnings**、`git diff --check` clean。歯科客単価・推定機会レンジ・JPY値・timeout値など、価格改定対象外の`12,000`は変更していない。既存の未関連作業・外部送信は実行していない。
+## CURRENT STATUS - 2026-07-21 トップ訴求帯のコンパクト化（本番release・実画面確認完了）
+
+- `/en`上部の`How much longer can you afford to leave Japan unserved?`帯を、ファーストビュー直下の補助訴求として再設計した。見出しをdesktop `48px→40px`、mobile `26px→22px`、上下余白・要素間隔・本文・CTAを縮小し、Japan Entry本体の見出しを早く視認できる構成へ変更した。
+- PR **#489** / commit `e4890497`をmainへ統合し、正式`npm run release:prod`のdeployment **prsuwdh743n5lpt2ljvm33t9**を完走。DB **93/93**、公開smoke、Traefik/Cloudflare、RLS/Realtime、Sales health `ok:true`を含むrelease gateがpassした。
+- 本番in-app browser実画面で`data-testid=japan-market-urgency`を確認し、section height **274px**、heading font **40px**、heading height **90px**、横overflow **0**。スクリーンショットでも次の`Launch in Japan without hiring a local team`見出しが同一viewportに入り、訴求帯が主役コンテンツを圧迫しないことを確認した。
