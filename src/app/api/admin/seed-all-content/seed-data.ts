@@ -397,7 +397,7 @@ export async function seedAllContent(
           { icon: "TrendingUp", title: "Japan market report", description: "A sourced comparison across priority markets with one deeper view, public evidence, observation dates, unknowns, and next actions.", href: "", highlighted: false },
           { icon: "ShieldCheck", title: "Trust & regulatory screening", description: "Commercial disclosure, privacy, Japan's Act on Specified Commercial Transactions, and relevant sector questions organized for qualified review — not presented as legal advice.", href: "", highlighted: false },
           { icon: "CreditCard", title: "Payment & inquiry readiness", description: "We connect the payment and inquiry routes your business is eligible to use, with constraints confirmed before kickoff.", href: "", highlighted: false },
-          { icon: "MessageCircle", title: "Japanese operation & handover", description: "Japanese inquiry handling, measurement, launch checks, ownership mapping, and a campaign operating period: months 1–6 at $0/month for the first 10 selected launch partners.", href: "", highlighted: false },
+          { icon: "MessageCircle", title: "Japanese operation & handover", description: "Japanese inquiry handling, measurement, launch checks, ownership mapping, and a selected-partner campaign period: $2,000/month × 6 months = $12,000 of managed-operation value included.", href: "", highlighted: false },
         ],
       },
       EN_JAPAN_ENTRY_PROCESS_BLOCK,
@@ -407,7 +407,7 @@ export async function seedAllContent(
         title: "One fixed Japan entry offer",
         subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
         tiers: [
-          { name: "Japan Entry Package", price: "$13,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with a standard $2,000/month managed-operation layer. For the first 10 selected launch partners, months 1–6 are $0/month.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing", ctaLabel: "Apply for Japan Entry — $13K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$13,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with a standard $2,000/month managed-operation layer. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing", ctaLabel: "Apply for Japan Entry — $13K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
@@ -480,7 +480,7 @@ export async function seedAllContent(
     }
     await upsertHomePage("home-en",
       "Paradigm — Fixed-Price Japan Entry for Fast-Decision Global SMBs",
-      "$13,000 fixed Japan entry setup. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms.",
+      "$13,000 fixed Japan entry setup. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms.",
       layoutEn, "en")
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
   return summary

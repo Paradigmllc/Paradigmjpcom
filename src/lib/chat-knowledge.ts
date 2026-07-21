@@ -34,15 +34,15 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     locale: "en",
     title: "Japan Entry pricing and commercial terms",
     href: "/en/pricing",
-    keywords: ["price", "pricing", "cost", "fee", "monthly", "setup", "13,000", "13000", "2,000", "2000", "six", "month", "campaign", "waived", "10"],
-    content: "$13,000 USD fixed one-time setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge because that fee is waived. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved work outside scope remain separate.",
+    keywords: ["price", "pricing", "cost", "fee", "monthly", "setup", "13,000", "13000", "2,000", "2000", "12,000", "12000", "six", "month", "campaign", "waived", "selected"],
+    content: "$13,000 USD fixed one-time setup. For selected launch partners, the standard managed-operation fee of $2,000/month is included for months 1–6 at no additional monthly charge: $2,000/month × 6 months = $12,000 of managed-operation value. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved work outside scope remain separate.",
   },
   {
     locale: "ja",
     title: "Japan Entryの料金と契約条件",
     href: "/ja/pricing",
     keywords: ["料金", "費用", "価格", "セットアップ", "13000", "13,000", "月額", "6か月", "継続"],
-    content: "セットアップは13,000ドル固定です。選定した契約先には、最初の6か月の運用を追加月額なしで提供します。期間終了後の継続条件・月額は個別に協議し、書面で合意します。第三者費用と合意外の作業は別です。",
+    content: "セットアップは13,000ドル固定です。選定した契約先には、標準月額2,000ドルの運用を6か月分、追加月額なしで含めます（2,000ドル×6か月＝12,000ドル相当）。期間終了後の継続条件・月額は個別に協議し、書面で合意します。第三者費用と合意外の作業は別です。",
   },
   {
     locale: "en",

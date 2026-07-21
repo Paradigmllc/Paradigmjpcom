@@ -7,7 +7,7 @@ export const EN_JAPAN_ENTRY_PROCESS_BLOCK = {
     { title: "Scope in 48 hours", description: "We confirm the offer, eligible payment and operating routes, required specialist review, and the exact launch checklist.", icon: "ClipboardCheck" },
     { title: "Localize the revenue path", description: "We rebuild the Japanese positioning, page structure, trust content, pricing presentation, and inquiry flow.", icon: "Languages" },
     { title: "Connect the operation", description: "We connect analytics, supported payment or lead routes, Japanese support, notifications, and ownership handover.", icon: "Workflow" },
-    { title: "Delivery by day 14", description: "We publish, verify the agreed buyer journey end to end, record acceptance, and begin the campaign operating period: months 1–6 at $0/month for the first 10 selected launch partners. Client-requested holds pause the clock.", icon: "Rocket" },
+    { title: "Delivery by day 14", description: "We publish, verify the agreed buyer journey end to end, record acceptance, and begin the selected-partner campaign operating period: $2,000/month × 6 months = $12,000 of managed-operation value included. Client-requested holds pause the clock.", icon: "Rocket" },
   ],
 } as const
 
@@ -23,7 +23,7 @@ export const EN_JAPAN_ENTRY_COMPARISON_BLOCK = {
     { item: "Launch ownership", leftValue: "One accountable Tokyo team", rightValue: "Several internal and external owners" },
     { item: "Time to market", leftValue: "14-business-day delivery guarantee", rightValue: "Dependent on hiring and vendor coordination" },
     { item: "Your team's workload", leftValue: "One English-speaking owner", rightValue: "Engineering, legal, marketing, and support" },
-    { item: "Japanese operation", leftValue: "Months 1–6 at $0/month for the first 10 selected launch partners", rightValue: "Separate ongoing contracts" },
+    { item: "Japanese operation", leftValue: "$2,000/month × 6 months = $12,000 value included for selected launch partners", rightValue: "Separate ongoing contracts" },
     { item: "Decision", leftValue: "One fixed scope", rightValue: "Repeated procurement decisions" },
   ],
 } as const

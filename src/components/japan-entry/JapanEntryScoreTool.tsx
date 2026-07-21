@@ -408,7 +408,7 @@ export default function JapanEntryScoreTool({ locale }: Props) {
             </div>
 
             <div className="mt-8 flex flex-col items-start justify-between gap-5 rounded-2xl bg-zinc-950 p-6 text-white sm:flex-row sm:items-center sm:p-8">
-              <div><p className="text-lg font-semibold">{copy.apply}</p><p className="mt-2 text-sm text-zinc-300">{locale === "ja" ? "セットアップ13,000ドル固定。選定した契約先には最初の6か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別協議のうえ書面で合意します。" : "Fixed $13,000 setup. Standard Managed Japan Desk is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge, and month 7 onward is $2,000/month under the signed terms."}</p></div>
+              <div><p className="text-lg font-semibold">{copy.apply}</p><p className="mt-2 text-sm text-zinc-300">{locale === "ja" ? "セットアップ13,000ドル固定。選定した契約先には月額2,000ドル×6か月＝12,000ドル相当の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別協議のうえ書面で合意します。" : "Fixed $13,000 setup. Selected launch partners receive $2,000/month × 6 months = $12,000 of standard managed-operation value included at no additional monthly fee; month 7 onward is $2,000/month under the signed terms."}</p></div>
               <Link href={`/${locale}/contact?intent=japan-entry`} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300">{copy.apply}<ArrowRight className="h-4 w-4" aria-hidden /></Link>
             </div>
             <button type="button" onClick={() => { setResult(null); setStatus("idle"); setError(null); window.scrollTo({ top: 0, behavior: "smooth" }) }} className="mt-5 text-sm font-semibold text-blue-700 hover:text-blue-900">{copy.retry}</button>

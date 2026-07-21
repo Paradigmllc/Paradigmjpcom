@@ -63,8 +63,7 @@ export function isSafeEnglishJapanEntryHomepage(
   const normalizedCopy = copy.toLowerCase()
   const requiredCopy = [
     "$2,000/month",
-    "first 10 selected launch partners",
-    "months 1–6 at $0/month",
+    "$2,000/month × 6 months = $12,000 value included",
     "Month 7 onward: $2,000/month",
     "availability and scope are confirmed in writing",
     "Month-one target: 20 qualified launches",
