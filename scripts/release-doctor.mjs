@@ -361,6 +361,9 @@ function checkStaticReleaseRules() {
   const personalizedMessage = fs.existsSync("src/lib/sales/japan-entry-personalized-message.ts")
     ? fs.readFileSync("src/lib/sales/japan-entry-personalized-message.ts", "utf8")
     : ""
+  const personalizedMessageStructured = fs.existsSync("src/lib/sales/japan-entry-personalized-message-structured.ts")
+    ? fs.readFileSync("src/lib/sales/japan-entry-personalized-message-structured.ts", "utf8")
+    : ""
   if (
     operatorApprovalMigration.includes("sales_lead_operator_events")
     && operatorApprovalMigration.includes("ENABLE ROW LEVEL SECURITY")
@@ -391,7 +394,8 @@ function checkStaticReleaseRules() {
     && leadSourceSelectionService.includes('"sales_claim_lead_source_records"')
     && !deepSeekGateway.includes("process.env.LITELLM_API_KEY")
     && !deepSeekGateway.includes("process.env.OPENROUTER_API_KEY")
-    && personalizedMessage.includes('modelPolicy: "strict"')
+    && personalizedMessageStructured.includes('modelPolicy: "strict"')
+    && personalizedMessageStructured.includes('const MODEL = "deepseek-v4-pro"')
     && personalizedMessage.includes('const MODEL = "deepseek-v4-pro"')
   ) {
     pass("lead factory enforces source preview, pilot review, manual Twenty promotion, operator audit and direct DeepSeek V4 Pro generation")
