@@ -5,6 +5,9 @@ const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   create: vi.fn(),
   active: vi.fn(),
+  position: vi.fn(),
+  queueSummary: vi.fn(),
+  promote: vi.fn(),
   normalize: vi.fn(),
   notify: vi.fn(),
   schedule: vi.fn(),
@@ -15,6 +18,9 @@ vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }
 vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   createManualWorkBatch: mocks.create,
   getLatestActiveManualWorkBatch: mocks.active,
+  getManualWorkBatchQueuePosition: mocks.position,
+  getManualWorkBatchQueueSummary: mocks.queueSummary,
+  promoteNextManualWorkBatch: mocks.promote,
 }))
 vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ normalizeManualWorkUrl: mocks.normalize }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
@@ -42,6 +48,9 @@ beforeEach(() => {
     return { inputUrl: value, canonicalUrl: `https://${domain}/`, domain }
   })
   mocks.create.mockImplementation(async (input: { urls: unknown[] }) => snapshot(input.urls.length))
+  mocks.position.mockResolvedValue(0)
+  mocks.queueSummary.mockResolvedValue({ batchCount: 1, companyCount: 1, runningBatchId: "11111111-1111-4111-8111-111111111111", queuedBatchCount: 0, queuedCompanyCount: 0 })
+  mocks.promote.mockImplementation(async () => ({ snapshot: snapshot(1), promoted: true }))
   mocks.notify.mockResolvedValue({ ok: true })
   mocks.preflight.mockResolvedValue({ ok: true, usedModel: "deepseek-chat" })
 })
@@ -57,6 +66,7 @@ describe("manual work durable batch API", () => {
   it("accepts up to 500 URLs and deduplicates by normalized domain", async () => {
     const urls = Array.from({ length: 500 }, (_, index) => `company-${index}.example`)
     urls[499] = "company-0.example"
+    mocks.promote.mockResolvedValue({ snapshot: snapshot(499), promoted: true })
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -85,15 +95,22 @@ describe("manual work durable batch API", () => {
     expect(mocks.create).not.toHaveBeenCalled()
   })
 
-  it("does not create a second active batch", async () => {
+  it("queues a second batch behind the active runner", async () => {
     mocks.active.mockResolvedValue(snapshot(12))
+    mocks.position.mockResolvedValue(1)
+    mocks.promote.mockResolvedValue({ snapshot: snapshot(12), promoted: false })
+    mocks.queueSummary.mockResolvedValue({ batchCount: 2, companyCount: 13, runningBatchId: "11111111-1111-4111-8111-111111111111", queuedBatchCount: 1, queuedCompanyCount: 1 })
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ urls: ["example.com"] }),
     }))
-    expect(response.status).toBe(409)
-    expect(mocks.create).not.toHaveBeenCalled()
+    const body = await response.json()
+    expect(response.status).toBe(201)
+    expect(body.queuePosition).toBe(1)
+    expect(body.automaticDrainStarted).toBe(false)
+    expect(mocks.create).toHaveBeenCalledTimes(1)
+    expect(mocks.schedule).not.toHaveBeenCalled()
   })
 
   it("does not enqueue hundreds of doomed jobs when DeepSeek is unavailable", async () => {
@@ -109,5 +126,18 @@ describe("manual work durable batch API", () => {
     expect(body.error).toContain("バッチは開始していません")
     expect(mocks.create).not.toHaveBeenCalled()
     expect(mocks.schedule).not.toHaveBeenCalled()
+  })
+
+  it("returns an operator-safe conflict when the 20-batch queue is full", async () => {
+    mocks.create.mockRejectedValue(new Error("manual work queue is full (20 batches / 10000 companies maximum)"))
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ urls: ["example.com"] }),
+    }))
+    const body = await response.json()
+    expect(response.status).toBe(409)
+    expect(body.error).toBe("永続キューは最大20バッチです。処理完了後に追加してください。")
+    expect(mocks.promote).not.toHaveBeenCalled()
   })
 })

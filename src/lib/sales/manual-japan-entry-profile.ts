@@ -1,10 +1,11 @@
 import { z } from "zod"
-import { callDeepSeek } from "@/lib/deepseek"
+import { callDeepSeek, type DeepSeekResponse } from "@/lib/deepseek"
 import { INDUSTRIES } from "./types"
 import type { JapanMarketAudit } from "./sources/japan-market-audit"
 import {
   MANUAL_COMMERCIAL_SIGNAL_KINDS,
   type ManualCompanyProfile,
+  type ManualDeepSeekStageUsage,
 } from "./manual-japan-entry-types"
 import {
   buildManualMarketLens,
@@ -45,6 +46,19 @@ const profileSchema = z.object({
 }).strict()
 
 type ParsedManualCompanyProfile = z.infer<typeof profileSchema>
+
+function summarizeAnalysisUsage(responses: DeepSeekResponse[], elapsedMs: number): ManualDeepSeekStageUsage {
+  return {
+    stage: "company_classification",
+    requests: responses.length,
+    models: [...new Set(responses.map((response) => response.usedModel).filter((model): model is string => Boolean(model)))],
+    promptTokens: responses.reduce((total, response) => total + (response.usage?.prompt_tokens ?? 0), 0),
+    completionTokens: responses.reduce((total, response) => total + (response.usage?.completion_tokens ?? 0), 0),
+    cacheHitTokens: responses.reduce((total, response) => total + (response.usage?.cache_hit_tokens ?? 0), 0),
+    cacheMissTokens: responses.reduce((total, response) => total + (response.usage?.cache_miss_tokens ?? 0), 0),
+    elapsedMs,
+  }
+}
 
 const PROFILE_OUTPUT_CONTRACT = {
   companyName: "string",
@@ -285,6 +299,8 @@ export async function analyzeManualCompanyProfile(input: {
   headings: string[]
   audit: JapanMarketAudit
 }): Promise<ManualCompanyProfile> {
+  const analysisStartedAt = Date.now()
+  const analysisResponses: DeepSeekResponse[] = []
   const evidenceText = [input.title, input.description, ...input.headings, input.productContext]
     .filter((value): value is string => Boolean(value))
     .join(" | ")
@@ -337,6 +353,7 @@ export async function analyzeManualCompanyProfile(input: {
     thinking: "disabled",
     timeoutMs: 120_000,
   })
+  analysisResponses.push(response)
   if (!response.ok || !response.text) {
     throw new Error(response.error ?? "DeepSeek V4 Pro company classification failed")
   }
@@ -390,6 +407,7 @@ export async function analyzeManualCompanyProfile(input: {
       thinking: "disabled",
       timeoutMs: 120_000,
     })
+    analysisResponses.push(repair)
     if (!repair.ok || !repair.text) {
       throw new Error(`DeepSeek V4 Pro company classification repair failed (${issues.map((issue) => issue.path).filter(Boolean).join(", ")})`)
     }
@@ -409,11 +427,14 @@ export async function analyzeManualCompanyProfile(input: {
     }
     profile = repaired.data
   }
-  return groundManualCompanyProfile({
-    profile,
-    domain: input.domain,
-    fallbackCompanyName: input.fallbackCompanyName,
-    evidenceText,
-    productContext: input.productContext,
-  })
+  return {
+    ...groundManualCompanyProfile({
+      profile,
+      domain: input.domain,
+      fallbackCompanyName: input.fallbackCompanyName,
+      evidenceText,
+      productContext: input.productContext,
+    }),
+    analysisUsage: summarizeAnalysisUsage(analysisResponses, Date.now() - analysisStartedAt),
+  }
 }

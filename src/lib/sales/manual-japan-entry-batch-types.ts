@@ -3,6 +3,7 @@ import type { ManualMessageVariantSelection } from "./manual-japan-entry-experim
 
 export const MANUAL_WORK_BATCH_MAX_URLS = 500
 export const MANUAL_WORK_BATCH_DRAIN_SIZE = 3
+export const MANUAL_WORK_BATCH_QUEUE_MAX_BATCHES = 20
 
 export type ManualWorkBatchStatus =
   | "queued"
@@ -34,8 +35,18 @@ export interface ManualWorkBatchRow {
   started_at: string | null
   completed_at: string | null
   notified_at: string | null
+  drain_claim_token: string | null
+  drain_claimed_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface ManualWorkBatchQueueSummary {
+  batchCount: number
+  companyCount: number
+  runningBatchId: string | null
+  queuedBatchCount: number
+  queuedCompanyCount: number
 }
 
 export interface ManualWorkBatchItemRow {

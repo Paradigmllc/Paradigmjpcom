@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
+  type ManualWorkBatchQueueSummary,
+  type ManualWorkBatchStatus,
+} from "@/lib/sales/manual-japan-entry-batch-types"
+import {
   MANUAL_SOURCE_ROLE_LABELS,
   type ManualLeadSourceCatalogRow,
 } from "@/lib/sales/manual-japan-entry-source-ledger"
@@ -22,7 +26,11 @@ export function ManualWorkIntake({
   sources,
   selectedSource,
   queue,
-  running,
+  submitting,
+  queueActive,
+  batchStatus,
+  queuePosition,
+  queueSummary,
   urlCount,
   maxUrls,
   finished,
@@ -40,7 +48,11 @@ export function ManualWorkIntake({
   sources: ManualLeadSourceCatalogRow[]
   selectedSource?: ManualLeadSourceCatalogRow
   queue: ManualWorkQueueState
-  running: boolean
+  submitting: boolean
+  queueActive: boolean
+  batchStatus: ManualWorkBatchStatus | null
+  queuePosition: number
+  queueSummary: ManualWorkBatchQueueSummary
   urlCount: number
   maxUrls: number
   finished: number
@@ -71,8 +83,9 @@ export function ManualWorkIntake({
         </div>
         <div className="hidden border-l border-slate-200 bg-slate-50/80 px-5 py-4 lg:block">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">Execution policy</p>
-          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Layers3 className="size-4 text-emerald-600" />500 URL / durable queue</div>
+          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Layers3 className="size-4 text-emerald-600" />500件 × 最大20バッチ</div>
           <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><CircleDot className="size-4 text-amber-500" />Auto-send disabled</div>
+          {queueSummary.batchCount > 0 && <p className="mt-3 text-xs leading-5 text-slate-600">待機・実行中 {queueSummary.batchCount}バッチ / {queueSummary.companyCount.toLocaleString("ja-JP")}社</p>}
         </div>
       </div>
 
@@ -84,7 +97,7 @@ export function ManualWorkIntake({
               <select
                 value={sourceSlug}
                 onChange={(event) => onSourceChange(event.target.value)}
-                disabled={running}
+                disabled={submitting}
                 aria-label="企業を見つけた営業ソース"
                 className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal text-slate-900 outline-none transition focus-visible:border-slate-400 focus-visible:ring-4 focus-visible:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -93,7 +106,7 @@ export function ManualWorkIntake({
             </label>
             <label className="space-y-2 text-sm font-semibold text-slate-700">
               <span>掲載・発見ページURL <span className="font-normal text-slate-600">任意</span></span>
-              <Input value={sourcePageUrl} onChange={(event) => onSourcePageUrlChange(event.target.value)} placeholder="https://source.example/company" disabled={running} aria-label="営業ソースの掲載ページURL" className="h-11 rounded-xl border-slate-200 bg-white focus-visible:ring-slate-200" />
+              <Input value={sourcePageUrl} onChange={(event) => onSourcePageUrlChange(event.target.value)} placeholder="https://source.example/company" disabled={submitting} aria-label="営業ソースの掲載ページURL" className="h-11 rounded-xl border-slate-200 bg-white focus-visible:ring-slate-200" />
             </label>
           </div>
 
@@ -106,7 +119,14 @@ export function ManualWorkIntake({
             </div>
           )}
 
-          {batchError && <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950 sm:flex-row sm:items-center sm:justify-between"><p>{batchError}<br />未処理URLはDBに残っており、この画面から再開できます。</p>{canResume && <Button type="button" variant="outline" size="sm" disabled={running} onClick={onResume} className="shrink-0 border-amber-300 bg-white">処理を再開</Button>}</div>}
+          {batchError && <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950 sm:flex-row sm:items-center sm:justify-between"><p>{batchError}<br />未処理URLはDBに残っており、この画面から再開できます。</p>{canResume && <Button type="button" variant="outline" size="sm" disabled={submitting} onClick={onResume} className="shrink-0 border-amber-300 bg-white">処理を再開</Button>}</div>}
+
+          {queueActive && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-950" aria-live="polite">
+              <p className="font-semibold">{batchStatus === "queued" ? `永続キューで待機中（前方${queuePosition}バッチ）` : "サーバーで解析を継続中"}</p>
+              <p className="mt-1">画面を閉じても処理は継続します。次の500件も入力でき、完了イベントで順番に自動開始します。</p>
+            </div>
+          )}
 
           <label className="block space-y-2 text-sm font-semibold text-slate-700">
             <span className="flex items-center justify-between gap-3"><span>解析する海外企業URL</span><span className={invalidCount ? "text-red-600" : "font-normal text-slate-600"}>{urlCount} / {maxUrls}件</span></span>
@@ -116,16 +136,16 @@ export function ManualWorkIntake({
               placeholder={"https://example.com\nhttps://another-company.com"}
               className="min-h-40 resize-y rounded-2xl border-slate-200 bg-slate-50/70 p-4 font-mono text-sm leading-6 focus-visible:bg-white focus-visible:ring-slate-200"
               aria-label="解析する海外企業URL"
-              disabled={running}
+              disabled={submitting}
             />
           </label>
 
           <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動で1件に統合します。</p>
-            <Button onClick={onStart} disabled={running || urlCount === 0 || invalidCount} size="lg" className="h-12 w-full rounded-xl bg-slate-950 px-6 text-white shadow-lg shadow-slate-950/10 hover:bg-emerald-700 sm:w-auto">
-              {running ? <LoaderCircle className="animate-spin" /> : <Play />}
-              {running ? "解析中" : "解析を開始"}
-              {!running && <ChevronRight />}
+            <Button onClick={onStart} disabled={submitting || urlCount === 0 || invalidCount} size="lg" className="h-12 w-full rounded-xl bg-slate-950 px-6 text-white shadow-lg shadow-slate-950/10 hover:bg-emerald-700 sm:w-auto">
+              {submitting ? <LoaderCircle className="animate-spin" /> : <Play />}
+              {submitting ? "キュー登録中" : queueActive ? "次のバッチを追加" : "解析を開始"}
+              {!submitting && <ChevronRight />}
             </Button>
           </div>
         </div>

@@ -140,4 +140,45 @@ describe("ManualMessageIntelligence", () => {
     expect(container.textContent).toContain("初年度機会$12,000–$48,000")
     expect(container.textContent).toContain("実測PV・実売上・保証値ではありません")
   })
+
+  it("shows persisted DeepSeek cache usage across classification and copy generation", async () => {
+    await act(async () => root.render(
+      <ManualMessageIntelligence
+        item={workRow({
+          initial_message: "Copy-ready personalized draft.",
+          profile: {
+            analysisUsage: {
+              stage: "company_classification",
+              requests: 1,
+              models: ["deepseek-v4-pro"],
+              promptTokens: 1_000,
+              completionTokens: 200,
+              cacheHitTokens: 400,
+              cacheMissTokens: 600,
+              elapsedMs: 10_000,
+            },
+          },
+          message_review: {
+            generation_status: "passed",
+            passed: true,
+            score: 96,
+            attempts: 2,
+            generation_usage: {
+              prompt_tokens: 2_000,
+              completion_tokens: 500,
+              cache_hit_tokens: 800,
+              cache_miss_tokens: 1_200,
+            },
+          },
+        })}
+        onCopy={vi.fn()}
+      />,
+    ))
+
+    expect(container.textContent).toContain("Cache 40%")
+    expect(container.textContent).toContain("追跡済みDeepSeek 3 calls")
+    expect(container.textContent).toContain("Input 3,000")
+    expect(container.textContent).toContain("Output 700")
+    expect(container.textContent).toContain("Cache Hit 1,200 (40%)")
+  })
 })

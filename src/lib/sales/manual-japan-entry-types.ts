@@ -65,6 +65,17 @@ export interface ManualMarketLens {
   requiresHumanReview: true
 }
 
+export interface ManualDeepSeekStageUsage {
+  stage: "company_classification"
+  requests: number
+  models: string[]
+  promptTokens: number
+  completionTokens: number
+  cacheHitTokens: number
+  cacheMissTokens: number
+  elapsedMs: number
+}
+
 export interface ManualCompanyProfile {
   companyName: string
   countryCode: string | null
@@ -83,6 +94,7 @@ export interface ManualCompanyProfile {
   positioningConcept: ManualPositioningConcept | null
   commercialSignals?: ManualCommercialSignal[]
   marketLens?: ManualMarketLens
+  analysisUsage?: ManualDeepSeekStageUsage
 }
 
 export interface ManualJapanEntryWorkRow {

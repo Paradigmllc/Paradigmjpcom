@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-21 `/work`最大10,000社連続キュー・単一drain lease・DeepSeek工程別Cache可視化（実装検証完了 / 本番release待ち / 外部送信0）
+
+- 1回500URLの安全上限は維持しつつ、最大 **20バッチ / 10,000社**を先行登録できるDBキューへ拡張した。複数`queued`を許可し、Postgres advisory lockとpartial unique indexで`running`は常に1バッチだけ。完了イベントが次の最古バッチを原子的に昇格・自動dispatchするため、4,000社は8×500を先に登録して連続処理できる。
+- browserとserver、startup recoveryが同時にdrainしても並列数が倍増しないようbatch単位の6分leaseを追加した。item claimは従来どおり`FOR UPDATE SKIP LOCKED`・同時3件・10分reclaim。dispatchは0/0.5/1.5秒のbounded retry、container起動時は3秒後と旧lease失効後の370秒後に一度ずつ復旧し、cron・常駐poller・自動送信を追加しない。
+- `/work`は待機・実行中のバッチ数/会社数、前方バッチ数、`queued/running`を表示する。バックグラウンド解析中も次の500件を登録可能で、キュー満杯は日本語409、Realtimeで待機バッチの昇格と次active batchへ追従する。
+- 企業分類のDeepSeek model・request数・input/output・Cache Hit/Miss token・所要時間を`profile.analysisUsage`へ保存し、既存の文面`generation_usage`と合算した追跡済みCache Hit率を会社カードへ表示する。単価はUIに固定せずtoken実績を正本とする。既存20社の$0.00359/社は文面生成だけの実績であり、新規解析から分類工程も可視化される。
+- 検証: 対象 **8 files / 23 tests**、最終重点 **7 files / 26 tests**、全Vitest **233 files / 1,078 tests**、TypeScript、ESLint、Quality Guard **0 errors / 77 existing warnings**、release-doctor static contract、production build **408/408 pages** pass。次はPR統合後、正式`npm run release:prod`でmigration・single-running index・3 RPC・公開`/work`・Twenty/Realtime/zero-sendをread-backする。
+
 ## CURRENT STATUS - 2026-07-21 `/work`20社canary・Twenty完全読戻し・DeepSeek Cache/処理能力実測（500件operator-ready / 外部送信0）
 
 - テキスト壁だった`/work-report`を10章の経営戦略レポートV4へ更新し、本番実画面でsemantic figure **14件**、decision table **1件**、heading **67件**、横overflow **0**を確認した。数値根拠がない場合はグラフ用の値を捏造せず、observed / modeled / hypothesis / recommended actionを分離する。

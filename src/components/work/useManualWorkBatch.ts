@@ -8,6 +8,7 @@ import {
   isManualWorkBatchTerminal,
   type ManualWorkBatchItemRow,
   type ManualWorkBatchItemStatus,
+  type ManualWorkBatchQueueSummary,
   type ManualWorkBatchRow,
   type ManualWorkBatchSnapshot,
 } from "@/lib/sales/manual-japan-entry-batch-types"
@@ -31,6 +32,8 @@ interface BatchResponse {
   ok?: boolean
   automaticDrainStarted?: boolean
   claimed?: number
+  queuePosition?: number
+  queueSummary?: ManualWorkBatchQueueSummary
   activeBatch?: ManualWorkBatchSnapshot | null
   snapshot?: ManualWorkBatchSnapshot
   error?: string
@@ -45,6 +48,15 @@ async function readBatchResponse(response: Response): Promise<BatchResponse> {
 export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
   const [snapshot, setSnapshot] = useState<ManualWorkBatchSnapshot | null>(null)
   const [running, setRunning] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [queuePosition, setQueuePosition] = useState(0)
+  const [queueSummary, setQueueSummary] = useState<ManualWorkBatchQueueSummary>({
+    batchCount: 0,
+    companyCount: 0,
+    runningBatchId: null,
+    queuedBatchCount: 0,
+    queuedCompanyCount: 0,
+  })
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const drainingRef = useRef(false)
   const eventsRef = useRef<EventSource | null>(null)
@@ -87,7 +99,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       toast.error(`${message} キューはDBに保存されています。`)
     } finally {
       drainingRef.current = false
-      setRunning(false)
+      setRunning(current.remaining > 0)
       await onHistoryRefresh()
     }
   }, [commitSnapshot, onHistoryRefresh])
@@ -97,20 +109,33 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
     await drain(batch)
   }, [commitSnapshot, drain])
 
+  const refreshActive = useCallback(async (): Promise<ManualWorkBatchSnapshot | null> => {
+    const response = await fetch("/api/work/batches", { cache: "no-store" })
+    const body = await readBatchResponse(response)
+    if (body.queueSummary) setQueueSummary(body.queueSummary)
+    const active = body.activeBatch ?? null
+    if (active) {
+      commitSnapshot(active)
+      setQueuePosition(0)
+      lastHistoryRefreshRef.current = active.finished
+      setRunning(!isManualWorkBatchTerminal(active.batch.status))
+    } else {
+      snapshotRef.current = null
+      setSnapshot(null)
+      setRunning(false)
+      setQueuePosition(0)
+    }
+    return active
+  }, [commitSnapshot])
+
   useEffect(() => {
     let cancelled = false
     async function loadActive(): Promise<void> {
       try {
-        const response = await fetch("/api/work/batches", { cache: "no-store" })
-        const body = await readBatchResponse(response)
-        if (!cancelled && body.activeBatch) {
-          commitSnapshot(body.activeBatch)
-          lastHistoryRefreshRef.current = body.activeBatch.finished
-          setRunning(true)
-          if (body.activeBatch.batch.last_error) {
+        const active = await refreshActive()
+        if (!cancelled && active?.batch.last_error) {
             toast.info("停止したサーバー処理を自動復旧しています。再解析ボタンは不要です。")
-            void drain(body.activeBatch)
-          }
+            void drain(active)
         }
       } catch (error) {
         console.error("[manual-work-batch-ui] active batch read failed:", error)
@@ -119,7 +144,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
     }
     void loadActive()
     return () => { cancelled = true }
-  }, [commitSnapshot, drain])
+  }, [drain, refreshActive])
 
   const batchId = snapshot?.batch.id ?? null
   const batchStatus = snapshot?.batch.status ?? null
@@ -153,6 +178,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
         if (payload.batch && next) next = { ...next, batch: payload.batch }
         if (!next) return
         commitSnapshot(next)
+        if (next.batch.status === "running") setQueuePosition(0)
         const shouldRefreshHistory = next.finished - lastHistoryRefreshRef.current >= 25
           || isManualWorkBatchTerminal(next.batch.status)
         if (shouldRefreshHistory) {
@@ -168,6 +194,10 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
           } else {
             toast.success(`${next.batch.total_count}件の自動処理が完了しました`)
           }
+          void refreshActive().catch((error: unknown) => {
+            console.error("[manual-work-batch-ui] next batch read failed:", error)
+            setErrorMessage(error instanceof Error ? error.message : "次のバッチを取得できませんでした")
+          })
         }
       } catch (error) {
         console.error("[manual-work-batch-ui] realtime payload failed:", error)
@@ -180,7 +210,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       events.close()
       if (eventsRef.current === events) eventsRef.current = null
     }
-  }, [batchId, batchStatus, commitSnapshot, onHistoryRefresh])
+  }, [batchId, batchStatus, commitSnapshot, onHistoryRefresh, refreshActive])
 
   const start = useCallback(async (input: {
     urls: string[]
@@ -189,8 +219,8 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
     sourceSlug: string
     sourcePageUrl: string
   }) => {
-    if (running || drainingRef.current) return
-    setRunning(true)
+    if (submitting) return false
+    setSubmitting(true)
     setErrorMessage(null)
     try {
       const response = await fetch("/api/work/batches", {
@@ -201,16 +231,26 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       const body = await readBatchResponse(response)
       if (!body.snapshot) throw new Error("作成したバッチを読み戻せませんでした")
       commitSnapshot(body.snapshot)
+      setQueuePosition(body.queuePosition ?? 0)
+      if (body.queueSummary) setQueueSummary(body.queueSummary)
+      setRunning(!isManualWorkBatchTerminal(body.snapshot.batch.status))
       lastHistoryRefreshRef.current = body.snapshot.finished
-      toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録し、サーバー自動処理を開始しました`)
+      if ((body.queuePosition ?? 0) > 0) {
+        toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録しました（前方${body.queuePosition}バッチ）`)
+      } else {
+        toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録し、サーバー自動処理を開始しました`)
+      }
+      return true
     } catch (error) {
       console.error("[manual-work-batch-ui] create failed:", error)
       const message = error instanceof Error ? error.message : "バッチを作成できませんでした"
       setErrorMessage(message)
-      setRunning(false)
       toast.error(message)
+      return false
+    } finally {
+      setSubmitting(false)
     }
-  }, [commitSnapshot, running])
+  }, [commitSnapshot, submitting])
 
-  return { snapshot, running, errorMessage, start, resume }
+  return { snapshot, running, submitting, queuePosition, queueSummary, errorMessage, start, resume }
 }

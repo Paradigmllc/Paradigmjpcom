@@ -154,7 +154,8 @@ export function ManualJapanEntryWorkConsole({
   }, [historyHasMore, historyLoading, historyPage, refreshHistory])
 
   const batch = useManualWorkBatch(useCallback(() => refreshHistory(true), [refreshHistory]))
-  const running = batch.running || retryRunning
+  const workflowRunning = batch.running || retryRunning
+  const inputBusy = batch.submitting || retryRunning
   const queue = useMemo<ManualWorkQueueState>(() => {
     if (retryRunning || Object.keys(retryQueue).length > 0) return retryQueue
     if (!batch.snapshot) return {}
@@ -176,7 +177,8 @@ export function ManualJapanEntryWorkConsole({
     if (urls.length === 0) return toast.error("海外企業のURLを1件以上入力してください")
     if (urls.length > MANUAL_WORK_BATCH_MAX_URLS) return toast.error(`1回の上限は${MANUAL_WORK_BATCH_MAX_URLS}件です`)
     setRetryQueue({})
-    await batch.start({ urls, variant, angle, sourceSlug, sourcePageUrl })
+    const accepted = await batch.start({ urls, variant, angle, sourceSlug, sourcePageUrl })
+    if (accepted) setInput("")
   }
 
   const processUrl = async (url: string, retryItem?: ManualJapanEntryWorkRow) => {
@@ -263,7 +265,7 @@ export function ManualJapanEntryWorkConsole({
         <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-emerald-400 text-slate-950">P</span><span>Paradigm Revenue Operations</span></div>
-            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${deepSeekBalanceBlocked ? "text-amber-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{running ? "Analysis running" : deepSeekBalanceBlocked ? "DeepSeek balance required" : "System ready"}</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${deepSeekBalanceBlocked ? "text-amber-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Analysis running" : deepSeekBalanceBlocked ? "DeepSeek balance required" : "System ready"}</span></div>
           </div>
         </div>
       </div>
@@ -294,7 +296,11 @@ export function ManualJapanEntryWorkConsole({
             sources={sources}
             selectedSource={selectedSource}
             queue={queue}
-            running={running}
+            submitting={inputBusy}
+            queueActive={batch.running}
+            batchStatus={batch.snapshot?.batch.status ?? null}
+            queuePosition={batch.queuePosition}
+            queueSummary={batch.queueSummary}
             urlCount={urls.length}
             maxUrls={MANUAL_WORK_BATCH_MAX_URLS}
             finished={finished}
@@ -306,7 +312,7 @@ export function ManualJapanEntryWorkConsole({
             onStart={() => void start()}
             onResume={() => batch.snapshot && void batch.resume(batch.snapshot)}
           />
-          <ManualWorkExperimentControls variant={variant} angle={angle} running={running} metrics={metrics} angleMetrics={angleMetrics} onVariantChange={setVariant} onAngleChange={setAngle} />
+          <ManualWorkExperimentControls variant={variant} angle={angle} running={inputBusy} metrics={metrics} angleMetrics={angleMetrics} onVariantChange={setVariant} onAngleChange={setAngle} />
         </div>
 
         <section aria-label="生成ガードレール" className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3 sm:p-5">
@@ -315,7 +321,7 @@ export function ManualJapanEntryWorkConsole({
           <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">根拠不足は自動降格</p><p className="mt-1 text-xs leading-5 text-slate-600">初回文面は「推定あり／なし × 価格あり／なし」の4セル。根拠不足時は安全な条件へ戻します。</p></div></div>
         </section>
 
-        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} total={historyTotal} hasMore={historyHasMore} loading={historyLoading} sources={sources} historyError={historyError} running={running} updatingOutcome={updatingOutcome} onCriteriaChange={changeHistoryCriteria} onLoadMore={loadMoreHistory} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
+        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} total={historyTotal} hasMore={historyHasMore} loading={historyLoading} sources={sources} historyError={historyError} running={workflowRunning} updatingOutcome={updatingOutcome} onCriteriaChange={changeHistoryCriteria} onLoadMore={loadMoreHistory} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
       </div>
     </main>
   )
