@@ -766,6 +766,10 @@ function checkStaticReleaseRules() {
   const manualOwnershipMigration = fs.existsSync(manualOwnershipMigrationPath)
     ? fs.readFileSync(manualOwnershipMigrationPath, "utf8")
     : ""
+  const manualTerminalFailuresMigrationPath = "supabase/migrations/20260722044000_manual_work_terminal_source_failures.sql"
+  const manualTerminalFailuresMigration = fs.existsSync(manualTerminalFailuresMigrationPath)
+    ? fs.readFileSync(manualTerminalFailuresMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -932,6 +936,11 @@ function checkStaticReleaseRules() {
     && manualOwnershipMigration.includes("idx_manual_japan_entry_work_twenty_company_id")
     && noLoginDeploy.includes("20260721193000_manual_work_report_ownership_and_scale.sql")
     && noLoginDeploy.includes("applyManualWorkReportOwnershipAndScaleMigration")
+    && manualTerminalFailuresMigration.includes("status = 'rejected'")
+    && manualTerminalFailuresMigration.includes("stage = 'complete'")
+    && manualTerminalFailuresMigration.includes("sent = false")
+    && noLoginDeploy.includes("20260722044000_manual_work_terminal_source_failures.sql")
+    && noLoginDeploy.includes("applyManualWorkTerminalSourceFailuresMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
@@ -1668,6 +1677,25 @@ select case when
     where status in ('needs_review', 'failed')
       and initial_message is null
       and nullif(message_review ->> 'generation_error', '') is null
+  )
+  and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where status = 'failed'
+      and stage = 'failed'
+      and twenty_sync_status = 'skipped'
+      and report_url is null
+      and initial_message is null
+      and sent = false
+      and (
+        lower(error_message) = 'fetch failed'
+        or lower(error_message) like '%timed out%'
+        or lower(error_message) like '%aborted due to timeout%'
+        or lower(error_message) like 'homepage returned http%'
+        or lower(error_message) like '%no public pages were available%'
+        or lower(error_message) like '%homepage evidence could not be reused%'
+        or lower(error_message) like '%did not provide enough grounded product context%'
+      )
   )` : ""}
 then 1 else 0 end;
 " 2>/dev/null || true)"
