@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 
 const mocks = vi.hoisted(() => ({
   getServiceSalesSupabase: vi.fn(),
@@ -6,17 +7,22 @@ const mocks = vi.hoisted(() => ({
   resolveReport: vi.fn(),
   isCurrentReport: vi.fn(),
   syncManual: vi.fn(),
+  syncManualBatch: vi.fn(),
 }))
 
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getServiceSalesSupabase }))
 vi.mock("./manual-japan-entry-profile", () => ({ parseManualCompanyProfile: mocks.parseProfile }))
 vi.mock("./manual-japan-entry-report-resolver", () => ({ resolveManualJapanEntryReportData: mocks.resolveReport }))
 vi.mock("./manual-japan-entry-report-types", () => ({ isManualJapanEntryReportData: mocks.isCurrentReport }))
-vi.mock("./manual-japan-entry-twenty", () => ({ syncManualWorkToTwenty: mocks.syncManual }))
+vi.mock("./manual-japan-entry-twenty", () => ({
+  syncManualWorkToTwenty: mocks.syncManual,
+  syncManualWorkToTwentyBatch: mocks.syncManualBatch,
+}))
 
 import {
   findManualWorkLegacyReportAlias,
   restoreManualWorkTwentyHome,
+  restoreManualWorkTwentyHomes,
 } from "./manual-work-artifact-authority"
 
 function builder(result: { data: unknown; error: { message: string } | null }) {
@@ -47,6 +53,9 @@ beforeEach(() => {
     japanEntryFitStatus: "qualified",
   })
   mocks.syncManual.mockResolvedValue({ status: "synced", companyId: "twenty-paperform" })
+  mocks.syncManualBatch.mockImplementation(async (inputs: Array<{ domain: string; ownedCompanyId: string }>) =>
+    inputs.map((input) => ({ companyId: input.ownedCompanyId, domain: input.domain, ok: true })),
+  )
 })
 
 describe("manual work artifact authority", () => {
@@ -110,5 +119,30 @@ describe("manual work artifact authority", () => {
       ownedCompanyId: "twenty-paperform",
       readiness: { sendReady: true, reasons: [] },
     }))
+  })
+
+  it("restores 100 workbench artifacts in two rate-safe Twenty batches", async () => {
+    mocks.isCurrentReport.mockReturnValue(true)
+    const items = Array.from({ length: 100 }, (_, index) => ({
+      id: `work-${index}`,
+      domain: `company-${index}.example`,
+      report_url: reportUrl.replace("11111111-1111-4111-8111-111111111111", `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`),
+      report_data: { schemaVersion: "manual_japan_entry_strategy_v4" },
+      profile: {},
+      form_url: null,
+      initial_message: null,
+      message_review: {},
+      error_message: null,
+      twenty_company_id: `twenty-${index}`,
+      source_attributions: [],
+    })) as unknown as ManualJapanEntryWorkRow[]
+
+    const result = await restoreManualWorkTwentyHomes(items)
+
+    expect(result).toHaveLength(100)
+    expect(result.every((entry) => entry.protected)).toBe(true)
+    expect(mocks.syncManualBatch).toHaveBeenCalledTimes(2)
+    expect(mocks.syncManualBatch.mock.calls[0]?.[0]).toHaveLength(50)
+    expect(mocks.syncManualBatch.mock.calls[1]?.[0]).toHaveLength(50)
   })
 })

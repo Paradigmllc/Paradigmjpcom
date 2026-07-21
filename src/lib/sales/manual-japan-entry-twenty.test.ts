@@ -1,18 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualCompanyProfile } from "./manual-japan-entry-types";
+import type { TwentyRecord } from "./twenty-sync-utils";
 
 const twenty = vi.hoisted(() => ({
   createTwentyCompanyBase: vi.fn(),
+  findTwentyCompaniesById: vi.fn(),
   findTwentyCompanyByDomain: vi.fn(),
   findTwentyCompanyById: vi.fn(),
   patchTwentyCompanyHome: vi.fn(),
 }));
+const twentyApi = vi.hoisted(() => ({ twentyFetch: vi.fn() }));
 
 vi.mock("./twenty-sync-company-home", () => twenty);
+vi.mock("./twenty-sync-utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./twenty-sync-utils")>()),
+  twentyFetch: twentyApi.twentyFetch,
+}));
 
 import {
   ManualTwentySyncError,
   syncManualWorkToTwenty,
+  syncManualWorkToTwentyBatch,
   twentyLinkMatches,
   twentyNumberMatches,
 } from "./manual-japan-entry-twenty";
@@ -40,6 +48,36 @@ describe("manual work Twenty persistence", () => {
     vi.clearAllMocks();
     twenty.createTwentyCompanyBase.mockResolvedValue({ id: "company-1" });
     twenty.findTwentyCompanyById.mockResolvedValue(null);
+  });
+
+  it("bulk reconciles 50 owned companies with one write and exact read-back", async () => {
+    const inputs = Array.from({ length: 50 }, (_, index) => ({
+      domain: `company-${index}.example`,
+      profile: { ...profile, companyName: `Company ${index}` },
+      formUrl: index % 2 === 0 ? `https://company-${index}.example/contact` : null,
+      reportUrl: `https://paradigmjp.com/en/work-report/00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+      initialMessage: index % 2 === 0 ? `Company ${index}向け未送信文面` : null,
+      ownedCompanyId: `company-${index}`,
+      readiness: { sendReady: false, reasons: ["human review"] },
+    }));
+    let saved: Map<string, TwentyRecord> = new Map(inputs.map((input) => [input.ownedCompanyId, {
+      id: input.ownedCompanyId,
+      name: input.profile.companyName,
+    }]));
+    twenty.findTwentyCompaniesById.mockImplementation(async () => saved);
+    twentyApi.twentyFetch.mockImplementation(async (_path: string, init: RequestInit) => {
+      const mutations = JSON.parse(String(init.body)) as Array<Record<string, unknown>>;
+      saved = new Map(mutations.map((mutation) => [String(mutation.id), mutation]));
+      return { ok: true, data: { data: { createCompanies: mutations } } };
+    });
+
+    const result = await syncManualWorkToTwentyBatch(inputs);
+
+    expect(result).toHaveLength(50);
+    expect(result.every((entry) => entry.ok)).toBe(true);
+    expect(twentyApi.twentyFetch).toHaveBeenCalledTimes(1);
+    expect(twenty.findTwentyCompaniesById).toHaveBeenCalledTimes(2);
+    expect(twenty.findTwentyCompaniesById).toHaveBeenNthCalledWith(1, inputs.map((input) => input.ownedCompanyId));
   });
 
   it("returns synced only after URLs and the complete initial message are readable from Twenty", async () => {

@@ -5,7 +5,11 @@ import { DB_TABLES } from "./db-tables"
 import { parseManualCompanyProfile } from "./manual-japan-entry-profile"
 import { resolveManualJapanEntryReportData } from "./manual-japan-entry-report-resolver"
 import { isManualJapanEntryReportData, type ManualJapanEntryReportData } from "./manual-japan-entry-report-types"
-import { syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
+import {
+  syncManualWorkToTwenty,
+  syncManualWorkToTwentyBatch,
+  type ManualTwentySyncInput,
+} from "./manual-japan-entry-twenty"
 import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 
 const DEDICATED_REPORT_URL = /^https:\/\/paradigmjp\.com\/en\/work-report\/[0-9a-f-]{36}$/i
@@ -137,4 +141,59 @@ export async function restoreManualWorkTwentyHome(input: {
     .eq("id", item.id)
   if (error) throw new Error(error.message)
   return { protected: true, reportUrl: item.report_url, workId: item.id }
+}
+
+export async function restoreManualWorkTwentyHomes(
+  items: ManualJapanEntryWorkRow[],
+): Promise<Array<{ domain: string; protected: boolean; error?: string }>> {
+  const prepared: Array<{ item: ManualJapanEntryWorkRow; input: ManualTwentySyncInput }> = []
+  const results: Array<{ domain: string; protected: boolean; error?: string }> = []
+  for (const item of items) {
+    if (!item.twenty_company_id || !item.report_url || !hasDedicatedReport(item)) {
+      results.push({ domain: item.domain, protected: false })
+      continue
+    }
+    const profile = parseManualCompanyProfile(item.profile)
+    const reviewPassed = item.message_review?.passed === true
+    const sendReady = Boolean(
+      item.form_url
+      && item.initial_message
+      && reviewPassed
+      && profile.smbStatus === "qualified"
+      && profile.japanEntryFitStatus === "qualified",
+    )
+    const currentReport = resolveManualJapanEntryReportData(item)
+    await persistCurrentManualWorkReport(item, currentReport)
+    prepared.push({
+      item,
+      input: {
+        domain: item.domain,
+        profile,
+        formUrl: item.form_url,
+        reportUrl: item.report_url,
+        initialMessage: item.initial_message,
+        ownedCompanyId: item.twenty_company_id,
+        readiness: {
+          sendReady,
+          reasons: sendReady
+            ? []
+            : [item.error_message || "Saved manual work artifacts require operator review before outreach."],
+        },
+      },
+    })
+  }
+
+  for (let start = 0; start < prepared.length; start += 50) {
+    const chunk = prepared.slice(start, start + 50)
+    const batchResults = await syncManualWorkToTwentyBatch(chunk.map((entry) => entry.input))
+    const byCompanyId = new Map(batchResults.map((result) => [result.companyId, result]))
+    for (const entry of chunk) {
+      const companyId = entry.input.ownedCompanyId as string
+      const result = byCompanyId.get(companyId)
+      results.push(result?.ok
+        ? { domain: entry.item.domain, protected: true }
+        : { domain: entry.item.domain, protected: false, error: result?.error ?? "Twenty batch reconciliation omitted company" })
+    }
+  }
+  return results
 }

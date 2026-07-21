@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getServiceSalesSupabase }))
-vi.mock("./manual-work-artifact-authority", () => ({ restoreManualWorkTwentyHome: mocks.restore }))
+vi.mock("./manual-work-artifact-authority", () => ({ restoreManualWorkTwentyHomes: mocks.restore }))
 
 import { reconcileManualWorkArtifacts } from "./manual-work-artifact-reconcile"
 
@@ -24,28 +24,20 @@ function queryResult(data: unknown[]) {
 beforeEach(() => vi.clearAllMocks())
 
 describe("manual work artifact reconciliation", () => {
-  it("reconciles 100 companies with bounded concurrency and zero sends", async () => {
+  it("reconciles 100 companies in one bulk authority pass with zero sends", async () => {
     const rows = Array.from({ length: 100 }, (_, index) => ({
       domain: `company-${index}.example`,
       twenty_company_id: `twenty-${index}`,
       sent: false,
     }))
     mocks.getServiceSalesSupabase.mockReturnValue(queryResult(rows))
-    let active = 0
-    let peak = 0
-    mocks.restore.mockImplementation(async (input: { domain: string }) => {
-      active += 1
-      peak = Math.max(peak, active)
-      await new Promise((resolve) => setTimeout(resolve, 1))
-      active -= 1
-      return { protected: true, reportUrl: `https://paradigmjp.com/en/work-report/${input.domain}`, workId: input.domain }
-    })
+    mocks.restore.mockResolvedValue(rows.map((row) => ({ domain: row.domain, protected: true })))
 
     const result = await reconcileManualWorkArtifacts({ limit: 100 })
 
     expect(result).toEqual({ checked: 100, repaired: 100, skipped: 0, failed: 0, errors: [], sent: 0 })
-    expect(mocks.restore).toHaveBeenCalledTimes(100)
-    expect(peak).toBeLessThanOrEqual(3)
+    expect(mocks.restore).toHaveBeenCalledTimes(1)
+    expect(mocks.restore).toHaveBeenCalledWith(rows)
   })
 
   it("fails closed if the zero-send invariant is ever violated", async () => {

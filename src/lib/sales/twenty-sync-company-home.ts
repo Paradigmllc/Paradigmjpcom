@@ -39,6 +39,29 @@ export async function findTwentyCompanyById(
   return result.data.data?.company ?? null;
 }
 
+function companyIdFilter(ids: string[]): string {
+  const parts = ids.map((id) => `id[eq]:"${id}"`);
+  return parts.length === 1 ? parts[0] as string : `or(${parts.join(",")})`;
+}
+
+export async function findTwentyCompaniesById(
+  twentyCompanyIds: string[],
+): Promise<Map<string, TwentyRecord>> {
+  const ids = [...new Set(twentyCompanyIds)];
+  if (ids.length === 0) return new Map();
+  if (ids.length > 60) throw new Error("Twenty bulk read requires 1-60 unique company IDs");
+  const filter = companyIdFilter(ids);
+  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(
+    `/rest/companies?limit=60&depth=0&filter=${encodeURIComponent(filter)}`,
+  );
+  if (!result.ok) throw new Error(result.error);
+  return new Map(
+    (result.data.data?.companies ?? []).flatMap((company) =>
+      company.id ? [[company.id, company] as const] : [],
+    ),
+  );
+}
+
 export async function createTwentyCompany(
   karte: CompanyKarteSnapshot,
 ): Promise<TwentyRecord> {

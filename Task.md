@@ -1,9 +1,12 @@
-## CURRENT STATUS - 2026-07-21 `/work`レポート所有権・旧URL自己修復・100/500件scale hardening（実装/全回帰/本番build完了・release待ち / 外部送信0）
+## CURRENT STATUS - 2026-07-21 `/work`100社実走・旧レポート自己修復・Twenty batch整合・全幅UI guard（最終回帰/release待ち / 外部送信0）
 
-- `manual_japan_entry_work`が保存した専用`/en/work-report/{uuid}`とTwentyホームを成果物の正本にした。旧`syncCompanyKarteToTwenty`が同じTwenty会社へ書こうとした場合は汎用`/en/report/{slug}`で上書きせず、保存済みprofile/form/message/reportを再読込して専用URL・フォーム・要約・分類・scoreを再保存し、所有済みTwenty会社IDを直接read-backする。同一domainの別会社へは書かずfail closedする。既存の`/en/report/{slug}`は、衝突しない`legacy_report_slug`が1件だけ見つかった場合に専用V4へpermanent redirectする。
-- 既存V2/旧schemaの`report_data`は専用レポート表示時とTwenty整合性監査時に`manual_japan_entry_strategy_v4`へ再構築してDB実体も更新する。`/work`へ管理者用「Twenty整合性」を追加し、再解析・DeepSeek再課金なしで最大100社を3並列修復する。APIはRLS/service-role境界、認可、DBベル+Slack通知、`sent=false`検査を持ち、外部送信は行わない。
-- 500件batchの各3件drain後に全item最大500行を再取得していた処理を、batch行の7状態counterへ変更した。各sliceはbatch 1行だけをread-backし、UIはRealtime item差分と初回snapshotをmergeする。DeepSeekのbounded recoveryを5分境界で切らないようrequest budgetを890秒、drain leaseを16分、stale item回収を20分へ分離し、GETも安全な自動復旧eventとしてdispatchする。
-- 100社の成果物整合性simulationは100/100修復、最大同時3、送信0。新設整合性3 files / 7 tests、Twenty所有権を含む重点3 files / 16 tests、全Vitest **236 files / 1,088 tests**、TypeScript、Quality Guard **0 errors / 78 existing warnings**、release-doctor static/remote preflight（dirty判定以外）、production build **408/408 pages**がpass。本番release、Paperform旧URL/DB V4/Twenty exact read-back、transaction内100/500件queue証明、実URL100件soakはPR統合後に行い、数値を追記する。
+- PR **#508** / main **06fe9288**を正式`release:prod`で本番反映した。Paperform旧URL`/en/report/paperform`は専用`/en/work-report/{uuid}`へ308転送し、DB実体は`manual_japan_entry_strategy_v4 / 10章 / 3,118語`、実画面はfigure 14 / SVG 42 / 横overflow 0 / console error 0。Twenty会社IDを直接read-backし、専用report URL・manual_work source・未対応status・初回文面要約が一致、外部送信0を確認した。
+- Startup SG公式100 URLの本番soakは25分43秒、平均32.4秒 / p50 34.2秒 / p95 54.9秒 / 最大97.8秒、最大attempt 1、約233社/時で自動完了した。100件内は`completed 7 / needs_review 69 / rejected 2 / failed 22`で、失敗22件は取得不能14・HTTP 404が5・公開商品根拠不足2・site timeout 1。再解析ボタンやoperator介入は0。
+- 非failed 78社はV4 78/78、10章78/78、最小2,887語、Twenty ID保存78/78。初回文面は49/49 gate pass・unique hash 49・903〜1,235文字・最低quality 92 / safety 100 / uniqueness 57、署名49/49、URL/出典URL違反0。フォーム25/25はconfidence 90以上かつemail/message/submitをDOM検証。batch全体の`sent`違反0。
+- 旧100件Twenty整合性監査は1社あたりGET/PATCH/GETを3並列で投げ、Twentyの100 token/分上限へ達して35成功・65件429となるscale欠陥を実測した。修正後は所有済みIDを50社単位で一括read→batch upsert→一括read-backし、100社を2 batch・計6 API callでexact検証する。再解析・DeepSeek再課金・外部送信は行わず、100件chunkingと一括read-backの回帰testを追加した。
+- 19:36のChrome画面で`/work`が約540px幅へ縮み右側に余白が出た報告を受け、rootと1480px shellに`w-full / min-w-0`、rootに`overflow-x-clip`を追加した。修正前の現行本番でもログイン済みChrome read-backは`html/body/main=1440px`、横overflow 0、console error 0で復帰を確認しており、CSS幅不変条件をrelease wiring testへ追加した。最終全回帰・正式release・本番PC read-back後に完了判定する。
+- 500件batchの各3件drain後に全item最大500行を再取得していた処理は、batch行の7状態counterへ変更済み。各sliceはbatch 1行だけをread-backし、UIはRealtime item差分と初回snapshotをmergeする。DeepSeekのbounded recoveryを5分境界で切らないようrequest budget 890秒、drain lease 16分、stale item回収20分へ分離し、GETも安全な自動復旧eventとしてdispatchする。transaction内100/500件queueは完了100/500、二重lease拒否、rollback後synthetic 0を確認した。
+- 今回差分の重点 **4 files / 19 tests**、全Vitest **236 files / 1,090 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 78 existing warnings**、production build **408/408 pages**がpass。正式release後に、新batch整合100/100・Twenty exact read-back・Paperform旧URL・全幅PC UI・console/overflow・zero-sendを再確認する。
 
 ## CURRENT STATUS - 2026-07-21 `/work`最大10,000社連続キュー・単一drain lease・DeepSeek工程別Cache可視化（本番release・DB読戻し完了 / 外部送信0）
 
