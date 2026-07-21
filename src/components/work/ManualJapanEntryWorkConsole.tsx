@@ -234,7 +234,7 @@ export function ManualJapanEntryWorkConsole({
           </nav>
         </motion.header>
 
-        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek APIの残高不足で解析を停止しています</p><p>DeepSeek Platformで残高を補充後、失敗した履歴の「再解析」を押してください。履歴を再利用するため、同じ企業は重複登録されません。</p></div>}
+        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek APIの残高不足で解析を停止しています</p><p>残高補充後は、失敗した履歴の「復旧再実行」から同じ履歴を安全に再開できます。同じ企業は重複登録されません。</p></div>}
 
         <div className="mt-7"><ManualWorkOverview items={items} /></div>
 

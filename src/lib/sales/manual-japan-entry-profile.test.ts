@@ -115,6 +115,52 @@ describe("manual company Japan exclusion", () => {
 
     expect(grounded.companyName).toBe("example.com")
   })
+
+  it("treats missing Japan readiness as the sales opportunity for an overseas SaaS", () => {
+    const grounded = groundManualCompanyProfile({
+      domain: "altairis.fr",
+      fallbackCompanyName: "Altairis",
+      evidenceText: "Altairis | ERP and CRM software for businesses",
+      productContext: "ERP and CRM software for businesses | Cloud hosting and managed infrastructure",
+      profile: parseManualCompanyProfile(modelProfile({
+        companyName: "Altairis",
+        countryCode: "FR",
+        businessModel: "saas",
+        japanEntryFitStatus: "rejected",
+        japanEntryFitConfidence: 95,
+        japanEntryFitEvidence: [
+          "Website is entirely in French, with no Japanese language support.",
+          "No indication of Japan market presence or localization.",
+          "Japan readiness audit shows missing JPY currency and local payments.",
+          "The ERP/CRM product is unlikely to fit the Japanese market without localization.",
+        ],
+      })),
+    })
+
+    expect(grounded.japanEntryFitStatus).toBe("qualified")
+    expect(grounded.japanEntryFitConfidence).toBeGreaterThanOrEqual(70)
+    expect(grounded.japanEntryFitEvidence).toContain(
+      "Missing Japanese localization or current Japan presence is a market-entry readiness gap, not an offer-fit rejection criterion.",
+    )
+  })
+
+  it("preserves an explicit structural rejection for a location-bound service", () => {
+    const grounded = groundManualCompanyProfile({
+      domain: "local-tour.example",
+      fallbackCompanyName: "Local Tour",
+      evidenceText: "Local Tour | In-person tours in one city",
+      productContext: "In-person walking tours available only in one local city",
+      profile: parseManualCompanyProfile(modelProfile({
+        companyName: "Local Tour",
+        countryCode: "FR",
+        businessModel: "service",
+        japanEntryFitStatus: "rejected",
+        japanEntryFitEvidence: ["The service is delivered only in person at one fixed location and cannot be exported."],
+      })),
+    })
+
+    expect(grounded.japanEntryFitStatus).toBe("rejected")
+  })
 })
 
 describe("manual company DeepSeek response compatibility", () => {

@@ -92,7 +92,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
         </div>
         <div className="border-t border-amber-200 px-4 py-3 text-xs leading-5 text-amber-900">
           <p>{notice?.detail ?? "前回の生成結果が保存されていません。"}</p>
-          <p className="mt-1 font-semibold">「再解析」を実行し、生成結果を保存し直してください。</p>
+          <p className="mt-1 font-semibold">初回処理内の自動生成・品質修正・再生成は完了しています。</p>
         </div>
       </section>
     )

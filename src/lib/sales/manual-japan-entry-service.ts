@@ -33,11 +33,14 @@ import {
 import {
   buildManualInitialMessageInput,
   manualWorkEligibility,
+  manualWorkTerminalStatus,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
 } from "./manual-japan-entry-workflow-helpers"
 import { ManualTwentySyncError, syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
 import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
+import { runWithManualWorkAutoRecovery } from "./manual-work-auto-recovery"
+import { isManualWorkRecoveryAvailable } from "./manual-work-recovery-policy"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
@@ -45,6 +48,7 @@ import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
 export {
   buildManualInitialMessageInput,
   manualWorkEligibility,
+  manualWorkTerminalStatus,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
 } from "./manual-japan-entry-workflow-helpers"
@@ -78,15 +82,9 @@ async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWor
 }
 
 export function isRetryableManualWork(
-  item: Pick<ManualJapanEntryWorkRow, "status"> & Partial<Pick<
-    ManualJapanEntryWorkRow,
-    "twenty_sync_status" | "manually_sent_at" | "reply_received_at" | "founder_forwarded_at" | "meeting_converted_at"
-  >>,
+  item: Parameters<typeof isManualWorkRecoveryAvailable>[0],
 ): boolean {
-  const hasRecordedOutcome = Boolean(
-    item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at,
-  )
-  return !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
+  return isManualWorkRecoveryAvailable(item)
 }
 
 export function shouldUseTwentyOnlyRetry(
@@ -234,11 +232,16 @@ export async function processManualJapanEntryUrl(
       })
   try {
     await attachManualWorkSource(work.id, sourceInput)
-    const evidence = await collectInitialFormDraftEvidence({
-      domain: normalized.domain,
-      industry: null,
-      techStack: {},
+    const evidenceRun = await runWithManualWorkAutoRecovery({
+      phase: "public evidence collection",
+      maxAttempts: 2,
+      operation: async () => collectInitialFormDraftEvidence({
+        domain: normalized.domain,
+        industry: null,
+        techStack: {},
+      }),
     })
+    const evidence = evidenceRun.value
     work = await updateManualWork(work.id, {
       stage: "classifying",
       evidence: {
@@ -249,19 +252,25 @@ export async function processManualJapanEntryUrl(
         productNames: evidence.productNames,
         evidenceMode: evidence.evidenceMode,
         audit: evidence.audit,
+        automaticRecovery: { evidenceAttempts: evidenceRun.attempts },
       },
       product_context: evidence.productContext,
     })
 
-    const profile = await analyzeManualCompanyProfile({
-      domain: normalized.domain,
-      fallbackCompanyName: evidence.companyName,
-      productContext: evidence.productContext,
-      title: evidence.title,
-      description: evidence.description,
-      headings: evidence.headings,
-      audit: evidence.audit,
+    const profileRun = await runWithManualWorkAutoRecovery({
+      phase: "company classification",
+      maxAttempts: 2,
+      operation: async () => analyzeManualCompanyProfile({
+        domain: normalized.domain,
+        fallbackCompanyName: evidence.companyName,
+        productContext: evidence.productContext,
+        title: evidence.title,
+        description: evidence.description,
+        headings: evidence.headings,
+        audit: evidence.audit,
+      }),
     })
+    const profile = profileRun.value
     work = await updateManualWork(work.id, {
       company_name: profile.companyName,
       country_code: profile.countryCode,
@@ -343,19 +352,30 @@ export async function processManualJapanEntryUrl(
         audit: evidence.audit,
         market_visibility: marketProjection.visibility,
         message_projection: marketProjection.projection,
+        automaticRecovery: {
+          evidenceAttempts: evidenceRun.attempts,
+          profileAttempts: profileRun.attempts,
+        },
       },
       stage: "copy_generation",
     })
 
     const priorMessages = await listRecentManualMessages(80, work.id)
-    const generated = await generatePersonalizedJapanEntryMessage(buildManualInitialMessageInput({
+    const messageInput = buildManualInitialMessageInput({
       profile,
       evidence,
       variant: effectiveVariant,
       angle: resolvedAngle.angle,
       projection: marketProjection.projection,
       priorMessages,
-    }))
+    })
+    const generatedRun = await runWithManualWorkAutoRecovery({
+      phase: "initial message generation",
+      maxAttempts: 2,
+      operation: async () => generatePersonalizedJapanEntryMessage(messageInput),
+      accept: (result) => result.ok,
+    })
+    const generated = generatedRun.value
     const generationError = generated.ok
       ? null
       : (generated.error ?? "Initial message generation failed").slice(0, 1_500)
@@ -386,6 +406,7 @@ export async function processManualJapanEntryUrl(
       generation_status: generated.ok ? "passed" : "failed",
       generation_error: generationError,
       generation_usage: generated.usage ?? null,
+      automatic_generation_attempts: generatedRun.attempts,
       generated_at: new Date().toISOString(),
     }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
@@ -418,31 +439,46 @@ export async function processManualJapanEntryUrl(
       ...(generationError ? [`Initial message generation failed: ${generationError}`] : []),
       ...eligibility.reasons,
     ].filter((reason, index, reasons) => reasons.indexOf(reason) === index)
+    const terminalStatus = manualWorkTerminalStatus(profile, eligibility.eligible)
     work = await updateManualWork(work.id, {
       report_data: report,
       report_url: reportUrl,
       stage: "twenty_sync",
       status: "processing",
       twenty_sync_status: "not_started",
-      error_message: eligibility.eligible ? null : blockingReasons.join("; ").slice(0, 2_000),
+      error_message: terminalStatus === "completed" ? null : blockingReasons.join("; ").slice(0, 2_000),
     })
 
     try {
-      const synced = await syncManualWorkToTwenty({
-        domain: normalized.domain,
-        profile,
-        formUrl: form.formUrl,
-        reportUrl,
-        initialMessage: generated.message ?? null,
-        ownedCompanyId: work.twenty_company_id,
-        readiness: { sendReady: eligibility.eligible, reasons: blockingReasons },
+      const syncRun = await runWithManualWorkAutoRecovery({
+        phase: "Twenty persistence and read-back",
+        maxAttempts: 3,
+        operation: async () => syncManualWorkToTwenty({
+          domain: normalized.domain,
+          profile,
+          formUrl: form.formUrl,
+          reportUrl,
+          initialMessage: generated.message ?? null,
+          ownedCompanyId: work.twenty_company_id,
+          readiness: { sendReady: eligibility.eligible, reasons: blockingReasons },
+        }),
       })
+      const synced = syncRun.value
       work = await updateManualWork(work.id, {
-        status: eligibility.eligible ? "completed" : "needs_review",
+        status: terminalStatus,
         stage: "complete",
         twenty_company_id: synced.companyId,
         twenty_sync_status: synced.status,
-        error_message: eligibility.eligible ? null : blockingReasons.join("; ").slice(0, 2_000),
+        evidence: {
+          ...jsonRecord(work.evidence),
+          automaticRecovery: {
+            evidenceAttempts: evidenceRun.attempts,
+            profileAttempts: profileRun.attempts,
+            messageGenerationAttempts: generatedRun.attempts,
+            twentySyncAttempts: syncRun.attempts,
+          },
+        },
+        error_message: terminalStatus === "completed" ? null : blockingReasons.join("; ").slice(0, 2_000),
       })
     } catch (error) {
       console.error("[manual-work] Twenty sync failed:", { id: work.id, error })

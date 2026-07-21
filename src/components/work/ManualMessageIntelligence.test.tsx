@@ -81,9 +81,9 @@ describe("ManualMessageIntelligence", () => {
     await act(async () => root.render(<ManualMessageIntelligence item={workRow()} onCopy={vi.fn()} />))
 
     expect(container.textContent).toContain("企業別フォーム文面は未生成です")
-    expect(container.textContent).toContain("公開根拠の検証または品質審査が未完了です")
+    expect(container.textContent).toContain("公開根拠の検証または品質審査が自動修正後も基準を満たしませんでした")
     expect(container.textContent).not.toContain("DeepSeek candidate generation failed after three attempts")
-    expect(container.textContent).toContain("再解析")
+    expect(container.textContent).toContain("自動生成・品質修正・再生成は完了")
     expect(container.querySelector("button")).toBeNull()
   })
 

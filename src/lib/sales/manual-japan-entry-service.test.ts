@@ -5,6 +5,7 @@ import {
   isRetryableManualWork,
   ManualWorkRetryConflictError,
   manualWorkEligibility,
+  manualWorkTerminalStatus,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
   shouldUseTwentyOnlyRetry,
@@ -59,8 +60,17 @@ describe("manual Japan Entry work safety gates", () => {
   it("allows failed persistent work to be analyzed again without creating a duplicate", () => {
     expect(isRetryableManualWork({ status: "failed" })).toBe(true)
     expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "failed" })).toBe(true)
-    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(true)
+    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(false)
+    expect(isRetryableManualWork({
+      status: "needs_review",
+      twenty_sync_status: "synced",
+      is_japanese_company: false,
+      business_model: "saas",
+      japan_entry_fit_status: "rejected",
+      profile: { japanEntryFitEvidence: ["No Japanese language support or Japan market presence was found."] },
+    })).toBe(true)
     expect(isRetryableManualWork({ status: "failed", manually_sent_at: "2026-07-19T00:00:00.000Z" })).toBe(false)
+    expect(isRetryableManualWork({ status: "rejected", message_review: { generation_status: "failed" } })).toBe(false)
     expect(isRetryableManualWork({ status: "completed" })).toBe(false)
   })
 
@@ -116,6 +126,16 @@ describe("manual Japan Entry work safety gates", () => {
     expect(result.eligible).toBe(false)
     expect(result.reasons).toContain("Japanese companies are excluded")
     expect(result.reasons).toContain("A high-confidence public form was not verified")
+  })
+
+  it("separates terminal offer rejection from evidence review", () => {
+    expect(manualWorkTerminalStatus({
+      ...qualifiedProfile,
+      japanEntryFitStatus: "rejected",
+      japanEntryFitEvidence: ["The location-bound service cannot serve or export to Japan."],
+    }, false)).toBe("rejected")
+    expect(manualWorkTerminalStatus({ ...qualifiedProfile, smbStatus: "review_required" }, false)).toBe("needs_review")
+    expect(manualWorkTerminalStatus(qualifiedProfile, true)).toBe("completed")
   })
 
   it("wires manual work to the light initial-interest contract and raw public evidence", () => {
