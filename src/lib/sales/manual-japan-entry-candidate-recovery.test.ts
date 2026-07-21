@@ -191,4 +191,43 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(finalQuestion).toContain("Dub")
     expect(finalQuestion.trim()).toBe("Would you like to receive the Dub Japan opportunity analysis?")
   })
+
+  it("rebuilds a multi-sentence opening when one sentence is duplicated later", () => {
+    const [contract] = buildManualCtaContracts({
+      companyName,
+      requiredAnchor: productName,
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const repeated = "The workspace approval workflow is documented for independent analytics teams."
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting(companyName)}
+
+${companyName} documents ${productEvidenceRendering}. ${repeated}
+
+${repeated} ${auditFact.statement}
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: productEvidence,
+        product_evidence_rendering: productEvidenceRendering,
+        cta_type: "legacy_unspecified",
+      },
+      companyName,
+      productNames: [productName],
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract: contract!,
+      issues: ["Repeated or near-duplicate sentences are prohibited; each sentence must add a distinct company-specific point"],
+      similarityPassed: true,
+    })
+
+    expect(recovered.message).not.toContain(repeated)
+    expect(recovered.message).toContain(productEvidenceRendering)
+    expect(recovered.message).toContain(auditFact.statement)
+  })
 })

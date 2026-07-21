@@ -23,6 +23,21 @@ function review(body: string, openingParagraph: string, finalParagraph: string) 
 }
 
 describe("bespoke form-copy style", () => {
+  it("accepts a three-character company anchor in the final question", () => {
+    const issues = reviewManualFormBespokeStyle({
+      body: "Dub documents a link attribution workflow. Would you like the Dub analysis?",
+      openingParagraph: "Dub documents a link attribution workflow.",
+      finalParagraph: "Would you like the Dub analysis?",
+      companyName: "Dub",
+      productEvidence: "link attribution workflow",
+      productNames: ["Dub"],
+      selectedFacts: [],
+      includeEstimate: false,
+    })
+
+    expect(issues).not.toContain("The final question must include the exact company or product anchor: Dub")
+  })
+
   it("accepts a company-named CTA as a concrete customer-path focus", () => {
     const issues = review(
       "Screenshot to Code converts screenshots to code. The audit found no Japanese-language path.",

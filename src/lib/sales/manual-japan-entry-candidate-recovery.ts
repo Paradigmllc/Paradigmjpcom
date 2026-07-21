@@ -31,6 +31,13 @@ function bodyBlocks(message: string): string[] {
   return output
 }
 
+function paragraphSentences(paragraphs: string[]): string[] {
+  return paragraphs.flatMap((paragraph) => paragraph
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean))
+}
+
 function sentenceTokens(value: string): Set<string> {
   return new Set(value.toLowerCase()
     .replace(/[^a-z0-9\s-]/g, " ")
@@ -127,7 +134,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const currentBody = bodyBlocks(input.candidate.message)
   const originalMiddle = input.similarityPassed ? currentBody.slice(1, -1) : []
-  const rebuildOpening = input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims)/i.test(issue))
+  const rebuildOpening = input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated or near-duplicate)/i.test(issue))
   const opening = rebuildOpening || !currentBody[0]
     ? productOpening({
         companyName: input.companyName,
@@ -162,8 +169,9 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   }
 
   const uniqueMiddleSentences: string[] = []
+  const openingSentences = paragraphSentences([opening])
   for (const sentence of middleSentences) {
-    if (tooSimilar(sentence, opening)) continue
+    if (openingSentences.some((openingSentence) => tooSimilar(sentence, openingSentence))) continue
     if (uniqueMiddleSentences.some((prior) => tooSimilar(sentence, prior))) continue
     uniqueMiddleSentences.push(sentence)
   }
@@ -195,10 +203,12 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   ]
   const offset = stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) % paddingPool.length
   const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
+  const existingSentences = paragraphSentences(recoveredBody)
   for (const sentence of padding) {
     if (wordCount(recoveredBody) >= BODY_MIN_WORDS) break
-    if (recoveredBody.some((paragraph) => tooSimilar(sentence, paragraph))) continue
+    if (existingSentences.some((existing) => tooSimilar(sentence, existing))) continue
     recoveredBody[1] = `${recoveredBody[1] ?? ""} ${sentence}`.trim()
+    existingSentences.push(sentence)
   }
 
   const requiredAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName
