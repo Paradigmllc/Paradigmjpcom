@@ -65,7 +65,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     subtitle:
       "A fixed-scope Japan entry operation for companies ready to move this month. One accountable Tokyo-based team builds, launches, and operates your Japanese revenue path.",
     primaryCta: {
-      label: "Apply for Japan Entry — $12K",
+      label: "Apply for Japan Entry — $13K",
       href: "/en/contact?intent=japan-entry",
     },
     secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
@@ -74,7 +74,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
       alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
     },
     stats: [
-      { value: "$12K", label: "fixed setup" },
+      { value: "$13K", label: "fixed setup" },
       { value: "$0/mo", label: "months 1–6 for the first 10 selected launch partners" },
       { value: "14", label: "business-day delivery guarantee" },
       JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
@@ -97,13 +97,13 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     tiers: [
       {
         name: "Japan Entry Package",
-        price: "$12,000",
+        price: "$13,000",
         period: "one-time",
         description:
           "A market-ready launch with a standard $2,000/month managed-operation layer. For the first 10 selected launch partners, months 1–6 are $0/month.",
         features:
           "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
-        ctaLabel: "Apply for Japan Entry — $12K",
+        ctaLabel: "Apply for Japan Entry — $13K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,
       },
@@ -124,7 +124,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     subtitle:
       `${JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE} Apply with your decision authority and launch timing. We reply with a fit decision and fixed deployment scope.`,
     primaryCta: {
-      label: "Apply for Japan Entry — $12K",
+      label: "Apply for Japan Entry — $13K",
       href: "/en/contact?intent=japan-entry",
     },
     secondaryCta: { label: "Review the fixed offer", href: "#japan-entry-pricing" },
@@ -312,7 +312,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: "/en/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${JAPAN_ENTRY_TITLE} — $12,000 fixed setup`,
+          alt: `${JAPAN_ENTRY_TITLE} — $13,000 fixed setup`,
         },
       ],
     },

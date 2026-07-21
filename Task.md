@@ -2028,3 +2028,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 本番で`screenshottocode.com`を再解析し、専用DB record **40c23b3b-fa0e-4540-9f1d-09082d67bb93**をread-back。公開機能「convert any screenshot or design to clean code」、推定月間PV **700–8,000**、初年度Japan opportunity **$336–$1,115**、日本語導線・JPY表示の公開ページgapを組み込んだ初回文面が生成され、品質 **93/100**、safety **100**、uniqueness **100**、generation `passed`となった。
 - 本文は`Hello Screenshot to Code team,`から始まり、URL・ドメイン・Tranco/Common Crawl・出典・citation・Package料金・call bookingを含まず、`Best regards, / Tomohiro H / Paradigm LLC / contact@paradigmjp.com`で終了する。`not measured analytics`、`not observed revenue`、`performance is not guaranteed`を明記し、メールアドレスは1回だけ。決定論的read-back **20/20項目**が合格した。
 - 404の偽フォームを保存せず`form_url=null`へfail-closed。国・SMB・Japan fitとverified formが未確定のため`needs_review`、Twentyは意図どおり`skipped`で偽のCRM追加を行わない。`legacyTemplateUsed=false`、`sent=false`、`automaticSendAllowed=false`を確認。本番app logs直近15分は`api_work_errors=0`、`deepseek_manual_errors=0`、`process_fatals=0`。
+## CURRENT STATUS - 2026-07-21 Japan Entryセットアップ価格改定（実装・検証中 / 外部送信0）
+
+- Japan Entry Packageの固定セットアップ費用を`$12,000`から`$13,000 USD`へ改定し、英語・日本語の公開文言、料金ページ、ホーム、Contact、FAQ、法務、JSON-LD、OG/manifest、図解SVG、CMS seed、チャット知識・フォールバック、診断・Opportunity、営業テンプレート、DeepSeek生成プロンプト・数値レビュー、商品seed、release smoke markerへ反映した。月額`$2,000/month`、最初の10社の1〜6か月`$0/month`、7か月目以降`$2,000/month`は変更していない。
+- 偶然の置換で変更してはいけない、歯科の客単価・公開シグナルの推定機会レンジ・API timeoutなどの`12,000`は変更していない。運用runbookとE2E/単体テストの価格期待値は13,000へ更新した。
+- 対象Vitest **15 files / 106 tests**、JSON parse、TypeScript、Quality Guard **0 errors / 75 existing warnings**、価格旧表現の残存検索、`git diff --check`を確認済み。本番release・CMS read-backはコミット後に実施する。外部送信・Twenty追加は実行していない。

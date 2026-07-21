@@ -42,7 +42,7 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
     badge: "Revenue OS for service businesses",
     h1: "問い合わせが増えるだけでなく、受注まで進むWeb基盤をつくる。",
     lead: "Paradigmは、Web制作・SEO/GEO・MEO・AI導入をばらばらに提供しません。診断、改善、営業導線、CRM連携までをひとつの収益システムとして設計します。",
-    primary: "Japan Entry 適合審査 — $12K",
+    primary: "Japan Entry 適合審査 — $13K",
     secondary: "サービスを見る",
     proof: ["診断から改善提案まで一気通貫", "中小企業・店舗向けの実装設計", "Revenue OSで商談化を可視化"],
     visualTitle: "Revenue OS",
@@ -75,13 +75,13 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
       { value: "CRM", label: "商談化と追客状況" },
     ],
     ctaTitle: "日本市場への展開を、実行できる計画に変えます。",
-    ctaBody: "セットアップ費用は12,000ドル固定。月額運用は最初の6か月無料です。意思決定者と必要条件が揃う企業だけを審査します。",
+    ctaBody: "セットアップ費用は13,000ドル固定。月額運用は最初の6か月無料です。意思決定者と必要条件が揃う企業だけを審査します。",
   },
   en: {
     badge: "Revenue OS for Japan growth",
     h1: "Build a web presence that turns interest into qualified sales conversations.",
     lead: "Paradigm connects web, SEO/GEO, local search, and AI operations into one revenue system: audit, improve, route leads, and keep follow-up visible.",
-    primary: "Apply for Japan Entry — $12K",
+    primary: "Apply for Japan Entry — $13K",
     secondary: "View services",
     proof: ["Audit-to-action workflow", "Built for SMB and local-service growth", "Pipeline visibility through Revenue OS"],
     visualTitle: "Revenue OS",
@@ -114,7 +114,7 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
       { value: "CRM", label: "Pipeline follow-up" },
     ],
     ctaTitle: "Turn Japan entry into an execution-ready plan.",
-    ctaBody: "Setup is fixed at $12,000. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Apply only if an empowered decision-maker can move now.",
+    ctaBody: "Setup is fixed at $13,000. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Apply only if an empowered decision-maker can move now.",
   },
 }
 

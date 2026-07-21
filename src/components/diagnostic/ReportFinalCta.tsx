@@ -68,7 +68,7 @@ export default function ReportFinalCta({
               data-umami-event-source="final-cta"
               className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition-transform hover:scale-105"
             >
-              {lang === "ja" ? "15分相談を予約" : "Apply — $12K fixed"}
+              {lang === "ja" ? "15分相談を予約" : "Apply — $13K fixed"}
             </a>
           </div>
         </div>

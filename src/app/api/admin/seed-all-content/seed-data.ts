@@ -80,7 +80,7 @@ export const WORKS = [
 export const FAQS = [
   { qJa:"Webサイト制作の期間はどのくらいですか？", qEn:"How long does web development take?", aJa:"制作規模により異なります。5ページ程度のシンプルなコーポレートサイトは1〜2ヶ月、10ページ以上の本格サイトは2〜3ヶ月、ECサイトやフルカスタム開発は3〜6ヶ月が目安です。いずれも企画・設計フェーズを含めた全体期間です。", aEn:"Depends on scope: 5-page corporate site 1-2 months, 10+ page site 2-3 months, ecommerce/custom 3-6 months. All timelines include planning and design.", catJa:"Web制作", catEn:"Web Development", sort:1 },
   { qJa:"MEO対策の効果が出るまでどのくらいかかりますか？", qEn:"How long until MEO shows results?", aJa:"最適化後、即日〜1週間で順位変動が始まります。安定した上位表示には1〜3ヶ月の継続運用が必要です。口コミ数や競合状況で変動します。", aEn:"Ranking changes begin within days to a week. Stable top rankings require 1-3 months of consistent effort.", catJa:"MEO対策", catEn:"MEO", sort:2 },
-  { qJa:"Japan Entryの費用はいくらですか？", qEn:"What does Japan Entry cost?", aJa:"セットアップ費用は12,000ドル固定です。選定した契約先には最初の6か月の運用を追加月額なしで提供します。期間終了後の継続条件・月額は個別に協議し、書面で合意します。第三者費用や法務・税務費用は別途です。", aEn:"Setup is fixed at $12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party, legal, and tax costs remain separate.", catJa:"Japan Entry", catEn:"Japan Entry", sort:3 },
+  { qJa:"Japan Entryの費用はいくらですか？", qEn:"What does Japan Entry cost?", aJa:"セットアップ費用は13,000ドル固定です。選定した契約先には最初の6か月の運用を追加月額なしで提供します。期間終了後の継続条件・月額は個別に協議し、書面で合意します。第三者費用や法務・税務費用は別途です。", aEn:"Setup is fixed at $13,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Continuation pricing is agreed separately after the included period. Third-party, legal, and tax costs remain separate.", catJa:"Japan Entry", catEn:"Japan Entry", sort:3 },
   { qJa:"多言語対応はどの言語まで可能ですか？", qEn:"How many languages can you support?", aJa:"日本語、英語、韓国語、中国語、ドイツ語、フランス語、スペイン語、ポルトガル語、ロシア語、アラビア語、ベトナム語、インドネシア語の12カ国語です。DeepSeek V4翻訳＋ネイティブチェックで高品質を実現します。", aEn:"12 languages: Japanese, English, Korean, Chinese, German, French, Spanish, Portuguese, Russian, Arabic, Vietnamese, Indonesian. Hybrid of AI translation + native review.", catJa:"多言語対応", catEn:"Multilingual", sort:4 },
   { qJa:"AIチャットボットの導入にはどのくらいの期間が必要ですか？", qEn:"How long does AI chatbot deployment take?", aJa:"既存FAQやマニュアルが整っていれば1〜2週間で初期導入可能です。本格的なワークフロー自動化を含む場合は1〜2ヶ月を見込んでください。", aEn:"1-2 weeks with existing FAQs/manuals. Full workflow automation: 1-2 months.", catJa:"AI導入", catEn:"AI Implementation", sort:5 },
   { qJa:"保守・運用サポートはありますか？", qEn:"Do you provide maintenance and support?", aJa:"はい、全プランに初期無料保守期間（1〜12ヶ月）が含まれます。終了後は月額プランでサーバー管理、セキュリティ更新、コンテンツ更新代行を提供します。", aEn:"Yes, every plan includes free initial maintenance (1-12 months). After that, monthly plans cover server, security, and content updates.", catJa:"運用保守", catEn:"Maintenance", sort:6 },
@@ -359,10 +359,10 @@ export async function seedAllContent(
         badge: "FOR FAST-DECISION GLOBAL SMBs",
         title: "Launch in Japan without hiring a local team",
         subtitle: "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies entering Japan or establishing a Japan-facing operating base. For fast-decision teams, we build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
-        primaryCta: { label: "Apply for Japan Entry — $12K", href: "/en/contact?intent=japan-entry" },
+        primaryCta: { label: "Apply for Japan Entry — $13K", href: "/en/contact?intent=japan-entry" },
         secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
         stats: [
-          { value: "$12K", label: "fixed setup" },
+          { value: "$13K", label: "fixed setup" },
           { value: "6", label: "months included for selected launch partners" },
           { value: "14", label: "business-day delivery guarantee" },
           JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
@@ -407,7 +407,7 @@ export async function seedAllContent(
         title: "One fixed Japan entry offer",
         subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with a standard $2,000/month managed-operation layer. For the first 10 selected launch partners, months 1–6 are $0/month.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$13,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with a standard $2,000/month managed-operation layer. For the first 10 selected launch partners, months 1–6 are $0/month.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing", ctaLabel: "Apply for Japan Entry — $13K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
@@ -421,7 +421,7 @@ export async function seedAllContent(
         blockType: "card-grid", variant: "equal", columns: "4",
         cards: [
           { icon: "UserCheck", title: "Final authority", description: "The person applying can make or directly secure the final purchasing decision.", href: "", highlighted: false },
-          { icon: "BadgeDollarSign", title: "$12K approval", description: "The fixed setup fee can be approved and paid within seven days without a long procurement cycle.", href: "", highlighted: true },
+          { icon: "BadgeDollarSign", title: "$13K approval", description: "The fixed setup fee can be approved and paid within seven days without a long procurement cycle.", href: "", highlighted: true },
           { icon: "UserCog", title: "One launch owner", description: "One internal owner can supply decisions, access, brand assets, and product facts in English.", href: "", highlighted: false },
           { icon: "Timer", title: "Ready this month", description: "There is a real commercial reason to start now, not an exploratory project for a future quarter.", href: "", highlighted: false },
         ],
@@ -431,7 +431,7 @@ export async function seedAllContent(
         title: "Before you apply",
         subtitle: "Paradigm LLC supports overseas e-commerce, SaaS, and Web3.0 companies with a professional, evidence-led Japan launch path. The terms are deliberately simple so qualified companies can decide quickly.",
         items: [
-          { question: "Is the setup fee always $12,000?", answer: textToLexical("Yes. The setup fee is fixed at $12,000 and paid before kickoff. If your launch cannot fit the published scope, we will decline the application rather than expand the price after the fact.") },
+          { question: "Is the setup fee always $13,000?", answer: textToLexical("Yes. The setup fee is fixed at $13,000 and paid before kickoff. If your launch cannot fit the published scope, we will decline the application rather than expand the price after the fact.") },
           { question: "What does the selected-launch-partner operating period include?", answer: textToLexical("For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain your responsibility.") },
           { question: "What happens after six months?", answer: textToLexical("After the included period, continuation pricing is agreed separately under written scope and terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
           { question: "Do I need a Japanese entity or bank account?", answer: textToLexical("Not for every launch. Eligibility depends on your product, regulated category, payment methods, and provider account location. We confirm the viable route before accepting the fixed-scope engagement and do not promise unsupported payment methods.") },
@@ -440,15 +440,15 @@ export async function seedAllContent(
           { question: "What must our team provide?", answer: textToLexical("One final decision-maker, one implementation owner, accurate product and policy information, brand assets, and the required account access within 48 hours of kickoff.") },
           { question: "Does the setup include Social Media and market research?", answer: textToLexical("Yes. The setup includes profile and starter-content setup for up to two priority social channels, plus a sourced public-signal market report across up to three markets with one priority deep dive. Ongoing posting and private traffic or revenue data are separate.") },
           { question: "Does regulatory screening replace legal advice?", answer: textToLexical("No. We screen likely disclosure and regulatory applicability, including Japan's Act on Specified Commercial Transactions where relevant, and record questions for qualified professionals. Formal legal opinions, filings, and licences remain separate.") },
-          { question: "What can change the 14-business-day delivery clock?", answer: textToLexical("The clock starts on the recorded Start Date after written scope, cleared payment, complete inputs, required access, and one empowered approver. Client-requested changes or holds pause the clock. If the agreed setup is not delivered within 14 business days, 100% of the $12,000 setup fee is refunded.") },
+          { question: "What can change the 14-business-day delivery clock?", answer: textToLexical("The clock starts on the recorded Start Date after written scope, cleared payment, complete inputs, required access, and one empowered approver. Client-requested changes or holds pause the clock. If the agreed setup is not delivered within 14 business days, 100% of the $13,000 setup fee is refunded.") },
           { question: "Which payment methods can we use?", answer: textToLexical("Wise, bank transfer, USDC, and credit card via a Stripe invoice or payment link are available after fit review. The invoice confirms recipient, fees, and the USDC network and wallet. Never send funds from public-form fields.") },
         ],
       },
       {
         blockType: "cta",
         title: JAPAN_ENTRY_MONTH_ONE_TARGET,
-        subtitle: `${JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE} If your company can approve the $12,000 setup this week and assign one launch owner, apply now. We reply with a fit decision and fixed deployment scope — not a low-cost pilot.`,
-        primaryCta: { label: "Apply for Japan Entry — $12K", href: "/en/contact?intent=japan-entry" },
+        subtitle: `${JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE} If your company can approve the $13,000 setup this week and assign one launch owner, apply now. We reply with a fit decision and fixed deployment scope — not a low-cost pilot.`,
+        primaryCta: { label: "Apply for Japan Entry — $13K", href: "/en/contact?intent=japan-entry" },
         secondaryCta: { label: "Review the fixed offer", href: "#japan-entry-pricing" },
         background: "gradient",
       },
@@ -480,7 +480,7 @@ export async function seedAllContent(
     }
     await upsertHomePage("home-en",
       "Paradigm — Fixed-Price Japan Entry for Fast-Decision Global SMBs",
-      "$12,000 fixed Japan entry setup. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms.",
+      "$13,000 fixed Japan entry setup. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms.",
       layoutEn, "en")
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
   return summary

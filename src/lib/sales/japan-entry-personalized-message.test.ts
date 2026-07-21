@@ -66,21 +66,21 @@ I reviewed Example’s subscription analytics platform for independent retailers
 
 Our public-signal planning model estimates roughly 1,950 monthly visits from Japan and a potential monthly revenue opportunity gap of about $10,296 under stated assumptions. These are modeled estimates, not measured analytics. The checked public pages also did not show a Japanese-language customer path, leaving the route from existing Japanese interest to purchase unverified.
 
-Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`,
+Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $13,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`,
   `Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.
 
 I reviewed Example’s subscription analytics platform for independent retailers and its inventory forecasting and replenishment workflow.
 
 The public-signal planning model estimates approximately 1,950 monthly visits from Japan and a potential monthly revenue opportunity gap of approximately $10,296 under stated planning assumptions. These are modeled estimates, not measured analytics. The checked public pages did not show customer-facing JPY pricing, so the commercial path available to that Japanese interest remains unverified.
 
-Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`,
+Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $13,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`,
   `Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.
 
 I reviewed Example’s subscription analytics platform for independent retailers, particularly the inventory forecasting and replenishment insights described publicly.
 
 Our public-signal planning model estimates about 1,950 monthly visits from Japan and a potential monthly revenue opportunity gap of about $10,296 under its stated planning assumptions. These are modeled estimates, not measured analytics. The checked public pages also did not show Japan-specific delivery terms, leaving the ecommerce fulfillment path for that interest unverified.
 
-Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $12,000 paid upfront, and the first six months of managed support are included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`,
+Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $13,000 paid upfront, and the first six months of managed support are included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`,
 ]
 
 const productContext = "Example provides a subscription analytics platform for independent retailers with inventory insights."
@@ -265,7 +265,7 @@ I reviewed Example and noted its subscription analytics platform for independent
 
 A public-signal planning model estimates approximately 1,950 monthly visits from Japan, with a potential monthly revenue opportunity gap of approximately $10,296. These are planning estimates, not measured analytics. The checked public pages did not show a Japanese-language customer path, so the customer path remains unverified.
 
-Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would you like a detailed Japan opportunity analysis?`
+Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $13,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would you like a detailed Japan opportunity analysis?`
     const review = reviewPersonalizedJapanEntryMessage({
       message,
       companyName: "Example",
@@ -336,7 +336,7 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
     const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
     const review = reviewPersonalizedJapanEntryMessage({
       message:
-        "Hi Example team — I noticed your site has a Tranco rank of 52,000. Given that reach, Japan is a logical next step. Our Japan Entry Package is $12,000 paid upfront, with the first six months included. Is this relevant?",
+        "Hi Example team — I noticed your site has a Tranco rank of 52,000. Given that reach, Japan is a logical next step. Our Japan Entry Package is $13,000 paid upfront, with the first six months included. Is this relevant?",
       companyName: "Example",
       productContext,
       productEvidence,

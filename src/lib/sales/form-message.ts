@@ -216,7 +216,7 @@ async function generateWithDify(input: {
   }
 }
 
-const FIXED_OFFER_NUMBERS = new Set(["0", "6", "7", "12,000", "12000", "21", "20", "200", "300"])
+const FIXED_OFFER_NUMBERS = new Set(["0", "6", "7", "13,000", "13000", "21", "20", "200", "300"])
 
 function numericTokens(message: string): string[] {
   return message.match(/(?:[$€£¥]\s*)?\d[\d,]*(?:\.\d+)?%?/g) ?? []

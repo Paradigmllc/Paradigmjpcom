@@ -29,10 +29,10 @@ describe("Japan Entry package detail copy", () => {
     expect(page.async.points.some((point) => point.title.includes("Loom"))).toBe(true)
     expect(page.notIncluded.items).toContain("Guaranteed traffic, rankings, conversion rate, revenue, customer acquisition, or ROI")
     expect(page.notIncluded.items).toContain("Company incorporation, licence applications, registrations, certification, or specialist sign-off")
-    expect(JSON.stringify(page.commercial)).toContain("$12,000 USD")
+    expect(JSON.stringify(page.commercial)).toContain("$13,000 USD")
     expect(JSON.stringify(page.campaign)).toContain("first 10 selected launch partners")
     expect(JSON.stringify(page.campaign)).toContain("$2,000/month")
-    expect(page.campaign.steps.map((step) => step.price)).toEqual(["$12,000", "$0/mo", "$2,000/mo"])
+    expect(page.campaign.steps.map((step) => step.price)).toEqual(["$13,000", "$0/mo", "$2,000/mo"])
     expect(page.tracks.items).toHaveLength(3)
     expect(page.tracks.items.map((track) => track.name)).toEqual([
       "Japan Digital Launch",

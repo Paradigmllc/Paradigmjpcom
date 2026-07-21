@@ -146,7 +146,7 @@ The objective is not to imitate a paid intelligence platform for free. It is to 
 
 When an overseas company sees “six months included,” the useful question is not whether every future request is free. It is: what operating layer starts after the Japan launch, what can enter the queue, who approves it, and what remains outside the service? A clear answer protects both sides. The client can plan a realistic launch; the delivery team can keep quality and ownership visible.
 
-The Japan Entry offer separates two milestones. The fixed $12,000 setup builds the Japanese buyer path, trust information, eligible inquiry or payment route, launch assets, operating record, and handover. The Managed Japan Desk then keeps that path usable and improves it through a written request queue. Setup and operation are related, but they are not one unlimited bucket.
+The Japan Entry offer separates two milestones. The fixed $13,000 setup builds the Japanese buyer path, trust information, eligible inquiry or payment route, launch assets, operating record, and handover. The Managed Japan Desk then keeps that path usable and improves it through a written request queue. Setup and operation are related, but they are not one unlimited bucket.
 
 ## The commercial model in one view
 
@@ -154,7 +154,7 @@ The standard Managed Japan Desk fee is $2,000/month. For the first 10 selected l
 
 | Stage | What the client pays | What the stage is for |
 |---|---:|---|
-| Setup | $12,000 one time | Build, verify, publish, and hand over the agreed Japan launch scope |
+| Setup | $13,000 one time | Build, verify, publish, and hand over the agreed Japan launch scope |
 | Months 1–6 campaign | $0/month for the first 10 selected launch partners | Operate the agreed route, answer questions, and improve priority surfaces |
 | Month 7 onward | $2,000/month | Continue the standard Managed Japan Desk under the signed scope |
 

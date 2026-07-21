@@ -37,7 +37,7 @@ describe("Japanese public content safety", () => {
         blockType: "pricing",
         tiers: [
           {
-            price: "$12,000",
+            price: "$13,000",
             features:
               "Standard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
           },
