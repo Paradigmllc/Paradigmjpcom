@@ -199,8 +199,8 @@ export function OpportunityBrief({
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
             <p className="text-base leading-8 text-zinc-700">
               {isJa
-                ? `公開シグナル上、日本市場の余地を検証する合理性があります。初期費用は$12,000の一括前払い、最初の6か月は追加月額なし。基準シナリオでは${projection.paybackMonth ? `${projection.paybackMonth}か月目` : "24か月以降"}の回収を試算しています。`
-                : `Public signals support a structured Japan validation. The fixed setup is $12,000 paid upfront, with no additional monthly fee for the first six months. The base model reaches payback ${projection.paybackMonth ? `in month ${projection.paybackMonth}` : "after month 24"}.`}
+                ? `公開シグナル上、日本市場の余地を検証する合理性があります。初期費用は$13,000の一括前払い、最初の6か月は追加月額なし。基準シナリオでは${projection.paybackMonth ? `${projection.paybackMonth}か月目` : "24か月以降"}の回収を試算しています。`
+                : `Public signals support a structured Japan validation. The fixed setup is $13,000 paid upfront, with no additional monthly fee for the first six months. The base model reaches payback ${projection.paybackMonth ? `in month ${projection.paybackMonth}` : "after month 24"}.`}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a

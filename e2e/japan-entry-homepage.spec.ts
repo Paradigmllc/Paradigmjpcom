@@ -7,7 +7,7 @@ test.describe("Japan Entry conversion path", () => {
     await page.goto("/en")
 
     await expect(page.getByRole("heading", { name: "Launch in Japan without hiring a local team" })).toBeVisible()
-    await expect(page.getByText("$12,000", { exact: true })).toBeVisible()
+    await expect(page.getByText("$13,000", { exact: true })).toBeVisible()
     await expect(page.getByText("six months of managed operation are included for selected launch partners", { exact: false })).toBeVisible()
     await expect(page.getByText("$1,500", { exact: false })).toHaveCount(0)
     await expect(page.getByText("Book a free 30-min call", { exact: false })).toHaveCount(0)
@@ -19,7 +19,7 @@ test.describe("Japan Entry conversion path", () => {
     await expect(page).toHaveTitle(/Japan Entry Package for Fast-Decision SMBs/)
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       "content",
-      /\$12,000 fixed Japan entry setup/,
+      /\$13,000 fixed Japan entry setup/,
     )
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
       "content",
@@ -32,7 +32,7 @@ test.describe("Japan Entry conversion path", () => {
     const schemaText = schemas.join("\n")
     expect(schemaText).toContain('"@type":"Service"')
     expect(schemaText).toContain('"@type":"Offer"')
-    expect(schemaText).toContain('"price":"12000"')
+    expect(schemaText).toContain('"price":"13000"')
     expect(schemaText).toContain('"priceCurrency":"USD"')
     expect(schemaText).toContain('"@type":"FAQPage"')
 
@@ -54,7 +54,7 @@ test.describe("Japan Entry conversion path", () => {
     await expect(page).toHaveTitle(/Apply for the Japan Entry Package/)
     await expect(page.getByText("Japan Entry Application", { exact: true })).toBeVisible()
     await expect(page.getByLabel("Final decision authority")).toBeVisible()
-    await expect(page.getByLabel("$12,000 approval timeline")).toBeVisible()
+    await expect(page.getByLabel("$13,000 approval timeline")).toBeVisible()
     await expect(page.getByText("Submit Japan Entry Application", { exact: true })).toBeVisible()
     await expect(page.getByRole("link", { name: "Back to the Japan Entry Package" })).toHaveAttribute("href", "/en")
 
@@ -188,7 +188,7 @@ test.describe("Japan Entry conversion path", () => {
     )).toBeVisible()
     await expect(page.locator("h1")).toContainText("Illustrative Exporter, Inc.")
     await expect(
-      page.getByText(/Setup is fixed at USD \$12,000\./),
+      page.getByText(/Setup is fixed at USD \$13,000\./),
     ).toBeVisible()
     await expect(
       page.getByText(

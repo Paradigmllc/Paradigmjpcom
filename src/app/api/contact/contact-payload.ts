@@ -316,7 +316,7 @@ export function validateContactPayload(payload: ContactPayload): string | null {
     return "Select your decision authority."
   }
   if (!APPROVAL_TIMELINES.has(payload.approvalTimeline)) {
-    return "Select the $12,000 approval timeline."
+    return "Select the $13,000 approval timeline."
   }
   if (!DESIRED_LAUNCHES.has(payload.desiredLaunch)) {
     return "Select the desired Japan launch timing."
@@ -325,7 +325,7 @@ export function validateContactPayload(payload: ContactPayload): string | null {
     return "Select a supported payment method."
   }
   if (!payload.setupFeeAcknowledged) {
-    return "Confirm the $12,000 setup fee and 14-business-day delivery refund terms before applying."
+    return "Confirm the $13,000 setup fee and 14-business-day delivery refund terms before applying."
   }
   if (!/^[A-Za-z0-9_-]{16,128}$/.test(payload.idempotencyKey)) {
     return "Form verification identity is missing. Reload the page and try again."

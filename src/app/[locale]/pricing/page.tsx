@@ -114,7 +114,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
         id: "japan-entry",
         planName: t("fixedPlanName"),
         serviceId: "japan-entry",
-        price: 12000,
+        price: 13000,
         currency: "usd",
         billingCycle: "one-time",
         description: t("fixedPlanDescription"),
@@ -142,9 +142,9 @@ export default async function PricingPage({ params, searchParams }: Props) {
     const currency = (plan.currency ?? "jpy").toUpperCase() as "JPY" | "USD"
     if (isJapanEntry) {
       return {
-        display: "$12,000",
-        adjusted: 12000,
-        original: 12000,
+        display: "$13,000",
+        adjusted: 13000,
+        original: 13000,
         factor: 1,
         discounted: false,
       }

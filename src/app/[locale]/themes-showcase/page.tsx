@@ -72,7 +72,7 @@ const SAMPLE_PRICING = {
 const SAMPLE_CTA = {
   heading: "今、あなたの Web サイトに何が起きているか、知っていますか?",
   description: "Paradigm の主治医ポジション診断で、月次ヘルスチェックが始まります。",
-  buttonLabel: "Japan Entry 適合審査 — $12K",
+  buttonLabel: "Japan Entry 適合審査 — $13K",
   buttonUrl: "#",
   variant: "primary" as const,
 }

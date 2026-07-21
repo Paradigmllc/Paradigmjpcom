@@ -33,7 +33,7 @@ export default function ReportRoiCalculator({
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            ["Setup", "$12,000 fixed"],
+            ["Setup", "$13,000 fixed"],
             ["Managed operation", "$0/month for the first 10 selected launch partners in months 1–6"],
             ["Month 7 onward", "$2,000/month under the signed terms"],
           ].map(([label, value]) => (

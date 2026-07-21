@@ -125,7 +125,7 @@ export function ReportFooter({
           <Link href={`/${siteLocale}`} className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>Paradigm HP</Link>
           <Link href={`/${siteLocale}/works`} className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "制作事例" : "Works"}</Link>
           <Link href={`/${siteLocale}/pricing`} className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "料金" : "Fixed scope"}</Link>
-          <a href={calHref} {...(calHref.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})} data-umami-event="diagnostic-report-apply" data-umami-event-source="footer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "相談を予約" : "Apply — $12K"}</a>
+          <a href={calHref} {...(calHref.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})} data-umami-event="diagnostic-report-apply" data-umami-event-source="footer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "相談を予約" : "Apply — $13K"}</a>
         </nav>
       </div>
     </footer>

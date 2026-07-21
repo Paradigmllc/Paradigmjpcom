@@ -57,7 +57,7 @@ export function isSafeEnglishJapanEntryHomepage(
 
   const price = "price" in tier ? tier.price : null
   const features = "features" in tier ? tier.features : null
-  if (price !== "$12,000" || typeof features !== "string") return false
+  if (price !== "$13,000" || typeof features !== "string") return false
 
   const copy = JSON.stringify(blocks)
   const normalizedCopy = copy.toLowerCase()

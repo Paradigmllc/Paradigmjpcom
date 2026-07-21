@@ -37,7 +37,7 @@ const COPY: Record<string, CopyBundle> = {
     brand: "Paradigm",
     tagline: "Launch in Japan. Move this month.",
     services: [
-      "$12K fixed",
+      "$13K fixed",
       "14-business-day delivery guarantee",
       "6 months included for selected launch partners",
       "selected partners · continuation terms agreed separately",

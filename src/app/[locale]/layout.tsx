@@ -44,7 +44,7 @@ const LOCALE_TITLES: Record<Locale, { default: string; template: string; descrip
   en: {
     default: "Japan Entry Package for Fast-Decision SMBs | Paradigm",
     template: "%s | Paradigm LLC",
-    description: "$12,000 fixed Japan entry setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms.",
+    description: "$13,000 fixed Japan entry setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms.",
     ogSiteName: "Paradigm LLC",
     ogLocale: "en_US",
   },

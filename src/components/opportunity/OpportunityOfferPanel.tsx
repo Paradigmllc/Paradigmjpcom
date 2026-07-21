@@ -50,7 +50,7 @@ export function OpportunityOfferPanel({
               id="opportunity-offer-title"
               className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl"
             >
-              $12,000 {isJa ? "一括前払い" : "paid upfront"}
+              $13,000 {isJa ? "一括前払い" : "paid upfront"}
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-300">
               {isJa

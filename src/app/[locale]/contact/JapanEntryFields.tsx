@@ -31,7 +31,7 @@ export function JapanEntryCompanyFields({
           Japan Entry Application
         </p>
         <p className="font-display text-[22px] leading-tight text-paradigm-ink mb-2">
-          $12,000 fixed setup
+          $13,000 fixed setup
         </p>
         <p className="text-[13px] leading-[1.7] text-paradigm-ink-soft">
           The standard managed-operation fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms. Apply only if your
@@ -125,7 +125,7 @@ export function JapanEntryDecisionFields({
           htmlFor="approvalTimeline"
           className="block paradigm-eyebrow text-paradigm-ink-soft mb-2"
         >
-          $12,000 approval timeline <span className="text-pink-500">*</span>
+          $13,000 approval timeline <span className="text-pink-500">*</span>
         </label>
         <select
           id="approvalTimeline"
@@ -221,8 +221,8 @@ export function JapanEntryAcknowledgement({
       />
       <span>
         {isJa
-          ? "Japan Entryのセットアップ12,000ドルは着手前払いで、必要条件が揃った開始日から14営業日以内に合意した納品物を納品できない場合、セットアップ費用全額が返金される条件を確認しました。顧客側の追加変更・保留期間は起算日程に含まれません。"
-          : "I understand that the $12,000 Japan Entry setup fee is paid before kickoff and is fully refundable if Paradigm does not deliver the agreed setup within 14 business days from the Start Date. Client-requested changes or holds are recorded separately from the delivery clock."}
+          ? "Japan Entryのセットアップ13,000ドルは着手前払いで、必要条件が揃った開始日から14営業日以内に合意した納品物を納品できない場合、セットアップ費用全額が返金される条件を確認しました。顧客側の追加変更・保留期間は起算日程に含まれません。"
+          : "I understand that the $13,000 Japan Entry setup fee is paid before kickoff and is fully refundable if Paradigm does not deliver the agreed setup within 14 business days from the Start Date. Client-requested changes or holds are recorded separately from the delivery clock."}
       </span>
     </label>
   )

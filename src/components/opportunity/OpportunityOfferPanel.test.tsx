@@ -15,7 +15,7 @@ describe("OpportunityOfferPanel", () => {
       />,
     );
 
-    expect(html).toContain("$12,000");
+    expect(html).toContain("$13,000");
     expect(html).toContain("paid upfront");
     expect(html).toContain("Managed Japan Desk");
     expect(html).toContain("$2,000/month");

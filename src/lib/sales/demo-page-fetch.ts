@@ -17,7 +17,7 @@ import { siteUrl } from "./routing"
 import { buildOwnedLicensedMedia, buildPrivateProposalMedia } from "./demo-proposal-media"
 import { applyDemoDesignSpec, readPersistedDemoDesignSpec } from "./demo-design-spec-runtime"
 import { ensureGeneratedVisualMedia } from "./demo-visual-fallback"
-import { isDemoMultiPageData, isRecord } from "./demo-page-data-guards"
+import { isDemoMultiPageData, isRecord } from "./demo-page-fetch-guards"
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
  * falling back to building from sales_companies data.

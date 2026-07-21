@@ -83,7 +83,7 @@ describe("initial-interest form message safety", () => {
   });
 
   it("rejects commercial terms in the light first contact", () => {
-    const message = copyReady(opening, product, diagnosis, "Our Japan Entry Package is $12,000 paid upfront. Would you be open to receiving a report?");
+    const message = copyReady(opening, product, diagnosis, "Our Japan Entry Package is $13,000 paid upfront. Would you be open to receiving a report?");
     const result = review(message);
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("This initial-interest variant must not include commercial terms, package scope, or a call offer");

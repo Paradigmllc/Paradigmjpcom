@@ -45,14 +45,14 @@ const VARIANT_DEMO_DATA: Record<string, VariantDemoData> = {
       },
       {
         type: "hope", icon: "REACH", headline: { ja: "固定範囲のJapan Entryを開始する", en: "Launch a fixed-scope Japan Entry deployment" },
-        body: { ja: "セットアップは12,000米ドル固定です。選定した契約先には最初の6か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別に協議して書面で合意します。書面範囲、入金、必要条件、承認者が揃った開始日から14営業日の納品保証を適用し、未納品時はセットアップ費用を全額返金します。売上成果は保証しません。", en: "Setup is fixed at USD $12,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge; continuation pricing is agreed separately after the included period. The delivery guarantee is 14 business days from the recorded Start Date after scope, cleared payment, prerequisites, and an approver are complete; the setup fee is fully refunded if the agreed setup is not delivered. Sales outcomes are not guaranteed." },
+        body: { ja: "セットアップは13,000米ドル固定です。選定した契約先には最初の6か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別に協議して書面で合意します。書面範囲、入金、必要条件、承認者が揃った開始日から14営業日の納品保証を適用し、未納品時はセットアップ費用を全額返金します。売上成果は保証しません。", en: "Setup is fixed at USD $13,000. For selected launch partners, the first six months of managed operation are included at no additional monthly charge; continuation pricing is agreed separately after the included period. The delivery guarantee is 14 business days from the recorded Start Date after scope, cleared payment, prerequisites, and an approver are complete; the setup fee is fully refunded if the agreed setup is not delivered. Sales outcomes are not guaranteed." },
         metric_label: { ja: "納品保証", en: "Delivery guarantee" }, metric_value: { ja: "14営業日", en: "14 business days" }, metric_unit: "", metric_bench: { ja: "記録した開始日から", en: "From the recorded Start Date" }, severity: "info",
       },
     ],
     totalLoss: { ja: "個別算定", en: "Not estimated" },
     cta: {
-      ja: "固定範囲、12,000米ドルの承認時期、必要素材、開始日から14営業日の納品保証条件を申込み前に書面で確認します。",
-      en: "Apply to confirm fit, the fixed $12,000 scope, approval timing, required inputs, and the Start Date behind the 14-business-day delivery guarantee.",
+      ja: "固定範囲、13,000米ドルの承認時期、必要素材、開始日から14営業日の納品保証条件を申込み前に書面で確認します。",
+      en: "Apply to confirm fit, the fixed $13,000 scope, approval timing, required inputs, and the Start Date behind the 14-business-day delivery guarantee.",
     },
   },
   website_diagnostic: {

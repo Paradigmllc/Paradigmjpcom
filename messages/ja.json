@@ -351,7 +351,7 @@
     "proofItems": [
       { "title": "日本語の購入者導線", "industry": "公開できる実装", "description": "ローカライズルーティング、CMS、構造化されたページ、レスポンシブ表示、申込導線をこのサイトで確認できます。", "metrics": "paradigmjp.comで公開", "tags": ["ローカライズ", "CMS", "レスポンシブ", "SEO"] },
       { "title": "適合審査フロー", "industry": "運用プロセス", "description": "会社、権限、開始時期、商品、公開情報を申込みで受け取り、具体的な入力から確認を始めます。", "metrics": "判断に必要な情報", "tags": ["適合", "入力", "引き継ぎ", "プライバシー"] },
-      { "title": "固定商業スコープ", "industry": "料金の透明性", "description": "セットアップ、含まれる公開作業、除外、月額運用、7か月目以降の条件を申込前に確認できます。", "metrics": "$12K · 6か月$0", "tags": ["固定範囲", "USD", "運用", "引き継ぎ"] },
+      { "title": "固定商業スコープ", "industry": "料金の透明性", "description": "セットアップ、含まれる公開作業、除外、月額運用、7か月目以降の条件を申込前に確認できます。", "metrics": "$13K · 6か月$0", "tags": ["固定範囲", "USD", "運用", "引き継ぎ"] },
       { "title": "公開シグナルスコア", "industry": "市場の可視性", "description": "Signal Checkは公開順位、クロール、登録、サイト信号と自己申告を分離し、未知の訪問数や売上を作りません。", "metrics": "公開根拠 · 未知項目", "tags": ["Tranco", "Common Crawl", "RDAP", "監査"] },
       { "title": "意思決定記事", "industry": "Japan Entry Field Notes", "description": "ローカライズ、採用、業者調整、商業範囲、公開後1か月の判断を記事で整理しています。", "metrics": "7本の実務記事", "tags": ["範囲", "比較", "運用", "信頼"] },
       { "title": "人が確認する自動化", "industry": "運用境界", "description": "自動化はルーティング・要約・シグナル整理に使い、機微・不確実・契約判断は人の確認に残します。", "metrics": "エスカレーションを文書化", "tags": ["レビュー", "ルーティング", "引き継ぎ", "安全"] }
@@ -428,7 +428,7 @@
       ],
       [
         "セットアップ納品保証",
-        "記録した開始日から14営業日以内に合意した固定セットアップを納品できない場合、セットアップ費用12,000ドルを全額返金します。顧客側の追加変更や保留は記録して納品時計を一時停止します。順位、アクセス、成約、売上などの成果は保証しません。"
+        "記録した開始日から14営業日以内に合意した固定セットアップを納品できない場合、セットアップ費用13,000ドルを全額返金します。顧客側の追加変更や保留は記録して納品時計を一時停止します。順位、アクセス、成約、売上などの成果は保証しません。"
       ],
       [
         "返品・キャンセル",
@@ -640,7 +640,7 @@
       "適格な問い合わせ・決済経路の実装",
       "日本語サポート、公開運用、引き継ぎ",
       "支払方法：Wise・銀行振込・USDC・Stripe請求書／決済リンクのクレジットカード",
-      "開始日から14営業日以内に合意したセットアップを納品できない場合の12,000ドル全額返金",
+      "開始日から14営業日以内に合意したセットアップを納品できない場合の13,000ドル全額返金",
       "最初の6か月は標準月額運用込み",
       "選定した契約先には最初の6か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別に協議して書面で合意します。"
     ],
@@ -655,10 +655,10 @@
     ],
     "deliveryGuaranteeEyebrow": "セットアップ保証",
     "deliveryGuaranteeTitle": "記録した開始日から14営業日以内に納品できなければ、セットアップ費用を返金。",
-    "deliveryGuaranteeDesc": "書面での範囲確定、入金確認、必要素材・アクセス、社内承認者が揃った日を開始日として記録します。合意した固定セットアップを14営業日以内に納品できない場合、12,000ドルを全額返金します。顧客側の追加変更や保留は記録して時計を一時停止します。売上・順位・アクセス・成約の保証ではありません。",
+    "deliveryGuaranteeDesc": "書面での範囲確定、入金確認、必要素材・アクセス、社内承認者が揃った日を開始日として記録します。合意した固定セットアップを14営業日以内に納品できない場合、13,000ドルを全額返金します。顧客側の追加変更や保留は記録して時計を一時停止します。売上・順位・アクセス・成約の保証ではありません。",
     "packageEyebrow": "購入するもの",
     "packageTitle": "6つの作業を、1つの公開システムに接続します。",
-    "packageDesc": "12,000ドルは単発の翻訳費ではありません。購入者導線、市場根拠、チャネル、規制確認、公開運用、引き継ぎを同じ範囲・責任者で進めます。含まれる月額運用の通常依頼は48営業時間以内に着手し、完了時期は範囲・承認・第三者依存に左右されます。",
+    "packageDesc": "13,000ドルは単発の翻訳費ではありません。購入者導線、市場根拠、チャネル、規制確認、公開運用、引き継ぎを同じ範囲・責任者で進めます。含まれる月額運用の通常依頼は48営業時間以内に着手し、完了時期は範囲・承認・第三者依存に左右されます。",
     "packageModules": [
       { "title": "LP / HPローカライズ", "description": "既存の提案を、日本の購入者が理解して次へ進めるページ構成に変えます。", "deliverables": ["情報設計、コピー方針、CTA、メタデータ", "主要ページ、信頼情報、CMS引き継ぎ", "問い合わせまたは適格な決済導線"] },
       { "title": "SNS初期セットアップ", "description": "運用を約束するのではなく、最初の日本向け発信を始められる状態にします。", "deliverables": ["優先2チャネルのプロフィールと導線", "CTA、ビジュアル方針、投稿テーマ", "スターターテンプレートと所有者ガイド"] },
@@ -683,7 +683,7 @@
     "comparisonRows": [
       { "criterion": "最初の公開導線", "package": "記録した開始日から14営業日の納品保証", "hire": "採用・オンボーディングが先", "vendors": "各社の開始日が分かれる" },
       { "criterion": "責任の所在", "package": "固定範囲、担当、承認、引き継ぎを一つに", "hire": "社員だけでは専門作業が残る", "vendors": "顧客が統合責任を負う" },
-      { "criterion": "費用の形", "package": "$12,000固定、6か月込み、7か月目以降continuation pricing/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
+      { "criterion": "費用の形", "package": "$13,000固定、6か月込み、7か月目以降continuation pricing/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
       { "criterion": "適する企業", "package": "実際の提案と、今月判断できる責任者がいる企業", "hire": "恒久的な日本チームをつくる企業", "vendors": "社内に統合責任者と時間がある企業" }
     ],
     "scopeEyebrow": "範囲の境界",
@@ -719,7 +719,7 @@
       },
       {
         "q": "14営業日の納品保証と返金はどうなりますか？",
-        "a": "書面での範囲確定、入金確認、必要素材・アクセス、社内承認者が揃った日を開始日として記録します。開始日から14営業日以内に合意した固定セットアップを納品できない場合、12,000ドルを全額返金します。顧客側の追加変更や保留は記録して時計を一時停止します。"
+        "a": "書面での範囲確定、入金確認、必要素材・アクセス、社内承認者が揃った日を開始日として記録します。開始日から14営業日以内に合意した固定セットアップを納品できない場合、13,000ドルを全額返金します。顧客側の追加変更や保留は記録して時計を一時停止します。"
       },
       {
         "q": "保守費用はいくらですか？",
@@ -2044,8 +2044,8 @@
       "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
       "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
       "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
-      "ctaPrimary": "Apply for Japan Entry — $12K",
-      "ctaPrimaryNote": "$12,000 setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month · month 7 onward $2,000/month",
+      "ctaPrimary": "Apply for Japan Entry — $13K",
+      "ctaPrimaryNote": "$13,000 setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month · month 7 onward $2,000/month",
       "ctaSecondary": "Review fixed scope",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
@@ -2092,7 +2092,7 @@
       "marquee4": "Written scope boundaries",
       "metric1Value": "14",
       "metric1Label": "business-day delivery guarantee from the recorded Start Date",
-      "metric2Value": "$12K",
+      "metric2Value": "$13K",
       "metric2Label": "fixed setup price in USD",
       "metric3Value": "$0/mo",
       "metric3Label": "months 1–6 for the first 10 selected launch partners",
@@ -2102,12 +2102,12 @@
     },
     "report": {
       "eyebrow": "ONE COMMERCIAL DECISION",
-      "heading": "Apply for the fixed $12,000 Japan Entry setup",
+      "heading": "Apply for the fixed $13,000 Japan Entry setup",
       "body": "We review company fit, decision authority, timing, offer context, and known launch constraints before accepting an engagement.",
       "bullet1": "One empowered approval path",
       "bullet2": "Required source content, access, and launch context",
       "bullet3": "Written scope, dependencies, exclusions, and start date",
-      "cta": "Apply for Japan Entry — $12K",
+      "cta": "Apply for Japan Entry — $13K",
       "note": "Submitting an application does not create a contract or reserve a slot."
     },
     "pricing": {
@@ -2116,12 +2116,12 @@
       "sub": "The English public price does not change by country or package tier.",
       "cycle": "fixed terms",
       "popular": "Fixed offer",
-      "cta": "Apply for Japan Entry — $12K",
+      "cta": "Apply for Japan Entry — $13K",
       "note": "Third-party fees and approved work outside the fixed launch scope are separate.",
       "tiers": {
         "essential": {
           "name": "Setup",
-          "price": "$12,000",
+          "price": "$13,000",
           "desc": "The fixed Japan Entry implementation scope.",
           "feature1": "Japan-ready landing page and core localization",
           "feature2": "Compliance and trust checklist",
@@ -2152,11 +2152,11 @@
       "q2": "How do payments work without a Japanese bank?",
       "a2": "After fit review, payment is arranged by Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. The invoice confirms the recipient, fees, and (for USDC) the network and wallet; provider approval and fees remain separate.",
       "q3": "How long until I'm live in Japan?",
-      "a3": "The Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. If the agreed fixed setup is not delivered within 14 business days, 100% of the $12,000 setup fee is refunded; client-requested changes or holds pause the clock.",
+      "a3": "The Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. If the agreed fixed setup is not delivered within 14 business days, 100% of the $13,000 setup fee is refunded; client-requested changes or holds pause the clock.",
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$12,000 one-time setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$13,000 one-time setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
@@ -2166,8 +2166,8 @@
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",
-      "sub": "Apply if your company can approve the fixed $12,000 setup and provide launch inputs without a long procurement cycle.",
-      "button": "Apply for Japan Entry — $12K",
+      "sub": "Apply if your company can approve the fixed $13,000 setup and provide launch inputs without a long procurement cycle.",
+      "button": "Apply for Japan Entry — $13K",
       "secondary": "Review fixed scope"
     },
     "comparison": {

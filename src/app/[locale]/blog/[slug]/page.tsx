@@ -196,10 +196,10 @@ export default async function BlogPostPage({
                   </nav>
                 )}
                 <div className="paradigm-glass rounded-2xl p-5 paradigm-glow-sm bg-gradient-to-br from-paradigm-accent/5 to-paradigm-glow/5">
-                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2">{isJa ? "Web・集客・AI導入を相談" : "Japan Entry — $12K fixed"}</h4>
+                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2">{isJa ? "Web・集客・AI導入を相談" : "Japan Entry — $13K fixed"}</h4>
                   <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "現在の課題と目標をお聞かせください。" : "A fixed-scope starting system for fast-decision SMBs."}</p>
                   <Link href={contactHref} className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors px-4 py-2 rounded-xl paradigm-glow-sm">
-                    {isJa ? "お問い合わせ" : "Apply — $12K"} <ArrowRight size={12} />
+                    {isJa ? "お問い合わせ" : "Apply — $13K"} <ArrowRight size={12} />
                   </Link>
                 </div>
               </aside>
@@ -277,10 +277,10 @@ export default async function BlogPostPage({
 
                 {/* CTA Card */}
                 <div className="paradigm-glass rounded-2xl p-5 paradigm-glow-sm bg-gradient-to-br from-paradigm-accent/5 to-paradigm-glow/5">
-                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2 tracking-[-0.01em]">{isJa ? "Web・集客・AI導入を相談" : "Japan Entry — $12K fixed"}</h4>
+                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2 tracking-[-0.01em]">{isJa ? "Web・集客・AI導入を相談" : "Japan Entry — $13K fixed"}</h4>
                   <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "現在の課題と目標をお聞かせください。" : "Apply if your team can approve this week and launch this month."}</p>
                   <Link href={contactHref} className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors px-4 py-2 rounded-xl paradigm-glow-sm">
-                    {isJa ? "お問い合わせ" : "Apply — $12K"} <ArrowRight size={12} />
+                    {isJa ? "お問い合わせ" : "Apply — $13K"} <ArrowRight size={12} />
                   </Link>
                 </div>
               </div>

@@ -50,7 +50,7 @@ describe("getServicesJsonLd", () => {
     expect(s.itemListElement[0].name).toContain("Japan Entry Package")
     expect(s.itemListElement[0].offers).toMatchObject({
       priceCurrency: "USD",
-      price: "12000",
+      price: "13000",
     })
   })
 })
@@ -62,10 +62,10 @@ describe("Japan Entry structured data", () => {
       "@type": "Service",
       offers: {
         "@type": "Offer",
-        price: "12000",
+        price: "13000",
         priceCurrency: "USD",
         priceSpecification: [
-          expect.objectContaining({ price: "12000", priceCurrency: "USD" }),
+          expect.objectContaining({ price: "13000", priceCurrency: "USD" }),
         ],
       },
     })
@@ -76,7 +76,7 @@ describe("Japan Entry structured data", () => {
     const faqText = JSON.stringify(faqPage)
     expect(faqText).toContain("Wise")
     expect(faqText).toContain("14 business days")
-    expect(faqText).toContain("100% of the USD 12,000 setup fee is refunded")
+    expect(faqText).toContain("100% of the USD 13,000 setup fee is refunded")
   })
 
   it("publishes an intent-specific application page", () => {

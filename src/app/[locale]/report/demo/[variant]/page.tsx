@@ -15,7 +15,7 @@ export default function DemoReportPage() {
         <main className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="text-xl font-semibold">This demo is archived</h1>
         <p className="text-sm text-zinc-600">Only the verified Japan Entry example is available publicly.</p>
-        <Link className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white" href="/en/contact?intent=japan-entry">Apply for Japan Entry — $12K</Link>
+        <Link className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white" href="/en/contact?intent=japan-entry">Apply for Japan Entry — $13K</Link>
       </main>
     )
   }
