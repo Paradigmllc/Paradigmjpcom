@@ -286,7 +286,7 @@ export function ManualJapanEntryWorkConsole({
   }
 
   return (
-    <main className="min-h-dvh bg-[#f6f7f9] text-slate-950">
+    <main className="min-h-dvh w-full min-w-0 overflow-x-clip bg-[#f6f7f9] text-slate-950">
       <Toaster richColors position="top-center" toastOptions={{ classNames: { success: "!text-emerald-900" } }} />
       <div className="border-b border-white/10 bg-slate-950 text-white">
         <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
@@ -297,7 +297,7 @@ export function ManualJapanEntryWorkConsole({
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <div className="mx-auto w-full min-w-0 max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Manual Japan Entry Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">Zero-send architecture</span></div>

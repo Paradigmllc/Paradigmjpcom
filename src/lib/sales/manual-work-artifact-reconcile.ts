@@ -2,7 +2,8 @@ import "server-only"
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
-import { restoreManualWorkTwentyHome } from "./manual-work-artifact-authority"
+import { restoreManualWorkTwentyHomes } from "./manual-work-artifact-authority"
+import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 
 export interface ManualWorkArtifactReconcileResult {
   checked: number
@@ -21,7 +22,7 @@ export async function reconcileManualWorkArtifacts(input: {
   if (!supabase) throw new Error("Sales Supabase is not configured")
   let query = supabase
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_WORK)
-    .select("domain,twenty_company_id,sent")
+    .select("*")
     .in("twenty_sync_status", ["synced", "duplicate"])
     .not("twenty_company_id", "is", null)
     .not("report_url", "is", null)
@@ -30,31 +31,19 @@ export async function reconcileManualWorkArtifacts(input: {
   if (input.domain) query = query.eq("domain", input.domain)
   const { data, error } = await query
   if (error) throw new Error(error.message)
-  const rows = (data ?? []) as Array<{ domain: string; twenty_company_id: string; sent: boolean }>
+  const rows = (data ?? []) as ManualJapanEntryWorkRow[]
   if (rows.some((row) => row.sent)) throw new Error("Zero-send invariant violation detected")
 
-  let cursor = 0
-  let repaired = 0
-  let skipped = 0
+  const reconciled = await restoreManualWorkTwentyHomes(rows)
+  const repaired = reconciled.filter((result) => result.protected).length
+  const skipped = reconciled.filter((result) => !result.protected && !result.error).length
   const errors: string[] = []
-  const worker = async () => {
-    while (cursor < rows.length) {
-      const row = rows[cursor]
-      cursor += 1
-      try {
-        const restored = await restoreManualWorkTwentyHome({
-          twentyCompanyId: row.twenty_company_id,
-          domain: row.domain,
-        })
-        if (restored.protected) repaired += 1
-        else skipped += 1
-      } catch (restoreError) {
-        console.error("[manual-work-reconcile] artifact repair failed:", { domain: row.domain, error: restoreError })
-        errors.push(`${row.domain}: ${restoreError instanceof Error ? restoreError.message : "unknown error"}`)
-      }
+  for (const result of reconciled) {
+    if (result.error) {
+      console.error("[manual-work-reconcile] artifact repair failed:", { domain: result.domain, error: result.error })
+      errors.push(`${result.domain}: ${result.error}`)
     }
   }
-  await Promise.all(Array.from({ length: Math.min(3, rows.length) }, () => worker()))
   return {
     checked: rows.length,
     repaired,
