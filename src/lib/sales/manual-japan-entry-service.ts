@@ -1,5 +1,4 @@
 import "server-only"
-
 import { collectInitialFormDraftEvidence } from "./initial-form-draft-evidence"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
@@ -44,6 +43,7 @@ import { isExplicitManualWorkArtifactRefresh, isManualWorkRecoveryAvailable } fr
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
+import { slugifyCompanyName } from "./routing"
 
 export {
   buildManualInitialMessageInput,
@@ -59,12 +59,10 @@ export class ManualWorkRetryConflictError extends Error {
     this.name = "ManualWorkRetryConflictError"
   }
 }
-
 export interface ManualWorkProcessOptions {
   retryRequested?: boolean
   expectedWorkId?: string | null
 }
-
 function jsonRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
@@ -274,6 +272,7 @@ export async function processManualJapanEntryUrl(
     const profile = profileRun.value
     work = await updateManualWork(work.id, {
       company_name: profile.companyName,
+      legacy_report_slug: slugifyCompanyName(profile.companyName),
       country_code: profile.countryCode,
       is_japanese_company: profile.isJapaneseCompany,
       smb_status: profile.smbStatus,

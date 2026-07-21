@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
-  getManualWorkBatch: mocks.get,
+  getManualWorkBatchCompact: mocks.get,
   claimManualWorkBatchDrain: mocks.claimDrain,
   claimManualWorkBatchItems: mocks.claim,
   completeManualWorkBatchItem: mocks.complete,

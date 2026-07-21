@@ -12,6 +12,8 @@ import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
 import { ensureSafeDiagnosticReport } from "@/lib/sales/diagnostic/safe-report"
 import { localeToRegion } from "@/lib/sales/types"
 import { getApprovedReportBlogLinks } from "@/components/diagnostic/report-blog-links"
+import { permanentRedirect } from "next/navigation"
+import { findManualWorkLegacyReportAlias } from "@/lib/sales/manual-work-artifact-authority"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 60
@@ -57,8 +59,22 @@ const getCachedReport = cache(
     fetchDiagnosticReport({ slug, region, reportLocale: locale }),
 )
 
+const getManualAlias = cache(async (slug: string) => findManualWorkLegacyReportAlias(slug))
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params
+  try {
+    const alias = await getManualAlias(slug)
+    if (alias) {
+      return {
+        title: `${alias.companyName} | Japan Entry Strategy Report`,
+        robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+        alternates: { canonical: `/en/work-report/${alias.token}` },
+      }
+    }
+  } catch (error) {
+    console.error("[report-page] manual report alias metadata lookup failed:", error)
+  }
   const region = localeToRegion(locale)
   const lang = normalizeReportLang(locale)
   const copy: ReportCopy = (REPORT_COPY as Record<string, ReportCopy>)[lang] ?? REPORT_COPY.ja
@@ -81,6 +97,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ReportPage({ params }: Props) {
   const { locale, slug } = await params
+  let manualAlias = null
+  try {
+    manualAlias = await getManualAlias(slug)
+  } catch (error) {
+    console.error("[report-page] manual report alias lookup failed:", error)
+  }
+  if (manualAlias) permanentRedirect(`/en/work-report/${manualAlias.token}`)
   const region = localeToRegion(locale)
   let data = null
   try {

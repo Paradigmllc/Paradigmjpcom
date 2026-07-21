@@ -24,6 +24,7 @@ import { ManualWorkOverview } from "./ManualWorkOverview"
 import { useManualWorkBatch } from "./useManualWorkBatch"
 import { MANUAL_WORK_BATCH_MAX_URLS } from "@/lib/sales/manual-japan-entry-batch-types"
 import type { ManualWorkDashboardSummary, ManualWorkHistoryFilter } from "@/lib/sales/manual-work-dashboard"
+import { Button } from "@/components/ui/button"
 
 export function parseManualWorkUrls(value: string): string[] {
   return [...new Set(value.split(/[\s,]+/).map((url) => url.trim()).filter(Boolean))]
@@ -88,6 +89,7 @@ export function ManualJapanEntryWorkConsole({
   const [historyPage, setHistoryPage] = useState(1)
   const [historyHasMore, setHistoryHasMore] = useState(initialItems.length < initialHistoryTotal)
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [reconcilingArtifacts, setReconcilingArtifacts] = useState(false)
   const [summary, setSummary] = useState(initialSummary)
   const historyCriteria = useRef<{ filter: ManualWorkHistoryFilter; query: string }>({ filter: "all", query: "" })
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
@@ -258,6 +260,31 @@ export function ManualJapanEntryWorkConsole({
     }
   }
 
+  const reconcileArtifacts = async () => {
+    if (reconcilingArtifacts) return
+    setReconcilingArtifacts(true)
+    try {
+      const response = await fetch("/api/work/artifacts/reconcile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 100 }),
+      })
+      const body = await response.json() as {
+        ok?: boolean
+        result?: { checked: number; repaired: number; failed: number; sent: number }
+        error?: string
+      }
+      if (!response.ok || !body.ok || !body.result) throw new Error(body.error ?? "Twenty整合性監査に失敗しました")
+      toast.success(`${body.result.checked}件を監査し、${body.result.repaired}件の最新版を確認しました（外部送信${body.result.sent}件）`)
+      await refreshHistory(true)
+    } catch (error) {
+      console.error("[manual-work-ui] artifact reconciliation failed:", error)
+      toast.error(error instanceof Error ? error.message : "Twenty整合性監査に失敗しました")
+    } finally {
+      setReconcilingArtifacts(false)
+    }
+  }
+
   return (
     <main className="min-h-dvh bg-[#f6f7f9] text-slate-950">
       <Toaster richColors position="top-center" toastOptions={{ classNames: { success: "!text-emerald-900" } }} />
@@ -281,6 +308,7 @@ export function ManualJapanEntryWorkConsole({
             <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">新規解析</a>
             <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">生成条件</a>
             <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">履歴</a>
+            <Button type="button" variant="ghost" size="sm" aria-label="Twenty成果物の整合性を監査" disabled={reconcilingArtifacts} onClick={() => void reconcileArtifacts()} className="h-auto rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">{reconcilingArtifacts ? "監査中…" : "Twenty整合性"}</Button>
           </nav>
         </motion.header>
 

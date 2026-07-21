@@ -8,7 +8,10 @@ import {
   getLatestActiveManualWorkBatch,
   promoteNextManualWorkBatch,
 } from "@/lib/sales/manual-japan-entry-batch-store"
-import { MANUAL_WORK_BATCH_MAX_URLS } from "@/lib/sales/manual-japan-entry-batch-types"
+import {
+  isManualWorkBatchTerminal,
+  MANUAL_WORK_BATCH_MAX_URLS,
+} from "@/lib/sales/manual-japan-entry-batch-types"
 import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
 import { preflightManualWorkBatch } from "@/lib/sales/manual-japan-entry-batch-preflight"
@@ -50,8 +53,13 @@ export async function GET(req: NextRequest) {
       const promoted = await promoteNextManualWorkBatch()
       if (promoted) {
         activeBatch = promoted.snapshot
-        if (promoted.promoted) scheduleManualWorkBatchDrain(promoted.snapshot.batch.id)
       }
+    }
+    if (activeBatch && !isManualWorkBatchTerminal(activeBatch.batch.status)) {
+      // Page/API reads are also recovery events. The DB drain lease makes this
+      // safe when a healthy worker is already running and self-heals a process
+      // that stopped between slices without requiring a button click.
+      scheduleManualWorkBatchDrain(activeBatch.batch.id)
     }
     return NextResponse.json({
       ok: true,

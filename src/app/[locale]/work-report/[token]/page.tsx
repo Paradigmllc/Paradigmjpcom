@@ -4,6 +4,7 @@ import { z } from "zod"
 import ManualJapanEntryReport from "@/components/work-report/ManualJapanEntryReport"
 import { resolveManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-resolver"
 import { findManualWorkByReportToken } from "@/lib/sales/manual-japan-entry-store"
+import { persistCurrentManualWorkReport } from "@/lib/sales/manual-work-artifact-authority"
 
 export const dynamic = "force-dynamic"
 
@@ -27,5 +28,10 @@ export default async function ManualWorkReportPage({ params }: Props) {
   }
   if (!item || !item.report_url) notFound()
   const data = resolveManualJapanEntryReportData(item)
+  try {
+    await persistCurrentManualWorkReport(item, data)
+  } catch (error) {
+    console.error("[work-report] current report persistence failed:", error)
+  }
   return <ManualJapanEntryReport data={data} />
 }

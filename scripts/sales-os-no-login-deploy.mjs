@@ -845,6 +845,14 @@ async function applyManualWorkMultiBatchQueueMigration(envs) {
   )
 }
 
+async function applyManualWorkReportOwnershipAndScaleMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260721193000_manual_work_report_ownership_and_scale.sql",
+    "Manual work report ownership and 500-row scale migration",
+  )
+}
+
 async function applyTwentySelectOptionsScript(envs) {
   const sqlPath = path.join(process.cwd(), "scripts", "twenty-sales-select-options.sql")
   if (!fs.existsSync(sqlPath)) return "Twenty select options script missing"
@@ -1509,6 +1517,7 @@ async function main() {
     console.log(await applyManualWorkDurableBatchesMigration(envs))
     console.log(await applyManualWorkBatchRealtimeMigration(envs))
     console.log(await applyManualWorkMultiBatchQueueMigration(envs))
+    console.log(await applyManualWorkReportOwnershipAndScaleMigration(envs))
     console.log(await applyTwentySelectOptionsScript(envs))
     console.log(await applyTwentyCompaniesViewScript(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))

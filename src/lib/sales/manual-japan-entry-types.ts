@@ -100,6 +100,7 @@ export interface ManualCompanyProfile {
 export interface ManualJapanEntryWorkRow {
   id: string
   report_token: string
+  legacy_report_slug?: string | null
   input_url: string
   canonical_url: string
   domain: string

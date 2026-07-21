@@ -47,7 +47,10 @@ export async function dispatchManualWorkBatchDrain(batchId: string): Promise<{
       },
       body: JSON.stringify({ automated: true }),
       cache: "no-store",
-      signal: AbortSignal.timeout(295_000),
+      // A full company pass includes bounded 120s DeepSeek phases plus public
+      // evidence and Twenty read-back. Keep this outside the old five-minute
+      // cliff while the DB claim remains the duplicate-execution guard.
+      signal: AbortSignal.timeout(890_000),
     })
     if (!response.ok) {
       const body = await response.text()

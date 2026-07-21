@@ -28,6 +28,18 @@ function mergeBatchItem(snapshot: ManualWorkBatchSnapshot, item: ManualWorkBatch
   return { ...snapshot, items, counts, remaining, finished: items.length - remaining }
 }
 
+function mergeBatchSnapshot(
+  current: ManualWorkBatchSnapshot,
+  incoming: ManualWorkBatchSnapshot,
+): ManualWorkBatchSnapshot {
+  return {
+    ...incoming,
+    // Drain responses intentionally carry counters only. Realtime owns item
+    // deltas, so retain the one full item snapshot loaded at batch start.
+    items: incoming.items.length > 0 ? incoming.items : current.items,
+  }
+}
+
 interface BatchResponse {
   ok?: boolean
   automaticDrainStarted?: boolean
@@ -82,7 +94,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
         })
         const body = await readBatchResponse(response)
         if (!body.snapshot) throw new Error("バッチ進捗を読み戻せませんでした")
-        current = body.snapshot
+        current = mergeBatchSnapshot(current, body.snapshot)
         commitSnapshot(current)
         await onHistoryRefresh()
         if ((body.claimed ?? 0) === 0 && current.remaining > 0) {
