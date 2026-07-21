@@ -11,6 +11,7 @@ const CASE_STUDY_HEADING_RE = /(?:\s+x\s+|:\s*$|^case stud(?:y|ies)\b)/i
 const PROMOTIONAL_QUALIFIER_RE = /\b(?:free|significantly|effectively|effortlessly|seamlessly|powerfully)\b/i
 const FORM_COPY_UNSAFE_EVIDENCE_RE = /(?:https?:\/\/|www\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b|\b(?:attached|attachment|downloadable|download|unlock(?:ed|s|ing)?|ROI|return on investment|revenue|guarantee(?:d|s|ing)?)\b)/i
 const CUSTOMER_QUOTE_RE = /(?:\b(?:I|we|our|my|I've|we've)\b|trusted by|definitely recommended|absolutely love)/i
+const UNRESOLVED_PUBLIC_TEXT_RE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
 
 function evidenceToken(value: string): string {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -84,15 +85,18 @@ function productEvidenceCandidates(input: {
     .filter((value) => !CUSTOMER_QUOTE_RE.test(value))
     .filter((value) => !CASE_STUDY_HEADING_RE.test(value))
     .filter((value) => !PROMOTIONAL_QUALIFIER_RE.test(value))
+    .filter((value) => !UNRESOLVED_PUBLIC_TEXT_RE.test(value))
     .filter((value) => !productNames.has(value.toLowerCase()))
     .filter((value) => evidenceTokens(value).length >= 4)
 }
 
 export function isInitialInterestProductEvidenceSafe(value: string): boolean {
   return value.trim().length >= 3
+    && value.trim().length <= 180
     && !FORM_COPY_UNSAFE_EVIDENCE_RE.test(value)
     && !PRODUCT_OUTCOME_CLAIM_RE.test(value)
     && !PROMOTIONAL_QUALIFIER_RE.test(value)
+    && !UNRESOLVED_PUBLIC_TEXT_RE.test(value)
 }
 
 function primaryEvidenceScore(value: string): number {

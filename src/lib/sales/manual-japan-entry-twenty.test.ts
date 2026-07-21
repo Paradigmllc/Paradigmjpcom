@@ -18,6 +18,7 @@ vi.mock("./twenty-sync-utils", async (importOriginal) => ({
 }));
 
 import {
+  markManualWorkTargetRejectedInTwenty,
   ManualTwentySyncError,
   syncManualWorkToTwenty,
   syncManualWorkToTwentyBatch,
@@ -275,6 +276,31 @@ describe("manual work Twenty persistence", () => {
       readiness: { sendReady: false, reasons: ["Country remains unconfirmed"] },
     })).resolves.toEqual({ status: "synced", companyId: "company-existing" });
     expect(saved.paradigmCountryName).toBe("米国");
+  });
+
+  it("clears outreach artifacts and verifies the Twenty read-back for a rejected non-company page", async () => {
+    let saved: Record<string, unknown> = { id: "company-parked", name: "Parked Domain" };
+    twenty.findTwentyCompanyById.mockImplementation(async () => saved);
+    twenty.patchTwentyCompanyHome.mockImplementation(async (id: string, payload: Record<string, unknown>) => {
+      saved = { id, ...payload };
+      return { ok: true };
+    });
+
+    await expect(markManualWorkTargetRejectedInTwenty({
+      companyId: "company-parked",
+      companyName: "Parked Domain",
+      domain: "parked.example",
+      reason: "公開ページは駐車ページです",
+    })).resolves.toBeUndefined();
+    expect(saved).toMatchObject({
+      paradigmDataStatus: "Manual workbench / rejected / non-company page",
+      paradigmNextAction: "対象外・送信禁止",
+      paradigmFormUrl: { primaryLinkUrl: "" },
+      paradigmReportUrl: { primaryLinkUrl: "" },
+      paradigmSmbScore: 0,
+      paradigmOpportunityScore: 0,
+    });
+    expect(twenty.findTwentyCompanyById).toHaveBeenCalledTimes(2);
   });
 });
 

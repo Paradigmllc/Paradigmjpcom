@@ -24,8 +24,8 @@ function queryResult(data: unknown[]) {
 beforeEach(() => vi.clearAllMocks())
 
 describe("manual work artifact reconciliation", () => {
-  it("reconciles 100 companies in one bulk authority pass with zero sends", async () => {
-    const rows = Array.from({ length: 100 }, (_, index) => ({
+  it("reconciles 500 companies in one bulk authority pass with zero sends", async () => {
+    const rows = Array.from({ length: 500 }, (_, index) => ({
       domain: `company-${index}.example`,
       twenty_company_id: `twenty-${index}`,
       sent: false,
@@ -33,9 +33,9 @@ describe("manual work artifact reconciliation", () => {
     mocks.getServiceSalesSupabase.mockReturnValue(queryResult(rows))
     mocks.restore.mockResolvedValue(rows.map((row) => ({ domain: row.domain, protected: true })))
 
-    const result = await reconcileManualWorkArtifacts({ limit: 100 })
+    const result = await reconcileManualWorkArtifacts({ limit: 500 })
 
-    expect(result).toEqual({ checked: 100, repaired: 100, skipped: 0, failed: 0, errors: [], sent: 0 })
+    expect(result).toEqual({ checked: 500, repaired: 500, skipped: 0, failed: 0, errors: [], sent: 0 })
     expect(mocks.restore).toHaveBeenCalledTimes(1)
     expect(mocks.restore).toHaveBeenCalledWith(rows)
   })

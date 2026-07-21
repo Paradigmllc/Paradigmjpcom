@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-22 `/work`誤検知根絶・非企業URL除外・全レポート500件自己修復（本番release前）
+
+- 本番DBの全129履歴を監査し、`completed 9 / needs_review 96 / rejected 2 / failed 22`、外部送信0、旧V2レポート5、文面未生成28を確認した。28件はDeepSeek transport障害ではなく、数字を含む企業/商品名、ドメイン風社名、相手商品の価格語、公開HTML entity、長いmodel fieldを決定論gateが誤検知していた。駐車・販売ページ3件も企業扱いされTwentyへ残っていた。
+- 品質gateを緩めず、公開根拠に含まれる企業/商品固有の数字と相手商品の価格記述だけを許可し、未知の数字・Paradigm価格・URL・出典・推測・因果・成果保証は引き続き拒否する。ドメイン風の社名/商品名はフォーム本文だけ人間可読のURLなし表記へ変換し、`Tomohiro H / Paradigm LLC / contact@paradigmjp.com`署名を維持する。DeepSeekの既知の長さ超過はZod preprocessで上限内へ正規化し、未解決placeholder/HTML entityは公開根拠候補から除外する。
+- GoDaddy/Sedo/HugeDomains/登録済み販売ページ/Apache/nginx初期ページを企業ではない対象としてprofile・文面・レポート生成前にrejectする。既に`/work`所有Twenty会社がある場合はreport/form URLを空にし、`rejected / non-company page`、`対象外・送信禁止`をPATCH後にread-backする。再解析時は旧report aliasも消去する。
+- レポート整合APIは上限100から500へ拡張し、Twenty同期済み行だけでなく専用report URLを持つ全行を現行`manual_japan_entry_strategy_v4`へ永続更新する。Twenty会社がある行は50件batch write + batch read-backを維持し、レポート更新とCRM障害を分離する。
+- 現時点のローカル検証は重点38 files / 181 tests、全Vitest **237 files / 1,103 tests**、TypeScript、ESLint、Quality Guard **0 errors / 78 existing warnings**、production build **408/408 pages**がpass。正式PR・`release:prod`・本番28件回復・旧V2 0件・Twenty拒否3件・PC/mobile UI・外部送信0のread-back後だけ完了へ更新する。
+
 ## CURRENT STATUS - 2026-07-21 `/work`100社実走・旧レポート自己修復・Twenty batch整合・全幅UI guard（本番release/100社exact read-back完了 / 外部送信0）
 
 - PR **#508** / main **06fe9288**を正式`release:prod`で本番反映した。Paperform旧URL`/en/report/paperform`は専用`/en/work-report/{uuid}`へ308転送し、DB実体は`manual_japan_entry_strategy_v4 / 10章 / 3,118語`、実画面はfigure 14 / SVG 42 / 横overflow 0 / console error 0。Twenty会社IDを直接read-backし、専用report URL・manual_work source・未対応status・初回文面要約が一致、外部送信0を確認した。

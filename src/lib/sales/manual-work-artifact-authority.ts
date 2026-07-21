@@ -149,8 +149,28 @@ export async function restoreManualWorkTwentyHomes(
   const prepared: Array<{ item: ManualJapanEntryWorkRow; input: ManualTwentySyncInput }> = []
   const results: Array<{ domain: string; protected: boolean; error?: string }> = []
   for (const item of items) {
-    if (!item.twenty_company_id || !item.report_url || !hasDedicatedReport(item)) {
+    if (!item.report_url || !hasDedicatedReport(item)) {
       results.push({ domain: item.domain, protected: false })
+      continue
+    }
+    try {
+      const currentReport = resolveManualJapanEntryReportData(item)
+      await persistCurrentManualWorkReport(item, currentReport)
+    } catch (error) {
+      console.error("[manual-work-authority] current report persistence failed:", {
+        id: item.id,
+        domain: item.domain,
+        error,
+      })
+      results.push({
+        domain: item.domain,
+        protected: false,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      continue
+    }
+    if (!item.twenty_company_id) {
+      results.push({ domain: item.domain, protected: true })
       continue
     }
     const profile = parseManualCompanyProfile(item.profile)
@@ -162,8 +182,6 @@ export async function restoreManualWorkTwentyHomes(
       && profile.smbStatus === "qualified"
       && profile.japanEntryFitStatus === "qualified",
     )
-    const currentReport = resolveManualJapanEntryReportData(item)
-    await persistCurrentManualWorkReport(item, currentReport)
     prepared.push({
       item,
       input: {

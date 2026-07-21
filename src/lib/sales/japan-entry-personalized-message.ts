@@ -105,12 +105,15 @@ interface GenerateInput {
 }
 
 type LlmCaller = DeepSeekStructuredCaller;
-
+const boundedGeneratedEvidence = (maximum: number) => z.preprocess(
+  (value) => typeof value === "string" ? value.trim().slice(0, maximum) : value,
+  z.string().min(3).max(maximum),
+)
 const candidateSchema = z.object({
   message: z.string().min(1).max(1_800),
   fact_ids: z.array(z.string().min(1)).min(1).max(6),
-  product_evidence: z.string().min(3).max(180),
-  product_evidence_rendering: z.string().min(3).max(240),
+  product_evidence: boundedGeneratedEvidence(180),
+  product_evidence_rendering: boundedGeneratedEvidence(240),
   angle: z.string().min(1).max(300),
   opening_style: z.string().min(1).max(120).default("legacy_unspecified"),
   diagnostic_focus: z.string().min(1).max(240).default("legacy_unspecified"),
