@@ -213,7 +213,7 @@ export function generationMessages(
             }))
           : [],
         fixed_offer: purpose === "commercial_offer" ? {
-          setup_fee_usd: 12_000,
+          setup_fee_usd: 13_000,
           payment: "paid upfront",
           included_managed_months: 6,
         } : null,
