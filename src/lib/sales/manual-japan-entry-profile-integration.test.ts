@@ -79,7 +79,7 @@ describe("manual company live-model response boundary", () => {
     callDeepSeek.mockResolvedValue({
       ok: true,
       text: JSON.stringify(response({
-        businessModel: "saas",
+        businessModel: "service",
         japanEntryFitStatus: "rejected",
         japanEntryFitConfidence: 95,
         japanEntryFitEvidence: [

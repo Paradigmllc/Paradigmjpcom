@@ -65,9 +65,13 @@ describe("manual Japan Entry work safety gates", () => {
       status: "needs_review",
       twenty_sync_status: "synced",
       is_japanese_company: false,
-      business_model: "saas",
+      business_model: "service",
       japan_entry_fit_status: "rejected",
-      profile: { japanEntryFitEvidence: ["No Japanese language support or Japan market presence was found."] },
+      profile: {
+        productContext: "ERP and CRM software with cloud hosting",
+        observedFacts: ["Cloud-hosted ERP and CRM software"],
+        japanEntryFitEvidence: ["No Japanese language support or Japan market presence was found."],
+      },
     })).toBe(true)
     expect(isRetryableManualWork({ status: "failed", manually_sent_at: "2026-07-19T00:00:00.000Z" })).toBe(false)
     expect(isRetryableManualWork({ status: "rejected", message_review: { generation_status: "failed" } })).toBe(false)

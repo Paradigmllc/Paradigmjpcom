@@ -92,6 +92,7 @@ describe("manual Japan Entry release wiring", () => {
     expect(profile).toContain("after one repair")
     expect(profile).toContain("JAPAN_ENTRY_FIT_CONTRACT_VERSION")
     expect(fitPolicy).toContain('"opportunity-first-v1"')
+    expect(fitPolicy).toContain("DIGITAL_DELIVERY_PATTERN")
     expect(fitPolicy).toContain("Missing Japanese localization or current Japan presence is a market-entry readiness gap")
     expect(autoRecovery).toContain("maxAttempts > 3")
     expect(recoveryPolicy).toContain('item.status === "failed"')
