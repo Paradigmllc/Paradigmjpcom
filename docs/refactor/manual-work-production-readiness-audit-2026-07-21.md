@@ -32,6 +32,7 @@ This change removes the known code-level blockers: a visual report system, serve
 7. **500-item Realtime amplification** — the stream now sends changed item/batch rows instead of repeatedly reloading all 500 items. History refreshes are bounded to 25 completed items or terminal state.
 8. **4,000-row history blind spot** — `/api/work` now supports server-side filtering, search, exact totals, and 100-row pages. Dashboard totals are global rather than calculated from the visible page.
 9. **Stale report schema** — report resolution rebuilds every saved report through the current V4 contract while preserving the original generation timestamp.
+10. **Cross-company template drift** — the first live two-company canary passed the old score gate but reused an effectively identical routing paragraph and four-paragraph evidence order. Distinctness now compares every substantive paragraph against the 20 most recent drafts, rejects repeated phrases inside a sentence, and requires a three-to-five-paragraph architecture with a materially different evidence sequence and CTA construction. The exact Paperform/SavvyCal production pair is retained as a regression test.
 
 ## Remaining operational risks and required controls
 
@@ -67,7 +68,7 @@ The new figures improve decision usability, but charts are only valid when their
 
 ### 6. Copy quality requires ongoing sampling even after automatic gates
 
-The deterministic gate catches URLs, citations, commercial terms, unsupported claims, signatures, and sentence repetition. It cannot fully judge tone, recipient appropriateness, or whether a true fact is the best fact to lead with.
+The deterministic gate catches URLs, citations, commercial terms, unsupported claims, signatures, sentence repetition, repeated paragraph construction, and same-template CTAs. It cannot fully judge tone, recipient appropriateness, or whether a true fact is the best fact to lead with.
 
 **Control:** human-read all first 20 drafts, then 20% of the 100 wave and 10% of each 500 wave. Track edits, repeated openings across companies, wrong product anchors, word count, and copy/paste readiness. Feed recurring edits into a regression test before the next wave.
 

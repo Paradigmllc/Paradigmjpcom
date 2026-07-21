@@ -268,8 +268,10 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     }
   }
 
-  const validParagraphCount = paragraphs.length === 4;
-  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain exactly four short body paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
+  const validParagraphCount = customInitialInterest
+    ? paragraphs.length >= 3 && paragraphs.length <= 5
+    : paragraphs.length === 4;
+  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain three to five short body paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
   else {
     const expectedIntro = "Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.";
     const productParagraph = paragraphs[1] ?? "";

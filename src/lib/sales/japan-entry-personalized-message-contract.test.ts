@@ -55,4 +55,14 @@ describe("initial-interest evidence contract", () => {
     expect(selectGroundedProductEvidence({ companyName: "Salesfire", productContext })).toBe("Customer journey analytics across onsite search and email")
     expect(selectSupplementalProductEvidence({ companyName: "Salesfire", productContext })).toBe("Connected solutions for smarter eCommerce operations")
   })
+
+  it("extracts a clean exact capability clause instead of repeated promotional Paperform copy", () => {
+    const productContext = "Paperform provides a doc-style form builder where you can create forms and surveys, take payments, automate workflows and send documents for signing, all from one easy, doc-style form builder FOR FREE. The platform also supports surveys, quizzes, tests, payment forms, scheduling forms, and a whole lot more."
+
+    const selected = selectGroundedProductEvidence({ companyName: "Paperform", productContext })
+
+    expect(selected).toBe("create forms and surveys, take payments, automate workflows and send documents for signing")
+    expect(productContext).toContain(selected)
+    expect(selected).not.toMatch(/for free|doc-style form builder/i)
+  })
 })
