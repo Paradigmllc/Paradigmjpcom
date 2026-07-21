@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-22 `/work`本番102社自然文再生成・決定論recovery（第3release前）
+
+- main **009a9fab** / deployment **fim5z03x0mon27ymuq83bez5**を正式`npm run release:prod`で反映し、新migration `20260722044000_manual_work_terminal_source_failures.sql`をDB SSH経由で適用した。post-deploy gateは既知の取得不能系`failed`残存0、Sales health JSON `ok:true`、Twenty HTTP 200 / worker restart 0、Realtime/RLS/Traefik/zero-send、公開V4レポートを含めpass。本番129件は`completed 13 / needs_review 89 / rejected 27 / failed 0 / sent 0`。
+- 旧container上で長時間実行中だった成果物整合requestが103件をV2へ戻した事象を本番API read-backで検出した。最終main endpointから再実行し、5秒で`checked 104 / repaired 104 / currentReports 104 / legacyReports 0 / failed 0 / sent 0`。独立GETでもreport-bearing **104/104 V4 / legacy 0**を確認した。
+- 102社の新品質文面再生成を3並列で開始し、13件時点で10件が92〜93点・V4・未送信で完了。3件は企業名3回以上2件とcompany-neutral similarity 36〜37%でfail-closedしたため、無駄なDeepSeek再試行を避けてbatchを停止した。
+- 根因修正では、企業名/商品名を冒頭1回とCTA1回だけ残し、余分な本文参照を`the company / the product / it / its`へ決定論変換する。類似度失敗時は旧openingも再利用せず、企業固有の公開商品根拠から再構築する。35%独自性閾値、URL/出典/提携/推測/因果/成果保証禁止、120〜190語、正確な署名は緩めない。
+- 修正後は重点4 files / 48 tests、関連52 files / 263 tests、全Vitest **238 files / 1,115 tests**、TypeScript、ESLint、Quality Guard **0 errors / 78 existing warnings**、production build **408/408 pages**がpass。正式PR/release後に残92件＋失敗3件を再生成し、全件品質・V4・Twenty・Cache Hit・PC/mobile UI・sent 0をread-backして完了へ更新する。
+
 ## CURRENT STATUS - 2026-07-22 `/work`自然文品質・V4永続read-back・terminal failure収束（最終release前）
 
 - 本番102件の保存済み初回文面を再監査し、95件で企業名が本文3回以上、最大9回、11件で根拠境界の但し書きが3回以上というテンプレ感を実測した。旧score 92以上を品質証明にせず、企業名と商品名は本文各2回まで、根拠境界は2回まで、冒頭で公開商品事実を1回示した後は自然な代名詞へ切り替え、CTA段落だけ企業/商品anchorを保持する決定論gateへ更新した。DeepSeek prompt、候補repair、CTA契約も同じ制約へ統一し、URL・出典・価格・提携文・推測・因果・成果保証の禁止は維持する。
