@@ -14,6 +14,28 @@ I can share a detailed Japan opportunity analysis based on this public evidence.
 ${MANUAL_FORM_SIGNATURE}`
 
 describe("manual CTA contract", () => {
+  it("keeps every selectable route inside the deterministic analysis CTA contract", () => {
+    const observed = new Map<string, string>()
+    for (let index = 0; index < 200; index += 1) {
+      const contracts = buildManualCtaContracts({
+        companyName: `Company ${index}`,
+        requiredAnchor: `Product ${index}`,
+        customerPathAnchor: "Japanese-language",
+        priorMessages: [],
+      })
+      for (const contract of contracts) observed.set(contract.id, contract.paragraph)
+    }
+
+    expect(observed.size).toBe(12)
+    for (const paragraph of observed.values()) {
+      expect(paragraph).toMatch(/Japan (?:opportunity )?analysis/i)
+      expect(paragraph).toMatch(/(?:share|send|receive|forward|right person|appropriate person|who owns|owner|responsible)/i)
+      expect(paragraph).toMatch(/Product \d+/)
+      expect(paragraph).toMatch(/Japanese-language/)
+      expect(paragraph).toMatch(/\?$/)
+    }
+  })
+
   it("selects a company-specific final paragraph that is distinct from recent copy", () => {
     const contracts = buildManualCtaContracts({
       companyName: "Beta",
