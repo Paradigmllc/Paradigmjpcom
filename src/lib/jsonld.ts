@@ -22,7 +22,7 @@ const altNamesOf = (locale: string) =>
 
 export const JAPAN_ENTRY_TITLE = "Japan Entry Package for Fast-Decision SMBs"
 export const JAPAN_ENTRY_DESCRIPTION =
-  "$13,000 fixed Japan entry setup. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge, and month 7 onward is $2,000/month under the signed terms. Launch a market-ready Japanese revenue path with one accountable Tokyo-based team."
+  "$13,000 fixed Japan entry setup. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. Launch a market-ready Japanese revenue path with one accountable Tokyo-based team."
 export const JAPAN_ENTRY_URL = "https://paradigmjp.com/en"
 export const JAPAN_ENTRY_CONTACT_CANONICAL_URL =
   "https://paradigmjp.com/en/contact"
@@ -36,7 +36,7 @@ export const JAPAN_ENTRY_FAQS = [
   },
   {
     q: "What does the selected-launch-partner operating period include?",
-    a: "The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain the client's responsibility.",
+    a: "The standard managed-operation fee is $2,000/month; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain the client's responsibility.",
   },
   {
     q: "What happens after six months?",
@@ -98,7 +98,7 @@ function getJapanEntryServiceJsonLd() {
       price: "13000",
       priceCurrency: "USD",
       description:
-        "$13,000 one-time setup. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at no additional monthly charge, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
+        "$13,000 one-time setup. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
       eligibleRegion: ["US", "CA", "GB", "EU", "AU", "NZ"],
       priceSpecification: [
         {
@@ -195,7 +195,7 @@ export function getServicesJsonLd(locale: string = "ja") {
           desc: JAPAN_ENTRY_DESCRIPTION,
           url: `/${pageLocale}`,
           price: "13000",
-          priceDesc: "Fixed one-time setup; standard managed operation is $2,000/month, waived for months 1–6 for the first 10 selected launch partners",
+          priceDesc: "Fixed one-time setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included",
         },
       ]
   return {

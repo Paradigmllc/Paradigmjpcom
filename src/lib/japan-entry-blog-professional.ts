@@ -53,7 +53,7 @@ The chosen route may be a hosted checkout, invoice, bank transfer, or qualified 
 
 ## What Paradigm can coordinate
 
-Paradigm can localize the buyer-facing information architecture, prepare Japanese copy and disclosure placement from approved source material, configure the agreed inquiry or payment handoff, and provide a documented launch checklist. The fixed Japan Entry setup is $13,000; standard Managed Japan Desk operation is $2,000/month, with months 1–6 waived for the first 10 selected launch partners and $2,000/month from month 7 onward under signed terms. Provider fees, fulfilment, advertising, legal, tax, and regulated advice remain separate. The result is a clearer path to a decision—not a guarantee that the market will buy.`
+Paradigm can localize the buyer-facing information architecture, prepare Japanese copy and disclosure placement from approved source material, configure the agreed inquiry or payment handoff, and provide a documented launch checklist. The fixed Japan Entry setup is $13,000; selected launch partners receive $2,000/month × 6 months = $12,000 of standard Managed Japan Desk operation included, followed by $2,000/month from month 7 onward under signed terms. Provider fees, fulfilment, advertising, legal, tax, and regulated advice remain separate. The result is a clearer path to a decision—not a guarantee that the market will buy.`
   },
   {
     slug: "japan-ec-payment-fulfilment-trust",

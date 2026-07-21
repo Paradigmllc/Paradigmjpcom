@@ -10,8 +10,8 @@ describe("chat commercial fallback", () => {
 
     expect(answer).toContain("$13,000")
     expect(answer).toContain("$2,000/month")
-    expect(answer).toContain("first 10 selected launch partners")
     expect(answer).toContain("selected launch partners")
+    expect(answer).toContain("$12,000")
     expect(answer).not.toMatch(/\bsubject to separate written terms\b|cancel anytime|995/i)
     expect(answer).not.toMatch(/free consult|¥|1,300|198,000/i)
   })

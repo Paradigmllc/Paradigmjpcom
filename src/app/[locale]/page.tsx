@@ -15,6 +15,7 @@ import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryTrustPanel from "@/components/japan-entry/JapanEntryTrustPanel"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
+import JapanEntryCampaign, { type CampaignCopy } from "@/components/japan-entry/JapanEntryCampaign"
 import { JapanMarketUrgency } from "@/components/japan-entry/JapanMarketUrgency"
 import {
   isSafeEnglishJapanEntryHomepage,
@@ -75,7 +76,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     },
     stats: [
       { value: "$13K", label: "fixed setup" },
-      { value: "$0/mo", label: "months 1–6 for the first 10 selected launch partners" },
+      { value: "$12K value", label: "$2,000/month × 6 months included for selected launch partners" },
       { value: "14", label: "business-day delivery guarantee" },
       JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
     ],
@@ -100,9 +101,9 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
         price: "$13,000",
         period: "one-time",
         description:
-          "A market-ready launch with a standard $2,000/month managed-operation layer. For the first 10 selected launch partners, months 1–6 are $0/month.",
+        "A market-ready launch with a standard $2,000/month managed-operation layer. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee.",
         features:
-          "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nFirst 10 selected launch partners: months 1–6 at $0/month\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
+        "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
         ctaLabel: "Apply for Japan Entry — $13K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,
@@ -340,6 +341,10 @@ export default async function HomePage({ params }: Props) {
     ? isSafeEnglishJapanEntryHomepage(cmsBlocks)
     : safeCmsBlocks.length === cmsBlocks.length && cmsBlocks.length > 0
   const isJapanEntryLocale = locale !== "ja"
+  const packageCopy = isJapanEntryLocale
+    ? await getTranslations({ locale: "en", namespace: "packagePage" })
+    : null
+  const campaign = packageCopy ? packageCopy.raw("campaign") as CampaignCopy : null
   const blocks = locale !== "ja" && cmsBlocks.length > 0 && cmsHomepagePassedSafetyGate
     ? safeCmsBlocks
     : isJapanEntryLocale ? EN_FALLBACK_BLOCKS : JA_FALLBACK_BLOCKS
@@ -350,6 +355,7 @@ export default async function HomePage({ params }: Props) {
         <>
           <BlockRenderer blocks={blocks.slice(0, 1)} />
           <JapanMarketUrgency source="homepage" />
+          {campaign && <JapanEntryCampaign copy={campaign} source="homepage" compact />}
           <BlockRenderer blocks={blocks.slice(1)} />
         </>
       ) : (

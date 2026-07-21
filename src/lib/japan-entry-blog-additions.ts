@@ -150,12 +150,12 @@ The Japan Entry offer separates two milestones. The fixed $13,000 setup builds t
 
 ## The commercial model in one view
 
-The standard Managed Japan Desk fee is $2,000/month. For the first 10 selected launch partners, the fee is waived for months 1–6, so those months are $0/month. From month 7 onward, the standard fee is $2,000/month under the signed terms. Eligibility and availability are confirmed in writing; an application alone does not reserve a place.
+The standard Managed Japan Desk fee is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee. From month 7 onward, the standard fee is $2,000/month under the signed terms. Eligibility and availability are confirmed in writing; an application alone does not reserve a place.
 
 | Stage | What the client pays | What the stage is for |
 |---|---:|---|
 | Setup | $13,000 one time | Build, verify, publish, and hand over the agreed Japan launch scope |
-| Months 1–6 campaign | $0/month for the first 10 selected launch partners | Operate the agreed route, answer questions, and improve priority surfaces |
+| Months 1–6 campaign | $2,000/month × 6 months = $12,000 value included for selected launch partners | Operate the agreed route, answer questions, and improve priority surfaces |
 | Month 7 onward | $2,000/month | Continue the standard Managed Japan Desk under the signed scope |
 
 The table is a commercial map, not a promise of sales. It does not include advertising spend, payment-provider charges, hosting, fulfilment, inventory, legal or tax advice, licensing, or specialist approval unless the signed scope explicitly adds them.

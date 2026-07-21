@@ -50,8 +50,8 @@
           "label": "Business-day delivery guarantee from Start Date"
         },
         {
-          "value": "$0/mo",
-          "label": "Months 1–6 for the first 10 selected launch partners"
+          "value": "$12K value",
+          "label": "$2,000/month × 6 months included for selected launch partners"
         },
         {
           "value": "$2,000/mo",
@@ -66,7 +66,7 @@
         },
         {
           "question": "Do you offer post-launch maintenance?",
-          "answer": "The standard managed-operation fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms. Eligibility and exact responsibilities are confirmed in the engagement scope."
+          "answer": "The standard managed-operation fee is $2,000/month. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. Eligibility and exact responsibilities are confirmed in the engagement scope."
         },
         {
           "question": "Can I update the site myself after launch?",
@@ -391,7 +391,7 @@
         "title": "Fixed commercial scope",
         "industry": "Commercial clarity",
         "description": "One public offer keeps setup, included launch work, exclusions, support period, and ongoing price visible before application.",
-        "metrics": "$13K setup · $0/month in months 1–6 for the first 10 selected launch partners",
+        "metrics": "$13K setup · $2,000/month × 6 months = $12,000 value included for selected launch partners",
         "tags": ["Fixed scope", "USD", "Support", "Handover"]
       },
       {
@@ -531,7 +531,7 @@
       ],
       [
         "Ongoing service price",
-        "Standard managed operation is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month; month 7 onward is $2,000/month under the signed terms, with availability and scope confirmed in writing."
+        "Standard managed operation is $2,000/month. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included; month 7 onward is $2,000/month under the signed terms, with availability and scope confirmed in writing."
       ],
       [
         "Service start and delivery guarantee",
@@ -632,7 +632,7 @@
       },
       {
         "title": "3. Fixed setup and monthly service",
-        "body": "The standard Japan Entry setup is USD 13,000. The standard managed-operation fee is $2,000/month. For the first 10 selected launch partners, months 1–6 are $0/month because that fee is waived; month 7 onward is $2,000/month under the signed terms. The Order Form records the Managed Operations Commencement Date after setup handover and confirms campaign eligibility. A different price or scope is effective only if confirmed in writing."
+        "body": "The standard Japan Entry setup is USD 13,000. The standard managed-operation fee is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included; month 7 onward is $2,000/month under the signed terms. The Order Form records the Managed Operations Commencement Date after setup handover and confirms campaign eligibility. A different price or scope is effective only if confirmed in writing."
       },
       {
         "title": "4. Payment rails, taxes, and third-party charges",
@@ -681,7 +681,7 @@
     "sections": [
       {
         "title": "1. What this policy covers",
-        "body": "This policy covers the fixed USD 13,000 Japan Entry setup, the standard $2,000/month managed operation, the first 10 selected launch partners' months 1–6 at $0/month, and related approved work. The applicable Order Form records the Managed Operations Commencement Date and campaign eligibility. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
+        "body": "This policy covers the fixed USD 13,000 Japan Entry setup, the standard $2,000/month managed operation, the selected launch-partner campaign value of $2,000/month × 6 months = $12,000 included, and related approved work. The applicable Order Form records the Managed Operations Commencement Date and campaign eligibility. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
       },
       {
         "title": "2. Full setup-fee refund for a late fixed setup",
@@ -697,7 +697,7 @@
       },
       {
         "title": "5. Monthly service cancellation",
-        "body": "The standard managed-operation fee is $2,000/month. For the first 10 selected launch partners, the fee is waived for months one through six, so those months are $0/month. From month 7 onward, managed operation is $2,000/month under the signed terms. Campaign availability and scope are confirmed in writing, and third-party commitments remain governed by the written scope."
+        "body": "The standard managed-operation fee is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee. From month 7 onward, managed operation is $2,000/month under the signed terms. Campaign availability and scope are confirmed in writing, and third-party commitments remain governed by the written scope."
       },
       {
         "title": "6. How to request a review",
@@ -719,11 +719,11 @@
   },
   "pricingPage": {
     "metaTitle": "Japan Entry Pricing — Fixed $13,000 Setup",
-    "metaDescription": "One fixed Japan Entry offer: $13,000 one-time setup covering localization, Social Media setup, market intelligence, regulatory screening, launch operations, and handover. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month.",
+    "metaDescription": "One fixed Japan Entry offer: $13,000 one-time setup covering localization, Social Media setup, market intelligence, regulatory screening, launch operations, and handover. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included.",
     "heroBadge": "One package · fixed USD price",
     "heroTitle": "One decision. One scope. One Japan launch.",
     "heroHighlight": "One scope",
-    "heroDesc": "$13,000 one-time setup. The standard managed-operation fee is $2,000/month; for the first 10 selected launch partners, months 1–6 are $0/month as a limited campaign. Month 7 onward is $2,000/month under the signed terms. No regional price adjustment.",
+    "heroDesc": "$13,000 one-time setup. For selected launch partners, the standard $2,000/month managed-operation layer for months 1–6 is included at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. No regional price adjustment.",
     "emptyMessage": "The Japan Entry application is temporarily unavailable.",
     "emptyCta": "Apply for Japan Entry — $13K",
     "popularBadge": "Fixed offer",
@@ -735,7 +735,7 @@
     "pppHint": "Fixed USD price — standard {originalPrice}",
     "regionFooter": "The English Japan Entry package uses one fixed USD price for {country}; it does not change by region.",
     "fixedPlanName": "Japan Entry Package",
-    "fixedPlanDescription": "A fixed-scope Japan launch for fast-decision SMBs, covering the buyer-facing surface, public market evidence, channel setup, regulatory applicability screening, launch operations, and handover.",
+    "fixedPlanDescription": "A fixed-scope Japan launch for fast-decision SMBs, covering the buyer-facing surface, public market evidence, channel setup, regulatory applicability screening, launch operations, and handover. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included.",
     "fixedPlanFeatures": [
       "LP / HP localization and Japanese buyer-path rebuild",
       "Social Media setup for up to two priority channels",
@@ -746,7 +746,7 @@
       "Payment options: Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link",
       "Full USD 13,000 setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date",
       "Standard managed operation: $2,000/month",
-      "First 10 selected launch partners: months 1–6 at $0/month",
+      "Selected launch partners: $2,000/month × 6 months = $12,000 of managed-operation value included",
       "Month 7 onward: $2,000/month under the signed terms"
     ],
     "paymentEyebrow": "Payment and delivery assurance",
@@ -763,7 +763,7 @@
     "deliveryGuaranteeDesc": "The Start Date is recorded after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. If the agreed fixed setup is not delivered within 14 business days, 100% of the USD 13,000 setup fee is refunded. Client-requested changes or holds are logged and pause the clock; this is a delivery guarantee, not a sales or revenue guarantee.",
     "packageEyebrow": "What you are buying",
     "packageTitle": "One launch system, delivered in six connected parts.",
-    "packageDesc": "The $13,000 setup is not a menu of disconnected tasks. It connects the buyer-facing surface, market evidence, acquisition channels, regulatory questions, launch operations, and handover under one written scope. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, with standard requests starting within 48 business hours during the included period.",
+    "packageDesc": "The $13,000 setup is not a menu of disconnected tasks. It connects the buyer-facing surface, market evidence, acquisition channels, regulatory questions, launch operations, and handover under one written scope. For selected launch partners, the standard managed-operation fee is bundled for six months: $2,000/month × 6 months = $12,000 of included value, with standard requests starting within 48 business hours during the included period.",
     "packageModules": [
       {
         "title": "LP / HP localization",
@@ -865,7 +865,7 @@
       },
       {
         "criterion": "Commercial shape",
-        "package": "$13,000 fixed setup; months 1–6 at $0/month for the first 10 selected launch partners; $2,000/month from month 7 onward",
+        "package": "$13,000 fixed setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included; $2,000/month from month 7 onward",
         "hire": "Recruiting, salary, employment overhead, and management cost",
         "vendors": "Separate proposals, retainers, minimums, and change orders"
       },
@@ -894,7 +894,7 @@
           "Public-signal market report and priority-market deep dive",
           "Japan's Act on Specified Commercial Transactions and relevant regulatory applicability screening",
           "Discovery, analytics, support, launch, and handover setup",
-          "Months 1–6 at $0/month for the first 10 selected launch partners; standard $2,000/month from month 7 onward"
+          "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners; standard $2,000/month from month 7 onward"
         ]
       },
       {
@@ -923,7 +923,7 @@
       },
       {
         "q": "What is the six-month launch-partner campaign?",
-        "a": "The standard managed-operation fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month because that fee is waived for the campaign. From month 7 onward, managed operation is $2,000/month under the signed terms. Eligibility and campaign availability are confirmed in writing."
+        "a": "The standard managed-operation fee is $2,000/month. For selected launch partners, months 1–6 are included at no additional monthly fee: $2,000/month × 6 months = $12,000 of managed-operation value. From month 7 onward, managed operation is $2,000/month under the signed terms. Eligibility and campaign availability are confirmed in writing."
       },
       {
         "q": "What happens after the six-month campaign period?",
@@ -969,7 +969,7 @@
     "heroBadge": "Japan Entry application",
     "heroTitle": "Bring a decision, not a procurement maze.",
     "heroHighlight": "a decision",
-    "heroDesc": "Paradigm LLC is a Japan-based market-entry and digital operations partner with experience supporting overseas e-commerce, SaaS, and Web3.0 companies. The $13,000 one-time setup includes the agreed launch scope; standard managed operation is $2,000/month, with months 1–6 at $0/month for the first 10 selected launch partners. We review fit before confirming an engagement.",
+    "heroDesc": "Paradigm LLC is a Japan-based market-entry and digital operations partner with experience supporting overseas e-commerce, SaaS, and Web3.0 companies. The $13,000 one-time setup includes the agreed launch scope; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included. We review fit before confirming an engagement.",
     "formEyebrow": "Application",
     "formTitle": "Tell us what must launch in Japan",
     "consultLabel": "Before you apply",
@@ -1012,7 +1012,7 @@
     "heroBadge": "FAQ",
     "heroTitle": "Answers to common questions.",
     "heroHighlight": "common questions",
-    "heroDesc": "Clear answers about Paradigm LLC, a Japan-based professional partner for overseas e-commerce, SaaS, and Web3.0 companies, plus the fixed $13,000 package, the $2,000/month standard managed-operation fee, the first-10 launch-partner campaign, payment rails, delivery guarantee, eligibility, scope, and ongoing support.",
+    "heroDesc": "Clear answers about Paradigm LLC, a Japan-based professional partner for overseas e-commerce, SaaS, and Web3.0 companies, plus the fixed $13,000 package, the $2,000/month × 6 months = $12,000 selected-partner campaign value, payment rails, delivery guarantee, eligibility, scope, and ongoing support.",
     "emptyMessage": "No FAQs are published yet.",
     "emptyCta": "Apply for Japan Entry — $13K",
     "ctaEyebrow": "Ready to decide",
@@ -1023,11 +1023,11 @@
     "items": [
       {
         "q": "What exactly does the Japan Entry package cost?",
-        "a": "The setup fee is fixed at $13,000 USD. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms. Third-party fees and approved work outside the fixed scope are separate."
+        "a": "The setup fee is fixed at $13,000 USD. For selected launch partners, the standard $2,000/month managed-operation layer for months 1–6 is included at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. Third-party fees and approved work outside the fixed scope are separate."
       },
       {
         "q": "When do the campaign months begin?",
-        "a": "The written Order Form records the applicable Managed Operations Commencement Date. Where the campaign applies, months 1–6 at $0/month begin after the fixed setup is accepted and handed over—not automatically on the contract date. The signed Order Form controls the exact date, eligibility, and any dependency or pause rules."
+        "a": "The written Order Form records the applicable Managed Operations Commencement Date. Where the campaign applies, the six included managed-operation months begin after the fixed setup is accepted and handed over—not automatically on the contract date. The signed Order Form controls the exact date, eligibility, and any dependency or pause rules."
       },
       {
         "q": "Which launch track is right for us?",
@@ -1059,7 +1059,7 @@
       },
       {
         "q": "Can we cancel the ongoing service?",
-        "a": "The setup engagement remains governed by the agreed scope. The first 10 selected launch partners receive months 1–6 at $0/month, followed by the standard $2,000/month managed-operation fee from month 7 onward under the signed terms; fees already earned and third-party commitments are not reversed."
+        "a": "The setup engagement remains governed by the agreed scope. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, followed by the standard $2,000/month managed-operation fee from month 7 onward under the signed terms; fees already earned and third-party commitments are not reversed."
       },
       {
         "q": "What happens after we apply?",
@@ -1161,7 +1161,7 @@
     "values": [
       {
         "title": "One public offer",
-        "desc": "$13,000 one-time setup. Standard managed operation is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month, and month 7 onward is $2,000/month under the signed terms. The price does not change by visitor region."
+        "desc": "$13,000 one-time setup. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. The price does not change by visitor region."
       },
       {
         "title": "Written scope boundaries",
@@ -1259,7 +1259,7 @@
     "ctaEyebrow": "One commercial decision",
     "ctaTitle": "Choose the package, not a maze of retainers.",
     "ctaHighlight": "the package",
-    "ctaDesc": "$13,000 one-time setup, standard managed operation at $2,000/month, and months 1–6 at $0/month for the first 10 selected launch partners. Final scope and dependencies are confirmed before kickoff.",
+    "ctaDesc": "$13,000 one-time setup, with $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners. Final scope and dependencies are confirmed before kickoff.",
     "ctaButton": "Apply for Japan Entry — $13K"
   },
   "marketUrgency": {
@@ -1273,29 +1273,33 @@
   },
   "packagePage": {
     "metaTitle": "Japan Entry Package Deliverables | Paradigm",
-    "metaDescription": "A deliverable-by-deliverable view of the fixed $13,000 Japan Entry setup, the $2,000/month managed-operation fee, the first-10 launch-partner campaign, scope boundaries, exclusions, and handover.",
+    "metaDescription": "A deliverable-by-deliverable view of the fixed $13,000 Japan Entry setup, the limited selected-partner campaign that includes $2,000/month × 6 months = $12,000 of managed-operation value, scope boundaries, exclusions, and handover.",
     "navLabel": "See full package deliverables",
     "heroBadge": "Japan Entry Package · Fixed deliverables",
     "heroTitle": "Everything included in the $13,000 launch.",
     "heroHighlight": "$13,000 launch",
-    "heroDesc": "This is the implementation brief behind the public offer: what we build, what we configure, what you approve, and what your team receives after launch. The standard envelope below makes the boundary concrete; the signed scope is the final source of truth. The package is designed for fast-decision SMBs that want one accountable Japan path without pulling their core team into a long market-entry project.",
+    "heroDesc": "This is the implementation brief behind the public offer: what we build, what we configure, what you approve, and what your team receives after launch. The limited selected-partner campaign makes the value explicit: $2,000/month × 6 months = $12,000 of managed operation included at no additional monthly fee. The standard envelope below makes the boundary concrete; the signed scope is the final source of truth.",
     "summary": [
       { "value": "$13,000", "label": "one-time setup" },
-      { "value": "$0/mo", "label": "months 1–6 for the first 10 selected launch partners" },
+      { "value": "$12K value", "label": "$2,000/month × 6 months included for selected launch partners" },
       { "value": "14 days", "label": "delivery guarantee from the recorded Start Date" },
       { "value": "48h", "label": "start SLA for standard included requests" }
     ],
     "summaryLabel": "Package summary",
     "campaign": {
-      "eyebrow": "Launch partner campaign · limited to the first 10 selected partners",
-      "badge": "FIRST 10 SELECTED LAUNCH PARTNERS",
-      "title": "Pay once. Keep the first six months at",
-      "highlight": "$0/month",
-      "desc": "The standard managed-operation fee is $2,000/month. For the first 10 selected launch partners, that fee is waived for months 1–6. Month 7 onward is $2,000/month under the signed terms.",
-      "availability": "Campaign availability is limited to the first 10 selected launch partners and is confirmed in writing before kickoff.",
+      "eyebrow": "Launch partner campaign · limited selected availability",
+      "badge": "SELECTED LAUNCH PARTNERS",
+      "title": "Pay once. Unlock",
+      "highlight": "$12,000 of included value",
+      "desc": "The standard managed-operation fee is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee. Month 7 onward is $2,000/month under the signed terms.",
+      "valueTitle": "LIMITED CAMPAIGN VALUE · INCLUDED WITH THE FIXED SETUP",
+      "valueFormula": "$2,000/mo × 6 = $12,000",
+      "valueBody": "The first six months of the standard managed-operation layer are included at no additional monthly fee for selected launch partners. That is $12,000 of operating value bundled into the one-time setup—not a vague discount.",
+      "ctaLabel": "See the full included scope",
+      "availability": "Campaign availability is limited to selected launch partners and is confirmed in writing before kickoff.",
       "steps": [
         { "label": "01", "title": "Setup", "price": "$13,000", "period": "one-time", "body": "Fixed implementation scope, paid before kickoff. The 14-business-day delivery guarantee starts from the recorded Start Date." },
-        { "label": "02", "title": "Months 1–6", "price": "$0/mo", "period": "campaign waiver", "body": "The standard $2,000/month managed-operation fee is waived for the first 10 selected launch partners." },
+        { "label": "02", "title": "Months 1–6", "price": "$0/mo", "period": "campaign inclusion", "body": "$2,000/month × 6 months = $12,000 of standard managed-operation value is included for selected launch partners." },
         { "label": "03", "title": "Month 7 onward", "price": "$2,000/mo", "period": "standard monthly fee", "body": "Managed operation continues at the standard monthly fee under the signed terms." }
       ],
       "footnote": "The $13,000 setup fee, 14-business-day delivery guarantee, included-scope boundaries, and written eligibility conditions remain unchanged."
@@ -1493,7 +1497,7 @@
         { "label": "01", "title": "Fit review and proposal", "body": "We confirm decision authority, the offer, inputs, dependencies, payment rail, and whether the fixed package is a fit. An application is not contract acceptance." },
         { "label": "02", "title": "MSA / service terms", "body": "Master terms cover confidentiality, security, ownership, reusable tooling, liability, suspension, termination, and governing law." },
         { "label": "03", "title": "Setup SOW", "body": "The Statement of Work records the USD 13,000 setup scope: pages, words, channels, assets, responsibilities, dependencies, acceptance criteria, exclusions, and change control." },
-        { "label": "04", "title": "Order Form + SLA", "body": "For the first 10 selected launch partners, the Order Form records the months 1–6 $2,000/month waiver and the $2,000/month managed-operation fee from month 7 onward. The service schedule defines queue rules, one active request, business-hour response, and pause conditions." },
+        { "label": "04", "title": "Order Form + SLA", "body": "For selected launch partners, the Order Form records the $2,000/month × 6 months = $12,000 campaign inclusion and the $2,000/month managed-operation fee from month 7 onward. The service schedule defines queue rules, one active request, business-hour response, and pause conditions." },
         { "label": "05", "title": "DPA / NDA / payment addendum", "body": "Only when needed: data-processing terms, confidentiality before disclosure, or USDC network and refund-routing details. The invoice is the payment instruction; public forms never collect credentials." }
       ],
       "handover": "Electronic signature and kickoff follow only after the final written scope, payment instructions, approver, and required inputs are confirmed."
@@ -1501,7 +1505,7 @@
     "operations": {
       "eyebrow": "Months 1–6 included",
       "title": "What happens after launch.",
-      "desc": "The standard managed-operation fee is $2,000/month. For the first 10 selected launch partners, months 1–6 are included at $0/month because that fee is waived. This is an operating layer around the agreed launch—not unlimited agency capacity. The written scope sets the active request queue, channels, approvals, and any third-party dependencies.",
+      "desc": "The standard managed-operation fee is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee. This is an operating layer around the agreed launch—not unlimited agency capacity. The written scope sets the active request queue, channels, approvals, and any third-party dependencies.",
       "items": [
         { "title": "Ongoing localization", "body": "Web pages, new features, product copy, email, FAQ, CTA, pricing, and campaign updates within the agreed monthly envelope—normally up to four pages or 5,000 words." },
         { "title": "One active creative request", "body": "Queue creative work such as social images, banners, decks, product visuals, short video edits, subtitles, thumbnails, blog visuals, or a campaign LP one active request at a time." },
@@ -1558,7 +1562,7 @@
       "title": "The decision is simple; the boundaries are written.",
       "items": [
         { "label": "Setup", "value": "$13,000 USD, one-time" },
-      { "label": "Months 1–6", "value": "$0/month for the first 10 selected launch partners; the standard $2,000/month fee is waived" },
+      { "label": "Months 1–6", "value": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners" },
       { "label": "Month 7 onward", "value": "$2,000/month standard managed-operation fee under the signed terms" },
         { "label": "Refund", "value": "If the agreed setup is not delivered within 14 business days from the recorded Start Date, the setup fee is refunded in full, subject to the written conditions." },
         { "label": "Payment", "value": "Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link where applicable" }
@@ -1598,7 +1602,7 @@
   },
   "footer": {
     "company": "Paradigm LLC",
-      "companyTagline": "Paradigm LLC is a Japan-based market-entry and digital operations partner for overseas e-commerce, SaaS, and Web3.0 companies. Fixed Japan Entry scope: $13,000 setup, standard managed operation at $2,000/month, and months 1–6 at $0/month for the first 10 selected launch partners.",
+      "companyTagline": "Paradigm LLC is a Japan-based market-entry and digital operations partner for overseas e-commerce, SaaS, and Web3.0 companies. Fixed Japan Entry scope: $13,000 setup, with $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners.",
     "servicesHeading": "Services",
     "companyHeading": "Company",
     "contactHeading": "Contact",
@@ -1623,7 +1627,7 @@
   "home": {
     "heroBadge": "Fixed Japan Entry Package",
     "heroTitle": "Launch in Japan with one accountable package",
-    "heroSubtitle": "$13,000 one-time setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month · month 7 onward $2,000/month.",
+    "heroSubtitle": "$13,000 one-time setup · selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included · month 7 onward $2,000/month.",
     "heroSuffix": " for fast-decision SMBs.",
     "heroSubheadline": "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies with localization, trust and compliance coordination, discovery, Japanese support, and handover in one agreed scope.",
     "heroTypingWords": [
@@ -1718,7 +1722,7 @@
     "trustBadges": {
       "1": "Bilingual JP / EN",
       "2": "$13,000 fixed setup",
-      "3": "Months 1–6 at $0/month for the first 10 selected launch partners",
+      "3": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners",
       "4": "$2,000/month standard managed operation from month 7 onward"
     },
     "ctaEyebrow": "Get Started",
@@ -1890,7 +1894,7 @@
           "kicker": "Commercial scope",
           "value": "$13K",
           "title": "A price with boundaries",
-          "body": "Fixed setup, $2,000/month standard operation, months 1–6 at $0/month for the first 10 selected launch partners, exclusions, dependencies, and the month-seven rate."
+          "body": "Fixed setup, $2,000/month standard operation, $2,000/month × 6 months = $12,000 of value included for selected launch partners, exclusions, dependencies, and the month-seven rate."
         },
         {
           "kicker": "Handover",
@@ -1920,7 +1924,7 @@
     "footerContact": "Apply for Japan Entry →",
     "quick": {
       "pricingLabel": "Fixed price & terms",
-      "pricingMessage": "Explain the $13,000 one-time Japan Entry setup, the standard $2,000/month managed operation, the first 10 selected launch partners' months 1–6 at $0/month, and the $2,000/month fee from month seven.",
+      "pricingMessage": "Explain the $13,000 one-time Japan Entry setup, the $2,000/month × 6 months = $12,000 selected-partner campaign value, and the $2,000/month fee from month seven.",
       "processLabel": "How it works",
       "processMessage": "Walk me through what happens after I submit a Japan Entry application.",
       "timelineLabel": "Timeline",
@@ -2077,7 +2081,7 @@
     "ctaEyebrow": "From insight to launch",
     "ctaTitle": "Apply the lesson to your Japan entry.",
     "ctaHighlight": "Japan entry",
-    "ctaDesc": "The public offer is fixed: $13,000 one-time setup, standard managed operation at $2,000/month, and months 1–6 at $0/month for the first 10 selected launch partners. Apply if your decision-maker is ready.",
+    "ctaDesc": "The public offer is fixed: $13,000 one-time setup, with $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners. Apply if your decision-maker is ready.",
     "ctaButton": "Apply for Japan Entry — $13K",
     "notFound": "Article not found",
     "emptyContent": "The full article content is being prepared. Please check back soon."
@@ -2088,7 +2092,7 @@
     "heroBadge": "Japan Entry module",
     "heroTitle": "Build a Japanese buyer path, not a raw translation.",
     "heroHighlight": "buyer path",
-    "heroDesc": "This module is available through the fixed $13,000 Japan Entry setup, with standard managed operation at $2,000/month and months 1–6 at $0/month for the first 10 selected launch partners; month 7 onward is $2,000/month under the signed terms.",
+    "heroDesc": "This module is available through the fixed $13,000 Japan Entry setup, with $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners; month 7 onward is $2,000/month under the signed terms.",
     "painsEyebrow": "Pains",
     "painsHeading": "Any of these sound familiar?",
     "pains": [
@@ -2139,7 +2143,7 @@
       {
         "name": "Months 1–6",
         "price": "$0/mo",
-        "desc": "The standard $2,000/month managed-operation fee is waived during months 1–6 for the first 10 selected launch partners.",
+        "desc": "$2,000/month × 6 months = $12,000 of standard managed-operation value included for selected launch partners.",
         "features": [
           "Agreed monitoring and support",
           "Analytics and notifications",
@@ -2162,7 +2166,7 @@
     "ctaEyebrow": "Begin",
     "ctaTitle": "Apply for the fixed Japan Entry package",
     "ctaHighlight": "Japan Entry package",
-    "ctaDesc": "$13,000 one-time setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month.",
+    "ctaDesc": "$13,000 one-time setup · $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners.",
     "ctaButton": "Apply for Japan Entry — $13K"
   },
   "lpMeo": {
@@ -2247,7 +2251,7 @@
         "name": "Months 1–6",
         "price": "$0",
         "period": "/month",
-        "desc": "$0/month for the first 10 selected launch partners during months 1–6",
+        "desc": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners",
         "features": [
           "Responsibilities defined in scope",
           "No separate English discovery retainer",
@@ -2327,7 +2331,7 @@
         "name": "Months 1–6",
         "price": "$0",
         "period": "/month",
-        "desc": "$0/month for the first 10 selected launch partners during months 1–6",
+        "desc": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners",
         "features": [
           "Responsibilities defined in scope",
           "No separate English search retainer",
@@ -2438,7 +2442,7 @@
         "name": "Months 1–6",
         "price": "$0",
         "period": "/month",
-        "desc": "$0/month for the first 10 selected launch partners during months 1–6",
+        "desc": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners",
         "features": [
           "Responsibilities defined in scope",
           "No separate English AI retainer",
@@ -2476,7 +2480,7 @@
     "comparisonTraditionalHead": "Agency / hire",
     "pricingEyebrow": "Pricing",
     "pricingTitle": "One fixed Japan Entry package",
-    "pricingDesc": "$13,000 one-time setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month. Content work outside the agreed launch scope requires written approval.",
+    "pricingDesc": "$13,000 one-time setup · $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners. Content work outside the agreed launch scope requires written approval.",
     "processEyebrow": "Process",
     "processTitle": "From request to delivery — 4 steps",
     "ctaButton": "Apply for Japan Entry — $13K",
@@ -2490,7 +2494,7 @@
         "name": "Japan Entry Package",
         "price": "$13,000",
         "period": "setup",
-        "volume": "Months 1–6 at $0/month for the first 10 selected launch partners · $2,000/month from month 7 onward",
+        "volume": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners · $2,000/month from month 7 onward",
         "popular": true,
         "features": [
           "Content deliverables only when included in the signed scope",
@@ -2524,7 +2528,7 @@
       },
       {
         "item": "Billing",
-        "paradigm": "Months 1–6 at $0/month for the first 10 selected launch partners; $2,000/month from month 7 onward under written terms",
+        "paradigm": "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners; $2,000/month from month 7 onward under written terms",
         "traditional": "Per-project, minimums"
       }
     ],
@@ -2572,7 +2576,7 @@
     "howItWorksEyebrow": "How it works",
     "howItWorksTitle": "One written scope across agency, client, and Paradigm",
     "pricingTitle": "One public package",
-    "pricingDesc": "$13,000 one-time setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month. Agency-specific additions require written scope approval.",
+    "pricingDesc": "$13,000 one-time setup · $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners. Agency-specific additions require written scope approval.",
     "comparisonEyebrow": "Why WL",
     "comparisonTitle": "Written responsibilities instead of assumed white-label promises",
     "faqEyebrow": "FAQ",
@@ -2668,7 +2672,7 @@
       },
       {
         "q": "How does future-period cancellation work?",
-        "a": "The standard Managed Japan Desk is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month, followed by $2,000/month from month 7 under the signed terms; agency additions may have separate commitments."
+        "a": "The standard Managed Japan Desk is $2,000/month. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, followed by $2,000/month from month 7 under the signed terms; agency additions may have separate commitments."
       }
     ],
     "ctaEyebrow": "Partnership",
@@ -2686,7 +2690,7 @@
     "videoFooter": "Review the evidence, assumptions, and recommended priorities before deciding on any action.",
     "ctaEyebrow": "NEXT STEP",
     "ctaTitle": "Apply for the fixed Japan Entry package",
-    "ctaDesc": "$13,000 one-time setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month. Submission is a fit review, not contract acceptance.",
+    "ctaDesc": "$13,000 one-time setup · $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners. Submission is a fit review, not contract acceptance.",
     "ctaSubtext": "For fast-decision SMBs with launch-ready inputs",
     "footerNote": "Paradigm Web Diagnostics · report valid until {date}",
     "severityCritical": "Critical",
@@ -2699,7 +2703,7 @@
       "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
       "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
       "ctaPrimary": "Apply for Japan Entry — $13K",
-      "ctaPrimaryNote": "$13,000 setup · standard managed operation $2,000/month · first 10 selected launch partners get months 1–6 at $0/month · month 7 onward $2,000/month",
+      "ctaPrimaryNote": "$13,000 setup · selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included · month 7 onward $2,000/month",
       "ctaSecondary": "Review fixed scope",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
@@ -2748,8 +2752,8 @@
       "metric1Label": "business-day delivery guarantee from the recorded Start Date",
       "metric2Value": "$13K",
       "metric2Label": "fixed setup price in USD",
-      "metric3Value": "$0/mo",
-      "metric3Label": "months 1–6 for the first 10 selected launch partners",
+      "metric3Value": "$12K",
+      "metric3Label": "$2,000/month × 6 months of managed operation included for selected launch partners",
       "metric4Value": "$2,000/mo",
       "metric4Label": "standard managed operation from month 7 onward",
       "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
@@ -2784,7 +2788,7 @@
         "growth": {
           "name": "Months 1–6",
           "price": "$0/mo",
-          "desc": "The standard $2,000/month managed-operation fee is waived during months 1–6 for the first 10 selected launch partners.",
+          "desc": "$2,000/month × 6 months = $12,000 of standard managed-operation value included for selected launch partners.",
           "feature1": "Localized site sections plus MEO foundation",
           "feature2": "LINE / inquiry flow and AI support setup",
           "feature3": "30-day launch improvement sprint"
@@ -2810,13 +2814,13 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$13,000 one-time setup. The standard managed-operation fee is $2,000/month; the first 10 selected launch partners receive months 1–6 at $0/month. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$13,000 one-time setup. The standard managed-operation fee is $2,000/month; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
       "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "The agreed handover materials and ownership are documented in scope. The first 10 selected launch partners receive months 1–6 at $0/month, then managed operation is $2,000/month from month 7 onward under the signed terms; availability and scope are confirmed in writing."
+      "a8": "The agreed handover materials and ownership are documented in scope. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, then managed operation is $2,000/month from month 7 onward under the signed terms; availability and scope are confirmed in writing."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",

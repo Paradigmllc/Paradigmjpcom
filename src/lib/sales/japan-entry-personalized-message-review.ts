@@ -318,7 +318,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (selectedModeled && !/(?:model(?:ed)?|estimate[sd]?|planning assumption)/i.test(message)) { issues.push("Modeled metrics are not clearly labeled as estimates"); score -= 40; }
   if (/\brevenue\b/i.test(message) && !selected.some((fact) => fact.id === "modeled-monthly-opportunity-gap" || fact.id === "modeled-annual-opportunity-range")) { issues.push("Revenue wording is not tied to the modeled opportunity fact"); score -= 40; }
 
-  const allowed = new Set(purpose === "commercial_offer" || (purpose === "initial_interest" && initialInterestOptions.includePrice) ? ["13000", "6", "15"] : []);
+  const allowed = new Set(purpose === "commercial_offer" || (purpose === "initial_interest" && initialInterestOptions.includePrice) ? ["13000", "2000", "12000", "6", "15"] : []);
   for (const fact of selected) for (const token of numericTokens(fact.statement)) allowed.add(normalizeNumber(token));
   const unsupported = numericTokens(message).map(normalizeNumber).filter((token) => !allowed.has(token));
   if (unsupported.length > 0) { issues.push(`Unsupported numeric claims: ${[...new Set(unsupported)].join(", ")}`); score -= 35; }

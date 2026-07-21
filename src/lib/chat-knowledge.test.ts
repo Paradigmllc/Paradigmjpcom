@@ -6,7 +6,7 @@ describe("approved chat knowledge retrieval", () => {
     const sources = retrieveChatKnowledge("What is the $13,000 setup and month seven price?", "en")
     expect(sources[0]?.href).toBe("/en/pricing")
     expect(sources[0]?.content).toContain("$2,000/month")
-    expect(sources[0]?.content).toContain("first 10 selected launch partners")
+    expect(sources[0]?.content).toContain("$12,000 of managed-operation value")
     expect(formatChatKnowledge(sources)).toContain("[Source 1]")
   })
 

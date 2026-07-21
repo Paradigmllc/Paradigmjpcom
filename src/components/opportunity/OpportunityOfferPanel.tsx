@@ -55,7 +55,7 @@ export function OpportunityOfferPanel({
             <p className="mt-4 max-w-xl text-sm leading-7 text-zinc-300">
               {isJa
                 ? "選定した契約先には最初の6か月を追加月額なしで提供。期間終了後の継続条件・月額は個別協議のうえ書面合意。"
-                : "The standard Managed Japan Desk fee is $2,000/month. The first 10 selected launch partners receive months 1–6 at $0/month; month 7 onward is $2,000/month under the signed terms."}
+                : "The standard Managed Japan Desk fee is $2,000/month. Selected launch partners receive six months included at no additional monthly fee: $2,000/month × 6 months = $12,000 of value; month 7 onward is $2,000/month under the signed terms."}
             </p>
 
             <div className="mt-6 rounded-xl border border-amber-300/40 bg-amber-300/10 p-5">
@@ -65,7 +65,7 @@ export function OpportunityOfferPanel({
               <p className="mt-2 text-sm font-semibold leading-6 text-white">
                 {isJa
                   ? "6か月の月額無料は、審査を通過した数組だけが対象です。"
-                  : "The six-month $0 monthly-fee period is available to the first 10 selected launch partners."}
+                  : "The $2,000/month × 6 months = $12,000 value campaign is available to selected launch partners and confirmed in writing."}
               </p>
               <p className="mt-2 text-xs leading-5 text-zinc-300">
                 {isJa

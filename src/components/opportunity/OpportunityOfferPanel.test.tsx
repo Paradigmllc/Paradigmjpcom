@@ -19,7 +19,7 @@ describe("OpportunityOfferPanel", () => {
     expect(html).toContain("paid upfront");
     expect(html).toContain("Managed Japan Desk");
     expect(html).toContain("$2,000/month");
-    expect(html).toContain("first 10 selected launch partners");
+    expect(html).toContain("$12,000 of value");
     expect(html).toContain("form submission alone does not reserve a place");
     expect(html.match(/<li/g)).toHaveLength(7);
     expect(html).toContain("Market and offer framing");

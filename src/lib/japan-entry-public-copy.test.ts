@@ -33,9 +33,10 @@ describe("public English Japan Entry copy", () => {
     expect(messages.pricingPage.fixedPlanName).toBe("Japan Entry Package")
     expect(messages.pricingPage.heroDesc).toContain("$13,000")
     expect(messages.pricingPage.heroDesc).toContain("$2,000/month")
-    expect(messages.pricingPage.heroDesc).toContain("first 10 selected launch partners")
+    expect(messages.pricingPage.heroDesc).toContain("$2,000/month × 6 months = $12,000")
     expect(messages.packagePage.campaign.steps[1].price).toBe("$0/mo")
     expect(messages.packagePage.campaign.steps[2].price).toBe("$2,000/mo")
+    expect(JSON.stringify(messages)).not.toMatch(/first 10 selected|first-10 launch-partner/i)
     expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for Japan Entry — $13K")
     expect(messages.cta.primary).toBe("Apply — $13K")
     expect(messages.lpWeb.plans.map((plan) => plan.name)).toEqual([
@@ -164,7 +165,7 @@ describe("public English Japan Entry copy", () => {
     for (const term of [
       "$13,000",
       "$2,000/month",
-      "first 10 selected launch partners",
+      "$2,000/month × 6 months = $12,000",
       "standard managed operation from month 7 onward",
       "Month-one target: 20 qualified launches",
       "not a customer outcome guarantee",
@@ -209,7 +210,7 @@ describe("public English Japan Entry copy", () => {
     const priceToken = /\$(?:\d{1,3}(?:,\d{3})+|\d+)(?:K)?/g
     const prices = new Set(strings.flatMap(({ value }) => value.match(priceToken) ?? []))
 
-    expect([...prices].sort()).toEqual(["$0", "$13,000", "$13K", "$2,000"])
+    expect([...prices].sort()).toEqual(["$0", "$12,000", "$12K", "$13,000", "$13K", "$2,000"])
   })
 
   it("contains no accidental Japanese copy outside the locale-switch label", () => {
