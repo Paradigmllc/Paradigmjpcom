@@ -905,10 +905,17 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("20260716181500_manual_japan_entry_source_ledger.sql")
     && noLoginDeploy.includes("applyManualJapanEntrySourceLedgerMigration")
     && manualReportV2Migration.includes("manual_japan_entry_v2")
+    && manualReportV2Migration.includes("must never downgrade a newer report")
+    && manualReportV2Migration.includes("manual_japan_entry_customer_v3")
+    && manualReportV2Migration.includes("manual_japan_entry_strategy_v4")
     && manualReportV2Migration.includes("legacyTemplateUsed")
     && manualReportV2Migration.includes("automaticSendAllowed")
     && noLoginDeploy.includes("20260719032800_manual_japan_entry_report_v2.sql")
     && noLoginDeploy.includes("applyManualJapanEntryReportV2Migration")
+    && noLoginDeploy.includes("reconcileManualWorkV4Artifacts")
+    && noLoginDeploy.includes("/api/work/artifacts/reconcile")
+    && noLoginDeploy.includes("result?.currentReports === result?.checked")
+    && noLoginDeploy.includes("result?.legacyReports === 0")
     && manualFormDiagnosticsMigration.includes("form_discovery #>> '{inspection,status}' = 'form'")
     && manualFormDiagnosticsMigration.includes("generation_status")
     && manualFormDiagnosticsMigration.includes("generation_error")
@@ -1644,6 +1651,12 @@ select case when
       )
   )
   ${POST_DEPLOY ? `and not exists (
+    select 1
+    from public.manual_japan_entry_work
+    where report_url is not null
+      and report_data ->> 'schemaVersion' is distinct from 'manual_japan_entry_strategy_v4'
+  )
+  and not exists (
     select 1
     from public.manual_japan_entry_work
     where form_url is not null

@@ -1453,6 +1453,37 @@ async function refreshIntegrationStatus(envs) {
   }
 }
 
+async function reconcileManualWorkV4Artifacts(envs) {
+  const secret = envs.TRIGGER_WEBHOOK_SECRET
+  if (!secret || String(secret).trim().length === 0) {
+    throw new Error("Manual work V4 reconciliation requires TRIGGER_WEBHOOK_SECRET")
+  }
+  const baseUrl = envs.PARADIGMJP_BASE_URL || envs.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
+  const endpoint = `${String(baseUrl).replace(/\/+$/, "")}/api/work/artifacts/reconcile`
+  const res = await fetch(endpoint, {
+    method: "POST",
+    signal: AbortSignal.timeout(330_000),
+    headers: {
+      "Content-Type": "application/json",
+      "X-Webhook-Secret": secret,
+    },
+    body: JSON.stringify({ limit: 500 }),
+  })
+  const body = await res.json().catch(() => null)
+  const result = body?.result
+  const exact = res.ok
+    && body?.ok === true
+    && result?.failed === 0
+    && result?.skipped === 0
+    && result?.legacyReports === 0
+    && result?.currentReports === result?.checked
+    && result?.sent === 0
+  if (!exact) {
+    throw new Error(`Manual work V4 reconciliation failed exact read-back (HTTP ${res.status})`)
+  }
+  return `Manual work V4 reconciliation: ${result.currentReports}/${result.checked} current, legacy ${result.legacyReports}, sent ${result.sent}`
+}
+
 async function main() {
   console.log("Sales OS no-login deploy")
   const envs = await readProductionEnv()
@@ -1585,6 +1616,10 @@ async function main() {
     await seedEnglishJapanEntryBlog(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
+  }
+
+  if (!DRY && !SKIP_DEPLOY) {
+    console.log(await reconcileManualWorkV4Artifacts(envs))
   }
 
   const smokeTargets = [
