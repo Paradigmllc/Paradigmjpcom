@@ -304,7 +304,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (purpose === "initial_interest") {
       if (customInitialInterest) {
         const finalParagraph = paragraphs.at(-1) ?? "";
-        if (!/(?:share|send|receive|forward|right person|appropriate person|who owns|owner|responsible)/i.test(finalParagraph) || !/(?:analysis|opportunity snapshot|brief)/i.test(finalParagraph)) {
+        if (!/(?:share|send|receive|forward|route|recipient|right person|appropriate person|who owns|owner|responsible|prepare|provide|document|set out|give leadership)/i.test(finalParagraph) || !/(?:analysis|opportunity snapshot|brief)/i.test(finalParagraph)) {
           issues.push("Initial-interest CTA must offer only the analysis through a permission or routing question"); score -= 25;
         }
       } else {
