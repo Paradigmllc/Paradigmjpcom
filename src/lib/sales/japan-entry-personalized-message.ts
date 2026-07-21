@@ -7,6 +7,7 @@ import type { JapanEntryInitialInterestOptions } from "./japan-entry-message-opt
 import type { ManualMessageAngle } from "./manual-japan-entry-angle";
 import type { ManualOutreachPlaybook, ManualPositioningConcept } from "./manual-japan-entry-playbook";
 import { withManualFormCopyReadyEnvelope } from "./manual-japan-entry-copy-envelope";
+import { buildPersonalizedMessageRepairInput } from "./japan-entry-personalized-message-repair";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
   manualMessageSimilarity,
@@ -26,11 +27,8 @@ export type { JapanEntryMessageReview } from "./japan-entry-personalized-message
 const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 23;
-const STAGE_MAX_TOKENS = {
-  generation: 4_000,
-  repair: 2_400,
-  critic: 1_200,
-} as const;
+const INITIAL_SAFETY_REPAIR_LIMIT = 3;
+const STAGE_MAX_TOKENS = { generation: 4_000, repair: 2_400, critic: 1_200 } as const;
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
   message?: string;
@@ -379,10 +377,16 @@ export async function generatePersonalizedJapanEntryMessage(
   if (valid.length === 0) {
     let repairTarget = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
     if (!repairTarget) return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro returned no candidate to repair" };
-    for (let repairPass = 1; repairPass <= 2; repairPass += 1) {
+    for (let repairPass = 1; repairPass <= INITIAL_SAFETY_REPAIR_LIMIT; repairPass += 1) {
       const repaired = await callStructured({
         stage: "repair",
-        messages: generationMessages(input, facts, mode, { candidate: repairTarget.candidate, issues: [...repairTarget.safety.issues, ...repairTarget.similarity.reasons] }),
+        messages: generationMessages(input, facts, mode, buildPersonalizedMessageRepairInput({
+          candidate: repairTarget.candidate,
+          issues: [...repairTarget.safety.issues, ...repairTarget.similarity.reasons],
+          wordCount: repairTarget.safety.wordCount,
+          purpose,
+          includePrice: input.initialInterestOptions?.includePrice === true,
+        })),
         schema: repairSchema,
         caller,
       });
@@ -397,10 +401,10 @@ export async function generatePersonalizedJapanEntryMessage(
         break;
       }
       repairTarget = inspected;
-      if (repairPass === 2) return {
+      if (repairPass === INITIAL_SAFETY_REPAIR_LIMIT) return {
         ok: false,
         usage: totalUsage,
-        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety or uniqueness gate after two targeted repairs: ${[...inspected.safety.issues, ...inspected.similarity.reasons].join("; ")}`,
+        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety or uniqueness gate after ${INITIAL_SAFETY_REPAIR_LIMIT} targeted repairs: ${[...inspected.safety.issues, ...inspected.similarity.reasons].join("; ")}`,
       };
     }
   }
@@ -452,7 +456,14 @@ export async function generatePersonalizedJapanEntryMessage(
     const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; make the final question itself contain the exact company or product anchor '${exactCtaAnchor}', and make the final paragraph contain the exact audited customer-path anchor supplied in required_cta_contract while saying what Japan customer-path decision the analysis informs. Mentioning the company or product anchor only before the final question is invalid. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
     const repaired = await callStructured({
       stage: "repair",
-      messages: generationMessages(input, facts, mode, { candidate: finalCandidate.candidate, issues: repairIssues, editorialFeedback }),
+      messages: generationMessages(input, facts, mode, buildPersonalizedMessageRepairInput({
+        candidate: finalCandidate.candidate,
+        issues: repairIssues,
+        wordCount: finalCandidate.safety.wordCount,
+        purpose,
+        includePrice: input.initialInterestOptions?.includePrice === true,
+        editorialFeedback,
+      })),
       schema: repairSchema,
       caller,
     });
