@@ -271,11 +271,18 @@ export function ManualJapanEntryWorkConsole({
       })
       const body = await response.json() as {
         ok?: boolean
-        result?: { checked: number; repaired: number; failed: number; sent: number }
+        result?: {
+          checked: number
+          repaired: number
+          failed: number
+          currentReports: number
+          legacyReports: number
+          sent: number
+        }
         error?: string
       }
       if (!response.ok || !body.ok || !body.result) throw new Error(body.error ?? "Twenty整合性監査に失敗しました")
-      toast.success(`${body.result.checked}件を監査し、${body.result.repaired}件の最新版を確認しました（外部送信${body.result.sent}件）`)
+      toast.success(`${body.result.checked}件を監査し、V4 ${body.result.currentReports}/${body.result.checked}件をDB読戻ししました（旧版${body.result.legacyReports}件・外部送信${body.result.sent}件）`)
       await refreshHistory(true)
     } catch (error) {
       console.error("[manual-work-ui] artifact reconciliation failed:", error)

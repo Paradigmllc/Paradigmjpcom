@@ -95,22 +95,23 @@ function productOpening(input: {
   const productName = input.productNames.map((name) => name.trim()).find((name) => (
     name
     && name.toLowerCase() !== input.companyName.trim().toLowerCase()
+    && !name.toLowerCase().includes(input.companyName.trim().toLowerCase())
     && !rendering.toLowerCase().includes(name.toLowerCase())
   ))
   const subject = productName ?? "its offering"
   const renderingIncludesCompany = rendering.toLowerCase().includes(input.companyName.toLowerCase())
   const variants = renderingIncludesCompany
     ? [
-        `The public product description states: ${renderedSentence} I kept this review within that documented capability rather than treating it as evidence of a customer outcome.`,
-        `The concrete public capability is stated as follows: ${renderedSentence} I used that wording as the boundary of this review, without adding a claim about results.`,
-        `The checked product page defines the offering this way: ${renderedSentence} This review stays with that documented capability and does not infer market performance.`,
-        `The public wording for the offering is: ${renderedSentence} I treated that exact capability as the product evidence and left customer outcomes unverified.`,
+        `The public product description states: ${renderedSentence} That specific capability is the starting point for this Japan review.`,
+        `The checked product page describes the offering this way: ${renderedSentence} I used that concrete wording to frame the Japan review.`,
+        `The product page defines the offering as follows: ${renderedSentence} That is the product basis used here.`,
+        `The public description is specific: ${renderedSentence} I used that capability to keep the Japan review focused.`,
       ]
     : [
-        `${input.companyName} publicly describes ${subject} this way: ${renderedSentence} I kept this review within that stated capability rather than treating it as evidence of a customer outcome.`,
-        `The concrete capability ${input.companyName} documents publicly for ${subject} is: ${renderedSentence} I used that wording as the boundary of this review, without adding a claim about results.`,
-        `In its public product description, ${input.companyName} defines ${subject} around this capability: ${renderedSentence} This review stays with that documented capability and does not infer market performance.`,
-        `${input.companyName}'s public wording for ${subject} is: ${renderedSentence} I treated that capability as the product evidence and left customer outcomes unverified.`,
+        `${input.companyName} publicly describes ${subject} this way: ${renderedSentence} That specific capability is the starting point for this Japan review.`,
+        `The concrete capability documented by ${input.companyName} for ${subject} is: ${renderedSentence} I used that wording to frame the Japan review.`,
+        `In its public product description, ${input.companyName} defines ${subject} around this capability: ${renderedSentence} That is the product basis used here.`,
+        `The public wording from ${input.companyName} for ${subject} is: ${renderedSentence} I used that capability to keep the Japan review focused.`,
       ]
   return variants[stableHash(`${input.companyName}:${rendering}`) % variants.length]!
 }
@@ -167,10 +168,10 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   ) {
     const renderedSupplemental = /[.!?]$/.test(supplemental) ? supplemental : `${supplemental}.`
     const supplementalVariants = [
-      `The same public material also documents “${renderedSupplemental}” I treated that as a second product detail, not evidence of Japan demand.`,
-      `A separate public capability is “${renderedSupplemental}” That detail narrows the product reading without implying a market outcome.`,
-      `The public description also includes “${renderedSupplemental}” I kept it as supporting product context rather than a claim about Japanese buyers.`,
-      `Another documented product point is “${renderedSupplemental}” It informs the scope of the review but does not establish performance in Japan.`,
+      `The same public material also documents “${renderedSupplemental}” That gives the review a second concrete product detail.`,
+      `A separate public capability is “${renderedSupplemental}” This helps narrow the scope of the analysis.`,
+      `The public description also includes “${renderedSupplemental}” I used it as supporting product context.`,
+      `Another documented product point is “${renderedSupplemental}” It helps define what the analysis should cover.`,
     ]
     middleSentences.unshift(supplementalVariants[stableHash(`${input.companyName}:${supplemental}`) % supplementalVariants.length]!)
   }
@@ -186,7 +187,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     uniqueMiddleSentences.push(sentence)
   }
   if (uniqueMiddleSentences.length === 0) {
-    uniqueMiddleSentences.push(`The public-page review leaves ${input.companyName}'s ${input.customerPathAnchor} decision unverified.`)
+    uniqueMiddleSentences.push(`The public-page review leaves the ${input.customerPathAnchor} decision unverified.`)
   }
 
   const recovered = applyManualCtaContract({
@@ -202,14 +203,14 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const recoveredBody = bodyBlocks(recovered.message)
   const paddingPool = [
-    `For ${input.companyName}, the page check establishes only the observed ${input.customerPathAnchor} condition; it is not evidence of demand, buyer behavior, or results in Japan.`,
-    `The open question for ${input.companyName} is whether that ${input.customerPathAnchor} observation deserves a focused customer-path test before a broader market commitment.`,
-    `Nothing in the public evidence resolves that decision, and this review keeps it separate from assumptions about commercial outcomes.`,
-    `This is deliberately a page-level finding for ${input.companyName}, not a conclusion about Japanese buyers or product-market fit.`,
-    `${input.companyName} can therefore treat the ${input.customerPathAnchor} point as a validation question while leaving demand and performance unclaimed.`,
-    `A bounded test would determine whether the observed customer-path condition merits further work, without presuming a market result.`,
-    `The checked material supports a narrow ${input.customerPathAnchor} observation for ${input.companyName}; it does not establish how a Japanese audience would respond.`,
-    `That leaves one practical decision open for ${input.companyName}: whether to validate the observed path before committing to wider localization.`,
+    `The page check establishes only the observed ${input.customerPathAnchor} condition; whether it matters commercially remains unverified.`,
+    `The practical question is whether the ${input.customerPathAnchor} observation deserves a focused test before a broader market commitment.`,
+    `The public evidence does not resolve that decision, so the analysis keeps assumptions separate from observed facts.`,
+    `This is a page-level finding, not a conclusion about Japanese demand or product-market fit.`,
+    `The ${input.customerPathAnchor} point is therefore a validation question rather than a forecast.`,
+    `A bounded test could determine whether the observed customer-path condition merits further work without presuming a result.`,
+    `The checked material supports a narrow ${input.customerPathAnchor} observation and no claim about audience response.`,
+    `That leaves one decision open: whether to validate the observed path before committing to wider localization.`,
   ]
   const offset = stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) % paddingPool.length
   const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
@@ -224,10 +225,9 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   const requiredAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName
   const ctaIndex = recoveredBody.length - 1
   const ctaParagraph = recoveredBody[ctaIndex] ?? ""
-  const finalQuestion = ctaParagraph.match(/[^.!?]*\?\s*$/)?.[0] ?? ""
-  if (!finalQuestion.toLowerCase().includes(requiredAnchor.toLowerCase())) {
-    const offer = ctaParagraph.replace(/[^.!?]*\?\s*$/, "").trim()
-    recoveredBody[ctaIndex] = `${offer} Would you like to receive the ${requiredAnchor} Japan opportunity analysis?`.trim()
+  if (!ctaParagraph.toLowerCase().includes(requiredAnchor.toLowerCase())) {
+    const question = ctaParagraph.match(/[^.!?]*\?\s*$/)?.[0]?.trim() || "Would you like me to send it?"
+    recoveredBody[ctaIndex] = `I can send a short Japan opportunity analysis for ${requiredAnchor}, focused on the ${input.customerPathAnchor} question. ${question}`
   }
   return {
     ...recovered,

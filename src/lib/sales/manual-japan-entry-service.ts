@@ -42,6 +42,7 @@ import { runWithManualWorkAutoRecovery } from "./manual-work-auto-recovery"
 import { isExplicitManualWorkArtifactRefresh, isManualWorkRecoveryAvailable } from "./manual-work-recovery-policy"
 import { rejectManualWorkNonCompanyEvidence } from "./manual-company-evidence-policy"
 import { buildManualWorkRetryPatch } from "./manual-work-retry-patch"
+import { classifyManualWorkFailure } from "./manual-work-failure-policy"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
@@ -71,13 +72,18 @@ function jsonRecord(value: unknown): Record<string, unknown> {
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
 }
 
-async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWorkRow> {
-  const message = error instanceof Error ? error.message : "Manual Japan Entry processing failed"
-  console.error("[manual-work] processing failed:", { id, error })
-  return updateManualWork(id, {
-    status: "failed",
-    stage: "failed",
-    error_message: message.slice(0, 2_000),
+async function failWork(item: ManualJapanEntryWorkRow, error: unknown): Promise<ManualJapanEntryWorkRow> {
+  const disposition = classifyManualWorkFailure(item.stage, error)
+  console.error("[manual-work] processing stopped:", {
+    id: item.id,
+    stage: item.stage,
+    disposition: disposition.status,
+    error,
+  })
+  return updateManualWork(item.id, {
+    status: disposition.status,
+    stage: disposition.stage,
+    error_message: disposition.message,
     twenty_sync_status: "skipped",
   })
 }
@@ -457,6 +463,6 @@ export async function processManualJapanEntryUrl(
     }
     return { item: work, duplicate: false }
   } catch (error) {
-    return { item: await failWork(work.id, error), duplicate: false }
+    return { item: await failWork(work, error), duplicate: false }
   }
 }

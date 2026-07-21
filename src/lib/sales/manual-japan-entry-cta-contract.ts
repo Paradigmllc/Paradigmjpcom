@@ -38,85 +38,85 @@ const CTA_ROUTES: CtaRoute[] = [
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `I can prepare a Japan opportunity analysis that separates the public evidence around ${path} from the decision still open for ${anchor}.`,
-      question: `Would you like to receive the ${anchor} analysis before deciding whether that customer path warrants a test?`,
+      offer: `I can send a short Japan opportunity analysis for ${anchor}, focused on the ${path} question.`,
+      question: "Would you like me to send it?",
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `The Japan opportunity analysis would focus on ${anchor}'s ${path} evidence and the validation decision that remains unresolved.`,
-      question: `Who owns the ${anchor} decision on whether to validate that path?`,
+      offer: `I can prepare a concise Japan opportunity analysis for ${anchor} around the open ${path} decision.`,
+      question: "Who would be the right person to review it?",
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `I can map the observed ${path} gap and its evidence boundary in a Japan opportunity analysis for ${anchor}.`,
-      question: `Is the ${anchor} founder or international-growth lead the right person to receive it?`,
+      offer: `A short Japan opportunity analysis for ${anchor} can set out the observed ${path} gap and the decision it leaves open.`,
+      question: "Would the founder or international-growth lead be the best recipient?",
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `A focused Japan opportunity analysis can set out what the public ${path} evidence establishes, what it does not, and the next decision for ${anchor}.`,
-      question: `May I send the ${anchor} analysis for that review?`,
+      offer: `I can share a focused Japan opportunity analysis for ${anchor} based on the public ${path} finding.`,
+      question: "May I send it for review?",
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `I can prepare a Japan opportunity analysis around the open ${path} question without treating the page review as proof of demand.`,
-      question: `Who is the right person to receive the ${anchor} analysis for that decision?`,
+      offer: `I can send a Japan opportunity analysis for ${anchor} that treats the ${path} point as a testable question.`,
+      question: "Who is the right person to receive it?",
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `The useful next artifact would be a Japan opportunity analysis linking ${anchor}'s product evidence to the unresolved ${path} decision.`,
-      question: `Would the ${anchor} founder be the right person to receive that analysis?`,
+      offer: `The useful next step for ${anchor} would be a short Japan opportunity analysis linking the product evidence to the unresolved ${path} decision.`,
+      question: "Should I route it to the founder or international-growth lead?",
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `I can turn the ${path} observation into a Japan opportunity analysis that keeps evidence, assumptions, and the ${anchor} validation choice separate.`,
-      question: `Would you like to receive the ${anchor} analysis before that choice is made?`,
+      offer: `I can turn the ${path} observation into a Japan opportunity analysis for ${anchor}, with evidence and assumptions clearly separated.`,
+      question: "Would you like to receive it?",
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `A Japan opportunity analysis for ${anchor} would examine the ${path} question as a testable entry decision rather than a conclusion.`,
-      question: `Are you the person who owns that ${anchor} decision?`,
+      offer: `A Japan opportunity analysis for ${anchor} would frame the ${path} question as a testable entry decision.`,
+      question: "Are you the person who owns that decision?",
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `I can prepare the Japan opportunity analysis for ${anchor} around the exact ${path} evidence and the decision it leaves open.`,
-      question: `Should I route the ${anchor} analysis to its founder or international-growth owner?`,
+      offer: `I can prepare a Japan opportunity analysis for ${anchor} around the exact ${path} evidence.`,
+      question: "Should I route it to the founder or international-growth owner?",
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `The Japan opportunity analysis I can provide would stay narrowly focused on ${anchor}, the observed ${path} signal, and whether a customer-path test is justified.`,
-      question: `Would you like to receive the ${anchor} Japan opportunity analysis?`,
+      offer: `I can provide a short Japan opportunity analysis for ${anchor}, focused on the observed ${path} signal.`,
+      question: "Would you like to receive it?",
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `I can document the ${path} finding and the unresolved validation choice in a Japan opportunity analysis specific to ${anchor}.`,
-      question: `Who should receive the ${anchor} analysis for deciding what to test first?`,
+      offer: `I can document the ${path} finding and the unresolved validation choice in a Japan opportunity analysis for ${anchor}.`,
+      question: "Who should receive it to decide what to test first?",
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `A Japan opportunity analysis can give ${anchor}'s leadership a bounded view of the ${path} evidence before any broader market commitment.`,
-      question: `Is the ${anchor} founder the right person to receive that analysis?`,
+      offer: `A Japan opportunity analysis for ${anchor} can give leadership a bounded view of the ${path} evidence.`,
+      question: "Should I send it to the founder?",
     }),
   },
 ]

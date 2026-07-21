@@ -10,6 +10,15 @@ function containsAnchor(text: string, anchors: string[], minimumLength = 4): boo
   return anchors.some((anchor) => anchor.trim().length >= minimumLength && normalized.includes(anchor.trim().toLowerCase()))
 }
 
+function exactOccurrences(text: string, value: string): number {
+  const normalized = value.trim()
+  if (!normalized) return 0
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return text.match(new RegExp(escaped, "gi"))?.length ?? 0
+}
+
+const EVIDENCE_BOUNDARY_PATTERN = /\b(?:not evidence|not proof|does not establish|remains? unverified|left [^.]{0,80} unverified|not a conclusion|without (?:adding|treating|implying)|does not infer)\b/gi
+
 export function reviewManualFormBespokeStyle(input: {
   body: string
   openingParagraph: string
@@ -47,10 +56,23 @@ export function reviewManualFormBespokeStyle(input: {
     issues.push("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
   }
 
+  if (exactOccurrences(input.body, input.companyName) > 2) {
+    issues.push("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
+  }
+  for (const productName of input.productNames) {
+    if (productName.toLowerCase() === input.companyName.toLowerCase()) continue
+    if (exactOccurrences(input.body, productName) > 2) {
+      issues.push(`The product name must appear no more than twice in the personalized body: ${productName}`)
+    }
+  }
+  const evidenceBoundaries = input.body.match(EVIDENCE_BOUNDARY_PATTERN)?.length ?? 0
+  if (evidenceBoundaries > 2) {
+    issues.push("The message repeats evidence disclaimers; keep one concise boundary statement and use the remaining space for decision relevance")
+  }
+
   const companyOrProductAnchors = [input.companyName, ...input.productNames]
-  const finalQuestion = input.finalParagraph.match(/[^.!?]*\?\s*$/)?.[0] ?? input.finalParagraph
-  if (!containsAnchor(finalQuestion, companyOrProductAnchors, 2)) {
-    issues.push(`The final question must include the exact company or product anchor: ${input.productNames[0] ?? input.companyName}`)
+  if (!containsAnchor(input.finalParagraph, companyOrProductAnchors, 2)) {
+    issues.push(`The final CTA paragraph must include the exact company or product anchor: ${input.productNames[0] ?? input.companyName}`)
   }
   return issues
 }

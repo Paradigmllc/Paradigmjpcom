@@ -17,13 +17,13 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example’s public pages describe RetailScope as a subscription analytics platform for independent retailers. The documented workflow connects inventory forecasting with replenishment decisions and supplies inventory insights for independent operators, giving this review a concrete company-specific product basis.
+Example publicly describes RetailScope as a subscription analytics platform for independent retailers. The documented workflow connects inventory forecasting with replenishment decisions and supplies inventory insights for independent operators.
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. These are bounded observations about the pages checked, not findings about demand, buyer behavior, or performance in Japan.
 
-For RetailScope, the decision that remains unverified is whether independent retail operators in Japan can understand the inventory-analytics proposition and reach an appropriate evaluation route without changing the product’s documented scope. That question should be tested before a broader localization commitment.
+The decision that remains unverified is whether the documented product needs a Japanese evaluation route before a broader localization commitment. The public evidence does not resolve that choice, so the analysis must keep assumptions separate from observed facts.
 
-I can share a one-page Japan Opportunity Snapshot focused on RetailScope’s Japanese-language customer path, JPY presentation question, and the next validation decision. Could you forward the RetailScope customer-path snapshot to the person responsible for international growth?
+I can share a Japan opportunity analysis focused on RetailScope’s Japanese-language customer path and JPY presentation question. Would the founder or international-growth lead be the best recipient?
 
 ${MANUAL_FORM_SIGNATURE}`
 
@@ -117,7 +117,7 @@ describe("manual work first-touch generation integration", () => {
     expect(result.message).toBe(message)
     expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
-    expect(result.message).toContain("Could you forward the RetailScope customer-path snapshot to the person responsible for international growth?")
+    expect(result.message).toContain("Would the founder or international-growth lead be the best recipient?")
     expect(result.message).toMatch(/^Hello Example team,/)
     expect(result.message).toMatch(/Best regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp\.com$/)
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })

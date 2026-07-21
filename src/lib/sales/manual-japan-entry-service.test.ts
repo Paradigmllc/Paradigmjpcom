@@ -81,6 +81,7 @@ describe("manual Japan Entry work safety gates", () => {
 
   it("allows an explicit artifact refresh for untouched completed work without exposing routine recovery", () => {
     expect(isExplicitManualWorkArtifactRefresh({ status: "completed" }, true)).toBe(true)
+    expect(isExplicitManualWorkArtifactRefresh({ status: "needs_review" }, true)).toBe(true)
     expect(isExplicitManualWorkArtifactRefresh({ status: "completed" }, false)).toBe(false)
     expect(isExplicitManualWorkArtifactRefresh({ status: "completed", manually_sent_at: "2026-07-21T00:00:00.000Z" }, true)).toBe(false)
     expect(isRetryableManualWork({ status: "completed" })).toBe(false)

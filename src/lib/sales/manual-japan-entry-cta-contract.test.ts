@@ -29,7 +29,7 @@ describe("manual CTA contract", () => {
     expect(observed.size).toBeGreaterThanOrEqual(120)
     for (const paragraph of observed.values()) {
       expect(paragraph).toMatch(/Japan (?:opportunity )?analysis/i)
-      expect(paragraph).toMatch(/(?:share|send|receive|forward|right person|appropriate person|who owns|owner|responsible)/i)
+      expect(paragraph).toMatch(/(?:share|send|receive|forward|route|recipient|right person|appropriate person|who owns|owner|responsible)/i)
       expect(paragraph).toMatch(/Product \d+/)
       expect(paragraph).toMatch(/Japanese-language/)
       expect(paragraph).toMatch(/\?$/)
@@ -49,7 +49,8 @@ describe("manual CTA contract", () => {
     for (const contract of contracts) {
       expect(contract.paragraph).toContain("Beta Flow")
       expect(contract.paragraph).toContain("Japanese-language")
-      expect(contract.question).toMatch(/Beta Flow.*\?$/)
+      expect(contract.question).toMatch(/\?$/)
+      expect(contract.question).not.toContain("Beta Flow")
     }
   })
 

@@ -7,8 +7,8 @@ import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-
 const companyName = "Example"
 const productEvidence = "subscription analytics platform for independent retailers"
 const productContext = `Example provides a ${productEvidence} with inventory insights.`
-const introduction = "Example’s public pages describe a retail analytics workflow centered on inventory decisions, giving this review a concrete product and customer-path starting point."
-const productParagraph = `I reviewed Example and its ${productEvidence}, including the inventory insights described on the homepage.`
+const introduction = `Example’s public pages describe a ${productEvidence}. The documented workflow centers on inventory decisions and gives this review a concrete product starting point.`
+const productParagraph = "The same public description includes inventory insights, which narrows the review to the stated workflow without inferring demand or customer behavior."
 const audit: JapanEntryPersonalizationFact = {
   id: "japan-audit-language",
   statement: "The checked public pages did not show a Japanese-language customer path.",
@@ -36,7 +36,7 @@ function copyReady(diagnosis: string, close: string): string {
     .replace("a one-page Japan Opportunity Snapshot", "a one-page Japan Opportunity Snapshot focused on Example’s Japanese-language customer path")
     .replace("a more detailed Japan opportunity analysis", "a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
     .replace("a detailed Japan opportunity analysis", "a detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
-    .replace("Could you forward this to the founder or person responsible for international growth?", "Could you forward the Example customer-path snapshot to the founder or person responsible for international growth?")
+    .replace("Could you forward this to the founder or person responsible for international growth?", "Would the founder or international-growth lead be the best recipient?")
   return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, bespokeClose, MANUAL_FORM_SIGNATURE].join("\n\n")
 }
 
@@ -141,6 +141,6 @@ describe("manual initial-interest message variants", () => {
     const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: false })
 
     expect(result.passed).toBe(false)
-    expect(result.issues).toContain("The final question must include the exact company or product anchor: Example")
+    expect(result.issues).toContain("The final CTA paragraph must include the exact company or product anchor: Example")
   })
 })
