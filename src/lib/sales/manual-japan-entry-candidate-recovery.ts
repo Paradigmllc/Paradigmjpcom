@@ -16,6 +16,30 @@ interface RecoverableCandidate {
   cta_type: string
 }
 
+interface CandidateInspection {
+  safety: { passed: boolean; score: number }
+  similarity: { passed: boolean; maxSimilarity: number }
+}
+
+function inspectionRank(value: CandidateInspection): number {
+  return Number(value.safety.passed) * 1000
+    + Number(value.similarity.passed) * 500
+    + value.safety.score
+    - value.similarity.maxSimilarity * 100
+}
+
+export function selectBestManualCandidateInspection<T extends CandidateInspection>(
+  candidateAt: (variationIndex: number) => T,
+  limit = 8,
+): T {
+  let best = candidateAt(0)
+  for (let variationIndex = 1; variationIndex < limit && (!best.safety.passed || !best.similarity.passed); variationIndex += 1) {
+    const alternative = candidateAt(variationIndex)
+    if (inspectionRank(alternative) > inspectionRank(best)) best = alternative
+  }
+  return best
+}
+
 function blocks(message: string): string[] {
   return message
     .replace(/\r\n?/g, "\n")
@@ -89,6 +113,7 @@ function productOpening(input: {
   companyName: string
   productNames: string[]
   rendering: string
+  variationIndex?: number
 }): string {
   const rendering = input.rendering.trim()
   const renderedSentence = /[.!?]$/.test(rendering) ? rendering : `${rendering}.`
@@ -113,7 +138,7 @@ function productOpening(input: {
         `In its public product description, ${input.companyName} defines ${subject} around this capability: ${renderedSentence} That is the product basis used here.`,
         `The public wording from ${input.companyName} for ${subject} is: ${renderedSentence} I used that capability to keep the Japan review focused.`,
       ]
-  return variants[stableHash(`${input.companyName}:${rendering}`) % variants.length]!
+  return variants[(stableHash(`${input.companyName}:${rendering}`) + (input.variationIndex ?? 0)) % variants.length]!
 }
 
 function selectedFacts(candidate: RecoverableCandidate, facts: JapanEntryPersonalizationFact[]): JapanEntryPersonalizationFact[] {
@@ -166,6 +191,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   contract: ManualCtaContract
   issues: string[]
   similarityPassed: boolean
+  variationIndex?: number
 }): T {
   if (input.issues.length === 0 && input.similarityPassed) return input.candidate
 
@@ -177,6 +203,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
         companyName: input.companyName,
         productNames: input.productNames ?? [],
         rendering: input.candidate.product_evidence_rendering,
+        variationIndex: input.variationIndex,
       })
     : currentBody[0]
   const middleSentences = safeSentences(originalMiddle, {
@@ -238,7 +265,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     `The checked material supports a narrow ${input.customerPathAnchor} observation and no claim about audience response.`,
     `That leaves one decision open: whether to validate the observed path before committing to wider localization.`,
   ]
-  const offset = stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) % paddingPool.length
+  const offset = (stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) + (input.variationIndex ?? 0)) % paddingPool.length
   const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
   const existingSentences = paragraphSentences(recoveredBody)
   for (const sentence of padding) {

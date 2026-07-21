@@ -29,7 +29,7 @@ import {
   callDeepSeekStructured,
   type DeepSeekStructuredCaller,
 } from "./japan-entry-personalized-message-structured";
-import { recoverManualInitialInterestCandidate } from "./manual-japan-entry-candidate-recovery";
+import { recoverManualInitialInterestCandidate, selectBestManualCandidateInspection } from "./manual-japan-entry-candidate-recovery";
 import {
   isInitialInterestProductEvidenceSafe,
   selectGroundedProductEvidence,
@@ -322,25 +322,25 @@ export async function generatePersonalizedJapanEntryMessage(
       : rawCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
-    const candidate = purpose === "initial_interest" && ctaContracts.length > 0
-      ? recoverManualInitialInterestCandidate({
+    if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed)) {
+      return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity };
+    }
+    const recoverAndInspect = (variationIndex: number) => {
+      const candidate = recoverManualInitialInterestCandidate({
           candidate: enveloped,
           companyName: input.companyName,
           productNames: input.productNames,
           facts,
           supplementalProductEvidence: supplementalInitialProductEvidence,
           customerPathAnchor: ctaAnchors.customerPathAnchor,
-          contract: ctaContracts[candidateIndex % ctaContracts.length] ?? ctaContracts[0]!,
+          contract: ctaContracts[(candidateIndex + variationIndex) % ctaContracts.length] ?? ctaContracts[0]!,
           issues: initial.safety.issues,
           similarityPassed: initial.similarity.passed,
-        })
-      : enveloped;
-    const inspected = candidate === enveloped ? initial : deterministicInspection(candidate);
-    return {
-      candidate,
-      safety: inspected.safety,
-      similarity: inspected.similarity,
+          variationIndex,
+        });
+      return { candidate, ...deterministicInspection(candidate) };
     };
+    return selectBestManualCandidateInspection(recoverAndInspect);
   };
 
   const generated = await callDeepSeekStructured({

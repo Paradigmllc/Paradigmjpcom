@@ -150,6 +150,61 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(recovered.message).toContain(auditFact.statement)
   })
 
+  it("tries structurally distinct safe variants and accepts a contract that prepares and routes the analysis", () => {
+    const contract: ManualCtaContract = {
+      id: "cta-prepare-route",
+      ctaType: "right_person",
+      paragraph: `I can prepare a concise Japan opportunity analysis for ${productName} around the open Japanese-language decision. Who would be the right person to review it?`,
+      question: "Who would be the right person to review it?",
+    }
+    const candidate = {
+      message: `${manualFormGreeting(companyName)}
+
+${companyName} documents ${productEvidenceRendering}.
+
+This repeated template fragment requires a deterministic rewrite.
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+      fact_ids: [auditFact.id],
+      product_evidence: productEvidence,
+      product_evidence_rendering: productEvidenceRendering,
+      cta_type: "legacy_unspecified",
+    }
+    const recover = (variationIndex: number) => recoverManualInitialInterestCandidate({
+      candidate,
+      companyName,
+      productNames: [productName],
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract,
+      issues: ["The initial message is too similar to another company message"],
+      similarityPassed: false,
+      variationIndex,
+    })
+    const first = recover(0)
+    const second = recover(1)
+    const review = reviewPersonalizedJapanEntryMessage({
+      message: first.message,
+      companyName,
+      productContext,
+      productNames: [productName],
+      productEvidence,
+      productEvidenceRendering,
+      factIds: first.fact_ids,
+      facts: [auditFact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+
+    expect(first.message).not.toBe(second.message)
+    expect(review).toMatchObject({ passed: true, issues: [] })
+    expect(first.message).toContain(contract.paragraph)
+  })
+
   it("keeps one grounded and one CTA anchor while replacing model repetition with natural references", () => {
     const [contract] = buildManualCtaContracts({
       companyName,
