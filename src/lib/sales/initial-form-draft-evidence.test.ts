@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs"
+import path from "node:path"
 import { decodePublicHtmlText, extractPublicProductNames, joinPublicEvidenceSegments, selectRicherHomepageHtml } from "./initial-form-draft-evidence";
 
 describe("public product-name evidence", () => {
@@ -63,5 +65,12 @@ describe("public product-name evidence", () => {
     const rendered = `<html><body><h1>Acme Analytics</h1><p>Public inventory analytics workflow.</p></body></html>`
 
     expect(selectRicherHomepageHtml(direct, rendered).evidenceMode).toBe("direct_html")
+  })
+
+  it("audits the final response URL and reuses verified homepage HTML when the page sweep is empty", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/initial-form-draft-evidence.ts"), "utf8")
+    expect(source).toContain("auditJapanMarketReadiness(response.url)")
+    expect(source).toContain("auditJapanMarketReadinessFromHtml(response.url, html)")
+    expect(source).not.toContain("auditJapanMarketReadiness(origin)")
   })
 });

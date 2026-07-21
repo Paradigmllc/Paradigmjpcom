@@ -2,7 +2,7 @@ import type { BusinessModel } from "./japan-entry-projection";
 import { normalizeDomain } from "./dedup";
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard";
 import { getProxyFetchOptions } from "./proxy-agent";
-import { auditJapanMarketReadiness } from "./sources/japan-market-audit";
+import { auditJapanMarketReadiness, auditJapanMarketReadinessFromHtml } from "./sources/japan-market-audit";
 import { fetchPageWithCrawl4Ai } from "./crawl4ai-page";
 
 type JsonRecord = Record<string, unknown>;
@@ -261,8 +261,14 @@ export async function collectInitialFormDraftEvidence(input: {
     title,
   ]);
   if (productContext.length < 12) throw new Error("Homepage did not provide enough grounded product context");
-  const audit = await auditJapanMarketReadiness(origin);
-  if (audit.pages_checked.length === 0) throw new Error("No public pages were available for Japan-readiness evidence");
+  // Use the final canonical URL so a bare-domain -> www redirect is not repeated
+  // across every audit path. If the secondary page sweep is throttled, reuse the
+  // homepage HTML that already passed the public HTML and product-evidence gates.
+  const remoteAudit = await auditJapanMarketReadiness(response.url);
+  const audit = remoteAudit.pages_checked.length > 0
+    ? remoteAudit
+    : auditJapanMarketReadinessFromHtml(response.url, html);
+  if (audit.pages_checked.length === 0) throw new Error("Homepage evidence could not be reused for Japan-readiness analysis");
   return {
     companyName,
     productContext,
