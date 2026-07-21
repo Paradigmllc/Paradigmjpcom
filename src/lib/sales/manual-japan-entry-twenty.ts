@@ -68,6 +68,53 @@ export interface ManualTwentyBatchResult {
   error?: string
 }
 
+export async function markManualWorkTargetRejectedInTwenty(input: {
+  companyId: string
+  companyName: string
+  domain: string
+  reason: string
+}): Promise<void> {
+  const summary = [
+    "Manual Japan Entry workbench (not automated pipeline)",
+    "Analysis state: rejected / non-company public page",
+    "Outreach state: prohibited / never sent automatically",
+    `Company label: ${input.companyName}`,
+    `Domain: ${input.domain}`,
+    `Reason: ${input.reason}`,
+  ].join("\n")
+  const payload = {
+    name: input.companyName,
+    paradigmReportUrl: { primaryLinkLabel: "", primaryLinkUrl: "" },
+    paradigmFormUrl: { primaryLinkLabel: "", primaryLinkUrl: "" },
+    paradigmSourceName: sourceSelectValue("manual_work"),
+    paradigmSalesStatus: "手動確認 / 未対応",
+    paradigmDataStatus: "Manual workbench / rejected / non-company page",
+    paradigmNextAction: "対象外・送信禁止",
+    paradigmSmbScore: 0,
+    paradigmOpportunityScore: 0,
+    paradigmKarteSummary: { markdown: summary },
+  }
+  const current = await findTwentyCompanyById(input.companyId)
+  if (current?.id !== input.companyId) {
+    throw new ManualTwentySyncError("Owned Twenty company could not be read back", input.companyId)
+  }
+  const patched = await patchTwentyCompanyHome(input.companyId, payload)
+  if (!patched.ok) throw new ManualTwentySyncError(patched.error, input.companyId)
+  const saved = await findTwentyCompanyById(input.companyId)
+  const mismatches = [
+    saved?.id === input.companyId ? null : "companyId",
+    saved?.name === input.companyName ? null : "name",
+    twentyLinkMatches(saved?.paradigmReportUrl?.primaryLinkUrl, "") ? null : "reportUrl",
+    twentyLinkMatches(saved?.paradigmFormUrl?.primaryLinkUrl, "") ? null : "formUrl",
+    saved?.paradigmDataStatus === payload.paradigmDataStatus ? null : "dataStatus",
+    saved?.paradigmNextAction === payload.paradigmNextAction ? null : "nextAction",
+    saved?.paradigmKarteSummary?.markdown === summary ? null : "summary",
+  ].filter((value): value is string => value !== null)
+  if (mismatches.length > 0) {
+    throw new ManualTwentySyncError(`Twenty rejection read-back failed: ${mismatches.join(", ")}`, input.companyId)
+  }
+}
+
 interface TwentyBatchMutationResponse {
   data?: { createCompanies?: TwentyRecord[]; updateCompanies?: TwentyRecord[] }
 }

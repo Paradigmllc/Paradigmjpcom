@@ -230,4 +230,58 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(recovered.message).toContain(productEvidenceRendering)
     expect(recovered.message).toContain(auditFact.statement)
   })
+
+  it("keeps a numeric brand identity without treating it as an invented claim", () => {
+    const numericCompanyName = "149 Technologies"
+    const numericProductName = "149 Discover"
+    const numericEvidence = "a verified workspace discovery workflow for independent product teams"
+    const [contract] = buildManualCtaContracts({
+      companyName: numericCompanyName,
+      requiredAnchor: numericProductName,
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting(numericCompanyName)}
+
+${numericCompanyName} publicly documents ${numericEvidence}.
+
+${auditFact.statement}
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: numericEvidence,
+        product_evidence_rendering: numericEvidence,
+        cta_type: "legacy_unspecified",
+      },
+      companyName: numericCompanyName,
+      productNames: [numericProductName],
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract: contract!,
+      issues: ["Unsupported numeric claims: 149"],
+      similarityPassed: true,
+    })
+    const review = reviewPersonalizedJapanEntryMessage({
+      message: recovered.message,
+      companyName: numericCompanyName,
+      productContext: `${numericProductName} documents ${numericEvidence}.`,
+      productNames: [numericProductName],
+      productEvidence: numericEvidence,
+      productEvidenceRendering: numericEvidence,
+      factIds: recovered.fact_ids,
+      facts: [auditFact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+
+    expect(review.issues).not.toContain("Unsupported numeric claims: 149")
+    expect(review).toMatchObject({ passed: true, issues: [] })
+  })
 })

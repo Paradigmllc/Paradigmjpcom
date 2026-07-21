@@ -1,0 +1,43 @@
+import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
+
+export function buildManualWorkRetryPatch(
+  existing: Pick<ManualJapanEntryWorkRow, "attempts">,
+  requestedVariant: ManualJapanEntryWorkRow["message_variant_requested"],
+  requestedAngle: ManualJapanEntryWorkRow["message_angle_requested"],
+): Record<string, unknown> {
+  return {
+    status: "processing",
+    stage: "fetching",
+    error_message: null,
+    twenty_sync_status: "not_started",
+    attempts: existing.attempts + 1,
+    company_name: null,
+    country_code: null,
+    is_japanese_company: null,
+    smb_status: null,
+    smb_confidence: null,
+    japan_entry_fit_status: null,
+    japan_entry_fit_confidence: null,
+    business_model: null,
+    industry: null,
+    product_context: null,
+    profile: {},
+    evidence: {},
+    form_discovery: {},
+    form_url: null,
+    initial_message: null,
+    message_review: {},
+    qualification_ledger: {},
+    master_lead_ledger: {},
+    report_data: {},
+    report_url: null,
+    legacy_report_slug: null,
+    message_variant_requested: requestedVariant,
+    message_variant: requestedVariant,
+    message_variant_fallback_reason: null,
+    message_angle_requested: requestedAngle,
+    message_angle: requestedAngle,
+    message_angle_fallback_reason: null,
+    outreach_playbook: "general_online_smb",
+  }
+}

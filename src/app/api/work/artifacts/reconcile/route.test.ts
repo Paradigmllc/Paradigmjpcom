@@ -37,16 +37,16 @@ describe("manual work artifact reconciliation API", () => {
     expect(mocks.reconcile).not.toHaveBeenCalled()
   })
 
-  it("repairs up to 100 stored artifacts without sending", async () => {
+  it("repairs up to 500 stored artifacts without sending", async () => {
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/artifacts/reconcile", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ limit: 100 }),
+      body: JSON.stringify({ limit: 500 }),
     }))
     const body = await response.json()
     expect(response.status).toBe(200)
     expect(body).toMatchObject({ ok: true, result: { checked: 27, repaired: 27, failed: 0, sent: 0 } })
-    expect(mocks.reconcile).toHaveBeenCalledWith({ limit: 100 })
+    expect(mocks.reconcile).toHaveBeenCalledWith({ limit: 500 })
     expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({
       message: expect.stringContaining("外部送信0件"),
     }))

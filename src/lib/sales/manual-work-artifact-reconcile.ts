@@ -23,11 +23,9 @@ export async function reconcileManualWorkArtifacts(input: {
   let query = supabase
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_WORK)
     .select("*")
-    .in("twenty_sync_status", ["synced", "duplicate"])
-    .not("twenty_company_id", "is", null)
     .not("report_url", "is", null)
     .order("updated_at", { ascending: false })
-    .limit(Math.max(1, Math.min(input.limit, 100)))
+    .limit(Math.max(1, Math.min(input.limit, 500)))
   if (input.domain) query = query.eq("domain", input.domain)
   const { data, error } = await query
   if (error) throw new Error(error.message)

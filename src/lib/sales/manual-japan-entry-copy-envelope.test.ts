@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   inspectManualFormCopyEnvelope,
   MANUAL_FORM_SIGNATURE,
+  manualFormCompanyName,
   manualFormGreeting,
   withManualFormCopyReadyEnvelope,
 } from "./manual-japan-entry-copy-envelope"
@@ -26,5 +27,21 @@ describe("manual Japan Entry copy-ready envelope", () => {
     expect(candidate.message.match(/Best regards,/g)).toHaveLength(1)
     expect(candidate.message).not.toContain("Sato")
     expect(candidate.message).toContain("contact@paradigmjp.com")
+  })
+
+  it.each([
+    ["aaapnea.com", "Aaapnea"],
+    ["482.solutions", "482 Solutions"],
+    ["AIPath.one", "AIPath One"],
+    ["ASP.NET", "ASP NET"],
+    ["Aires A.T", "Aires AT"],
+  ])("turns a domain-like or dotted company label into URL-free form copy", (raw, expected) => {
+    expect(manualFormCompanyName(raw)).toBe(expected)
+    const candidate = withManualFormCopyReadyEnvelope({
+      message: "The checked public product page documents a workflow for analytics teams.\n\nWould you like to receive the Japan opportunity analysis?",
+    }, raw)
+
+    expect(candidate.message).toContain(`Hello ${expected} team,`)
+    expect(candidate.message.replace("contact@paradigmjp.com", "")).not.toMatch(/\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b/i)
   })
 })

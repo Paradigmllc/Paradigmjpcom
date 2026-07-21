@@ -7,6 +7,7 @@ import { variantOptions, type ManualMessageVariant } from "./manual-japan-entry-
 import type { ManualMessageAngle } from "./manual-japan-entry-angle"
 import type { ManualCompanyProfile, ManualWorkStatus } from "./manual-japan-entry-types"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
+import { manualFormCompanyName } from "./manual-japan-entry-copy-envelope"
 
 export interface ManualWorkEligibility {
   eligible: boolean
@@ -124,10 +125,10 @@ export function buildManualInitialMessageInput(input: {
 }): Parameters<typeof generatePersonalizedJapanEntryMessage>[0] {
   const variant = input.variant ?? "estimate_off_price_off"
   return {
-    companyName: input.profile.companyName,
+    companyName: manualFormCompanyName(input.profile.companyName),
     industry: input.profile.industry,
     productContext: input.evidence.productContext,
-    productNames: input.evidence.productNames,
+    productNames: (input.evidence.productNames ?? []).map(manualFormCompanyName),
     targetCountry: input.profile.countryCode,
     businessModel: input.profile.businessModel,
     audit: input.evidence.audit,

@@ -15,8 +15,40 @@ function normalizedCompanyName(companyName: string): string {
   return companyName.replace(/\s+/g, " ").trim()
 }
 
+const COMMON_PUBLIC_SUFFIXES = new Set([
+  "ai", "app", "biz", "co", "com", "dev", "fr", "io", "net", "org", "tech",
+])
+
+function titleCaseDomainToken(value: string): string {
+  if (/\d/.test(value) || value === value.toUpperCase() || /[A-Z].*[a-z]|[a-z].*[A-Z]/.test(value)) return value
+  return value ? `${value[0]?.toUpperCase() ?? ""}${value.slice(1).toLowerCase()}` : value
+}
+
+export function manualFormCompanyName(companyName: string): string {
+  const normalized = normalizedCompanyName(companyName)
+  const hostnameLike = /^(?:[a-z0-9-]+\.)+[a-z]{2,}$/i.test(normalized)
+  if (hostnameLike) {
+    const labels = normalized.split(".")
+    const suffix = labels.at(-1)?.toLowerCase() ?? ""
+    const isLowercaseDomainFallback = normalized === normalized.toLowerCase()
+    const identityLabels = COMMON_PUBLIC_SUFFIXES.has(suffix) && isLowercaseDomainFallback
+      ? labels.slice(0, -1)
+      : labels
+    const humanized = identityLabels
+      .flatMap((label) => label.split("-"))
+      .map(titleCaseDomainToken)
+      .filter(Boolean)
+      .join(" ")
+    if (humanized) return humanized
+  }
+  return normalized
+    .replace(/\b([A-Za-z])\.\s*([A-Za-z])\.?\b/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 export function manualFormGreeting(companyName: string): string {
-  return `Hello ${normalizedCompanyName(companyName)} team,`
+  return `Hello ${manualFormCompanyName(companyName)} team,`
 }
 
 function messageBlocks(message: string): string[] {

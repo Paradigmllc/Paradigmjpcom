@@ -9,7 +9,7 @@ export const maxDuration = 300
 
 const bodySchema = z.object({
   domain: z.string().trim().regex(/^[a-z0-9.-]+$/).max(253).optional(),
-  limit: z.number().int().min(1).max(100).default(100),
+  limit: z.number().int().min(1).max(500).default(500),
 }).strict()
 
 export async function POST(req: NextRequest) {

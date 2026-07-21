@@ -46,6 +46,11 @@ function normalizeNumber(value: string): string {
   return value.replace(/^[$€£¥]\s*/, "").replaceAll(",", "").replace(/%$/, "");
 }
 
+function withoutExactEvidence(value: string, evidence: string): string {
+  if (!evidence.trim()) return value
+  return value.replace(new RegExp(escapeRegularExpression(evidence), "gi"), "")
+}
+
 function containsUnresolvedPlaceholder(value: string): boolean {
   return [
     /\[[^\]\n]{1,80}\]/,
@@ -323,7 +328,9 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (/(?:founding compan|normally\s+\$|after\s+(?:the\s+)?first\s+six\s+months|month\s*7|continuation\s+(?:fee|price)|paid\s+upfront)/i.test(message)) {
       issues.push("Unsupported scarcity, continuation pricing, or payment terms are prohibited"); score -= 45;
     }
-  } else if (/\$\s?12,?000|paid\s+upfront|upfront\s+payment|first\s+six\s+months|Japan Entry Package|15-minute|book(?:ing)?\s+(?:link|a call)|\b(?:setup|launch|service|package)\s+(?:price|pricing|fee|cost)\b|\b(?:price|pricing|fee)\s+(?:is|of|would be)\b/i.test(message)) {
+  } else if (/\$\s?12,?000|paid\s+upfront|upfront\s+payment|first\s+six\s+months|Japan Entry Package|15-minute|book(?:ing)?\s+(?:link|a call)|\b(?:setup|launch|service|package)\s+(?:price|pricing|fee|cost)\b|\b(?:price|pricing|fee)\s+(?:is|of|would be)\b/i.test(
+    withoutExactEvidence(withoutExactEvidence(message, productEvidenceRendering), productEvidence),
+  )) {
     issues.push(customInitialInterest
       ? "This initial-interest variant must not include commercial terms, package scope, or a call offer"
       : "Initial-interest message must not include commercial terms, package scope, or a call offer"); score -= 45;
@@ -399,6 +406,9 @@ export function reviewPersonalizedJapanEntryMessage(input: {
 
   const allowed = new Set(purpose === "commercial_offer" || (purpose === "initial_interest" && initialInterestOptions.includePrice) ? ["13000", "2000", "12000", "6", "15"] : []);
   for (const fact of selected) for (const token of numericTokens(fact.statement)) allowed.add(normalizeNumber(token));
+  for (const groundedIdentity of [input.companyName, ...productNames, productEvidence, productEvidenceRendering]) {
+    for (const token of numericTokens(groundedIdentity)) allowed.add(normalizeNumber(token));
+  }
   const unsupported = numericTokens(message).map(normalizeNumber).filter((token) => !allowed.has(token));
   if (unsupported.length > 0) { issues.push(`Unsupported numeric claims: ${[...new Set(unsupported)].join(", ")}`); score -= 35; }
   return { passed: issues.length === 0, score: Math.max(0, score), issues, wordCount: words.length, factIds: selected.map((fact) => fact.id) };

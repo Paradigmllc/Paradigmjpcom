@@ -145,4 +145,31 @@ describe("manual work artifact authority", () => {
     expect(mocks.syncManualBatch.mock.calls[0]?.[0]).toHaveLength(50)
     expect(mocks.syncManualBatch.mock.calls[1]?.[0]).toHaveLength(50)
   })
+
+  it("upgrades a legacy report even when the row has no Twenty company", async () => {
+    const item = {
+      id: "work-report-only",
+      domain: "report-only.example",
+      report_url: reportUrl,
+      report_data: { schemaVersion: "manual_japan_entry_v2" },
+      profile: {},
+      form_url: null,
+      initial_message: null,
+      message_review: {},
+      error_message: null,
+      twenty_company_id: null,
+      source_attributions: [],
+    } as unknown as ManualJapanEntryWorkRow
+    mocks.getServiceSalesSupabase.mockReturnValue(supabaseResults({
+      data: { id: item.id },
+      error: null,
+    }))
+
+    await expect(restoreManualWorkTwentyHomes([item])).resolves.toEqual([{
+      domain: item.domain,
+      protected: true,
+    }])
+    expect(mocks.resolveReport).toHaveBeenCalledWith(item)
+    expect(mocks.syncManualBatch).not.toHaveBeenCalled()
+  })
 })

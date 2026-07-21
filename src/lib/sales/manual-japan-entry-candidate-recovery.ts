@@ -6,6 +6,7 @@ const BODY_MIN_WORDS = 120
 const DANGEROUS_SENTENCE = /(?:https?:\/\/|www\.|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b(?:attached|attachment|downloadable|download)\b|\bunlock\b|\b(?:guarantee(?:d|s|ing)?|ROI|return on investment)\b)/i
 const UNSUPPORTED_CAUSAL_SENTENCE = /(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i
 const PROMOTIONAL_SENTENCE = /(?:logical next step|given that reach|i noticed your site|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|\b(?:is|provides?|offers?) (?:a )?clear value\b|\bis valuable\b|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i
+const UNRESOLVED_SENTENCE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
 const STOP_WORDS = new Set(["a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "with"])
 
 interface RecoverableCandidate {
@@ -76,6 +77,7 @@ function safeSentences(paragraphs: string[], input: {
       if (input.removeRevenue && /\brevenue\b/i.test(sentence)) continue
       if (input.removeUnsupportedCausal && UNSUPPORTED_CAUSAL_SENTENCE.test(sentence)) continue
       if (input.removePromotional && PROMOTIONAL_SENTENCE.test(sentence)) continue
+      if (UNRESOLVED_SENTENCE.test(sentence)) continue
       if (accepted.some((prior) => tooSimilar(sentence, prior))) continue
       accepted.push(sentence)
     }
@@ -96,12 +98,20 @@ function productOpening(input: {
     && !rendering.toLowerCase().includes(name.toLowerCase())
   ))
   const subject = productName ?? "its offering"
-  const variants = [
-    `${input.companyName} publicly describes ${subject} as “${renderedSentence}” I kept this review within that stated capability rather than treating it as evidence of a customer outcome.`,
-    `The concrete capability ${input.companyName} documents publicly for ${subject} is “${renderedSentence}” I used that wording as the boundary of this review, without adding a claim about results.`,
-    `In its public product description, ${input.companyName} defines ${subject} around “${renderedSentence}” This review stays with that documented capability and does not infer market performance.`,
-    `${input.companyName}'s public wording for ${subject} is “${renderedSentence}” I treated the quoted capability as the product evidence and left customer outcomes unverified.`,
-  ]
+  const renderingIncludesCompany = rendering.toLowerCase().includes(input.companyName.toLowerCase())
+  const variants = renderingIncludesCompany
+    ? [
+        `The public product description states: ${renderedSentence} I kept this review within that documented capability rather than treating it as evidence of a customer outcome.`,
+        `The concrete public capability is stated as follows: ${renderedSentence} I used that wording as the boundary of this review, without adding a claim about results.`,
+        `The checked product page defines the offering this way: ${renderedSentence} This review stays with that documented capability and does not infer market performance.`,
+        `The public wording for the offering is: ${renderedSentence} I treated that exact capability as the product evidence and left customer outcomes unverified.`,
+      ]
+    : [
+        `${input.companyName} publicly describes ${subject} this way: ${renderedSentence} I kept this review within that stated capability rather than treating it as evidence of a customer outcome.`,
+        `The concrete capability ${input.companyName} documents publicly for ${subject} is: ${renderedSentence} I used that wording as the boundary of this review, without adding a claim about results.`,
+        `In its public product description, ${input.companyName} defines ${subject} around this capability: ${renderedSentence} This review stays with that documented capability and does not infer market performance.`,
+        `${input.companyName}'s public wording for ${subject} is: ${renderedSentence} I treated that capability as the product evidence and left customer outcomes unverified.`,
+      ]
   return variants[stableHash(`${input.companyName}:${rendering}`) % variants.length]!
 }
 
@@ -134,7 +144,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const currentBody = bodyBlocks(input.candidate.message)
   const originalMiddle = input.similarityPassed ? currentBody.slice(1, -1) : []
-  const rebuildOpening = input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated or near-duplicate)/i.test(issue))
+  const rebuildOpening = input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder)/i.test(issue))
   const opening = rebuildOpening || !currentBody[0]
     ? productOpening({
         companyName: input.companyName,

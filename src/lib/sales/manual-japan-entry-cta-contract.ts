@@ -1,4 +1,8 @@
-import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-copy-envelope"
+import {
+  MANUAL_FORM_SIGNATURE,
+  manualFormCompanyName,
+  manualFormGreeting,
+} from "./manual-japan-entry-copy-envelope"
 import { manualMessageSimilarity, type PriorManualMessage } from "./manual-japan-entry-message-similarity"
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
 
@@ -14,8 +18,11 @@ export function resolveManualCtaAnchors(input: {
   productNames?: string[]
   facts: JapanEntryPersonalizationFact[]
 }): { requiredAnchor: string; customerPathAnchor: string } {
+  const safeProductName = input.productNames
+    ?.map((name) => manualFormCompanyName(name))
+    .find(Boolean)
   return {
-    requiredAnchor: input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName,
+    requiredAnchor: safeProductName ?? manualFormCompanyName(input.companyName),
     customerPathAnchor: input.facts
       .find((fact) => fact.id.startsWith("japan-audit-"))
       ?.anchors.map((anchor) => anchor.trim()).find((anchor) => anchor.length >= 4) ?? "Japan customer path",
