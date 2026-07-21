@@ -5,9 +5,9 @@ const PARTNERSHIP_PITCH_PATTERN = /\b(?:explore (?:a |the )?(?:partnership|colla
 const JAPANESE_BEHAVIOR_PATTERN = /\b(?:for\s+)?Japanese(?:\s+[a-z-]+){0,3}\s+(?:customers?|buyers?|consumers?|users?|companies|teams?|developers?|designers?|retailers?|businesses)\b.{0,140}\b(?:often|typically|generally|tend to|prefer|expect|need|rely on|evaluate|look for|care about|value|influence(?:s|d)?\s+(?:trial|purchase|buying|evaluation|decision)|overlook)\b/i
 const STOCK_ROUTING_CTA_PATTERN = /\b(?:I can share a detailed Japan opportunity analysis based on this public evidence|Could you forward (?:this|it) to the founder or person responsible for international growth)\b/i
 
-function containsAnchor(text: string, anchors: string[]): boolean {
+function containsAnchor(text: string, anchors: string[], minimumLength = 4): boolean {
   const normalized = text.toLowerCase()
-  return anchors.some((anchor) => anchor.trim().length >= 4 && normalized.includes(anchor.trim().toLowerCase()))
+  return anchors.some((anchor) => anchor.trim().length >= minimumLength && normalized.includes(anchor.trim().toLowerCase()))
 }
 
 export function reviewManualFormBespokeStyle(input: {
@@ -49,7 +49,7 @@ export function reviewManualFormBespokeStyle(input: {
 
   const companyOrProductAnchors = [input.companyName, ...input.productNames]
   const finalQuestion = input.finalParagraph.match(/[^.!?]*\?\s*$/)?.[0] ?? input.finalParagraph
-  if (!containsAnchor(finalQuestion, companyOrProductAnchors)) {
+  if (!containsAnchor(finalQuestion, companyOrProductAnchors, 2)) {
     issues.push(`The final question must include the exact company or product anchor: ${input.productNames[0] ?? input.companyName}`)
   }
   return issues
