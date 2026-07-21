@@ -285,10 +285,15 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (!containsCompanyOrProductAnchor(productSection) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company or exact product name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
     if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
-    const unsupportedProductTerms = ["need", "needs", "pain point", "pain points", "challenge", "challenges", "demand"];
-    const unsupportedTerms = unsupportedProductTerms.filter(
-      (term) => productSection.toLowerCase().includes(term) && !input.productContext.toLowerCase().includes(term),
-    );
+    const unsupportedProductTerms = [
+      { label: "need", pattern: /\bneed(?:s|ed|ing)?\b/i },
+      { label: "pain point", pattern: /\bpain points?\b/i },
+      { label: "challenge", pattern: /\bchallenges?\b/i },
+      { label: "demand", pattern: /\bdemand(?:s|ed|ing)?\b/i },
+    ];
+    const unsupportedTerms = unsupportedProductTerms
+      .filter(({ pattern }) => pattern.test(productSection) && !pattern.test(input.productContext))
+      .map(({ label }) => label);
     if (unsupportedTerms.length > 0) { issues.push(`Unsupported product-context terms in paragraph 2: ${unsupportedTerms.join(", ")}`); score -= 35; }
     if (!selected.some((fact) => includesAny(customInitialInterest ? message : paragraphs[2] ?? "", fact.anchors))) { issues.push(customInitialInterest ? "A selected Japan-specific diagnosis must be reflected in the message" : "Japan-specific diagnosis must be in paragraph 3"); score -= 20; }
     if (purpose === "initial_interest") {

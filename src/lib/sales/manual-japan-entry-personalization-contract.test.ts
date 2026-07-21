@@ -150,6 +150,56 @@ ${MANUAL_FORM_SIGNATURE}`
     expect(result.issues).not.toContain("Low-pressure report or 15-minute CTA is missing")
   })
 
+  it("normalizes grounded product-term inflections without allowing a new need claim", () => {
+    const productEvidence = "unlimited forms and submissions for free"
+    const grounded = reviewPersonalizedJapanEntryMessage({
+      message: `${manualFormGreeting("Tally Forms")}
+
+Tally documents ${productEvidence} and a workflow that needs no coding.
+
+My public-page review did not show a Japanese-language customer path. Whether that observed gap matters for Tally's Japan customer path remains unverified, so the decision is whether a localized route warrants testing.
+
+I prepared a Japan opportunity analysis focused on Tally's Japanese-language customer path. Who owns the Tally Japan customer-path decision?
+
+${MANUAL_FORM_SIGNATURE}`,
+      companyName: "Tally Forms",
+      productContext: `Tally gives you ${productEvidence}. No need to code; just type your questions.`,
+      productEvidence,
+      productEvidenceRendering: productEvidence,
+      productNames: ["Tally"],
+      factIds: [fact.id],
+      facts: [fact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+    const invented = reviewPersonalizedJapanEntryMessage({
+      message: `${manualFormGreeting("Example")}
+
+Example documents an API-first fraud review workflow that meets marketplace needs.
+
+My public-page review did not show a Japanese-language customer path. Whether that observed gap matters for Example remains unverified.
+
+I prepared a Japan opportunity analysis focused on Example's Japanese-language customer path. Who owns the Example Japan customer-path decision?
+
+${MANUAL_FORM_SIGNATURE}`,
+      companyName: "Example",
+      productContext: "Example documents an API-first fraud review workflow.",
+      productEvidence: "API-first fraud review workflow",
+      productEvidenceRendering: "API-first fraud review workflow",
+      factIds: [fact.id],
+      facts: [fact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+
+    expect(grounded.issues).not.toContain("Unsupported product-context terms in paragraph 2: need")
+    expect(invented.issues).toContain("Unsupported product-context terms in paragraph 2: need")
+  })
+
   it("rejects speculative product-market fit while allowing a final routing question", () => {
     const message = `${manualFormGreeting("Example")}\n\nExample documents an API-first fraud review workflow for marketplaces that could help Japanese teams.\n\nThe public pages did not show a Japanese-language customer path, so Japan applicability remains unverified.\n\nI can share a one-page Japan Opportunity Snapshot focused on Example's Japanese-language path. Could you forward it to the person responsible for international growth?\n\n${MANUAL_FORM_SIGNATURE}`
     const result = reviewPersonalizedJapanEntryMessage({ message, companyName: "Example", productContext: "Example documents an API-first fraud review workflow for marketplaces.", productEvidence: "API-first fraud review workflow", factIds: [fact.id], facts: [fact], purpose: "initial_interest", initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true }, messageAngle: "problem", candidateAngle: "problem" })
