@@ -327,6 +327,45 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(recovered.message).toContain(auditFact.statement)
   })
 
+  it("reasserts faithful product evidence when the company name is part of the source phrase", () => {
+    const evidence = "Agrohub Benchmarking –"
+    const [contract] = buildManualCtaContracts({
+      companyName: "AGROHUB",
+      requiredAnchor: "AGROHUB",
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting("AGROHUB")}
+
+AGROHUB publicly documents ${evidence}. AGROHUB describes the same capability elsewhere.
+
+${auditFact.statement}
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: evidence,
+        product_evidence_rendering: evidence,
+        cta_type: "legacy_unspecified",
+      },
+      companyName: "AGROHUB",
+      productNames: [],
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract: contract!,
+      issues: ["The company name must appear no more than twice in the personalized body"],
+      similarityPassed: true,
+    })
+    const body = recovered.message.split(/\n\n/).slice(1, -1).join("\n\n")
+
+    expect(recovered.message).toContain(evidence)
+    expect(body.match(/AGROHUB/gi)).toHaveLength(2)
+  })
+
   it("keeps a numeric brand identity without treating it as an invented claim", () => {
     const numericCompanyName = "149 Technologies"
     const numericProductName = "149 Discover"

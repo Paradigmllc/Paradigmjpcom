@@ -176,6 +176,8 @@ describe("Japan Entry editorial repair loop", () => {
       .mockResolvedValueOnce(critic(23, false))
       .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
       .mockResolvedValueOnce(critic(23, false))
+      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(critic(23, false))
 
     const result = await generatePersonalizedJapanEntryMessage({
       companyName: "AtlasMetric",
@@ -192,6 +194,6 @@ describe("Japan Entry editorial repair loop", () => {
 
     expect(result.ok).toBe(false)
     expect(result.review?.issues).toContain("DeepSeek V4 Pro did not verify the English product-evidence rendering as faithful to the public source phrase")
-    expect(caller).toHaveBeenCalledTimes(6)
+    expect(caller).toHaveBeenCalledTimes(8)
   })
 })

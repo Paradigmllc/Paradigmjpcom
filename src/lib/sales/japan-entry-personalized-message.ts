@@ -44,6 +44,7 @@ const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 23;
 const INITIAL_SAFETY_REPAIR_LIMIT = 3;
+const EDITORIAL_REPAIR_LIMIT = 3;
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
   message?: string;
@@ -449,7 +450,7 @@ export async function generatePersonalizedJapanEntryMessage(
   let finalCandidate = selected;
   let finalReview = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts, similarity: selected.similarity, candidateCount: valid.length });
   let repairIssues = finalReview.issues;
-  for (let repairPass = 1; !finalReview.passed && repairPass <= 2; repairPass += 1) {
+  for (let repairPass = 1; !finalReview.passed && repairPass <= EDITORIAL_REPAIR_LIMIT; repairPass += 1) {
     const exactCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
     const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; mention the exact company or product anchor '${exactCtaAnchor}' no more than twice in the body and exactly once in the final CTA paragraph; let the final question use a natural pronoun instead of repeating the anchor; keep only one concise evidence-boundary statement; and make the final paragraph contain the exact audited customer-path anchor supplied in required_cta_contract while saying what Japan customer-path decision the analysis informs. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
     const repaired = await callDeepSeekStructured({
@@ -471,7 +472,7 @@ export async function generatePersonalizedJapanEntryMessage(
     const inspected = inspectCandidate(repaired.data.candidate);
     if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {
       repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
-      if (repairPass === 2) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };
+      if (repairPass === EDITORIAL_REPAIR_LIMIT) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };
       finalCandidate = inspected;
       continue;
     }
