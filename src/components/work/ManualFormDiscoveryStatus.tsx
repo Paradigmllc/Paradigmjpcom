@@ -41,7 +41,7 @@ export function ManualFormDiscoveryStatus({ item }: { item: ManualJapanEntryWork
       </div>
       <p className="mt-2 text-xs leading-5 opacity-85">{presentation.detail}</p>
       {checkedAt && <p className="mt-2 text-[11px] opacity-65">最終探索: {checkedAt}</p>}
-      {terminalMissing && <p className="mt-2 text-[11px] font-medium opacity-75">存在しないURLは補完せず、Twenty同期を停止しています。</p>}
+      {terminalMissing && <p className="mt-2 text-[11px] font-medium opacity-75">存在しないURLは補完しません。解析データはTwentyへ保存し、送信可否だけを停止します。</p>}
     </section>
   )
 }

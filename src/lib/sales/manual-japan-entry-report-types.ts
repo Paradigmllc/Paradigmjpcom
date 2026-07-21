@@ -6,7 +6,7 @@ import type {
   QualificationStatus,
 } from "./manual-japan-entry-types"
 
-export const MANUAL_JAPAN_ENTRY_REPORT_SCHEMA = "manual_japan_entry_customer_v3" as const
+export const MANUAL_JAPAN_ENTRY_REPORT_SCHEMA = "manual_japan_entry_strategy_v4" as const
 
 export type ManualReportDecisionStatus = "qualified" | "review_required" | "rejected"
 export type ManualReportContactStatus = "verified" | "review_required" | "missing"
@@ -37,6 +37,40 @@ export interface ManualCustomerReportSource {
   url: string
 }
 
+export const MANUAL_STRATEGY_CHAPTER_IDS = [
+  "executive_decision",
+  "company_product_diagnostic",
+  "japan_opportunity_thesis",
+  "customer_journey_readiness",
+  "positioning_localization",
+  "commercial_model",
+  "go_to_market",
+  "operating_model",
+  "roadmap_metrics",
+  "risks_recommendation",
+] as const
+
+export type ManualStrategyChapterId = (typeof MANUAL_STRATEGY_CHAPTER_IDS)[number]
+export type ManualStrategyEvidenceClass = "observed" | "modeled" | "hypothesis" | "recommended_action"
+
+export interface ManualStrategyEvidenceItem {
+  classification: ManualStrategyEvidenceClass
+  label: string
+  detail: string
+}
+
+export interface ManualStrategyChapter {
+  id: ManualStrategyChapterId
+  number: number
+  title: string
+  executiveTakeaway: string
+  narrative: string[]
+  evidence: ManualStrategyEvidenceItem[]
+  actions: string[]
+  kpis: string[]
+  decisionGate: string
+}
+
 export interface ManualJapanEntryReportData {
   schemaVersion: typeof MANUAL_JAPAN_ENTRY_REPORT_SCHEMA
   reportKind: "customer_japan_entry_opportunity_report"
@@ -51,7 +85,7 @@ export interface ManualJapanEntryReportData {
     productContext: string
   }
   customerView: {
-    title: "Japan Entry Opportunity Report"
+    title: "Japan Entry Strategy Report"
     executiveSummary: string
     productSnapshot: string
     observedSignals: string[]
@@ -73,6 +107,8 @@ export interface ManualJapanEntryReportData {
     evidenceSources: ManualCustomerReportSource[]
     recommendedDecision: string
     methodology: string
+    strategyChapters: ManualStrategyChapter[]
+    reportWordCount: number
   }
   decision: {
     status: ManualReportDecisionStatus
@@ -165,6 +201,35 @@ function isCustomerSource(value: unknown): value is ManualCustomerReportSource {
   }
 }
 
+function isStrategyEvidence(value: unknown): value is ManualStrategyEvidenceItem {
+  return isRecord(value)
+    && ["observed", "modeled", "hypothesis", "recommended_action"].includes(String(value.classification))
+    && isText(value.label)
+    && isText(value.detail)
+}
+
+function isStrategyChapter(value: unknown, index: number): value is ManualStrategyChapter {
+  return isRecord(value)
+    && value.id === MANUAL_STRATEGY_CHAPTER_IDS[index]
+    && value.number === index + 1
+    && isText(value.title)
+    && isText(value.executiveTakeaway)
+    && isStringArray(value.narrative)
+    && value.narrative.length >= 2
+    && value.narrative.length <= 5
+    && Array.isArray(value.evidence)
+    && value.evidence.length >= 2
+    && value.evidence.length <= 6
+    && value.evidence.every(isStrategyEvidence)
+    && isStringArray(value.actions)
+    && value.actions.length >= 2
+    && value.actions.length <= 6
+    && isStringArray(value.kpis)
+    && value.kpis.length >= 1
+    && value.kpis.length <= 6
+    && isText(value.decisionGate)
+}
+
 function isCustomerView(value: unknown): value is ManualJapanEntryReportData["customerView"] {
   if (!isRecord(value) || !isRecord(value.opportunityHypothesis)) return false
   const hypothesis = value.opportunityHypothesis
@@ -175,7 +240,7 @@ function isCustomerView(value: unknown): value is ManualJapanEntryReportData["cu
     && isText(value.projection.basis)
     && isText(value.projection.disclaimer)
   )
-  return value.title === "Japan Entry Opportunity Report"
+  return value.title === "Japan Entry Strategy Report"
     && isText(value.executiveSummary)
     && isText(value.productSnapshot)
     && isStringArray(value.observedSignals)
@@ -200,6 +265,12 @@ function isCustomerView(value: unknown): value is ManualJapanEntryReportData["cu
     && value.evidenceSources.every(isCustomerSource)
     && isText(value.recommendedDecision)
     && isText(value.methodology)
+    && Array.isArray(value.strategyChapters)
+    && value.strategyChapters.length === 10
+    && value.strategyChapters.every(isStrategyChapter)
+    && typeof value.reportWordCount === "number"
+    && Number.isFinite(value.reportWordCount)
+    && value.reportWordCount >= 1_200
 }
 
 export function isManualJapanEntryReportData(value: unknown): value is ManualJapanEntryReportData {

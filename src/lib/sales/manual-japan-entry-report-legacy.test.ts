@@ -84,10 +84,11 @@ function legacyRow(): ManualJapanEntryWorkRow {
 }
 
 describe("manual report legacy isolation", () => {
-  it("rebuilds legacy rows into the customer V3 contract without carrying old template fields", () => {
+  it("rebuilds legacy rows into the customer V4 strategy contract without carrying old template fields", () => {
     const report = resolveManualJapanEntryReportData(legacyRow())
-    expect(report.schemaVersion).toBe("manual_japan_entry_customer_v3")
-    expect(report.customerView.title).toBe("Japan Entry Opportunity Report")
+    expect(report.schemaVersion).toBe("manual_japan_entry_strategy_v4")
+    expect(report.customerView.title).toBe("Japan Entry Strategy Report")
+    expect(report.customerView.strategyChapters).toHaveLength(10)
     expect(report.provenance).toMatchObject({ legacyTemplateUsed: false, automaticSendAllowed: false })
     expect(report.company).toMatchObject({ name: "Acme", businessModel: "saas" })
     expect(report.outreach).toMatchObject({ purpose: "initial_interest", neverSent: true })

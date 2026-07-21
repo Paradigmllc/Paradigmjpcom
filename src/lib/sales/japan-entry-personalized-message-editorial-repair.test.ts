@@ -15,9 +15,11 @@ const safeMessage = `Hello AtlasMetric team,
 
 AtlasMetric provides subscription analytics for independent retailers with inventory forecasting and replenishment insights.
 
-The checked public pages did not show a Japanese-language customer path. Whether the product has a relevant customer path in Japan remains unverified from that public evidence.
+The checked public pages did not show a Japanese-language customer path. This is a bounded observation about the reviewed pages, not a finding about demand, buyer behavior, or performance in Japan.
 
-I can share a one-page Japan Opportunity Snapshot focused on AtlasMetric's current customer path and the decisions that remain open. Could you forward it to the person responsible for international growth at AtlasMetric?
+For AtlasMetric, whether independent retailers can understand the inventory-analytics proposition and reach an appropriate evaluation route in Japan remains unverified from that public evidence. The decision is whether this customer path warrants a focused test before any broader localization commitment.
+
+I can share a one-page Japan Opportunity Snapshot focused on AtlasMetric's current customer path, the evidence boundary, and the decisions that remain open. Could you forward it to the person responsible for international growth at AtlasMetric?
 
 Best regards,
 Tomohiro H
@@ -25,7 +27,7 @@ Paradigm LLC
 contact@paradigmjp.com`
 
 const unsafeRepair = safeMessage.replace(
-  "Whether the product has a relevant customer path in Japan remains unverified from that public evidence.",
+  "For AtlasMetric, whether independent retailers can understand the inventory-analytics proposition and reach an appropriate evaluation route in Japan remains unverified from that public evidence. The decision is whether this customer path warrants a focused test before any broader localization commitment.",
   "Japanese independent retailers typically need localized access before they evaluate a product.",
 )
 

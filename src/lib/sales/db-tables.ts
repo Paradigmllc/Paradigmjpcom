@@ -131,6 +131,8 @@ export const DB_TABLES = {
 
   // Dedicated manual Japan Entry workbench (never part of Sales OS automation)
   MANUAL_JAPAN_ENTRY_WORK: "manual_japan_entry_work",
+  MANUAL_JAPAN_ENTRY_BATCHES: "manual_japan_entry_batches",
+  MANUAL_JAPAN_ENTRY_BATCH_ITEMS: "manual_japan_entry_batch_items",
   MANUAL_JAPAN_ENTRY_SOURCE_CATALOG: "manual_japan_entry_source_catalog",
   MANUAL_JAPAN_ENTRY_WORK_SOURCES: "manual_japan_entry_work_sources",
 

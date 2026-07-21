@@ -16,12 +16,12 @@ import { manualFormDiscoveryPresentation } from "@/lib/sales/manual-form-discove
 import { manualWorkOperatorNotice } from "@/lib/sales/manual-work-operator-notice"
 
 const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
-  processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
+  processing: "解析中", needs_review: "要確認", completed: "送信準備完了", failed: "失敗", duplicate: "統合済み", rejected: "対象外",
 }
 
 const stageCopy: Record<ManualJapanEntryWorkRow["stage"], string> = {
   fetching: "公開ページ取得", classifying: "海外SMB判定", form_discovery: "フォーム探索", copy_generation: "初回文面生成",
-  report_generation: "診断レポート生成", twenty_sync: "Twenty同期", complete: "完了", failed: "失敗",
+  report_generation: "戦略レポート生成", twenty_sync: "Twenty同期", complete: "完了", failed: "失敗",
 }
 
 export type ManualWorkOutcome = "manually_sent" | "reply_received" | "founder_forwarded" | "meeting_converted"

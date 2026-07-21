@@ -110,8 +110,8 @@ function buildSourceCoverage(input: {
       category: "outreach",
       status: isVerifiedManualFormResult(input.form) ? "collected" : "missing",
       detail: `${input.form.method} discovery; verification=${input.form.verification}; confidence=${input.form.confidence}/100.`,
-      meaning: "Only a fetched page containing a usable form can enter the Twenty manual-review list.",
-      missingConsequence: "The record remains in operator review and is never sent automatically.",
+      meaning: "A fetched page containing a usable form is required for send-readiness, while the analysis record can still be stored in Twenty for review.",
+      missingConsequence: "The record remains in Twenty as review-required and is never sent automatically.",
       nextStep: "Open and manually confirm the form before sending anything.",
     }),
     sourceItem({

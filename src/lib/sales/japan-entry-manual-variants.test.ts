@@ -35,6 +35,7 @@ function copyReady(diagnosis: string, close: string): string {
   const bespokeClose = close
     .replace("a one-page Japan Opportunity Snapshot", "a one-page Japan Opportunity Snapshot focused on Example’s Japanese-language customer path")
     .replace("a more detailed Japan opportunity analysis", "a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
+    .replace("a detailed Japan opportunity analysis", "a detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
     .replace("Could you forward this to the founder or person responsible for international growth?", "Could you forward the Example customer-path snapshot to the founder or person responsible for international growth?")
   return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, bespokeClose, MANUAL_FORM_SIGNATURE].join("\n\n")
 }
@@ -65,7 +66,7 @@ function review(input: {
 describe("manual initial-interest message variants", () => {
   it("accepts the price cell only with the current fixed terms", () => {
     const options = { includeEstimate: false, includePrice: true, founderForwardCta: true }
-    const message = copyReady("In a review of the public pages, I did not find a Japanese-language customer path. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.", initialInterestClose(options))
+    const message = copyReady("In a review of the public pages, I did not find a Japanese-language customer path. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked. The open management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.", initialInterestClose(options))
     expect(review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: true })).toMatchObject({ passed: true, score: 100 })
     expect(message).not.toMatch(/founding compan|normally \$|paid upfront|month 7|continuation/i)
   })

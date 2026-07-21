@@ -821,6 +821,14 @@ async function applyManualWorkVerifiedFormAndCopyDiagnosticsMigration(envs) {
   )
 }
 
+async function applyManualWorkDurableBatchesMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260720233215_manual_work_durable_batches.sql",
+    "Manual work durable 500-URL batch migration",
+  )
+}
+
 async function applyTwentySelectOptionsScript(envs) {
   const sqlPath = path.join(process.cwd(), "scripts", "twenty-sales-select-options.sql")
   if (!fs.existsSync(sqlPath)) return "Twenty select options script missing"
@@ -1482,6 +1490,7 @@ async function main() {
     console.log(await applyManualJapanEntrySourceLedgerMigration(envs))
     console.log(await applyManualJapanEntryReportV2Migration(envs))
     console.log(await applyManualWorkVerifiedFormAndCopyDiagnosticsMigration(envs))
+    console.log(await applyManualWorkDurableBatchesMigration(envs))
     console.log(await applyTwentySelectOptionsScript(envs))
     console.log(await applyTwentyCompaniesViewScript(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))

@@ -41,7 +41,6 @@ import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
-import { findTwentyCompanyByDomain } from "./twenty-sync-company-home"
 
 export {
   buildManualInitialMessageInput,
@@ -173,34 +172,47 @@ export async function processManualJapanEntryUrl(
 
   if (existing && shouldUseTwentyOnlyRetry(existing, Boolean(options.retryRequested))) {
     await attachManualWorkSource(existing.id, sourceInput)
-    if (!existing.form_url || !existing.report_url || !existing.initial_message) {
+    if (!existing.report_url) {
       const item = await updateManualWork(existing.id, {
         status: "failed",
         stage: "failed",
         attempts: existing.attempts + 1,
         twenty_sync_status: "skipped",
-        error_message: "Twenty再同期に必要な保存済みフォームURL・レポートURL・初回文面が不足しています。解析をやり直してください。",
+        error_message: "Twenty再同期に必要な保存済みレポートURLが不足しています。解析をやり直してください。",
       })
       return { item, duplicate: false }
     }
     try {
+      const retryProfile = parseManualCompanyProfile(existing.profile)
+      const retrySendReady = Boolean(
+        existing.form_url
+        && existing.initial_message
+        && jsonRecord(existing.message_review).passed === true
+        && retryProfile.smbStatus === "qualified"
+        && retryProfile.japanEntryFitStatus === "qualified",
+      )
+      const retryReasons = retrySendReady ? [] : ["Saved analysis artifacts require operator review before outreach."]
       const synced = await syncManualWorkToTwenty({
         domain: normalized.domain,
-        profile: parseManualCompanyProfile(existing.profile),
+        profile: retryProfile,
         formUrl: existing.form_url,
         reportUrl: existing.report_url,
         initialMessage: existing.initial_message,
         ownedCompanyId: existing.twenty_company_id,
+        readiness: {
+          sendReady: retrySendReady,
+          reasons: retryReasons,
+        },
       })
       const item = await updateManualWork(existing.id, {
-        status: synced.status === "duplicate" ? "duplicate" : "completed",
+        status: retrySendReady ? "completed" : "needs_review",
         stage: "complete",
         attempts: existing.attempts + 1,
         twenty_company_id: synced.companyId,
         twenty_sync_status: synced.status,
-        error_message: synced.status === "duplicate" ? "This domain already exists in Twenty; no fields were overwritten." : null,
+        error_message: retrySendReady ? null : retryReasons.join("; "),
       })
-      return { item, duplicate: synced.status === "duplicate" }
+      return { item, duplicate: false }
     } catch (error) {
       console.error("[manual-work] Twenty re-sync failed:", { id: existing.id, error })
       const item = await updateManualWork(existing.id, {
@@ -222,22 +234,6 @@ export async function processManualJapanEntryUrl(
       })
   try {
     await attachManualWorkSource(work.id, sourceInput)
-    try {
-      const twentyExisting = await findTwentyCompanyByDomain(normalized.domain)
-      if (twentyExisting?.id && twentyExisting.id !== work.twenty_company_id) {
-        work = await updateManualWork(work.id, {
-          status: "duplicate",
-          stage: "complete",
-          twenty_company_id: twentyExisting.id,
-          twenty_sync_status: "duplicate",
-          error_message: "This domain already exists in Twenty; no fields were overwritten.",
-        })
-        return { item: work, duplicate: true }
-      }
-    } catch (error) {
-      console.warn("[manual-work] Twenty duplicate precheck unavailable; continuing without write:", error)
-    }
-
     const evidence = await collectInitialFormDraftEvidence({
       domain: normalized.domain,
       industry: null,
@@ -425,14 +421,11 @@ export async function processManualJapanEntryUrl(
     work = await updateManualWork(work.id, {
       report_data: report,
       report_url: reportUrl,
-      stage: eligibility.eligible ? "twenty_sync" : "complete",
-      status: eligibility.eligible ? "processing" : "needs_review",
-      twenty_sync_status: eligibility.eligible ? "not_started" : "skipped",
+      stage: "twenty_sync",
+      status: "processing",
+      twenty_sync_status: "not_started",
       error_message: eligibility.eligible ? null : blockingReasons.join("; ").slice(0, 2_000),
     })
-    if (!eligibility.eligible || !form.formUrl || !generated.message) {
-      return { item: work, duplicate: false }
-    }
 
     try {
       const synced = await syncManualWorkToTwenty({
@@ -440,15 +433,16 @@ export async function processManualJapanEntryUrl(
         profile,
         formUrl: form.formUrl,
         reportUrl,
-        initialMessage: generated.message,
+        initialMessage: generated.message ?? null,
         ownedCompanyId: work.twenty_company_id,
+        readiness: { sendReady: eligibility.eligible, reasons: blockingReasons },
       })
       work = await updateManualWork(work.id, {
-        status: synced.status === "duplicate" ? "duplicate" : "completed",
+        status: eligibility.eligible ? "completed" : "needs_review",
         stage: "complete",
         twenty_company_id: synced.companyId,
         twenty_sync_status: synced.status,
-        error_message: synced.status === "duplicate" ? "This domain already exists in Twenty; no fields were overwritten." : null,
+        error_message: eligibility.eligible ? null : blockingReasons.join("; ").slice(0, 2_000),
       })
     } catch (error) {
       console.error("[manual-work] Twenty sync failed:", { id: work.id, error })

@@ -111,8 +111,8 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
-  const minWords = customInitialInterest ? initialInterestOptions.includePrice ? 110 : 60 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
-  const maxWords = customInitialInterest ? initialInterestOptions.includePrice ? 175 : 150 : enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
+  const minWords = customInitialInterest ? initialInterestOptions.includePrice ? 145 : 120 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
+  const maxWords = customInitialInterest ? initialInterestOptions.includePrice ? 210 : 190 : enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
 
   if (containsUnresolvedPlaceholder(message)) {
     issues.push("Unresolved template placeholder is prohibited");
@@ -191,8 +191,16 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     issues.push("The mockup angle must identify the positioning concept as an unpublished draft"); score -= 40;
   }
 
-  const validParagraphCount = customInitialInterest ? paragraphs.length >= 3 && paragraphs.length <= 4 : paragraphs.length === 4;
-  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain three or four short body paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
+  if (customInitialInterest) {
+    const factualParagraphs = paragraphs.slice(0, -1).join(" ")
+    const finalWithoutQuestion = (paragraphs.at(-1) ?? "").replace(/\b(?:Could you|May I|Would you)\b[^?]*\?\s*$/i, "")
+    if (/\b(?:(?:could|may|might)\s+(?:help|enable|support|accelerate|serve|improve|reduce|hinder|limit|affect|address|reach|capture|appeal)|likely|appears? to|seems? to)\b/i.test(`${factualParagraphs} ${finalWithoutQuestion}`)) {
+      issues.push("Speculative product-market-fit language is prohibited outside the final permission question"); score -= 45;
+    }
+  }
+
+  const validParagraphCount = paragraphs.length === 4;
+  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain exactly four short body paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
   else {
     const expectedIntro = "Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.";
     const productParagraph = paragraphs[1] ?? "";
@@ -202,13 +210,6 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (!customInitialInterest && (paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
     if (!productSection.toLowerCase().includes(input.companyName.toLowerCase()) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
-    if (customInitialInterest) {
-      const factualParagraphs = paragraphs.slice(0, -1).join(" ")
-      const finalWithoutQuestion = (paragraphs.at(-1) ?? "").replace(/\b(?:Could you|May I|Would you)\b[^?]*\?\s*$/i, "")
-      if (/\b(?:(?:could|may|might)\s+(?:help|enable|support|accelerate|serve|improve|reduce|hinder|limit|affect|address|reach|capture|appeal)|likely|appears? to|seems? to)\b/i.test(`${factualParagraphs} ${finalWithoutQuestion}`)) {
-        issues.push("Speculative product-market-fit language is prohibited outside the final permission question"); score -= 45;
-      }
-    }
     if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
     const unsupportedProductTerms = ["need", "needs", "pain point", "pain points", "challenge", "challenges", "demand"];
     const unsupportedTerms = unsupportedProductTerms.filter(
