@@ -167,6 +167,9 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const productNames = (input.productNames ?? [])
     .map((name) => name.trim())
     .filter((name) => name.length >= 2);
+  const companyOrProductAnchors = [input.companyName, ...productNames];
+  const containsCompanyOrProductAnchor = (value: string): boolean =>
+    companyOrProductAnchors.some((anchor) => value.toLowerCase().includes(anchor.toLowerCase()));
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
@@ -198,7 +201,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (!envelope?.greetingValid) { issues.push("Copy-ready company greeting is missing or altered"); score = 0; }
     if (!envelope?.signatureValid || senderEmailCount !== 1) { issues.push("Approved Tomohiro H sender signature is missing or altered"); score = 0; }
     if (/\bSato\b/i.test(message)) { issues.push("Legacy sender name Sato is prohibited"); score = 0; }
-    if (!paragraphs[0]?.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("The first body paragraph must open with a company-specific observation"); score -= 25; }
+    if (!containsCompanyOrProductAnchor(paragraphs[0] ?? "")) { issues.push("The first body paragraph must open with a company-specific observation"); score -= 25; }
     if (/(?:I(?:'|’)m|I am)\s+Tomohiro H/i.test(substantiveMessage)) { issues.push("The sender biography must not be repeated inside the personalized body"); score -= 20; }
     const bespokeIssues = reviewManualFormBespokeStyle({
       body: substantiveMessage,
@@ -279,7 +282,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
       ? paragraphs.slice(0, 2).find((paragraph) => paragraph.toLowerCase().includes(productEvidenceRendering.toLowerCase())) ?? paragraphs[0] ?? ""
       : productParagraph;
     if (!customInitialInterest && (paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
-    if (!productSection.toLowerCase().includes(input.companyName.toLowerCase()) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (!containsCompanyOrProductAnchor(productSection) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company or exact product name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
     if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
     const unsupportedProductTerms = ["need", "needs", "pain point", "pain points", "challenge", "challenges", "demand"];
@@ -322,7 +325,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   }
   if (!/\?\s*$/.test(substantiveMessage)) { issues.push("Message body must end with a yes/no question before the signature"); score -= 10; }
   if (!/public(?:ly)?/i.test(message)) { issues.push("Public-page provenance is missing"); score -= 10; }
-  const hasAnalysisCta = /(?:detailed(?: Japan opportunity)? (?:analysis|report)|one-page Japan Opportunity Snapshot)/i.test(message);
+  const hasAnalysisCta = /(?:(?:detailed|short|brief|focused|company-specific|one-page)?\s*Japan (?:opportunity )?(?:analysis|report|brief|snapshot)|one-page Japan Opportunity Snapshot)/i.test(message);
   const hasCallCta = /15-minute (?:call|conversation|meeting)/i.test(message);
   if (!hasAnalysisCta && !hasCallCta) { issues.push("Low-pressure report or 15-minute CTA is missing"); score -= 10; }
   if (hasAnalysisCta && hasCallCta) { issues.push("CTA must offer either a detailed analysis or a 15-minute call, not both"); score -= 10; }

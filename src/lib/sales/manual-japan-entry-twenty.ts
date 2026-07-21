@@ -65,6 +65,7 @@ export async function syncManualWorkToTwenty(input: {
     && input.profile.japanEntryFitStatus === "qualified",
   )
   const reviewReasons = input.readiness?.reasons ?? []
+  const classifiedCountry = countrySelectValue(input.profile.countryCode)
   const summary = [
     "Manual Japan Entry workbench (not automated pipeline)",
     `Analysis state: ${sendReady ? "ready for human pre-send review" : "analyzed / review required"}`,
@@ -86,7 +87,10 @@ export async function syncManualWorkToTwenty(input: {
       primaryLinkLabel: input.formUrl ? "Verified form URL" : "",
       primaryLinkUrl: input.formUrl ?? "",
     },
-    paradigmCountryName: countrySelectValue(input.profile.countryCode),
+    // A null classifier result means "unconfirmed", not "erase a previously
+    // verified CRM value". Preserve the current Twenty selection and verify it
+    // after the patch instead of creating a false read-back failure.
+    paradigmCountryName: classifiedCountry ?? company.paradigmCountryName ?? null,
     paradigmIndustryName: industrySelectValue(input.profile.industry),
     paradigmSourceName: sourceSelectValue("manual_work"),
     // Twenty select fields reject values outside their configured option set.
