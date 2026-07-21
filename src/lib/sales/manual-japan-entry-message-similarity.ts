@@ -12,6 +12,10 @@ export interface ManualMessageSimilarityReview {
   reasons: string[]
 }
 
+const INTERNAL_REPEAT_STOP_WORDS = new Set([
+  "a", "an", "and", "as", "at", "by", "for", "from", "in", "of", "on", "or", "the", "to", "with", "you", "your",
+])
+
 const COMMON_COPY = [
   /hello,?\s+i(?:'|’)m\s+sato[^.?!]*[.?!]?/gi,
   /^hello\s+[^\n,]{1,160}\s+team,\s*$/gim,
@@ -45,6 +49,56 @@ function jaccard(left: Set<string>, right: Set<string>): number {
   return intersection / (left.size + right.size - intersection)
 }
 
+function contentParagraphs(message: string): string[] {
+  const blocks = message
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+  if (/^hello\b/i.test(blocks[0] ?? "")) blocks.shift()
+  if (/(?:best|kind|warm) regards/i.test(blocks.at(-1) ?? "")) blocks.pop()
+  return blocks.filter((block) => block.length >= 45)
+}
+
+function repeatedPhrase(message: string): string | null {
+  const sentences = message.split(/(?<=[.!?])\s+/)
+  for (const sentence of sentences) {
+    const words = sentence
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean)
+    for (let width = 5; width >= 3; width -= 1) {
+      const seen = new Map<string, number>()
+      for (let index = 0; index <= words.length - width; index += 1) {
+        const window = words.slice(index, index + width)
+        if (window.filter((word) => word.length >= 3 && !INTERNAL_REPEAT_STOP_WORDS.has(word)).length < 3) continue
+        const phrase = window.join(" ")
+        if (phrase.replaceAll(" ", "").length < 14) continue
+        const priorIndex = seen.get(phrase)
+        if (priorIndex !== undefined && index - priorIndex >= width) return phrase
+        seen.set(phrase, index)
+      }
+    }
+  }
+  return null
+}
+
+function paragraphSimilarity(
+  message: string,
+  priorMessage: string,
+  companyNames: Array<string | null>,
+): number {
+  let strongest = 0
+  for (const current of contentParagraphs(message)) {
+    for (const prior of contentParagraphs(priorMessage)) {
+      strongest = Math.max(strongest, manualMessageSimilarity(current, prior, companyNames))
+    }
+  }
+  return strongest
+}
+
 export function manualMessageSimilarity(left: string, right: string, companyNames: Array<string | null> = []): number {
   return jaccard(shingles(normalizedWords(left, companyNames)), shingles(normalizedWords(right, companyNames)))
 }
@@ -54,26 +108,40 @@ export function reviewManualMessageDistinctness(input: {
   companyName: string
   priorMessages: PriorManualMessage[]
   threshold?: number
+  paragraphThreshold?: number
 }): ManualMessageSimilarityReview {
   const threshold = input.threshold ?? 0.35
+  const paragraphThreshold = input.paragraphThreshold ?? 0.72
   let strongest: PriorManualMessage | null = null
   let maxSimilarity = 0
+  let maxParagraphSimilarity = 0
   for (const prior of input.priorMessages) {
     const similarity = manualMessageSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
-    if (similarity > maxSimilarity) {
+    const paragraph = paragraphSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
+    if (Math.max(similarity, paragraph) > Math.max(maxSimilarity, maxParagraphSimilarity)) {
       maxSimilarity = similarity
+      maxParagraphSimilarity = paragraph
       strongest = prior
     }
   }
-  const passed = maxSimilarity < threshold
+  const repeated = repeatedPhrase(input.message)
+  const wholeMessagePassed = maxSimilarity < threshold
+  const paragraphsPassed = maxParagraphSimilarity < paragraphThreshold
+  const passed = wholeMessagePassed && paragraphsPassed && repeated === null
+  const reasons: string[] = []
+  if (!wholeMessagePassed) {
+    reasons.push(`Company-name-neutral copy similarity ${Math.round(maxSimilarity * 100)}% exceeds the ${Math.round(threshold * 100)}% limit`)
+  }
+  if (!paragraphsPassed) {
+    reasons.push(`A body paragraph is ${Math.round(maxParagraphSimilarity * 100)}% similar to recent company copy; change the evidence sequence and CTA framing`)
+  }
+  if (repeated) reasons.push(`Repeated phrase inside one sentence is prohibited: "${repeated}"`)
+  if (!passed) reasons.push("Rewrite the observation, diagnostic logic, paragraph order, and CTA for this company")
   return {
     passed,
-    maxSimilarity: Number(maxSimilarity.toFixed(3)),
+    maxSimilarity: Number(Math.max(maxSimilarity, maxParagraphSimilarity).toFixed(3)),
     matchedMessageId: strongest?.id ?? null,
     matchedCompany: strongest?.companyName ?? strongest?.domain ?? null,
-    reasons: passed ? [] : [
-      `Company-name-neutral copy similarity ${Math.round(maxSimilarity * 100)}% exceeds the ${Math.round(threshold * 100)}% limit`,
-      "Rewrite the observation, diagnostic logic, paragraph order, and CTA for this company",
-    ],
+    reasons,
   }
 }

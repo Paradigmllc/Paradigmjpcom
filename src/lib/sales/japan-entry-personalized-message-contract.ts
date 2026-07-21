@@ -48,6 +48,21 @@ function cleanEvidenceSegment(value: string, companyName: string): string {
     .trim()
 }
 
+function exactCapabilityClauses(value: string): string[] {
+  const clauses: string[] = []
+  const patterns = [
+    /\b(?:where|that)\s+you\s+can\s+(.+?)(?=,\s+(?:all|while|so)\b|[.!?]|$)/gi,
+    /\b(?:lets?|allows?|enables?)\s+(?:you|customers?|users?)\s+to\s+(.+?)(?=,\s+(?:all|while|so)\b|[.!?]|$)/gi,
+  ]
+  for (const pattern of patterns) {
+    for (const match of value.matchAll(pattern)) {
+      const clause = match[1]?.trim().replace(/[,:;\s]+$/g, "")
+      if (clause) clauses.push(clause)
+    }
+  }
+  return clauses
+}
+
 function productEvidenceCandidates(input: {
   companyName: string
   productContext: string
@@ -57,9 +72,11 @@ function productEvidenceCandidates(input: {
   return input.productContext
     .split(/\s*\|\s*|\n+|(?<=[.!?])\s+/)
     .map((value) => cleanEvidenceSegment(value, input.companyName))
+    .flatMap((value) => [value, ...exactCapabilityClauses(value)])
     .filter((value) => value.length >= 12 && value.length <= 180)
     .filter((value) => !/\d/.test(value))
     .filter((value) => !/\b(?:best|faster|fastest|leading|developers? love|ready to ship|game[- ]changer|award[- ]winning)\b/i.test(value))
+    .filter((value) => !/\b(?:for free|whole lot more)\b/i.test(value))
     .filter((value) => !PRODUCT_OUTCOME_CLAIM_RE.test(value))
     .filter((value) => !CASE_STUDY_HEADING_RE.test(value))
     .filter((value) => !PROMOTIONAL_QUALIFIER_RE.test(value))

@@ -52,4 +52,56 @@ contact@paradigmjp.com`
     expect(result.maxSimilarity).toBeGreaterThanOrEqual(0.35)
     expect(result.passed).toBe(false)
   })
+
+  it("rejects the live Paperform and SavvyCal drafts because their CTA paragraph is the same template", () => {
+    const paperform = `Hello Paperform team,
+
+Paperform provides a doc-style form builder where you can create forms and surveys, take payments, automate workflows and send documents for signing, all from one easy, doc-style form builder FOR FREE. The platform also supports surveys, quizzes, tests, payment forms, scheduling forms, and a whole lot more.
+
+A review of your public pages showed no Japanese-language customer path. The pages we checked did not include Japanese-language content or a localized experience for Japanese-speaking visitors.
+
+Whether this gap affects Paperform's Japanese customer path remains unverified. The decision about how Paperform would serve Japanese-speaking users is still open.
+
+I can share a detailed Japan opportunity analysis based on this public evidence to inform a Paperform Japanese-language decision. Could you forward this to the founder or person responsible for international growth at Paperform?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+    const savvycal = `Hello SavvyCal team,
+
+SavvyCal's scheduling tool includes a feature where the recipient can view their calendar events on top of your scheduling link, to save them the hassle of clicking back and forth. Additionally, you can adjust the colors, banner image, and avatar that appear on your links to match your unique style.
+
+We reviewed your public pages and found no Japanese-language customer path. The checked pages lacked a Japanese interface, localized content, or any indication of how Japanese-speaking prospects might evaluate SavvyCal.
+
+The decision about whether this gap impacts SavvyCal's Japanese customer path remains unverified. Without a Japanese-language presence, the quality of the evaluation experience for Japanese prospects is uncertain.
+
+I can share a detailed Japan opportunity analysis based on this public evidence to inform a SavvyCal Japanese-language decision. Could you forward this to the founder or person responsible for international growth at SavvyCal?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+
+    const result = reviewManualMessageDistinctness({
+      message: savvycal,
+      companyName: "SavvyCal",
+      priorMessages: [{ id: "paperform-live", companyName: "Paperform", domain: "paperform.co", message: paperform }],
+    })
+
+    expect(result.passed).toBe(false)
+    expect(result.maxSimilarity).toBe(1)
+    expect(result.reasons.join(" ")).toContain("body paragraph")
+  })
+
+  it("rejects a repeated product phrase inside one sentence even without history", () => {
+    const result = reviewManualMessageDistinctness({
+      message: "Paperform provides a doc-style form builder for teams, all from one doc-style form builder for free.",
+      companyName: "Paperform",
+      priorMessages: [],
+    })
+
+    expect(result.passed).toBe(false)
+    expect(result.reasons.join(" ")).toContain("Repeated phrase")
+  })
 })
