@@ -50,6 +50,8 @@ interface RepairInput {
   candidate: PromptCandidate;
   issues: string[];
   editorialFeedback?: string;
+  measuredBodyWordCount?: number;
+  requiredBodyWordRange?: { min: number; max: number; target: number };
 }
 
 export const JAPAN_ENTRY_GENERATION_SYSTEM_PROMPT = [
@@ -101,7 +103,7 @@ export function initialInterestGenerationPrompt(
     "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type}}.",
     "Build the strategy before drafting. Connect a supplied company observation to a Japanese customer-segment hypothesis, the exact public-page gap, why a Japan opportunity analysis is relevant, and a low-friction permission or routing CTA. Every strategy field is subject to the same evidence limits as the message: when the payload does not verify a segment, demand, underserved status, discoverability, evaluation behavior, or effect, write 'Unverified' rather than inventing it.",
     "Use the supplied evidence_contract exactly. Every fact_id must be in allowed_fact_ids, every required_fact_id must be present, and no product-context or company-observed fact belongs in fact_ids because product evidence is tracked separately. Never use more than four fact_ids.",
-    `The personalized body, excluding the greeting and signature, must be ${options.includePrice ? "145-210" : "120-190"} English words and contain exactly four short paragraphs separated by a blank line (\\n\\n): grounded product observation, public-page Japan finding, company-specific decision implication, then the permission or routing CTA. Do not use headings, bullets, or Markdown.`,
+    `The personalized body, excluding the greeting and signature, must be ${options.includePrice ? "145-210" : "120-190"} English words and contain exactly four short paragraphs separated by a blank line (\\n\\n): grounded product observation, public-page Japan finding, company-specific decision implication, then the permission or routing CTA. Aim for ${options.includePrice ? "165-185" : "145-165"} body words. Before returning JSON, count whitespace-delimited words in those four body paragraphs and rewrite until the count is inside the required range. Do not use headings, bullets, or Markdown.`,
     `Start with the exact standalone greeting supplied in fixed_sender.greeting. Use the first body paragraph for a company-specific observation, not a sender biography. End with this exact four-line signature and nothing after it: '${MANUAL_FORM_SIGNATURE.replaceAll("\n", " / ")}'. Do not invent a title, city, office, or company category.`,
     "Open directly with the observable company detail. The first body paragraph must contain the exact company_name and product_evidence_rendering verbatim. When supplemental_product_evidence is non-null, use its concrete capability as the only second product detail so the observation demonstrates real product understanding. Keep this paragraph free of Japan claims, audit gaps, estimates, buyer behavior, demand, outcomes, praise, or sender biography. Do not begin with I noticed, I came across, I was impressed, I am reaching out, I wanted to reach out, hope this message finds you well, or another reusable prospecting opener.",
     "Return required_product_evidence exactly and unchanged as product_evidence. It describes a real capability, workflow, product category, or customer use; do not conjugate, paraphrase, shorten, or broaden it. Return product_evidence_rendering as a faithful English rendering of that exact source phrase, with no added fact, outcome, customer claim, or interpretation, and use the rendering verbatim in the first body paragraph. If required_product_evidence is already English, product_evidence_rendering must be identical to it. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
@@ -216,6 +218,8 @@ export function generationMessages(
           candidate: repair.candidate,
           issues: repair.issues,
           editorial_feedback: repair.editorialFeedback ?? null,
+          measured_body_word_count_before_repair: repair.measuredBodyWordCount ?? null,
+          required_body_word_range: repair.requiredBodyWordRange ?? null,
           required_fact_ids: evidenceContract?.requiredFactIds ?? [],
           allowed_fact_ids: evidenceContract?.allowedFactIds ?? [],
           required_cta_contract: ctaContract,

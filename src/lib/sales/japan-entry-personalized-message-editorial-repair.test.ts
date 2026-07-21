@@ -26,6 +26,11 @@ Tomohiro H
 Paradigm LLC
 contact@paradigmjp.com`
 
+const shortMessage = safeMessage.replace(
+  "This is a bounded observation about the reviewed pages, not a finding about demand, buyer behavior, or performance in Japan.",
+  "This is a bounded public-page observation.",
+)
+
 const unsafeRepair = safeMessage.replace(
   "For AtlasMetric, whether independent retailers can understand the inventory-analytics proposition and reach an appropriate evaluation route in Japan remains unverified from that public evidence. The decision is whether this customer path warrants a focused test before any broader localization commitment.",
   "Japanese independent retailers typically need localized access before they evaluate a product.",
@@ -59,6 +64,52 @@ function critic(specificity: number, productEvidenceFaithful = true) {
 }
 
 describe("Japan Entry editorial repair loop", () => {
+  it("feeds the measured body length back to DeepSeek and uses a third safety repair instead of discarding the message", async () => {
+    const caller = vi.fn()
+      .mockResolvedValueOnce(response({
+        strategy: {
+          primary_observation: "AtlasMetric product workflow",
+          why_now: "Japan path unverified",
+          japanese_segment: "Unverified",
+          japan_gap: "No Japanese-language path",
+          opportunity_angle: "Decision quality",
+          offer_relevance: "Opportunity analysis",
+          tone: "Direct",
+          cta: "Route the analysis",
+          country_adaptation: "Direct",
+          prohibited_claims: ["Demand"],
+        },
+        candidates: [candidate(shortMessage)],
+      }))
+      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(critic(23))
+
+    const result = await generatePersonalizedJapanEntryMessage({
+      companyName: "AtlasMetric",
+      industry: "B2B SaaS",
+      productContext: `AtlasMetric provides ${productEvidence}`,
+      targetCountry: "US",
+      businessModel: "saas",
+      projection,
+      audit: { status: { japanese_language_missing: true }, signals: { japanese_language: [] }, pages_checked: ["https://atlasmetric.example/"] },
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true },
+      messageAngle: "problem",
+    }, caller)
+
+    expect(result.ok).toBe(true)
+    expect(result.review?.wordCount).toBe(120)
+    expect(caller).toHaveBeenCalledTimes(5)
+    const firstRepairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as {
+      repair?: { measured_body_word_count_before_repair?: number; required_body_word_range?: unknown; issues?: string[] }
+    }
+    expect(firstRepairPayload.repair?.measured_body_word_count_before_repair).toBeLessThan(120)
+    expect(firstRepairPayload.repair?.required_body_word_range).toEqual({ min: 120, max: 190, target: 150 })
+    expect(firstRepairPayload.repair?.issues?.[0]).toContain("Deterministic body count is")
+  })
+
   it("uses the second editorial repair when the first rewrite violates a deterministic safety rule", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(response({
