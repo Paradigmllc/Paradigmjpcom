@@ -6,7 +6,7 @@ import type {
   QualificationStatus,
 } from "./manual-japan-entry-types"
 
-export const MANUAL_JAPAN_ENTRY_REPORT_SCHEMA = "manual_japan_entry_v2" as const
+export const MANUAL_JAPAN_ENTRY_REPORT_SCHEMA = "manual_japan_entry_strategy_v4" as const
 
 export type ManualReportDecisionStatus = "qualified" | "review_required" | "rejected"
 export type ManualReportContactStatus = "verified" | "review_required" | "missing"
@@ -19,9 +19,61 @@ export interface ManualReportGap {
   confidence: number
 }
 
+export interface ManualCustomerReportPriority {
+  title: string
+  finding: string
+  recommendation: string
+  decisionValue: string
+}
+
+export interface ManualCustomerReportRoadmapStep {
+  phase: string
+  objective: string
+  deliverable: string
+}
+
+export interface ManualCustomerReportSource {
+  label: string
+  url: string
+}
+
+export const MANUAL_STRATEGY_CHAPTER_IDS = [
+  "executive_decision",
+  "company_product_diagnostic",
+  "japan_opportunity_thesis",
+  "customer_journey_readiness",
+  "positioning_localization",
+  "commercial_model",
+  "go_to_market",
+  "operating_model",
+  "roadmap_metrics",
+  "risks_recommendation",
+] as const
+
+export type ManualStrategyChapterId = (typeof MANUAL_STRATEGY_CHAPTER_IDS)[number]
+export type ManualStrategyEvidenceClass = "observed" | "modeled" | "hypothesis" | "recommended_action"
+
+export interface ManualStrategyEvidenceItem {
+  classification: ManualStrategyEvidenceClass
+  label: string
+  detail: string
+}
+
+export interface ManualStrategyChapter {
+  id: ManualStrategyChapterId
+  number: number
+  title: string
+  executiveTakeaway: string
+  narrative: string[]
+  evidence: ManualStrategyEvidenceItem[]
+  actions: string[]
+  kpis: string[]
+  decisionGate: string
+}
+
 export interface ManualJapanEntryReportData {
   schemaVersion: typeof MANUAL_JAPAN_ENTRY_REPORT_SCHEMA
-  reportKind: "manual_japan_entry_evidence_brief"
+  reportKind: "customer_japan_entry_opportunity_report"
   generatedAt: string
   reportUrl: string
   company: {
@@ -31,6 +83,32 @@ export interface ManualJapanEntryReportData {
     businessModel: "ecommerce" | "saas" | "service"
     industry: string
     productContext: string
+  }
+  customerView: {
+    title: "Japan Entry Strategy Report"
+    executiveSummary: string
+    productSnapshot: string
+    observedSignals: string[]
+    opportunityHypothesis: {
+      headline: string
+      targetSegment: string
+      rationale: string
+      whyNow: string
+      evidenceBoundary: string
+    }
+    projection: null | {
+      monthlyVisitRange: string
+      firstYearOpportunityRange: string
+      basis: string
+      disclaimer: string
+    }
+    priorities: ManualCustomerReportPriority[]
+    roadmap: ManualCustomerReportRoadmapStep[]
+    evidenceSources: ManualCustomerReportSource[]
+    recommendedDecision: string
+    methodology: string
+    strategyChapters: ManualStrategyChapter[]
+    reportWordCount: number
   }
   decision: {
     status: ManualReportDecisionStatus
@@ -90,6 +168,111 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string" && item.trim().length > 0)
+}
+
+function isText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0
+}
+
+function isCustomerPriority(value: unknown): value is ManualCustomerReportPriority {
+  return isRecord(value)
+    && isText(value.title)
+    && isText(value.finding)
+    && isText(value.recommendation)
+    && isText(value.decisionValue)
+}
+
+function isCustomerRoadmapStep(value: unknown): value is ManualCustomerReportRoadmapStep {
+  return isRecord(value)
+    && isText(value.phase)
+    && isText(value.objective)
+    && isText(value.deliverable)
+}
+
+function isCustomerSource(value: unknown): value is ManualCustomerReportSource {
+  if (!isRecord(value) || !isText(value.label) || !isText(value.url)) return false
+  try {
+    return ["http:", "https:"].includes(new URL(value.url).protocol)
+  } catch (error) {
+    console.warn("[manual-work-report] invalid customer evidence URL:", error)
+    return false
+  }
+}
+
+function isStrategyEvidence(value: unknown): value is ManualStrategyEvidenceItem {
+  return isRecord(value)
+    && ["observed", "modeled", "hypothesis", "recommended_action"].includes(String(value.classification))
+    && isText(value.label)
+    && isText(value.detail)
+}
+
+function isStrategyChapter(value: unknown, index: number): value is ManualStrategyChapter {
+  return isRecord(value)
+    && value.id === MANUAL_STRATEGY_CHAPTER_IDS[index]
+    && value.number === index + 1
+    && isText(value.title)
+    && isText(value.executiveTakeaway)
+    && isStringArray(value.narrative)
+    && value.narrative.length >= 2
+    && value.narrative.length <= 5
+    && Array.isArray(value.evidence)
+    && value.evidence.length >= 2
+    && value.evidence.length <= 6
+    && value.evidence.every(isStrategyEvidence)
+    && isStringArray(value.actions)
+    && value.actions.length >= 2
+    && value.actions.length <= 6
+    && isStringArray(value.kpis)
+    && value.kpis.length >= 1
+    && value.kpis.length <= 6
+    && isText(value.decisionGate)
+}
+
+function isCustomerView(value: unknown): value is ManualJapanEntryReportData["customerView"] {
+  if (!isRecord(value) || !isRecord(value.opportunityHypothesis)) return false
+  const hypothesis = value.opportunityHypothesis
+  const projectionValid = value.projection === null || (
+    isRecord(value.projection)
+    && isText(value.projection.monthlyVisitRange)
+    && isText(value.projection.firstYearOpportunityRange)
+    && isText(value.projection.basis)
+    && isText(value.projection.disclaimer)
+  )
+  return value.title === "Japan Entry Strategy Report"
+    && isText(value.executiveSummary)
+    && isText(value.productSnapshot)
+    && isStringArray(value.observedSignals)
+    && value.observedSignals.length > 0
+    && value.observedSignals.length <= 4
+    && isText(hypothesis.headline)
+    && isText(hypothesis.targetSegment)
+    && isText(hypothesis.rationale)
+    && isText(hypothesis.whyNow)
+    && isText(hypothesis.evidenceBoundary)
+    && projectionValid
+    && Array.isArray(value.priorities)
+    && value.priorities.length > 0
+    && value.priorities.length <= 3
+    && value.priorities.every(isCustomerPriority)
+    && Array.isArray(value.roadmap)
+    && value.roadmap.length === 3
+    && value.roadmap.every(isCustomerRoadmapStep)
+    && Array.isArray(value.evidenceSources)
+    && value.evidenceSources.length > 0
+    && value.evidenceSources.length <= 6
+    && value.evidenceSources.every(isCustomerSource)
+    && isText(value.recommendedDecision)
+    && isText(value.methodology)
+    && Array.isArray(value.strategyChapters)
+    && value.strategyChapters.length === 10
+    && value.strategyChapters.every(isStrategyChapter)
+    && typeof value.reportWordCount === "number"
+    && Number.isFinite(value.reportWordCount)
+    && value.reportWordCount >= 1_200
+}
+
 export function isManualJapanEntryReportData(value: unknown): value is ManualJapanEntryReportData {
   if (!isRecord(value) || value.schemaVersion !== MANUAL_JAPAN_ENTRY_REPORT_SCHEMA) return false
   const company = value.company
@@ -100,11 +283,12 @@ export function isManualJapanEntryReportData(value: unknown): value is ManualJap
   const outreach = value.outreach
   const sourceCoverage = value.sourceCoverage
   const provenance = value.provenance
-  return value.reportKind === "manual_japan_entry_evidence_brief"
+  return value.reportKind === "customer_japan_entry_opportunity_report"
     && typeof value.generatedAt === "string"
     && typeof value.reportUrl === "string"
     && isRecord(company)
     && typeof company.name === "string"
+    && isCustomerView(value.customerView)
     && isRecord(decision)
     && typeof decision.status === "string"
     && Array.isArray(decision.reasons)

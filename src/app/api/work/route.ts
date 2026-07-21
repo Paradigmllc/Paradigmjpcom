@@ -11,7 +11,7 @@ import {
 } from "@/lib/sales/manual-japan-entry-store"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
 import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
-import { processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
+import { ManualWorkRetryConflictError, processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -26,7 +26,16 @@ const createSchema = z.object({
     z.literal(""),
   ]).default(""),
   observedOn: z.string().date().optional(),
-}).strict()
+  retry: z.boolean().default(false),
+  workId: z.string().uuid().optional(),
+}).strict().superRefine((value, context) => {
+  if (value.retry && !value.workId) {
+    context.addIssue({ code: "custom", path: ["workId"], message: "再解析には履歴IDが必要です" })
+  }
+  if (!value.retry && value.workId) {
+    context.addIssue({ code: "custom", path: ["workId"], message: "履歴IDは再解析時だけ指定できます" })
+  }
+})
 const outcomeSchema = z.object({
   id: z.string().uuid(),
   outcome: z.enum(MANUAL_WORK_OUTCOMES),
@@ -70,11 +79,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "有効な企業URLを1件指定してください" }, { status: 400 })
   }
   try {
-    const result = await processManualJapanEntryUrl(parsed.data.url, parsed.data.variant, parsed.data.angle, {
-      sourceSlug: parsed.data.sourceSlug,
-      sourcePageUrl: parsed.data.sourcePageUrl || null,
-      observedOn: parsed.data.observedOn ?? null,
-    })
+    const result = await processManualJapanEntryUrl(
+      parsed.data.url,
+      parsed.data.variant,
+      parsed.data.angle,
+      {
+        sourceSlug: parsed.data.sourceSlug,
+        sourcePageUrl: parsed.data.sourcePageUrl || null,
+        observedOn: parsed.data.observedOn ?? null,
+      },
+      { retryRequested: parsed.data.retry, expectedWorkId: parsed.data.workId ?? null },
+    )
     try {
       const { notifyBothChannels } = await import("@/lib/notify")
       await notifyBothChannels("sales", {
@@ -90,6 +105,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, ...result }, { status: result.duplicate ? 200 : 201 })
   } catch (error) {
     console.error("[api/work] process failed:", error)
+    if (error instanceof ManualWorkRetryConflictError) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 409 })
+    }
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "解析を開始できませんでした" },
       { status: 500 },

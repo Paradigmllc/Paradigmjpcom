@@ -1,5 +1,7 @@
+import type { JapanEntryProjection } from "./japan-entry-projection"
 import type { ManualCompanyProfile, ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
-import type { FormDiscoveryResult, DiscoveryMethod } from "./sources/form-discovery"
+import type { ContactFormInspection } from "./sources/contact-form-inspection"
+import type { DiscoveryMethod, FormDiscoveryResult } from "./sources/form-discovery"
 import type { JapanMarketAudit } from "./sources/japan-market-audit"
 import { parseManualCompanyProfile } from "./manual-japan-entry-profile"
 import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
@@ -9,9 +11,7 @@ import {
 } from "./manual-japan-entry-report-types"
 
 function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {}
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}
 }
 
 function stringArray(value: unknown): string[] {
@@ -32,7 +32,7 @@ function fallbackProfile(item: ManualJapanEntryWorkRow): ManualCompanyProfile {
   try {
     return parseManualCompanyProfile(item.profile)
   } catch (error) {
-    console.warn("[manual-work-report] stored profile required legacy normalization:", {
+    console.warn("[manual-work-report] stored profile required normalization:", {
       workId: item.id,
       error: error instanceof Error ? error.message : String(error),
     })
@@ -88,7 +88,7 @@ function storedAudit(item: ManualJapanEntryWorkRow): JapanMarketAudit {
     pages_checked: stringArray(raw.pages_checked),
     sales_pitch_context: typeof raw.sales_pitch_context === "string"
       ? raw.sales_pitch_context
-      : "Legacy record reconstructed from stored public-page evidence.",
+      : "Stored public-page evidence reconstructed for the current report.",
     human_review_required: true,
     legal_disclaimer: typeof raw.legal_disclaimer === "string"
       ? raw.legal_disclaimer
@@ -100,6 +100,30 @@ const DISCOVERY_METHODS: readonly DiscoveryMethod[] = [
   "source", "dom", "sitemap", "heuristic", "llm", "crawl4ai", "spa", "fallback", "none",
 ]
 
+const INSPECTION_REASONS: readonly ContactFormInspection["reason"][] = [
+  "verified_contact_fields", "contact_page_only", "no_contact_intent", "non_contact_form",
+  "untrusted_action", "empty_or_soft_404", "spa_fallback_duplicate",
+]
+
+function storedInspection(value: unknown): ContactFormInspection | null {
+  const raw = record(value)
+  const status = raw.status
+  const reason = raw.reason
+  if (!(["form", "page", "missing"] as const).includes(status as ContactFormInspection["status"])) return null
+  if (!INSPECTION_REASONS.includes(reason as ContactFormInspection["reason"])) return null
+  return {
+    status: status as ContactFormInspection["status"],
+    reason: reason as ContactFormInspection["reason"],
+    fields: stringArray(raw.fields).filter((field): field is ContactFormInspection["fields"][number] =>
+      (["name", "email", "message", "submit"] as const).includes(field as ContactFormInspection["fields"][number]),
+    ),
+    formCount: typeof raw.formCount === "number" ? Math.max(0, Math.round(raw.formCount)) : 0,
+    action: typeof raw.action === "string" ? raw.action : null,
+    sameOrigin: raw.sameOrigin === true,
+    trustedProvider: raw.trustedProvider === true,
+  }
+}
+
 function storedForm(item: ManualJapanEntryWorkRow): FormDiscoveryResult {
   const raw = record(item.form_discovery)
   const rawMethod = typeof raw.method === "string" ? raw.method : "none"
@@ -107,15 +131,35 @@ function storedForm(item: ManualJapanEntryWorkRow): FormDiscoveryResult {
   const verification = raw.verification === "form" || raw.verification === "page" || raw.verification === "fallback"
     ? raw.verification
     : "none"
+  const outcome = ["verified_form", "contact_page_only", "no_public_form", "site_unreachable", "invalid_origin"].includes(String(raw.outcome))
+    ? raw.outcome as FormDiscoveryResult["outcome"]
+    : undefined
   return {
     formUrl: item.form_url,
     method,
     verification,
     confidence: boundedScore(raw.confidence),
-    inspection: null,
+    inspection: storedInspection(raw.inspection),
     candidates: stringArray(raw.candidates),
     traceMs: typeof raw.traceMs === "number" && Number.isFinite(raw.traceMs) ? Math.max(0, raw.traceMs) : 0,
+    outcome,
+    outcomeReason: typeof raw.outcomeReason === "string" ? raw.outcomeReason : undefined,
+    checkedUrlCount: typeof raw.checkedUrlCount === "number" ? Math.max(0, Math.round(raw.checkedUrlCount)) : undefined,
+    checkedAt: typeof raw.checkedAt === "string" ? raw.checkedAt : undefined,
   }
+}
+
+function storedProjection(item: ManualJapanEntryWorkRow): JapanEntryProjection | null {
+  const candidate = record(record(item.evidence).message_projection)
+  const range = record(candidate.monthlyVisitRange)
+  if (
+    candidate.modelVersion !== "public-opportunity-v1"
+    || candidate.classification !== "modeled-estimate"
+    || typeof range.low !== "number"
+    || typeof range.high !== "number"
+    || !Array.isArray(candidate.scenarios)
+  ) return null
+  return candidate as unknown as JapanEntryProjection
 }
 
 export function resolveManualJapanEntryReportData(item: ManualJapanEntryWorkRow): ManualJapanEntryReportData {
@@ -128,10 +172,8 @@ export function resolveManualJapanEntryReportData(item: ManualJapanEntryWorkRow)
     messageReview: item.message_review,
     reportUrl: item.report_url ?? `https://paradigmjp.com/en/work-report/${item.report_token}`,
     sourceUrl: item.canonical_url || item.input_url,
+    qualificationLedger: item.qualification_ledger,
+    projection: storedProjection(item),
   })
-  return {
-    ...rebuilt,
-    generatedAt: item.updated_at,
-    qualificationLedger: { ...item.qualification_ledger },
-  }
+  return { ...rebuilt, generatedAt: item.updated_at }
 }

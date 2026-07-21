@@ -17,13 +17,13 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example’s RetailScope public pages describe a retail analytics workflow that links inventory forecasting with replenishment decisions for independent operators, providing a concrete basis for a Japan-path review.
+Example’s public pages describe RetailScope as a subscription analytics platform for independent retailers. The documented workflow connects inventory forecasting with replenishment decisions and supplies inventory insights for independent operators, giving this review a concrete company-specific product basis.
 
-I reviewed Example and its RetailScope subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage and product pages.
+In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. These are bounded observations about the pages checked, not findings about demand, buyer behavior, or performance in Japan.
 
-In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.
+For RetailScope, the decision that remains unverified is whether independent retail operators in Japan can understand the inventory-analytics proposition and reach an appropriate evaluation route without changing the product’s documented scope. That question should be tested before a broader localization commitment.
 
-I can share a one-page Japan Opportunity Snapshot based on this public evidence. Could you forward this to the founder or person responsible for international growth?
+I can share a one-page Japan Opportunity Snapshot focused on RetailScope’s Japanese-language customer path, JPY presentation question, and the next validation decision. Could you forward the RetailScope customer-path snapshot to the person responsible for international growth?
 
 ${MANUAL_FORM_SIGNATURE}`
 
@@ -44,6 +44,7 @@ const candidate = {
   message,
   fact_ids: ["japan-audit-language", "japan-audit-jpy"],
   product_evidence: "subscription analytics platform for independent retailers",
+  product_evidence_rendering: "subscription analytics platform for independent retailers",
   angle: "problem",
   opening_style: "public-observation-led",
   diagnostic_focus: "Japanese-language evaluation path",
@@ -102,6 +103,7 @@ describe("manual work first-touch generation integration", () => {
         ok: true,
         text: JSON.stringify({
           selected_index: 0,
+          product_evidence_faithful: true,
           scores: { specificity: 24, naturalness: 24, credibility: 24, executive_relevance: 24 },
           rationale: "Grounded, concise, and permission-based.",
           risk_flags: [],
@@ -115,7 +117,7 @@ describe("manual work first-touch generation integration", () => {
     expect(result.message).toBe(message)
     expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
-    expect(result.message).toContain("Could you forward this to the founder")
+    expect(result.message).toContain("Could you forward the RetailScope customer-path snapshot to the person responsible for international growth?")
     expect(result.message).toMatch(/^Hello Example team,/)
     expect(result.message).toMatch(/Best regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp\.com$/)
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })
@@ -136,6 +138,7 @@ describe("manual work first-touch generation integration", () => {
         ok: true,
         text: JSON.stringify({
           selected_index: 0,
+          product_evidence_faithful: true,
           scores: { specificity: 24, naturalness: 24, credibility: 24, executive_relevance: 24 },
           rationale: "Grounded, concise, and permission-based.",
           risk_flags: [],

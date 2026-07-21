@@ -32,7 +32,12 @@ const traffic: JapanEntryPersonalizationFact = {
 }
 
 function copyReady(diagnosis: string, close: string): string {
-  return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, close, MANUAL_FORM_SIGNATURE].join("\n\n")
+  const bespokeClose = close
+    .replace("a one-page Japan Opportunity Snapshot", "a one-page Japan Opportunity Snapshot focused on Example’s Japanese-language customer path")
+    .replace("a more detailed Japan opportunity analysis", "a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
+    .replace("a detailed Japan opportunity analysis", "a detailed Japan opportunity analysis focused on Example’s Japanese-language customer path")
+    .replace("Could you forward this to the founder or person responsible for international growth?", "Could you forward the Example customer-path snapshot to the founder or person responsible for international growth?")
+  return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, bespokeClose, MANUAL_FORM_SIGNATURE].join("\n\n")
 }
 
 function review(input: {
@@ -61,7 +66,7 @@ function review(input: {
 describe("manual initial-interest message variants", () => {
   it("accepts the price cell only with the current fixed terms", () => {
     const options = { includeEstimate: false, includePrice: true, founderForwardCta: true }
-    const message = copyReady("In a review of the public pages, I did not find a Japanese-language customer path. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.", initialInterestClose(options))
+    const message = copyReady("In a review of the public pages, I did not find a Japanese-language customer path. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked. The open management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.", initialInterestClose(options))
     expect(review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: true })).toMatchObject({ passed: true, score: 100 })
     expect(message).not.toMatch(/founding compan|normally \$|paid upfront|month 7|continuation/i)
   })
@@ -92,5 +97,50 @@ describe("manual initial-interest message variants", () => {
     const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: true })
     expect(result.passed).toBe(false)
     expect(result.issues).toContain("Unsupported scarcity, continuation pricing, or payment terms are prohibited")
+  })
+
+  it("rejects template openings, partnership pitches, and generic Japanese behavior", () => {
+    const options = { includeEstimate: false, includePrice: false, founderForwardCta: true }
+    const message = copyReady(
+      "A public-page review did not show a Japanese-language customer path. Japanese retailers often prefer local-language tools, so I would like to explore a partnership and work together.",
+      initialInterestClose(options),
+    ).replace(introduction, "I noticed Example’s public pages and wanted to reach out about its retail analytics workflow.")
+    const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: false })
+
+    expect(result.passed).toBe(false)
+    expect(result.issues.join(" ")).toMatch(/Template-like outreach opening/)
+    expect(result.issues).toContain("Partnership or collaboration pitch language is prohibited in first-touch form copy")
+    expect(result.issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
+  })
+
+  it("rejects an estimate draft that dumps multiple audit gaps", () => {
+    const jpyAudit: JapanEntryPersonalizationFact = {
+      id: "japan-audit-jpy",
+      statement: "The checked public pages did not show customer-facing JPY pricing.",
+      source: "Japan market public-page audit",
+      confidence: 0.76,
+      anchors: ["JPY pricing"],
+    }
+    const options = { includeEstimate: true, includePrice: false, founderForwardCta: true }
+    const diagnosis = `${traffic.statement} ${annual.statement} A public-page review found no Japanese-language customer path or JPY pricing. These modeled estimates are not observed revenue and performance is not guaranteed.`
+    const message = copyReady(diagnosis, initialInterestClose(options))
+    const result = review({ message, facts: [audit, jpyAudit, traffic, annual], factIds: [audit.id, jpyAudit.id, traffic.id, annual.id], includeEstimate: true, includePrice: false })
+
+    expect(result.passed).toBe(false)
+    expect(result.issues).toContain("The estimate variant must use exactly one audited customer-path fact")
+  })
+
+  it("rejects a generic CTA that does not carry the selected company focus", () => {
+    const options = { includeEstimate: false, includePrice: false, founderForwardCta: true }
+    const message = copyReady(
+      "A public-page review did not show a Japanese-language customer path. This is not a finding about demand or performance; it leaves one concrete question for a Japan entry decision.",
+      initialInterestClose(options),
+    )
+      .replace(" focused on Example’s Japanese-language customer path", "")
+      .replace("the Example customer-path snapshot", "it")
+    const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: false })
+
+    expect(result.passed).toBe(false)
+    expect(result.issues).toContain("The final question must include the exact company or product anchor: Example")
   })
 })

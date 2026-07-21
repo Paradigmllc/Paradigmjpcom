@@ -12,7 +12,7 @@ import { ManualWorkHistoryItem, type ManualWorkOutcome } from "./ManualWorkHisto
 const filters: Array<{ value: ManualWorkHistoryFilter; label: string }> = [
   { value: "all", label: "すべて" },
   { value: "action_required", label: "要確認" },
-  { value: "completed", label: "Twenty追加" },
+  { value: "completed", label: "Twenty保存" },
   { value: "sent", label: "手動送信済み" },
   { value: "failed", label: "失敗・対象外" },
 ]

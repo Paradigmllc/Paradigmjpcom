@@ -2,7 +2,8 @@ import type { BusinessModel } from "./japan-entry-projection";
 import { normalizeDomain } from "./dedup";
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard";
 import { getProxyFetchOptions } from "./proxy-agent";
-import { auditJapanMarketReadiness } from "./sources/japan-market-audit";
+import { auditJapanMarketReadiness, auditJapanMarketReadinessFromHtml } from "./sources/japan-market-audit";
+import { fetchPageWithCrawl4Ai } from "./crawl4ai-page";
 
 type JsonRecord = Record<string, unknown>;
 const MAX_HOMEPAGE_BYTES = 1_500_000;
@@ -34,16 +35,46 @@ function publicOrigin(domain: string): string {
   return `https://${normalized}`;
 }
 
-function decodeHtml(value: string): string {
-  return value
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;|&#34;/gi, "\"")
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&nbsp;|&#160;/gi, " ")
+function decodeNumericHtmlEntity(entity: string): string {
+  const hexadecimal = entity.match(/^&#x([0-9a-f]{1,6});$/i)?.[1]
+  const decimal = entity.match(/^&#([0-9]{1,7});$/)?.[1]
+  const codePoint = hexadecimal
+    ? Number.parseInt(hexadecimal, 16)
+    : decimal
+      ? Number.parseInt(decimal, 10)
+      : Number.NaN
+  if (!Number.isInteger(codePoint) || codePoint <= 0 || codePoint > 0x10ffff) return " "
+  if ((codePoint >= 0xd800 && codePoint <= 0xdfff) || codePoint === 0x7f) return " "
+  return String.fromCodePoint(codePoint)
+}
+
+export function decodePublicHtmlText(value: string): string {
+  let decoded = value
+  for (let pass = 0; pass < 2; pass += 1) {
+    const next = decoded
+      .replace(/&#(?:x[0-9a-f]{1,6}|[0-9]{1,7});/gi, decodeNumericHtmlEntity)
+      .replace(/&(?:amp|quot|apos|nbsp|lt|gt|rsquo|lsquo|ldquo|rdquo);/gi, (entity) => ({
+        "&amp;": "&",
+        "&quot;": "\"",
+        "&apos;": "'",
+        "&nbsp;": " ",
+        "&lt;": "<",
+        "&gt;": ">",
+        "&rsquo;": "’",
+        "&lsquo;": "‘",
+        "&ldquo;": "“",
+        "&rdquo;": "”",
+      })[entity.toLowerCase()] ?? " ")
+    decoded = next
+    if (!/&(?:amp|#(?:x[0-9a-f]{1,6}|[0-9]{1,7}));/i.test(decoded)) break
+  }
+  return decoded
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
+
+const decodeHtml = decodePublicHtmlText
 
 function attribute(tag: string, name: string): string | null {
   const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, "i"));
@@ -68,6 +99,51 @@ function textMatches(html: string, pattern: RegExp, limit: number): string[] {
     if (values.length >= limit) break;
   }
   return values;
+}
+
+export function joinPublicEvidenceSegments(values: Array<string | null | undefined>, maxChars = 700): string {
+  const segments = [...new Set(values
+    .filter((value): value is string => Boolean(value && value.length >= 3))
+    .map((value) => value.replace(/\s+/g, " ").trim()))];
+  const selected: string[] = [];
+  for (const segment of segments) {
+    const candidate = [...selected, segment].join(" | ");
+    if (candidate.length > maxChars) continue;
+    selected.push(segment);
+  }
+  return selected.join(" | ");
+}
+
+function visiblePageText(html: string): string {
+  return decodeHtml(html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript\b[\s\S]*?<\/noscript>/gi, " "))
+}
+
+function samePublicHostname(left: string, right: string): boolean {
+  try {
+    return new URL(left).hostname.replace(/^www\./, "") === new URL(right).hostname.replace(/^www\./, "")
+  } catch (error) {
+    console.warn("[manual-work] ignored invalid rendered homepage URL:", { left, right, error })
+    return false
+  }
+}
+
+export function selectRicherHomepageHtml(directHtml: string, renderedHtml: string | null): {
+  html: string
+  evidenceMode: "direct_html" | "browser_rendered"
+} {
+  if (!renderedHtml) return { html: directHtml, evidenceMode: "direct_html" }
+  const directText = visiblePageText(directHtml)
+  const renderedText = visiblePageText(renderedHtml)
+  const directHeadings = textMatches(directHtml, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 12).length
+  const renderedHeadings = textMatches(renderedHtml, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 12).length
+  const materiallyRicher = renderedText.length >= Math.max(240, directText.length * 1.5)
+    && (renderedHeadings > directHeadings || renderedText.length >= directText.length + 500)
+  return materiallyRicher
+    ? { html: renderedHtml.slice(0, MAX_HOMEPAGE_BYTES), evidenceMode: "browser_rendered" }
+    : { html: directHtml, evidenceMode: "direct_html" }
 }
 
 function credibleSiteName(value: string | null): string | null {
@@ -157,19 +233,42 @@ export async function collectInitialFormDraftEvidence(input: {
   if (!contentType.includes("text/html")) throw new Error("Homepage did not return HTML");
   const declaredSize = Number(response.headers.get("content-length") ?? 0);
   if (declaredSize > MAX_HOMEPAGE_BYTES) throw new Error("Homepage HTML exceeded the evidence size limit");
-  const html = (await response.text()).slice(0, MAX_HOMEPAGE_BYTES);
+  const directHtml = (await response.text()).slice(0, MAX_HOMEPAGE_BYTES);
+  const directVisibleText = visiblePageText(directHtml);
+  const directHeadings = textMatches(directHtml, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 3);
+  const needsBrowserEvidence = directVisibleText.length < 240 || directHeadings.length === 0;
+  const renderedPage = needsBrowserEvidence
+    ? await fetchPageWithCrawl4Ai(origin, 20_000)
+    : null;
+  const sameHostRenderedHtml = renderedPage
+    && samePublicHostname(renderedPage.url, response.url)
+    ? renderedPage.html
+    : null;
+  const selected = selectRicherHomepageHtml(directHtml, sameHostRenderedHtml);
+  const html = selected.html;
   const title = textMatches(html, /<title\b[^>]*>([\s\S]*?)<\/title>/gi, 1)[0] ?? null;
   const description = metaContent(html, "description") ?? metaContent(html, "og:description");
-  const headings = textMatches(html, /<h[12]\b[^>]*>([\s\S]*?)<\/h[12]>/gi, 5);
+  const headings = textMatches(html, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 8);
+  const descriptiveParagraphs = textMatches(html, /<p\b[^>]*>([\s\S]*?)<\/p>/gi, 5)
+    .filter((value) => value.length >= 20 && value.length <= 220);
   const companyName = credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title);
   const productNames = extractPublicProductNames(html);
-  const productContext = [...new Set([description, ...headings, ...productNames, title]
-    .filter((value): value is string => Boolean(value && value.length >= 3)))]
-    .join(" | ")
-    .slice(0, 700);
+  const productContext = joinPublicEvidenceSegments([
+    ...productNames,
+    description,
+    ...descriptiveParagraphs,
+    ...headings,
+    title,
+  ]);
   if (productContext.length < 12) throw new Error("Homepage did not provide enough grounded product context");
-  const audit = await auditJapanMarketReadiness(origin);
-  if (audit.pages_checked.length === 0) throw new Error("No public pages were available for Japan-readiness evidence");
+  // Use the final canonical URL so a bare-domain -> www redirect is not repeated
+  // across every audit path. If the secondary page sweep is throttled, reuse the
+  // homepage HTML that already passed the public HTML and product-evidence gates.
+  const remoteAudit = await auditJapanMarketReadiness(response.url);
+  const audit = remoteAudit.pages_checked.length > 0
+    ? remoteAudit
+    : auditJapanMarketReadinessFromHtml(response.url, html);
+  if (audit.pages_checked.length === 0) throw new Error("Homepage evidence could not be reused for Japan-readiness analysis");
   return {
     companyName,
     productContext,
@@ -179,6 +278,7 @@ export async function collectInitialFormDraftEvidence(input: {
     description,
     headings,
     productNames,
+    evidenceMode: selected.evidenceMode,
     audit,
   };
 }

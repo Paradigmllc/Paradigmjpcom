@@ -746,6 +746,10 @@ function checkStaticReleaseRules() {
   const manualFormDiagnosticsMigration = fs.existsSync(manualFormDiagnosticsMigrationPath)
     ? fs.readFileSync(manualFormDiagnosticsMigrationPath, "utf8")
     : ""
+  const manualBatchMigrationPath = "supabase/migrations/20260720233215_manual_work_durable_batches.sql"
+  const manualBatchMigration = fs.existsSync(manualBatchMigrationPath)
+    ? fs.readFileSync(manualBatchMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -754,6 +758,15 @@ function checkStaticReleaseRules() {
     : ""
   const manualWorkProfile = fs.existsSync("src/lib/sales/manual-japan-entry-profile.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-profile.ts", "utf8")
+    : ""
+  const manualWorkFitPolicy = fs.existsSync("src/lib/sales/manual-japan-entry-fit-policy.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-fit-policy.ts", "utf8")
+    : ""
+  const manualWorkAutoRecovery = fs.existsSync("src/lib/sales/manual-work-auto-recovery.ts")
+    ? fs.readFileSync("src/lib/sales/manual-work-auto-recovery.ts", "utf8")
+    : ""
+  const manualWorkRecoveryPolicy = fs.existsSync("src/lib/sales/manual-work-recovery-policy.ts")
+    ? fs.readFileSync("src/lib/sales/manual-work-recovery-policy.ts", "utf8")
     : ""
   const manualWorkTwenty = fs.existsSync("src/lib/sales/manual-japan-entry-twenty.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-twenty.ts", "utf8")
@@ -766,6 +779,12 @@ function checkStaticReleaseRules() {
     : ""
   const manualMessageIntelligence = fs.existsSync("src/components/work/ManualMessageIntelligence.tsx")
     ? fs.readFileSync("src/components/work/ManualMessageIntelligence.tsx", "utf8")
+    : ""
+  const manualWorkOperatorNotice = fs.existsSync("src/lib/sales/manual-work-operator-notice.ts")
+    ? fs.readFileSync("src/lib/sales/manual-work-operator-notice.ts", "utf8")
+    : ""
+  const manualWorkConsole = fs.existsSync("src/components/work/ManualJapanEntryWorkConsole.tsx")
+    ? fs.readFileSync("src/components/work/ManualJapanEntryWorkConsole.tsx", "utf8")
     : ""
   const contactFormInspection = fs.existsSync("src/lib/sales/sources/contact-form-inspection.ts")
     ? fs.readFileSync("src/lib/sales/sources/contact-form-inspection.ts", "utf8")
@@ -785,6 +804,9 @@ function checkStaticReleaseRules() {
   const manualWorkReportTypes = fs.existsSync("src/lib/sales/manual-japan-entry-report-types.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-report-types.ts", "utf8")
     : ""
+  const manualWorkReportResolver = fs.existsSync("src/lib/sales/manual-japan-entry-report-resolver.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-report-resolver.ts", "utf8")
+    : ""
   const manualWorkReportPage = fs.existsSync("src/app/[locale]/work-report/[token]/page.tsx")
     ? fs.readFileSync("src/app/[locale]/work-report/[token]/page.tsx", "utf8")
     : ""
@@ -802,6 +824,9 @@ function checkStaticReleaseRules() {
     : ""
   const externalFormVerification = fs.existsSync("src/lib/sales/sources/external-form-verification.ts")
     ? fs.readFileSync("src/lib/sales/sources/external-form-verification.ts", "utf8")
+    : ""
+  const formDiscovery = fs.existsSync("src/lib/sales/sources/form-discovery.ts")
+    ? fs.readFileSync("src/lib/sales/sources/form-discovery.ts", "utf8")
     : ""
   const manualCopyEnvelope = fs.existsSync("src/lib/sales/manual-japan-entry-copy-envelope.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-copy-envelope.ts", "utf8")
@@ -842,21 +867,41 @@ function checkStaticReleaseRules() {
     && manualFormDiagnosticsMigration.includes("generation_error")
     && noLoginDeploy.includes("20260719211533_manual_work_verified_form_and_copy_diagnostics.sql")
     && noLoginDeploy.includes("applyManualWorkVerifiedFormAndCopyDiagnosticsMigration")
+    && manualBatchMigration.includes("total_count BETWEEN 1 AND 500")
+    && manualBatchMigration.includes("FOR UPDATE SKIP LOCKED")
+    && manualBatchMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
+    && noLoginDeploy.includes("20260720233215_manual_work_durable_batches.sql")
+    && noLoginDeploy.includes("applyManualWorkDurableBatchesMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
+    && dbVerifier.includes('"manual_japan_entry_batches"')
+    && dbVerifier.includes('"manual_japan_entry_batch_items"')
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
-    && manualWorkService.includes('!hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")')
+    && manualWorkService.includes('phase: "public evidence collection"')
+    && manualWorkService.includes('phase: "company classification"')
+    && manualWorkService.includes('phase: "initial message generation"')
+    && manualWorkService.includes('phase: "Twenty persistence and read-back"')
     && manualWorkService.includes('twenty_sync_status === "failed"')
     && manualWorkService.includes("generation_status")
     && manualWorkService.includes("generation_error")
     && manualWorkService.includes("ownedCompanyId: work.twenty_company_id")
+    && manualWorkService.includes("retryRequested")
+    && manualWorkService.includes("expectedWorkId")
     && manualWorkProfile.includes("normalizeManualCompanyProfile")
     && manualWorkProfile.includes("after one repair")
+    && manualWorkProfile.includes("JAPAN_ENTRY_FIT_CONTRACT_VERSION")
+    && manualWorkFitPolicy.includes('"opportunity-first-v1"')
+    && manualWorkFitPolicy.includes("Missing Japanese localization or current Japan presence is a market-entry readiness gap")
+    && manualWorkAutoRecovery.includes("maxAttempts > 3")
+    && manualWorkRecoveryPolicy.includes('item.status === "failed"')
+    && manualWorkRecoveryPolicy.includes('item.twenty_sync_status === "failed"')
     && manualWorkTwenty.includes("ManualTwentySyncError")
     && manualWorkTwenty.includes("Twenty保存確認")
+    && manualWorkTwenty.includes("twentyNumberMatches")
+    && manualWorkTwenty.includes("twentyLinkMatches")
     && manualWorkCopySmoke.includes('purpose: "initial_interest"')
     && manualWorkCopySmoke.includes("noUrlOrDomain")
     && manualWorkCopySmoke.includes("noCommercialTerms")
@@ -865,10 +910,15 @@ function checkStaticReleaseRules() {
     && manualCopyEnvelope.includes('name: "Tomohiro H"')
     && manualCopyEnvelope.includes('company: "Paradigm LLC"')
     && manualCopyEnvelope.includes('email: "contact@paradigmjp.com"')
-    && manualWorkHistoryItem.includes("再解析")
-    && manualWorkHistoryItem.includes("フォーム未確認")
-    && manualMessageIntelligence.includes("generation_error")
+    && manualWorkHistoryItem.includes("isManualWorkRecoveryAvailable")
+    && manualWorkHistoryItem.includes("ManualFormDiscoveryStatus")
+    && manualWorkHistoryItem.includes("復旧再実行")
     && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
+    && !manualMessageIntelligence.includes("generation_error")
+    && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
+    && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存され")
+    && manualWorkConsole.includes("retry: Boolean(input.retryItem)")
+    && manualWorkConsole.includes("workId: input.retryItem.id")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
@@ -878,14 +928,22 @@ function checkStaticReleaseRules() {
     && manualWorkReport.includes("MANUAL_JAPAN_ENTRY_REPORT_SCHEMA")
     && !manualWorkReport.includes("matchContentTemplate")
     && !manualWorkReport.includes("DiagnosticReportData")
-    && manualWorkReportTypes.includes('"manual_japan_entry_v2"')
+    && manualWorkReportTypes.includes('"manual_japan_entry_strategy_v4"')
+    && manualWorkReportTypes.includes("strategyChapters")
+    && manualWorkReportTypes.includes('"customer_japan_entry_opportunity_report"')
     && manualWorkReportTypes.includes("legacyTemplateUsed: false")
     && manualWorkReportTypes.includes("automaticSendAllowed: false")
+    && manualWorkReportResolver.includes("resolveManualJapanEntryReportData")
+    && manualWorkReportResolver.includes("isManualJapanEntryReportData")
     && manualWorkReportPage.includes("ManualJapanEntryReport")
     && manualWorkReportPage.includes("resolveManualJapanEntryReportData")
     && !manualWorkReportPage.includes("ensureSafeDiagnosticReport")
     && !manualWorkReportPage.includes('components/diagnostic/DiagnosticReport')
-    && manualWorkReportRenderer.includes("Never sent automatically")
+    && manualWorkReportRenderer.includes("Japan Entry Strategy Report")
+    && manualWorkReportRenderer.includes("Ten decision chapters")
+    && manualWorkReportRenderer.includes("Executive perspective")
+    && !manualWorkReportRenderer.includes("Private evidence brief")
+    && !manualWorkReportRenderer.includes("Never sent automatically")
     && conditionalSiteChrome.includes("isStandaloneRoute")
     && standaloneRoutes.includes("work-report")
     && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
@@ -893,10 +951,13 @@ function checkStaticReleaseRules() {
     && manualMarketLens.includes("sourcePhrase.length < 3")
     && externalFormVerification.includes('inspection.status === "form"')
     && contactFormInspection.includes("empty_or_soft_404")
+    && contactFormInspection.includes("spa_fallback_duplicate")
+    && formDiscovery.includes("documentFingerprint")
+    && formDiscovery.includes('outcome: outcome ?? (verification === "form" ? "verified_form"')
   ) {
-    pass("manual Japan Entry workbench has a dedicated V2 evidence report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has one-shot recovery, opportunity-first fit, a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires a dedicated V2 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1433,8 +1494,18 @@ select case when
   ) = 13
   and to_regclass('public.manual_japan_entry_source_catalog') is not null
   and to_regclass('public.manual_japan_entry_work_sources') is not null
+  and to_regclass('public.manual_japan_entry_batches') is not null
+  and to_regclass('public.manual_japan_entry_batch_items') is not null
   and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_source_catalog'::regclass)
   and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_work_sources'::regclass)
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_batches'::regclass)
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_batch_items'::regclass)
+  and to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)') is not null
+  and to_regprocedure('public.manual_japan_entry_claim_batch_items(uuid,integer)') is not null
+  and to_regprocedure('public.manual_japan_entry_refresh_batch(uuid)') is not null
+  and has_function_privilege('service_role', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')
+  and not has_function_privilege('anon', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')
+  and not exists (select 1 from public.manual_japan_entry_batches where sent is distinct from false)
   and (select count(*) from public.manual_japan_entry_source_catalog where active) >= 39
   and exists (
     select 1 from pg_constraint
@@ -1448,8 +1519,20 @@ select case when
     from public.manual_japan_entry_work
     where report_url is not null
       and (
-        report_data ->> 'schemaVersion' is distinct from 'manual_japan_entry_v2'
-        or report_data ->> 'reportKind' is distinct from 'manual_japan_entry_evidence_brief'
+        report_data ->> 'schemaVersion' is null
+        or report_data ->> 'schemaVersion' not in ('manual_japan_entry_v2', 'manual_japan_entry_customer_v3', 'manual_japan_entry_strategy_v4')
+        or (
+          report_data ->> 'schemaVersion' = 'manual_japan_entry_v2'
+          and report_data ->> 'reportKind' is distinct from 'manual_japan_entry_evidence_brief'
+        )
+        or (
+          report_data ->> 'schemaVersion' = 'manual_japan_entry_customer_v3'
+          and report_data ->> 'reportKind' is distinct from 'customer_japan_entry_opportunity_report'
+        )
+        or (
+          report_data ->> 'schemaVersion' = 'manual_japan_entry_strategy_v4'
+          and report_data ->> 'reportKind' is distinct from 'customer_japan_entry_opportunity_report'
+        )
         or report_data #>> '{provenance,legacyTemplateUsed}' is distinct from 'false'
         or report_data #>> '{provenance,automaticSendAllowed}' is distinct from 'false'
         or report_data ? 'content_template'
@@ -1493,9 +1576,9 @@ select case when
 then 1 else 0 end;
 " 2>/dev/null || true)"
   if [ "$manual_copy_experiment_guard" = "1" ]; then
-    echo "OK manual copy experiment/report V2/angle playbooks/outcome constraint/RLS/zero-send guard"
+    echo "OK manual copy experiment/report V4/durable batch/outcome constraint/RLS/zero-send guard"
   else
-    echo "FAIL manual copy experiment/report V2/angle playbooks/outcome constraint/RLS/zero-send guard"
+    echo "FAIL manual copy experiment/report V4/durable batch/outcome constraint/RLS/zero-send guard"
     fail=1
   fi
 
@@ -1641,6 +1724,16 @@ async function fetchCheck(label, url, options = {}) {
     const missingMarkers = expectedMarkers.filter((marker) => !text.includes(marker))
     if (missingMarkers.length > 0) {
       fail(`${label} did not contain expected marker(s): ${missingMarkers.join(", ")}`)
+      return
+    }
+    const forbiddenMarkers = options.mustNotContain
+      ? Array.isArray(options.mustNotContain)
+        ? options.mustNotContain
+        : [options.mustNotContain]
+      : []
+    const presentForbiddenMarkers = forbiddenMarkers.filter((marker) => text.includes(marker))
+    if (presentForbiddenMarkers.length > 0) {
+      fail(`${label} contained forbidden marker(s): ${presentForbiddenMarkers.join(", ")}`)
       return
     }
     pass(`${label} HTTP ${res.status}`)
@@ -1822,10 +1915,11 @@ async function checkPostDeployUrls() {
   })
   const manualReportPath = latestManualWorkReportPath()
   if (manualReportPath) {
-    await fetchCheck("manual Japan Entry V2 evidence report", `${BASE_URL}${manualReportPath}`, {
+    await fetchCheck("manual Japan Entry customer V4 strategy report", `${BASE_URL}${manualReportPath}`, {
       timeoutMs: 25_000,
       rejectReportError: true,
-      mustContain: ["Private evidence brief", "Manual Japan Entry Workbench", "Never sent automatically", "manual_japan_entry_v2"],
+      mustContain: ["Japan Entry Strategy Report", "Ten decision chapters", "Paradigm LLC", "manual_japan_entry_strategy_v4"],
+      mustNotContain: ["Private evidence brief", "Manual Japan Entry Workbench", "Operator next actions", "Never sent automatically", "Human-reviewed first touch"],
     })
   } else {
     warn("manual Japan Entry report smoke skipped because no stored report exists")

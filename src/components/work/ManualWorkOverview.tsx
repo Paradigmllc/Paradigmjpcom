@@ -6,7 +6,7 @@ const statDefinitions = [
   { key: "total", label: "解析履歴", note: "専用DBに永続保存", icon: Building2 },
   { key: "actionRequired", label: "要確認", note: "人の判断が必要", icon: CircleAlert },
   { key: "formReady", label: "フォーム発見", note: "送信先候補あり", icon: FileCheck2 },
-  { key: "completed", label: "Twenty追加", note: "未送信リスト", icon: ArrowUpRight },
+  { key: "completed", label: "Twenty保存", note: "解析データ・未送信", icon: ArrowUpRight },
   { key: "manuallySent", label: "手動送信", note: "operator記録", icon: Send },
   { key: "meetings", label: "商談化", note: "成果イベント", icon: Target },
 ] as const

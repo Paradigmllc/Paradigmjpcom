@@ -2,7 +2,11 @@ import {
   isAllowedFormUrlForOrigin,
   type ExternalFormDiscoveryHit,
 } from "./external-form-discovery"
-import { inspectContactPage, type FormDiscoveryResult } from "./form-discovery"
+import {
+  fetchContactPageHtml,
+  inspectContactPage,
+  type FormDiscoveryResult,
+} from "./form-discovery"
 
 function uniqueUrls(urls: Iterable<string>): string[] {
   return [...new Set(urls)].slice(0, 80)
@@ -32,10 +36,11 @@ export async function verifyExternalFormDiscoveryHit(input: {
     ...input.hit.candidates,
   ]).filter((url) => isAllowedFormUrlForOrigin(input.origin, url))
   if (candidates.length === 0) return null
+  const homepageHtml = await fetchContactPageHtml(input.origin, input.timeoutMs)
 
   const inspected = await mapLimit(candidates.slice(0, 12), 3, async (url) => ({
     url,
-    inspection: await inspectContactPage(url, input.origin, input.timeoutMs),
+    inspection: await inspectContactPage(url, input.origin, input.timeoutMs, homepageHtml),
   }))
   const verifiedForm = inspected.find((item) => item.inspection.status === "form")
   if (verifiedForm) {
@@ -47,6 +52,10 @@ export async function verifyExternalFormDiscoveryHit(input: {
       inspection: verifiedForm.inspection,
       candidates,
       traceMs: Date.now() - started,
+      outcome: "verified_form",
+      outcomeReason: "A public inquiry form with usable email, message, and submit controls was verified.",
+      checkedUrlCount: inspected.length + 1,
+      checkedAt: new Date().toISOString(),
     }
   }
 
@@ -60,5 +69,9 @@ export async function verifyExternalFormDiscoveryHit(input: {
     inspection: verifiedPage.inspection,
     candidates,
     traceMs: Date.now() - started,
+    outcome: "contact_page_only",
+    outcomeReason: "A contact page was found, but it does not contain a usable public inquiry form.",
+    checkedUrlCount: inspected.length + 1,
+    checkedAt: new Date().toISOString(),
   }
 }

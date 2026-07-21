@@ -1,222 +1,188 @@
 import {
-  ArrowUpRight,
+  ArrowRight,
+  BarChart3,
   CheckCircle2,
-  CircleAlert,
-  CircleX,
-  FileSearch,
-  Globe2,
-  LockKeyhole,
-  MessageSquareText,
-  ShieldCheck,
+  Compass,
+  ExternalLink,
+  Lightbulb,
+  Route,
+  SearchCheck,
+  Target,
 } from "lucide-react"
-import type {
-  ManualJapanEntryReportData,
-  ManualReportDecisionStatus,
-} from "@/lib/sales/manual-japan-entry-report-types"
-
-const decisionStyles: Record<ManualReportDecisionStatus, string> = {
-  qualified: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  review_required: "border-amber-200 bg-amber-50 text-amber-900",
-  rejected: "border-red-200 bg-red-50 text-red-800",
-}
-
-const decisionLabels: Record<ManualReportDecisionStatus, string> = {
-  qualified: "Qualified for human review",
-  review_required: "Operator review required",
-  rejected: "Out of scope",
-}
+import type { ManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-types"
+import { ManualStrategyChapter } from "./ManualStrategyChapter"
 
 function formatDate(value: string): string {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
     ? "Date unavailable"
-    : new Intl.DateTimeFormat("en", { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }).format(date)
+    : new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: "UTC" }).format(date)
 }
 
-function humanize(value: string): string {
-  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
-}
-
-function StatusIcon({ status }: { status: string }) {
-  if (["qualified", "verified", "collected"].includes(status)) {
-    return <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+function compactUrl(value: string): string {
+  try {
+    const url = new URL(value)
+    return `${url.hostname.replace(/^www\./, "")}${url.pathname === "/" ? "" : url.pathname}`
+  } catch (error) {
+    console.warn("[manual-work-report] invalid evidence URL reached renderer:", error)
+    return value
   }
-  if (["rejected", "missing", "error"].includes(status)) {
-    return <CircleX className="h-4 w-4 text-red-500" aria-hidden="true" />
-  }
-  return <CircleAlert className="h-4 w-4 text-amber-500" aria-hidden="true" />
-}
-
-function ConfidenceBar({ value }: { value: number }) {
-  const bounded = Math.max(0, Math.min(100, value))
-  return (
-    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100" aria-label={`Confidence ${bounded} percent`}>
-      <div className="h-full rounded-full bg-slate-900" style={{ width: `${bounded}%` }} />
-    </div>
-  )
 }
 
 export default function ManualJapanEntryReport({ data }: { data: ManualJapanEntryReportData }) {
+  const report = data.customerView
   return (
-    <main className="min-h-dvh bg-[#f5f7fb] px-4 py-6 text-slate-950 sm:px-6 sm:py-10 lg:px-8 print:bg-white print:p-0">
-      <article className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_-40px_rgba(15,23,42,0.35)] print:rounded-none print:border-0 print:shadow-none">
-        <header className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_42%)] px-6 py-8 sm:px-10 sm:py-12">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="mb-5 flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5">
-                  <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" />
-                  Private evidence brief
-                </span>
-                <span>Manual Japan Entry Workbench</span>
+    <main className="min-h-dvh bg-[#eef2f7] px-4 py-6 text-slate-950 sm:px-6 sm:py-10 lg:px-8 print:bg-white print:p-0">
+      <article className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_32px_90px_-48px_rgba(15,23,42,0.45)] print:rounded-none print:border-0 print:shadow-none">
+        <header className="relative overflow-hidden bg-slate-950 px-6 py-9 text-white sm:px-10 sm:py-14">
+          <div className="absolute -right-24 -top-32 size-80 rounded-full bg-blue-500/20 blur-3xl" aria-hidden="true" />
+          <div className="absolute bottom-0 left-1/3 h-px w-1/2 bg-gradient-to-r from-transparent via-blue-300/60 to-transparent" aria-hidden="true" />
+          <div className="relative grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end">
+            <div>
+              <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Paradigm · Japan Entry</span>
+                <span>Prepared for {data.company.name}</span>
               </div>
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">
-                {data.company.name}
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                Evidence-led screening for a potential Japan Entry engagement. Findings are bounded to the checked public pages and require human review.
+              <h1 className="mt-7 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-6xl">Japan Entry Strategy Report</h1>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+                A focused view of where {data.company.name} may have a credible Japan opportunity, what remains unproven, and the smallest next test worth running.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2 text-sm text-slate-600">
-                {[data.company.domain, data.company.countryCode ?? "Country unconfirmed", humanize(data.company.businessModel), data.company.industry].map((item) => (
-                  <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{item}</span>
-                ))}
-              </div>
             </div>
-            <div className="min-w-64 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur">
-              <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${decisionStyles[data.decision.status]}`}>
-                <StatusIcon status={data.decision.status} />
-                {decisionLabels[data.decision.status]}
-              </span>
-              <dl className="mt-5 space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-4"><dt className="text-slate-500">Generated</dt><dd className="text-right font-medium">{formatDate(data.generatedAt)}</dd></div>
-                <div className="flex items-center justify-between gap-4"><dt className="text-slate-500">Evidence</dt><dd className="font-medium">Public pages only</dd></div>
-                <div className="flex items-center justify-between gap-4"><dt className="text-slate-500">Automatic send</dt><dd className="font-semibold text-red-600">Disabled</dd></div>
-              </dl>
-            </div>
+            <dl className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 text-sm backdrop-blur">
+              <div className="border-b border-white/10 pb-3"><dt className="text-slate-400">Prepared</dt><dd className="mt-1 font-medium text-white">{formatDate(data.generatedAt)}</dd></div>
+              <div className="border-b border-white/10 py-3"><dt className="text-slate-400">Company</dt><dd className="mt-1 font-medium text-white">{data.company.name}</dd></div>
+              <div className="pt-3"><dt className="text-slate-400">Focus</dt><dd className="mt-1 font-medium text-white">Japan market validation</dd></div>
+            </dl>
           </div>
         </header>
 
-        <div className="space-y-10 px-6 py-8 sm:px-10 sm:py-10">
-          <section aria-labelledby="decision-heading">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5 text-blue-600" aria-hidden="true" />
-              <h2 id="decision-heading" className="text-xl font-semibold tracking-tight">Decision snapshot</h2>
+        <div className="space-y-12 px-6 py-9 sm:px-10 sm:py-12">
+          <section aria-labelledby="contents-heading" className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 print:break-after-page">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Management edition</p><h2 id="contents-heading" className="mt-2 text-2xl font-semibold tracking-tight">Ten decision chapters</h2></div>
+              <p className="text-xs text-slate-500">{report.reportWordCount.toLocaleString("en-US")} words · public-evidence boundary</p>
             </div>
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">{data.decision.summary}</p>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-600">Overseas SMB confidence</span><strong>{data.decision.smb.confidence}/100</strong></div>
-                <ConfidenceBar value={data.decision.smb.confidence} />
-                <p className="mt-3 text-sm text-slate-500">Status: {humanize(data.decision.smb.status)}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-600">Japan Entry fit confidence</span><strong>{data.decision.japanEntryFit.confidence}/100</strong></div>
-                <ConfidenceBar value={data.decision.japanEntryFit.confidence} />
-                <p className="mt-3 text-sm text-slate-500">Status: {humanize(data.decision.japanEntryFit.status)}</p>
-              </div>
-            </div>
-            <ul className="mt-5 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
-              {data.decision.reasons.map((reason) => <li key={reason} className="flex gap-2 rounded-xl bg-slate-50 px-4 py-3"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />{reason}</li>)}
-            </ul>
+            <ol className="mt-7 grid gap-3 md:grid-cols-2">
+              {report.strategyChapters.map((chapter) => (
+                <li key={chapter.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"><span className="font-mono text-xs font-semibold text-blue-700">{String(chapter.number).padStart(2, "0")}</span><span className="font-medium text-slate-800">{chapter.title}</span></li>
+              ))}
+            </ol>
           </section>
-
-          <section className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]" aria-labelledby="market-heading">
-            <div className="rounded-2xl border border-slate-200 p-6">
-              <div className="flex items-center gap-3"><Globe2 className="h-5 w-5 text-blue-600" aria-hidden="true" /><h2 id="market-heading" className="text-xl font-semibold tracking-tight">Market and company lens</h2></div>
-              <p className="mt-5 text-lg font-medium">{data.market.label}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{data.market.rationale}</p>
-              <div className="mt-5 rounded-xl bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Public product context</p>
-                <p className="mt-2 text-sm leading-6 text-slate-700">{data.company.productContext}</p>
-              </div>
-              {data.market.focusIndustries.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{data.market.focusIndustries.map((industry) => <span key={industry} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">{industry}</span>)}</div>}
+          <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]" aria-labelledby="executive-summary-heading">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
+              <div className="flex items-center gap-3 text-blue-700"><Compass className="size-5" aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-[0.16em]">Executive perspective</p></div>
+              <h2 id="executive-summary-heading" className="mt-5 text-2xl font-semibold tracking-tight sm:text-3xl">A testable opportunity, not a market-size claim</h2>
+              <p className="mt-4 text-base leading-8 text-slate-700">{report.executiveSummary}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Commercial evidence</p>
-              <p className="mt-2 text-lg font-semibold">{humanize(data.market.commercialEvidenceStatus)}</p>
-              <div className="mt-4 space-y-3">
-                {data.market.commercialSignals.length > 0 ? data.market.commercialSignals.map((signal) => (
-                  <div key={`${signal.kind}-${signal.sourcePhrase}`} className="rounded-xl bg-slate-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{humanize(signal.kind)}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-700">“{signal.sourcePhrase}”</p>
-                  </div>
-                )) : <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm leading-6 text-slate-500">No company-level foreign revenue, global customer, funding, or international-operation signal was verified in the bounded evidence.</p>}
+            <div className="rounded-3xl bg-blue-50 p-6 sm:p-8">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Public product snapshot</p>
+              <p className="mt-4 text-base font-medium leading-8 text-slate-900">{report.productSnapshot}</p>
+              <div className="mt-6 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
+                <span className="rounded-full bg-white px-3 py-1.5">{data.company.industry}</span>
+                <span className="rounded-full bg-white px-3 py-1.5">{data.company.countryCode ?? "Country not confirmed"}</span>
               </div>
-              <p className="mt-4 text-xs leading-5 text-slate-500">Pricing policy: no automatic country adjustment. Payment capacity requires separate primary-source verification.</p>
             </div>
           </section>
 
-          <section aria-labelledby="readiness-heading">
-            <div className="flex items-center gap-3"><FileSearch className="h-5 w-5 text-blue-600" aria-hidden="true" /><h2 id="readiness-heading" className="text-xl font-semibold tracking-tight">Japan customer-path screen</h2></div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{data.japanReadiness.summary} Checked pages: {data.japanReadiness.checkedPageCount}.</p>
-            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {data.japanReadiness.gaps.length > 0 ? data.japanReadiness.gaps.map((gap) => (
-                <div key={gap.id} className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
-                  <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-slate-900">{gap.title}</h3><span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-slate-600">{gap.confidence}%</span></div>
-                  <p className="mt-3 text-sm leading-6 text-slate-700">{gap.observation}</p>
-                  <p className="mt-3 text-xs leading-5 text-slate-500">{gap.source}</p>
-                </div>
-              )) : <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 md:col-span-2 lg:col-span-3"><div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" aria-hidden="true" /><p className="text-sm leading-6 text-slate-700">No missing signal was observed for this business model. Continue to commercial, market, and legal validation; this result is not a launch approval.</p></div></div>}
-            </div>
-            <p className="mt-4 text-xs leading-5 text-slate-500">{data.japanReadiness.disclaimer}</p>
-          </section>
-
-          <section className="grid gap-5 lg:grid-cols-2" aria-labelledby="outreach-heading">
-            <div className="rounded-2xl border border-slate-200 p-6">
-              <div className="flex items-center gap-3"><MessageSquareText className="h-5 w-5 text-blue-600" aria-hidden="true" /><h2 id="outreach-heading" className="text-xl font-semibold tracking-tight">Human-reviewed first touch</h2></div>
-              <div className="mt-5 flex flex-wrap gap-2 text-xs font-medium">
-                <span className={`rounded-full px-3 py-1.5 ${data.outreach.qualityPassed ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-700"}`}>Quality {data.outreach.qualityPassed ? "passed" : "blocked"}</span>
-                {data.outreach.score !== null && <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">Editorial {data.outreach.score}/100</span>}
-                {data.outreach.uniquenessScore !== null && <span className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">Uniqueness {data.outreach.uniquenessScore}/100</span>}
-              </div>
-              <p className="mt-4 text-sm leading-6 text-slate-600">{data.outreach.reviewSummary}</p>
-              <div className="mt-4 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-800">
-                {data.outreach.draft ?? "No first-touch draft passed the quality gate."}
-              </div>
-              <p className="mt-3 text-xs font-semibold text-red-600">Never sent automatically. A human must review and submit the final text.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Verified inquiry route</p>
-              <div className="mt-3 flex items-center gap-2"><StatusIcon status={data.contactRoute.status} /><span className="font-semibold">{humanize(data.contactRoute.status)}</span></div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{data.contactRoute.reason}</p>
-              <dl className="mt-5 space-y-3 text-sm">
-                <div className="flex justify-between gap-4 border-b border-slate-100 pb-3"><dt className="text-slate-500">Discovery method</dt><dd className="font-medium">{humanize(data.contactRoute.method)}</dd></div>
-                <div className="flex justify-between gap-4 border-b border-slate-100 pb-3"><dt className="text-slate-500">Confidence</dt><dd className="font-medium">{data.contactRoute.confidence}/100</dd></div>
-                <div className="flex justify-between gap-4"><dt className="text-slate-500">Route</dt><dd className="max-w-72 truncate text-right font-medium">{data.contactRoute.url ?? "Not verified"}</dd></div>
-              </dl>
-              {data.contactRoute.url && <a href={data.contactRoute.url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Open verified form <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a>}
-            </div>
-          </section>
-
-          <section aria-labelledby="coverage-heading">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 id="coverage-heading" className="text-xl font-semibold tracking-tight">Evidence coverage</h2><p className="mt-2 text-sm text-slate-600">Every missing source remains visible; no fallback is presented as verified evidence.</p></div><strong className="text-3xl tracking-tight">{data.sourceCoverage.score}%</strong></div>
-            <ConfidenceBar value={data.sourceCoverage.score} />
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {data.sourceCoverage.items.map((item) => (
-                <div key={item.slug} className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex items-start gap-3"><StatusIcon status={item.status} /><div><h3 className="text-sm font-semibold">{item.label}</h3><p className="mt-1 text-xs uppercase tracking-wide text-slate-400">{humanize(item.status)}</p></div></div>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.detail}</p>
-                  {item.status !== "collected" && <p className="mt-2 text-xs leading-5 text-amber-800">Next: {item.nextStep}</p>}
+          <section aria-labelledby="observations-heading">
+            <div className="flex items-center gap-3"><SearchCheck className="size-5 text-blue-700" aria-hidden="true" /><h2 id="observations-heading" className="text-2xl font-semibold tracking-tight">What the public evidence says</h2></div>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Only company-specific observations used to shape this opportunity hypothesis are shown here.</p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {report.observedSignals.map((signal, index) => (
+                <div key={signal} className="flex gap-4 rounded-2xl border border-slate-200 p-5">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-slate-950 text-xs font-semibold text-white">{index + 1}</span>
+                  <p className="text-sm leading-7 text-slate-700">{signal}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="grid gap-5 lg:grid-cols-2" aria-labelledby="actions-heading">
-            <div className="rounded-2xl bg-slate-950 p-6 text-white">
-              <h2 id="actions-heading" className="text-xl font-semibold tracking-tight">Operator next actions</h2>
-              <ol className="mt-5 space-y-4">{data.nextActions.map((action, index) => <li key={action} className="flex gap-3 text-sm leading-6 text-slate-200"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold">{index + 1}</span>{action}</li>)}</ol>
-            </div>
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-6">
-              <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-700" aria-hidden="true" /><h2 className="text-xl font-semibold tracking-tight">Evidence guardrails</h2></div>
-              <ul className="mt-5 space-y-4">{data.guardrails.map((guardrail) => <li key={guardrail} className="flex gap-3 text-sm leading-6 text-slate-700"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />{guardrail}</li>)}</ul>
+          <section className="overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-indigo-50" aria-labelledby="hypothesis-heading">
+            <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="border-b border-blue-100 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+                <div className="flex items-center gap-3 text-blue-700"><Target className="size-5" aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-[0.16em]">Opportunity hypothesis</p></div>
+                <h2 id="hypothesis-heading" className="mt-5 text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">{report.opportunityHypothesis.headline}</h2>
+                <p className="mt-5 text-sm font-semibold uppercase tracking-wider text-slate-500">Priority segment to validate</p>
+                <p className="mt-2 text-base font-medium leading-7 text-slate-900">{report.opportunityHypothesis.targetSegment}</p>
+              </div>
+              <div className="space-y-6 p-6 sm:p-8">
+                <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Why this is worth testing</p><p className="mt-2 text-sm leading-7 text-slate-700">{report.opportunityHypothesis.rationale}</p></div>
+                <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Why now</p><p className="mt-2 text-sm leading-7 text-slate-700">{report.opportunityHypothesis.whyNow}</p></div>
+                <p className="rounded-xl border border-blue-100 bg-white/80 px-4 py-3 text-xs leading-5 text-slate-600">{report.opportunityHypothesis.evidenceBoundary}</p>
+              </div>
             </div>
           </section>
+
+          {report.projection && (
+            <section aria-labelledby="projection-heading">
+              <div className="flex items-center gap-3"><BarChart3 className="size-5 text-blue-700" aria-hidden="true" /><h2 id="projection-heading" className="text-2xl font-semibold tracking-tight">Indicative opportunity range</h2></div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 p-6"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Estimated monthly public-site visits</p><p className="mt-3 text-3xl font-semibold tracking-tight">{report.projection.monthlyVisitRange}</p></div>
+                <div className="rounded-2xl border border-slate-200 p-6"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Modeled first-year Japan opportunity</p><p className="mt-3 text-3xl font-semibold tracking-tight">{report.projection.firstYearOpportunityRange}</p></div>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">{report.projection.basis}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">{report.projection.disclaimer}</p>
+            </section>
+          )}
+
+          <section aria-labelledby="priorities-heading">
+            <div className="flex items-center gap-3"><Lightbulb className="size-5 text-blue-700" aria-hidden="true" /><h2 id="priorities-heading" className="text-2xl font-semibold tracking-tight">Priority moves before a broader launch</h2></div>
+            <div className="mt-6 grid gap-5 lg:grid-cols-3">
+              {report.priorities.map((priority, index) => (
+                <article key={priority.title} className="rounded-2xl border border-slate-200 p-6">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Priority {index + 1}</p>
+                  <h3 className="mt-3 text-xl font-semibold tracking-tight">{priority.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{priority.finding}</p>
+                  <div className="mt-5 border-t border-slate-100 pt-5"><p className="text-xs font-bold uppercase tracking-wider text-slate-500">Recommended move</p><p className="mt-2 text-sm leading-6 text-slate-800">{priority.recommendation}</p></div>
+                  <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600"><strong className="text-slate-800">Decision value:</strong> {priority.decisionValue}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section aria-labelledby="roadmap-heading">
+            <div className="flex items-center gap-3"><Route className="size-5 text-blue-700" aria-hidden="true" /><h2 id="roadmap-heading" className="text-2xl font-semibold tracking-tight">A practical validation sequence</h2></div>
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+              {report.roadmap.map((step) => (
+                <div key={step.phase} className="relative rounded-2xl bg-slate-950 p-6 text-white">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-300">{step.phase}</p>
+                  <p className="mt-4 text-base font-semibold leading-7">{step.objective}</p>
+                  <p className="mt-4 text-sm leading-6 text-slate-300">{step.deliverable}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 sm:p-8" aria-labelledby="decision-heading">
+            <div className="flex items-start gap-4"><CheckCircle2 className="mt-1 size-6 shrink-0 text-emerald-700" aria-hidden="true" /><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-800">Recommended decision</p><h2 id="decision-heading" className="mt-3 text-2xl font-semibold tracking-tight">Validate before scaling</h2><p className="mt-3 max-w-4xl text-sm leading-7 text-slate-700">{report.recommendedDecision}</p></div></div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5" aria-labelledby="method-heading">
+            <h2 id="method-heading" className="text-sm font-semibold text-slate-900">Method and evidence boundary</h2>
+            <p className="mt-2 text-xs leading-6 text-slate-600">{report.methodology}</p>
+            <div className="mt-5 border-t border-slate-200 pt-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Public pages reviewed</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {report.evidenceSources.map((source) => (
+                  <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-blue-300 hover:text-blue-800">
+                    {source.label}: {compactUrl(source.url)} <ExternalLink className="size-3" aria-hidden="true" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <div className="space-y-16 print:space-y-0">
+            {report.strategyChapters.map((chapter) => <ManualStrategyChapter key={chapter.id} chapter={chapter} />)}
+          </div>
         </div>
 
-        <footer className="border-t border-slate-200 bg-slate-50 px-6 py-6 text-xs leading-5 text-slate-500 sm:px-10">
-          <p><strong className="text-slate-700">Paradigm Japan Entry Workbench</strong> · schema {data.schemaVersion} · generated from {data.provenance.evidenceContract} evidence.</p>
-          <p className="mt-1">Private, human-reviewed operating artifact. Not legal, financial, market-demand, or compliance advice.</p>
+        <footer className="border-t border-slate-200 bg-white px-6 py-7 sm:px-10">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-sm font-semibold text-slate-950">Paradigm LLC</p><p className="mt-1 text-xs text-slate-500">Japan market-entry validation and execution</p></div>
+            <a href="mailto:contact@paradigmjp.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900">Discuss the next validation step <ArrowRight className="size-4" aria-hidden="true" /></a>
+          </div>
+          <p className="mt-5 text-[11px] leading-5 text-slate-400">Prepared by Tomohiro H · Paradigm LLC · contact@paradigmjp.com · {data.schemaVersion}</p>
         </footer>
       </article>
     </main>

@@ -3,9 +3,12 @@ import {
   buildManualInitialMessageInput,
   buildManualWorkRetryPatch,
   isRetryableManualWork,
+  ManualWorkRetryConflictError,
   manualWorkEligibility,
+  manualWorkTerminalStatus,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
+  shouldUseTwentyOnlyRetry,
 } from "./manual-japan-entry-service"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
@@ -47,11 +50,27 @@ const verifiedForm: FormDiscoveryResult = {
 }
 
 describe("manual Japan Entry work safety gates", () => {
+  it("exposes a dedicated conflict type for stale explicit retry requests", () => {
+    expect(new ManualWorkRetryConflictError("履歴が更新されています")).toMatchObject({
+      name: "ManualWorkRetryConflictError",
+      message: "履歴が更新されています",
+    })
+  })
+
   it("allows failed persistent work to be analyzed again without creating a duplicate", () => {
     expect(isRetryableManualWork({ status: "failed" })).toBe(true)
     expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "failed" })).toBe(true)
-    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(true)
+    expect(isRetryableManualWork({ status: "needs_review", twenty_sync_status: "skipped" })).toBe(false)
+    expect(isRetryableManualWork({
+      status: "needs_review",
+      twenty_sync_status: "synced",
+      is_japanese_company: false,
+      business_model: "saas",
+      japan_entry_fit_status: "rejected",
+      profile: { japanEntryFitEvidence: ["No Japanese language support or Japan market presence was found."] },
+    })).toBe(true)
     expect(isRetryableManualWork({ status: "failed", manually_sent_at: "2026-07-19T00:00:00.000Z" })).toBe(false)
+    expect(isRetryableManualWork({ status: "rejected", message_review: { generation_status: "failed" } })).toBe(false)
     expect(isRetryableManualWork({ status: "completed" })).toBe(false)
   })
 
@@ -77,6 +96,13 @@ describe("manual Japan Entry work safety gates", () => {
     })
   })
 
+  it("runs a full regeneration for an explicit operator retry", () => {
+    const item = { status: "needs_review", twenty_sync_status: "failed" } as const
+
+    expect(shouldUseTwentyOnlyRetry(item, true)).toBe(false)
+    expect(shouldUseTwentyOnlyRetry(item, false)).toBe(true)
+  })
+
   it("normalizes one public company domain", () => {
     expect(normalizeManualWorkUrl("acme.com/about")).toEqual({
       inputUrl: "acme.com/about",
@@ -100,6 +126,16 @@ describe("manual Japan Entry work safety gates", () => {
     expect(result.eligible).toBe(false)
     expect(result.reasons).toContain("Japanese companies are excluded")
     expect(result.reasons).toContain("A high-confidence public form was not verified")
+  })
+
+  it("separates terminal offer rejection from evidence review", () => {
+    expect(manualWorkTerminalStatus({
+      ...qualifiedProfile,
+      japanEntryFitStatus: "rejected",
+      japanEntryFitEvidence: ["The location-bound service cannot serve or export to Japan."],
+    }, false)).toBe("rejected")
+    expect(manualWorkTerminalStatus({ ...qualifiedProfile, smbStatus: "review_required" }, false)).toBe("needs_review")
+    expect(manualWorkTerminalStatus(qualifiedProfile, true)).toBe("completed")
   })
 
   it("wires manual work to the light initial-interest contract and raw public evidence", () => {
@@ -144,6 +180,14 @@ describe("manual Japan Entry work safety gates", () => {
     expect(selectBestManualFormResult([{ ...baseline, verification: "fallback", confidence: 20 }, crawlPageOnly])).toEqual({
       ...crawlPageOnly,
       formUrl: null,
+    })
+    expect(selectBestManualFormResult([
+      { ...baseline, verification: "fallback", confidence: 20, checkedUrlCount: 16 },
+      { ...crawlPageOnly, checkedUrlCount: 2 },
+    ])).toMatchObject({
+      formUrl: null,
+      verification: "page",
+      checkedUrlCount: 16,
     })
   })
 

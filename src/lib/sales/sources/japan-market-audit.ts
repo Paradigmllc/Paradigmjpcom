@@ -168,12 +168,7 @@ function buildSalesContext(status: JapanMarketAuditStatus): string {
   return `公開ページ上では ${gaps.join("、")} が不足している可能性があります。これは法的断定ではなく、日本参入パッケージの営業仮説として、人間確認と一次情報確認を挟んで提案文面へ反映します。`
 }
 
-export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<JapanMarketAudit> {
-  const origin = normalizeOrigin(domainOrUrl)
-  const urls = [...new Set(AUDIT_PATHS.map((item) => `${origin}${item}`))]
-  const pages = (await Promise.all(urls.map((url) => fetchAuditPage(url)))).filter(
-    (page): page is AuditPage => page !== null,
-  )
+function buildJapanMarketAudit(pages: AuditPage[]): JapanMarketAudit {
   const joined = pages.map((page) => page.text).join("\n")
 
   const tokushoho = collectSignals(joined, TOKUSHOHO_PATTERNS)
@@ -210,4 +205,18 @@ export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<Ja
     legal_disclaimer:
       "This is a public-page heuristic for sales triage, not legal advice. Customer-facing legal, penalty, market, or compliance claims require human review and primary-source verification.",
   }
+}
+
+export function auditJapanMarketReadinessFromHtml(url: string, html: string): JapanMarketAudit {
+  const text = stripHtml(html)
+  return buildJapanMarketAudit(text ? [{ url, text: text.slice(0, 80_000) }] : [])
+}
+
+export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<JapanMarketAudit> {
+  const origin = normalizeOrigin(domainOrUrl)
+  const urls = [...new Set(AUDIT_PATHS.map((item) => `${origin}${item}`))]
+  const pages = (await Promise.all(urls.map((url) => fetchAuditPage(url)))).filter(
+    (page): page is AuditPage => page !== null,
+  )
+  return buildJapanMarketAudit(pages)
 }

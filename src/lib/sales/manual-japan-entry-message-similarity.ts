@@ -55,7 +55,7 @@ export function reviewManualMessageDistinctness(input: {
   priorMessages: PriorManualMessage[]
   threshold?: number
 }): ManualMessageSimilarityReview {
-  const threshold = input.threshold ?? 0.58
+  const threshold = input.threshold ?? 0.35
   let strongest: PriorManualMessage | null = null
   let maxSimilarity = 0
   for (const prior of input.priorMessages) {

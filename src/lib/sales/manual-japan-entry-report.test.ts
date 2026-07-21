@@ -59,7 +59,18 @@ async function reportFor(businessModel: ManualCompanyProfile["businessModel"]) {
       traceMs: 10,
     },
     initialMessage: "A reviewable permission-based first touch",
-    messageReview: { passed: true, score: 96, purpose: "initial_interest" },
+    messageReview: {
+      passed: true,
+      score: 96,
+      purpose: "initial_interest",
+      strategy: {
+        primaryObservation: "Acme documents a workflow product for distributed small-business teams.",
+        japaneseSegment: "Japanese operations teams replacing spreadsheet-led approvals.",
+        opportunityAngle: "Test whether Acme can shorten the evaluation path for Japanese operations teams.",
+        japanGap: "The checked pages do not yet explain a Japanese evaluation path.",
+        whyNow: "The public offer is concrete enough to test without assuming demand.",
+      },
+    },
     reportUrl: "https://paradigmjp.com/en/work-report/token",
     sourceUrl: "https://acme.com/",
   })
@@ -68,9 +79,20 @@ async function reportFor(businessModel: ManualCompanyProfile["businessModel"]) {
 describe("manual Japan Entry diagnostic report", () => {
   it("uses observed ecommerce gaps without inventing traffic, revenue, or loss", async () => {
     const report = await reportFor("ecommerce")
-    expect(report.schemaVersion).toBe("manual_japan_entry_v2")
-    expect(report.reportKind).toBe("manual_japan_entry_evidence_brief")
-    expect(JSON.stringify(report)).not.toMatch(/monthly visits|monthly revenue|opportunity loss/i)
+    expect(report.schemaVersion).toBe("manual_japan_entry_strategy_v4")
+    expect(report.reportKind).toBe("customer_japan_entry_opportunity_report")
+    expect(report.customerView).toMatchObject({
+      title: "Japan Entry Strategy Report",
+      opportunityHypothesis: {
+        targetSegment: "Japanese operations teams replacing spreadsheet-led approvals.",
+      },
+    })
+    expect(report.customerView.observedSignals).toContain("Acme documents a workflow product for distributed small-business teams.")
+    expect(report.customerView.evidenceSources).toContainEqual({ label: "Company homepage", url: "https://acme.com/" })
+    expect(report.customerView.strategyChapters).toHaveLength(10)
+    expect(report.customerView.strategyChapters.map((chapter) => chapter.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(report.customerView.reportWordCount).toBeGreaterThanOrEqual(1_200)
+    expect(JSON.stringify(report)).not.toMatch(/modeled first-year Japan opportunity|monthly revenue opportunity gap/i)
     expect(report.provenance).toMatchObject({
       evidenceContract: "public-pages-only",
       legacyTemplateUsed: false,

@@ -11,14 +11,18 @@ import { MANUAL_SOURCE_ROLE_LABELS, type ManualLeadSourceCatalogRow, type Manual
 import { buildManualMarketLens, MANUAL_COMMERCIAL_SIGNAL_LABELS } from "@/lib/sales/manual-japan-entry-market-lens"
 import type { ManualCommercialSignal, ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import { ManualMessageIntelligence } from "./ManualMessageIntelligence"
+import { ManualFormDiscoveryStatus } from "./ManualFormDiscoveryStatus"
+import { manualFormDiscoveryPresentation } from "@/lib/sales/manual-form-discovery-status"
+import { manualWorkOperatorNotice } from "@/lib/sales/manual-work-operator-notice"
+import { isManualWorkRecoveryAvailable } from "@/lib/sales/manual-work-recovery-policy"
 
 const statusCopy: Record<ManualJapanEntryWorkRow["status"], string> = {
-  processing: "解析中", needs_review: "要確認", completed: "Twenty追加済み", failed: "失敗", duplicate: "重複", rejected: "対象外",
+  processing: "解析中", needs_review: "要確認", completed: "送信準備完了", failed: "失敗", duplicate: "統合済み", rejected: "対象外",
 }
 
 const stageCopy: Record<ManualJapanEntryWorkRow["stage"], string> = {
   fetching: "公開ページ取得", classifying: "海外SMB判定", form_discovery: "フォーム探索", copy_generation: "初回文面生成",
-  report_generation: "診断レポート生成", twenty_sync: "Twenty同期", complete: "完了", failed: "失敗",
+  report_generation: "戦略レポート生成", twenty_sync: "Twenty同期", complete: "完了", failed: "失敗",
 }
 
 export type ManualWorkOutcome = "manually_sent" | "reply_received" | "founder_forwarded" | "meeting_converted"
@@ -90,8 +94,10 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
   const stages = qualificationStages(item.qualification_ledger)
   const verifiedStages = stages.filter(([, stage]) => stage.status === "verified").length
   const qualificationProgress = stages.length ? Math.round((verifiedStages / 6) * 100) : 0
-  const hasRecordedOutcome = Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
-  const retryable = !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
+  const formPresentation = manualFormDiscoveryPresentation({ formUrl: item.form_url, formDiscovery: item.form_discovery })
+  const hasVerifiedForm = formPresentation.state === "verified_form"
+  const retryable = isManualWorkRecoveryAvailable(item)
+  const operatorNotice = manualWorkOperatorNotice(item)
   const outcomes = [
     ["manually_sent", "手動フォーム送信済み", Boolean(item.manually_sent_at)],
     ["reply_received", "返信あり", Boolean(item.reply_received_at)],
@@ -114,9 +120,9 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}を再解析`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{item.twenty_sync_status === "failed" ? "Twenty再同期" : "再解析"}</Button>}
-              {item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
-              {!item.form_url && item.stage === "complete" && <Badge variant="outline" className="h-8 border-amber-200 bg-amber-50 px-3 text-amber-800">フォーム未確認</Badge>}
+              {retryable && <Button type="button" variant="outline" size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}の解析を復旧`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{operatorNotice?.retryLabel ?? "復旧再実行"}</Button>}
+              {hasVerifiedForm && item.form_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.form_url} target="_blank" rel="noopener noreferrer">フォーム<ExternalLink /></a></Button>}
+              {!hasVerifiedForm && item.stage === "complete" && <Badge variant="outline" className="h-8 border-slate-200 bg-slate-50 px-3 text-slate-700">{formPresentation.label}</Badge>}
               {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
             </div>
           </div>
@@ -128,13 +134,15 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
             {item.source_attributions.map((source) => <Badge key={source.id} variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">{sourceBySlug.get(source.source_slug)?.name ?? source.source_slug}</Badge>)}
           </div>
 
-          {(item.error_message || item.message_variant_fallback_reason || item.message_angle_fallback_reason) && (
+          {(operatorNotice || item.message_variant_fallback_reason || item.message_angle_fallback_reason) && (
             <div className="mt-5 space-y-2">
-              {item.error_message && <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">{item.error_message}</p>}
+              {operatorNotice && <div className={`rounded-xl border px-3 py-2 text-xs leading-5 ${operatorNotice.tone === "red" ? "border-red-200 bg-red-50 text-red-900" : operatorNotice.tone === "slate" ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-900"}`}><p className="font-semibold">{operatorNotice.title}</p><p>{operatorNotice.detail}</p></div>}
               {item.message_variant_fallback_reason && <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">{item.message_variant_fallback_reason}</p>}
               {item.message_angle_fallback_reason && <p className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">{item.message_angle_fallback_reason}</p>}
             </div>
           )}
+
+          {item.stage === "complete" && <ManualFormDiscoveryStatus item={item} />}
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">Market</p><p className="mt-1 text-sm font-semibold text-slate-700">{item.country_code ?? "未確定"} · {marketLens.label}</p><p className="mt-1 text-xs text-slate-600">SMB {item.smb_confidence ?? "—"} / 企業別判断</p></div>

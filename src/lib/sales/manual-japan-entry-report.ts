@@ -5,6 +5,8 @@ import type { JapanMarketAudit, JapanMarketAuditStatus } from "./sources/japan-m
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
 import type { ManualMasterLeadLedger, ManualQualificationLedger } from "./manual-japan-entry-source-ledger"
 import { buildManualMarketLens } from "./manual-japan-entry-market-lens"
+import type { JapanEntryProjection } from "./japan-entry-projection"
+import { buildManualCustomerReportView } from "./manual-japan-entry-customer-report"
 import type {
   ManualJapanEntryReportData,
   ManualReportDecisionStatus,
@@ -108,8 +110,8 @@ function buildSourceCoverage(input: {
       category: "outreach",
       status: isVerifiedManualFormResult(input.form) ? "collected" : "missing",
       detail: `${input.form.method} discovery; verification=${input.form.verification}; confidence=${input.form.confidence}/100.`,
-      meaning: "Only a fetched page containing a usable form can enter the Twenty manual-review list.",
-      missingConsequence: "The record remains in operator review and is never sent automatically.",
+      meaning: "A fetched page containing a usable form is required for send-readiness, while the analysis record can still be stored in Twenty for review.",
+      missingConsequence: "The record remains in Twenty as review-required and is never sent automatically.",
       nextStep: "Open and manually confirm the form before sending anything.",
     }),
     sourceItem({
@@ -179,8 +181,9 @@ export function buildManualJapanEntryReport(input: {
   messageReview: Record<string, unknown>
   reportUrl: string
   sourceUrl: string
-  qualificationLedger?: ManualQualificationLedger
-  masterLeadLedger?: ManualMasterLeadLedger
+  qualificationLedger?: ManualQualificationLedger | Record<string, unknown>
+  masterLeadLedger?: ManualMasterLeadLedger | Record<string, unknown>
+  projection?: JapanEntryProjection | null
 }): ManualJapanEntryReportData {
   const gaps = reportGaps(input.profile, input.audit)
   const messagePassed = Boolean(input.initialMessage) && input.messageReview.passed === true
@@ -199,7 +202,7 @@ export function buildManualJapanEntryReport(input: {
 
   return {
     schemaVersion: MANUAL_JAPAN_ENTRY_REPORT_SCHEMA,
-    reportKind: "manual_japan_entry_evidence_brief",
+    reportKind: "customer_japan_entry_opportunity_report",
     generatedAt: new Date().toISOString(),
     reportUrl: input.reportUrl,
     company: {
@@ -210,6 +213,13 @@ export function buildManualJapanEntryReport(input: {
       industry: input.profile.industry,
       productContext: input.profile.productContext,
     },
+    customerView: buildManualCustomerReportView({
+      profile: input.profile,
+      gaps,
+      messageReview: input.messageReview,
+      projection: input.projection ?? null,
+      reviewedPages: [input.sourceUrl, ...input.audit.pages_checked],
+    }),
     decision: {
       status,
       summary: status === "qualified"

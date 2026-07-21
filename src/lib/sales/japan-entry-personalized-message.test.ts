@@ -106,6 +106,7 @@ function generationResponse(): DeepSeekResponse {
           "modeled-monthly-opportunity-gap",
         ],
         product_evidence: productEvidence,
+        product_evidence_rendering: productEvidence,
         angle: `angle-${index + 1}`,
       })),
     }),
@@ -118,6 +119,7 @@ function repairResponse(message: string): DeepSeekResponse {
       message,
       fact_ids: ["japan-audit-jpy", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
       product_evidence: productEvidence,
+      product_evidence_rendering: productEvidence,
       angle: "targeted-repair",
     },
   }))
@@ -127,6 +129,7 @@ function criticResponse(overrides: Record<string, unknown> = {}): DeepSeekRespon
   return response(
     JSON.stringify({
       selected_index: 1,
+      product_evidence_faithful: true,
       scores: {
         specificity: 23,
         naturalness: 23,
@@ -461,30 +464,23 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
       .mockResolvedValueOnce(generationResponse())
       .mockResolvedValueOnce(
         criticResponse({
-          scores: {
-            specificity: 19,
-            naturalness: 22,
-            credibility: 24,
-            executive_relevance: 22,
-          },
+          scores: { specificity: 19, naturalness: 22, credibility: 24, executive_relevance: 22 },
         }),
       )
       .mockResolvedValueOnce(repairResponse(messages[1]))
       .mockResolvedValueOnce(
         criticResponse({
           selected_index: 0,
-          scores: {
-            specificity: 21,
-            naturalness: 22,
-            credibility: 24,
-            executive_relevance: 22,
-          },
+          scores: { specificity: 21, naturalness: 22, credibility: 24, executive_relevance: 22 },
         }),
       )
+      .mockResolvedValueOnce(repairResponse(messages[1]))
+      .mockResolvedValueOnce(criticResponse({ selected_index: 0, scores: { specificity: 22, naturalness: 22, credibility: 24, executive_relevance: 23 } }))
     const result = await generatePersonalizedJapanEntryMessage(generateInput(), caller)
     expect(result.ok).toBe(false)
     expect(result.review?.passed).toBe(false)
     expect(result.message).toBeUndefined()
+    expect(caller).toHaveBeenCalledTimes(6)
   })
 
   it("does not replace a V4 Pro outage with canned copy", async () => {

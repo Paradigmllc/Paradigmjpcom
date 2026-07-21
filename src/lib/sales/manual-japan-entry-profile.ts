@@ -14,6 +14,7 @@ import {
   groundManualPositioningConcept,
   MANUAL_OUTREACH_PLAYBOOKS,
 } from "./manual-japan-entry-playbook"
+import { applyJapanEntryFitPolicy, JAPAN_ENTRY_FIT_CONTRACT_VERSION } from "./manual-japan-entry-fit-policy"
 
 const profileSchema = z.object({
   companyName: z.string().min(2).max(120),
@@ -206,7 +207,7 @@ export function groundManualCompanyProfile(input: {
   })
   const commercialSignals = groundManualCommercialSignals(input.profile.commercialSignals, input.productContext)
 
-  return {
+  const grounded: ManualCompanyProfile = {
     ...input.profile,
     companyName,
     productContext: input.productContext,
@@ -221,6 +222,7 @@ export function groundManualCompanyProfile(input: {
       ? [...input.profile.japanEntryFitEvidence, "Deterministic evidence indicates a Japanese company."].slice(0, 8)
       : input.profile.japanEntryFitEvidence,
   }
+  return applyJapanEntryFitPolicy(grounded)
 }
 
 export async function analyzeManualCompanyProfile(input: {
@@ -243,7 +245,11 @@ export async function analyzeManualCompanyProfile(input: {
         "You classify public company websites for a manual Japan market-entry sales workbench.",
         "Return strict JSON only. Never invent headcount, revenue, traction, country, or Japan demand.",
         "SMB qualified means public evidence is consistent with a small or midsize operating company; uncertainty must be review_required.",
-        "Japan-entry fit qualified means the offer can plausibly be sold to this non-Japanese company based on its actual product/service and public site, not assumed demand.",
+        `Apply Japan-entry fit decision contract ${JAPAN_ENTRY_FIT_CONTRACT_VERSION}.`,
+        "Japan-entry fit asks whether Paradigm's market-entry work can plausibly help this non-Japanese commercial company bring its actual product or service to Japan. It does not ask whether the company is already Japan-ready.",
+        "Missing Japanese language, JPY, local payments, Japan shipping, Japanese customers, localization, or current Japan presence are readiness gaps and sales opportunities. Never use those gaps by themselves as rejection evidence, and never require proof of existing Japan demand.",
+        "For a real online-deliverable SaaS or ecommerce offer, classify Japan-entry fit as qualified unless explicit public evidence establishes a structural incompatibility. A low Japan-readiness audit score is not a fit rejection.",
+        "Use rejected only for explicit structural mismatch such as a Japanese company, non-commercial or inactive site, or a strictly location-bound offer that cannot serve or export to Japan. When delivery or exportability is genuinely unclear, use review_required rather than rejected.",
         "Use ISO-3166 alpha-2 countryCode or null. Japanese companies must be isJapaneseCompany=true and japanEntryFitStatus=rejected.",
         "Choose exactly one outreachPlaybook from the allowed list based only on the public product evidence.",
         "For positioningConcept, create a stored draft Japanese positioning concept only when it can be grounded in one exact sourcePhrase copied from productContext. Translate or reframe only that supplied meaning; do not add demand, outcomes, superiority, numbers, customers, or Japan-market fit. Return null when a grounded concept is not possible.",

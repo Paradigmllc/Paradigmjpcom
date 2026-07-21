@@ -33,22 +33,37 @@ import {
 import {
   buildManualInitialMessageInput,
   manualWorkEligibility,
+  manualWorkTerminalStatus,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
 } from "./manual-japan-entry-workflow-helpers"
 import { ManualTwentySyncError, syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
 import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
+import { runWithManualWorkAutoRecovery } from "./manual-work-auto-recovery"
+import { isManualWorkRecoveryAvailable } from "./manual-work-recovery-policy"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
-import { findTwentyCompanyByDomain } from "./twenty-sync-company-home"
 
 export {
   buildManualInitialMessageInput,
   manualWorkEligibility,
+  manualWorkTerminalStatus,
   normalizeManualWorkUrl,
   selectBestManualFormResult,
 } from "./manual-japan-entry-workflow-helpers"
+
+export class ManualWorkRetryConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ManualWorkRetryConflictError"
+  }
+}
+
+export interface ManualWorkProcessOptions {
+  retryRequested?: boolean
+  expectedWorkId?: string | null
+}
 
 function jsonRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
@@ -67,15 +82,16 @@ async function failWork(id: string, error: unknown): Promise<ManualJapanEntryWor
 }
 
 export function isRetryableManualWork(
-  item: Pick<ManualJapanEntryWorkRow, "status"> & Partial<Pick<
-    ManualJapanEntryWorkRow,
-    "twenty_sync_status" | "manually_sent_at" | "reply_received_at" | "founder_forwarded_at" | "meeting_converted_at"
-  >>,
+  item: Parameters<typeof isManualWorkRecoveryAvailable>[0],
 ): boolean {
-  const hasRecordedOutcome = Boolean(
-    item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at,
-  )
-  return !hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")
+  return isManualWorkRecoveryAvailable(item)
+}
+
+export function shouldUseTwentyOnlyRetry(
+  item: Pick<ManualJapanEntryWorkRow, "status" | "twenty_sync_status">,
+  retryRequested: boolean,
+): boolean {
+  return !retryRequested && item.status === "needs_review" && item.twenty_sync_status === "failed"
 }
 
 export function buildManualWorkRetryPatch(
@@ -124,6 +140,7 @@ export async function processManualJapanEntryUrl(
   variantSelection: ManualMessageVariantSelection = "auto",
   angleSelection: ManualMessageAngleSelection = "auto",
   sourceInput: ManualWorkSourceInput = { sourceSlug: "manual_input" },
+  options: ManualWorkProcessOptions = {},
 ): Promise<{
   item: ManualJapanEntryWorkRow
   duplicate: boolean
@@ -138,41 +155,62 @@ export async function processManualJapanEntryUrl(
   const sourceCatalog = await findManualLeadSource(sourceInput.sourceSlug)
   if (!sourceCatalog) throw new Error("選択した営業ソースは台帳に存在しません")
   const existing = await findManualWorkByDomain(normalized.domain)
+  if (options.retryRequested) {
+    if (!existing || options.expectedWorkId !== existing.id) {
+      throw new ManualWorkRetryConflictError("再解析対象の履歴が更新されています。履歴を更新してからもう一度実行してください。")
+    }
+    if (!isRetryableManualWork(existing)) {
+      throw new ManualWorkRetryConflictError("この履歴は現在再解析できません。最新の状態を確認してください。")
+    }
+  }
   if (existing && !isRetryableManualWork(existing)) {
     await attachManualWorkSource(existing.id, sourceInput)
     return { item: existing, duplicate: true }
   }
 
-  if (existing?.status === "needs_review" && existing.twenty_sync_status === "failed") {
+  if (existing && shouldUseTwentyOnlyRetry(existing, Boolean(options.retryRequested))) {
     await attachManualWorkSource(existing.id, sourceInput)
-    if (!existing.form_url || !existing.report_url || !existing.initial_message) {
+    if (!existing.report_url) {
       const item = await updateManualWork(existing.id, {
         status: "failed",
         stage: "failed",
         attempts: existing.attempts + 1,
         twenty_sync_status: "skipped",
-        error_message: "Twenty再同期に必要な保存済みフォームURL・レポートURL・初回文面が不足しています。解析をやり直してください。",
+        error_message: "Twenty再同期に必要な保存済みレポートURLが不足しています。解析をやり直してください。",
       })
       return { item, duplicate: false }
     }
     try {
+      const retryProfile = parseManualCompanyProfile(existing.profile)
+      const retrySendReady = Boolean(
+        existing.form_url
+        && existing.initial_message
+        && jsonRecord(existing.message_review).passed === true
+        && retryProfile.smbStatus === "qualified"
+        && retryProfile.japanEntryFitStatus === "qualified",
+      )
+      const retryReasons = retrySendReady ? [] : ["Saved analysis artifacts require operator review before outreach."]
       const synced = await syncManualWorkToTwenty({
         domain: normalized.domain,
-        profile: parseManualCompanyProfile(existing.profile),
+        profile: retryProfile,
         formUrl: existing.form_url,
         reportUrl: existing.report_url,
         initialMessage: existing.initial_message,
         ownedCompanyId: existing.twenty_company_id,
+        readiness: {
+          sendReady: retrySendReady,
+          reasons: retryReasons,
+        },
       })
       const item = await updateManualWork(existing.id, {
-        status: synced.status === "duplicate" ? "duplicate" : "completed",
+        status: retrySendReady ? "completed" : "needs_review",
         stage: "complete",
         attempts: existing.attempts + 1,
         twenty_company_id: synced.companyId,
         twenty_sync_status: synced.status,
-        error_message: synced.status === "duplicate" ? "This domain already exists in Twenty; no fields were overwritten." : null,
+        error_message: retrySendReady ? null : retryReasons.join("; "),
       })
-      return { item, duplicate: synced.status === "duplicate" }
+      return { item, duplicate: false }
     } catch (error) {
       console.error("[manual-work] Twenty re-sync failed:", { id: existing.id, error })
       const item = await updateManualWork(existing.id, {
@@ -194,27 +232,16 @@ export async function processManualJapanEntryUrl(
       })
   try {
     await attachManualWorkSource(work.id, sourceInput)
-    try {
-      const twentyExisting = await findTwentyCompanyByDomain(normalized.domain)
-      if (twentyExisting?.id && twentyExisting.id !== work.twenty_company_id) {
-        work = await updateManualWork(work.id, {
-          status: "duplicate",
-          stage: "complete",
-          twenty_company_id: twentyExisting.id,
-          twenty_sync_status: "duplicate",
-          error_message: "This domain already exists in Twenty; no fields were overwritten.",
-        })
-        return { item: work, duplicate: true }
-      }
-    } catch (error) {
-      console.warn("[manual-work] Twenty duplicate precheck unavailable; continuing without write:", error)
-    }
-
-    const evidence = await collectInitialFormDraftEvidence({
-      domain: normalized.domain,
-      industry: null,
-      techStack: {},
+    const evidenceRun = await runWithManualWorkAutoRecovery({
+      phase: "public evidence collection",
+      maxAttempts: 2,
+      operation: async () => collectInitialFormDraftEvidence({
+        domain: normalized.domain,
+        industry: null,
+        techStack: {},
+      }),
     })
+    const evidence = evidenceRun.value
     work = await updateManualWork(work.id, {
       stage: "classifying",
       evidence: {
@@ -223,20 +250,27 @@ export async function processManualJapanEntryUrl(
         description: evidence.description,
         headings: evidence.headings,
         productNames: evidence.productNames,
+        evidenceMode: evidence.evidenceMode,
         audit: evidence.audit,
+        automaticRecovery: { evidenceAttempts: evidenceRun.attempts },
       },
       product_context: evidence.productContext,
     })
 
-    const profile = await analyzeManualCompanyProfile({
-      domain: normalized.domain,
-      fallbackCompanyName: evidence.companyName,
-      productContext: evidence.productContext,
-      title: evidence.title,
-      description: evidence.description,
-      headings: evidence.headings,
-      audit: evidence.audit,
+    const profileRun = await runWithManualWorkAutoRecovery({
+      phase: "company classification",
+      maxAttempts: 2,
+      operation: async () => analyzeManualCompanyProfile({
+        domain: normalized.domain,
+        fallbackCompanyName: evidence.companyName,
+        productContext: evidence.productContext,
+        title: evidence.title,
+        description: evidence.description,
+        headings: evidence.headings,
+        audit: evidence.audit,
+      }),
     })
+    const profile = profileRun.value
     work = await updateManualWork(work.id, {
       company_name: profile.companyName,
       country_code: profile.countryCode,
@@ -314,22 +348,34 @@ export async function processManualJapanEntryUrl(
         description: evidence.description,
         headings: evidence.headings,
         productNames: evidence.productNames,
+        evidenceMode: evidence.evidenceMode,
         audit: evidence.audit,
         market_visibility: marketProjection.visibility,
         message_projection: marketProjection.projection,
+        automaticRecovery: {
+          evidenceAttempts: evidenceRun.attempts,
+          profileAttempts: profileRun.attempts,
+        },
       },
       stage: "copy_generation",
     })
 
     const priorMessages = await listRecentManualMessages(80, work.id)
-    const generated = await generatePersonalizedJapanEntryMessage(buildManualInitialMessageInput({
+    const messageInput = buildManualInitialMessageInput({
       profile,
       evidence,
       variant: effectiveVariant,
       angle: resolvedAngle.angle,
       projection: marketProjection.projection,
       priorMessages,
-    }))
+    })
+    const generatedRun = await runWithManualWorkAutoRecovery({
+      phase: "initial message generation",
+      maxAttempts: 2,
+      operation: async () => generatePersonalizedJapanEntryMessage(messageInput),
+      accept: (result) => result.ok,
+    })
+    const generated = generatedRun.value
     const generationError = generated.ok
       ? null
       : (generated.error ?? "Initial message generation failed").slice(0, 1_500)
@@ -360,6 +406,7 @@ export async function processManualJapanEntryUrl(
       generation_status: generated.ok ? "passed" : "failed",
       generation_error: generationError,
       generation_usage: generated.usage ?? null,
+      automatic_generation_attempts: generatedRun.attempts,
       generated_at: new Date().toISOString(),
     }
     const reportUrl = `https://paradigmjp.com/en/work-report/${work.report_token}`
@@ -380,6 +427,7 @@ export async function processManualJapanEntryUrl(
       sourceUrl: evidence.sourceUrl,
       qualificationLedger: sourceLedgers.qualification,
       masterLeadLedger: sourceLedgers.master,
+      projection: marketProjection.projection,
     })
     const eligibility = manualWorkEligibility({
       profile,
@@ -391,33 +439,46 @@ export async function processManualJapanEntryUrl(
       ...(generationError ? [`Initial message generation failed: ${generationError}`] : []),
       ...eligibility.reasons,
     ].filter((reason, index, reasons) => reasons.indexOf(reason) === index)
+    const terminalStatus = manualWorkTerminalStatus(profile, eligibility.eligible)
     work = await updateManualWork(work.id, {
       report_data: report,
       report_url: reportUrl,
-      stage: eligibility.eligible ? "twenty_sync" : "complete",
-      status: eligibility.eligible ? "processing" : "needs_review",
-      twenty_sync_status: eligibility.eligible ? "not_started" : "skipped",
-      error_message: eligibility.eligible ? null : blockingReasons.join("; ").slice(0, 2_000),
+      stage: "twenty_sync",
+      status: "processing",
+      twenty_sync_status: "not_started",
+      error_message: terminalStatus === "completed" ? null : blockingReasons.join("; ").slice(0, 2_000),
     })
-    if (!eligibility.eligible || !form.formUrl || !generated.message) {
-      return { item: work, duplicate: false }
-    }
 
     try {
-      const synced = await syncManualWorkToTwenty({
-        domain: normalized.domain,
-        profile,
-        formUrl: form.formUrl,
-        reportUrl,
-        initialMessage: generated.message,
-        ownedCompanyId: work.twenty_company_id,
+      const syncRun = await runWithManualWorkAutoRecovery({
+        phase: "Twenty persistence and read-back",
+        maxAttempts: 3,
+        operation: async () => syncManualWorkToTwenty({
+          domain: normalized.domain,
+          profile,
+          formUrl: form.formUrl,
+          reportUrl,
+          initialMessage: generated.message ?? null,
+          ownedCompanyId: work.twenty_company_id,
+          readiness: { sendReady: eligibility.eligible, reasons: blockingReasons },
+        }),
       })
+      const synced = syncRun.value
       work = await updateManualWork(work.id, {
-        status: synced.status === "duplicate" ? "duplicate" : "completed",
+        status: terminalStatus,
         stage: "complete",
         twenty_company_id: synced.companyId,
         twenty_sync_status: synced.status,
-        error_message: synced.status === "duplicate" ? "This domain already exists in Twenty; no fields were overwritten." : null,
+        evidence: {
+          ...jsonRecord(work.evidence),
+          automaticRecovery: {
+            evidenceAttempts: evidenceRun.attempts,
+            profileAttempts: profileRun.attempts,
+            messageGenerationAttempts: generatedRun.attempts,
+            twentySyncAttempts: syncRun.attempts,
+          },
+        },
+        error_message: terminalStatus === "completed" ? null : blockingReasons.join("; ").slice(0, 2_000),
       })
     } catch (error) {
       console.error("[manual-work] Twenty sync failed:", { id: work.id, error })
