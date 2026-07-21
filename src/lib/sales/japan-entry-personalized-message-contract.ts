@@ -122,12 +122,35 @@ function rankedProductEvidenceCandidates(input: {
     .map((item) => item.value)
 }
 
+function shortGroundedEvidenceFallback(input: {
+  companyName: string
+  productContext: string
+  productNames?: string[]
+}): string | null {
+  const excludedNames = new Set([
+    input.companyName.trim().toLowerCase(),
+    ...(input.productNames ?? []).map((name) => name.trim().toLowerCase()),
+  ])
+  return input.productContext
+    .split(/\s*\|\s*|\n+|(?<=[.!?])\s+/)
+    .map((value) => cleanEvidenceSegment(value, input.companyName))
+    .find((value) => (
+      value.length >= 12
+      && value.length <= 180
+      && evidenceTokens(value).length >= 2
+      && !excludedNames.has(value.toLowerCase())
+      && isInitialInterestProductEvidenceSafe(value)
+    )) ?? null
+}
+
 export function selectGroundedProductEvidence(input: {
   companyName: string
   productContext: string
   productNames?: string[]
 }): string {
-  return rankedProductEvidenceCandidates(input)[0] ?? input.productContext.trim().slice(0, 180)
+  return rankedProductEvidenceCandidates(input)[0]
+    ?? shortGroundedEvidenceFallback(input)
+    ?? input.productContext.trim().slice(0, 180)
 }
 
 export function selectSupplementalProductEvidence(input: {
