@@ -115,8 +115,8 @@ const CTA_ROUTES: CtaRoute[] = [
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `A Japan opportunity analysis for ${anchor} can give leadership a bounded view of the ${path} evidence.`,
-      question: "Should I send it to the founder?",
+      offer: `A Japan opportunity analysis for ${anchor} can turn the documented product capability and the unresolved ${path} path into a concrete first validation decision.`,
+      question: "Should I send it to the founder to decide what to test first?",
     }),
   },
 ]

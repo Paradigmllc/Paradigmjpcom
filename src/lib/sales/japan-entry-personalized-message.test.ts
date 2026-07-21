@@ -476,11 +476,13 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
       )
       .mockResolvedValueOnce(repairResponse(messages[1]))
       .mockResolvedValueOnce(criticResponse({ selected_index: 0, scores: { specificity: 22, naturalness: 22, credibility: 24, executive_relevance: 23 } }))
+      .mockResolvedValueOnce(repairResponse(messages[1]))
+      .mockResolvedValueOnce(criticResponse({ selected_index: 0, scores: { specificity: 22, naturalness: 22, credibility: 24, executive_relevance: 23 } }))
     const result = await generatePersonalizedJapanEntryMessage(generateInput(), caller)
     expect(result.ok).toBe(false)
     expect(result.review?.passed).toBe(false)
     expect(result.message).toBeUndefined()
-    expect(caller).toHaveBeenCalledTimes(6)
+    expect(caller).toHaveBeenCalledTimes(8)
   })
 
   it("does not replace a V4 Pro outage with canned copy", async () => {

@@ -287,6 +287,15 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     if (productName.trim().toLowerCase() === input.companyName.trim().toLowerCase()) continue
     boundedBody = limitAnchorOccurrences(boundedBody, productName, "the product")
   }
+  const faithfulRendering = input.candidate.product_evidence_rendering.trim()
+  if (faithfulRendering && !boundedBody.join(" ").toLowerCase().includes(faithfulRendering.toLowerCase())) {
+    boundedBody[0] = productOpening({
+      companyName: input.companyName,
+      productNames: input.productNames ?? [],
+      rendering: faithfulRendering,
+      variationIndex: input.variationIndex,
+    })
+  }
   return {
     ...recovered,
     message: [manualFormGreeting(input.companyName), ...boundedBody, MANUAL_FORM_SIGNATURE].join("\n\n"),
