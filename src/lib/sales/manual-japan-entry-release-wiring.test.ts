@@ -98,6 +98,8 @@ describe("manual Japan Entry release wiring", () => {
     expect(autoRecovery).toContain("maxAttempts > 3")
     expect(recoveryPolicy).toContain('item.status === "failed"')
     expect(recoveryPolicy).toContain('item.twenty_sync_status === "failed"')
+    expect(recoveryPolicy).toContain('item.status !== "completed"')
+    expect(recoveryPolicy).toContain("isExplicitManualWorkArtifactRefresh")
     expect(manualTwenty).toContain("ManualTwentySyncError")
     expect(manualTwenty).toContain("Twenty保存確認")
     expect(copySmoke).toContain('purpose: "initial_interest"')

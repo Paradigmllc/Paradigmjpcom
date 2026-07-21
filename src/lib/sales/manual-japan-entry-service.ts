@@ -40,7 +40,7 @@ import {
 import { ManualTwentySyncError, syncManualWorkToTwenty } from "./manual-japan-entry-twenty"
 import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 import { runWithManualWorkAutoRecovery } from "./manual-work-auto-recovery"
-import { isManualWorkRecoveryAvailable } from "./manual-work-recovery-policy"
+import { isExplicitManualWorkArtifactRefresh, isManualWorkRecoveryAvailable } from "./manual-work-recovery-policy"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
@@ -155,15 +155,16 @@ export async function processManualJapanEntryUrl(
   const sourceCatalog = await findManualLeadSource(sourceInput.sourceSlug)
   if (!sourceCatalog) throw new Error("選択した営業ソースは台帳に存在しません")
   const existing = await findManualWorkByDomain(normalized.domain)
+  const explicitArtifactRefresh = existing ? isExplicitManualWorkArtifactRefresh(existing, Boolean(options.retryRequested)) : false
   if (options.retryRequested) {
     if (!existing || options.expectedWorkId !== existing.id) {
       throw new ManualWorkRetryConflictError("再解析対象の履歴が更新されています。履歴を更新してからもう一度実行してください。")
     }
-    if (!isRetryableManualWork(existing)) {
+    if (!isRetryableManualWork(existing) && !explicitArtifactRefresh) {
       throw new ManualWorkRetryConflictError("この履歴は現在再解析できません。最新の状態を確認してください。")
     }
   }
-  if (existing && !isRetryableManualWork(existing)) {
+  if (existing && !isRetryableManualWork(existing) && !explicitArtifactRefresh) {
     await attachManualWorkSource(existing.id, sourceInput)
     return { item: existing, duplicate: true }
   }

@@ -46,3 +46,8 @@ export function isManualWorkRecoveryAvailable(item: RecoveryState): boolean {
     || generationFailed
     || hasLegacyReadinessInversion(item)
 }
+
+export function isExplicitManualWorkArtifactRefresh(item: RecoveryState, retryRequested: boolean): boolean {
+  if (!retryRequested || item.status !== "completed") return false
+  return !Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
+}
