@@ -130,6 +130,32 @@ function wordCount(paragraphs: string[]): number {
   return paragraphs.join(" ").trim().split(/\s+/).filter(Boolean).length
 }
 
+function limitAnchorOccurrences(paragraphs: string[], anchor: string, replacement: string): string[] {
+  const normalized = anchor.trim()
+  if (!normalized) return paragraphs
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped})(['’]s)?(?=$|[^\\p{L}\\p{N}])`, "giu")
+  const finalIndex = paragraphs.length - 1
+  let keptBodyAnchor = false
+  let keptFinalAnchor = false
+  return paragraphs.map((paragraph, paragraphIndex) => paragraph.replace(
+    pattern,
+    (match, prefix: string, _value: string, possessive: string | undefined, offset: number) => {
+      if (paragraphIndex === finalIndex && !keptFinalAnchor) {
+        keptFinalAnchor = true
+        return match
+      }
+      if (!keptBodyAnchor) {
+        keptBodyAnchor = true
+        return match
+      }
+      const sentenceStart = offset === 0 || /[.!?]\s*$/.test(paragraph.slice(0, offset))
+      if (possessive) return `${prefix}${sentenceStart ? "Its" : "its"}`
+      return `${prefix}${sentenceStart ? replacement[0]?.toUpperCase() ?? "" : replacement[0]?.toLowerCase() ?? ""}${replacement.slice(1)}`
+    },
+  ))
+}
+
 export function recoverManualInitialInterestCandidate<T extends RecoverableCandidate>(input: {
   candidate: T
   companyName: string
@@ -145,7 +171,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const currentBody = bodyBlocks(input.candidate.message)
   const originalMiddle = input.similarityPassed ? currentBody.slice(1, -1) : []
-  const rebuildOpening = input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder)/i.test(issue))
+  const rebuildOpening = !input.similarityPassed || input.issues.some((issue) => /(?:opening|product evidence|product-context|company name|product name|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder)/i.test(issue))
   const opening = rebuildOpening || !currentBody[0]
     ? productOpening({
         companyName: input.companyName,
@@ -229,8 +255,13 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     const question = ctaParagraph.match(/[^.!?]*\?\s*$/)?.[0]?.trim() || "Would you like me to send it?"
     recoveredBody[ctaIndex] = `I can send a short Japan opportunity analysis for ${requiredAnchor}, focused on the ${input.customerPathAnchor} question. ${question}`
   }
+  let boundedBody = limitAnchorOccurrences(recoveredBody, input.companyName, "the company")
+  for (const productName of input.productNames ?? []) {
+    if (productName.trim().toLowerCase() === input.companyName.trim().toLowerCase()) continue
+    boundedBody = limitAnchorOccurrences(boundedBody, productName, "the product")
+  }
   return {
     ...recovered,
-    message: [manualFormGreeting(input.companyName), ...recoveredBody, MANUAL_FORM_SIGNATURE].join("\n\n"),
+    message: [manualFormGreeting(input.companyName), ...boundedBody, MANUAL_FORM_SIGNATURE].join("\n\n"),
   }
 }

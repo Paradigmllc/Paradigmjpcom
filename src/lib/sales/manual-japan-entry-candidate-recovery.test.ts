@@ -145,8 +145,48 @@ ${MANUAL_FORM_SIGNATURE}`,
     })
 
     expect(recovered.message).not.toContain("reusable template fragment")
+    expect(recovered.message).not.toContain(`${companyName} publicly documents`)
     expect(recovered.message.match(new RegExp(productEvidenceRendering, "g"))).toHaveLength(1)
     expect(recovered.message).toContain(auditFact.statement)
+  })
+
+  it("keeps one grounded and one CTA anchor while replacing model repetition with natural references", () => {
+    const [contract] = buildManualCtaContracts({
+      companyName,
+      requiredAnchor: companyName,
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting(companyName)}
+
+${companyName} documents ${productEvidenceRendering}. ${companyName} also describes the review workflow in its public material.
+
+The checked pages leave the Japanese-language decision open for ${companyName}. ${companyName}'s public evidence does not resolve that decision.
+
+I can send a Japan opportunity analysis for ${companyName}. Would you like me to send it?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: productEvidence,
+        product_evidence_rendering: productEvidenceRendering,
+        cta_type: "permission_to_send",
+      },
+      companyName,
+      productNames: [],
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract: contract!,
+      issues: ["The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction"],
+      similarityPassed: true,
+    })
+    const body = recovered.message.split(/\n\n/).slice(1, -1).join("\n\n")
+
+    expect(body.match(new RegExp(companyName, "g"))).toHaveLength(2)
+    expect(body).toMatch(/the company|its/i)
+    expect(body.split(/\n\n/).at(-1)).toContain(companyName)
   })
 
   it("keeps the exact product anchor once in the CTA paragraph and a natural pronoun in the question", () => {
