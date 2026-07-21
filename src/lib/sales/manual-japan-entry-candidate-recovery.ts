@@ -47,6 +47,15 @@ function tooSimilar(left: string, right: string): boolean {
   return overlap / Math.min(leftTokens.size, rightTokens.size) >= 0.74
 }
 
+function stableHash(value: string): number {
+  let hash = 2_166_136_261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16_777_619)
+  }
+  return hash >>> 0
+}
+
 function safeSentences(paragraphs: string[], input: {
   removeRevenue: boolean
   removeUnsupportedCausal: boolean
@@ -74,10 +83,19 @@ function productOpening(input: {
 }): string {
   const rendering = input.rendering.trim()
   const renderedSentence = /[.!?]$/.test(rendering) ? rendering : `${rendering}.`
-  const productName = input.productNames.map((name) => name.trim()).find((name) => name && !rendering.toLowerCase().includes(name.toLowerCase()))
-  return productName
-    ? `${input.companyName} presents ${productName} in its public product description as “${renderedSentence}” That exact capability is the product scope I reviewed, without extending the wording to an unverified customer outcome.`
-    : `${input.companyName} describes its offering as “${renderedSentence}” That exact capability is the product scope I reviewed, without extending the wording to an unverified customer outcome.`
+  const productName = input.productNames.map((name) => name.trim()).find((name) => (
+    name
+    && name.toLowerCase() !== input.companyName.trim().toLowerCase()
+    && !rendering.toLowerCase().includes(name.toLowerCase())
+  ))
+  const subject = productName ?? "its offering"
+  const variants = [
+    `${input.companyName} publicly describes ${subject} as “${renderedSentence}” I kept this review within that stated capability rather than treating it as evidence of a customer outcome.`,
+    `The concrete capability ${input.companyName} documents publicly for ${subject} is “${renderedSentence}” I used that wording as the boundary of this review, without adding a claim about results.`,
+    `In its public product description, ${input.companyName} defines ${subject} around “${renderedSentence}” This review stays with that documented capability and does not infer market performance.`,
+    `${input.companyName}'s public wording for ${subject} is “${renderedSentence}” I treated the quoted capability as the product evidence and left customer outcomes unverified.`,
+  ]
+  return variants[stableHash(`${input.companyName}:${rendering}`) % variants.length]!
 }
 
 function selectedFacts(candidate: RecoverableCandidate, facts: JapanEntryPersonalizationFact[]): JapanEntryPersonalizationFact[] {
@@ -99,6 +117,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   companyName: string
   productNames?: string[]
   facts: JapanEntryPersonalizationFact[]
+  supplementalProductEvidence?: string | null
   customerPathAnchor: string
   contract: ManualCtaContract
   issues: string[]
@@ -116,6 +135,17 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   })
   const facts = selectedFacts(input.candidate, input.facts)
   const middleText = middleSentences.join(" ")
+  const supplemental = input.supplementalProductEvidence?.trim()
+  if (supplemental && !middleText.toLowerCase().includes(supplemental.toLowerCase())) {
+    const renderedSupplemental = /[.!?]$/.test(supplemental) ? supplemental : `${supplemental}.`
+    const supplementalVariants = [
+      `The same public material also documents “${renderedSupplemental}” I treated that as a second product detail, not evidence of Japan demand.`,
+      `A separate public capability is “${renderedSupplemental}” That detail narrows the product reading without implying a market outcome.`,
+      `The public description also includes “${renderedSupplemental}” I kept it as supporting product context rather than a claim about Japanese buyers.`,
+      `Another documented product point is “${renderedSupplemental}” It informs the scope of the review but does not establish performance in Japan.`,
+    ]
+    middleSentences.unshift(supplementalVariants[stableHash(`${input.companyName}:${supplemental}`) % supplementalVariants.length]!)
+  }
   for (const fact of facts) {
     if (!includesFactAnchor(middleText, fact)) middleSentences.push(fact.statement)
   }
@@ -141,13 +171,21 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   }, input.companyName, input.contract)
 
   const recoveredBody = bodyBlocks(recovered.message)
-  const padding = [
-    "This is a bounded observation about the pages checked, not a finding about demand, buyer behavior, or performance in Japan.",
-    `${input.companyName}'s open decision is whether to test the observed ${input.customerPathAnchor} point within its Japan customer path before making a broader market commitment.`,
-    "That decision remains unverified from the public evidence alone and is separate from any assumption about commercial results.",
+  const paddingPool = [
+    `For ${input.companyName}, the page check establishes only the observed ${input.customerPathAnchor} condition; it is not evidence of demand, buyer behavior, or results in Japan.`,
+    `The open question for ${input.companyName} is whether that ${input.customerPathAnchor} observation deserves a focused customer-path test before a broader market commitment.`,
+    `Nothing in the public evidence resolves that decision, and this review keeps it separate from assumptions about commercial outcomes.`,
+    `This is deliberately a page-level finding for ${input.companyName}, not a conclusion about Japanese buyers or product-market fit.`,
+    `${input.companyName} can therefore treat the ${input.customerPathAnchor} point as a validation question while leaving demand and performance unclaimed.`,
+    `A bounded test would determine whether the observed customer-path condition merits further work, without presuming a market result.`,
+    `The checked material supports a narrow ${input.customerPathAnchor} observation for ${input.companyName}; it does not establish how a Japanese audience would respond.`,
+    `That leaves one practical decision open for ${input.companyName}: whether to validate the observed path before committing to wider localization.`,
   ]
+  const offset = stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) % paddingPool.length
+  const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
   for (const sentence of padding) {
     if (wordCount(recoveredBody) >= BODY_MIN_WORDS) break
+    if (recoveredBody.some((paragraph) => tooSimilar(sentence, paragraph))) continue
     recoveredBody[1] = `${recoveredBody[1] ?? ""} ${sentence}`.trim()
   }
   return {

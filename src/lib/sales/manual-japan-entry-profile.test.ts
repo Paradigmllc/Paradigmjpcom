@@ -116,6 +116,29 @@ describe("manual company Japan exclusion", () => {
     expect(grounded.companyName).toBe("example.com")
   })
 
+  it("removes HTML entities and title taglines from the customer-facing company name", () => {
+    const profile = parseManualCompanyProfile(modelProfile({
+      companyName: "Formbricks, the Open Source Experience Data Hub",
+    }))
+    const grounded = groundManualCompanyProfile({
+      domain: "formbricks.com",
+      fallbackCompanyName: "Formbricks, the Open Source Experience Data Hub",
+      evidenceText: "Formbricks, the Open Source Experience Data Hub | Survey workflow",
+      productContext: "Privacy-first experience management and survey workflow",
+      profile,
+    })
+    const apostrophe = groundManualCompanyProfile({
+      domain: "abcduparfum.fr",
+      fallbackCompanyName: "L&#039;ABC du Parfum",
+      evidenceText: "L&#039;ABC du Parfum | Independent fragrance store",
+      productContext: "Independent fragrance store and online product catalogue",
+      profile: parseManualCompanyProfile(modelProfile({ companyName: "L&#039;ABC du Parfum" })),
+    })
+
+    expect(grounded.companyName).toBe("Formbricks")
+    expect(apostrophe.companyName).toBe("L'ABC du Parfum")
+  })
+
   it("treats missing Japan readiness as the sales opportunity for a digital service", () => {
     const grounded = groundManualCompanyProfile({
       domain: "altairis.fr",

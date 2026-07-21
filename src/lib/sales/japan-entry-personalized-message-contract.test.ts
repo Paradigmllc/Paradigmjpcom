@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   initialInterestFactContract,
+  isInitialInterestProductEvidenceSafe,
   isGroundedProductEvidence,
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
@@ -64,5 +65,18 @@ describe("initial-interest evidence contract", () => {
     expect(selected).toBe("create forms and surveys, take payments, automate workflows and send documents for signing")
     expect(productContext).toContain(selected)
     expect(selected).not.toMatch(/for free|doc-style form builder/i)
+  })
+
+  it("rejects public marketing phrases that the form-copy safety gate prohibits", () => {
+    const canny = "Canny | Canny's AI-powered customer feedback platform captures, analyzes, and prioritizes feedback to help you build what drives revenue. | AI-powered customer feedback platform | Use AI to turn customer conversations into revenue"
+    const testimonial = "The all-in-one platform to capture, measure, and showcase customer love — testimonials, case studies, NPS, and brand monitoring in one place. | Once we added Testimonial it unlocked more conversion — the ROI was immediate."
+    const heyzine = "Download, share and embed flipbooks. | Convert a PDF and customize it with page effects. | Change logo, text, icon styles, and pagination."
+
+    expect(selectGroundedProductEvidence({ companyName: "Canny", productContext: canny, productNames: ["Canny"] })).toBe("AI-powered customer feedback platform")
+    expect(selectGroundedProductEvidence({ companyName: "Testimonial", productContext: testimonial })).toContain("capture, measure, and showcase customer love")
+    expect(selectGroundedProductEvidence({ companyName: "Heyzine", productContext: heyzine })).not.toMatch(/download/i)
+    expect(isInitialInterestProductEvidenceSafe("Turn clicks into revenue")).toBe(false)
+    expect(isInitialInterestProductEvidenceSafe("Download the attached report")).toBe(false)
+    expect(isInitialInterestProductEvidenceSafe("AI-powered customer feedback platform")).toBe(true)
   })
 })
