@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-21 `/work`100社実走・旧レポート自己修復・Twenty batch整合・全幅UI guard（最終回帰/release待ち / 外部送信0）
+## CURRENT STATUS - 2026-07-21 `/work`100社実走・旧レポート自己修復・Twenty batch整合・全幅UI guard（本番release/100社exact read-back完了 / 外部送信0）
 
 - PR **#508** / main **06fe9288**を正式`release:prod`で本番反映した。Paperform旧URL`/en/report/paperform`は専用`/en/work-report/{uuid}`へ308転送し、DB実体は`manual_japan_entry_strategy_v4 / 10章 / 3,118語`、実画面はfigure 14 / SVG 42 / 横overflow 0 / console error 0。Twenty会社IDを直接read-backし、専用report URL・manual_work source・未対応status・初回文面要約が一致、外部送信0を確認した。
 - Startup SG公式100 URLの本番soakは25分43秒、平均32.4秒 / p50 34.2秒 / p95 54.9秒 / 最大97.8秒、最大attempt 1、約233社/時で自動完了した。100件内は`completed 7 / needs_review 69 / rejected 2 / failed 22`で、失敗22件は取得不能14・HTTP 404が5・公開商品根拠不足2・site timeout 1。再解析ボタンやoperator介入は0。
@@ -6,7 +6,9 @@
 - 旧100件Twenty整合性監査は1社あたりGET/PATCH/GETを3並列で投げ、Twentyの100 token/分上限へ達して35成功・65件429となるscale欠陥を実測した。修正後は所有済みIDを50社単位で一括read→batch upsert→一括read-backし、100社を2 batch・計6 API callでexact検証する。再解析・DeepSeek再課金・外部送信は行わず、100件chunkingと一括read-backの回帰testを追加した。
 - 19:36のChrome画面で`/work`が約540px幅へ縮み右側に余白が出た報告を受け、rootと1480px shellに`w-full / min-w-0`、rootに`overflow-x-clip`を追加した。修正前の現行本番でもログイン済みChrome read-backは`html/body/main=1440px`、横overflow 0、console error 0で復帰を確認しており、CSS幅不変条件をrelease wiring testへ追加した。最終全回帰・正式release・本番PC read-back後に完了判定する。
 - 500件batchの各3件drain後に全item最大500行を再取得していた処理は、batch行の7状態counterへ変更済み。各sliceはbatch 1行だけをread-backし、UIはRealtime item差分と初回snapshotをmergeする。DeepSeekのbounded recoveryを5分境界で切らないようrequest budget 890秒、drain lease 16分、stale item回収20分へ分離し、GETも安全な自動復旧eventとしてdispatchする。transaction内100/500件queueは完了100/500、二重lease拒否、rollback後synthetic 0を確認した。
-- 今回差分の重点 **4 files / 19 tests**、全Vitest **236 files / 1,090 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 78 existing warnings**、production build **408/408 pages**がpass。正式release後に、新batch整合100/100・Twenty exact read-back・Paperform旧URL・全幅PC UI・console/overflow・zero-sendを再確認する。
+- 今回差分の重点 **4 files / 19 tests**、全Vitest **236 files / 1,090 tests**、TypeScript、対象ESLint、Quality Guard **0 errors / 78 existing warnings**、production build **408/408 pages**がpass。新batch整合100/100・Twenty exact read-back・Paperform旧URL・zero-sendを本番で再確認した。
+- PR **#509** / main **5d6445ca**を正式`npm run release:prod`のdeployment **t3ucekbsrp9cqkmrk5rw2y3b**で反映。本番container **n8i2sjiqvr2d8hrzppop2m2i-130639751808**は同main imageでhealthy。DB 93/93、Sales health JSON `ok:true`、Twenty HTTP 200 / worker restart 0、Realtime/RLS/Traefik/公開V4/zero-sendを含むrelease gateがpassした。
+- 本番新batch整合は100件を7.6秒で`checked 100 / repaired 100 / failed 0 / sent 0`。同時刻のapp logに429・circuit breaker・artifact repair error 0。Paperform旧URLは再度専用V4へ転送し、1440pxで横overflow 0、text 37,861文字、figure 14、SVG 42、h2 20、error overlay 0。新containerの`/app/.next/server/app/work/page.js`に全幅root/shell fingerprintを確認した。Chrome管理sessionが失効して`/admin/login?redirect=%2Fwork`へ戻ったため、保護画面のpost-release目視だけは次回ログイン後に行う。
 
 ## CURRENT STATUS - 2026-07-21 `/work`最大10,000社連続キュー・単一drain lease・DeepSeek工程別Cache可視化（本番release・DB読戻し完了 / 外部送信0）
 
