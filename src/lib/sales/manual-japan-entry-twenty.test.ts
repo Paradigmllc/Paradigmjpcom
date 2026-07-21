@@ -172,7 +172,7 @@ describe("manual work Twenty persistence", () => {
       readiness: { sendReady: false, reasons: ["A verified public form was not found"] },
     })).resolves.toEqual({ status: "synced", companyId: "company-1" });
     expect(saved).toMatchObject({
-      paradigmSalesStatus: "解析済み / 要確認",
+      paradigmSalesStatus: "手動確認 / 未対応",
       paradigmDataStatus: "Manual workbench / analyzed / evidence review required",
       paradigmFormUrl: { primaryLinkUrl: "" },
     });

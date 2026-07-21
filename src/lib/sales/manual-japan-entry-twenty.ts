@@ -89,7 +89,9 @@ export async function syncManualWorkToTwenty(input: {
     paradigmCountryName: countrySelectValue(input.profile.countryCode),
     paradigmIndustryName: industrySelectValue(input.profile.industry),
     paradigmSourceName: sourceSelectValue("manual_work"),
-    paradigmSalesStatus: sendReady ? "手動確認 / 未対応" : "解析済み / 要確認",
+    // Twenty select fields reject values outside their configured option set.
+    // Readiness detail belongs in dataStatus/nextAction while sales stays unsent.
+    paradigmSalesStatus: "手動確認 / 未対応",
     paradigmDataStatus: sendReady
       ? "Manual workbench / analyzed / pre-send review"
       : "Manual workbench / analyzed / evidence review required",
