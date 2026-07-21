@@ -61,6 +61,25 @@ function contentParagraphs(message: string): string[] {
   return blocks.filter((block) => block.length >= 45)
 }
 
+const STANDARDIZED_RECOVERY_SENTENCE = /(?:checked public pages did not show|whether that observation matters .+? remains unverified|page check establishes only|open question for .+? is whether|nothing in the public evidence resolves|deliberately a page-level finding|can therefore treat the .+? point as a validation question|bounded test would determine|checked material supports a narrow|leaves one practical decision open|bounded observation about the pages checked|open decision is whether to test the observed|decision remains unverified from the public evidence|kept this review within that stated capability|used that wording as the boundary of this review|review stays with that documented capability|treated the quoted capability as the product evidence)/i
+
+function companySpecificCore(message: string): string {
+  const paragraphs = contentParagraphs(message)
+  if (paragraphs.length <= 1) return message
+  paragraphs.pop()
+  const joined = paragraphs.join(" ")
+  const quotedProductEvidence = [...joined.matchAll(/“([^”]{3,240})”/g)].map((match) => match[1] ?? "")
+  const bespokeSentences = joined
+    .split(/[.!?][”"']?\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence && !sentence.includes("“") && !STANDARDIZED_RECOVERY_SENTENCE.test(sentence))
+  return [...quotedProductEvidence, ...bespokeSentences].join(" ")
+}
+
+function coreMessageSimilarity(left: string, right: string, companyNames: Array<string | null>): number {
+  return manualMessageSimilarity(companySpecificCore(left), companySpecificCore(right), companyNames)
+}
+
 function repeatedPhrase(message: string): string | null {
   const sentences = message.split(/(?<=[.!?])\s+/)
   for (const sentence of sentences) {
@@ -113,7 +132,7 @@ export function reviewManualMessageDistinctness(input: {
   let maxSimilarity = 0
   let maxCtaSimilarity = 0
   for (const prior of input.priorMessages) {
-    const similarity = manualMessageSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
+    const similarity = coreMessageSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
     const cta = ctaParagraphSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
     if (Math.max(similarity, cta) > Math.max(maxSimilarity, maxCtaSimilarity)) {
       maxSimilarity = similarity

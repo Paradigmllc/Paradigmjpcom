@@ -30,6 +30,11 @@ import {
   type DeepSeekStructuredCaller,
 } from "./japan-entry-personalized-message-structured";
 import { recoverManualInitialInterestCandidate } from "./manual-japan-entry-candidate-recovery";
+import {
+  isInitialInterestProductEvidenceSafe,
+  selectGroundedProductEvidence,
+  selectSupplementalProductEvidence,
+} from "./japan-entry-personalized-message-contract";
 export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
@@ -270,6 +275,12 @@ export async function generatePersonalizedJapanEntryMessage(
   let totalUsage: DeepSeekResponse["usage"];
 
   const ctaAnchors = resolveManualCtaAnchors({ companyName: input.companyName, productNames: input.productNames, facts });
+  const requiredInitialProductEvidence = purpose === "initial_interest"
+    ? selectGroundedProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames })
+    : null;
+  const supplementalInitialProductEvidence = purpose === "initial_interest"
+    ? selectSupplementalProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames })
+    : null;
   const ctaContracts = purpose === "initial_interest"
     ? buildManualCtaContracts({
         companyName: input.companyName,
@@ -299,7 +310,17 @@ export async function generatePersonalizedJapanEntryMessage(
   });
 
   const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>, candidateIndex = 0) => {
-    const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(rawCandidate, input.companyName) : rawCandidate;
+    const evidenceLocked = purpose === "initial_interest"
+      && requiredInitialProductEvidence
+      && isInitialInterestProductEvidenceSafe(requiredInitialProductEvidence)
+      && (!isInitialInterestProductEvidenceSafe(rawCandidate.product_evidence) || !isInitialInterestProductEvidenceSafe(rawCandidate.product_evidence_rendering))
+      ? {
+          ...rawCandidate,
+          product_evidence: requiredInitialProductEvidence,
+          product_evidence_rendering: requiredInitialProductEvidence,
+        }
+      : rawCandidate;
+    const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
     const candidate = purpose === "initial_interest" && ctaContracts.length > 0
       ? recoverManualInitialInterestCandidate({
@@ -307,6 +328,7 @@ export async function generatePersonalizedJapanEntryMessage(
           companyName: input.companyName,
           productNames: input.productNames,
           facts,
+          supplementalProductEvidence: supplementalInitialProductEvidence,
           customerPathAnchor: ctaAnchors.customerPathAnchor,
           contract: ctaContracts[candidateIndex % ctaContracts.length] ?? ctaContracts[0]!,
           issues: initial.safety.issues,

@@ -94,7 +94,7 @@ const CTA_ROUTES: CtaRoute[] = [
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `The analysis I can provide would stay narrowly focused on ${anchor}, the observed ${path} signal, and whether a Japan customer-path test is justified.`,
+      offer: `The Japan opportunity analysis I can provide would stay narrowly focused on ${anchor}, the observed ${path} signal, and whether a customer-path test is justified.`,
       question: `Would you like to receive the ${anchor} Japan opportunity analysis?`,
     }),
   },
@@ -147,20 +147,23 @@ export function buildManualCtaContracts(input: {
   count?: number
 }): ManualCtaContract[] {
   const count = Math.max(1, Math.min(input.count ?? 3, 3))
-  const candidates = CTA_ROUTES.map((route, index) => {
-    const { offer, question } = route.build(input.requiredAnchor, input.customerPathAnchor)
-    const paragraph = `${offer} ${question}`
+  const routeParts = CTA_ROUTES.map((route) => ({
+    ctaType: route.ctaType,
+    ...route.build(input.requiredAnchor, input.customerPathAnchor),
+  }))
+  const candidates = routeParts.flatMap((offerRoute, offerIndex) => routeParts.map((questionRoute, questionIndex) => {
+    const paragraph = `${offerRoute.offer} ${questionRoute.question}`
     const maxPriorSimilarity = input.priorMessages.reduce((maximum, prior) => Math.max(
       maximum,
       manualMessageSimilarity(paragraph, contentCta(prior.message), [input.companyName, prior.companyName]),
     ), 0)
-    const tieBreak = stableHash(`${input.companyName}:${input.requiredAnchor}:${index}`)
+    const tieBreak = stableHash(`${input.companyName}:${input.requiredAnchor}:${offerIndex}:${questionIndex}`)
     return {
-      contract: { id: `cta-route-${index + 1}`, ctaType: route.ctaType, paragraph, question },
+      contract: { id: `cta-route-${offerIndex + 1}-${questionIndex + 1}`, ctaType: questionRoute.ctaType, paragraph, question: questionRoute.question },
       maxPriorSimilarity,
       tieBreak,
     }
-  }).sort((left, right) => left.maxPriorSimilarity - right.maxPriorSimilarity || left.tieBreak - right.tieBreak)
+  })).sort((left, right) => left.maxPriorSimilarity - right.maxPriorSimilarity || left.tieBreak - right.tieBreak)
 
   const selected: ManualCtaContract[] = []
   for (const item of candidates) {

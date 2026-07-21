@@ -15,6 +15,7 @@ import {
   MANUAL_OUTREACH_PLAYBOOKS,
 } from "./manual-japan-entry-playbook"
 import { applyJapanEntryFitPolicy, JAPAN_ENTRY_FIT_CONTRACT_VERSION } from "./manual-japan-entry-fit-policy"
+import { decodePublicHtmlText } from "./initial-form-draft-evidence"
 
 const profileSchema = z.object({
   companyName: z.string().min(2).max(120),
@@ -226,6 +227,15 @@ function publicEvidenceFacts(productContext: string): string[] {
     .slice(0, 10)
 }
 
+function normalizedPublicCompanyName(value: string | null, domain: string): string {
+  const decoded = decodePublicHtmlText(value ?? "")
+    .replace(/\s+[|–—-]\s+(?:the\s+)?[^|–—]{8,}$/i, "")
+    .replace(/,\s+(?:the|a|an)\s+[^,]{8,}$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+  return decoded.length >= 2 && decoded.length <= 80 ? decoded : domain
+}
+
 export function groundManualCompanyProfile(input: {
   profile: ParsedManualCompanyProfile
   domain: string
@@ -233,11 +243,13 @@ export function groundManualCompanyProfile(input: {
   evidenceText: string
   productContext: string
 }): ManualCompanyProfile {
-  const normalizedEvidence = input.evidenceText.toLocaleLowerCase("en-US")
-  const modelNameIsObserved = normalizedEvidence.includes(input.profile.companyName.toLocaleLowerCase("en-US"))
+  const normalizedEvidence = decodePublicHtmlText(input.evidenceText).toLocaleLowerCase("en-US")
+  const profileCompanyName = normalizedPublicCompanyName(input.profile.companyName, input.domain)
+  const fallbackCompanyName = normalizedPublicCompanyName(input.fallbackCompanyName, input.domain)
+  const modelNameIsObserved = normalizedEvidence.includes(profileCompanyName.toLocaleLowerCase("en-US"))
   const companyName = modelNameIsObserved
-    ? input.profile.companyName
-    : input.fallbackCompanyName ?? input.domain
+    ? profileCompanyName
+    : fallbackCompanyName
   const isJapaneseCompany = hasDeterministicJapanEvidence({
     domain: input.domain,
     text: input.evidenceText,

@@ -26,7 +26,7 @@ describe("manual CTA contract", () => {
       for (const contract of contracts) observed.set(contract.id, contract.paragraph)
     }
 
-    expect(observed.size).toBe(12)
+    expect(observed.size).toBeGreaterThanOrEqual(120)
     for (const paragraph of observed.values()) {
       expect(paragraph).toMatch(/Japan (?:opportunity )?analysis/i)
       expect(paragraph).toMatch(/(?:share|send|receive|forward|right person|appropriate person|who owns|owner|responsible)/i)
