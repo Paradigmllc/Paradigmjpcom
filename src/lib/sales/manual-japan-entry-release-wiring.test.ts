@@ -100,6 +100,8 @@ describe("manual Japan Entry release wiring", () => {
     expect(deploy).toContain("result?.legacyReports === 0")
     expect(doctor).toContain("report_data ->> 'schemaVersion' is distinct from 'manual_japan_entry_strategy_v4'")
     expect(formDiagnosticsMigration).toContain("generation_error")
+    expect(formDiagnosticsMigration).toContain("updated_at < now() - interval '15 minutes'")
+    expect(formDiagnosticsMigration).toContain("Interrupted analysis was recovered as retryable")
     expect(formDiagnosticsMigration).toContain("form_discovery #>> '{inspection,status}' = 'form'")
     expect(batchMigration).toContain("total_count BETWEEN 1 AND 500")
     expect(batchMigration).toContain("FOR UPDATE SKIP LOCKED")

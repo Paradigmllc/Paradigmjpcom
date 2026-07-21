@@ -40,7 +40,10 @@ export function isManualWorkRecoveryAvailable(item: RecoveryState): boolean {
   )
   if (hasRecordedOutcome) return false
   if (item.status === "rejected" && item.twenty_sync_status !== "failed") return false
-  const generationFailed = item.message_review?.generation_status === "failed"
+  const generationStatus = typeof item.message_review?.generation_status === "string"
+    ? item.message_review.generation_status
+    : ""
+  const generationFailed = ["failed", "retry_required"].includes(generationStatus)
   return item.status === "failed"
     || item.twenty_sync_status === "failed"
     || generationFailed
