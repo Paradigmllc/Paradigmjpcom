@@ -30,11 +30,15 @@ export async function POST(req: NextRequest) {
   }
   try {
     const result = await reconcileManualWorkArtifacts(parsed.data)
+    const complete = result.failed === 0
+      && result.skipped === 0
+      && result.legacyReports === 0
+      && result.currentReports === result.checked
     try {
       const { notifyBothChannels } = await import("@/lib/notify")
       await notifyBothChannels("sales", {
         title: "Manual work成果物の整合性監査完了",
-        message: `${result.checked}件確認 / ${result.repaired}件復元 / ${result.failed}件失敗 / 外部送信0件`,
+        message: `${result.checked}件確認 / V4 DB読戻し${result.currentReports}件 / 旧版${result.legacyReports}件 / ${result.failed}件失敗 / 外部送信0件`,
         link: "/work",
         type: "manual_work_artifact_reconciled",
         region: "global",
@@ -42,7 +46,7 @@ export async function POST(req: NextRequest) {
     } catch (notifyError) {
       console.error("[api/work/artifacts/reconcile] notification failed:", notifyError)
     }
-    return NextResponse.json({ ok: result.failed === 0, result }, { status: result.failed === 0 ? 200 : 207 })
+    return NextResponse.json({ ok: complete, result }, { status: complete ? 200 : 207 })
   } catch (error) {
     console.error("[api/work/artifacts/reconcile] failed:", error)
     return NextResponse.json(

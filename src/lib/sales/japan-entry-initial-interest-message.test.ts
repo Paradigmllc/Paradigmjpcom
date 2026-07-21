@@ -21,10 +21,10 @@ const audit = {
 };
 const productContext = "Example provides a subscription analytics platform for independent retailers with inventory insights.";
 const productEvidence = "subscription analytics platform for independent retailers";
-const diagnosis = "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked. For Example, the management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.";
-const opening = "Example’s public pages describe an analytics workflow built around inventory decisions for independent retailers, which makes the product scope concrete enough for a Japan-path review.";
-const product = "I reviewed Example and its subscription analytics platform for independent retailers, including the inventory forecasting and replenishment insights described on the homepage.";
-const tailoredClose = "If useful, I can share a more detailed Japan opportunity analysis focused on Example’s Japanese-language customer path. Would you be open to receiving the Example analysis?";
+const diagnosis = "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; the customer path available for a Japan entry decision remains unverified from the pages checked. The management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.";
+const opening = "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in a single workflow.";
+const product = "That documented workflow gives the review a concrete product basis without assuming how retailers in Japan would evaluate or use it.";
+const tailoredClose = "I can share a Japan opportunity analysis focused on Example’s Japanese-language customer path and JPY presentation question. Would you be open to receiving it?";
 
 function copyReady(...bodyParagraphs: string[]): string {
   return [manualFormGreeting("Example"), ...bodyParagraphs, MANUAL_FORM_SIGNATURE].join("\n\n");
@@ -52,9 +52,9 @@ describe("initial-interest form message safety", () => {
 
   it("accepts a company-specific opening when options are omitted", () => {
     const message = copyReady(
-      "I reviewed Example’s subscription analytics platform for independent retailers, including the inventory insights described publicly, to understand what a Japan evaluation could verify.",
-      "The product description connects forecasting and replenishment decisions in one workflow, so the public product scope is specific rather than inferred from a broad category label.",
-      "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked.",
+      "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in one workflow.",
+      "That documented workflow gives the review a concrete product basis without inferring demand, customer behavior, or results in Japan.",
+      "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked. The next decision is whether that observed path warrants a focused validation test before wider localization work.",
       tailoredClose,
     );
     const result = review(message);

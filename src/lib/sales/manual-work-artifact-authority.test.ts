@@ -45,7 +45,10 @@ const reportUrl = "https://paradigmjp.com/en/work-report/11111111-1111-4111-8111
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.isCurrentReport.mockReturnValue(false)
+  mocks.isCurrentReport.mockImplementation((value: unknown) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false
+    return (value as Record<string, unknown>).schemaVersion === "manual_japan_entry_strategy_v4"
+  })
   mocks.resolveReport.mockReturnValue({ schemaVersion: "manual_japan_entry_strategy_v4" })
   mocks.parseProfile.mockReturnValue({
     companyName: "Paperform",
@@ -103,7 +106,7 @@ describe("manual work artifact authority", () => {
     }
     mocks.getServiceSalesSupabase.mockReturnValue(supabaseResults(
       { data: item, error: null },
-      { data: { id: item.id }, error: null },
+      { data: { id: item.id, report_data: { schemaVersion: "manual_japan_entry_strategy_v4" } }, error: null },
       { data: null, error: null },
     ))
 
@@ -122,7 +125,6 @@ describe("manual work artifact authority", () => {
   })
 
   it("restores 100 workbench artifacts in two rate-safe Twenty batches", async () => {
-    mocks.isCurrentReport.mockReturnValue(true)
     const items = Array.from({ length: 100 }, (_, index) => ({
       id: `work-${index}`,
       domain: `company-${index}.example`,
@@ -161,7 +163,7 @@ describe("manual work artifact authority", () => {
       source_attributions: [],
     } as unknown as ManualJapanEntryWorkRow
     mocks.getServiceSalesSupabase.mockReturnValue(supabaseResults({
-      data: { id: item.id },
+      data: { id: item.id, report_data: { schemaVersion: "manual_japan_entry_strategy_v4" } },
       error: null,
     }))
 
@@ -171,5 +173,31 @@ describe("manual work artifact authority", () => {
     }])
     expect(mocks.resolveReport).toHaveBeenCalledWith(item)
     expect(mocks.syncManualBatch).not.toHaveBeenCalled()
+  })
+
+  it("fails before Twenty sync when the database returns a legacy report after update", async () => {
+    const item = {
+      id: "work-stale-report",
+      domain: "stale-report.example",
+      report_url: reportUrl,
+      report_data: { schemaVersion: "manual_japan_entry_v2" },
+      profile: {},
+      form_url: null,
+      initial_message: null,
+      message_review: {},
+      error_message: null,
+      twenty_company_id: "twenty-stale-report",
+      source_attributions: [],
+    }
+    mocks.getServiceSalesSupabase.mockReturnValue(supabaseResults(
+      { data: item, error: null },
+      { data: { id: item.id, report_data: item.report_data }, error: null },
+    ))
+
+    await expect(restoreManualWorkTwentyHome({
+      twentyCompanyId: "twenty-stale-report",
+      domain: item.domain,
+    })).rejects.toThrow("failed exact V4 database read-back")
+    expect(mocks.syncManual).not.toHaveBeenCalled()
   })
 })

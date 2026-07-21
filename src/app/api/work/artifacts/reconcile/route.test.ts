@@ -24,6 +24,8 @@ beforeEach(() => {
     skipped: 0,
     failed: 0,
     errors: [],
+    currentReports: 27,
+    legacyReports: 0,
     sent: 0,
   })
   mocks.notify.mockResolvedValue({ ok: true })
@@ -45,10 +47,34 @@ describe("manual work artifact reconciliation API", () => {
     }))
     const body = await response.json()
     expect(response.status).toBe(200)
-    expect(body).toMatchObject({ ok: true, result: { checked: 27, repaired: 27, failed: 0, sent: 0 } })
+    expect(body).toMatchObject({
+      ok: true,
+      result: { checked: 27, repaired: 27, failed: 0, currentReports: 27, legacyReports: 0, sent: 0 },
+    })
     expect(mocks.reconcile).toHaveBeenCalledWith({ limit: 500 })
     expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({
       message: expect.stringContaining("外部送信0件"),
     }))
+  })
+
+  it("returns multi-status when even one legacy report remains after read-back", async () => {
+    mocks.reconcile.mockResolvedValue({
+      checked: 27,
+      repaired: 27,
+      skipped: 0,
+      failed: 1,
+      errors: ["legacy.example: legacy or invalid report remained after reconciliation"],
+      currentReports: 26,
+      legacyReports: 1,
+      sent: 0,
+    })
+
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/artifacts/reconcile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ limit: 500 }),
+    }))
+    expect(response.status).toBe(207)
+    await expect(response.json()).resolves.toMatchObject({ ok: false, result: { legacyReports: 1 } })
   })
 })

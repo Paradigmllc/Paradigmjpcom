@@ -47,13 +47,13 @@ describe("bespoke form-copy style", () => {
     expect(issues).not.toContain("The final question must include the exact company or product anchor: Screenshot to Code")
   })
 
-  it("rejects a generic final question even when the preceding offer sentence names the company", () => {
+  it("accepts a natural pronoun in the final question when the CTA paragraph names the company", () => {
     const issues = review(
       "Screenshot to Code converts screenshots to code. The audit found no Japanese-language path.",
       "Screenshot to Code converts screenshots to code.",
       "I can share a Screenshot to Code opportunity snapshot. Could you forward it to the right person?",
     )
-    expect(issues).toContain("The final question must include the exact company or product anchor: Screenshot to Code")
+    expect(issues).not.toContain("The final CTA paragraph must include the exact company or product anchor: Screenshot to Code")
   })
 
   it("rejects the stock founder-forward CTA even when the company anchor is present", () => {
@@ -74,5 +74,15 @@ describe("bespoke form-copy style", () => {
       "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
     )
     expect(issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
+  })
+
+  it("rejects repeated company naming and repeated evidence disclaimers", () => {
+    const issues = review(
+      "Screenshot to Code documents screenshot conversion. Screenshot to Code has no Japanese-language path. Screenshot to Code remains unverified; it is not evidence of demand and does not establish outcomes.",
+      "Screenshot to Code documents screenshot conversion.",
+      "I can send a Screenshot to Code analysis. Would you like me to send it?",
+    )
+    expect(issues).toContain("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
+    expect(issues).toContain("The message repeats evidence disclaimers; keep one concise boundary statement and use the remaining space for decision relevance")
   })
 })

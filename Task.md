@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-22 `/work`自然文品質・V4永続read-back・terminal failure収束（最終release前）
+
+- 本番102件の保存済み初回文面を再監査し、95件で企業名が本文3回以上、最大9回、11件で根拠境界の但し書きが3回以上というテンプレ感を実測した。旧score 92以上を品質証明にせず、企業名と商品名は本文各2回まで、根拠境界は2回まで、冒頭で公開商品事実を1回示した後は自然な代名詞へ切り替え、CTA段落だけ企業/商品anchorを保持する決定論gateへ更新した。DeepSeek prompt、候補repair、CTA契約も同じ制約へ統一し、URL・出典・価格・提携文・推測・因果・成果保証の禁止は維持する。
+- `/work`の明示的な「再探索・再生成」は`completed`だけでなく成果timestampのない`needs_review`も同一履歴IDで全面再生成できるようにした。取得不能、公開HTTP失敗、timeout、公開商品根拠不足、公開ページなしは再解析を要求する赤エラーではなく`rejected / complete`へterminal収束し、外部送信・Twenty新規追加を行わない。model、DB、Twenty等の真正な障害は従来どおり`failed`で可視化する。既存terminal failureを同じ基準へ正規化するmigrationを追加した。
+- V4レポート更新はDBのupdate応答を成功扱いせず、保存直後の`id,report_data`を検証して`manual_japan_entry_strategy_v4`でない場合は失敗させる。最大500件の整合APIも100件chunkでDBを独立read-backし、`currentReports=checked / legacyReports=0 / failed=0 / skipped=0`のときだけHTTP 200とする。UI toastにもV4読戻し件数と旧版件数を表示する。
+- 本番ではrelease前の現行整合APIを実行し、report-bearing 104件を`checked 104 / repaired 104 / failed 0 / sent 0`へ更新後、独立read-backでV4 **104/104 / legacy 0**を確認済み。フォーム保存31件はstrict DOM検証31/31で、live networkは29/31成功、残2件はbot防御403と接続拒否として誤404保存なし。Twentyはsynced/duplicate 106、外部送信0。
+- 新しい文面契約とV4/terminal policyの関連回帰は **52 files / 262 tests**がpass。全Vitest、TypeScript、ESLint、Quality Guard、production build、正式PR、`npm run release:prod`、全対象文面の再生成、Twenty/V4/zero-send read-back、PC/mobile Chrome確認後だけ実務開始可へ更新する。
+
 ## CURRENT STATUS - 2026-07-22 `/work`誤検知根絶・非企業URL除外・全レポート500件自己修復（第1release/実データ回復完了・第2release前）
 
 - PR **#511** / main **1d62eeca**を正式`npm run release:prod`のdeployment **i8vvm2xc0wcvn0ho4kh9p0z4**で反映し、DB 93/93、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime/RLS/Traefik/zero-sendを含むrelease gateがpassした。全report-bearing履歴107件を1回の整合APIで`checked 107 / repaired 107 / failed 0 / sent 0`へ更新した。

@@ -149,7 +149,7 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(recovered.message).toContain(auditFact.statement)
   })
 
-  it("enforces the exact product anchor in the final question after recovery", () => {
+  it("keeps the exact product anchor once in the CTA paragraph and a natural pronoun in the question", () => {
     const [baseContract] = buildManualCtaContracts({
       companyName: "Dub",
       requiredAnchor: "Dub",
@@ -183,13 +183,14 @@ ${MANUAL_FORM_SIGNATURE}`,
       facts: [auditFact],
       customerPathAnchor: "Japanese-language",
       contract,
-      issues: ["The final CTA question must contain the exact company or product anchor"],
+      issues: ["The final CTA paragraph must contain the exact company or product anchor"],
       similarityPassed: true,
     })
     const finalQuestion = recovered.message.match(/[^.!?]*\?\s*(?:\n|$)/g)?.at(-1) ?? ""
 
-    expect(finalQuestion).toContain("Dub")
-    expect(finalQuestion.trim()).toBe("Would you like to receive the Dub Japan opportunity analysis?")
+    expect(recovered.message).toContain("Dub")
+    expect(finalQuestion).not.toContain("Dub")
+    expect(finalQuestion.trim()).toBe("Would you like to receive it?")
   })
 
   it("rebuilds a multi-sentence opening when one sentence is duplicated later", () => {

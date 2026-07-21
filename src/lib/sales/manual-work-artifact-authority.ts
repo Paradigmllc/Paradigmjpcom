@@ -89,14 +89,21 @@ export async function persistCurrentManualWorkReport(
   report: ManualJapanEntryReportData,
 ): Promise<void> {
   if (isManualJapanEntryReportData(item.report_data)) return
+  if (!isManualJapanEntryReportData(report)) {
+    throw new Error("Generated manual report did not satisfy the current V4 schema")
+  }
   const { data, error } = await client()
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_WORK)
     .update({ report_data: report })
     .eq("id", item.id)
-    .select("id")
+    .select("id,report_data")
     .maybeSingle()
   if (error) throw new Error(error.message)
   if (!data) throw new Error("Current manual report could not be persisted")
+  const persisted = data as { id?: unknown; report_data?: unknown }
+  if (persisted.id !== item.id || !isManualJapanEntryReportData(persisted.report_data)) {
+    throw new Error("Current manual report failed exact V4 database read-back")
+  }
 }
 
 export async function restoreManualWorkTwentyHome(input: {
