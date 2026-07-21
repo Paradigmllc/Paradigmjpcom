@@ -2044,3 +2044,10 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `/en`上部の`How much longer can you afford to leave Japan unserved?`帯を、ファーストビュー直下の補助訴求として再設計した。見出しをdesktop `48px→40px`、mobile `26px→22px`、上下余白・要素間隔・本文・CTAを縮小し、Japan Entry本体の見出しを早く視認できる構成へ変更した。
 - PR **#489** / commit `e4890497`をmainへ統合し、正式`npm run release:prod`のdeployment **prsuwdh743n5lpt2ljvm33t9**を完走。DB **93/93**、公開smoke、Traefik/Cloudflare、RLS/Realtime、Sales health `ok:true`を含むrelease gateがpassした。
 - 本番in-app browser実画面で`data-testid=japan-market-urgency`を確認し、section height **274px**、heading font **40px**、heading height **90px**、横overflow **0**。スクリーンショットでも次の`Launch in Japan without hiring a local team`見出しが同一viewportに入り、訴求帯が主役コンテンツを圧迫しないことを確認した。
+## CURRENT STATUS - 2026-07-21 Japan Entry campaign value visibility (本番release・公開read-back完了)
+
+- Japan Entryの価値訴求を全公開導線へ統一し、`$2,000/month × 6 months = $12,000`（初期セットアップに含まれる6か月分の運用価値）をホーム、Pricing、Package、Contact、FAQ、About、Blog、診断ツール、チャット、営業文面、JSON-LD、法務ページへ反映した。Packageページには数式カードと含有範囲へのCTA、ホームにはcompactバナーを追加した。
+- キャンペーン対象は「selected launch partners / limited selected availability」と表記し、未決定の固定社数（例: 10社）を公開コピーへ入れていない。月額の確定値を捏造せず、6か月分の価値を$2,000/月として説明する。
+- PR **#494** / commit **48b216cf** をmainへ統合（merge **b24795818fcd58be81a3b1c63e3fbd08b64fe9e8**）。正式 `npm run release:prod` と `npm run release:doctor -- --post-deploy` を完走し、DB **91/91**、公開smoke、Sales health `ok:true`、Twenty/Realtime/Traefik/zero-sendを含むrelease gateを確認した。
+- 本番 `https://paradigmjp.com/en` はHTTP **200**。`/en/pricing`、`/en/package`、`/en/contact`、`/en/faq`、`/en/about`、`/en/blog`もHTTP **200**で、各HTMLから数式をread-backした。固定社数を示す`first 10`/`10 companies`表現は公開HTMLにない。
+- TypeScript、全Vitest、Lint、Quality Guard、`git diff --check`をpass（Quality Guardは既存warningのみ）。ユーザー固有の未関連変更 `e2e/manual-japan-entry-work.spec.ts` と `test-results/` は保持している。
