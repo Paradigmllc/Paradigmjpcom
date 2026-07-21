@@ -79,4 +79,13 @@ describe("initial-interest evidence contract", () => {
     expect(isInitialInterestProductEvidenceSafe("Download the attached report")).toBe(false)
     expect(isInitialInterestProductEvidenceSafe("AI-powered customer feedback platform")).toBe(true)
   })
+
+  it("skips generic confidence language and public-page legal boilerplate", () => {
+    const airboxr = "Make decisions with confidence, with advanced analytics and AI built into your existing tools. | Make confident decisions backed by data and e-commerce expertise, without changing the way you work."
+    const strands = "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply. | Accurate, Affordable and accelerated cancer monitoring technology"
+
+    expect(selectGroundedProductEvidence({ companyName: "Airboxr", productContext: airboxr })).toBe("Make confident decisions backed by data and e-commerce expertise, without changing the way you work.")
+    expect(selectGroundedProductEvidence({ companyName: "2Strands Biosciences", productContext: strands })).toBe("Accurate, Affordable and accelerated cancer monitoring technology")
+    expect(isInitialInterestProductEvidenceSafe("This site is protected by reCAPTCHA")).toBe(false)
+  })
 })

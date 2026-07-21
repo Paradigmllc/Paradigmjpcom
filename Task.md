@@ -1,5 +1,8 @@
-## CURRENT STATUS - 2026-07-22 `/work`誤検知根絶・非企業URL除外・全レポート500件自己修復（本番release前）
+## CURRENT STATUS - 2026-07-22 `/work`誤検知根絶・非企業URL除外・全レポート500件自己修復（第1release/実データ回復完了・第2release前）
 
+- PR **#511** / main **1d62eeca**を正式`npm run release:prod`のdeployment **i8vvm2xc0wcvn0ho4kh9p0z4**で反映し、DB 93/93、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime/RLS/Traefik/zero-sendを含むrelease gateがpassした。全report-bearing履歴107件を1回の整合APIで`checked 107 / repaired 107 / failed 0 / sent 0`へ更新した。
+- 文面未生成28件を同じ履歴ID・3並列・外部送信0で再処理し、15件は文面/gate/V4/Twenty read-back成功、GoDaddy/登録販売ページ3件はrejectされTwentyのreport/form URLを消去、通信エラー0。残10件は正式社名の同一文中反復8、modelの販促句選択1、reCAPTCHA定型文の商材誤選択1へ絞り込んだ。
+- 第2修正では正式社名由来の3〜5語windowだけを内部反復判定から除外し、商材フレーズ反復は引き続き拒否する。`with confidence`等の販促句とreCAPTCHA/Privacy Policy/Terms/Cookie/権利表記を商材根拠候補から排除し、unsafeなmodel選択時は決定論で選んだ公開根拠へ戻す。重点40 files / 192 tests、全Vitest **237 files / 1,105 tests**、TypeScript、ESLint、Quality Guard 0 errors、production build 408/408 pagesがpass。第2PR/release後に残10件を再処理し、文面未生成0または正当な対象外だけへ収束させる。
 - 本番DBの全129履歴を監査し、`completed 9 / needs_review 96 / rejected 2 / failed 22`、外部送信0、旧V2レポート5、文面未生成28を確認した。28件はDeepSeek transport障害ではなく、数字を含む企業/商品名、ドメイン風社名、相手商品の価格語、公開HTML entity、長いmodel fieldを決定論gateが誤検知していた。駐車・販売ページ3件も企業扱いされTwentyへ残っていた。
 - 品質gateを緩めず、公開根拠に含まれる企業/商品固有の数字と相手商品の価格記述だけを許可し、未知の数字・Paradigm価格・URL・出典・推測・因果・成果保証は引き続き拒否する。ドメイン風の社名/商品名はフォーム本文だけ人間可読のURLなし表記へ変換し、`Tomohiro H / Paradigm LLC / contact@paradigmjp.com`署名を維持する。DeepSeekの既知の長さ超過はZod preprocessで上限内へ正規化し、未解決placeholder/HTML entityは公開根拠候補から除外する。
 - GoDaddy/Sedo/HugeDomains/登録済み販売ページ/Apache/nginx初期ページを企業ではない対象としてprofile・文面・レポート生成前にrejectする。既に`/work`所有Twenty会社がある場合はreport/form URLを空にし、`rejected / non-company page`、`対象外・送信禁止`をPATCH後にread-backする。再解析時は旧report aliasも消去する。

@@ -8,10 +8,11 @@ const EVIDENCE_STOP_WORDS = new Set([
 
 const PRODUCT_OUTCOME_CLAIM_RE = /(?:\b(?:boost|maximi[sz]e|increase|generate|grow|scale|transform|accelerate|improve|enhance|drive)\b.{0,90}\b(?:conversion|conversions|sales|revenue|profit|growth|performance|results?|subscribers?|shoppers?|customers?|users?|audience)\b|\b(?:conversion|conversions|sales|revenue|profit|growth|performance|subscribers?|shoppers?|customers?|users?|audience)\b.{0,70}\b(?:boost|increase|maximi[sz]e|generate|grow|scale|transform|accelerate|improve|enhance|drive)\b|\bhelp you scale\b)/i
 const CASE_STUDY_HEADING_RE = /(?:\s+x\s+|:\s*$|^case stud(?:y|ies)\b)/i
-const PROMOTIONAL_QUALIFIER_RE = /\b(?:free|significantly|effectively|effortlessly|seamlessly|powerfully)\b/i
+const PROMOTIONAL_QUALIFIER_RE = /\b(?:free|significantly|effectively|effortlessly|seamlessly|powerfully|with confidence)\b/i
 const FORM_COPY_UNSAFE_EVIDENCE_RE = /(?:https?:\/\/|www\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b|\b(?:attached|attachment|downloadable|download|unlock(?:ed|s|ing)?|ROI|return on investment|revenue|guarantee(?:d|s|ing)?)\b)/i
 const CUSTOMER_QUOTE_RE = /(?:\b(?:I|we|our|my|I've|we've)\b|trusted by|definitely recommended|absolutely love)/i
 const UNRESOLVED_PUBLIC_TEXT_RE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
+const PUBLIC_BOILERPLATE_RE = /(?:reCAPTCHA|privacy policy|terms of service|cookie policy|all rights reserved)/i
 
 function evidenceToken(value: string): string {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -86,6 +87,7 @@ function productEvidenceCandidates(input: {
     .filter((value) => !CASE_STUDY_HEADING_RE.test(value))
     .filter((value) => !PROMOTIONAL_QUALIFIER_RE.test(value))
     .filter((value) => !UNRESOLVED_PUBLIC_TEXT_RE.test(value))
+    .filter((value) => !PUBLIC_BOILERPLATE_RE.test(value))
     .filter((value) => !productNames.has(value.toLowerCase()))
     .filter((value) => evidenceTokens(value).length >= 4)
 }
@@ -97,6 +99,7 @@ export function isInitialInterestProductEvidenceSafe(value: string): boolean {
     && !PRODUCT_OUTCOME_CLAIM_RE.test(value)
     && !PROMOTIONAL_QUALIFIER_RE.test(value)
     && !UNRESOLVED_PUBLIC_TEXT_RE.test(value)
+    && !PUBLIC_BOILERPLATE_RE.test(value)
 }
 
 function primaryEvidenceScore(value: string): number {

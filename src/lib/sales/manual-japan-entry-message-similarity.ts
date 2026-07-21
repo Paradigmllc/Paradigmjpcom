@@ -80,14 +80,30 @@ function coreMessageSimilarity(left: string, right: string, companyNames: Array<
   return manualMessageSimilarity(companySpecificCore(left), companySpecificCore(right), companyNames)
 }
 
-function repeatedPhrase(message: string): string | null {
+function normalizedRepeatWords(value: string): string[] {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+}
+
+function companyIdentityWindows(companyName: string): Set<string> {
+  const words = normalizedRepeatWords(companyName)
+  const windows = new Set<string>()
+  for (let width = 3; width <= Math.min(5, words.length); width += 1) {
+    for (let index = 0; index <= words.length - width; index += 1) {
+      windows.add(words.slice(index, index + width).join(" "))
+    }
+  }
+  return windows
+}
+
+function repeatedPhrase(message: string, companyName: string): string | null {
+  const identityWindows = companyIdentityWindows(companyName)
   const sentences = message.split(/(?<=[.!?])\s+/)
   for (const sentence of sentences) {
-    const words = sentence
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, " ")
-      .split(/\s+/)
-      .filter(Boolean)
+    const words = normalizedRepeatWords(sentence)
     for (let width = 5; width >= 3; width -= 1) {
       const seen = new Map<string, number>()
       for (let index = 0; index <= words.length - width; index += 1) {
@@ -95,6 +111,7 @@ function repeatedPhrase(message: string): string | null {
         if (window.filter((word) => word.length >= 3 && !INTERNAL_REPEAT_STOP_WORDS.has(word)).length < 3) continue
         const phrase = window.join(" ")
         if (phrase.replaceAll(" ", "").length < 14) continue
+        if (identityWindows.has(phrase)) continue
         const priorIndex = seen.get(phrase)
         if (priorIndex !== undefined && index - priorIndex >= width) return phrase
         seen.set(phrase, index)
@@ -140,7 +157,7 @@ export function reviewManualMessageDistinctness(input: {
       strongest = prior
     }
   }
-  const repeated = repeatedPhrase(input.message)
+  const repeated = repeatedPhrase(input.message, input.companyName)
   const wholeMessagePassed = maxSimilarity < threshold
   const ctaPassed = maxCtaSimilarity < ctaThreshold
   const passed = wholeMessagePassed && ctaPassed && repeated === null
