@@ -34,7 +34,13 @@ WITH normalized AS (
     END AS source_coverage
   FROM public.manual_japan_entry_work w
   WHERE w.report_url IS NOT NULL
-    AND coalesce(w.report_data ->> 'schemaVersion', '') <> 'manual_japan_entry_v2'
+    -- This compatibility migration is replayed by every formal release. It may
+    -- bootstrap truly legacy rows, but it must never downgrade a newer report.
+    AND coalesce(w.report_data ->> 'schemaVersion', '') NOT IN (
+      'manual_japan_entry_v2',
+      'manual_japan_entry_customer_v3',
+      'manual_japan_entry_strategy_v4'
+    )
 ), rebuilt AS (
   SELECT
     n.*,
@@ -192,4 +198,4 @@ FROM rebuilt
 WHERE target.id = rebuilt.id;
 
 COMMENT ON COLUMN public.manual_japan_entry_work.report_data IS
-  'Dedicated manual Japan Entry evidence brief. schemaVersion=manual_japan_entry_v2; never used as an automated send payload.';
+  'Versioned manual Japan Entry customer report; current production schema is manual_japan_entry_strategy_v4 and no report is an automated send payload.';
