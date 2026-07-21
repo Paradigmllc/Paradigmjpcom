@@ -2,9 +2,24 @@
 
 ## Executive verdict
 
-The production surface observed before this change was **not ready for scaled customer-facing use**. The report was a 19,093 px desktop / 39,275 px mobile text document with zero semantic figures and zero tables. The current database also contains only five manual-work records and one measured durable-batch item, so neither report quality nor 500-item throughput had been proven at production scale.
+The production surface observed before this change was **not ready for scaled customer-facing use**. The report was a 19,093 px desktop / 39,275 px mobile text document with zero semantic figures and zero tables. The current database also contained only five manual-work records and one measured durable-batch item, so neither report quality nor 500-item throughput had been proven at production scale.
 
-This change removes the known code-level blockers: a visual report system, server-drained durable batches, provider preflight, delta Realtime updates, global history pagination, duplicate-copy rejection, and Twenty read-back preservation. Release and a staged live canary are still required before processing the 4,000-company target.
+The known code-level blockers have now been released: a visual report system, server-drained durable batches, provider preflight, delta Realtime updates, global history pagination, duplicate-copy rejection, DeepSeek usage persistence, and field-by-field Twenty read-back. Production proof now covers the visual report and two recovered company records, but not a fresh 20/100/500 progression. The current verdict is therefore **production release candidate for a 20-company zero-send canary**, not 4,000-company production-ready.
+
+## Production verification after the fix
+
+| Check | Production evidence | Verdict |
+| --- | --- | --- |
+| Visual customer report | 14 semantic `<figure>` elements, one decision `<table>`, ten strategy chapters, 67 headings, 0 horizontal overflow | Passed for the inspected desktop report; mobile and sampled-company visual review remains part of each wave. |
+| Latest release | main `d769a92a`; Coolify deployment `gkbz3rwlo73l6v37kf3cblt5`; post-deploy Sales health JSON `ok:true` and final release gate passed | Passed. |
+| Fathom recovery | Copy score 92, safety 100, uniqueness 86, maximum history similarity 0.139; Twenty ID `8df3cbc9-b8ed-4403-9e19-42fe76fa0b6b`; `sent=false` | Passed; missing verified form correctly leaves the row in `needs_review`. |
+| Tally recovery | 53.3 seconds; copy score 92, safety 100, uniqueness 87, maximum history similarity 0.131; Twenty ID `9eb921a8-69fd-4fca-92be-b1d64b64477e`; `sent=false` | Passed; missing verified form correctly leaves the row in `needs_review`. |
+| Cross-company copy check | Fathom/Tally company-name-neutral similarity 0.125; no reused stock CTA detected | Passed for this pair. |
+| Twenty direct read-back | Both records returned HTTP 200 with exact company/domain/report, `manual_work`, scores, full Tomohiro H draft, and explicit never-sent summary | Passed. |
+| DeepSeek Cache Hit | Fathom 4,736/11,043 prompt tokens (42.9%); Tally 7,552/16,097 (46.9%) | Cache is active. Earlier failed repair loops exceeded 90% hit rate but still wasted completion tokens and wall time; cache ratio alone is not a quality KPI. |
+| External delivery | Form/email/SNS sends 0; all outcome timestamps remain null | Passed. |
+
+The successful single-company wall-clock sample is 53.3 seconds. With the current three-item drain concurrency, the arithmetic ceiling is about 203 companies/hour or 4,860/day before provider throttling, crawling variance, technical failures, and reconciliation. This is a capacity hypothesis only. At that rate, 500 items are about 2.5 hours and 4,000 items about 19.7 hours; the 20/100/500 live waves below are required before treating those estimates as an operating SLA.
 
 ## Evidence observed before the fix
 

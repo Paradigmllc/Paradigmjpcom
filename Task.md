@@ -1,3 +1,14 @@
+## CURRENT STATUS - 2026-07-21 `/work`視覚レポートV4・文面品質・Twenty読戻し・Cache Hit実測（本番release candidate / 20件canary前 / 外部送信0）
+
+- テキスト壁だった`/work-report`を10章の経営戦略レポートV4へ更新し、本番実画面でsemantic figure **14件**、decision table **1件**、heading **67件**、横overflow **0**を確認した。数値根拠がない場合はグラフ用の値を捏造せず、observed / modeled / hypothesis / recommended actionを分離する。
+- 500 URLをDBへ先に永続化し、browser非依存のserver drain（同時3件）、claim lease回収、Realtime差分通知、100件page、全件集計へ変更した。外部フォーム・メール・SNS送信経路は接続せず、`sent=false`制約を維持する。
+- 本番のFathom/Tallyで、自然なJapan analysis CTA、正式製品名と会社表示名の差、`need/needs/needed`語形、国未確定時のTwenty既存値保持を誤って失敗扱いする品質/read-back gateを修正した。最終main **d769a92a**、deployment **gkbz3rwlo73l6v37kf3cblt5**、Sales health JSON `ok:true`を含むpost-deploy release gate pass。
+- Fathomは文面score **92 / safety 100 / uniqueness 86 / max similarity 0.139**、Tallyは**53.3秒**で **92 / 100 / 87 / 0.131**。両文面の会社名除外類似度は**0.125**でdistinctness pass。URL・出典なし、`Tomohiro H / Paradigm LLC / contact@paradigmjp.com`署名あり。
+- Twenty API直接read-backで、Fathom ID `8df3cbc9-b8ed-4403-9e19-42fe76fa0b6b`、Tally ID `9eb921a8-69fd-4fca-92be-b1d64b64477e`とも会社・domain・国・`manual_work`・report URL・全文draft・score・`never sent automatically`を確認した。両社は実フォーム未確認のため`needs_review / evidence review required`が正しく、外部送信・成果timestampは0。
+- DeepSeek Cache HitはFathom **4,736 / 11,043 prompt tokens = 42.9%**、Tally **7,552 / 16,097 = 46.9%**。Cacheは実作動している。一方、旧誤判定のrepair loopはhit率90%超でも18k prompt tokensと約70秒を消費したため、Cache率ではなく`一発pass率 / completion tokens / p50-p95時間 / retry率`を運用KPIにする。
+- 現在の実測53.3秒・同時3件からの算術上限は約**203件/時・4,860件/日**、500件約2.5時間、4,000件約19.7時間。ただしprovider rate limit、crawl分散、フォーム率、Twenty再照合を含まない仮説値。次は新規URL **20→100→500** のzero-send canaryでtechnical failure、copy pass、Twenty read-back、Cache Hit、p50/p95、diskを計測し、合格前に「4,000件production-ready」とは扱わない。host diskはrelease時 **82–84%** のためP0運用監視対象。
+- 検証は全Vitest **228 files / 1,056 tests**、TypeScript、Quality Guard **0 errors / 77 existing warnings**、production build **408/408 pages**、DB **93/93**、Twenty worker restart 0、Realtime/RLS/Traefik/zero-sendを含む最終release gate pass。詳細: `docs/refactor/manual-work-production-readiness-audit-2026-07-21.md`。
+
 ## CURRENT STATUS - 2026-07-20 `/work`実フォームfail-closed・初回文面結果永続化（本番実解析・console clean完了 / 外部送信0）
 
 - `screenshottocode.com/contact`はHTTP 200でもbody空、form/input/textarea/button/link全て0件のclient-side soft 404だった。従来はpathnameに`contact`が含まれるだけで`verification=page`候補となり、manual workflowが実フォーム未検証のURLを`form_url`・V2レポート・master lead ledgerへ保存していた。初回文面生成失敗も、後段のeligibility理由で`error_message`を上書きし、失敗理由と再実行導線を失っていた。
