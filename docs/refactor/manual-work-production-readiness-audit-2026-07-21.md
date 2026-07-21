@@ -4,7 +4,7 @@
 
 The known code-level blockers have been released: a visual report system, server-drained durable batches, provider preflight, delta Realtime updates, global history pagination, deterministic copy recovery, DeepSeek message-usage persistence, and field-by-field Twenty read-back. The final production canary is **20/20 copy-pass, 0 technical failures, 20/20 exact Twenty read-back, and 0 external sends**.
 
-The current system is ready for operator-controlled batches of up to 500 supplied URLs, with human review and manual form submission. Measured throughput supports the 4,000-company daily target mathematically. It is not yet certified as an unattended 4,000-company/day SLA because only one 500-item batch can be active, dispatch exhaustion can pause a batch until recovery, full-pipeline DeepSeek usage is not persisted, and a fresh 100/500/24-hour soak has not been completed.
+The current system supports up to 20 durable batches of 500 supplied URLs (10,000 companies queued), with one DB-leased three-company runner, automatic next-batch promotion, bounded dispatch retry, startup recovery, human review, and manual form submission. Measured throughput supports the 4,000-company daily target mathematically. It is not yet certified as a 4,000-company/day SLA until the released queue completes fresh 100/500/24-hour production soaks.
 
 ## Production verification after the fix
 
@@ -64,17 +64,17 @@ The 20-record canary proves the corrected copy and CRM paths and gives a useful 
 
 **Control:** run 100 fresh URLs, then 500. Capture p50/p95 duration, technical-failure rate, needs-review rate, verified-form rate, copy-pass rate, Twenty read-back rate, and all DeepSeek usage before certifying a daily SLA.
 
-### 3. Eight 500-item batches are not yet an unattended queue
+### 3. Eight 500-item batches now have a durable queue, but still need a live soak
 
-Items and claim leases are durable, stale claims can be reclaimed after ten minutes, and each phase has bounded automatic retries. However, only one batch can be active. A 4,000-company day therefore requires eight sequential 500-item batches, and an exhausted self-dispatch chain can wait for the operator surface to resume it.
+Up to 20 batches can be queued while a partial unique index permits exactly one `running` batch. Completion atomically promotes the oldest queued batch. A batch-level six-minute drain lease prevents the browser, request chain, and startup recovery from multiplying the intended three-company concurrency. Item claims remain reclaimable after ten minutes; dispatch has bounded retries; two bounded startup events cover the normal boot path and a lease left by a terminated process.
 
-**Control:** add a durable queued-batch state and event-driven next-batch promotion, plus a dispatch-recovery event that does not depend on an open browser. Completion alerts and DB batch state remain the source of truth. Resume the same batch; never recreate duplicate work.
+**Control:** prove the released migration with two small consecutive batches, then 100, 500, and eight queued 500-item batches. Confirm a single running row, no duplicate work IDs, maximum observed processing concurrency three, automatic promotion, restart recovery, and final reconciliation.
 
 ### 4. Full-pipeline AI cost is not yet attributable
 
-`message_review.generation_usage` provides exact Cache Hit/Miss and completion usage for the first-touch generation stage. The earlier company-profile analysis calls do not yet write the same usage ledger, so the measured $0.00359/company is not a full-pipeline unit cost.
+`message_review.generation_usage` provides exact Cache Hit/Miss and completion usage for first-touch generation. New analyses also persist model, requests, input/output, Cache Hit/Miss, and elapsed time for company classification in `profile.analysisUsage`; `/work` aggregates the two tracked stages. The historical $0.00359/company remains a first-touch-only figure because the 20-row canary predates classification usage persistence and optional form-discovery LLM usage is not yet attributed.
 
-**Control:** persist stage, model, request count, cache hit/miss tokens, output tokens, latency, and estimated cost for every DeepSeek call. Display per-company, per-batch, and daily totals before calling the 4,000-company cost forecast final.
+**Control:** use fresh production rows to establish classification plus message unit cost, then attribute any optional form-discovery LLM call. Aggregate per-company, per-batch, and daily totals before calling the 4,000-company cost forecast final.
 
 ### 5. “Needs review” is not a technical failure
 
@@ -113,7 +113,7 @@ An HTTP success is insufficient if fields are missing, a duplicate company was u
 | Canary A | 20 | **Completed:** 0 unintended sends; 20/20 draft pass; 20/20 independent Twenty read-back; no false form URL promoted. |
 | Canary B | 100 | Technical failures ≤2%; p50/p95 and full-stage usage recorded; all false positives repaired before promotion. |
 | Production pilot | 500 | Server completes without browser drain; Realtime remains usable; cost and p95 duration recorded; Twenty/readiness reconciliation complete. |
-| Scale | 8 × 500 | Durable queued batches promote without operator handoff; 24-hour recovery drill passes; stop on a repeated systemic defect. |
+| Scale | 8 × 500 | Queue all eight batches before the run; verify automatic promotion, single drain lease, 24-hour recovery, and reconciliation; stop on a repeated systemic defect. |
 
 `needs_review` and legitimate target rejection are not forced into the ≤2% technical-failure threshold. No wave permits automated form/email/SNS sending.
 
@@ -127,8 +127,8 @@ Production-ready means all of the following are true at the same time:
 - an eligible record is visible in Twenty with field-by-field read-back and `sent=false`;
 - the public report renders at least 14 semantic figures and one decision table on desktop and mobile without horizontal overflow;
 - the completed 20-item live canary remains reproducible on 100 and 500 fresh URLs;
-- all DeepSeek stages expose cache, token, latency, and cost telemetry;
-- eight 500-item batches can queue, promote, recover, and reconcile without an open browser;
+- company classification and first-touch generation expose cache, token, latency, and model telemetry, with any form-discovery LLM usage attributed;
+- the implemented 20-batch queue proves promotion, recovery, and reconciliation without an open browser in a 24-hour production soak;
 - the source funnel reports honest stage counts toward 4,000 rather than a raw-URL headline.
 
 Until those checks are recorded, the correct status is **operator-ready for up to 500 URLs and capacity-capable of 4,000/day, but not yet an unattended 4,000/day SLA**.

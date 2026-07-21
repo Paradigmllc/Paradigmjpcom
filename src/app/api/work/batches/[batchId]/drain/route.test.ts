@@ -4,10 +4,13 @@ import { NextRequest } from "next/server"
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   get: vi.fn(),
+  claimDrain: vi.fn(),
   claim: vi.fn(),
   complete: vi.fn(),
   refresh: vi.fn(),
   notified: vi.fn(),
+  promote: vi.fn(),
+  releaseDrain: vi.fn(),
   process: vi.fn(),
   notify: vi.fn(),
   schedule: vi.fn(),
@@ -16,10 +19,13 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   getManualWorkBatch: mocks.get,
+  claimManualWorkBatchDrain: mocks.claimDrain,
   claimManualWorkBatchItems: mocks.claim,
   completeManualWorkBatchItem: mocks.complete,
   refreshManualWorkBatch: mocks.refresh,
   markManualWorkBatchNotified: mocks.notified,
+  promoteNextManualWorkBatch: mocks.promote,
+  releaseManualWorkBatchDrain: mocks.releaseDrain,
 }))
 vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ processManualJapanEntryUrl: mocks.process }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
@@ -40,6 +46,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.authorize.mockResolvedValue(true)
   mocks.get.mockResolvedValue(before)
+  mocks.claimDrain.mockResolvedValue("drain-claim-1")
   mocks.claim.mockResolvedValue([
     { id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1" },
     { id: "item-2", canonical_url: "https://two.example/", claim_token: "claim-2" },
@@ -52,6 +59,8 @@ beforeEach(() => {
   mocks.refresh.mockResolvedValue({ ...before, batch: { ...before.batch, status: "completed" }, remaining: 0, finished: 2, counts: { ...before.counts, queued: 0, completed: 1, needs_review: 1 } })
   mocks.notify.mockResolvedValue({ ok: true })
   mocks.notified.mockResolvedValue(true)
+  mocks.promote.mockResolvedValue(null)
+  mocks.releaseDrain.mockResolvedValue(undefined)
 })
 
 describe("manual work durable batch drain", () => {
@@ -64,6 +73,7 @@ describe("manual work durable batch drain", () => {
     expect(mocks.process).toHaveBeenCalledTimes(2)
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-1", claimToken: "claim-1", status: "completed", workId: "work-1" }))
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-2", claimToken: "claim-2", status: "needs_review", workId: "work-2" }))
+    expect(mocks.releaseDrain).toHaveBeenCalledWith(batchId, "drain-claim-1")
     expect(mocks.notify).toHaveBeenCalledTimes(1)
   })
 
@@ -95,5 +105,32 @@ describe("manual work durable batch drain", () => {
 
     expect(response.status).toBe(202)
     expect(mocks.schedule).toHaveBeenCalledWith(batchId)
+  })
+
+  it("does not double-drain when another request owns the batch lease", async () => {
+    mocks.claimDrain.mockResolvedValue(null)
+    const response = await POST(
+      new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
+      { params: Promise.resolve({ batchId }) },
+    )
+    const body = await response.json()
+    expect(response.status).toBe(202)
+    expect(body.processing).toBe(true)
+    expect(mocks.claim).not.toHaveBeenCalled()
+    expect(mocks.process).not.toHaveBeenCalled()
+  })
+
+  it("promotes and dispatches the next queued batch after completion", async () => {
+    const nextId = "22222222-2222-4222-8222-222222222222"
+    mocks.promote.mockResolvedValue({
+      promoted: true,
+      snapshot: { ...before, batch: { ...before.batch, id: nextId, status: "running" } },
+    })
+    const response = await POST(
+      new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
+      { params: Promise.resolve({ batchId }) },
+    )
+    expect(response.status).toBe(200)
+    expect(mocks.schedule).toHaveBeenCalledWith(nextId)
   })
 })

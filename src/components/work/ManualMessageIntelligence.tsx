@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, Calculator, CheckCircle2, Copy, ExternalLink, MessageSquareText, ShieldCheck, Sparkles } from "lucide-react"
+import { AlertTriangle, Calculator, CheckCircle2, Copy, ExternalLink, Gauge, MessageSquareText, ShieldCheck, Sparkles } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
@@ -35,6 +35,30 @@ function strategyRows(value: unknown): Array<[string, string]> {
 
 function records(value: unknown): JsonRecord[] {
   return Array.isArray(value) ? value.map(record).filter((item): item is JsonRecord => Boolean(item)) : []
+}
+
+function trackedDeepSeekUsage(item: ManualJapanEntryWorkRow): {
+  requests: number
+  promptTokens: number
+  completionTokens: number
+  cacheHitTokens: number
+  cacheRatio: number
+} | null {
+  const classification = record(item.profile.analysisUsage)
+  const message = record(item.message_review.generation_usage)
+  if (!classification && !message) return null
+  const promptTokens = (number(classification?.promptTokens) ?? 0) + (number(message?.prompt_tokens) ?? 0)
+  const completionTokens = (number(classification?.completionTokens) ?? 0) + (number(message?.completion_tokens) ?? 0)
+  const cacheHitTokens = (number(classification?.cacheHitTokens) ?? 0) + (number(message?.cache_hit_tokens) ?? 0)
+  const cacheMissTokens = (number(classification?.cacheMissTokens) ?? 0) + (number(message?.cache_miss_tokens) ?? 0)
+  const measuredInput = cacheHitTokens + cacheMissTokens
+  return {
+    requests: (number(classification?.requests) ?? 0) + (number(item.message_review.attempts) ?? (message ? 1 : 0)),
+    promptTokens,
+    completionTokens,
+    cacheHitTokens,
+    cacheRatio: measuredInput > 0 ? cacheHitTokens / measuredInput : 0,
+  }
 }
 
 function sourceLink(source: string): URL | null {
@@ -104,6 +128,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
   const score = number(review.score)
   const uniqueness = number(review.uniquenessScore)
   const projection = projectionSnapshot(item.evidence)
+  const usage = trackedDeepSeekUsage(item)
 
   return (
     <details className="overflow-hidden rounded-xl border border-slate-200 bg-white" open>
@@ -112,6 +137,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
         <span className="ml-auto flex gap-1.5">
           {score !== null && <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">品質 {score}</Badge>}
           {uniqueness !== null && <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">固有性 {uniqueness}</Badge>}
+          {usage && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">Cache {Math.round(usage.cacheRatio * 100)}%</Badge>}
         </span>
       </summary>
       <div className="space-y-4 border-t border-slate-100 bg-slate-50/60 p-4">
@@ -120,6 +146,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{item.initial_message}</p>
           <Button variant="outline" size="sm" className="mt-3 rounded-lg" onClick={() => onCopy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button>
         </div>
+        {usage && <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs text-violet-950"><span className="inline-flex items-center gap-2 font-semibold"><Gauge className="size-4" />追跡済みDeepSeek {usage.requests} calls</span><span>Input {usage.promptTokens.toLocaleString("en-US")}</span><span>Output {usage.completionTokens.toLocaleString("en-US")}</span><span>Cache Hit {usage.cacheHitTokens.toLocaleString("en-US")} ({Math.round(usage.cacheRatio * 100)}%)</span></div>}
         {projection.length > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4"><p className="flex items-center gap-2 text-xs font-semibold text-amber-950"><Calculator className="size-4" />無料公開シグナルによる企業別試算</p><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{projection.map(([label, value]) => <div key={label} className="rounded-lg border border-amber-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{label}</p><p className="mt-1 text-sm font-semibold text-slate-900">{value}</p></div>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-900">Tranco・Cloudflare Radar・Common Crawl・sitemap等の公開シグナルと業態別仮定による幅のある試算です。実測PV・実売上・保証値ではありません。</p></div>}
         {rows.length > 0 && <div><p className="flex items-center gap-2 text-xs font-semibold text-slate-700"><Sparkles className="size-4 text-violet-600" />企業別メッセージ戦略</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{rows.map(([label, value]) => <div key={label} className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 text-xs leading-5 text-slate-700">{value}</p></div>)}</div></div>}
         {facts.length > 0 && <details className="rounded-xl border border-slate-200 bg-white"><summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs font-semibold text-slate-700 marker:hidden"><ShieldCheck className="size-4 text-emerald-600" />使用可能な根拠・出典（内部確認専用）<span className="ml-auto font-normal text-slate-500">本文には挿入しません</span></summary><div className="grid gap-2 border-t border-slate-100 p-3 sm:grid-cols-2">{facts.map((fact, index) => { const statement = text(fact.statement); const source = text(fact.source); const link = source ? sourceLink(source) : null; return <div key={text(fact.id) ?? String(index)} className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600"><p className="text-slate-700">{statement}</p>{source && (link ? <a href={link.toString()} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:underline">出典を確認<ExternalLink className="size-3" /></a> : <p className="mt-1 text-[11px] text-slate-500">{source}</p>)}</div> })}</div></details>}

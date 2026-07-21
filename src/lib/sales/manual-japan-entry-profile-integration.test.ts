@@ -53,7 +53,12 @@ describe("manual company live-model response boundary", () => {
   beforeEach(() => vi.clearAllMocks())
 
   it("accepts the production screenshot payload and keeps deterministic public evidence", async () => {
-    callDeepSeek.mockResolvedValue({ ok: true, text: JSON.stringify(response()) })
+    callDeepSeek.mockResolvedValue({
+      ok: true,
+      text: JSON.stringify(response()),
+      usedModel: "deepseek-v4-pro",
+      usage: { prompt_tokens: 1_000, completion_tokens: 200, cache_hit_tokens: 450, cache_miss_tokens: 550 },
+    })
 
     const profile = await analyzeManualCompanyProfile(input)
 
@@ -70,6 +75,14 @@ describe("manual company live-model response boundary", () => {
         "Screenshot to Code converts screenshots into editable application code",
         "Public pricing is available",
       ],
+      analysisUsage: {
+        requests: 1,
+        models: ["deepseek-v4-pro"],
+        promptTokens: 1_000,
+        completionTokens: 200,
+        cacheHitTokens: 450,
+        cacheMissTokens: 550,
+      },
     })
     expect(JSON.stringify(profile)).not.toContain("Model-authored")
     expect(callDeepSeek.mock.calls[0]?.[0]?.[0]?.content).toContain("readiness gaps and sales opportunities")

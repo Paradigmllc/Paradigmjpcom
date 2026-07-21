@@ -758,6 +758,10 @@ function checkStaticReleaseRules() {
   const manualBatchRealtimeMigration = fs.existsSync(manualBatchRealtimeMigrationPath)
     ? fs.readFileSync(manualBatchRealtimeMigrationPath, "utf8")
     : ""
+  const manualBatchQueueMigrationPath = "supabase/migrations/20260721164000_manual_work_multi_batch_queue.sql"
+  const manualBatchQueueMigration = fs.existsSync(manualBatchQueueMigrationPath)
+    ? fs.readFileSync(manualBatchQueueMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -839,6 +843,9 @@ function checkStaticReleaseRules() {
   const manualWorkBatchEvents = fs.existsSync("src/app/api/work/batches/[batchId]/events/route.ts")
     ? fs.readFileSync("src/app/api/work/batches/[batchId]/events/route.ts", "utf8")
     : ""
+  const instrumentation = fs.existsSync("src/instrumentation.ts")
+    ? fs.readFileSync("src/instrumentation.ts", "utf8")
+    : ""
   const manualWorkStore = fs.existsSync("src/lib/sales/manual-japan-entry-store.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-store.ts", "utf8")
     : ""
@@ -909,6 +916,13 @@ function checkStaticReleaseRules() {
     && manualBatchRealtimeMigration.includes("supabase_realtime")
     && noLoginDeploy.includes("20260721123500_manual_work_batch_realtime.sql")
     && noLoginDeploy.includes("applyManualWorkBatchRealtimeMigration")
+    && manualBatchQueueMigration.includes("uq_manual_japan_entry_single_running_batch")
+    && manualBatchQueueMigration.includes("manual_japan_entry_promote_next_batch")
+    && manualBatchQueueMigration.includes("manual_japan_entry_claim_batch_drain")
+    && manualBatchQueueMigration.includes("manual_japan_entry_release_batch_drain")
+    && manualBatchQueueMigration.includes("v_open_batches >= 20")
+    && noLoginDeploy.includes("20260721164000_manual_work_multi_batch_queue.sql")
+    && noLoginDeploy.includes("applyManualWorkMultiBatchQueueMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
@@ -928,6 +942,7 @@ function checkStaticReleaseRules() {
     && manualWorkService.includes("retryRequested")
     && manualWorkService.includes("expectedWorkId")
     && manualWorkProfile.includes("normalizeManualCompanyProfile")
+    && manualWorkProfile.includes("summarizeAnalysisUsage")
     && manualWorkProfile.includes("after one repair")
     && manualWorkProfile.includes("JAPAN_ENTRY_FIT_CONTRACT_VERSION")
     && manualWorkFitPolicy.includes('"opportunity-first-v1"')
@@ -952,6 +967,7 @@ function checkStaticReleaseRules() {
     && manualWorkHistoryItem.includes("ManualFormDiscoveryStatus")
     && manualWorkHistoryItem.includes("復旧再実行")
     && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
+    && manualMessageIntelligence.includes("Cache Hit")
     && !manualMessageIntelligence.includes("generation_error")
     && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
     && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存され")
@@ -992,6 +1008,9 @@ function checkStaticReleaseRules() {
     && manualWorkStrategyChapter.includes("traceability map")
     && manualWorkBatchSchedule.includes("after(async ()")
     && manualWorkBatchSchedule.includes("dispatchManualWorkBatchDrain")
+    && manualWorkBatchSchedule.includes("DISPATCH_RETRY_DELAYS_MS")
+    && manualWorkBatchSchedule.includes("resumeManualWorkBatchQueue")
+    && instrumentation.includes("resumeManualWorkBatchQueue")
     && manualWorkBatchDrain.includes("http://127.0.0.1:")
     && manualWorkBatchDrain.includes("x-webhook-secret")
     && manualWorkBatchPreflight.includes("preflightManualWorkBatch")
@@ -1560,6 +1579,15 @@ select case when
   and to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)') is not null
   and to_regprocedure('public.manual_japan_entry_claim_batch_items(uuid,integer)') is not null
   and to_regprocedure('public.manual_japan_entry_refresh_batch(uuid)') is not null
+  and to_regprocedure('public.manual_japan_entry_promote_next_batch()') is not null
+  and to_regprocedure('public.manual_japan_entry_claim_batch_drain(uuid)') is not null
+  and to_regprocedure('public.manual_japan_entry_release_batch_drain(uuid,uuid)') is not null
+  and exists (
+    select 1 from pg_indexes
+    where schemaname = 'public'
+      and indexname = 'uq_manual_japan_entry_single_running_batch'
+      and indexdef like '%WHERE (status = ''running''::text)%'
+  )
   and exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='manual_japan_entry_batches')
   and exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='manual_japan_entry_batch_items')
   and has_function_privilege('service_role', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')

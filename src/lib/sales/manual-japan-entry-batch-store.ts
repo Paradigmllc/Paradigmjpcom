@@ -6,6 +6,7 @@ import type { ManualMessageAngleSelection } from "./manual-japan-entry-angle"
 import type { ManualMessageVariantSelection } from "./manual-japan-entry-experiment"
 import {
   MANUAL_WORK_BATCH_DRAIN_SIZE,
+  type ManualWorkBatchQueueSummary,
   type ManualWorkBatchItemRow,
   type ManualWorkBatchItemStatus,
   type ManualWorkBatchRow,
@@ -50,11 +51,68 @@ export async function getLatestActiveManualWorkBatch(): Promise<ManualWorkBatchS
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
     .select("id")
     .in("status", ["queued", "running"])
-    .order("created_at", { ascending: false })
+    .order("status", { ascending: false })
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle()
   if (error) throw new Error(error.message)
   return typeof data?.id === "string" ? getManualWorkBatch(data.id) : null
+}
+
+export async function getManualWorkBatchQueueSummary(): Promise<ManualWorkBatchQueueSummary> {
+  const { data, error } = await client()
+    .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
+    .select("id,status,total_count")
+    .in("status", ["queued", "running"])
+  if (error) throw new Error(error.message)
+  const rows = (data ?? []) as Array<{ id: string; status: ManualWorkBatchRow["status"]; total_count: number }>
+  const queued = rows.filter((row) => row.status === "queued")
+  return {
+    batchCount: rows.length,
+    companyCount: rows.reduce((total, row) => total + row.total_count, 0),
+    runningBatchId: rows.find((row) => row.status === "running")?.id ?? null,
+    queuedBatchCount: queued.length,
+    queuedCompanyCount: queued.reduce((total, row) => total + row.total_count, 0),
+  }
+}
+
+export async function getManualWorkBatchQueuePosition(batchId: string): Promise<number> {
+  const { data, error } = await client()
+    .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
+    .select("id,status,created_at")
+    .in("status", ["queued", "running"])
+    .order("created_at", { ascending: true })
+  if (error) throw new Error(error.message)
+  const position = (data ?? []).findIndex((row) => row.id === batchId)
+  return position < 0 ? 0 : position
+}
+
+export async function promoteNextManualWorkBatch(): Promise<{
+  snapshot: ManualWorkBatchSnapshot
+  promoted: boolean
+} | null> {
+  const { data, error } = await client().rpc("manual_japan_entry_promote_next_batch")
+  if (error) throw new Error(error.message)
+  const row = Array.isArray(data) ? data[0] as { batch_id?: unknown; promoted?: unknown } | undefined : undefined
+  if (!row || typeof row.batch_id !== "string") return null
+  const promoted = await getManualWorkBatch(row.batch_id)
+  if (!promoted) throw new Error("Promoted manual work batch could not be read back")
+  return { snapshot: promoted, promoted: row.promoted === true }
+}
+
+export async function claimManualWorkBatchDrain(batchId: string): Promise<string | null> {
+  const { data, error } = await client().rpc("manual_japan_entry_claim_batch_drain", { p_batch_id: batchId })
+  if (error) throw new Error(error.message)
+  return typeof data === "string" ? data : null
+}
+
+export async function releaseManualWorkBatchDrain(batchId: string, claimToken: string): Promise<void> {
+  const { data, error } = await client().rpc("manual_japan_entry_release_batch_drain", {
+    p_batch_id: batchId,
+    p_claim_token: claimToken,
+  })
+  if (error) throw new Error(error.message)
+  if (data !== true) throw new Error("Manual work batch drain claim is stale")
 }
 
 export async function createManualWorkBatch(input: {
@@ -141,6 +199,14 @@ export async function recordManualWorkBatchDispatchError(batchId: string, errorM
   const { error } = await client()
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
     .update({ last_error: errorMessage.slice(0, 2_000) })
+    .eq("id", batchId)
+  if (error) throw new Error(error.message)
+}
+
+export async function clearManualWorkBatchDispatchError(batchId: string): Promise<void> {
+  const { error } = await client()
+    .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
+    .update({ last_error: null })
     .eq("id", batchId)
   if (error) throw new Error(error.message)
 }

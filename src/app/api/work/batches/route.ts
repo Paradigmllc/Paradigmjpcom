@@ -3,7 +3,10 @@ import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import {
   createManualWorkBatch,
+  getManualWorkBatchQueuePosition,
+  getManualWorkBatchQueueSummary,
   getLatestActiveManualWorkBatch,
+  promoteNextManualWorkBatch,
 } from "@/lib/sales/manual-japan-entry-batch-store"
 import { MANUAL_WORK_BATCH_MAX_URLS } from "@/lib/sales/manual-japan-entry-batch-types"
 import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
@@ -42,7 +45,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
   try {
-    return NextResponse.json({ ok: true, activeBatch: await getLatestActiveManualWorkBatch() })
+    let activeBatch = await getLatestActiveManualWorkBatch()
+    if (activeBatch?.batch.status === "queued") {
+      const promoted = await promoteNextManualWorkBatch()
+      if (promoted) {
+        activeBatch = promoted.snapshot
+        if (promoted.promoted) scheduleManualWorkBatchDrain(promoted.snapshot.batch.id)
+      }
+    }
+    return NextResponse.json({
+      ok: true,
+      activeBatch,
+      queueSummary: await getManualWorkBatchQueueSummary(),
+    })
   } catch (error) {
     console.error("[api/work/batches] active batch read failed:", error)
     return NextResponse.json(
@@ -68,13 +83,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: `企業URLは1〜${MANUAL_WORK_BATCH_MAX_URLS}件で指定してください` }, { status: 400 })
   }
   try {
-    const activeBatch = await getLatestActiveManualWorkBatch()
-    if (activeBatch) {
-      return NextResponse.json(
-        { ok: false, error: "実行中の永続バッチがあります。完了後に新しいバッチを開始してください。", activeBatch },
-        { status: 409 },
-      )
-    }
     const byDomain = new Map<string, ReturnType<typeof normalizeManualWorkUrl>>()
     try {
       for (const url of parsed.data.urls) {
@@ -104,18 +112,31 @@ export async function POST(req: NextRequest) {
       sourcePageUrl: parsed.data.sourcePageUrl || null,
       observedOn: parsed.data.observedOn ?? null,
     })
-    scheduleManualWorkBatchDrain(batch.batch.id)
+    const active = await promoteNextManualWorkBatch()
+    if (active?.promoted) scheduleManualWorkBatchDrain(active.snapshot.batch.id)
+    const [queuePosition, queueSummary] = await Promise.all([
+      getManualWorkBatchQueuePosition(batch.batch.id),
+      getManualWorkBatchQueueSummary(),
+    ])
     await notify(
-      "Manual Japan Entryバッチ開始",
-      `${batch.batch.total_count}件を永続キューへ登録しました。解析後にTwentyへ未送信データとして同期します。外部送信0件。`,
-      "manual_japan_entry_batch_started",
+      queuePosition === 0 ? "Manual Japan Entryバッチ開始" : "Manual Japan Entryバッチ待機",
+      `${batch.batch.total_count}件を永続キューへ登録しました。前方バッチ${queuePosition}件。解析後にTwentyへ未送信データとして同期します。外部送信0件。`,
+      queuePosition === 0 ? "manual_japan_entry_batch_started" : "manual_japan_entry_batch_queued",
     )
-    return NextResponse.json({ ok: true, snapshot: batch, automaticDrainStarted: true }, { status: 201 })
+    return NextResponse.json({
+      ok: true,
+      snapshot: queuePosition === 0 && active ? active.snapshot : batch,
+      automaticDrainStarted: active?.promoted === true,
+      queuePosition,
+      queueSummary,
+    }, { status: 201 })
   } catch (error) {
     console.error("[api/work/batches] create failed:", error)
+    const message = error instanceof Error ? error.message : "バッチを作成できませんでした"
+    const queueFull = /queue is full/i.test(message)
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "バッチを作成できませんでした" },
-      { status: 500 },
+      { ok: false, error: queueFull ? "永続キューは最大20バッチです。処理完了後に追加してください。" : message },
+      { status: queueFull ? 409 : 500 },
     )
   }
 }
