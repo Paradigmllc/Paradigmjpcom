@@ -126,17 +126,28 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   if (input.issues.length === 0 && input.similarityPassed) return input.candidate
 
   const currentBody = bodyBlocks(input.candidate.message)
-  const originalMiddle = currentBody.slice(1, -1)
+  const originalMiddle = input.similarityPassed ? currentBody.slice(1, -1) : []
   const rebuildOpening = input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims)/i.test(issue))
+  const opening = rebuildOpening || !currentBody[0]
+    ? productOpening({
+        companyName: input.companyName,
+        productNames: input.productNames ?? [],
+        rendering: input.candidate.product_evidence_rendering,
+      })
+    : currentBody[0]
   const middleSentences = safeSentences(originalMiddle, {
     removeRevenue: input.issues.some((issue) => /Revenue wording is not tied/i.test(issue)),
     removeUnsupportedCausal: input.issues.some((issue) => /Unsupported causal inference/i.test(issue)),
     removePromotional: input.issues.some((issue) => /Generic, promotional/i.test(issue)),
   })
   const facts = selectedFacts(input.candidate, input.facts)
-  const middleText = middleSentences.join(" ")
   const supplemental = input.supplementalProductEvidence?.trim()
-  if (supplemental && !middleText.toLowerCase().includes(supplemental.toLowerCase())) {
+  if (
+    supplemental
+    && !opening.toLowerCase().includes(supplemental.toLowerCase())
+    && !tooSimilar(supplemental, input.candidate.product_evidence_rendering)
+    && !middleSentences.join(" ").toLowerCase().includes(supplemental.toLowerCase())
+  ) {
     const renderedSupplemental = /[.!?]$/.test(supplemental) ? supplemental : `${supplemental}.`
     const supplementalVariants = [
       `The same public material also documents “${renderedSupplemental}” I treated that as a second product detail, not evidence of Japan demand.`,
@@ -147,24 +158,25 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     middleSentences.unshift(supplementalVariants[stableHash(`${input.companyName}:${supplemental}`) % supplementalVariants.length]!)
   }
   for (const fact of facts) {
-    if (!includesFactAnchor(middleText, fact)) middleSentences.push(fact.statement)
+    if (!includesFactAnchor(middleSentences.join(" "), fact)) middleSentences.push(fact.statement)
   }
-  if (middleSentences.length === 0) {
-    middleSentences.push(`The public-page review leaves ${input.companyName}'s ${input.customerPathAnchor} decision unverified.`)
+
+  const uniqueMiddleSentences: string[] = []
+  for (const sentence of middleSentences) {
+    if (tooSimilar(sentence, opening)) continue
+    if (uniqueMiddleSentences.some((prior) => tooSimilar(sentence, prior))) continue
+    uniqueMiddleSentences.push(sentence)
+  }
+  if (uniqueMiddleSentences.length === 0) {
+    uniqueMiddleSentences.push(`The public-page review leaves ${input.companyName}'s ${input.customerPathAnchor} decision unverified.`)
   }
 
   const recovered = applyManualCtaContract({
     ...input.candidate,
     message: [
       manualFormGreeting(input.companyName),
-      rebuildOpening || !currentBody[0]
-        ? productOpening({
-            companyName: input.companyName,
-            productNames: input.productNames ?? [],
-            rendering: input.candidate.product_evidence_rendering,
-          })
-        : currentBody[0],
-      middleSentences.join(" "),
+      opening,
+      uniqueMiddleSentences.join(" "),
       input.contract.paragraph,
       MANUAL_FORM_SIGNATURE,
     ].join("\n\n"),
@@ -187,6 +199,15 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     if (wordCount(recoveredBody) >= BODY_MIN_WORDS) break
     if (recoveredBody.some((paragraph) => tooSimilar(sentence, paragraph))) continue
     recoveredBody[1] = `${recoveredBody[1] ?? ""} ${sentence}`.trim()
+  }
+
+  const requiredAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName
+  const ctaIndex = recoveredBody.length - 1
+  const ctaParagraph = recoveredBody[ctaIndex] ?? ""
+  const finalQuestion = ctaParagraph.match(/[^.!?]*\?\s*$/)?.[0] ?? ""
+  if (!finalQuestion.toLowerCase().includes(requiredAnchor.toLowerCase())) {
+    const offer = ctaParagraph.replace(/[^.!?]*\?\s*$/, "").trim()
+    recoveredBody[ctaIndex] = `${offer} Would you like to receive the ${requiredAnchor} Japan opportunity analysis?`.trim()
   }
   return {
     ...recovered,
