@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { auditJapanMarketReadiness } from "./japan-market-audit"
+import { auditJapanMarketReadiness, auditJapanMarketReadinessFromHtml } from "./japan-market-audit"
 
 const originalFetch = global.fetch
 
@@ -21,6 +21,17 @@ function mockFetch(htmlByPath: Record<string, string>) {
 }
 
 describe("auditJapanMarketReadiness", () => {
+  it("builds a bounded audit from an already verified canonical homepage", () => {
+    const audit = auditJapanMarketReadinessFromHtml(
+      "https://www.example.com/",
+      "<html><body>Global ERP and CRM hosting for project teams</body></html>",
+    )
+
+    expect(audit.pages_checked).toEqual(["https://www.example.com/"])
+    expect(audit.status.japanese_language_missing).toBe(true)
+    expect(audit.legal_disclaimer).toContain("not legal advice")
+  })
+
   it("marks Japan readiness gaps when public pages do not expose disclosure, privacy, or local payments", async () => {
     mockFetch({
       "/": "<html><title>Acme</title><body>Global store for creators</body></html>",

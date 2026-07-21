@@ -16,6 +16,19 @@ function generationFailed(item: ManualJapanEntryWorkRow): boolean {
   )
 }
 
+function failedAnalysisDetail(errorMessage: string | null): string {
+  if (errorMessage?.includes("No public pages were available") || errorMessage?.includes("Homepage evidence could not be reused")) {
+    return "企業サイトの公開ページ監査を完了できませんでした。canonical URLで再取得し、取得済みトップページを証拠として再利用するため、「再解析」を実行してください。"
+  }
+  if (errorMessage?.includes("Homepage returned HTTP")) {
+    return "企業サイトのトップページが正常なHTMLを返しませんでした。URLとサイト稼働状況を確認してから「再解析」を実行してください。"
+  }
+  if (errorMessage?.includes("timed out") || errorMessage?.includes("fetch failed")) {
+    return "企業サイトの取得が時間内に完了しませんでした。履歴は保持されています。時間を置いて「再解析」を実行してください。"
+  }
+  return "取得先または生成処理で一時的な問題が発生しました。履歴は保持されています。外部送信とTwenty追加は行わず安全に停止しています。"
+}
+
 export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualWorkOperatorNotice | null {
   if (item.twenty_sync_status === "failed") {
     return {
@@ -28,7 +41,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   if (item.status === "failed") {
     return {
       title: "解析を完了できませんでした",
-      detail: "取得先または生成処理で一時的な問題が発生しました。外部送信とTwenty追加は行っていません。「再解析」を実行してください。",
+      detail: failedAnalysisDetail(item.error_message),
       retryLabel: "再解析",
       tone: "red",
     }

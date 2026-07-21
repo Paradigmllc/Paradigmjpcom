@@ -52,4 +52,15 @@ describe("manualWorkOperatorNotice", () => {
     expect(notice?.retryLabel).toBe("再解析・再生成")
     expect(notice?.detail).toContain("文面とレポートを作り直し")
   })
+
+  it("explains a canonical-page audit retry without exposing raw diagnostics", () => {
+    const notice = manualWorkOperatorNotice(row({
+      status: "failed",
+      stage: "failed",
+      error_message: "No public pages were available for Japan-readiness evidence",
+    }))
+
+    expect(notice?.detail).toContain("canonical URL")
+    expect(notice?.detail).not.toContain("No public pages")
+  })
 })
