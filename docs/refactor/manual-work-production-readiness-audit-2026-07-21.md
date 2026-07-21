@@ -2,24 +2,25 @@
 
 ## Executive verdict
 
-The production surface observed before this change was **not ready for scaled customer-facing use**. The report was a 19,093 px desktop / 39,275 px mobile text document with zero semantic figures and zero tables. The current database also contained only five manual-work records and one measured durable-batch item, so neither report quality nor 500-item throughput had been proven at production scale.
+The known code-level blockers have been released: a visual report system, server-drained durable batches, provider preflight, delta Realtime updates, global history pagination, deterministic copy recovery, DeepSeek message-usage persistence, and field-by-field Twenty read-back. The final production canary is **20/20 copy-pass, 0 technical failures, 20/20 exact Twenty read-back, and 0 external sends**.
 
-The known code-level blockers have now been released: a visual report system, server-drained durable batches, provider preflight, delta Realtime updates, global history pagination, duplicate-copy rejection, DeepSeek usage persistence, and field-by-field Twenty read-back. Production proof now covers the visual report and two recovered company records, but not a fresh 20/100/500 progression. The current verdict is therefore **production release candidate for a 20-company zero-send canary**, not 4,000-company production-ready.
+The current system is ready for operator-controlled batches of up to 500 supplied URLs, with human review and manual form submission. Measured throughput supports the 4,000-company daily target mathematically. It is not yet certified as an unattended 4,000-company/day SLA because only one 500-item batch can be active, dispatch exhaustion can pause a batch until recovery, full-pipeline DeepSeek usage is not persisted, and a fresh 100/500/24-hour soak has not been completed.
 
 ## Production verification after the fix
 
 | Check | Production evidence | Verdict |
 | --- | --- | --- |
 | Visual customer report | 14 semantic `<figure>` elements, one decision `<table>`, ten strategy chapters, 67 headings, 0 horizontal overflow | Passed for the inspected desktop report; mobile and sampled-company visual review remains part of each wave. |
-| Latest release | main `d769a92a`; Coolify deployment `gkbz3rwlo73l6v37kf3cblt5`; post-deploy Sales health JSON `ok:true` and final release gate passed | Passed. |
-| Fathom recovery | Copy score 92, safety 100, uniqueness 86, maximum history similarity 0.139; Twenty ID `8df3cbc9-b8ed-4403-9e19-42fe76fa0b6b`; `sent=false` | Passed; missing verified form correctly leaves the row in `needs_review`. |
-| Tally recovery | 53.3 seconds; copy score 92, safety 100, uniqueness 87, maximum history similarity 0.131; Twenty ID `9eb921a8-69fd-4fca-92be-b1d64b64477e`; `sent=false` | Passed; missing verified form correctly leaves the row in `needs_review`. |
-| Cross-company copy check | Fathom/Tally company-name-neutral similarity 0.125; no reused stock CTA detected | Passed for this pair. |
-| Twenty direct read-back | Both records returned HTTP 200 with exact company/domain/report, `manual_work`, scores, full Tomohiro H draft, and explicit never-sent summary | Passed. |
-| DeepSeek Cache Hit | Fathom 4,736/11,043 prompt tokens (42.9%); Tally 7,552/16,097 (46.9%) | Cache is active. Earlier failed repair loops exceeded 90% hit rate but still wasted completion tokens and wall time; cache ratio alone is not a quality KPI. |
+| Latest release | main `68edee4c`; Coolify deployment `ek09966retkwnrkcl5ylq1si`; DB 93/93, Sales health JSON `ok:true`, Twenty HTTP 200, worker restart 0, and final release gate passed | Passed. |
+| Final production canary | 20/20 drafts passed; 20 unique message hashes; quality score minimum 92; 120-157 body words; correct greeting/signature; no URL, source citation, or placeholder | Passed. Recovery wording is deliberately cautious and still requires human pre-send review. |
+| Technical reliability | 0/20 technical failures after the final targeted recovery; the final Formbricks and Dub retries completed in 31.2 and 36.5 seconds | Passed for the 20-record canary. |
+| Twenty independent read-back | 20/20 exact by Twenty company ID: company identity, report URL, normalized verified-form URL, full draft in `paradigmKarteSummary`, and unsent state | Passed. Three stale CRM rows were reconciled from saved `/work` artifacts without re-analysis or external delivery. |
+| DeepSeek Cache Hit | Final saved message generations: 83,712 hit / 106,558 miss / 190,270 prompt tokens = 44.0% hit; earlier waves measured 48.1-51.6% | Cache is active and measured from API usage, not inferred. This ledger currently covers first-touch message generation only. |
 | External delivery | Form/email/SNS sends 0; all outcome timestamps remain null | Passed. |
 
-The successful single-company wall-clock sample is 53.3 seconds. With the current three-item drain concurrency, the arithmetic ceiling is about 203 companies/hour or 4,860/day before provider throttling, crawling variance, technical failures, and reconciliation. This is a capacity hypothesis only. At that rate, 500 items are about 2.5 hours and 4,000 items about 19.7 hours; the 20/100/500 live waves below are required before treating those estimates as an operating SLA.
+Meaningful production retry waves measured 38.2-40.6 seconds of work per company. With three concurrent claims, observed throughput was 224-258 companies/hour: approximately 1.9-2.2 hours per 500-item batch, or 15.5-17.9 hours for eight sequential batches and 4,000 items. The target requires 166.7 companies/hour, so observed raw capacity has 34-55% headroom. This is production evidence, but not yet a 24-hour reliability SLA.
+
+At DeepSeek V4 Pro's documented rates (cache-hit input $0.003625/M, cache-miss input $0.435/M, output $0.87/M), the saved final-message usage cost $0.0717 for 20 companies, or $0.00359/company. The same message generations without caching would have cost about $0.1078, so Cache Hit saved 33.5% of total generation cost and 43.6% of input cost. A 4,000-company extrapolation is about $14.34/day with the observed cache mix versus $21.57 without it. This is **first-touch generation only**, not the full crawl/profile/report pipeline cost.
 
 ## Evidence observed before the fix
 
@@ -57,43 +58,49 @@ The workbench processes supplied company URLs; it does not make an unqualified s
 
 **Control:** operate source acquisition as a separate funnel with counts for raw URL, reachable company site, overseas SMB evidence, offer fit, verified form, copy pass, report pass, and Twenty read-back. Never report raw URLs as a 4,000-company sales list.
 
-### 2. No production 500-item canary has been completed
+### 2. A production 500-item soak has not been completed
 
-One 31-second item cannot establish latency, DeepSeek spend, Crawl4AI capacity, failure rate, or Twenty throughput. Extrapolating it would be misleading.
+The 20-record canary proves the corrected copy and CRM paths and gives a useful throughput range. It does not establish p95 latency, provider throttling, crawl-domain variance, or day-long dispatch recovery at 500/4,000 scale.
 
-**Control:** run 20, then 100, then 500 fresh URLs. Capture p50/p95 duration, technical-failure rate, needs-review rate, verified-form rate, copy-pass rate, Twenty read-back rate, and actual DeepSeek usage before raising the batch size in practice.
+**Control:** run 100 fresh URLs, then 500. Capture p50/p95 duration, technical-failure rate, needs-review rate, verified-form rate, copy-pass rate, Twenty read-back rate, and all DeepSeek usage before certifying a daily SLA.
 
-### 3. A process/container interruption can still require recovery
+### 3. Eight 500-item batches are not yet an unattended queue
 
-Items and claim leases are durable and stale claims can be reclaimed. The normal chain is automatic and a recorded dispatch failure auto-recovers when the operator returns. A host outage during an in-flight slice cannot be made impossible inside a single web container.
+Items and claim leases are durable, stale claims can be reclaimed after ten minutes, and each phase has bounded automatic retries. However, only one batch can be active. A 4,000-company day therefore requires eight sequential 500-item batches, and an exhausted self-dispatch chain can wait for the operator surface to resume it.
 
-**Control:** completion alert plus DB batch state is the operational source of truth. A batch that remains `running` without item updates for more than the claim lease is an incident; it must be resumed against the same batch, never recreated as a duplicate batch.
+**Control:** add a durable queued-batch state and event-driven next-batch promotion, plus a dispatch-recovery event that does not depend on an open browser. Completion alerts and DB batch state remain the source of truth. Resume the same batch; never recreate duplicate work.
 
-### 4. “Needs review” is not a technical failure
+### 4. Full-pipeline AI cost is not yet attributable
+
+`message_review.generation_usage` provides exact Cache Hit/Miss and completion usage for the first-touch generation stage. The earlier company-profile analysis calls do not yet write the same usage ledger, so the measured $0.00359/company is not a full-pipeline unit cost.
+
+**Control:** persist stage, model, request count, cache hit/miss tokens, output tokens, latency, and estimated cost for every DeepSeek call. Display per-company, per-batch, and daily totals before calling the 4,000-company cost forecast final.
+
+### 5. “Needs review” is not a technical failure
 
 An overseas-SMB uncertainty, Japan-fit uncertainty, missing verified form, or insufficient public evidence must remain review-required. Converting these to apparent success would recreate the false-form and fabricated-claim defects.
 
 **Control:** distinguish `failed` (technical) from `needs_review` (evidence/human decision), `rejected` (out of scope), and `completed` (all current gates passed). Only technical failures count against platform reliability.
 
-### 5. Report design cannot substitute for company-specific evidence
+### 6. Report design cannot substitute for company-specific evidence
 
 The new figures improve decision usability, but charts are only valid when their source is visible. The report must not invent traffic, revenue, demand, legal exposure, or opportunity loss to make a graphic look complete.
 
 **Control:** audit every 20-item canary report, then a random 10% sample per 100-item wave and 5% per 500-item wave. Reject raw enum labels, repeated sections, unrelated products, unsupported numbers, generic template language, or a recommendation that cannot be traced to a saved fact/hypothesis/action class.
 
-### 6. Copy quality requires ongoing sampling even after automatic gates
+### 7. Copy quality requires ongoing sampling even after automatic gates
 
 The deterministic gate catches URLs, citations, commercial terms, unsupported claims, signatures, sentence repetition, repeated paragraph construction, and same-template CTAs. It cannot fully judge tone, recipient appropriateness, or whether a true fact is the best fact to lead with.
 
 **Control:** human-read all first 20 drafts, then 20% of the 100 wave and 10% of each 500 wave. Track edits, repeated openings across companies, wrong product anchors, word count, and copy/paste readiness. Feed recurring edits into a regression test before the next wave.
 
-### 7. Form availability and permission can change
+### 8. Form availability and permission can change
 
 A technically verified form may later change, use a no-solicitation policy, add CAPTCHA, or route to support rather than business development.
 
 **Control:** the operator opens the form immediately before manual submission. The workbench must remain zero-send; verification is permission to review a route, not permission to contact automatically.
 
-### 8. Twenty is a read-back requirement, not a fire-and-forget side effect
+### 9. Twenty is a read-back requirement, not a fire-and-forget side effect
 
 An HTTP success is insufficient if fields are missing, a duplicate company was updated incorrectly, or the worker is unhealthy.
 
@@ -103,10 +110,10 @@ An HTTP success is insufficient if fields are missing, a duplicate company was u
 
 | Wave | Volume | Promotion gate |
 | --- | ---: | --- |
-| Canary A | 20 | 0 unintended sends; 100% Twenty read-back for eligible records; 100% human copy/report review; no false form URL. |
-| Canary B | 100 | Technical failures ≤2%; copy gate results explainable; all false positives repaired before promotion. |
+| Canary A | 20 | **Completed:** 0 unintended sends; 20/20 draft pass; 20/20 independent Twenty read-back; no false form URL promoted. |
+| Canary B | 100 | Technical failures ≤2%; p50/p95 and full-stage usage recorded; all false positives repaired before promotion. |
 | Production pilot | 500 | Server completes without browser drain; Realtime remains usable; cost and p95 duration recorded; Twenty/readiness reconciliation complete. |
-| Scale | 8 × 500 | Start the next wave only after the prior wave’s reconciliation and sampling audit passes. Stop on a repeated systemic defect. |
+| Scale | 8 × 500 | Durable queued batches promote without operator handoff; 24-hour recovery drill passes; stop on a repeated systemic defect. |
 
 `needs_review` and legitimate target rejection are not forced into the ≤2% technical-failure threshold. No wave permits automated form/email/SNS sending.
 
@@ -119,7 +126,9 @@ Production-ready means all of the following are true at the same time:
 - its copy and current V4 visual report are persisted and readable after reload;
 - an eligible record is visible in Twenty with field-by-field read-back and `sent=false`;
 - the public report renders at least 14 semantic figures and one decision table on desktop and mobile without horizontal overflow;
-- a 20-item live canary meets the first promotion gate;
+- the completed 20-item live canary remains reproducible on 100 and 500 fresh URLs;
+- all DeepSeek stages expose cache, token, latency, and cost telemetry;
+- eight 500-item batches can queue, promote, recover, and reconcile without an open browser;
 - the source funnel reports honest stage counts toward 4,000 rather than a raw-URL headline.
 
-Until those checks are recorded, the correct status is **release candidate**, not “4,000-company production-ready.”
+Until those checks are recorded, the correct status is **operator-ready for up to 500 URLs and capacity-capable of 4,000/day, but not yet an unattended 4,000/day SLA**.
