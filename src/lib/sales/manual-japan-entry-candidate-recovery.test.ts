@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review"
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
-import { buildManualCtaContracts } from "./manual-japan-entry-cta-contract"
+import { buildManualCtaContracts, type ManualCtaContract } from "./manual-japan-entry-cta-contract"
 import { recoverManualInitialInterestCandidate } from "./manual-japan-entry-candidate-recovery"
 import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-copy-envelope"
 
@@ -107,5 +107,88 @@ ${MANUAL_FORM_SIGNATURE}`,
       issues: [],
       similarityPassed: true,
     })).toBe(candidate)
+  })
+
+  it("discards template-like middle copy after a similarity failure and avoids repeated product evidence", () => {
+    const [contract] = buildManualCtaContracts({
+      companyName,
+      requiredAnchor: productName,
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const candidate = {
+      message: `${manualFormGreeting(companyName)}
+
+${companyName} publicly documents ${productEvidenceRendering}.
+
+This reusable template fragment appears across unrelated company messages. ${productEvidenceRendering}.
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+      fact_ids: [auditFact.id],
+      product_evidence: productEvidence,
+      product_evidence_rendering: productEvidenceRendering,
+      cta_type: "legacy_unspecified",
+    }
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate,
+      companyName,
+      productNames: [productName],
+      facts: [auditFact],
+      supplementalProductEvidence: productEvidenceRendering,
+      customerPathAnchor: "Japanese-language",
+      contract: contract!,
+      issues: ["The initial message is too similar to another company message"],
+      similarityPassed: false,
+    })
+
+    expect(recovered.message).not.toContain("reusable template fragment")
+    expect(recovered.message.match(new RegExp(productEvidenceRendering, "g"))).toHaveLength(1)
+    expect(recovered.message).toContain(auditFact.statement)
+  })
+
+  it("enforces the exact product anchor in the final question after recovery", () => {
+    const [baseContract] = buildManualCtaContracts({
+      companyName: "Dub",
+      requiredAnchor: "Dub",
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const contract: ManualCtaContract = {
+      ...baseContract!,
+      paragraph: `${baseContract!.paragraph.replace(baseContract!.question, "")} Would you like to receive it?`,
+      question: "Would you like to receive it?",
+    }
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting("Dub")}
+
+Dub documents ${productEvidenceRendering}.
+
+This message requires deterministic recovery.
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: productEvidence,
+        product_evidence_rendering: productEvidenceRendering,
+        cta_type: "legacy_unspecified",
+      },
+      companyName: "Dub",
+      productNames: ["Dub"],
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract,
+      issues: ["The final CTA question must contain the exact company or product anchor"],
+      similarityPassed: true,
+    })
+    const finalQuestion = recovered.message.match(/[^.!?]*\?\s*(?:\n|$)/g)?.at(-1) ?? ""
+
+    expect(finalQuestion).toContain("Dub")
+    expect(finalQuestion.trim()).toBe("Would you like to receive the Dub Japan opportunity analysis?")
   })
 })
