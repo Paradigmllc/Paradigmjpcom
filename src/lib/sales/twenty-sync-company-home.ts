@@ -29,6 +29,16 @@ export async function findTwentyCompanyByDomain(
   );
 }
 
+export async function findTwentyCompanyById(
+  twentyCompanyId: string,
+): Promise<TwentyRecord | null> {
+  const result = await twentyFetch<TwentyMutationResponse>(
+    `/rest/companies/${encodeURIComponent(twentyCompanyId)}`,
+  );
+  if (!result.ok) throw new Error(result.error);
+  return result.data.data?.company ?? null;
+}
+
 export async function createTwentyCompany(
   karte: CompanyKarteSnapshot,
 ): Promise<TwentyRecord> {

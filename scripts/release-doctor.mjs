@@ -762,6 +762,10 @@ function checkStaticReleaseRules() {
   const manualBatchQueueMigration = fs.existsSync(manualBatchQueueMigrationPath)
     ? fs.readFileSync(manualBatchQueueMigrationPath, "utf8")
     : ""
+  const manualOwnershipMigrationPath = "supabase/migrations/20260721193000_manual_work_report_ownership_and_scale.sql"
+  const manualOwnershipMigration = fs.existsSync(manualOwnershipMigrationPath)
+    ? fs.readFileSync(manualOwnershipMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -923,6 +927,11 @@ function checkStaticReleaseRules() {
     && manualBatchQueueMigration.includes("v_open_batches >= 20")
     && noLoginDeploy.includes("20260721164000_manual_work_multi_batch_queue.sql")
     && noLoginDeploy.includes("applyManualWorkMultiBatchQueueMigration")
+    && manualOwnershipMigration.includes("legacy_report_slug")
+    && manualOwnershipMigration.includes("queued_count integer NOT NULL DEFAULT 0")
+    && manualOwnershipMigration.includes("idx_manual_japan_entry_work_twenty_company_id")
+    && noLoginDeploy.includes("20260721193000_manual_work_report_ownership_and_scale.sql")
+    && noLoginDeploy.includes("applyManualWorkReportOwnershipAndScaleMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')

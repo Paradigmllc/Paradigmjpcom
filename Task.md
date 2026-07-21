@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-21 `/work`レポート所有権・旧URL自己修復・100/500件scale hardening（実装/全回帰/本番build完了・release待ち / 外部送信0）
+
+- `manual_japan_entry_work`が保存した専用`/en/work-report/{uuid}`とTwentyホームを成果物の正本にした。旧`syncCompanyKarteToTwenty`が同じTwenty会社へ書こうとした場合は汎用`/en/report/{slug}`で上書きせず、保存済みprofile/form/message/reportを再読込して専用URL・フォーム・要約・分類・scoreを再保存し、所有済みTwenty会社IDを直接read-backする。同一domainの別会社へは書かずfail closedする。既存の`/en/report/{slug}`は、衝突しない`legacy_report_slug`が1件だけ見つかった場合に専用V4へpermanent redirectする。
+- 既存V2/旧schemaの`report_data`は専用レポート表示時とTwenty整合性監査時に`manual_japan_entry_strategy_v4`へ再構築してDB実体も更新する。`/work`へ管理者用「Twenty整合性」を追加し、再解析・DeepSeek再課金なしで最大100社を3並列修復する。APIはRLS/service-role境界、認可、DBベル+Slack通知、`sent=false`検査を持ち、外部送信は行わない。
+- 500件batchの各3件drain後に全item最大500行を再取得していた処理を、batch行の7状態counterへ変更した。各sliceはbatch 1行だけをread-backし、UIはRealtime item差分と初回snapshotをmergeする。DeepSeekのbounded recoveryを5分境界で切らないようrequest budgetを890秒、drain leaseを16分、stale item回収を20分へ分離し、GETも安全な自動復旧eventとしてdispatchする。
+- 100社の成果物整合性simulationは100/100修復、最大同時3、送信0。新設整合性3 files / 7 tests、Twenty所有権を含む重点3 files / 16 tests、全Vitest **236 files / 1,088 tests**、TypeScript、Quality Guard **0 errors / 78 existing warnings**、release-doctor static/remote preflight（dirty判定以外）、production build **408/408 pages**がpass。本番release、Paperform旧URL/DB V4/Twenty exact read-back、transaction内100/500件queue証明、実URL100件soakはPR統合後に行い、数値を追記する。
+
 ## CURRENT STATUS - 2026-07-21 `/work`最大10,000社連続キュー・単一drain lease・DeepSeek工程別Cache可視化（本番release・DB読戻し完了 / 外部送信0）
 
 - 1回500URLの安全上限は維持しつつ、最大 **20バッチ / 10,000社**を先行登録できるDBキューへ拡張した。複数`queued`を許可し、Postgres advisory lockとpartial unique indexで`running`は常に1バッチだけ。完了イベントが次の最古バッチを原子的に昇格・自動dispatchするため、4,000社は8×500を先に登録して連続処理できる。

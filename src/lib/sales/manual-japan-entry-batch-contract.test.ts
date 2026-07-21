@@ -10,6 +10,8 @@ import {
 describe("manual work durable batch contract", () => {
   const migration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260720233215_manual_work_durable_batches.sql"), "utf8")
   const queueMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260721164000_manual_work_multi_batch_queue.sql"), "utf8")
+  const scaleMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260721193000_manual_work_report_ownership_and_scale.sql"), "utf8")
+  const batchStore = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-japan-entry-batch-store.ts"), "utf8")
 
   it("supports 500 URLs while keeping each server drain bounded", () => {
     expect(MANUAL_WORK_BATCH_MAX_URLS).toBe(500)
@@ -37,5 +39,15 @@ describe("manual work durable batch contract", () => {
     expect(queueMigration).toContain("manual_japan_entry_release_batch_drain")
     expect(queueMigration).toContain("WHERE status = 'running'")
     expect(queueMigration).toContain("batch.status = 'running'")
+  })
+
+  it("keeps 100-500 row drains constant-size and leaves enough time for bounded model recovery", () => {
+    expect(scaleMigration).toContain("queued_count integer NOT NULL DEFAULT 0")
+    expect(scaleMigration).toContain("processing_count integer NOT NULL DEFAULT 0")
+    expect(scaleMigration).toContain("failed_count integer NOT NULL DEFAULT 0")
+    expect(scaleMigration).toContain("interval '16 minutes'")
+    expect(scaleMigration).toContain("interval '20 minutes'")
+    expect(batchStore).toContain("getManualWorkBatchCompact")
+    expect(batchStore).toContain("return { batch, items: [], counts")
   })
 })

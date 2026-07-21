@@ -36,6 +36,20 @@ function snapshot(batch: ManualWorkBatchRow, items: ManualWorkBatchItemRow[]): M
   return { batch, items, counts, remaining, finished: items.length - remaining }
 }
 
+function compactSnapshot(batch: ManualWorkBatchRow): ManualWorkBatchSnapshot {
+  const counts: Record<ManualWorkBatchItemStatus, number> = {
+    queued: batch.queued_count,
+    processing: batch.processing_count,
+    completed: batch.completed_count,
+    needs_review: batch.needs_review_count,
+    rejected: batch.rejected_count,
+    failed: batch.failed_count,
+    duplicate: batch.duplicate_count,
+  }
+  const remaining = counts.queued + counts.processing
+  return { batch, items: [], counts, remaining, finished: batch.total_count - remaining }
+}
+
 export async function getManualWorkBatch(id: string): Promise<ManualWorkBatchSnapshot | null> {
   const [{ data: batch, error: batchError }, { data: items, error: itemsError }] = await Promise.all([
     client().from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES).select("*").eq("id", id).maybeSingle(),
@@ -44,6 +58,16 @@ export async function getManualWorkBatch(id: string): Promise<ManualWorkBatchSna
   if (batchError) throw new Error(batchError.message)
   if (itemsError) throw new Error(itemsError.message)
   return batch ? snapshot(batch as ManualWorkBatchRow, (items ?? []) as ManualWorkBatchItemRow[]) : null
+}
+
+export async function getManualWorkBatchCompact(id: string): Promise<ManualWorkBatchSnapshot | null> {
+  const { data, error } = await client()
+    .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return data ? compactSnapshot(data as ManualWorkBatchRow) : null
 }
 
 export async function getLatestActiveManualWorkBatch(): Promise<ManualWorkBatchSnapshot | null> {
@@ -176,9 +200,12 @@ export async function completeManualWorkBatchItem(input: {
 }
 
 export async function refreshManualWorkBatch(batchId: string): Promise<ManualWorkBatchSnapshot> {
-  const { error } = await client().rpc("manual_japan_entry_refresh_batch", { p_batch_id: batchId })
+  const { data, error } = await client().rpc("manual_japan_entry_refresh_batch", { p_batch_id: batchId })
   if (error) throw new Error(error.message)
-  const refreshed = await getManualWorkBatch(batchId)
+  const row = Array.isArray(data) ? data[0] : data
+  const refreshed = row
+    ? compactSnapshot(row as ManualWorkBatchRow)
+    : await getManualWorkBatchCompact(batchId)
   if (!refreshed) throw new Error("Manual work batch was not found")
   return refreshed
 }

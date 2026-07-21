@@ -4,6 +4,7 @@ import type { ManualCompanyProfile } from "./manual-japan-entry-types";
 const twenty = vi.hoisted(() => ({
   createTwentyCompanyBase: vi.fn(),
   findTwentyCompanyByDomain: vi.fn(),
+  findTwentyCompanyById: vi.fn(),
   patchTwentyCompanyHome: vi.fn(),
 }));
 
@@ -38,6 +39,7 @@ describe("manual work Twenty persistence", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     twenty.createTwentyCompanyBase.mockResolvedValue({ id: "company-1" });
+    twenty.findTwentyCompanyById.mockResolvedValue(null);
   });
 
   it("returns synced only after URLs and the complete initial message are readable from Twenty", async () => {
@@ -108,12 +110,8 @@ describe("manual work Twenty persistence", () => {
   });
 
   it("reuses the owned partial company instead of creating a duplicate", async () => {
-    let call = 0;
     let saved: Record<string, unknown> | null = null;
-    twenty.findTwentyCompanyByDomain.mockImplementation(async () => {
-      call += 1;
-      return call === 1 ? { id: "company-owned" } : saved;
-    });
+    twenty.findTwentyCompanyById.mockImplementation(async () => saved ?? { id: "company-owned" });
     twenty.patchTwentyCompanyHome.mockImplementation(
       async (id: string, payload: Record<string, unknown>) => {
         saved = { id, ...payload };
@@ -132,6 +130,27 @@ describe("manual work Twenty persistence", () => {
       }),
     ).resolves.toEqual({ status: "synced", companyId: "company-owned" });
     expect(twenty.createTwentyCompanyBase).not.toHaveBeenCalled();
+    expect(twenty.findTwentyCompanyByDomain).not.toHaveBeenCalled();
+    expect(twenty.findTwentyCompanyById).toHaveBeenCalledTimes(2);
+  });
+
+  it("fails closed instead of updating a same-domain duplicate when the owned company is missing", async () => {
+    twenty.findTwentyCompanyById.mockResolvedValue(null);
+    twenty.findTwentyCompanyByDomain.mockResolvedValue({ id: "same-domain-duplicate" });
+
+    await expect(syncManualWorkToTwenty({
+      domain: "screenshottocode.com",
+      profile,
+      formUrl: "https://screenshottocode.com/contact",
+      reportUrl: "https://paradigmjp.com/en/work-report/report-1",
+      initialMessage: "未送信の初回フォーム文面",
+      ownedCompanyId: "company-owned",
+    })).rejects.toMatchObject({
+      name: "ManualTwentySyncError",
+      companyId: "company-owned",
+    });
+    expect(twenty.findTwentyCompanyByDomain).not.toHaveBeenCalled();
+    expect(twenty.patchTwentyCompanyHome).not.toHaveBeenCalled();
   });
 
   it("updates an existing same-domain Twenty company with /work analysis instead of treating Twenty as the source", async () => {

@@ -5,7 +5,7 @@ import {
   claimManualWorkBatchDrain,
   claimManualWorkBatchItems,
   completeManualWorkBatchItem,
-  getManualWorkBatch,
+  getManualWorkBatchCompact,
   markManualWorkBatchNotified,
   promoteNextManualWorkBatch,
   refreshManualWorkBatch,
@@ -21,7 +21,7 @@ import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-bat
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 300
+export const maxDuration = 900
 
 const paramsSchema = z.object({ batchId: z.string().uuid() })
 const bodySchema = z.object({ automated: z.boolean().default(false) }).strict()
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
     return NextResponse.json({ ok: false, error: "JSON bodyが不正です" }, { status: 400 })
   }
   try {
-    let before = await getManualWorkBatch(params.data.batchId)
+    let before = await getManualWorkBatchCompact(params.data.batchId)
     if (!before) return NextResponse.json({ ok: false, error: "バッチが見つかりません" }, { status: 404 })
     if (isManualWorkBatchTerminal(before.batch.status)) {
       return NextResponse.json({ ok: true, claimed: 0, snapshot: before })

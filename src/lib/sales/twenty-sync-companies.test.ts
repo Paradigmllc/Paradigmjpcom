@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   twentyFetch: vi.fn(),
   requireTwentyAuth: vi.fn(),
   twentyCompanyHomePayload: vi.fn(),
+  restoreManualWorkTwentyHome: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase", () => ({
@@ -41,6 +42,9 @@ vi.mock("./twenty-sync-summaries", () => ({
 vi.mock("./twenty-health", () => ({
   requireTwentyAuth: mocks.requireTwentyAuth,
 }));
+vi.mock("./manual-work-artifact-authority", () => ({
+  restoreManualWorkTwentyHome: mocks.restoreManualWorkTwentyHome,
+}));
 
 import { syncCompanyKarteToTwenty } from "./twenty-sync-companies";
 
@@ -68,6 +72,7 @@ beforeEach(() => {
     paradigmKarteSummary: { markdown: "未送信・要レビュー" },
   });
   mocks.insertWithOptionalColumns.mockResolvedValue({ error: null });
+  mocks.restoreManualWorkTwentyHome.mockResolvedValue({ protected: false });
   mocks.twentyFetch.mockImplementation(async (path: string) => {
     if (path.startsWith("/rest/companies?")) {
       return {
@@ -155,6 +160,34 @@ describe("syncCompanyKarteToTwenty", () => {
     expect(mocks.twentyFetch).toHaveBeenCalledWith(
       "/rest/companies/twenty-new",
       { method: "DELETE" },
+    );
+  });
+
+  it("preserves and restores /work-owned Twenty home artifacts", async () => {
+    mocks.restoreManualWorkTwentyHome.mockResolvedValue({
+      protected: true,
+      reportUrl: "https://paradigmjp.com/en/work-report/11111111-1111-4111-8111-111111111111",
+      workId: "work-1",
+    });
+
+    const result = await syncCompanyKarteToTwenty("company-1", {
+      syncOpportunities: false,
+    });
+
+    expect(result).toMatchObject({ ok: true, homeSynced: true });
+    expect(mocks.twentyFetch).toHaveBeenCalledTimes(1);
+    expect(mocks.insertWithOptionalColumns).toHaveBeenCalledWith(
+      {},
+      "sales_sync_logs",
+      [expect.objectContaining({
+        action: "karte_home_sync",
+        payload: expect.objectContaining({
+          manual_work_protected: true,
+          manual_work_id: "work-1",
+          report_url: "https://paradigmjp.com/en/work-report/11111111-1111-4111-8111-111111111111",
+        }),
+      })],
+      ["pipeline_run_id"],
     );
   });
 });

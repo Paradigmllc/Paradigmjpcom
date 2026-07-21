@@ -4,6 +4,7 @@ import { countrySelectValue, industrySelectValue, sourceSelectValue } from "./tw
 import {
   createTwentyCompanyBase,
   findTwentyCompanyByDomain,
+  findTwentyCompanyById,
   patchTwentyCompanyHome,
 } from "./twenty-sync-company-home"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
@@ -50,7 +51,12 @@ export async function syncManualWorkToTwenty(input: {
   ownedCompanyId?: string | null
   readiness?: { sendReady: boolean; reasons: string[] }
 }): Promise<{ status: "synced" | "duplicate"; companyId: string }> {
-  const existing = await findTwentyCompanyByDomain(input.domain)
+  const existing = input.ownedCompanyId
+    ? await findTwentyCompanyById(input.ownedCompanyId)
+    : await findTwentyCompanyByDomain(input.domain)
+  if (input.ownedCompanyId && existing?.id !== input.ownedCompanyId) {
+    throw new ManualTwentySyncError("Owned Twenty company could not be read back", input.ownedCompanyId)
+  }
   const company = existing?.id
     ? existing
     : await createTwentyCompanyBase({
@@ -110,7 +116,9 @@ export async function syncManualWorkToTwenty(input: {
   if (!patched.ok) throw new ManualTwentySyncError(patched.error, company.id)
   let saved
   try {
-    saved = await findTwentyCompanyByDomain(input.domain)
+    saved = input.ownedCompanyId
+      ? await findTwentyCompanyById(input.ownedCompanyId)
+      : await findTwentyCompanyByDomain(input.domain)
   } catch (error) {
     throw new ManualTwentySyncError(
       `Twenty保存確認リクエストに失敗しました: ${error instanceof Error ? error.message : "unknown error"}`,

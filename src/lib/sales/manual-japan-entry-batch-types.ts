@@ -25,6 +25,13 @@ export interface ManualWorkBatchRow {
   id: string
   status: ManualWorkBatchStatus
   total_count: number
+  queued_count: number
+  processing_count: number
+  completed_count: number
+  needs_review_count: number
+  rejected_count: number
+  failed_count: number
+  duplicate_count: number
   message_variant_requested: ManualMessageVariantSelection
   message_angle_requested: ManualMessageAngleSelection
   source_slug: string

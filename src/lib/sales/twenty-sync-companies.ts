@@ -27,6 +27,7 @@ import {
   patchTwentyCompanyHome,
   syncTwentyCompanyHomeFields,
 } from "./twenty-sync-company-home";
+import { restoreManualWorkTwentyHome } from "./manual-work-artifact-authority";
 
 export async function syncCustomerHandoffToTwenty(
   input: TwentyCustomerHandoffInput,
@@ -284,7 +285,13 @@ export async function syncCompanyKarteToTwenty(
     }
     if (!twentyCompany?.id) throw new Error("Twenty company id missing");
 
-    await syncTwentyCompanyHomeFields(karte, twentyCompany.id);
+    const manualOwnership = await restoreManualWorkTwentyHome({
+      twentyCompanyId: twentyCompany.id,
+      domain: karte.domain,
+    });
+    if (!manualOwnership.protected) {
+      await syncTwentyCompanyHomeFields(karte, twentyCompany.id);
+    }
     const opportunityIds = syncOpportunities
       ? await syncTwentyOpportunities(sb, karte, twentyCompany.id)
       : [];
@@ -299,8 +306,10 @@ export async function syncCompanyKarteToTwenty(
         status: "success",
         payload: {
           twenty_company_id: twentyCompany.id,
-          report_url: karte.reportUrl,
+          report_url: manualOwnership.protected ? manualOwnership.reportUrl : karte.reportUrl,
           form_url: karte.formUrl,
+          manual_work_protected: manualOwnership.protected,
+          manual_work_id: manualOwnership.protected ? manualOwnership.workId : null,
           product_codes: recommendations.map((product) => product.code),
           sync_opportunities: syncOpportunities,
         },
