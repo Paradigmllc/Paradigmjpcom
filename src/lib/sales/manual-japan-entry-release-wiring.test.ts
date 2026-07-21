@@ -118,6 +118,8 @@ describe("manual Japan Entry release wiring", () => {
     expect(service).toContain('phase: "public evidence collection"')
     expect(service).toContain('phase: "company classification"')
     expect(service).toContain('phase: "initial message generation"')
+    expect(service).toContain("maxAttempts: 2")
+    expect(service).toContain("generationUsage = addDeepSeekUsage(generationUsage, result.usage)")
     expect(service).toContain('phase: "Twenty persistence and read-back"')
     expect(service).toContain("generation_error")
     expect(manualTwenty).toContain("twentyNumberMatches")

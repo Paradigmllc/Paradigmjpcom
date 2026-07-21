@@ -1,6 +1,10 @@
 import "server-only"
 import { collectInitialFormDraftEvidence } from "./initial-form-draft-evidence"
-import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
+import {
+  generatePersonalizedJapanEntryMessage,
+  type PersonalizedJapanEntryMessageResult,
+} from "./japan-entry-personalized-message"
+import { addDeepSeekUsage } from "./japan-entry-personalized-message-structured"
 import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
 import { collectManualMarketProjection } from "./manual-japan-entry-market-context"
 import { analyzeManualCompanyProfile, parseManualCompanyProfile } from "./manual-japan-entry-profile"
@@ -339,11 +343,16 @@ export async function processManualJapanEntryUrl(
       projection: marketProjection.projection,
       priorMessages,
     })
+    let generationUsage: PersonalizedJapanEntryMessageResult["usage"]
     const generatedRun = await runWithManualWorkAutoRecovery({
       phase: "initial message generation",
-      // The generator already performs bounded transport, schema, safety, and editorial recovery.
-      maxAttempts: 1,
-      operation: async () => generatePersonalizedJapanEntryMessage(messageInput),
+      // One fresh bounded run recovers a transient editorial false negative without operator reanalysis.
+      maxAttempts: 2,
+      operation: async () => {
+        const result = await generatePersonalizedJapanEntryMessage(messageInput)
+        generationUsage = addDeepSeekUsage(generationUsage, result.usage)
+        return result
+      },
       accept: (result) => result.ok,
     })
     const generated = generatedRun.value
@@ -376,7 +385,7 @@ export async function processManualJapanEntryUrl(
       similarity: generated.similarity ?? null,
       generation_status: generated.ok ? "passed" : "failed",
       generation_error: generationError,
-      generation_usage: generated.usage ?? null,
+      generation_usage: generationUsage ?? null,
       automatic_generation_attempts: generatedRun.attempts,
       generated_at: new Date().toISOString(),
     }
