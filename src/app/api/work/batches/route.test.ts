@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   active: vi.fn(),
   normalize: vi.fn(),
   notify: vi.fn(),
+  schedule: vi.fn(),
+  preflight: vi.fn(),
 }))
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
@@ -16,6 +18,8 @@ vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
 }))
 vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ normalizeManualWorkUrl: mocks.normalize }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
+vi.mock("@/lib/sales/manual-japan-entry-batch-schedule", () => ({ scheduleManualWorkBatchDrain: mocks.schedule }))
+vi.mock("@/lib/sales/manual-japan-entry-batch-preflight", () => ({ preflightManualWorkBatch: mocks.preflight }))
 
 import { GET, POST } from "./route"
 
@@ -39,6 +43,7 @@ beforeEach(() => {
   })
   mocks.create.mockImplementation(async (input: { urls: unknown[] }) => snapshot(input.urls.length))
   mocks.notify.mockResolvedValue({ ok: true })
+  mocks.preflight.mockResolvedValue({ ok: true, usedModel: "deepseek-chat" })
 })
 
 describe("manual work durable batch API", () => {
@@ -65,6 +70,8 @@ describe("manual work durable batch API", () => {
       urls: expect.arrayContaining([expect.objectContaining({ domain: "company-0.example" })]),
       sourceSlug: "manual_input",
     }))
+    expect(body.automaticDrainStarted).toBe(true)
+    expect(mocks.schedule).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
   })
 
   it("rejects a 501-item submission before any DB write", async () => {
@@ -87,5 +94,20 @@ describe("manual work durable batch API", () => {
     }))
     expect(response.status).toBe(409)
     expect(mocks.create).not.toHaveBeenCalled()
+  })
+
+  it("does not enqueue hundreds of doomed jobs when DeepSeek is unavailable", async () => {
+    mocks.preflight.mockResolvedValue({ ok: false, error: "DeepSeek APIの残高不足です" })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ urls: ["example.com"] }),
+    }))
+    const body = await response.json()
+
+    expect(response.status).toBe(503)
+    expect(body.error).toContain("バッチは開始していません")
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(mocks.schedule).not.toHaveBeenCalled()
   })
 })

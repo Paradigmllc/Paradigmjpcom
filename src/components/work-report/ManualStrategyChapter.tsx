@@ -15,7 +15,20 @@ const evidenceLabels = {
   recommended_action: "Recommended action",
 } as const
 
+const evidenceBars = {
+  observed: "bg-blue-600",
+  modeled: "bg-violet-600",
+  hypothesis: "bg-amber-500",
+  recommended_action: "bg-emerald-600",
+} as const
+
 export function ManualStrategyChapter({ chapter }: { chapter: StrategyChapter }) {
+  const evidenceCounts = chapter.evidence.reduce<Record<keyof typeof evidenceLabels, number>>((counts, item) => {
+    counts[item.classification] += 1
+    return counts
+  }, { observed: 0, modeled: 0, hypothesis: 0, recommended_action: 0 })
+  const evidenceTotal = chapter.evidence.length
+
   return (
     <section
       aria-labelledby={`strategy-${chapter.id}`}
@@ -34,9 +47,41 @@ export function ManualStrategyChapter({ chapter }: { chapter: StrategyChapter })
         <p className="mt-3 text-lg font-medium leading-8 text-slate-900">{chapter.executiveTakeaway}</p>
       </div>
 
-      <div className="mt-7 space-y-4">
-        {chapter.narrative.map((paragraph) => <p key={paragraph} className="text-[15px] leading-8 text-slate-700">{paragraph}</p>)}
+      <div className="mt-7 grid gap-4 lg:grid-cols-3">
+        {chapter.narrative.map((paragraph, index) => (
+          <div key={paragraph} className="rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="font-mono text-xs font-semibold text-blue-700">{String(index + 1).padStart(2, "0")}</p>
+            <p className="mt-3 text-sm leading-7 text-slate-700">{paragraph}</p>
+          </div>
+        ))}
       </div>
+
+      <figure aria-labelledby={`evidence-chart-${chapter.id}`} className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+        <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Chapter evidence composition</p>
+            <h3 id={`evidence-chart-${chapter.id}`} className="mt-2 text-lg font-semibold text-slate-950">Facts, models, hypotheses, and actions remain separate</h3>
+            <div className="mt-5 flex h-4 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={`${evidenceTotal} evidence items classified by evidence type`}>
+              {(Object.keys(evidenceLabels) as Array<keyof typeof evidenceLabels>).map((classification) => evidenceCounts[classification] > 0 && (
+                <div key={classification} className={evidenceBars[classification]} style={{ width: `${(evidenceCounts[classification] / evidenceTotal) * 100}%` }} />
+              ))}
+            </div>
+            <ul className="mt-4 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+              {(Object.keys(evidenceLabels) as Array<keyof typeof evidenceLabels>).map((classification) => (
+                <li key={classification} className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2"><span>{evidenceLabels[classification]}</span><strong className="font-mono text-slate-950">{evidenceCounts[classification]}</strong></li>
+              ))}
+            </ul>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-stretch">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">Evidence</p><p className="mt-2 text-xs leading-5 text-slate-700">{chapter.evidence[0]?.label}</p></div>
+            <span className="hidden self-center text-slate-300 sm:block" aria-hidden="true">→</span>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Controlled action</p><p className="mt-2 text-xs leading-5 text-slate-700">{chapter.actions[0]}</p></div>
+            <span className="hidden self-center text-slate-300 sm:block" aria-hidden="true">→</span>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wider text-amber-800">Decision</p><p className="mt-2 text-xs leading-5 text-slate-700">{chapter.decisionGate}</p></div>
+          </div>
+        </div>
+        <figcaption className="mt-5 text-xs leading-5 text-slate-500">This traceability map does not turn a hypothesis or recommended action into an observed fact.</figcaption>
+      </figure>
 
       <div className="mt-8">
         <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-slate-800"><ShieldCheck className="size-4 text-blue-700" aria-hidden="true" />Evidence ledger</h3>

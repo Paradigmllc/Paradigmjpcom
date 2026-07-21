@@ -4,10 +4,32 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import type { ManualMessageAngleSelection } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualMessageVariantSelection } from "@/lib/sales/manual-japan-entry-experiment"
-import type { ManualWorkBatchSnapshot } from "@/lib/sales/manual-japan-entry-batch-types"
+import {
+  isManualWorkBatchTerminal,
+  type ManualWorkBatchItemRow,
+  type ManualWorkBatchItemStatus,
+  type ManualWorkBatchRow,
+  type ManualWorkBatchSnapshot,
+} from "@/lib/sales/manual-japan-entry-batch-types"
+
+const ITEM_STATUSES: ManualWorkBatchItemStatus[] = [
+  "queued", "processing", "completed", "needs_review", "rejected", "failed", "duplicate",
+]
+
+function mergeBatchItem(snapshot: ManualWorkBatchSnapshot, item: ManualWorkBatchItemRow): ManualWorkBatchSnapshot {
+  const index = snapshot.items.findIndex((candidate) => candidate.id === item.id)
+  const items = index >= 0
+    ? snapshot.items.map((candidate, itemIndex) => itemIndex === index ? item : candidate)
+    : [...snapshot.items, item].sort((a, b) => a.position - b.position)
+  const counts = Object.fromEntries(ITEM_STATUSES.map((status) => [status, 0])) as Record<ManualWorkBatchItemStatus, number>
+  for (const candidate of items) counts[candidate.status] += 1
+  const remaining = counts.queued + counts.processing
+  return { ...snapshot, items, counts, remaining, finished: items.length - remaining }
+}
 
 interface BatchResponse {
   ok?: boolean
+  automaticDrainStarted?: boolean
   claimed?: number
   activeBatch?: ManualWorkBatchSnapshot | null
   snapshot?: ManualWorkBatchSnapshot
@@ -25,6 +47,14 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
   const [running, setRunning] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const drainingRef = useRef(false)
+  const eventsRef = useRef<EventSource | null>(null)
+  const snapshotRef = useRef<ManualWorkBatchSnapshot | null>(null)
+  const lastHistoryRefreshRef = useRef(0)
+
+  const commitSnapshot = useCallback((next: ManualWorkBatchSnapshot) => {
+    snapshotRef.current = next
+    setSnapshot(next)
+  }, [])
 
   const drain = useCallback(async (initial: ManualWorkBatchSnapshot) => {
     if (drainingRef.current) return
@@ -41,13 +71,15 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
         const body = await readBatchResponse(response)
         if (!body.snapshot) throw new Error("バッチ進捗を読み戻せませんでした")
         current = body.snapshot
-        setSnapshot(current)
+        commitSnapshot(current)
         await onHistoryRefresh()
         if ((body.claimed ?? 0) === 0 && current.remaining > 0) {
-          throw new Error("処理中の項目が残っています。10分後に「処理を再開」を押してください。")
+          setErrorMessage(null)
+          toast.info("サーバー側の自動処理が継続しています。キューはDBに保存済みです。")
+          break
         }
       }
-      toast.success(`${current.batch.total_count}件のバッチ処理が完了しました`)
+      if (current.remaining === 0) toast.success(`${current.batch.total_count}件のバッチ処理が完了しました`)
     } catch (error) {
       console.error("[manual-work-batch-ui] drain failed:", error)
       const message = error instanceof Error ? error.message : "バッチ処理を継続できませんでした"
@@ -58,12 +90,12 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       setRunning(false)
       await onHistoryRefresh()
     }
-  }, [onHistoryRefresh])
+  }, [commitSnapshot, onHistoryRefresh])
 
   const resume = useCallback(async (batch: ManualWorkBatchSnapshot) => {
-    setSnapshot(batch)
+    commitSnapshot(batch)
     await drain(batch)
-  }, [drain])
+  }, [commitSnapshot, drain])
 
   useEffect(() => {
     let cancelled = false
@@ -71,7 +103,15 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       try {
         const response = await fetch("/api/work/batches", { cache: "no-store" })
         const body = await readBatchResponse(response)
-        if (!cancelled && body.activeBatch) await resume(body.activeBatch)
+        if (!cancelled && body.activeBatch) {
+          commitSnapshot(body.activeBatch)
+          lastHistoryRefreshRef.current = body.activeBatch.finished
+          setRunning(true)
+          if (body.activeBatch.batch.last_error) {
+            toast.info("停止したサーバー処理を自動復旧しています。再解析ボタンは不要です。")
+            void drain(body.activeBatch)
+          }
+        }
       } catch (error) {
         console.error("[manual-work-batch-ui] active batch read failed:", error)
         if (!cancelled) setErrorMessage(error instanceof Error ? error.message : "実行中バッチを取得できませんでした")
@@ -79,7 +119,68 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
     }
     void loadActive()
     return () => { cancelled = true }
-  }, [resume])
+  }, [commitSnapshot, drain])
+
+  const batchId = snapshot?.batch.id ?? null
+  const batchStatus = snapshot?.batch.status ?? null
+  useEffect(() => {
+    eventsRef.current?.close()
+    eventsRef.current = null
+    if (!batchId || !batchStatus || isManualWorkBatchTerminal(batchStatus)) {
+      setRunning(false)
+      return
+    }
+
+    setRunning(true)
+    const events = new EventSource(`/api/work/batches/${batchId}/events`)
+    eventsRef.current = events
+    events.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as {
+          type?: string
+          snapshot?: ManualWorkBatchSnapshot | null
+          item?: ManualWorkBatchItemRow
+          batch?: ManualWorkBatchRow
+          message?: string
+        }
+        if (payload.type === "warning") {
+          console.warn("[manual-work-batch-ui] realtime warning:", payload.message)
+          return
+        }
+        let next = snapshotRef.current
+        if (payload.snapshot) next = payload.snapshot
+        if (payload.item && next) next = mergeBatchItem(next, payload.item)
+        if (payload.batch && next) next = { ...next, batch: payload.batch }
+        if (!next) return
+        commitSnapshot(next)
+        const shouldRefreshHistory = next.finished - lastHistoryRefreshRef.current >= 25
+          || isManualWorkBatchTerminal(next.batch.status)
+        if (shouldRefreshHistory) {
+          lastHistoryRefreshRef.current = next.finished
+          void onHistoryRefresh()
+        }
+        if (isManualWorkBatchTerminal(next.batch.status)) {
+          events.close()
+          eventsRef.current = null
+          setRunning(false)
+          if (next.counts.failed > 0) {
+            toast.warning(`${next.batch.total_count}件の自動処理が完了しました（失敗${next.counts.failed}件）`)
+          } else {
+            toast.success(`${next.batch.total_count}件の自動処理が完了しました`)
+          }
+        }
+      } catch (error) {
+        console.error("[manual-work-batch-ui] realtime payload failed:", error)
+      }
+    }
+    events.onerror = (error) => {
+      console.warn("[manual-work-batch-ui] realtime connection retrying:", error)
+    }
+    return () => {
+      events.close()
+      if (eventsRef.current === events) eventsRef.current = null
+    }
+  }, [batchId, batchStatus, commitSnapshot, onHistoryRefresh])
 
   const start = useCallback(async (input: {
     urls: string[]
@@ -99,10 +200,9 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       })
       const body = await readBatchResponse(response)
       if (!body.snapshot) throw new Error("作成したバッチを読み戻せませんでした")
-      setSnapshot(body.snapshot)
-      toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録しました`)
-      setRunning(false)
-      await drain(body.snapshot)
+      commitSnapshot(body.snapshot)
+      lastHistoryRefreshRef.current = body.snapshot.finished
+      toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録し、サーバー自動処理を開始しました`)
     } catch (error) {
       console.error("[manual-work-batch-ui] create failed:", error)
       const message = error instanceof Error ? error.message : "バッチを作成できませんでした"
@@ -110,7 +210,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       setRunning(false)
       toast.error(message)
     }
-  }, [drain, running])
+  }, [commitSnapshot, running])
 
   return { snapshot, running, errorMessage, start, resume }
 }

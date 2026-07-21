@@ -4,6 +4,7 @@ import { NextRequest } from "next/server"
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   list: vi.fn(),
+  summary: vi.fn(),
   metrics: vi.fn(),
   angleMetrics: vi.fn(),
   sources: vi.fn(),
@@ -14,7 +15,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/sales/manual-japan-entry-store", () => ({
-  listManualJapanEntryWork: mocks.list,
+  listManualJapanEntryWorkPage: mocks.list,
+  getManualWorkDashboardSummary: mocks.summary,
   listManualWorkExperimentMetrics: mocks.metrics,
   listManualWorkAngleMetrics: mocks.angleMetrics,
   listManualLeadSourceCatalog: mocks.sources,
@@ -29,7 +31,8 @@ import { GET, PATCH, POST } from "./route"
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.authorize.mockResolvedValue(true)
-  mocks.list.mockResolvedValue([])
+  mocks.list.mockResolvedValue({ items: [], page: 1, pageSize: 100, total: 0, hasMore: false })
+  mocks.summary.mockResolvedValue({ total: 0, actionRequired: 0, completed: 0, formReady: 0, manuallySent: 0, meetings: 0 })
   mocks.metrics.mockResolvedValue([])
   mocks.angleMetrics.mockResolvedValue([])
   mocks.sources.mockResolvedValue([])
@@ -44,6 +47,16 @@ describe("manual Japan Entry work API", () => {
     const response = await GET(new NextRequest("https://paradigmjp.com/api/work"))
     expect(response.status).toBe(401)
     expect(mocks.list).not.toHaveBeenCalled()
+  })
+
+  it("returns server-paginated history with global counts", async () => {
+    mocks.list.mockResolvedValue({ items: [{ id: "row-101" }], page: 2, pageSize: 100, total: 401, hasMore: true })
+    const response = await GET(new NextRequest("https://paradigmjp.com/api/work?page=2&filter=completed&q=acme"))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(mocks.list).toHaveBeenCalledWith({ page: 2, pageSize: 100, filter: "completed", query: "acme" })
+    expect(body).toMatchObject({ page: 2, total: 401, hasMore: true, items: [{ id: "row-101" }] })
   })
 
   it("processes exactly one explicit URL per request", async () => {

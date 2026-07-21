@@ -93,6 +93,40 @@ function findArticleAgreementIssue(message: string, anchors: string[]): string |
   return null;
 }
 
+const SENTENCE_SIMILARITY_STOP_WORDS = new Set([
+  "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "our", "that", "the", "their", "this", "to", "was", "we", "where", "with", "you", "your",
+]);
+
+function sentenceTokens(value: string): Set<string> {
+  return new Set(value.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length >= 3 && !SENTENCE_SIMILARITY_STOP_WORDS.has(token)));
+}
+
+function findRepeatedSentenceIssue(value: string): string | null {
+  const sentences = value
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length >= 45);
+  for (let leftIndex = 0; leftIndex < sentences.length; leftIndex += 1) {
+    const left = sentenceTokens(sentences[leftIndex] ?? "");
+    if (left.size < 6) continue;
+    for (let rightIndex = leftIndex + 1; rightIndex < sentences.length; rightIndex += 1) {
+      const right = sentenceTokens(sentences[rightIndex] ?? "");
+      if (right.size < 6) continue;
+      let overlap = 0;
+      for (const token of left) if (right.has(token)) overlap += 1;
+      const containment = overlap / Math.min(left.size, right.size);
+      const jaccard = overlap / (left.size + right.size - overlap);
+      if (containment >= 0.78 || jaccard >= 0.68) {
+        return "Repeated or near-duplicate sentences are prohibited; each sentence must add a distinct company-specific point";
+      }
+    }
+  }
+  return null;
+}
+
 export function getJapanEntryMessageMode(facts: JapanEntryPersonalizationFact[]): JapanEntryMessageMode {
   const ids = new Set(facts.map((fact) => fact.id));
   return (ids.has("modeled-global-monthly-visit-range") && ids.has("modeled-annual-opportunity-range"))
@@ -147,6 +181,11 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (articleAgreementIssue) {
     issues.push(articleAgreementIssue);
     score -= 40;
+  }
+  const repeatedSentenceIssue = findRepeatedSentenceIssue(substantiveMessage);
+  if (repeatedSentenceIssue) {
+    issues.push(repeatedSentenceIssue);
+    score -= 45;
   }
   if (messageAngle && input.candidateAngle !== messageAngle) {
     issues.push(`Candidate angle must be exactly ${messageAngle}`);

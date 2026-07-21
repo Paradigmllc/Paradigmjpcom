@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { CheckCircle2, CircleDot, Database, LockKeyhole, ShieldCheck } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Toaster, toast } from "sonner"
 import {
   summarizeManualWorkExperiment,
@@ -23,6 +23,7 @@ import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
 import { ManualWorkOverview } from "./ManualWorkOverview"
 import { useManualWorkBatch } from "./useManualWorkBatch"
 import { MANUAL_WORK_BATCH_MAX_URLS } from "@/lib/sales/manual-japan-entry-batch-types"
+import type { ManualWorkDashboardSummary, ManualWorkHistoryFilter } from "@/lib/sales/manual-work-dashboard"
 
 export function parseManualWorkUrls(value: string): string[] {
   return [...new Set(value.split(/[\s,]+/).map((url) => url.trim()).filter(Boolean))]
@@ -55,12 +56,16 @@ function mergeItems(current: ManualJapanEntryWorkRow[], incoming: ManualJapanEnt
 
 export function ManualJapanEntryWorkConsole({
   initialItems,
+  initialHistoryTotal,
+  initialSummary,
   initialMetrics,
   initialAngleMetrics,
   initialSources,
   initialHistoryError,
 }: {
   initialItems: ManualJapanEntryWorkRow[]
+  initialHistoryTotal: number
+  initialSummary: ManualWorkDashboardSummary
   initialMetrics: ManualExperimentMetric[]
   initialAngleMetrics: ManualAngleMetric[]
   initialSources: ManualLeadSourceCatalogRow[]
@@ -79,6 +84,12 @@ export function ManualJapanEntryWorkConsole({
   const [retryRunning, setRetryRunning] = useState(false)
   const [updatingOutcome, setUpdatingOutcome] = useState<string | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(initialHistoryError)
+  const [historyTotal, setHistoryTotal] = useState(initialHistoryTotal)
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyHasMore, setHistoryHasMore] = useState(initialItems.length < initialHistoryTotal)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [summary, setSummary] = useState(initialSummary)
+  const historyCriteria = useRef<{ filter: ManualWorkHistoryFilter; query: string }>({ filter: "all", query: "" })
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
   const deepSeekBalanceBlocked = items.some((item) => item.status === "failed" && (
     item.error_message?.includes("DeepSeek APIの残高不足")
@@ -87,12 +98,37 @@ export function ManualJapanEntryWorkConsole({
   const sourceBySlug = useMemo(() => new Map(sources.map((source) => [source.slug, source])), [sources])
   const selectedSource = sourceBySlug.get(sourceSlug)
 
-  const refreshHistory = useCallback(async (quiet = false) => {
+  const refreshHistory = useCallback(async (quiet = false, options?: {
+    page?: number
+    filter?: ManualWorkHistoryFilter
+    query?: string
+    append?: boolean
+  }) => {
+    const page = options?.page ?? 1
+    const filter = options?.filter ?? historyCriteria.current.filter
+    const query = options?.query ?? historyCriteria.current.query
+    setHistoryLoading(true)
     try {
-      const response = await fetch("/api/work", { cache: "no-store" })
-      const body = await response.json() as { ok?: boolean; items?: ManualJapanEntryWorkRow[]; metrics?: ManualExperimentMetric[]; angleMetrics?: ManualAngleMetric[]; sources?: ManualLeadSourceCatalogRow[]; error?: string }
+      const params = new URLSearchParams({ page: String(page), pageSize: "100", filter, q: query })
+      const response = await fetch(`/api/work?${params.toString()}`, { cache: "no-store" })
+      const body = await response.json() as {
+        ok?: boolean
+        items?: ManualJapanEntryWorkRow[]
+        page?: number
+        total?: number
+        hasMore?: boolean
+        summary?: ManualWorkDashboardSummary
+        metrics?: ManualExperimentMetric[]
+        angleMetrics?: ManualAngleMetric[]
+        sources?: ManualLeadSourceCatalogRow[]
+        error?: string
+      }
       if (!response.ok || !body.ok || !body.items) throw new Error(body.error ?? "履歴を取得できませんでした")
-      setItems((current) => mergeItems(current, body.items ?? []))
+      setItems((current) => options?.append ? mergeItems(current, body.items ?? []) : body.items ?? [])
+      setHistoryPage(body.page ?? page)
+      setHistoryTotal(body.total ?? body.items.length)
+      setHistoryHasMore(Boolean(body.hasMore))
+      if (body.summary) setSummary(body.summary)
       setMetrics(body.metrics ?? summarizeManualWorkExperiment(body.items ?? []))
       setAngleMetrics(body.angleMetrics ?? summarizeManualWorkAngles(body.items ?? []))
       if (body.sources) setSources(body.sources)
@@ -102,8 +138,20 @@ export function ManualJapanEntryWorkConsole({
       const message = error instanceof Error ? error.message : "履歴を取得できませんでした"
       setHistoryError(message)
       if (!quiet) toast.error(message)
+    } finally {
+      setHistoryLoading(false)
     }
   }, [])
+
+  const changeHistoryCriteria = useCallback((filter: ManualWorkHistoryFilter, query: string) => {
+    historyCriteria.current = { filter, query }
+    void refreshHistory(true, { page: 1, filter, query })
+  }, [refreshHistory])
+
+  const loadMoreHistory = useCallback(() => {
+    if (historyLoading || !historyHasMore) return
+    void refreshHistory(true, { page: historyPage + 1, append: true })
+  }, [historyHasMore, historyLoading, historyPage, refreshHistory])
 
   const batch = useManualWorkBatch(useCallback(() => refreshHistory(true), [refreshHistory]))
   const running = batch.running || retryRunning
@@ -116,7 +164,7 @@ export function ManualJapanEntryWorkConsole({
           : item.status === "failed" ? "error"
             : "done",
     ]))
-  }, [batch.snapshot, retryQueue])
+  }, [batch.snapshot, retryQueue, retryRunning])
   const finished = batch.snapshot?.finished
     ?? Object.values(queue).filter((value) => value === "done" || value === "error").length
 
@@ -236,7 +284,7 @@ export function ManualJapanEntryWorkConsole({
 
         {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek APIの残高不足で解析を停止しています</p><p>残高補充後は、失敗した履歴の「復旧再実行」から同じ履歴を安全に再開できます。同じ企業は重複登録されません。</p></div>}
 
-        <div className="mt-7"><ManualWorkOverview items={items} /></div>
+        <div className="mt-7"><ManualWorkOverview summary={summary} /></div>
 
         <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.75fr)] xl:items-start">
           <ManualWorkIntake
@@ -267,7 +315,7 @@ export function ManualJapanEntryWorkConsole({
           <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">根拠不足は自動降格</p><p className="mt-1 text-xs leading-5 text-slate-600">初回文面は「推定あり／なし × 価格あり／なし」の4セル。根拠不足時は安全な条件へ戻します。</p></div></div>
         </section>
 
-        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} sources={sources} historyError={historyError} running={running} updatingOutcome={updatingOutcome} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
+        <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} total={historyTotal} hasMore={historyHasMore} loading={historyLoading} sources={sources} historyError={historyError} running={running} updatingOutcome={updatingOutcome} onCriteriaChange={changeHistoryCriteria} onLoadMore={loadMoreHistory} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
       </div>
     </main>
   )

@@ -1,10 +1,10 @@
 "use client"
 
 import { RefreshCw, Search, SlidersHorizontal } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { filterManualWorkItems, type ManualWorkHistoryFilter } from "@/lib/sales/manual-work-dashboard"
+import type { ManualWorkHistoryFilter } from "@/lib/sales/manual-work-dashboard"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import { ManualWorkHistoryItem, type ManualWorkOutcome } from "./ManualWorkHistoryItem"
@@ -17,12 +17,17 @@ const filters: Array<{ value: ManualWorkHistoryFilter; label: string }> = [
   { value: "failed", label: "失敗・対象外" },
 ]
 
-export function ManualWorkHistory({ items, sources, historyError, running, updatingOutcome, onRefresh, onRetry, onCopy, onUpdateOutcome }: {
+export function ManualWorkHistory({ items, total, hasMore, loading, sources, historyError, running, updatingOutcome, onCriteriaChange, onLoadMore, onRefresh, onRetry, onCopy, onUpdateOutcome }: {
   items: ManualJapanEntryWorkRow[]
+  total: number
+  hasMore: boolean
+  loading: boolean
   sources: ManualLeadSourceCatalogRow[]
   historyError: string | null
   running: boolean
   updatingOutcome: string | null
+  onCriteriaChange: (filter: ManualWorkHistoryFilter, query: string) => void
+  onLoadMore: () => void
   onRefresh: () => void
   onRetry: (item: ManualJapanEntryWorkRow) => void
   onCopy: (value: string, label: string) => void
@@ -30,8 +35,17 @@ export function ManualWorkHistory({ items, sources, historyError, running, updat
 }) {
   const [filter, setFilter] = useState<ManualWorkHistoryFilter>("all")
   const [query, setQuery] = useState("")
+  const initialized = useRef(false)
   const sourceBySlug = useMemo(() => new Map(sources.map((source) => [source.slug, source])), [sources])
-  const filteredItems = useMemo(() => filterManualWorkItems(items, filter, query), [filter, items, query])
+
+  useEffect(() => {
+    if (!initialized.current) {
+      initialized.current = true
+      return
+    }
+    const timeout = window.setTimeout(() => onCriteriaChange(filter, query), 300)
+    return () => window.clearTimeout(timeout)
+  }, [filter, onCriteriaChange, query])
 
   return (
     <section id="history" aria-labelledby="history-heading" className="space-y-5">
@@ -42,8 +56,8 @@ export function ManualWorkHistory({ items, sources, historyError, running, updat
           <p className="mt-1 text-sm text-slate-600">履歴・根拠・文面・成果イベントは専用DBに残り、リロードしても消えません。</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{filteredItems.length} / {items.length}件</span>
-          <Button variant="outline" size="sm" onClick={onRefresh} disabled={running} aria-label="履歴を更新" className="rounded-lg bg-white"><RefreshCw className={running ? "animate-spin" : ""} />更新</Button>
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{items.length} / {total}件</span>
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={running || loading} aria-label="履歴を更新" className="rounded-lg bg-white"><RefreshCw className={running || loading ? "animate-spin" : ""} />更新</Button>
         </div>
       </div>
 
@@ -62,12 +76,15 @@ export function ManualWorkHistory({ items, sources, historyError, running, updat
       </div>
 
       {historyError && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{historyError}</div>}
-      {items.length === 0 ? (
+      {total === 0 && filter === "all" && !query.trim() ? (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><div className="mx-auto grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500"><Search className="size-5" /></div><p className="mt-4 font-semibold text-slate-700">まだ履歴はありません</p><p className="mt-1 text-sm text-slate-600">上の入力欄から最初の海外企業を解析してください。</p></div>
-      ) : filteredItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center"><p className="font-semibold text-slate-700">条件に一致する履歴がありません</p><button type="button" onClick={() => { setFilter("all"); setQuery("") }} className="mt-2 text-sm font-semibold text-blue-700 hover:underline">絞り込みを解除</button></div>
       ) : (
-        <div className="grid gap-4">{filteredItems.map((item) => <ManualWorkHistoryItem key={item.id} item={item} sourceBySlug={sourceBySlug} updatingOutcome={updatingOutcome} retrying={running} onRetry={onRetry} onCopy={onCopy} onUpdateOutcome={onUpdateOutcome} />)}</div>
+        <div className="grid gap-4">
+          {items.map((item) => <ManualWorkHistoryItem key={item.id} item={item} sourceBySlug={sourceBySlug} updatingOutcome={updatingOutcome} retrying={running} onRetry={onRetry} onCopy={onCopy} onUpdateOutcome={onUpdateOutcome} />)}
+          {hasMore && <div className="flex justify-center pt-2"><Button type="button" variant="outline" onClick={onLoadMore} disabled={loading || running} aria-label="履歴をさらに100件読み込む" className="min-w-52 rounded-xl bg-white">{loading ? <RefreshCw className="animate-spin" /> : null}さらに100件読み込む</Button></div>}
+        </div>
       )}
     </section>
   )

@@ -11,6 +11,18 @@ function sentence(value: string): string {
   return /[.!?。！？]$/.test(normalized) ? normalized : `${normalized}.`
 }
 
+function compactEvidenceText(value: string, maxLength = 280): string {
+  const candidates = value
+    .split(/\s*\|\s*|(?<=[.!?。！？])\s+/)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter((part) => part.length >= 12)
+  const compact = [...new Set(candidates.map((part) => part.toLowerCase()))]
+    .slice(0, 2)
+    .map((key) => candidates.find((part) => part.toLowerCase() === key) ?? key)
+    .join(" ") || value.replace(/\s+/g, " ").trim()
+  return compact.length <= maxLength ? compact : `${compact.slice(0, maxLength - 1).trimEnd()}…`
+}
+
 function observed(label: string, detail: string): ManualStrategyEvidenceItem {
   return { classification: "observed", label, detail: sentence(detail) }
 }
@@ -43,7 +55,18 @@ function gapSummary(gaps: ManualReportGap[]): string {
 }
 
 function primaryFact(profile: ManualCompanyProfile): string {
-  return profile.observedFacts.find((fact) => fact.trim().length >= 12) ?? profile.productContext
+  return compactEvidenceText(profile.observedFacts.find((fact) => fact.trim().length >= 12) ?? profile.productContext, 240)
+}
+
+function countryContext(countryCode: string | null): string {
+  if (!countryCode) return "The company’s operating country remains unconfirmed in the public evidence"
+  try {
+    const country = new Intl.DisplayNames(["en"], { type: "region" }).of(countryCode.toUpperCase()) ?? countryCode
+    return `The current public-site classification points to ${country}`
+  } catch (error) {
+    console.warn("[manual-work-report] country display name failed:", error)
+    return `The current public-site classification uses country code ${countryCode.toUpperCase()}`
+  }
 }
 
 export function buildManualStrategyChapters(input: {
@@ -56,12 +79,14 @@ export function buildManualStrategyChapters(input: {
 }): ManualStrategyChapter[] {
   const { profile, gaps, projection, targetSegment, opportunityAngle, whyNow } = input
   const company = profile.companyName
-  const product = sentence(profile.productContext)
+  const productContext = compactEvidenceText(profile.productContext)
+  const product = sentence(productContext)
   const fact = sentence(primaryFact(profile))
   const gap = gapSummary(gaps)
   const commercial = profile.commercialSignals?.length
-    ? profile.commercialSignals.map((signal) => sentence(signal.sourcePhrase)).join(" ")
+    ? profile.commercialSignals.slice(0, 2).map((signal) => sentence(compactEvidenceText(signal.sourcePhrase, 180))).join(" ")
     : "No public foreign-revenue, global-customer, funding, or operating-scale signal was strong enough to treat budget capacity as confirmed."
+  const homeMarket = countryContext(profile.countryCode)
 
   return [
     {
@@ -71,10 +96,10 @@ export function buildManualStrategyChapters(input: {
       executiveTakeaway: `${company} has enough product specificity for a bounded Japan validation, but the evidence does not support a full-market launch decision yet.`,
       narrative: [
         `${product} The strategic question is therefore not whether Japan is broadly attractive, but whether one defined Japanese segment can understand, trust, buy, and receive this specific offer through a workable customer journey. The recommended posture is an evidence-building sprint with explicit stop conditions, not a translation-first rollout or a country-wide sales commitment.`,
-        `${gap} That boundary matters because a missing public signal can reveal a question worth testing, but it cannot establish demand, buyer intent, conversion loss, or legal exposure. The first investment should buy decision quality: a validated segment, tested positioning, routed conversations, and documented objections.`,
+        `${homeMarket}. ${gap} That boundary matters because a missing public signal can reveal a question worth testing, but it cannot establish demand, buyer intent, conversion loss, or legal exposure. The first investment should buy decision quality: a validated segment, tested positioning, routed conversations, and documented objections.`,
         `The management decision is to authorize a narrow validation only if ${company} can assign an accountable owner, preserve the existing core offer, and accept that the result may be go, refine, or stop. Expansion capital should follow observed Japanese conversations and buying-path evidence rather than precede them.`,
       ],
-      evidence: [observed("Public offer", fact), hypothesis("Japan thesis", opportunityAngle), projectionEvidence(projection)],
+      evidence: [observed("Public offer", fact), hypothesis("Operating-market classification", homeMarket), hypothesis("Japan thesis", opportunityAngle), projectionEvidence(projection)],
       actions: [
         "Name one executive owner for the Japan validation decision and one operating owner for weekly evidence capture.",
         `Approve ${targetSegment} as a hypothesis to test, not as a confirmed buyer segment.`,
@@ -93,7 +118,7 @@ export function buildManualStrategyChapters(input: {
         `${company} is currently classified as ${profile.businessModel} in ${profile.industry}, with SMB confidence ${profile.smbConfidence}/100 and Japan-entry-fit confidence ${profile.japanEntryFitConfidence}/100. These scores are workflow prioritization aids, not company-size verification, credit assessment, or proof that the offer will sell in Japan.`,
         `The diagnostic implication is to isolate one purchase-relevant use case, one buyer role, and one proof requirement. A broad corporate introduction would dilute the observed product strength; an over-specific outcome claim would exceed the evidence. The first Japanese proposition should therefore pair the original capability with a measurable evaluation question.`,
       ],
-      evidence: [observed("Product context", profile.productContext), observed("Observed company fact", primaryFact(profile)), hypothesis("Classification boundary", `SMB=${profile.smbStatus}; Japan fit=${profile.japanEntryFitStatus}`)],
+      evidence: [observed("Product context", productContext), observed("Observed company fact", primaryFact(profile)), hypothesis("Classification boundary", `SMB=${profile.smbStatus}; Japan fit=${profile.japanEntryFitStatus}`)],
       actions: [
         "Create a fact ledger separating public product claims, company-supplied proof, modeled estimates, and unverified hypotheses.",
         "Select one use case that can be demonstrated without changing the core product or promising an unverified outcome.",
@@ -153,7 +178,7 @@ export function buildManualStrategyChapters(input: {
         `The first positioning system should contain one category statement, one primary use case, one consequence of the current workflow framed without invented loss, one proof element, and one low-friction action. Every element should be versioned so that outreach responses and conversations can refine the language rather than producing an untraceable rewrite.`,
         `Trust architecture is broader than testimonials. It includes who operates the service, what is delivered, where support begins and ends, how a buyer can evaluate the offer, and how unresolved commercial or compliance questions are handled. Missing proof should be labeled internally and either obtained or excluded from customer-facing claims.`,
       ],
-      evidence: [observed("Positioning anchor", profile.productContext), hypothesis("Localized audience", targetSegment), action("Claim discipline", "Use only verified product and operating facts in customer-facing Japanese copy")],
+      evidence: [observed("Positioning anchor", productContext), hypothesis("Localized audience", targetSegment), action("Claim discipline", "Use only verified product and operating facts in customer-facing Japanese copy")],
       actions: [
         "Draft three materially different Japanese value propositions tied to the same verified product facts.",
         "Test comprehension and relevance with qualified readers before selecting a primary version.",
@@ -223,9 +248,9 @@ export function buildManualStrategyChapters(input: {
       id: "roadmap_metrics",
       number: 9,
       title: "90/180-day roadmap and management dashboard",
-      executiveTakeaway: `The roadmap converts Japan entry from a launch project into staged management decisions with measurable evidence.`,
+      executiveTakeaway: `The roadmap converts ${company}'s Japan entry from a launch project into staged management decisions with measurable evidence.`,
       narrative: [
-        `Days 0–30 should establish the evidence baseline: approved claims, target-segment criteria, customer-journey gaps, operating owners, and a small account set. Days 31–90 should run bounded outreach and interview cycles, test the minimum Japanese journey, and record objections and routing outcomes. No scale assumption is required to complete this phase.`,
+        `For ${company}, days 0–30 should establish the evidence baseline: approved claims, target-segment criteria, customer-journey gaps, operating owners, and a small account set. Days 31–90 should run bounded outreach and interview cycles, test the minimum Japanese journey, and record objections and routing outcomes. No scale assumption is required to complete this phase.`,
         `Days 91–180 should repeat only the experiments that produced qualified evidence. The team can then deepen proof, commercial terms, channel access, and delivery readiness for the strongest use case. If evidence remains fragmented, the correct outcome is refinement or stop, not a larger campaign designed to force a positive result.`,
         `The management dashboard should distinguish activity, learning, pipeline, and readiness. Activity measures work performed; learning captures what changed; pipeline records qualified commercial progression; readiness tracks whether the organization can deliver what it says. A green activity dashboard with no decision evidence is not success.`,
       ],

@@ -8,11 +8,13 @@ import {
 import { MANUAL_WORK_BATCH_MAX_URLS } from "@/lib/sales/manual-japan-entry-batch-types"
 import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
+import { preflightManualWorkBatch } from "@/lib/sales/manual-japan-entry-batch-preflight"
+import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
 import { normalizeManualWorkUrl } from "@/lib/sales/manual-japan-entry-service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 60
+export const maxDuration = 300
 
 const createBatchSchema = z.object({
   urls: z.array(z.string().trim().min(1).max(2_048)).min(1).max(MANUAL_WORK_BATCH_MAX_URLS),
@@ -86,6 +88,14 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
+    const preflight = await preflightManualWorkBatch()
+    if (!preflight.ok) {
+      console.error("[api/work/batches] DeepSeek preflight failed:", preflight.error)
+      return NextResponse.json({
+        ok: false,
+        error: `バッチは開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
+      }, { status: 503 })
+    }
     const batch = await createManualWorkBatch({
       urls: [...byDomain.values()],
       variant: parsed.data.variant,
@@ -94,12 +104,13 @@ export async function POST(req: NextRequest) {
       sourcePageUrl: parsed.data.sourcePageUrl || null,
       observedOn: parsed.data.observedOn ?? null,
     })
+    scheduleManualWorkBatchDrain(batch.batch.id)
     await notify(
       "Manual Japan Entryバッチ開始",
       `${batch.batch.total_count}件を永続キューへ登録しました。解析後にTwentyへ未送信データとして同期します。外部送信0件。`,
       "manual_japan_entry_batch_started",
     )
-    return NextResponse.json({ ok: true, snapshot: batch }, { status: 201 })
+    return NextResponse.json({ ok: true, snapshot: batch, automaticDrainStarted: true }, { status: 201 })
   } catch (error) {
     console.error("[api/work/batches] create failed:", error)
     return NextResponse.json(

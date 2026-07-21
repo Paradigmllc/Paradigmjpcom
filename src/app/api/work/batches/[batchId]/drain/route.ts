@@ -10,12 +10,14 @@ import {
 } from "@/lib/sales/manual-japan-entry-batch-store"
 import { isManualWorkBatchTerminal, type ManualWorkBatchItemStatus } from "@/lib/sales/manual-japan-entry-batch-types"
 import { processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
+import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 const paramsSchema = z.object({ batchId: z.string().uuid() })
+const bodySchema = z.object({ automated: z.boolean().default(false) }).strict()
 
 function completedStatus(status: string): Exclude<ManualWorkBatchItemStatus, "queued" | "processing"> {
   if (status === "completed" || status === "needs_review" || status === "rejected" || status === "duplicate") return status
@@ -44,6 +46,14 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
   }
   const params = paramsSchema.safeParse(await context.params)
   if (!params.success) return NextResponse.json({ ok: false, error: "有効なバッチIDが必要です" }, { status: 400 })
+  let automated = false
+  try {
+    const raw = await req.text()
+    if (raw) automated = bodySchema.parse(JSON.parse(raw)).automated
+  } catch (error) {
+    console.error("[api/work/batches/drain] invalid body:", error)
+    return NextResponse.json({ ok: false, error: "JSON bodyが不正です" }, { status: 400 })
+  }
   try {
     const before = await getManualWorkBatch(params.data.batchId)
     if (!before) return NextResponse.json({ ok: false, error: "バッチが見つかりません" }, { status: 404 })
@@ -86,6 +96,9 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
     const refreshed = await refreshManualWorkBatch(before.batch.id)
     if (isManualWorkBatchTerminal(refreshed.batch.status) && !refreshed.batch.notified_at) {
       await notifyCompleted(refreshed.batch.id, refreshed.batch.total_count, refreshed.counts.failed)
+    }
+    if (automated && refreshed.remaining > 0) {
+      scheduleManualWorkBatchDrain(refreshed.batch.id)
     }
     return NextResponse.json({ ok: true, claimed: claimed.length, snapshot: refreshed }, { status: refreshed.remaining > 0 ? 202 : 200 })
   } catch (error) {
