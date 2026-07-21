@@ -224,6 +224,23 @@ describe("manual company DeepSeek response compatibility", () => {
     })
   })
 
+  it("drops malformed optional positioning and commercial-signal material without failing the company profile", () => {
+    const parsed = parseManualCompanyProfile(modelProfile({
+      positioningConcept: {
+        sourcePhrase: "x",
+        japaneseHeadline: "短",
+        japaneseSupportLine: "短い",
+      },
+      commercialSignals: [
+        { kind: "funding", sourcePhrase: "x", detail: "Too short source" },
+        { kind: "invented_kind", sourcePhrase: "Customers in 30 countries", detail: "Invalid kind" },
+      ],
+    }))
+
+    expect(parsed.positioningConcept).toBeNull()
+    expect(parsed.commercialSignals).toEqual([])
+  })
+
   it.each([
     ["confidence above the allowed range", { smbConfidence: "101" }],
     ["non-numeric confidence", { smbConfidence: "high" }],

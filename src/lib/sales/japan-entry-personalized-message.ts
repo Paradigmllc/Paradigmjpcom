@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { callDeepSeek, type DeepSeekMessage, type DeepSeekResponse } from "@/lib/deepseek";
+import { callDeepSeek, type DeepSeekResponse } from "@/lib/deepseek";
 import type { BusinessModel, JapanEntryProjection } from "./japan-entry-projection";
 import { criticMessages, generationMessages } from "./japan-entry-personalized-message-prompts";
 import type { JapanEntryMessagePurpose } from "./japan-entry-personalized-message-prompts";
@@ -20,6 +20,16 @@ import {
   reviewPersonalizedJapanEntryMessage,
   type JapanEntryMessageReview,
 } from "./japan-entry-personalized-message-review";
+import {
+  applyManualCtaContract,
+  buildManualCtaContracts,
+  resolveManualCtaAnchors,
+} from "./manual-japan-entry-cta-contract";
+import {
+  addDeepSeekUsage,
+  callDeepSeekStructured,
+  type DeepSeekStructuredCaller,
+} from "./japan-entry-personalized-message-structured";
 export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
@@ -28,7 +38,6 @@ const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 23;
 const INITIAL_SAFETY_REPAIR_LIMIT = 3;
-const STAGE_MAX_TOKENS = { generation: 4_000, repair: 2_400, critic: 1_200 } as const;
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
   message?: string;
@@ -90,7 +99,7 @@ interface GenerateInput {
   priorMessages?: PriorManualMessage[];
 }
 
-type LlmCaller = typeof callDeepSeek;
+type LlmCaller = DeepSeekStructuredCaller;
 
 const candidateSchema = z.object({
   message: z.string().min(1).max(1_800),
@@ -151,67 +160,6 @@ const criticSchema = z.object({
   rationale: z.string().min(1).max(1_200),
   risk_flags: riskFlagsSchema,
 }).strict();
-
-function parseJson(text: string): unknown {
-  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
-}
-
-function addUsage(
-  current?: DeepSeekResponse["usage"],
-  next?: DeepSeekResponse["usage"],
-): DeepSeekResponse["usage"] {
-  if (!current && !next) return undefined;
-  return {
-    prompt_tokens: (current?.prompt_tokens ?? 0) + (next?.prompt_tokens ?? 0),
-    completion_tokens: (current?.completion_tokens ?? 0) + (next?.completion_tokens ?? 0),
-    cache_hit_tokens: (current?.cache_hit_tokens ?? 0) + (next?.cache_hit_tokens ?? 0),
-    cache_miss_tokens: (current?.cache_miss_tokens ?? 0) + (next?.cache_miss_tokens ?? 0),
-  };
-}
-
-async function callStructured<T>(input: {
-  stage: keyof typeof STAGE_MAX_TOKENS;
-  messages: DeepSeekMessage[];
-  schema: z.ZodType<T>;
-  caller: LlmCaller;
-}): Promise<
-  | { ok: true; data: T; attempts: number; usage?: DeepSeekResponse["usage"] }
-  | { ok: false; attempts: number; error: string; usage?: DeepSeekResponse["usage"] }
-> {
-  let lastError = `${input.stage} failed`;
-  let usage: DeepSeekResponse["usage"];
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    let response: DeepSeekResponse;
-    try {
-      response = await input.caller(input.messages, {
-        model: MODEL,
-        modelPolicy: "strict",
-        responseFormat: "json_object",
-        temperature: input.stage === "generation" ? 0.55 : input.stage === "repair" ? 0.35 : 0.1,
-        maxTokens: STAGE_MAX_TOKENS[input.stage],
-        thinking: "disabled",
-        timeoutMs: 120_000,
-      });
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : `${input.stage} call failed`;
-      console.error(`[japan-entry-message] ${input.stage} attempt ${attempt} threw:`, error);
-      continue;
-    }
-    usage = addUsage(usage, response?.usage);
-    if (!response?.ok || !response.text) {
-      lastError = response?.error ?? `${input.stage} returned an empty response`;
-      console.error(`[japan-entry-message] ${input.stage} attempt ${attempt} failed:`, lastError);
-      continue;
-    }
-    try {
-      return { ok: true, data: input.schema.parse(parseJson(response.text)), attempts: attempt, usage };
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : `${input.stage} returned invalid JSON`;
-      console.error(`[japan-entry-message] ${input.stage} attempt ${attempt} JSON invalid:`, lastError);
-    }
-  }
-  return { ok: false, attempts: 3, error: lastError, usage };
-}
 
 function buildReview(input: {
   selected: { candidate: z.infer<typeof candidateSchema>; safety: ReturnType<typeof reviewPersonalizedJapanEntryMessage> };
@@ -321,38 +269,60 @@ export async function generatePersonalizedJapanEntryMessage(
   let totalAttempts = 0;
   let totalUsage: DeepSeekResponse["usage"];
 
-  const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>) => {
-    const candidate = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(rawCandidate, input.companyName) : rawCandidate;
+  const ctaContracts = purpose === "initial_interest"
+    ? buildManualCtaContracts({
+        companyName: input.companyName,
+        ...resolveManualCtaAnchors({ companyName: input.companyName, productNames: input.productNames, facts }),
+        priorMessages: input.priorMessages ?? [],
+      })
+    : [];
+
+  const deterministicInspection = (candidate: z.infer<typeof candidateSchema>) => ({
+    safety: reviewPersonalizedJapanEntryMessage({
+      message: candidate.message,
+      companyName: input.companyName,
+      productContext,
+      productNames: input.productNames,
+      productEvidence: candidate.product_evidence,
+      productEvidenceRendering: candidate.product_evidence_rendering,
+      factIds: candidate.fact_ids,
+      facts,
+      purpose,
+      initialInterestOptions: input.initialInterestOptions,
+      messageAngle: input.messageAngle,
+      candidateAngle: candidate.angle,
+    }),
+    similarity: purpose === "initial_interest"
+      ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [] })
+      : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
+  });
+
+  const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>, candidateIndex = 0) => {
+    const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(rawCandidate, input.companyName) : rawCandidate;
+    const initial = deterministicInspection(enveloped);
+    const ctaNeedsRecovery = purpose === "initial_interest" && (
+      !initial.similarity.passed
+      || initial.safety.issues.some((issue) => /(?:CTA|final question|permission or routing|body must end with)/i.test(issue))
+    );
+    const candidate = ctaNeedsRecovery && ctaContracts.length > 0
+      ? applyManualCtaContract(enveloped, input.companyName, ctaContracts[candidateIndex % ctaContracts.length] ?? ctaContracts[0]!)
+      : enveloped;
+    const inspected = candidate === enveloped ? initial : deterministicInspection(candidate);
     return {
       candidate,
-      safety: reviewPersonalizedJapanEntryMessage({
-        message: candidate.message,
-        companyName: input.companyName,
-        productContext,
-        productNames: input.productNames,
-        productEvidence: candidate.product_evidence,
-        productEvidenceRendering: candidate.product_evidence_rendering,
-        factIds: candidate.fact_ids,
-        facts,
-        purpose,
-        initialInterestOptions: input.initialInterestOptions,
-        messageAngle: input.messageAngle,
-        candidateAngle: candidate.angle,
-      }),
-      similarity: purpose === "initial_interest"
-        ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [] })
-        : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
+      safety: inspected.safety,
+      similarity: inspected.similarity,
     };
   };
 
-  const generated = await callStructured({
+  const generated = await callDeepSeekStructured({
     stage: "generation",
     messages: generationMessages(input, facts, mode),
     schema: purpose === "initial_interest" ? generationSchema.extend({ strategy: strategySchema }) : generationSchema,
     caller,
   });
   totalAttempts += generated.attempts;
-  totalUsage = addUsage(totalUsage, generated.usage);
+  totalUsage = addDeepSeekUsage(totalUsage, generated.usage);
   if (!generated.ok) {
     return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate generation failed: ${generated.error}` };
   }
@@ -363,7 +333,7 @@ export async function generatePersonalizedJapanEntryMessage(
     return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro did not return complete candidate differentiation metadata" };
   }
 
-  const reviewedCandidates = generated.data.candidates.map(inspectCandidate);
+  const reviewedCandidates = generated.data.candidates.map((candidate, index) => inspectCandidate(candidate, index));
   let valid: typeof reviewedCandidates = [];
   for (const item of reviewedCandidates) {
     if (!item.safety.passed || !item.similarity.passed) continue;
@@ -378,7 +348,7 @@ export async function generatePersonalizedJapanEntryMessage(
     let repairTarget = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
     if (!repairTarget) return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro returned no candidate to repair" };
     for (let repairPass = 1; repairPass <= INITIAL_SAFETY_REPAIR_LIMIT; repairPass += 1) {
-      const repaired = await callStructured({
+      const repaired = await callDeepSeekStructured({
         stage: "repair",
         messages: generationMessages(input, facts, mode, buildPersonalizedMessageRepairInput({
           candidate: repairTarget.candidate,
@@ -391,7 +361,7 @@ export async function generatePersonalizedJapanEntryMessage(
         caller,
       });
       totalAttempts += repaired.attempts;
-      totalUsage = addUsage(totalUsage, repaired.usage);
+      totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
       if (!repaired.ok) return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
       const inspected = inspectCandidate(repaired.data.candidate);
       const passed = inspected.safety.passed && inspected.similarity.passed
@@ -410,7 +380,7 @@ export async function generatePersonalizedJapanEntryMessage(
   }
 
   const criticize = async (candidates: typeof valid) => {
-    const criticized = await callStructured({
+    const criticized = await callDeepSeekStructured({
       stage: "critic",
       messages: criticMessages(
         input.companyName,
@@ -427,7 +397,7 @@ export async function generatePersonalizedJapanEntryMessage(
       caller,
     });
     totalAttempts += criticized.attempts;
-    totalUsage = addUsage(totalUsage, criticized.usage);
+    totalUsage = addDeepSeekUsage(totalUsage, criticized.usage);
     return criticized;
   };
 
@@ -454,7 +424,7 @@ export async function generatePersonalizedJapanEntryMessage(
   for (let repairPass = 1; !finalReview.passed && repairPass <= 2; repairPass += 1) {
     const exactCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
     const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; make the final question itself contain the exact company or product anchor '${exactCtaAnchor}', and make the final paragraph contain the exact audited customer-path anchor supplied in required_cta_contract while saying what Japan customer-path decision the analysis informs. Mentioning the company or product anchor only before the final question is invalid. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
-    const repaired = await callStructured({
+    const repaired = await callDeepSeekStructured({
       stage: "repair",
       messages: generationMessages(input, facts, mode, buildPersonalizedMessageRepairInput({
         candidate: finalCandidate.candidate,
@@ -468,7 +438,7 @@ export async function generatePersonalizedJapanEntryMessage(
       caller,
     });
     totalAttempts += repaired.attempts;
-    totalUsage = addUsage(totalUsage, repaired.usage);
+    totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
     if (!repaired.ok) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
     const inspected = inspectCandidate(repaired.data.candidate);
     if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {

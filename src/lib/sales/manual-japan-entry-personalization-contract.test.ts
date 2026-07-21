@@ -13,11 +13,11 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).toContain("one to three candidates")
     expect(prompt).toContain("must not share the same paragraph count")
     expect(prompt).toContain("Use the supplied evidence_contract exactly")
-    expect(prompt).toContain("that sentence itself must include required_cta_anchor exactly")
-    expect(prompt).toContain("A CTA that could be pasted unchanged into another company's message is invalid")
+    expect(prompt).toContain("copy one complete approved_cta_contract paragraph exactly")
+    expect(prompt).toContain("selected against recent copy")
     expect(prompt).toContain("three to five short paragraphs")
     expect(prompt).toContain("materially different from recent_copy_to_avoid")
-    expect(prompt).toContain("do not reuse a fixed offer sentence or fixed question")
+    expect(prompt).toContain("Do not combine or paraphrase contracts")
     expect(prompt).toContain("Never write 'I can share a detailed Japan opportunity analysis based on this public evidence'")
     expect(prompt).toContain("This is not a partnership proposal")
     expect(prompt).toContain("Tomohiro H / Paradigm LLC / contact@paradigmjp.com")
@@ -73,11 +73,37 @@ describe("manual Japan Entry personalization contract", () => {
     expect(payload).toContain('"requiredFactIds":["japan-audit-language"]')
     expect(payload).toContain('"required_cta_contract":{"final_question_must_contain_exact":["Example"]')
     expect(payload).toContain('"final_paragraph_must_contain_exact":["Japanese-language"]')
+    expect(payload).toContain('"approved_cta_contracts":[')
+    expect(payload).toContain('"exact_final_paragraph"')
     expect(payload).not.toContain("https://example.com/contact")
     expect(payload).not.toContain('"source"')
     const criticPayload = criticMessages("Example", [fact], [{ message: "Example message", fact_ids: [fact.id], product_evidence: "fraud review workflow", product_evidence_rendering: "fraud review workflow", angle: "problem" }], "audit", "initial_interest")[1]?.content ?? ""
     expect(criticPayload).not.toContain("https://example.com/contact")
     expect(criticPayload).not.toContain('"source"')
+  })
+
+  it("sends bounded recent-copy digests instead of repeating full messages in every repair prompt", () => {
+    const longMiddle = "A bounded diagnostic sentence. ".repeat(40)
+    const priorMessage = `${manualFormGreeting("Prior")}\n\nPrior documents a workflow.\n\n${longMiddle}\n\nWho owns the Prior decision?\n\n${MANUAL_FORM_SIGNATURE}`
+    const messages = generationMessages({
+      companyName: "Example",
+      industry: "SaaS / AI / Developer Tools",
+      productContext: "Example provides an API-first fraud review workflow for marketplaces.",
+      targetCountry: "US",
+      businessModel: "saas",
+      purpose: "initial_interest",
+      priorMessages: [{ companyName: "Prior", message: priorMessage }],
+    }, [fact], "audit")
+    const payload = JSON.parse(messages[1]?.content ?? "{}") as {
+      recent_copy_to_avoid?: Array<{ opening: string; diagnosis: string; cta: string; message?: string }>
+    }
+
+    expect(payload.recent_copy_to_avoid?.[0]).toMatchObject({
+      opening: "Prior documents a workflow.",
+      cta: "Who owns the Prior decision?",
+    })
+    expect(payload.recent_copy_to_avoid?.[0]?.diagnosis.length).toBeLessThanOrEqual(480)
+    expect(payload.recent_copy_to_avoid?.[0]).not.toHaveProperty("message")
   })
 
   it("fails closed when form copy contains a citation even without a URL", () => {
