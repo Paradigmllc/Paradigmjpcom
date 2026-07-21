@@ -14,11 +14,23 @@ interface FitPolicyInput {
   businessModel: BusinessModel
   japanEntryFitStatus: QualificationStatus
   japanEntryFitEvidence: string[]
+  productContext?: string
+  observedFacts?: string[]
+}
+
+const DIGITAL_DELIVERY_PATTERN = /\b(?:software|saas|cloud|hosting|erp|crm|platform|api|web[- ]based|online|digital|application|app)\b/i
+
+function hasDigitalDeliveryEvidence(input: FitPolicyInput): boolean {
+  if (input.businessModel === "saas" || input.businessModel === "ecommerce") return true
+  return DIGITAL_DELIVERY_PATTERN.test([
+    input.productContext ?? "",
+    ...(input.observedFacts ?? []),
+  ].join(" | "))
 }
 
 export function isReadinessGapOnlyJapanEntryRejection(input: FitPolicyInput): boolean {
   if (input.isJapaneseCompany || input.japanEntryFitStatus !== "rejected") return false
-  if (input.businessModel !== "saas" && input.businessModel !== "ecommerce") return false
+  if (!hasDigitalDeliveryEvidence(input)) return false
   if (input.japanEntryFitEvidence.length === 0) return false
   return input.japanEntryFitEvidence.every((evidence) => (
     READINESS_GAP_PATTERNS.some((pattern) => pattern.test(evidence))

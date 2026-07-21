@@ -116,7 +116,7 @@ describe("manual company Japan exclusion", () => {
     expect(grounded.companyName).toBe("example.com")
   })
 
-  it("treats missing Japan readiness as the sales opportunity for an overseas SaaS", () => {
+  it("treats missing Japan readiness as the sales opportunity for a digital service", () => {
     const grounded = groundManualCompanyProfile({
       domain: "altairis.fr",
       fallbackCompanyName: "Altairis",
@@ -125,7 +125,7 @@ describe("manual company Japan exclusion", () => {
       profile: parseManualCompanyProfile(modelProfile({
         companyName: "Altairis",
         countryCode: "FR",
-        businessModel: "saas",
+        businessModel: "service",
         japanEntryFitStatus: "rejected",
         japanEntryFitConfidence: 95,
         japanEntryFitEvidence: [

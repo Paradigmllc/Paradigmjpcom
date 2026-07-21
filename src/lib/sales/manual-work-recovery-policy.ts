@@ -19,12 +19,18 @@ function hasLegacyReadinessInversion(item: RecoveryState): boolean {
   const evidence = Array.isArray(item.profile?.japanEntryFitEvidence)
     ? item.profile.japanEntryFitEvidence.filter((value): value is string => typeof value === "string")
     : []
+  const observedFacts = Array.isArray(item.profile?.observedFacts)
+    ? item.profile.observedFacts.filter((value): value is string => typeof value === "string")
+    : []
+  const productContext = typeof item.profile?.productContext === "string" ? item.profile.productContext : undefined
   if (!item.business_model || !item.japan_entry_fit_status) return false
   return isReadinessGapOnlyJapanEntryRejection({
     isJapaneseCompany: item.is_japanese_company === true,
     businessModel: item.business_model,
     japanEntryFitStatus: item.japan_entry_fit_status,
     japanEntryFitEvidence: evidence,
+    productContext,
+    observedFacts,
   })
 }
 

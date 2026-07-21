@@ -894,6 +894,7 @@ function checkStaticReleaseRules() {
     && manualWorkProfile.includes("after one repair")
     && manualWorkProfile.includes("JAPAN_ENTRY_FIT_CONTRACT_VERSION")
     && manualWorkFitPolicy.includes('"opportunity-first-v1"')
+    && manualWorkFitPolicy.includes("DIGITAL_DELIVERY_PATTERN")
     && manualWorkFitPolicy.includes("Missing Japanese localization or current Japan presence is a market-entry readiness gap")
     && manualWorkAutoRecovery.includes("maxAttempts > 3")
     && manualWorkRecoveryPolicy.includes('item.status === "failed"')
