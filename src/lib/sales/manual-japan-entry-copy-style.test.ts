@@ -41,6 +41,17 @@ describe("bespoke form-copy style", () => {
     expect(issues).toContain("The final question must include the exact company or product anchor: Screenshot to Code")
   })
 
+  it("rejects the stock founder-forward CTA even when the company anchor is present", () => {
+    const finalParagraph = "I can share a detailed Japan opportunity analysis based on this public evidence for Screenshot to Code. Could you forward this to the founder or person responsible for international growth at Screenshot to Code?"
+    const issues = review(
+      `Screenshot to Code converts screenshots to code. ${finalParagraph}`,
+      "Screenshot to Code converts screenshots to code.",
+      finalParagraph,
+    )
+
+    expect(issues.join(" ")).toContain("Reusable stock routing CTA is prohibited")
+  })
+
   it("rejects ungrounded behavior claims about a qualified Japanese audience", () => {
     const issues = review(
       "Japanese front-end developers often rely on localized onboarding when evaluating tools.",

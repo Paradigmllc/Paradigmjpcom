@@ -18,6 +18,7 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).toContain("three to five short paragraphs")
     expect(prompt).toContain("materially different from recent_copy_to_avoid")
     expect(prompt).toContain("do not reuse a fixed offer sentence or fixed question")
+    expect(prompt).toContain("Never write 'I can share a detailed Japan opportunity analysis based on this public evidence'")
     expect(prompt).toContain("This is not a partnership proposal")
     expect(prompt).toContain("Tomohiro H / Paradigm LLC / contact@paradigmjp.com")
     expect(prompt).not.toContain("identify Sato")

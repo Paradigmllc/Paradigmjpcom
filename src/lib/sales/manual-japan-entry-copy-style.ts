@@ -3,6 +3,7 @@ import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-m
 const TEMPLATE_OPENING_PATTERN = /\b(?:I(?:'|’)m reaching out|I am reaching out|I wanted to reach out|I came across|I noticed|I was impressed by|hope this message finds you well|touch base|quick introduction)\b/i
 const PARTNERSHIP_PITCH_PATTERN = /\b(?:explore (?:a |the )?(?:partnership|collaboration)|potential partnership|partner with (?:you|your team)|collaborate with (?:you|your team)|work together|mutually beneficial|strategic fit|synerg(?:y|ies)|explore how we can)\b/i
 const JAPANESE_BEHAVIOR_PATTERN = /\b(?:for\s+)?Japanese(?:\s+[a-z-]+){0,3}\s+(?:customers?|buyers?|consumers?|users?|companies|teams?|developers?|designers?|retailers?|businesses)\b.{0,140}\b(?:often|typically|generally|tend to|prefer|expect|need|rely on|evaluate|look for|care about|value|influence(?:s|d)?\s+(?:trial|purchase|buying|evaluation|decision)|overlook)\b/i
+const STOCK_ROUTING_CTA_PATTERN = /\b(?:I can share a detailed Japan opportunity analysis based on this public evidence|Could you forward (?:this|it) to the founder or person responsible for international growth)\b/i
 
 function containsAnchor(text: string, anchors: string[]): boolean {
   const normalized = text.toLowerCase()
@@ -25,6 +26,8 @@ export function reviewManualFormBespokeStyle(input: {
   if (PARTNERSHIP_PITCH_PATTERN.test(input.body)) {
     issues.push("Partnership or collaboration pitch language is prohibited in first-touch form copy")
   }
+  const stockCta = input.finalParagraph.match(STOCK_ROUTING_CTA_PATTERN)?.[0]
+  if (stockCta) issues.push(`Reusable stock routing CTA is prohibited: ${stockCta}`)
 
   const selectedFacts = [...new Map(input.selectedFacts.map((fact) => [fact.id, fact])).values()]
   const auditFacts = selectedFacts.filter((fact) => fact.id.startsWith("japan-audit-"))
