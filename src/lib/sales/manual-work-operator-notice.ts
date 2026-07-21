@@ -36,7 +36,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   if (generationFailed(item)) {
     return {
       title: "企業別フォーム文面を再生成してください",
-      detail: "公開根拠の検証または品質審査が未完了です。外部送信とTwenty追加は行っていません。「再解析」で最新の生成結果へ更新できます。",
+      detail: "公開根拠の検証または品質審査が未完了です。解析データはTwentyへ要確認として保存されますが、外部送信は行いません。「再解析」で最新の生成結果へ更新できます。",
       retryLabel: "再解析",
       tone: "amber",
     }
@@ -51,8 +51,8 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   }
   if (item.status === "duplicate") {
     return {
-      title: "Twentyの既存企業を保持しました",
-      detail: "同一ドメインがすでに存在するため、既存情報を上書きせず停止しました。",
+      title: "Twentyの既存企業へ統合しました",
+      detail: "同一ドメインの企業へ/workの解析情報を統合しています。外部送信は行いません。",
       retryLabel: "再解析",
       tone: "slate",
     }
@@ -62,14 +62,14 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
     if (form.state !== "verified_form") {
       return {
         title: "公開問い合わせフォームの追加確認が必要です",
-        detail: "送信に使えるフォームを高い確度で確認できていないため、Twenty追加を停止しています。「再探索・再生成」を実行してください。",
+        detail: "解析データはTwentyへ保存済みですが、送信に使えるフォームを高い確度で確認できていません。「再探索・再生成」を実行してください。",
         retryLabel: "再探索・再生成",
         tone: "amber",
       }
     }
     return {
       title: "対象判定の追加確認が必要です",
-      detail: "文面とフォームは保存済みです。海外SMBまたはJapan Entry適合性の公開根拠を人が確認するまで、Twenty追加を停止しています。",
+      detail: "文面・フォーム・解析データはTwentyへ保存済みです。海外SMBまたはJapan Entry適合性の公開根拠を人が確認するまで送信不可です。",
       retryLabel: "再解析",
       tone: "amber",
     }

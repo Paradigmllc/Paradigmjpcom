@@ -4,7 +4,7 @@ import ManualJapanEntryReport from "./ManualJapanEntryReport"
 import { buildManualJapanEntryReport } from "@/lib/sales/manual-japan-entry-report"
 
 describe("ManualJapanEntryReport", () => {
-  it("renders a customer-facing opportunity report without internal operator content", () => {
+  it("renders a customer-facing ten-chapter strategy report without internal operator content", () => {
     const report = buildManualJapanEntryReport({
       profile: {
         companyName: "Acme Software",
@@ -71,14 +71,17 @@ describe("ManualJapanEntryReport", () => {
     })
     const html = renderToStaticMarkup(<ManualJapanEntryReport data={report} />)
 
-    expect(html).toContain("Japan Entry Opportunity Report")
+    expect(html).toContain("Japan Entry Strategy Report")
+    expect(html).toContain("Ten decision chapters")
     expect(html).toContain("Executive perspective")
     expect(html).toContain("Japanese operations teams replacing spreadsheet approvals.")
     expect(html).toContain("Priority moves before a broader launch")
     expect(html).toContain("Public pages reviewed")
     expect(html).toContain("acme.example")
     expect(html).toContain("Paradigm LLC")
-    expect(html).toContain("manual_japan_entry_customer_v3")
+    expect(html).toContain("manual_japan_entry_strategy_v4")
+    expect(html).toContain("Executive decision and investment thesis")
+    expect(html).toContain("Risk register, recommendation, and next engagement")
     expect(html).not.toContain("Private evidence brief")
     expect(html).not.toContain("Manual Japan Entry Workbench")
     expect(html).not.toContain("Operator next actions")

@@ -50,6 +50,7 @@ const existing = {
   form_url: "https://screenshottocode.com/contact",
   report_url: "https://paradigmjp.com/en/work-report/report-1",
   initial_message: "保存済みの未送信初回文面",
+  message_review: { passed: true, score: 96 },
   profile: savedProfile,
 } as unknown as ManualJapanEntryWorkRow
 

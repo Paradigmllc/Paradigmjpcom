@@ -6,6 +6,7 @@ import type {
   ManualJapanEntryReportData,
   ManualReportGap,
 } from "./manual-japan-entry-report-types"
+import { buildManualStrategyChapters, countStrategyWords } from "./manual-japan-entry-strategy-chapters"
 
 type CustomerView = ManualJapanEntryReportData["customerView"]
 
@@ -169,8 +170,17 @@ export function buildManualCustomerReportView(input: {
   }
   const focus = leadGap?.title ?? opportunityAngle
 
+  const strategyChapters = buildManualStrategyChapters({
+    profile: input.profile,
+    gaps: input.gaps,
+    projection: input.projection,
+    targetSegment,
+    opportunityAngle,
+    whyNow,
+  })
+
   return {
-    title: "Japan Entry Opportunity Report",
+    title: "Japan Entry Strategy Report",
     executiveSummary: `${input.profile.companyName} presents a concrete public offer: ${sentence(input.profile.productContext)} The most credible next step is not to assume broad Japanese demand, but to test whether a focused customer path can make that offer understandable, trustworthy, and actionable for a defined segment.`,
     productSnapshot: input.profile.productContext,
     observedSignals,
@@ -189,5 +199,7 @@ export function buildManualCustomerReportView(input: {
     evidenceSources: evidenceSources(input.reviewedPages),
     recommendedDecision: `Decide whether ${targetSegment} is important enough to justify a bounded validation sprint. Advance only if the test produces company-specific evidence of comprehension, qualified interest, and a workable buying path.`,
     methodology: "Paradigm reviewed the company’s public product positioning, observable Japan customer-path signals, and available public visibility indicators. Findings describe what was and was not visible; they are not legal advice, measured analytics, or a guarantee of demand or performance.",
+    strategyChapters,
+    reportWordCount: countStrategyWords(strategyChapters),
   }
 }

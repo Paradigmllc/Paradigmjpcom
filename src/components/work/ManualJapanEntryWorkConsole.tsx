@@ -21,28 +21,11 @@ import { ManualWorkExperimentControls } from "./ManualWorkExperimentControls"
 import { ManualWorkHistory } from "./ManualWorkHistory"
 import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
 import { ManualWorkOverview } from "./ManualWorkOverview"
-
-const MAX_URLS = 20
-const CONCURRENCY = 3
+import { useManualWorkBatch } from "./useManualWorkBatch"
+import { MANUAL_WORK_BATCH_MAX_URLS } from "@/lib/sales/manual-japan-entry-batch-types"
 
 export function parseManualWorkUrls(value: string): string[] {
   return [...new Set(value.split(/[\s,]+/).map((url) => url.trim()).filter(Boolean))]
-}
-
-export async function runWithConcurrency<T>(
-  items: readonly T[],
-  concurrency: number,
-  task: (item: T) => Promise<void>,
-): Promise<void> {
-  let cursor = 0
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (cursor < items.length) {
-      const item = items[cursor]
-      cursor += 1
-      if (item !== undefined) await task(item)
-    }
-  })
-  await Promise.all(workers)
 }
 
 export function buildManualWorkRequest(input: {
@@ -92,13 +75,11 @@ export function ManualJapanEntryWorkConsole({
   const [sources, setSources] = useState(initialSources)
   const [sourceSlug, setSourceSlug] = useState("manual_input")
   const [sourcePageUrl, setSourcePageUrl] = useState("")
-  const [queue, setQueue] = useState<ManualWorkQueueState>({})
-  const [running, setRunning] = useState(false)
+  const [retryQueue, setRetryQueue] = useState<ManualWorkQueueState>({})
+  const [retryRunning, setRetryRunning] = useState(false)
   const [updatingOutcome, setUpdatingOutcome] = useState<string | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(initialHistoryError)
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
-  const queueValues = Object.values(queue)
-  const finished = queueValues.filter((value) => value === "done" || value === "error").length
   const deepSeekBalanceBlocked = items.some((item) => item.status === "failed" && (
     item.error_message?.includes("DeepSeek APIの残高不足")
     || item.error_message?.includes("Insufficient Balance")
@@ -124,28 +105,34 @@ export function ManualJapanEntryWorkConsole({
     }
   }, [])
 
+  const batch = useManualWorkBatch(useCallback(() => refreshHistory(true), [refreshHistory]))
+  const running = batch.running || retryRunning
+  const queue = useMemo<ManualWorkQueueState>(() => {
+    if (retryRunning || Object.keys(retryQueue).length > 0) return retryQueue
+    if (!batch.snapshot) return {}
+    return Object.fromEntries(batch.snapshot.items.map((item) => [item.canonical_url,
+      item.status === "queued" ? "waiting"
+        : item.status === "processing" ? "processing"
+          : item.status === "failed" ? "error"
+            : "done",
+    ]))
+  }, [batch.snapshot, retryQueue])
+  const finished = batch.snapshot?.finished
+    ?? Object.values(queue).filter((value) => value === "done" || value === "error").length
+
   useEffect(() => {
     void refreshHistory(true)
   }, [refreshHistory])
 
-  useEffect(() => {
-    if (!running) return
-    const timer = window.setInterval(() => void refreshHistory(true), 3_000)
-    return () => window.clearInterval(timer)
-  }, [refreshHistory, running])
-
   const start = async () => {
     if (urls.length === 0) return toast.error("海外企業のURLを1件以上入力してください")
-    if (urls.length > MAX_URLS) return toast.error(`1回の上限は${MAX_URLS}件です`)
-    setQueue(Object.fromEntries(urls.map((url) => [url, "waiting" as const])))
-    setRunning(true)
-    await runWithConcurrency(urls, CONCURRENCY, processUrl)
-    setRunning(false)
-    await refreshHistory(true)
+    if (urls.length > MANUAL_WORK_BATCH_MAX_URLS) return toast.error(`1回の上限は${MANUAL_WORK_BATCH_MAX_URLS}件です`)
+    setRetryQueue({})
+    await batch.start({ urls, variant, angle, sourceSlug, sourcePageUrl })
   }
 
   const processUrl = async (url: string, retryItem?: ManualJapanEntryWorkRow) => {
-      setQueue((current) => ({ ...current, [url]: "processing" }))
+      setRetryQueue((current) => ({ ...current, [url]: "processing" }))
       try {
         const response = await fetch("/api/work", {
           method: "POST",
@@ -158,7 +145,7 @@ export function ManualJapanEntryWorkConsole({
         if (body.item.status === "failed") throw new Error(manualWorkFailureToast(body.item))
         if (body.item.twenty_sync_status === "failed") throw new Error(manualWorkFailureToast(body.item))
         if (body.item.status === "needs_review" && !body.item.initial_message) throw new Error(manualWorkFailureToast(body.item))
-        setQueue((current) => ({ ...current, [url]: "done" }))
+        setRetryQueue((current) => ({ ...current, [url]: "done" }))
         if (body.item.status === "needs_review") {
           toast.warning(`${url} の文面生成まで完了しました。対象判定を確認してください`)
         } else if (body.item.status === "rejected") {
@@ -168,19 +155,19 @@ export function ManualJapanEntryWorkConsole({
         }
       } catch (error) {
         console.error("[manual-work-ui] URL processing failed:", { url, error })
-        setQueue((current) => ({ ...current, [url]: "error" }))
+        setRetryQueue((current) => ({ ...current, [url]: "error" }))
         toast.error(error instanceof Error ? error.message : `${url} の解析に失敗しました`)
       }
       await refreshHistory(true)
   }
 
   const retry = async (item: ManualJapanEntryWorkRow) => {
-    setQueue({ [item.canonical_url]: "processing" })
-    setRunning(true)
+    setRetryQueue({ [item.canonical_url]: "processing" })
+    setRetryRunning(true)
     try {
       await processUrl(item.canonical_url, item)
     } finally {
-      setRunning(false)
+      setRetryRunning(false)
       await refreshHistory(true)
     }
   }
@@ -238,7 +225,7 @@ export function ManualJapanEntryWorkConsole({
           <div>
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Manual Japan Entry Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">Zero-send architecture</span></div>
             <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">海外SMBの初回営業準備</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">完全新規の企業URLから、公開根拠・フォーム・初回文面・診断レポートを一つの永続ワークスペースへ。条件を満たす海外企業だけをTwentyの未送信リストへ追加します。</p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">完全新規の企業URLから、公開根拠・フォーム・初回文面・10章の戦略レポートを一つの永続ワークスペースへ。海外企業の解析データはTwentyへ保存し、送信可否は別の安全審査で管理します。</p>
           </div>
           <nav aria-label="ワークベンチ内ナビゲーション" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
             <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">新規解析</a>
@@ -261,12 +248,15 @@ export function ManualJapanEntryWorkConsole({
             queue={queue}
             running={running}
             urlCount={urls.length}
-            maxUrls={MAX_URLS}
+            maxUrls={MANUAL_WORK_BATCH_MAX_URLS}
             finished={finished}
+            batchError={batch.errorMessage}
+            canResume={Boolean(batch.snapshot?.remaining)}
             onInputChange={setInput}
             onSourceChange={setSourceSlug}
             onSourcePageUrlChange={setSourcePageUrl}
             onStart={() => void start()}
+            onResume={() => batch.snapshot && void batch.resume(batch.snapshot)}
           />
           <ManualWorkExperimentControls variant={variant} angle={angle} running={running} metrics={metrics} angleMetrics={angleMetrics} onVariantChange={setVariant} onAngleChange={setAngle} />
         </div>

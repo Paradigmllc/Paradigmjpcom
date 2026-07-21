@@ -26,10 +26,13 @@ export function ManualWorkIntake({
   urlCount,
   maxUrls,
   finished,
+  batchError,
+  canResume,
   onInputChange,
   onSourceChange,
   onSourcePageUrlChange,
   onStart,
+  onResume,
 }: {
   input: string
   sourceSlug: string
@@ -41,10 +44,13 @@ export function ManualWorkIntake({
   urlCount: number
   maxUrls: number
   finished: number
+  batchError: string | null
+  canResume: boolean
   onInputChange: (value: string) => void
   onSourceChange: (value: string) => void
   onSourcePageUrlChange: (value: string) => void
   onStart: () => void
+  onResume: () => void
 }) {
   const queueEntries = Object.entries(queue)
   const progress = queueEntries.length ? Math.round((finished / queueEntries.length) * 100) : 0
@@ -59,13 +65,13 @@ export function ManualWorkIntake({
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">New analysis</p>
               <h2 id="intake-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">企業URLを入力</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大20件、3件ずつ安全に並列処理します。</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件、DBに保存したキューから3件ずつ安全に解析します。</p>
             </div>
           </div>
         </div>
         <div className="hidden border-l border-slate-200 bg-slate-50/80 px-5 py-4 lg:block">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">Execution policy</p>
-          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Layers3 className="size-4 text-emerald-600" />20 URL / concurrency 3</div>
+          <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Layers3 className="size-4 text-emerald-600" />500 URL / durable queue</div>
           <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><CircleDot className="size-4 text-amber-500" />Auto-send disabled</div>
         </div>
       </div>
@@ -99,6 +105,8 @@ export function ManualWorkIntake({
               <p className="mt-2">{selectedSource.notes}</p>
             </div>
           )}
+
+          {batchError && <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-950 sm:flex-row sm:items-center sm:justify-between"><p>{batchError}<br />未処理URLはDBに残っており、この画面から再開できます。</p>{canResume && <Button type="button" variant="outline" size="sm" disabled={running} onClick={onResume} className="shrink-0 border-amber-300 bg-white">処理を再開</Button>}</div>}
 
           <label className="block space-y-2 text-sm font-semibold text-slate-700">
             <span className="flex items-center justify-between gap-3"><span>解析する海外企業URL</span><span className={invalidCount ? "text-red-600" : "font-normal text-slate-600"}>{urlCount} / {maxUrls}件</span></span>
@@ -144,13 +152,14 @@ export function ManualWorkIntake({
           <div className="flex items-center justify-between gap-4 text-sm"><span className="font-semibold text-slate-700">今回の進捗</span><span className="font-mono text-xs text-slate-500">{finished} / {queueEntries.length} · {progress}%</span></div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-emerald-500 transition-[width] duration-500" style={{ width: `${progress}%` }} /></div>
           <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {queueEntries.map(([url, state]) => (
+            {queueEntries.slice(0, 60).map(([url, state]) => (
               <div key={url} className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600">
                 {state === "processing" ? <LoaderCircle className="size-4 shrink-0 animate-spin text-blue-600" /> : state === "done" ? <CheckCircle2 className="size-4 shrink-0 text-emerald-600" /> : state === "error" ? <XCircle className="size-4 shrink-0 text-red-600" /> : <span className="size-2 shrink-0 rounded-full bg-slate-300" />}
                 <span className="truncate">{url}</span>
               </div>
             ))}
           </div>
+          {queueEntries.length > 60 && <p className="mt-3 text-xs text-slate-600">先頭60件を表示中。残り{queueEntries.length - 60}件もDBキューで処理されます。</p>}
         </div>
       )}
     </section>

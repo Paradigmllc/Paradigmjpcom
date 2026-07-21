@@ -49,7 +49,7 @@ I reviewed Example and its security architecture platform for technology teams.
 
 In a public-page review, the checked pages did not show a Japanese-language customer path.
 
-I can share a one-page Japan Opportunity Snapshot based on this public evidence. Could you forward this to the founder or person responsible for international growth?`,
+I can share a detailed Japan opportunity analysis based on this public evidence. Could you forward this to the founder or person responsible for international growth?`,
       companyName: "Example",
       productContext: "security architecture platform for technology teams",
       productEvidence: "security architecture platform",

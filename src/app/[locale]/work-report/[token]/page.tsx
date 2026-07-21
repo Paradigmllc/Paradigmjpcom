@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const metadata: Metadata = {
-  title: "Japan Entry Opportunity Report | Paradigm",
+  title: "Japan Entry Strategy Report | Paradigm",
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 }
 

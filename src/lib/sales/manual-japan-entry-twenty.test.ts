@@ -63,7 +63,7 @@ describe("manual work Twenty persistence", () => {
     expect(JSON.stringify(saved)).toContain("未送信の初回フォーム文面");
     expect(saved).toMatchObject({
       paradigmSalesStatus: "手動確認 / 未対応",
-      paradigmNextAction: "初回文面を人間確認（未送信）",
+      paradigmNextAction: "フォーム・初回文面を人間確認（未送信）",
       paradigmFormUrl: {
         primaryLinkUrl: "https://screenshottocode.com/contact",
       },
@@ -132,6 +132,52 @@ describe("manual work Twenty persistence", () => {
       }),
     ).resolves.toEqual({ status: "synced", companyId: "company-owned" });
     expect(twenty.createTwentyCompanyBase).not.toHaveBeenCalled();
+  });
+
+  it("updates an existing same-domain Twenty company with /work analysis instead of treating Twenty as the source", async () => {
+    let saved: Record<string, unknown> | null = null;
+    twenty.findTwentyCompanyByDomain.mockImplementation(async () => saved ?? { id: "company-existing" });
+    twenty.patchTwentyCompanyHome.mockImplementation(async (id: string, payload: Record<string, unknown>) => {
+      saved = { id, ...payload };
+      return { ok: true };
+    });
+
+    await expect(syncManualWorkToTwenty({
+      domain: "screenshottocode.com",
+      profile,
+      formUrl: "https://screenshottocode.com/contact",
+      reportUrl: "https://paradigmjp.com/en/work-report/report-1",
+      initialMessage: "未送信の初回フォーム文面",
+    })).resolves.toEqual({ status: "synced", companyId: "company-existing" });
+    expect(twenty.createTwentyCompanyBase).not.toHaveBeenCalled();
+    expect(twenty.patchTwentyCompanyHome).toHaveBeenCalledWith("company-existing", expect.objectContaining({
+      paradigmSourceName: "manual_work",
+    }));
+  });
+
+  it("persists analyzed review data even when no verified form or approved message exists", async () => {
+    let saved: Record<string, unknown> | null = null;
+    twenty.findTwentyCompanyByDomain.mockImplementation(async () => saved);
+    twenty.patchTwentyCompanyHome.mockImplementation(async (id: string, payload: Record<string, unknown>) => {
+      saved = { id, ...payload };
+      return { ok: true };
+    });
+
+    await expect(syncManualWorkToTwenty({
+      domain: "screenshottocode.com",
+      profile,
+      formUrl: null,
+      reportUrl: "https://paradigmjp.com/en/work-report/report-1",
+      initialMessage: null,
+      readiness: { sendReady: false, reasons: ["A verified public form was not found"] },
+    })).resolves.toEqual({ status: "synced", companyId: "company-1" });
+    expect(saved).toMatchObject({
+      paradigmSalesStatus: "解析済み / 要確認",
+      paradigmDataStatus: "Manual workbench / analyzed / evidence review required",
+      paradigmFormUrl: { primaryLinkUrl: "" },
+    });
+    expect(JSON.stringify(saved)).toContain("A verified public form was not found");
+    expect(JSON.stringify(saved)).toContain("No draft passed the production quality gate");
   });
 
   it("keeps the created company id when the live read-back request fails", async () => {

@@ -10,6 +10,7 @@ import {
   Target,
 } from "lucide-react"
 import type { ManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-types"
+import { ManualStrategyChapter } from "./ManualStrategyChapter"
 
 function formatDate(value: string): string {
   const date = new Date(value)
@@ -42,7 +43,7 @@ export default function ManualJapanEntryReport({ data }: { data: ManualJapanEntr
                 <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5">Paradigm · Japan Entry</span>
                 <span>Prepared for {data.company.name}</span>
               </div>
-              <h1 className="mt-7 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-6xl">Japan Entry Opportunity Report</h1>
+              <h1 className="mt-7 max-w-4xl text-4xl font-semibold tracking-[-0.05em] sm:text-6xl">Japan Entry Strategy Report</h1>
               <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
                 A focused view of where {data.company.name} may have a credible Japan opportunity, what remains unproven, and the smallest next test worth running.
               </p>
@@ -56,6 +57,17 @@ export default function ManualJapanEntryReport({ data }: { data: ManualJapanEntr
         </header>
 
         <div className="space-y-12 px-6 py-9 sm:px-10 sm:py-12">
+          <section aria-labelledby="contents-heading" className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 print:break-after-page">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Management edition</p><h2 id="contents-heading" className="mt-2 text-2xl font-semibold tracking-tight">Ten decision chapters</h2></div>
+              <p className="text-xs text-slate-500">{report.reportWordCount.toLocaleString("en-US")} words · public-evidence boundary</p>
+            </div>
+            <ol className="mt-7 grid gap-3 md:grid-cols-2">
+              {report.strategyChapters.map((chapter) => (
+                <li key={chapter.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"><span className="font-mono text-xs font-semibold text-blue-700">{String(chapter.number).padStart(2, "0")}</span><span className="font-medium text-slate-800">{chapter.title}</span></li>
+              ))}
+            </ol>
+          </section>
           <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]" aria-labelledby="executive-summary-heading">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8">
               <div className="flex items-center gap-3 text-blue-700"><Compass className="size-5" aria-hidden="true" /><p className="text-xs font-bold uppercase tracking-[0.16em]">Executive perspective</p></div>
@@ -159,6 +171,10 @@ export default function ManualJapanEntryReport({ data }: { data: ManualJapanEntr
               </div>
             </div>
           </section>
+
+          <div className="space-y-16 print:space-y-0">
+            {report.strategyChapters.map((chapter) => <ManualStrategyChapter key={chapter.id} chapter={chapter} />)}
+          </div>
         </div>
 
         <footer className="border-t border-slate-200 bg-white px-6 py-7 sm:px-10">

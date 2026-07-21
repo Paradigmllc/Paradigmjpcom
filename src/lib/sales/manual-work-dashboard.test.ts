@@ -35,20 +35,21 @@ function row(overrides: Partial<ManualJapanEntryWorkRow>): ManualJapanEntryWorkR
 
 describe("manual work dashboard", () => {
   const items = [
-    row({ id: "review", company_name: "Acme Cloud" }),
-    row({ id: "done", domain: "orbit.example", company_name: "Orbit", status: "completed", manually_sent_at: "2026-07-17T01:00:00.000Z", meeting_converted_at: "2026-07-17T02:00:00.000Z" }),
+    row({ id: "review", company_name: "Acme Cloud", twenty_sync_status: "synced" }),
+    row({ id: "done", domain: "orbit.example", company_name: "Orbit", status: "completed", twenty_sync_status: "synced", manually_sent_at: "2026-07-17T01:00:00.000Z", meeting_converted_at: "2026-07-17T02:00:00.000Z" }),
     row({ id: "failed", domain: "broken.example", company_name: "Broken", status: "failed", form_url: null }),
   ]
 
   it("summarizes operator outcomes without treating generation as sending", () => {
     expect(summarizeManualWorkDashboard(items)).toEqual({
-      total: 3, actionRequired: 1, completed: 1, formReady: 2, manuallySent: 1, meetings: 1,
+      total: 3, actionRequired: 1, completed: 2, formReady: 2, manuallySent: 1, meetings: 1,
     })
   })
 
   it("filters history by workflow state and company search", () => {
     expect(filterManualWorkItems(items, "action_required", "acme").map((item) => item.id)).toEqual(["review"])
     expect(filterManualWorkItems(items, "sent", "").map((item) => item.id)).toEqual(["done"])
+    expect(filterManualWorkItems(items, "completed", "").map((item) => item.id)).toEqual(["review", "done"])
     expect(filterManualWorkItems(items, "failed", "broken.example").map((item) => item.id)).toEqual(["failed"])
   })
 })

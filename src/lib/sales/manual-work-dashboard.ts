@@ -17,7 +17,7 @@ export function summarizeManualWorkDashboard(items: ManualJapanEntryWorkRow[]): 
   return items.reduce<ManualWorkDashboardSummary>((summary, item) => {
     summary.total += 1
     if (item.status === "needs_review") summary.actionRequired += 1
-    if (item.status === "completed") summary.completed += 1
+    if (item.twenty_sync_status === "synced" || item.twenty_sync_status === "duplicate") summary.completed += 1
     if (item.form_url) summary.formReady += 1
     if (item.manually_sent_at) summary.manuallySent += 1
     if (item.meeting_converted_at) summary.meetings += 1
@@ -34,7 +34,7 @@ export function filterManualWorkItems(
   return items.filter((item) => {
     const matchesFilter = filter === "all"
       || (filter === "action_required" && item.status === "needs_review")
-      || (filter === "completed" && item.status === "completed")
+      || (filter === "completed" && (item.twenty_sync_status === "synced" || item.twenty_sync_status === "duplicate"))
       || (filter === "sent" && Boolean(item.manually_sent_at))
       || (filter === "failed" && FAILURE_STATUSES.includes(item.status))
     if (!matchesFilter) return false

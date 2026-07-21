@@ -746,6 +746,10 @@ function checkStaticReleaseRules() {
   const manualFormDiagnosticsMigration = fs.existsSync(manualFormDiagnosticsMigrationPath)
     ? fs.readFileSync(manualFormDiagnosticsMigrationPath, "utf8")
     : ""
+  const manualBatchMigrationPath = "supabase/migrations/20260720233215_manual_work_durable_batches.sql"
+  const manualBatchMigration = fs.existsSync(manualBatchMigrationPath)
+    ? fs.readFileSync(manualBatchMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -854,9 +858,16 @@ function checkStaticReleaseRules() {
     && manualFormDiagnosticsMigration.includes("generation_error")
     && noLoginDeploy.includes("20260719211533_manual_work_verified_form_and_copy_diagnostics.sql")
     && noLoginDeploy.includes("applyManualWorkVerifiedFormAndCopyDiagnosticsMigration")
+    && manualBatchMigration.includes("total_count BETWEEN 1 AND 500")
+    && manualBatchMigration.includes("FOR UPDATE SKIP LOCKED")
+    && manualBatchMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
+    && noLoginDeploy.includes("20260720233215_manual_work_durable_batches.sql")
+    && noLoginDeploy.includes("applyManualWorkDurableBatchesMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
+    && dbVerifier.includes('"manual_japan_entry_batches"')
+    && dbVerifier.includes('"manual_japan_entry_batch_items"')
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
@@ -887,7 +898,7 @@ function checkStaticReleaseRules() {
     && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
     && !manualMessageIntelligence.includes("generation_error")
     && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
-    && manualWorkOperatorNotice.includes("外部送信とTwenty追加は行っていません")
+    && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存されます")
     && manualWorkConsole.includes("retry: Boolean(input.retryItem)")
     && manualWorkConsole.includes("workId: input.retryItem.id")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
@@ -899,7 +910,8 @@ function checkStaticReleaseRules() {
     && manualWorkReport.includes("MANUAL_JAPAN_ENTRY_REPORT_SCHEMA")
     && !manualWorkReport.includes("matchContentTemplate")
     && !manualWorkReport.includes("DiagnosticReportData")
-    && manualWorkReportTypes.includes('"manual_japan_entry_customer_v3"')
+    && manualWorkReportTypes.includes('"manual_japan_entry_strategy_v4"')
+    && manualWorkReportTypes.includes("strategyChapters")
     && manualWorkReportTypes.includes('"customer_japan_entry_opportunity_report"')
     && manualWorkReportTypes.includes("legacyTemplateUsed: false")
     && manualWorkReportTypes.includes("automaticSendAllowed: false")
@@ -909,7 +921,8 @@ function checkStaticReleaseRules() {
     && manualWorkReportPage.includes("resolveManualJapanEntryReportData")
     && !manualWorkReportPage.includes("ensureSafeDiagnosticReport")
     && !manualWorkReportPage.includes('components/diagnostic/DiagnosticReport')
-    && manualWorkReportRenderer.includes("Japan Entry Opportunity Report")
+    && manualWorkReportRenderer.includes("Japan Entry Strategy Report")
+    && manualWorkReportRenderer.includes("Ten decision chapters")
     && manualWorkReportRenderer.includes("Executive perspective")
     && !manualWorkReportRenderer.includes("Private evidence brief")
     && !manualWorkReportRenderer.includes("Never sent automatically")
@@ -924,9 +937,9 @@ function checkStaticReleaseRules() {
     && formDiscovery.includes("documentFingerprint")
     && formDiscovery.includes('outcome: outcome ?? (verification === "form" ? "verified_form"')
   ) {
-    pass("manual Japan Entry workbench has a customer-facing V3 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, SPA-safe verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires a customer-facing V3 report, legacy isolation, login return routing, grounded copy, bounded DeepSeek repair, retryable Twenty read-back, SPA-safe verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1463,8 +1476,18 @@ select case when
   ) = 13
   and to_regclass('public.manual_japan_entry_source_catalog') is not null
   and to_regclass('public.manual_japan_entry_work_sources') is not null
+  and to_regclass('public.manual_japan_entry_batches') is not null
+  and to_regclass('public.manual_japan_entry_batch_items') is not null
   and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_source_catalog'::regclass)
   and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_work_sources'::regclass)
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_batches'::regclass)
+  and (select relrowsecurity from pg_class where oid = 'public.manual_japan_entry_batch_items'::regclass)
+  and to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)') is not null
+  and to_regprocedure('public.manual_japan_entry_claim_batch_items(uuid,integer)') is not null
+  and to_regprocedure('public.manual_japan_entry_refresh_batch(uuid)') is not null
+  and has_function_privilege('service_role', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')
+  and not has_function_privilege('anon', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')
+  and not exists (select 1 from public.manual_japan_entry_batches where sent is distinct from false)
   and (select count(*) from public.manual_japan_entry_source_catalog where active) >= 39
   and exists (
     select 1 from pg_constraint
@@ -1479,13 +1502,17 @@ select case when
     where report_url is not null
       and (
         report_data ->> 'schemaVersion' is null
-        or report_data ->> 'schemaVersion' not in ('manual_japan_entry_v2', 'manual_japan_entry_customer_v3')
+        or report_data ->> 'schemaVersion' not in ('manual_japan_entry_v2', 'manual_japan_entry_customer_v3', 'manual_japan_entry_strategy_v4')
         or (
           report_data ->> 'schemaVersion' = 'manual_japan_entry_v2'
           and report_data ->> 'reportKind' is distinct from 'manual_japan_entry_evidence_brief'
         )
         or (
           report_data ->> 'schemaVersion' = 'manual_japan_entry_customer_v3'
+          and report_data ->> 'reportKind' is distinct from 'customer_japan_entry_opportunity_report'
+        )
+        or (
+          report_data ->> 'schemaVersion' = 'manual_japan_entry_strategy_v4'
           and report_data ->> 'reportKind' is distinct from 'customer_japan_entry_opportunity_report'
         )
         or report_data #>> '{provenance,legacyTemplateUsed}' is distinct from 'false'
@@ -1531,9 +1558,9 @@ select case when
 then 1 else 0 end;
 " 2>/dev/null || true)"
   if [ "$manual_copy_experiment_guard" = "1" ]; then
-    echo "OK manual copy experiment/report V2/angle playbooks/outcome constraint/RLS/zero-send guard"
+    echo "OK manual copy experiment/report V4/durable batch/outcome constraint/RLS/zero-send guard"
   else
-    echo "FAIL manual copy experiment/report V2/angle playbooks/outcome constraint/RLS/zero-send guard"
+    echo "FAIL manual copy experiment/report V4/durable batch/outcome constraint/RLS/zero-send guard"
     fail=1
   fi
 
@@ -1870,10 +1897,10 @@ async function checkPostDeployUrls() {
   })
   const manualReportPath = latestManualWorkReportPath()
   if (manualReportPath) {
-    await fetchCheck("manual Japan Entry customer V3 report", `${BASE_URL}${manualReportPath}`, {
+    await fetchCheck("manual Japan Entry customer V4 strategy report", `${BASE_URL}${manualReportPath}`, {
       timeoutMs: 25_000,
       rejectReportError: true,
-      mustContain: ["Japan Entry Opportunity Report", "Executive perspective", "Paradigm LLC", "manual_japan_entry_customer_v3"],
+      mustContain: ["Japan Entry Strategy Report", "Ten decision chapters", "Paradigm LLC", "manual_japan_entry_strategy_v4"],
       mustNotContain: ["Private evidence brief", "Manual Japan Entry Workbench", "Operator next actions", "Never sent automatically", "Human-reviewed first touch"],
     })
   } else {
