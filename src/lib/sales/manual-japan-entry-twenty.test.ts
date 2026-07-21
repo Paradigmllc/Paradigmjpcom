@@ -196,6 +196,29 @@ describe("manual work Twenty persistence", () => {
     await expect(result).rejects.toBeInstanceOf(ManualTwentySyncError);
     await expect(result).rejects.toMatchObject({ companyId: "company-1" });
   });
+
+  it("preserves a verified CRM country when the current website classification is unconfirmed", async () => {
+    const unconfirmedProfile = { ...profile, countryCode: null };
+    let saved: Record<string, unknown> = {
+      id: "company-existing",
+      paradigmCountryName: "米国",
+    };
+    twenty.findTwentyCompanyByDomain.mockImplementation(async () => saved);
+    twenty.patchTwentyCompanyHome.mockImplementation(async (id: string, payload: Record<string, unknown>) => {
+      saved = { ...saved, id, ...payload };
+      return { ok: true };
+    });
+
+    await expect(syncManualWorkToTwenty({
+      domain: "usefathom.com",
+      profile: unconfirmedProfile,
+      formUrl: null,
+      reportUrl: "https://paradigmjp.com/en/work-report/fathom",
+      initialMessage: null,
+      readiness: { sendReady: false, reasons: ["Country remains unconfirmed"] },
+    })).resolves.toEqual({ status: "synced", companyId: "company-existing" });
+    expect(saved.paradigmCountryName).toBe("米国");
+  });
 });
 
 describe("manual work Twenty read-back normalization", () => {
