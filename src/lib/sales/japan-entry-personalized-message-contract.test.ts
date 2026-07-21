@@ -88,4 +88,10 @@ describe("initial-interest evidence contract", () => {
     expect(selectGroundedProductEvidence({ companyName: "2Strands Biosciences", productContext: strands })).toBe("Accurate, Affordable and accelerated cancer monitoring technology")
     expect(isInitialInterestProductEvidenceSafe("This site is protected by reCAPTCHA")).toBe(false)
   })
+
+  it("uses one short safe public phrase instead of a repeated-brand context fallback", () => {
+    const productContext = "Agrohub Benchmarking – | Agrohub HR360 Benchmarking – | Дослідження | AGROHUB"
+
+    expect(selectGroundedProductEvidence({ companyName: "AGROHUB", productContext })).toBe("Agrohub Benchmarking")
+  })
 })
