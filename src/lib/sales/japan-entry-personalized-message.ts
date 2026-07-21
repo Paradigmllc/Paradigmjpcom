@@ -21,7 +21,6 @@ import {
   type JapanEntryMessageReview,
 } from "./japan-entry-personalized-message-review";
 import {
-  applyManualCtaContract,
   buildManualCtaContracts,
   resolveManualCtaAnchors,
 } from "./manual-japan-entry-cta-contract";
@@ -30,6 +29,7 @@ import {
   callDeepSeekStructured,
   type DeepSeekStructuredCaller,
 } from "./japan-entry-personalized-message-structured";
+import { recoverManualInitialInterestCandidate } from "./manual-japan-entry-candidate-recovery";
 export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
@@ -269,10 +269,11 @@ export async function generatePersonalizedJapanEntryMessage(
   let totalAttempts = 0;
   let totalUsage: DeepSeekResponse["usage"];
 
+  const ctaAnchors = resolveManualCtaAnchors({ companyName: input.companyName, productNames: input.productNames, facts });
   const ctaContracts = purpose === "initial_interest"
     ? buildManualCtaContracts({
         companyName: input.companyName,
-        ...resolveManualCtaAnchors({ companyName: input.companyName, productNames: input.productNames, facts }),
+        ...ctaAnchors,
         priorMessages: input.priorMessages ?? [],
       })
     : [];
@@ -300,12 +301,17 @@ export async function generatePersonalizedJapanEntryMessage(
   const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>, candidateIndex = 0) => {
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(rawCandidate, input.companyName) : rawCandidate;
     const initial = deterministicInspection(enveloped);
-    const ctaNeedsRecovery = purpose === "initial_interest" && (
-      !initial.similarity.passed
-      || initial.safety.issues.some((issue) => /(?:CTA|final question|permission or routing|body must end with)/i.test(issue))
-    );
-    const candidate = ctaNeedsRecovery && ctaContracts.length > 0
-      ? applyManualCtaContract(enveloped, input.companyName, ctaContracts[candidateIndex % ctaContracts.length] ?? ctaContracts[0]!)
+    const candidate = purpose === "initial_interest" && ctaContracts.length > 0
+      ? recoverManualInitialInterestCandidate({
+          candidate: enveloped,
+          companyName: input.companyName,
+          productNames: input.productNames,
+          facts,
+          customerPathAnchor: ctaAnchors.customerPathAnchor,
+          contract: ctaContracts[candidateIndex % ctaContracts.length] ?? ctaContracts[0]!,
+          issues: initial.safety.issues,
+          similarityPassed: initial.similarity.passed,
+        })
       : enveloped;
     const inspected = candidate === enveloped ? initial : deterministicInspection(candidate);
     return {

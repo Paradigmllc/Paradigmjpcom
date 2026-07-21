@@ -32,7 +32,7 @@ const CTA_ROUTES: CtaRoute[] = [
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
       offer: `I can prepare a Japan opportunity analysis that separates the public evidence around ${path} from the decision still open for ${anchor}.`,
-      question: `Would you like the ${anchor} analysis before deciding whether that customer path warrants a test?`,
+      question: `Would you like to receive the ${anchor} analysis before deciding whether that customer path warrants a test?`,
     }),
   },
   {
@@ -60,21 +60,21 @@ const CTA_ROUTES: CtaRoute[] = [
     ctaType: "right_person",
     build: (anchor, path) => ({
       offer: `I can prepare a Japan opportunity analysis around the open ${path} question without treating the page review as proof of demand.`,
-      question: `Where should I direct the ${anchor} analysis for that decision?`,
+      question: `Who is the right person to receive the ${anchor} analysis for that decision?`,
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
       offer: `The useful next artifact would be a Japan opportunity analysis linking ${anchor}'s product evidence to the unresolved ${path} decision.`,
-      question: `Would the ${anchor} founder be the appropriate recipient for that analysis?`,
+      question: `Would the ${anchor} founder be the right person to receive that analysis?`,
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
       offer: `I can turn the ${path} observation into a Japan opportunity analysis that keeps evidence, assumptions, and the ${anchor} validation choice separate.`,
-      question: `Would receiving the ${anchor} analysis be useful before that choice is made?`,
+      question: `Would you like to receive the ${anchor} analysis before that choice is made?`,
     }),
   },
   {
@@ -95,13 +95,13 @@ const CTA_ROUTES: CtaRoute[] = [
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
       offer: `The analysis I can provide would stay narrowly focused on ${anchor}, the observed ${path} signal, and whether a Japan customer-path test is justified.`,
-      question: `Would you be open to receiving the ${anchor} Japan opportunity analysis?`,
+      question: `Would you like to receive the ${anchor} Japan opportunity analysis?`,
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `I can document the ${path} finding and the unresolved Japan validation choice in an opportunity analysis specific to ${anchor}.`,
+      offer: `I can document the ${path} finding and the unresolved validation choice in a Japan opportunity analysis specific to ${anchor}.`,
       question: `Who should receive the ${anchor} analysis for deciding what to test first?`,
     }),
   },
@@ -109,7 +109,7 @@ const CTA_ROUTES: CtaRoute[] = [
     ctaType: "founder_forward",
     build: (anchor, path) => ({
       offer: `A Japan opportunity analysis can give ${anchor}'s leadership a bounded view of the ${path} evidence before any broader market commitment.`,
-      question: `Is the ${anchor} founder the right owner for that evaluation?`,
+      question: `Is the ${anchor} founder the right person to receive that analysis?`,
     }),
   },
 ]

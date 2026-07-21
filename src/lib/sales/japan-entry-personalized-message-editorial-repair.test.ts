@@ -64,7 +64,7 @@ function critic(specificity: number, productEvidenceFaithful = true) {
 }
 
 describe("Japan Entry editorial repair loop", () => {
-  it("feeds the measured body length back to DeepSeek and uses a third safety repair instead of discarding the message", async () => {
+  it("repairs a short draft deterministically before the editorial call", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(response({
         strategy: {
@@ -81,9 +81,6 @@ describe("Japan Entry editorial repair loop", () => {
         },
         candidates: [candidate(shortMessage)],
       }))
-      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
-      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
-      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
       .mockResolvedValueOnce(critic(23))
 
     const result = await generatePersonalizedJapanEntryMessage({
@@ -100,14 +97,15 @@ describe("Japan Entry editorial repair loop", () => {
     }, caller)
 
     expect(result.ok).toBe(true)
-    expect(result.review?.wordCount).toBe(120)
-    expect(caller).toHaveBeenCalledTimes(5)
-    const firstRepairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as {
-      repair?: { measured_body_word_count_before_repair?: number; required_body_word_range?: unknown; issues?: string[] }
+    expect(result.review?.wordCount).toBeGreaterThanOrEqual(120)
+    expect(result.review?.wordCount).toBeLessThanOrEqual(190)
+    expect(caller).toHaveBeenCalledTimes(2)
+    const editorialPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as {
+      deterministic_contracts_passed?: boolean
+      candidates?: unknown[]
     }
-    expect(firstRepairPayload.repair?.measured_body_word_count_before_repair).toBeLessThan(120)
-    expect(firstRepairPayload.repair?.required_body_word_range).toEqual({ min: 120, max: 190, target: 150 })
-    expect(firstRepairPayload.repair?.issues?.[0]).toContain("Deterministic body count is")
+    expect(editorialPayload.deterministic_contracts_passed).toBe(true)
+    expect(editorialPayload.candidates).toHaveLength(1)
   })
 
   it("uses the second editorial repair when the first rewrite violates a deterministic safety rule", async () => {
