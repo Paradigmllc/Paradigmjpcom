@@ -115,12 +115,50 @@ function positioningConcept(value: unknown): unknown {
   const sourcePhrase = source.sourcePhrase
   const japaneseHeadline = source.japaneseHeadline
   const japaneseSupportLine = source.japaneseSupportLine
-  if (typeof sourcePhrase !== "string" || typeof japaneseHeadline !== "string" || typeof japaneseSupportLine !== "string") {
+  if (
+    typeof sourcePhrase !== "string"
+    || typeof japaneseHeadline !== "string"
+    || typeof japaneseSupportLine !== "string"
+    || sourcePhrase.trim().length < 3
+    || sourcePhrase.trim().length > 180
+    || japaneseHeadline.trim().length < 4
+    || japaneseHeadline.trim().length > 60
+    || japaneseSupportLine.trim().length < 8
+    || japaneseSupportLine.trim().length > 140
+  ) {
     // A partial positioning draft is optional. Dropping it is safer than inventing
     // the missing source phrase or Japanese copy merely to satisfy the schema.
     return null
   }
-  return { sourcePhrase, japaneseHeadline, japaneseSupportLine }
+  return {
+    sourcePhrase: sourcePhrase.trim(),
+    japaneseHeadline: japaneseHeadline.trim(),
+    japaneseSupportLine: japaneseSupportLine.trim(),
+  }
+}
+
+function commercialSignals(value: unknown): unknown {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const source = record(item)
+    if (!source) return []
+    const kind = source.kind
+    const sourcePhrase = source.sourcePhrase
+    const detail = source.detail
+    if (
+      typeof kind !== "string"
+      || !MANUAL_COMMERCIAL_SIGNAL_KINDS.includes(kind as (typeof MANUAL_COMMERCIAL_SIGNAL_KINDS)[number])
+      || typeof sourcePhrase !== "string"
+      || sourcePhrase.trim().length < 3
+      || sourcePhrase.trim().length > 180
+      || (detail !== undefined && (typeof detail !== "string" || detail.trim().length < 3 || detail.trim().length > 180))
+    ) return []
+    return [{
+      kind,
+      sourcePhrase: sourcePhrase.trim(),
+      ...(typeof detail === "string" ? { detail: detail.trim() } : {}),
+    }]
+  }).slice(0, 6)
 }
 
 export function normalizeManualCompanyProfile(value: unknown): unknown {
@@ -147,6 +185,7 @@ export function normalizeManualCompanyProfile(value: unknown): unknown {
     businessModel: businessModel(source.businessModel),
     observedFacts: boundedEvidence(source.observedFacts, 10),
     positioningConcept: positioningConcept(source.positioningConcept),
+    commercialSignals: commercialSignals(source.commercialSignals),
   }
   return Object.fromEntries(Object.keys(profileSchema.shape).map((key) => [key, normalized[key]]))
 }

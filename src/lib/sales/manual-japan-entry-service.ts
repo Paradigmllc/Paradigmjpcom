@@ -372,7 +372,8 @@ export async function processManualJapanEntryUrl(
     })
     const generatedRun = await runWithManualWorkAutoRecovery({
       phase: "initial message generation",
-      maxAttempts: 2,
+      // The generator already performs bounded transport, schema, safety, and editorial recovery.
+      maxAttempts: 1,
       operation: async () => generatePersonalizedJapanEntryMessage(messageInput),
       accept: (result) => result.ok,
     })

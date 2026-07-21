@@ -17,6 +17,7 @@ import {
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
+import { buildManualCtaContracts, resolveManualCtaAnchors } from "./manual-japan-entry-cta-contract";
 
 interface PromptInput {
   companyName: string;
@@ -51,6 +52,22 @@ interface RepairInput {
   editorialFeedback?: string;
   measuredBodyWordCount?: number;
   requiredBodyWordRange?: { min: number; max: number; target: number };
+}
+
+function recentCopyDigest(message: string): { opening: string; diagnosis: string; cta: string } {
+  const blocks = message
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  if (/^hello\b/i.test(blocks[0] ?? "")) blocks.shift();
+  if (/(?:best|kind|warm) regards/i.test(blocks.at(-1) ?? "")) blocks.pop();
+  return {
+    opening: (blocks[0] ?? "").slice(0, 320),
+    diagnosis: blocks.slice(1, -1).join(" ").slice(0, 480),
+    cta: (blocks.at(-1) ?? "").slice(0, 360),
+  };
 }
 
 export const JAPAN_ENTRY_GENERATION_SYSTEM_PROMPT = [
@@ -115,7 +132,7 @@ export function initialInterestGenerationPrompt(
     estimateRule,
     "After a missing public-page observation, never write 'This means' and never describe what Japanese developers, teams, buyers, or customers may do or lack. Use a company-specific uncertainty sentence instead: state that whether the observed gap matters for the named product's Japan customer path remains unverified. For repair_candidate, delete the whole unsupported audience-behavior sentence; do not preserve or paraphrase it.",
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
-    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. Required CTA meaning: ${ctaMeaning} Write both the offer and question specifically for this company's product and customer-path decision; do not copy an approved stock sentence and do not reuse a fixed offer sentence or fixed question from recent_copy_to_avoid. Never write 'I can share a detailed Japan opportunity analysis based on this public evidence' or 'Could you forward this to the founder or person responsible for international growth'. The last sentence ending in '?' is the final question: that sentence itself must include required_cta_anchor exactly. Mentioning that anchor only in the preceding offer sentence is invalid. The final paragraph must also include required_customer_path_anchor and state which Japan customer-path decision the analysis informs. Choose one CTA type: permission_to_send, right_person, or founder_forward. A CTA that could be pasted unchanged into another company's message is invalid. Use grammatically correct articles around the exact company or product anchor; prefer 'the analysis for [anchor]' or '[anchor]'s ... decision' instead of forcing 'a/an [anchor] ...'. Do not offer both a report and a call.`,
+    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. Required CTA meaning: ${ctaMeaning} For each candidate, copy one complete approved_cta_contract paragraph exactly, including punctuation, and return its matching cta_type. Do not combine or paraphrase contracts. The contracts were selected against recent copy and already contain the required company/product and customer-path anchors. Never write 'I can share a detailed Japan opportunity analysis based on this public evidence' or 'Could you forward this to the founder or person responsible for international growth'. Do not offer both a report and a call.`,
     options.includePrice
       ? "Use only the exact fixed commercial term in paragraph 4. Do not add scarcity, a founding-company claim, a normal monthly price, continuation pricing, or any other commercial term."
       : "Do not mention price, payment terms, a package scope, scarcity or continuation pricing.",
@@ -155,10 +172,19 @@ export function generationMessages(
   const promptFacts = evidenceContract
     ? facts.filter((fact) => evidenceContract.allowedFactIds.includes(fact.id))
     : facts;
-  const requiredCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
-  const requiredCustomerPathAnchor = promptFacts
-    .find((fact) => fact.id.startsWith("japan-audit-"))
-    ?.anchors.map((anchor) => anchor.trim()).find((anchor) => anchor.length >= 4) ?? "Japan customer path";
+  const { requiredAnchor: requiredCtaAnchor, customerPathAnchor: requiredCustomerPathAnchor } = resolveManualCtaAnchors({
+    companyName: input.companyName,
+    productNames: input.productNames,
+    facts: promptFacts,
+  });
+  const approvedCtaContracts = purpose === "initial_interest"
+    ? buildManualCtaContracts({
+        companyName: input.companyName,
+        requiredAnchor: requiredCtaAnchor,
+        customerPathAnchor: requiredCustomerPathAnchor,
+        priorMessages: input.priorMessages ?? [],
+      })
+    : [];
   const ctaContract = purpose === "initial_interest" ? {
     final_question_must_contain_exact: [requiredCtaAnchor],
     final_question_must_end_with_question_mark: true,
@@ -199,6 +225,11 @@ export function generationMessages(
         required_cta_anchor: purpose === "initial_interest" ? requiredCtaAnchor : null,
         required_customer_path_anchor: purpose === "initial_interest" ? requiredCustomerPathAnchor : null,
         required_cta_contract: ctaContract,
+        approved_cta_contracts: approvedCtaContracts.map((contract) => ({
+          id: contract.id,
+          cta_type: contract.ctaType,
+          exact_final_paragraph: contract.paragraph,
+        })),
         evidence_contract: evidenceContract,
         fixed_sender: purpose === "initial_interest" ? {
           greeting: manualFormGreeting(input.companyName),
@@ -211,9 +242,9 @@ export function generationMessages(
           ({ anchors: _anchors, source: _source, ...fact }) => fact,
         ),
         recent_copy_to_avoid: purpose === "initial_interest"
-          ? (input.priorMessages ?? []).slice(0, 20).map((item) => ({
+          ? (input.priorMessages ?? []).slice(0, 12).map((item) => ({
               company_name: item.companyName,
-              message: item.message,
+              ...recentCopyDigest(item.message),
             }))
           : [],
         fixed_offer: purpose === "commercial_offer" ? {
