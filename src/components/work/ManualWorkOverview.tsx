@@ -1,6 +1,5 @@
 import { ArrowUpRight, Building2, CircleAlert, FileCheck2, Send, Target } from "lucide-react"
-import { summarizeManualWorkDashboard } from "@/lib/sales/manual-work-dashboard"
-import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
+import type { ManualWorkDashboardSummary } from "@/lib/sales/manual-work-dashboard"
 
 const statDefinitions = [
   { key: "total", label: "解析履歴", note: "専用DBに永続保存", icon: Building2 },
@@ -11,8 +10,7 @@ const statDefinitions = [
   { key: "meetings", label: "商談化", note: "成果イベント", icon: Target },
 ] as const
 
-export function ManualWorkOverview({ items }: { items: ManualJapanEntryWorkRow[] }) {
-  const summary = summarizeManualWorkDashboard(items)
+export function ManualWorkOverview({ summary }: { summary: ManualWorkDashboardSummary }) {
   return (
     <section aria-labelledby="work-overview-heading" className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 shadow-[0_16px_50px_-32px_rgba(15,23,42,0.38)] sm:grid-cols-3 xl:grid-cols-6">
       <h2 id="work-overview-heading" className="sr-only">業務サマリー</h2>

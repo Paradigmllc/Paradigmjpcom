@@ -163,7 +163,7 @@ function storedProjection(item: ManualJapanEntryWorkRow): JapanEntryProjection |
 }
 
 export function resolveManualJapanEntryReportData(item: ManualJapanEntryWorkRow): ManualJapanEntryReportData {
-  if (isManualJapanEntryReportData(item.report_data)) return item.report_data
+  const storedReport = isManualJapanEntryReportData(item.report_data) ? item.report_data : null
   const rebuilt = buildManualJapanEntryReport({
     profile: fallbackProfile(item),
     audit: storedAudit(item),
@@ -175,5 +175,5 @@ export function resolveManualJapanEntryReportData(item: ManualJapanEntryWorkRow)
     qualificationLedger: item.qualification_ledger,
     projection: storedProjection(item),
   })
-  return { ...rebuilt, generatedAt: item.updated_at }
+  return { ...rebuilt, generatedAt: storedReport?.generatedAt ?? item.updated_at }
 }

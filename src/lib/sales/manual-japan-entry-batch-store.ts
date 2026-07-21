@@ -136,3 +136,11 @@ export async function markManualWorkBatchNotified(batchId: string): Promise<bool
   if (error) throw new Error(error.message)
   return Boolean(data)
 }
+
+export async function recordManualWorkBatchDispatchError(batchId: string, errorMessage: string): Promise<void> {
+  const { error } = await client()
+    .from(DB_TABLES.MANUAL_JAPAN_ENTRY_BATCHES)
+    .update({ last_error: errorMessage.slice(0, 2_000) })
+    .eq("id", batchId)
+  if (error) throw new Error(error.message)
+}

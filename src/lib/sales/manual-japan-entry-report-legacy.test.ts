@@ -94,4 +94,25 @@ describe("manual report legacy isolation", () => {
     expect(report.outreach).toMatchObject({ purpose: "initial_interest", neverSent: true })
     expect(JSON.stringify(report)).not.toMatch(/restaurant \| Japan market entry|content_template|Old generic report/i)
   })
+
+  it("rebuilds stored V4 rows so obsolete internal labels cannot survive a renderer upgrade", () => {
+    const item = legacyRow()
+    const current = resolveManualJapanEntryReportData(item)
+    item.report_data = {
+      ...current,
+      customerView: {
+        ...current.customerView,
+        opportunityHypothesis: {
+          ...current.customerView.opportunityHypothesis,
+          headline: "problem",
+          targetSegment: "Unverified",
+        },
+      },
+    }
+
+    const rebuilt = resolveManualJapanEntryReportData(item)
+    expect(rebuilt.customerView.opportunityHypothesis.headline).not.toBe("problem")
+    expect(rebuilt.customerView.opportunityHypothesis.targetSegment).not.toBe("Unverified")
+    expect(rebuilt.generatedAt).toBe(current.generatedAt)
+  })
 })

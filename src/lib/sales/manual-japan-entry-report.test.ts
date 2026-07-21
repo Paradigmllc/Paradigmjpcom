@@ -125,6 +125,34 @@ describe("manual Japan Entry diagnostic report", () => {
     expect(rendered).not.toMatch(/JPY pricing|Japan delivery terms|Japan-specific delivery|Japan-local payment|commerce disclosure|Tokushoho/i)
   })
 
+  it("keeps internal angle enums and raw crawl dumps out of the customer view", () => {
+    const report = buildManualJapanEntryReport({
+      profile: {
+        ...profile("saas"),
+        productContext: "Acme provides workflow automation. | Acme provides workflow automation. | A second public capability supports approval routing. | Unrelated navigation text that should not be repeated across the report.",
+      },
+      audit: { ...audit, pages_checked: ["https://www.acme.com/"] },
+      form: {
+        formUrl: "https://acme.com/contact",
+        method: "crawl4ai",
+        verification: "form",
+        confidence: 94,
+        inspection: { status: "form", reason: "verified_contact_fields", fields: ["email", "message", "submit"], formCount: 1, action: "https://acme.com/contact", sameOrigin: true, trustedProvider: false },
+        candidates: [],
+        traceMs: 10,
+      },
+      initialMessage: "A reviewable permission-based first touch",
+      messageReview: { passed: true, score: 96, strategy: { opportunityAngle: "problem", japaneseSegment: "Unverified" } },
+      reportUrl: "https://paradigmjp.com/en/work-report/token",
+      sourceUrl: "https://acme.com/",
+    })
+
+    expect(report.customerView.opportunityHypothesis.headline).toBe("Validate a focused Japanese customer path for Acme")
+    expect(report.customerView.opportunityHypothesis.targetSegment).not.toBe("Unverified")
+    expect(report.customerView.productSnapshot).not.toContain("|")
+    expect(report.customerView.evidenceSources.filter((source) => new URL(source.url).pathname === "/")).toHaveLength(1)
+  })
+
   it("never exposes a page-only contact candidate as a form link", () => {
     const report = buildManualJapanEntryReport({
       profile: profile("saas"),

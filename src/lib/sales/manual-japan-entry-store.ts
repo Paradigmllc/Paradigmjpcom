@@ -14,6 +14,7 @@ import type {
   ManualWorkSourceAttribution,
   ManualWorkSourceInput,
 } from "./manual-japan-entry-source-ledger"
+import type { ManualWorkDashboardSummary, ManualWorkHistoryFilter } from "./manual-work-dashboard"
 
 function client() {
   const supabase = getServiceSalesSupabase()
@@ -42,14 +43,76 @@ async function hydrateSources(rows: ManualJapanEntryWorkRow[]): Promise<ManualJa
   return rows.map((item) => ({ ...item, source_attributions: byWork.get(item.id) ?? [] }))
 }
 
-export async function listManualJapanEntryWork(limit = 100): Promise<ManualJapanEntryWorkRow[]> {
-  const { data, error } = await client()
+export interface ManualWorkHistoryPage {
+  items: ManualJapanEntryWorkRow[]
+  page: number
+  pageSize: number
+  total: number
+  hasMore: boolean
+}
+
+function safeHistoryQuery(value: string | undefined): string {
+  return (value ?? "")
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{N} ._@-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80)
+}
+
+export async function listManualJapanEntryWorkPage(input: {
+  page?: number
+  pageSize?: number
+  filter?: ManualWorkHistoryFilter
+  query?: string
+} = {}): Promise<ManualWorkHistoryPage> {
+  const page = Math.max(1, Math.floor(input.page ?? 1))
+  const pageSize = Math.max(1, Math.min(Math.floor(input.pageSize ?? 100), 100))
+  const from = (page - 1) * pageSize
+  const filter = input.filter ?? "all"
+  const search = safeHistoryQuery(input.query)
+  let query = client()
     .from(DB_TABLES.MANUAL_JAPAN_ENTRY_WORK)
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(Math.max(1, Math.min(limit, 200)))
+    .range(from, from + pageSize - 1)
+  if (filter === "action_required") query = query.eq("status", "needs_review")
+  if (filter === "completed") query = query.in("twenty_sync_status", ["synced", "duplicate"])
+  if (filter === "sent") query = query.not("manually_sent_at", "is", null)
+  if (filter === "failed") query = query.in("status", ["failed", "rejected"])
+  if (search) query = query.or(`company_name.ilike.*${search}*,domain.ilike.*${search}*`)
+  const { data, error, count } = await query
   if (error) throw new Error(error.message)
-  return hydrateSources((data ?? []).map(row))
+  const items = await hydrateSources((data ?? []).map(row))
+  const total = count ?? items.length
+  return { items, page, pageSize, total, hasMore: from + items.length < total }
+}
+
+export async function listManualJapanEntryWork(limit = 100): Promise<ManualJapanEntryWorkRow[]> {
+  return (await listManualJapanEntryWorkPage({ pageSize: Math.min(limit, 100) })).items
+}
+
+export async function getManualWorkDashboardSummary(): Promise<ManualWorkDashboardSummary> {
+  const table = () => client().from(DB_TABLES.MANUAL_JAPAN_ENTRY_WORK).select("id", { count: "exact", head: true })
+  const [total, actionRequired, completed, formReady, manuallySent, meetings] = await Promise.all([
+    table(),
+    table().eq("status", "needs_review"),
+    table().in("twenty_sync_status", ["synced", "duplicate"]),
+    table().not("form_url", "is", null),
+    table().not("manually_sent_at", "is", null),
+    table().not("meeting_converted_at", "is", null),
+  ])
+  const failed = [total, actionRequired, completed, formReady, manuallySent, meetings]
+    .find((result) => result.error)
+  if (failed?.error) throw new Error(failed.error.message)
+  return {
+    total: total.count ?? 0,
+    actionRequired: actionRequired.count ?? 0,
+    completed: completed.count ?? 0,
+    formReady: formReady.count ?? 0,
+    manuallySent: manuallySent.count ?? 0,
+    meetings: meetings.count ?? 0,
+  }
 }
 
 export async function listRecentManualMessages(limit = 80, excludeId?: string): Promise<Array<{

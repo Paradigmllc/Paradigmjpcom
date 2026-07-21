@@ -127,4 +127,35 @@ ${MANUAL_FORM_SIGNATURE}`
     expect(result.issues).toContain("Generic, promotional, invented, or unsupported market phrasing is prohibited")
     expect(result.issues).toContain("Unsupported causal inference or invented package deliverable is prohibited")
   })
+
+  it("rejects a product sentence repeated with a lightly changed lead-in", () => {
+    const repeated = `${manualFormGreeting("Altairis")}
+
+Altairis provides the Dolipro offering, where your Dolibarr is supplemented with essential external modules and you are on our secure servers. With the Dolipro offering, your Dolibarr is supplemented with essential external modules and you are on our secure servers.
+
+My public-page review did not show a Japanese-language customer path. Whether that observed gap matters for Altairis remains unverified.
+
+The decision is whether a localized evaluation route warrants evidence-led testing before a broader commitment.
+
+I can share a one-page Japan Opportunity Snapshot focused on Altairis's Japanese-language customer path. May I send the Altairis analysis?
+
+${MANUAL_FORM_SIGNATURE}`
+    const result = reviewPersonalizedJapanEntryMessage({
+      message: repeated,
+      companyName: "Altairis",
+      productContext: "Altairis provides the Dolipro offering, where your Dolibarr is supplemented with essential external modules and you are on our secure servers.",
+      productEvidence: "Dolipro offering",
+      productEvidenceRendering: "Dolipro offering",
+      productNames: ["Dolipro", "Dolibarr"],
+      factIds: [fact.id],
+      facts: [fact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+
+    expect(result.passed).toBe(false)
+    expect(result.issues).toContain("Repeated or near-duplicate sentences are prohibited; each sentence must add a distinct company-specific point")
+  })
 })

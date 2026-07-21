@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import {
-  listManualJapanEntryWork,
+  getManualWorkDashboardSummary,
+  listManualJapanEntryWorkPage,
   listManualLeadSourceCatalog,
   listManualWorkAngleMetrics,
   listManualWorkExperimentMetrics,
@@ -15,6 +16,13 @@ import { ManualWorkRetryConflictError, processManualJapanEntryUrl } from "@/lib/
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
+
+const historyQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(100),
+  filter: z.enum(["all", "action_required", "completed", "sent", "failed"]).default("all"),
+  q: z.string().max(100).default(""),
+})
 
 const createSchema = z.object({
   url: z.string().trim().min(1).max(2_048),
@@ -47,13 +55,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
   try {
-    const [items, metrics, angleMetrics, sources] = await Promise.all([
-      listManualJapanEntryWork(100),
+    const parsedQuery = historyQuerySchema.safeParse(Object.fromEntries(req.nextUrl.searchParams.entries()))
+    if (!parsedQuery.success) return NextResponse.json({ ok: false, error: "履歴の検索条件が不正です" }, { status: 400 })
+    const [history, summary, metrics, angleMetrics, sources] = await Promise.all([
+      listManualJapanEntryWorkPage({
+        page: parsedQuery.data.page,
+        pageSize: parsedQuery.data.pageSize,
+        filter: parsedQuery.data.filter,
+        query: parsedQuery.data.q,
+      }),
+      getManualWorkDashboardSummary(),
       listManualWorkExperimentMetrics(),
       listManualWorkAngleMetrics(),
       listManualLeadSourceCatalog(),
     ])
-    return NextResponse.json({ ok: true, items, metrics, angleMetrics, sources })
+    return NextResponse.json({ ok: true, ...history, summary, metrics, angleMetrics, sources })
   } catch (error) {
     console.error("[api/work] list failed:", error)
     return NextResponse.json(

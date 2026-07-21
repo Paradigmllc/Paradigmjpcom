@@ -10,6 +10,7 @@ import {
   Target,
 } from "lucide-react"
 import type { ManualJapanEntryReportData } from "@/lib/sales/manual-japan-entry-report-types"
+import { ManualReportVisuals } from "./ManualReportVisuals"
 import { ManualStrategyChapter } from "./ManualStrategyChapter"
 
 function formatDate(value: string): string {
@@ -83,6 +84,8 @@ export default function ManualJapanEntryReport({ data }: { data: ManualJapanEntr
               </div>
             </div>
           </section>
+
+          <ManualReportVisuals data={data} />
 
           <section aria-labelledby="observations-heading">
             <div className="flex items-center gap-3"><SearchCheck className="size-5 text-blue-700" aria-hidden="true" /><h2 id="observations-heading" className="text-2xl font-semibold tracking-tight">What the public evidence says</h2></div>

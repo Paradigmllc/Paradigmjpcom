@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   notified: vi.fn(),
   process: vi.fn(),
   notify: vi.fn(),
+  schedule: vi.fn(),
 }))
 
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
@@ -22,6 +23,7 @@ vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
 }))
 vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ processManualJapanEntryUrl: mocks.process }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
+vi.mock("@/lib/sales/manual-japan-entry-batch-schedule", () => ({ scheduleManualWorkBatchDrain: mocks.schedule }))
 
 import { POST } from "./route"
 
@@ -78,5 +80,20 @@ describe("manual work durable batch drain", () => {
       status: "failed",
       errorMessage: "DeepSeek temporarily unavailable",
     }))
+  })
+
+  it("chains the next server-side drain for an automated non-terminal batch", async () => {
+    mocks.refresh.mockResolvedValue({ ...before, remaining: 1, finished: 1, counts: { ...before.counts, queued: 1, completed: 1 } })
+    const response = await POST(
+      new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ automated: true }),
+      }),
+      { params: Promise.resolve({ batchId }) },
+    )
+
+    expect(response.status).toBe(202)
+    expect(mocks.schedule).toHaveBeenCalledWith(batchId)
   })
 })

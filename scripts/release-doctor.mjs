@@ -750,6 +750,10 @@ function checkStaticReleaseRules() {
   const manualBatchMigration = fs.existsSync(manualBatchMigrationPath)
     ? fs.readFileSync(manualBatchMigrationPath, "utf8")
     : ""
+  const manualBatchRealtimeMigrationPath = "supabase/migrations/20260721123500_manual_work_batch_realtime.sql"
+  const manualBatchRealtimeMigration = fs.existsSync(manualBatchRealtimeMigrationPath)
+    ? fs.readFileSync(manualBatchRealtimeMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -813,6 +817,30 @@ function checkStaticReleaseRules() {
   const manualWorkReportRenderer = fs.existsSync("src/components/work-report/ManualJapanEntryReport.tsx")
     ? fs.readFileSync("src/components/work-report/ManualJapanEntryReport.tsx", "utf8")
     : ""
+  const manualWorkReportVisuals = fs.existsSync("src/components/work-report/ManualReportVisuals.tsx")
+    ? fs.readFileSync("src/components/work-report/ManualReportVisuals.tsx", "utf8")
+    : ""
+  const manualWorkStrategyChapter = fs.existsSync("src/components/work-report/ManualStrategyChapter.tsx")
+    ? fs.readFileSync("src/components/work-report/ManualStrategyChapter.tsx", "utf8")
+    : ""
+  const manualWorkBatchSchedule = fs.existsSync("src/lib/sales/manual-japan-entry-batch-schedule.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-batch-schedule.ts", "utf8")
+    : ""
+  const manualWorkBatchDrain = fs.existsSync("src/lib/sales/manual-japan-entry-batch-drain.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-batch-drain.ts", "utf8")
+    : ""
+  const manualWorkBatchPreflight = fs.existsSync("src/lib/sales/manual-japan-entry-batch-preflight.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-batch-preflight.ts", "utf8")
+    : ""
+  const manualWorkBatchEvents = fs.existsSync("src/app/api/work/batches/[batchId]/events/route.ts")
+    ? fs.readFileSync("src/app/api/work/batches/[batchId]/events/route.ts", "utf8")
+    : ""
+  const manualWorkStore = fs.existsSync("src/lib/sales/manual-japan-entry-store.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-store.ts", "utf8")
+    : ""
+  const manualMessageReview = fs.existsSync("src/lib/sales/japan-entry-personalized-message-review.ts")
+    ? fs.readFileSync("src/lib/sales/japan-entry-personalized-message-review.ts", "utf8")
+    : ""
   const conditionalSiteChrome = fs.existsSync("src/components/aesop/ConditionalSiteChrome.tsx")
     ? fs.readFileSync("src/components/aesop/ConditionalSiteChrome.tsx", "utf8")
     : ""
@@ -872,6 +900,11 @@ function checkStaticReleaseRules() {
     && manualBatchMigration.includes("sent boolean NOT NULL DEFAULT false CHECK (sent = false)")
     && noLoginDeploy.includes("20260720233215_manual_work_durable_batches.sql")
     && noLoginDeploy.includes("applyManualWorkDurableBatchesMigration")
+    && manualBatchRealtimeMigration.includes("manual_japan_entry_batches")
+    && manualBatchRealtimeMigration.includes("manual_japan_entry_batch_items")
+    && manualBatchRealtimeMigration.includes("supabase_realtime")
+    && noLoginDeploy.includes("20260721123500_manual_work_batch_realtime.sql")
+    && noLoginDeploy.includes("applyManualWorkBatchRealtimeMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
@@ -943,8 +976,27 @@ function checkStaticReleaseRules() {
     && manualWorkReportRenderer.includes("Japan Entry Strategy Report")
     && manualWorkReportRenderer.includes("Ten decision chapters")
     && manualWorkReportRenderer.includes("Executive perspective")
+    && manualWorkReportRenderer.includes("ManualReportVisuals")
     && !manualWorkReportRenderer.includes("Private evidence brief")
     && !manualWorkReportRenderer.includes("Never sent automatically")
+    && manualWorkReportVisuals.includes("Readiness scorecard")
+    && manualWorkReportVisuals.includes("Evidence architecture")
+    && manualWorkReportVisuals.includes("Decision matrix")
+    && manualWorkReportVisuals.includes("<figure")
+    && manualWorkReportVisuals.includes("<table")
+    && manualWorkStrategyChapter.includes("Chapter evidence composition")
+    && manualWorkStrategyChapter.includes("traceability map")
+    && manualWorkBatchSchedule.includes("after(async ()")
+    && manualWorkBatchSchedule.includes("dispatchManualWorkBatchDrain")
+    && manualWorkBatchDrain.includes("http://127.0.0.1:")
+    && manualWorkBatchDrain.includes("x-webhook-secret")
+    && manualWorkBatchPreflight.includes("preflightManualWorkBatch")
+    && manualWorkBatchPreflight.includes("maxTokens: 4")
+    && manualWorkBatchEvents.includes('type: "item"')
+    && manualWorkBatchEvents.includes('type: "batch"')
+    && manualWorkStore.includes("listManualJapanEntryWorkPage")
+    && manualWorkStore.includes("getManualWorkDashboardSummary")
+    && manualMessageReview.includes("Repeated or near-duplicate sentences are prohibited")
     && conditionalSiteChrome.includes("isStandaloneRoute")
     && standaloneRoutes.includes("work-report")
     && manualMarketLens.includes('pricingPolicy: "no_automatic_country_adjustment"')
@@ -956,9 +1008,9 @@ function checkStaticReleaseRules() {
     && formDiscovery.includes("documentFingerprint")
     && formDiscovery.includes('outcome: outcome ?? (verification === "form" ? "verified_form"')
   ) {
-    pass("manual Japan Entry workbench has one-shot recovery, opportunity-first fit, a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has one-shot recovery, opportunity-first fit, a visual customer-facing V4 strategy report, server-drained durable 500-URL queue, paginated history, login return routing, grounded unique copy, Twenty analysis sync, SPA-safe verified forms, RLS and zero-send release wiring")
   } else {
-    fail("manual Japan Entry workbench requires a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, migration, DB verification and Twenty metadata")
+    fail("manual Japan Entry workbench requires a visual customer-facing V4 strategy report, server-drained durable 500-URL queue, paginated history, login return routing, grounded unique copy, Twenty analysis sync, SPA-safe verified forms, migration, DB verification and Twenty metadata")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
@@ -1504,6 +1556,8 @@ select case when
   and to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)') is not null
   and to_regprocedure('public.manual_japan_entry_claim_batch_items(uuid,integer)') is not null
   and to_regprocedure('public.manual_japan_entry_refresh_batch(uuid)') is not null
+  and exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='manual_japan_entry_batches')
+  and exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='manual_japan_entry_batch_items')
   and has_function_privilege('service_role', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')
   and not has_function_privilege('anon', to_regprocedure('public.manual_japan_entry_create_batch(jsonb,text,text,text,text,date)'), 'EXECUTE')
   and not exists (select 1 from public.manual_japan_entry_batches where sent is distinct from false)

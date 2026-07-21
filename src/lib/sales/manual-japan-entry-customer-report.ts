@@ -27,6 +27,36 @@ function sentence(value: string): string {
   return /[.!?。！？]$/.test(normalized) ? normalized : `${normalized}.`
 }
 
+const INTERNAL_STRATEGY_VALUES = new Set([
+  "problem", "competitor", "opportunity", "mockup", "unverified", "unknown", "n/a", "none",
+])
+
+function compactPublicText(value: string, maxLength = 300): string {
+  const parts = value
+    .split(/\s*\|\s*|(?<=[.!?。！？])\s+/)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter((part) => part.length >= 12)
+  const selected: string[] = []
+  const seen = new Set<string>()
+  for (const part of parts) {
+    const key = part.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    const next = [...selected, part].join(" ")
+    if (next.length > maxLength && selected.length > 0) break
+    selected.push(part)
+    if (selected.length >= 2) break
+  }
+  const compact = selected.join(" ") || value.replace(/\s+/g, " ").trim()
+  return compact.length <= maxLength ? compact : `${compact.slice(0, maxLength - 1).trimEnd()}…`
+}
+
+function publicStrategyText(value: unknown, fallback: string): string {
+  const candidate = text(value)
+  if (!candidate || INTERNAL_STRATEGY_VALUES.has(candidate.toLowerCase())) return fallback
+  return compactPublicText(candidate, 260)
+}
+
 function money(value: number): string {
   return `$${Math.max(0, Math.round(value)).toLocaleString("en-US")}`
 }
@@ -107,13 +137,15 @@ function roadmap(companyName: string, focus: string): ManualCustomerReportRoadma
 }
 
 function evidenceSources(urls: string[]): CustomerView["evidenceSources"] {
-  const sources = new Map<string, string>()
+  const sources = new Map<string, { label: string; url: string }>()
   for (const candidate of urls) {
     try {
       const url = new URL(candidate)
       if (!["http:", "https:"].includes(url.protocol)) continue
       url.hash = ""
-      const normalized = url.toString()
+      url.hostname = url.hostname.toLowerCase().replace(/^www\./, "")
+      url.pathname = url.pathname === "/" ? "/" : url.pathname.replace(/\/+$/, "")
+      const normalized = `${url.hostname}${url.pathname.toLowerCase()}${url.search}`
       const path = url.pathname.toLowerCase()
       const label = path === "/"
         ? "Company homepage"
@@ -124,12 +156,12 @@ function evidenceSources(urls: string[]): CustomerView["evidenceSources"] {
             : /support|help|docs/.test(path)
               ? "Support or documentation page"
               : "Public company page"
-      if (!sources.has(normalized)) sources.set(normalized, label)
+      if (!sources.has(normalized)) sources.set(normalized, { label, url: url.toString() })
     } catch (error) {
       console.warn("[manual-work-report] skipped invalid evidence URL:", error)
     }
   }
-  return [...sources].slice(0, 6).map(([url, label]) => ({ label, url }))
+  return [...sources.values()].slice(0, 6)
 }
 
 export function buildManualCustomerReportView(input: {
@@ -141,20 +173,25 @@ export function buildManualCustomerReportView(input: {
 }): CustomerView {
   const strategy = record(input.messageReview.strategy)
   const primaryObservation = text(strategy.primaryObservation)
-  const targetSegment = text(strategy.japaneseSegment)
-    ?? `Japanese buyers who already match ${input.profile.companyName}’s existing offer`
-  const opportunityAngle = text(strategy.opportunityAngle)
-    ?? `Validate a focused Japanese customer path for ${input.profile.companyName}`
+  const targetSegment = publicStrategyText(
+    strategy.japaneseSegment,
+    `A narrowly defined Japanese buyer segment whose workflow matches ${input.profile.companyName}’s existing offer`,
+  )
+  const opportunityAngle = publicStrategyText(
+    strategy.opportunityAngle,
+    `Validate a focused Japanese customer path for ${input.profile.companyName}`,
+  )
   const japanGap = text(strategy.japanGap)
   const whyNow = text(strategy.whyNow)
     ?? "The public product proposition is specific enough to test, while the Japan customer journey remains unverified."
   const leadGap = input.gaps[0]
+  const productSnapshot = compactPublicText(input.profile.productContext)
   const observedSignals = unique([
     primaryObservation,
     ...input.profile.observedFacts,
     ...(input.profile.commercialSignals ?? []).map((signal) => signal.sourcePhrase),
-    input.profile.productContext,
-  ], 4)
+    productSnapshot,
+  ].map((value) => value ? compactPublicText(value, 240) : value), 4)
   const priorities = input.gaps.slice(0, 3).map((gap) => priorityForGap(
     input.profile.companyName,
     input.profile.productContext,
@@ -181,8 +218,8 @@ export function buildManualCustomerReportView(input: {
 
   return {
     title: "Japan Entry Strategy Report",
-    executiveSummary: `${input.profile.companyName} presents a concrete public offer: ${sentence(input.profile.productContext)} The most credible next step is not to assume broad Japanese demand, but to test whether a focused customer path can make that offer understandable, trustworthy, and actionable for a defined segment.`,
-    productSnapshot: input.profile.productContext,
+    executiveSummary: `${input.profile.companyName} presents a concrete public offer: ${sentence(productSnapshot)} The most credible next step is not to assume broad Japanese demand, but to test whether a focused customer path can make that offer understandable, trustworthy, and actionable for a defined segment.`,
+    productSnapshot,
     observedSignals,
     opportunityHypothesis: {
       headline: opportunityAngle,
