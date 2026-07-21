@@ -85,18 +85,15 @@ function repeatedPhrase(message: string): string | null {
   return null
 }
 
-function paragraphSimilarity(
+function ctaParagraphSimilarity(
   message: string,
   priorMessage: string,
   companyNames: Array<string | null>,
 ): number {
-  let strongest = 0
-  for (const current of contentParagraphs(message)) {
-    for (const prior of contentParagraphs(priorMessage)) {
-      strongest = Math.max(strongest, manualMessageSimilarity(current, prior, companyNames))
-    }
-  }
-  return strongest
+  const current = contentParagraphs(message).at(-1)
+  const prior = contentParagraphs(priorMessage).at(-1)
+  if (!current || !prior) return 0
+  return manualMessageSimilarity(current, prior, companyNames)
 }
 
 export function manualMessageSimilarity(left: string, right: string, companyNames: Array<string | null> = []): number {
@@ -108,38 +105,38 @@ export function reviewManualMessageDistinctness(input: {
   companyName: string
   priorMessages: PriorManualMessage[]
   threshold?: number
-  paragraphThreshold?: number
+  ctaThreshold?: number
 }): ManualMessageSimilarityReview {
   const threshold = input.threshold ?? 0.35
-  const paragraphThreshold = input.paragraphThreshold ?? 0.72
+  const ctaThreshold = input.ctaThreshold ?? 0.72
   let strongest: PriorManualMessage | null = null
   let maxSimilarity = 0
-  let maxParagraphSimilarity = 0
+  let maxCtaSimilarity = 0
   for (const prior of input.priorMessages) {
     const similarity = manualMessageSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
-    const paragraph = paragraphSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
-    if (Math.max(similarity, paragraph) > Math.max(maxSimilarity, maxParagraphSimilarity)) {
+    const cta = ctaParagraphSimilarity(input.message, prior.message, [input.companyName, prior.companyName])
+    if (Math.max(similarity, cta) > Math.max(maxSimilarity, maxCtaSimilarity)) {
       maxSimilarity = similarity
-      maxParagraphSimilarity = paragraph
+      maxCtaSimilarity = cta
       strongest = prior
     }
   }
   const repeated = repeatedPhrase(input.message)
   const wholeMessagePassed = maxSimilarity < threshold
-  const paragraphsPassed = maxParagraphSimilarity < paragraphThreshold
-  const passed = wholeMessagePassed && paragraphsPassed && repeated === null
+  const ctaPassed = maxCtaSimilarity < ctaThreshold
+  const passed = wholeMessagePassed && ctaPassed && repeated === null
   const reasons: string[] = []
   if (!wholeMessagePassed) {
     reasons.push(`Company-name-neutral copy similarity ${Math.round(maxSimilarity * 100)}% exceeds the ${Math.round(threshold * 100)}% limit`)
   }
-  if (!paragraphsPassed) {
-    reasons.push(`A body paragraph is ${Math.round(maxParagraphSimilarity * 100)}% similar to recent company copy; change the evidence sequence and CTA framing`)
+  if (!ctaPassed) {
+    reasons.push(`The final routing or permission paragraph is ${Math.round(maxCtaSimilarity * 100)}% similar to recent company copy; use a company-specific CTA construction`)
   }
   if (repeated) reasons.push(`Repeated phrase inside one sentence is prohibited: "${repeated}"`)
   if (!passed) reasons.push("Rewrite the observation, diagnostic logic, paragraph order, and CTA for this company")
   return {
     passed,
-    maxSimilarity: Number(Math.max(maxSimilarity, maxParagraphSimilarity).toFixed(3)),
+    maxSimilarity: Number(Math.max(maxSimilarity, maxCtaSimilarity).toFixed(3)),
     matchedMessageId: strongest?.id ?? null,
     matchedCompany: strongest?.companyName ?? strongest?.domain ?? null,
     reasons,

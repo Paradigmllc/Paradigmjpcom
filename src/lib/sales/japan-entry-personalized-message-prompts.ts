@@ -4,7 +4,6 @@ import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-m
 import type { JapanEntryMessageMode } from "./japan-entry-personalized-message-review";
 import {
   DEFAULT_INITIAL_INTEREST_OPTIONS,
-  initialInterestClose,
   type JapanEntryInitialInterestOptions,
 } from "./japan-entry-message-options";
 import type { ManualMessageAngle } from "./manual-japan-entry-angle";
@@ -98,6 +97,9 @@ export function initialInterestGenerationPrompt(
     : "Across the middle body paragraphs, use one or two supplied public-page audit facts that fit the business_model, clearly say this was a public-page review, and state the specific Japan customer-path decision that remains unverified. Describe only what the checked pages did or did not show. Do not use modeled traffic, revenue, ROI, conversion, popularity, buyer behavior, legal breach, or market-size numbers."
   const verticalRule = MANUAL_OUTREACH_PLAYBOOK_RULES[playbook]
   const angleRule = initialInterestAngleRule(angle)
+  const ctaMeaning = options.founderForwardCta
+    ? "Ask the recipient to route the analysis to the founder or person responsible for international growth."
+    : "Ask whether the recipient would like to receive the analysis."
   return [
     "You write concise, natural B2B inquiry-form messages to founders and senior decision-makers at overseas SMBs.",
     "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type}}.",
@@ -113,7 +115,7 @@ export function initialInterestGenerationPrompt(
     estimateRule,
     "After a missing public-page observation, never write 'This means' and never describe what Japanese developers, teams, buyers, or customers may do or lack. Use a company-specific uncertainty sentence instead: state that whether the observed gap matters for the named product's Japan customer path remains unverified. For repair_candidate, delete the whole unsupported audience-behavior sentence; do not preserve or paraphrase it.",
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
-    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. The approved meaning is: '${initialInterestClose(options)}'. Express that meaning naturally; do not reuse a fixed offer sentence or fixed question from recent_copy_to_avoid. The last sentence ending in '?' is the final question: that sentence itself must include required_cta_anchor exactly. Mentioning that anchor only in the preceding offer sentence is invalid. The final paragraph must also include required_customer_path_anchor and state which Japan customer-path decision the analysis informs. Choose one CTA type: permission_to_send, right_person, or founder_forward. A CTA that could be pasted unchanged into another company's message is invalid. Use grammatically correct articles around the exact company or product anchor; prefer 'the analysis for [anchor]' or '[anchor]'s ... decision' instead of forcing 'a/an [anchor] ...'. Do not offer both a report and a call.`,
+    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. Required CTA meaning: ${ctaMeaning} Write both the offer and question specifically for this company's product and customer-path decision; do not copy an approved stock sentence and do not reuse a fixed offer sentence or fixed question from recent_copy_to_avoid. The last sentence ending in '?' is the final question: that sentence itself must include required_cta_anchor exactly. Mentioning that anchor only in the preceding offer sentence is invalid. The final paragraph must also include required_customer_path_anchor and state which Japan customer-path decision the analysis informs. Choose one CTA type: permission_to_send, right_person, or founder_forward. A CTA that could be pasted unchanged into another company's message is invalid. Use grammatically correct articles around the exact company or product anchor; prefer 'the analysis for [anchor]' or '[anchor]'s ... decision' instead of forcing 'a/an [anchor] ...'. Do not offer both a report and a call.`,
     options.includePrice
       ? "Use only the exact fixed commercial term in paragraph 4. Do not add scarcity, a founding-company claim, a normal monthly price, continuation pricing, or any other commercial term."
       : "Do not mention price, payment terms, a package scope, scarcity or continuation pricing.",

@@ -17,6 +17,45 @@ describe("manual inquiry-form copy distinctness", () => {
     expect(reviewManualMessageDistinctness({ message: next, companyName: "Beta", priorMessages: [{ id: "prior-1", companyName: "Alpha", domain: "alpha.example", message: prior }] }).passed).toBe(true)
   })
 
+  it("allows the same required audit fact when the overall draft and CTA are distinct", () => {
+    const prior = `Hello Alpha team,
+
+Alpha documents inventory reconciliation for independent shops.
+
+The checked public pages did not show a Japanese-language customer path.
+
+Whether that gap matters for Alpha remains unverified.
+
+I mapped the open localization decision in an analysis. Would the Alpha product owner like me to send it?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+    const next = `Hello Beta team,
+
+Beta provides approval routing for security review teams.
+
+The implementation question for Beta is how the current evaluation flow should be presented in Japan; that remains open.
+
+The checked public pages did not show a Japanese-language customer path.
+
+My Japan analysis separates that public-page evidence from the decisions still requiring validation. Who owns Beta's Japanese-language customer-path review?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+
+    const result = reviewManualMessageDistinctness({
+      message: next,
+      companyName: "Beta",
+      priorMessages: [{ id: "prior-audit", companyName: "Alpha", domain: "alpha.example", message: prior }],
+    })
+
+    expect(result.passed).toBe(true)
+  })
+
   it("rejects drafts that swap the product paragraph but reuse the same diagnosis and routing CTA", () => {
     const prior = `Hello Alpha team,
 
@@ -91,7 +130,7 @@ contact@paradigmjp.com`
 
     expect(result.passed).toBe(false)
     expect(result.maxSimilarity).toBe(1)
-    expect(result.reasons.join(" ")).toContain("body paragraph")
+    expect(result.reasons.join(" ")).toContain("routing or permission paragraph")
   })
 
   it("rejects a repeated product phrase inside one sentence even without history", () => {
