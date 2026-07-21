@@ -18,13 +18,13 @@ function generationFailed(item: ManualJapanEntryWorkRow): boolean {
 
 function failedAnalysisDetail(errorMessage: string | null): string {
   if (errorMessage?.includes("No public pages were available") || errorMessage?.includes("Homepage evidence could not be reused")) {
-    return "企業サイトの公開ページ監査を完了できませんでした。canonical URLで再取得し、取得済みトップページを証拠として再利用するため、「再解析」を実行してください。"
+    return "canonical URLと取得済みトップページの再利用を試しましたが、企業サイトの公開ページ監査を完了できませんでした。"
   }
   if (errorMessage?.includes("Homepage returned HTTP")) {
-    return "企業サイトのトップページが正常なHTMLを返しませんでした。URLとサイト稼働状況を確認してから「再解析」を実行してください。"
+    return "企業サイトのトップページが正常なHTMLを返しませんでした。URLまたはサイト稼働状況の確認が必要です。"
   }
   if (errorMessage?.includes("timed out") || errorMessage?.includes("fetch failed")) {
-    return "企業サイトの取得が時間内に完了しませんでした。履歴は保持されています。時間を置いて「再解析」を実行してください。"
+    return "企業サイトの取得が時間内に完了しませんでした。取得履歴は保持されています。"
   }
   return "取得先または生成処理で一時的な問題が発生しました。履歴は保持されています。外部送信とTwenty追加は行わず安全に停止しています。"
 }
@@ -33,24 +33,24 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   if (item.twenty_sync_status === "failed") {
     return {
       title: "Twentyへの保存を完了できませんでした",
-      detail: "解析結果は履歴に保存されています。「再解析・再生成」で公開情報から文面とレポートを作り直し、Twenty保存まで再確認できます。",
-      retryLabel: "再解析・再生成",
+      detail: "初回処理内の自動再試行後もTwentyの保存確認だけが完了しませんでした。解析結果は履歴に保持され、外部送信は行っていません。復旧操作ではTwenty保存を優先して再確認します。",
+      retryLabel: "保存を復旧",
       tone: "red",
     }
   }
   if (item.status === "failed") {
     return {
       title: "解析を完了できませんでした",
-      detail: failedAnalysisDetail(item.error_message),
-      retryLabel: "再解析",
+      detail: `${failedAnalysisDetail(item.error_message)} 初回処理内の自動再試行は完了しています。`,
+      retryLabel: "復旧再実行",
       tone: "red",
     }
   }
-  if (generationFailed(item)) {
+  if (generationFailed(item) && item.status !== "rejected") {
     return {
       title: "企業別フォーム文面を再生成してください",
-      detail: "公開根拠の検証または品質審査が未完了です。解析データはTwentyへ要確認として保存されますが、外部送信は行いません。「再解析」で最新の生成結果へ更新できます。",
-      retryLabel: "再解析",
+      detail: "公開根拠の検証または品質審査が自動修正後も基準を満たしませんでした。解析データはTwentyへ要確認として保存され、外部送信は行いません。",
+      retryLabel: "復旧再実行",
       tone: "amber",
     }
   }
@@ -75,8 +75,8 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
     if (form.state !== "verified_form") {
       return {
         title: "公開問い合わせフォームの追加確認が必要です",
-        detail: "解析データはTwentyへ保存済みですが、送信に使えるフォームを高い確度で確認できていません。「再探索・再生成」を実行してください。",
-        retryLabel: "再探索・再生成",
+        detail: "通常探索・Crawl4AI・実HTML検証は完了していますが、送信に使える公開フォームを高い確度で確認できませんでした。解析データはTwentyへ保存済みです。",
+        retryLabel: "人が確認",
         tone: "amber",
       }
     }

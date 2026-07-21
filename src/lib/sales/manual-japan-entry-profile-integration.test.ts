@@ -72,6 +72,27 @@ describe("manual company live-model response boundary", () => {
       ],
     })
     expect(JSON.stringify(profile)).not.toContain("Model-authored")
+    expect(callDeepSeek.mock.calls[0]?.[0]?.[0]?.content).toContain("readiness gaps and sales opportunities")
+  })
+
+  it("self-corrects a Japan-readiness inversion without another model request", async () => {
+    callDeepSeek.mockResolvedValue({
+      ok: true,
+      text: JSON.stringify(response({
+        businessModel: "saas",
+        japanEntryFitStatus: "rejected",
+        japanEntryFitConfidence: 95,
+        japanEntryFitEvidence: [
+          "No Japanese language support is present.",
+          "The product is unlikely to fit Japan without localization.",
+        ],
+      })),
+    })
+
+    const profile = await analyzeManualCompanyProfile(input)
+
+    expect(profile.japanEntryFitStatus).toBe("qualified")
+    expect(callDeepSeek).toHaveBeenCalledTimes(1)
   })
 
   it("uses at most one shape-only repair for an unknown enum", async () => {

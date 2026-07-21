@@ -46,11 +46,11 @@ describe("manualWorkOperatorNotice", () => {
     })
   })
 
-  it("labels a Twenty failure retry as a full regeneration", () => {
+  it("labels a Twenty failure as a persistence recovery after automatic retries", () => {
     const notice = manualWorkOperatorNotice(row({ twenty_sync_status: "failed" }))
 
-    expect(notice?.retryLabel).toBe("再解析・再生成")
-    expect(notice?.detail).toContain("文面とレポートを作り直し")
+    expect(notice?.retryLabel).toBe("保存を復旧")
+    expect(notice?.detail).toContain("自動再試行後")
   })
 
   it("explains a canonical-page audit retry without exposing raw diagnostics", () => {
@@ -61,6 +61,7 @@ describe("manualWorkOperatorNotice", () => {
     }))
 
     expect(notice?.detail).toContain("canonical URL")
+    expect(notice?.detail).toContain("自動再試行")
     expect(notice?.detail).not.toContain("No public pages")
   })
 })

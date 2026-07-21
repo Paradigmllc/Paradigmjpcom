@@ -759,6 +759,15 @@ function checkStaticReleaseRules() {
   const manualWorkProfile = fs.existsSync("src/lib/sales/manual-japan-entry-profile.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-profile.ts", "utf8")
     : ""
+  const manualWorkFitPolicy = fs.existsSync("src/lib/sales/manual-japan-entry-fit-policy.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-fit-policy.ts", "utf8")
+    : ""
+  const manualWorkAutoRecovery = fs.existsSync("src/lib/sales/manual-work-auto-recovery.ts")
+    ? fs.readFileSync("src/lib/sales/manual-work-auto-recovery.ts", "utf8")
+    : ""
+  const manualWorkRecoveryPolicy = fs.existsSync("src/lib/sales/manual-work-recovery-policy.ts")
+    ? fs.readFileSync("src/lib/sales/manual-work-recovery-policy.ts", "utf8")
+    : ""
   const manualWorkTwenty = fs.existsSync("src/lib/sales/manual-japan-entry-twenty.ts")
     ? fs.readFileSync("src/lib/sales/manual-japan-entry-twenty.ts", "utf8")
     : ""
@@ -871,7 +880,10 @@ function checkStaticReleaseRules() {
     && twentySelectOptionsScript.includes("'manual_work'")
     && manualWorkService.includes('purpose: "initial_interest"')
     && !manualWorkService.includes('purpose: "commercial_offer"')
-    && manualWorkService.includes('!hasRecordedOutcome && (item.status === "failed" || item.status === "needs_review")')
+    && manualWorkService.includes('phase: "public evidence collection"')
+    && manualWorkService.includes('phase: "company classification"')
+    && manualWorkService.includes('phase: "initial message generation"')
+    && manualWorkService.includes('phase: "Twenty persistence and read-back"')
     && manualWorkService.includes('twenty_sync_status === "failed"')
     && manualWorkService.includes("generation_status")
     && manualWorkService.includes("generation_error")
@@ -880,6 +892,12 @@ function checkStaticReleaseRules() {
     && manualWorkService.includes("expectedWorkId")
     && manualWorkProfile.includes("normalizeManualCompanyProfile")
     && manualWorkProfile.includes("after one repair")
+    && manualWorkProfile.includes("JAPAN_ENTRY_FIT_CONTRACT_VERSION")
+    && manualWorkFitPolicy.includes('"opportunity-first-v1"')
+    && manualWorkFitPolicy.includes("Missing Japanese localization or current Japan presence is a market-entry readiness gap")
+    && manualWorkAutoRecovery.includes("maxAttempts > 3")
+    && manualWorkRecoveryPolicy.includes('item.status === "failed"')
+    && manualWorkRecoveryPolicy.includes('item.twenty_sync_status === "failed"')
     && manualWorkTwenty.includes("ManualTwentySyncError")
     && manualWorkTwenty.includes("Twenty保存確認")
     && manualWorkTwenty.includes("twentyNumberMatches")
@@ -892,13 +910,13 @@ function checkStaticReleaseRules() {
     && manualCopyEnvelope.includes('name: "Tomohiro H"')
     && manualCopyEnvelope.includes('company: "Paradigm LLC"')
     && manualCopyEnvelope.includes('email: "contact@paradigmjp.com"')
-    && manualWorkHistoryItem.includes("再解析")
+    && manualWorkHistoryItem.includes("isManualWorkRecoveryAvailable")
     && manualWorkHistoryItem.includes("ManualFormDiscoveryStatus")
-    && manualWorkHistoryItem.includes("再探索・再生成")
+    && manualWorkHistoryItem.includes("復旧再実行")
     && manualMessageIntelligence.includes("企業別フォーム文面は未生成です")
     && !manualMessageIntelligence.includes("generation_error")
     && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
-    && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存されます")
+    && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存され")
     && manualWorkConsole.includes("retry: Boolean(input.retryItem)")
     && manualWorkConsole.includes("workId: input.retryItem.id")
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
@@ -937,7 +955,7 @@ function checkStaticReleaseRules() {
     && formDiscovery.includes("documentFingerprint")
     && formDiscovery.includes('outcome: outcome ?? (verification === "form" ? "verified_form"')
   ) {
-    pass("manual Japan Entry workbench has a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, RLS and zero-send release wiring")
+    pass("manual Japan Entry workbench has one-shot recovery, opportunity-first fit, a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, RLS and zero-send release wiring")
   } else {
     fail("manual Japan Entry workbench requires a customer-facing V4 strategy report, durable 500-URL queue, login return routing, grounded copy, Twenty analysis sync, SPA-safe verified forms, migration, DB verification and Twenty metadata")
   }
