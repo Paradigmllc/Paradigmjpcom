@@ -919,6 +919,8 @@ function checkStaticReleaseRules() {
     && manualFormDiagnosticsMigration.includes("form_discovery #>> '{inspection,status}' = 'form'")
     && manualFormDiagnosticsMigration.includes("generation_status")
     && manualFormDiagnosticsMigration.includes("generation_error")
+    && manualFormDiagnosticsMigration.includes("updated_at < now() - interval '15 minutes'")
+    && manualFormDiagnosticsMigration.includes("Interrupted analysis was recovered as retryable")
     && noLoginDeploy.includes("20260719211533_manual_work_verified_form_and_copy_diagnostics.sql")
     && noLoginDeploy.includes("applyManualWorkVerifiedFormAndCopyDiagnosticsMigration")
     && manualBatchMigration.includes("total_count BETWEEN 1 AND 500")

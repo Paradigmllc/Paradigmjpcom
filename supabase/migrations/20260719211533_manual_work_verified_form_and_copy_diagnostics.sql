@@ -87,9 +87,27 @@ SET
     )),
     true
   ),
+  status = CASE
+    WHEN status = 'processing' AND updated_at < now() - interval '15 minutes' THEN 'failed'
+    ELSE status
+  END,
+  stage = CASE
+    WHEN status = 'processing' AND updated_at < now() - interval '15 minutes' THEN 'failed'
+    ELSE stage
+  END,
+  twenty_sync_status = CASE
+    WHEN status = 'processing' AND updated_at < now() - interval '15 minutes' THEN 'skipped'
+    ELSE twenty_sync_status
+  END,
+  error_message = CASE
+    WHEN status = 'processing' AND updated_at < now() - interval '15 minutes'
+      THEN coalesce(nullif(error_message, ''), 'Interrupted analysis was recovered as retryable after 15 minutes.')
+    ELSE error_message
+  END,
   updated_at = now()
 WHERE initial_message IS NULL
-  AND coalesce(message_review ->> 'generation_status', '') NOT IN ('failed', 'passed');
+  AND coalesce(message_review ->> 'generation_status', '') NOT IN ('failed', 'passed')
+  AND (status <> 'processing' OR updated_at < now() - interval '15 minutes');
 
 COMMENT ON COLUMN public.manual_japan_entry_work.form_url IS
   'Operator-visible URL only when a fetched form has email, message, and submit fields and confidence >= 90.';
