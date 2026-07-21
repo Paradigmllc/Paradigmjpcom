@@ -68,6 +68,31 @@ function includesAny(value: string, candidates: string[]): boolean {
   return candidates.some((candidate) => candidate.length >= 3 && lower.includes(candidate.toLowerCase()));
 }
 
+function escapeRegularExpression(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function expectedIndefiniteArticle(anchor: string): "a" | "an" {
+  const firstWord = anchor.trim().match(/[A-Za-z]+/)?.[0] ?? "";
+  if (/^[A-Z]{2,}$/.test(firstWord)) {
+    return /^[AEFHILMNORSX]/.test(firstWord) ? "an" : "a";
+  }
+  if (/^(?:uni(?:vers|que)|user|use|euro|one\b)/i.test(firstWord)) return "a";
+  return /^[aeiou]/i.test(firstWord) ? "an" : "a";
+}
+
+function findArticleAgreementIssue(message: string, anchors: string[]): string | null {
+  for (const anchor of anchors.map((value) => value.trim()).filter(Boolean)) {
+    const match = message.match(new RegExp(`\\b(a|an)\\s+${escapeRegularExpression(anchor)}\\b`, "i"));
+    if (!match) continue;
+    const expected = expectedIndefiniteArticle(anchor);
+    if (match[1].toLowerCase() !== expected) {
+      return `Indefinite article must agree with the following company or product anchor: use ${expected} before ${anchor}`;
+    }
+  }
+  return null;
+}
+
 export function getJapanEntryMessageMode(facts: JapanEntryPersonalizationFact[]): JapanEntryMessageMode {
   const ids = new Set(facts.map((fact) => fact.id));
   return (ids.has("modeled-global-monthly-visit-range") && ids.has("modeled-annual-opportunity-range"))
@@ -117,6 +142,11 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (containsUnresolvedPlaceholder(message)) {
     issues.push("Unresolved template placeholder is prohibited");
     score = 0;
+  }
+  const articleAgreementIssue = findArticleAgreementIssue(message, [input.companyName, ...(input.productNames ?? [])]);
+  if (articleAgreementIssue) {
+    issues.push(articleAgreementIssue);
+    score -= 40;
   }
   if (messageAngle && input.candidateAngle !== messageAngle) {
     issues.push(`Candidate angle must be exactly ${messageAngle}`);

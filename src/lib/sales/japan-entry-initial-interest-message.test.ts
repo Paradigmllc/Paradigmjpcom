@@ -62,6 +62,21 @@ describe("initial-interest form message safety", () => {
     expect(result).toMatchObject({ passed: true, score: 100 });
   });
 
+  it("rejects an article that does not agree with the company or product anchor", () => {
+    const message = copyReady(
+      opening,
+      product,
+      diagnosis,
+      "I can share a detailed Japan opportunity analysis to inform a Example Japanese-language decision. Could you forward the Example analysis to the appropriate person?",
+    );
+    const result = review(message);
+
+    expect(result.passed).toBe(false);
+    expect(result.issues).toContain(
+      "Indefinite article must agree with the following company or product anchor: use an before Example",
+    );
+  });
+
   it("fails closed when the copy-ready greeting or approved sender signature is altered", () => {
     const valid = copyReady(opening, product, diagnosis, "If useful, I can share a more detailed Japan opportunity analysis based on public evidence. Would you be open to receiving it?");
     const wrongGreeting = review(valid.replace("Hello Example team,", "Hello,"));
