@@ -28,6 +28,7 @@ export async function callDeepSeekStructured<T>(input: {
   messages: DeepSeekMessage[]
   schema: z.ZodType<T>
   caller: DeepSeekStructuredCaller
+  temperature?: number
 }): Promise<
   | { ok: true; data: T; attempts: number; usage?: DeepSeekResponse["usage"] }
   | { ok: false; attempts: number; error: string; usage?: DeepSeekResponse["usage"] }
@@ -41,7 +42,7 @@ export async function callDeepSeekStructured<T>(input: {
         model: MODEL,
         modelPolicy: "strict",
         responseFormat: "json_object",
-        temperature: input.stage === "generation" ? 0.55 : input.stage === "repair" ? 0.35 : 0.1,
+        temperature: input.temperature ?? (input.stage === "generation" ? 0.55 : input.stage === "repair" ? 0.35 : 0.1),
         maxTokens: STAGE_MAX_TOKENS[input.stage],
         thinking: "disabled",
         timeoutMs: 120_000,

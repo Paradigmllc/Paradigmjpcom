@@ -110,6 +110,7 @@ contact@paradigmjp.com`
     expect(result.message).not.toMatch(/\brevenue\b/i)
     expect(result.message).not.toContain("The concrete capability documented")
     expect(caller).toHaveBeenCalledTimes(3)
+    expect(caller.mock.calls[1]?.[1]?.temperature).toBeCloseTo(0.43)
     const repairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as { task?: string }
     expect(repairPayload.task).toBe("repair_candidate")
   })

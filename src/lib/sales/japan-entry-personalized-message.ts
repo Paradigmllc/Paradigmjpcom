@@ -352,6 +352,7 @@ export async function generatePersonalizedJapanEntryMessage(
         })),
         schema: repairSchema,
         caller,
+        temperature: Math.min(0.75, 0.35 + repairPass * 0.08),
       });
       totalAttempts += repaired.attempts;
       totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
