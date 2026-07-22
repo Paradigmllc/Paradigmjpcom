@@ -218,6 +218,54 @@ describe("Japan Entry editorial repair loop", () => {
     expect(caller).toHaveBeenCalledTimes(5)
   })
 
+  it("rewrites the deterministic recovery seed before accepting the final message", async () => {
+    const caller = vi.fn()
+      .mockResolvedValueOnce(response({
+        strategy: {
+          primary_observation: "AtlasMetric product workflow",
+          why_now: "Japan path unverified",
+          japanese_segment: "Unverified",
+          japan_gap: "No Japanese-language path",
+          opportunity_angle: "Decision quality",
+          offer_relevance: "Opportunity analysis",
+          tone: "Direct",
+          cta: "Route the analysis",
+          country_adaptation: "Direct",
+          prohibited_claims: ["Demand"],
+        },
+        candidates: [candidate(modelRepairedMessage, approvedCta!.ctaType)],
+      }))
+      .mockResolvedValueOnce(critic(22))
+      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
+      .mockResolvedValueOnce(critic(23))
+
+    const result = await generatePersonalizedJapanEntryMessage({
+      companyName: "AtlasMetric",
+      industry: "B2B SaaS",
+      productContext: `AtlasMetric provides ${productEvidence}`,
+      targetCountry: "US",
+      businessModel: "saas",
+      projection,
+      audit: { status: { japanese_language_missing: true }, signals: { japanese_language: [] }, pages_checked: ["https://atlasmetric.example/"] },
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true },
+      messageAngle: "problem",
+    }, caller)
+
+    expect(result.ok, JSON.stringify(result)).toBe(true)
+    expect(result.message).toBe(modelRepairedMessage)
+    expect(result.message).not.toContain("The concrete capability documented")
+    expect(caller).toHaveBeenCalledTimes(8)
+    const recoveryRewrite = JSON.parse(caller.mock.calls[6]?.[0]?.[1]?.content ?? "{}") as {
+      repair?: { issues?: string[] }
+    }
+    expect(recoveryRewrite.repair?.issues, JSON.stringify(recoveryRewrite)).toContain("A deterministic safety recovery was used. Rewrite the complete body in fresh, natural, company-specific language; preserve every exact evidence and CTA contract, and do not reuse any recovery sentence.")
+  })
+
   it("fails closed when the critic cannot verify product-evidence translation fidelity", async () => {
     const generation = response({
       strategy: {
@@ -243,6 +291,10 @@ describe("Japan Entry editorial repair loop", () => {
       .mockResolvedValueOnce(critic(23, false))
       .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23, false))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
+      .mockResolvedValueOnce(critic(23, false))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
+      .mockResolvedValueOnce(critic(23, false))
 
     const result = await generatePersonalizedJapanEntryMessage({
       companyName: "AtlasMetric",
@@ -259,6 +311,6 @@ describe("Japan Entry editorial repair loop", () => {
 
     expect(result.ok).toBe(false)
     expect(result.review?.issues).toContain("DeepSeek V4 Pro did not verify the English product-evidence rendering as faithful to the public source phrase")
-    expect(caller).toHaveBeenCalledTimes(8)
+    expect(caller).toHaveBeenCalledTimes(12)
   })
 })
