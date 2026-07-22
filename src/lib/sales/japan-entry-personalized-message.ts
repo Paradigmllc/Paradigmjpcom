@@ -29,7 +29,11 @@ import {
   callDeepSeekStructured,
   type DeepSeekStructuredCaller,
 } from "./japan-entry-personalized-message-structured";
-import { recoverManualInitialInterestCandidate, selectBestManualCandidateInspection } from "./manual-japan-entry-candidate-recovery";
+import {
+  canMechanicallyFinishManualModelCopy,
+  recoverManualInitialInterestCandidate,
+  selectBestManualCandidateInspection,
+} from "./manual-japan-entry-candidate-recovery";
 import {
   isInitialInterestProductEvidenceSafe,
   selectGroundedProductEvidence,
@@ -359,6 +363,14 @@ export async function generatePersonalizedJapanEntryMessage(
         deterministicRecoveryUsed = inspected.usedRecovery;
         passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
       }
+      if (
+        !passed
+        && repairPass === INITIAL_SAFETY_REPAIR_LIMIT
+        && canMechanicallyFinishManualModelCopy({ issues: inspected.safety.issues, similarityPassed: inspected.similarity.passed })
+      ) {
+        inspected = inspectCandidate(repaired.data.candidate, 0, true);
+        passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
+      }
       if (passed) {
         if (inspected.usedRecovery && repairPass < INITIAL_SAFETY_REPAIR_LIMIT) {
           repairTarget = inspected;
@@ -446,6 +458,13 @@ export async function generatePersonalizedJapanEntryMessage(
     ) {
       inspected = inspectCandidate(repaired.data.candidate, 0, true);
       deterministicEditorialRecoveryUsed = inspected.usedRecovery;
+    }
+    if (
+      (!inspected.safety.passed || !inspected.similarity.passed)
+      && repairPass === EDITORIAL_REPAIR_LIMIT
+      && canMechanicallyFinishManualModelCopy({ issues: inspected.safety.issues, similarityPassed: inspected.similarity.passed })
+    ) {
+      inspected = inspectCandidate(repaired.data.candidate, 0, true);
     }
     if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {
       repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
