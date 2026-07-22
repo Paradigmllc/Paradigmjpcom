@@ -139,7 +139,10 @@ function productOpening(input: {
   variationIndex?: number
 }): string {
   const rendering = input.rendering.trim()
-  const quotedRendering = `“${rendering.replace(/[.!?]+$/, "")}”`
+  // The deterministic evidence contract is byte-for-byte: terminal punctuation
+  // is part of the public phrase. Keep it inside the quotation and only add a
+  // sentence stop when the source phrase does not already provide one.
+  const quotedRendering = `“${rendering}”${/[.!?]$/.test(rendering) ? "" : "."}`
   const productName = input.productNames.map((name) => name.trim()).find((name) => (
     name
     && name.toLowerCase() !== input.companyName.trim().toLowerCase()
