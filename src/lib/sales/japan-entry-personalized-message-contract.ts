@@ -45,6 +45,7 @@ export function isGroundedProductEvidence(productContext: string, productEvidenc
 function cleanEvidenceSegment(value: string, companyName: string): string {
   const company = companyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   return value
+    .replace(new RegExp(`^(?:ible\\s+)?${company}\\s*(?:[–—:-]\\s*)`, "i"), "")
     .replace(new RegExp(`^${company}\\s+(?:provides?|offers?|builds?|creates?|makes?|is)\\s+`, "i"), "")
     .replace(/^(?:a|an|the)\s+/i, "")
     .replace(/^[\s"'“”‘’|,:;–—-]+|[\s"'“”‘’|,:;–—-]+$/g, "")
@@ -91,6 +92,7 @@ function productEvidenceCandidates(input: {
     .filter((value) => !/\d/.test(value))
     .filter((value) => !/\b(?:best|faster|fastest|leading|developers? love|ready to ship|game[- ]changer|award[- ]winning)\b/i.test(value))
     .filter((value) => !/\b(?:for free|whole lot more)\b/i.test(value))
+    .filter((value) => !/\b(?:product is unavailable|choose a different combination|sold out|out of stock)\b/i.test(value))
     .filter((value) => !PRODUCT_OUTCOME_CLAIM_RE.test(value))
     .filter((value) => !FORM_COPY_UNSAFE_EVIDENCE_RE.test(value))
     .filter((value) => !CUSTOMER_QUOTE_RE.test(value))
@@ -100,7 +102,7 @@ function productEvidenceCandidates(input: {
     .filter((value) => !PUBLIC_BOILERPLATE_RE.test(value))
     .filter((value) => !repeatsCompanyOrProductAnchor(value, copyAnchors))
     .filter((value) => !productNames.has(value.toLowerCase()))
-    .filter((value) => evidenceTokens(value).length >= 4)
+    .filter((value) => evidenceTokens(value).length >= 3)
 }
 
 export function isInitialInterestProductEvidenceSafe(value: string): boolean {
@@ -117,7 +119,7 @@ function primaryEvidenceScore(value: string): number {
   const terms = evidenceTokens(value).length
   const descriptiveBonus = /\bai-powered\b/i.test(value)
     ? 16
-    : /\b(?:conversion|workflow|platform|software|supports?|integrates?|enables?)\b/i.test(value) ? 10 : 0
+    : /\b(?:conversion|workflow|platform|software|product|purifier|supports?|integrates?|enables?)\b/i.test(value) ? 10 : 0
   const imperativePenalty = /^(?:convert|build|get|try|start|ready)\b/i.test(value) ? 8 : 0
   return terms + descriptiveBonus - imperativePenalty
 }

@@ -51,8 +51,8 @@ export function reviewManualFormBespokeStyle(input: {
   if (AWKWARD_PRONOUN_BRIDGE_PATTERN.test(input.body)) {
     issues.push("The message contains an unnatural pronoun bridge; name the documented capability or rewrite the sentence directly")
   }
-  if ((input.body.match(MECHANICAL_BRIDGE_PATTERN) ?? []).length > 1) {
-    issues.push("The message repeats mechanical evidence-to-analysis bridge language; keep only the strongest bridge")
+  if ((input.body.match(MECHANICAL_BRIDGE_PATTERN) ?? []).length > 0) {
+    issues.push("Mechanical evidence-to-analysis bridge language is prohibited; state the company-specific observation directly")
   }
 
   const selectedFacts = [...new Map(input.selectedFacts.map((fact) => [fact.id, fact])).values()]

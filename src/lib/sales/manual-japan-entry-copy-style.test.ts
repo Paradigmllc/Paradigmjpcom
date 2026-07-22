@@ -136,13 +136,13 @@ describe("bespoke form-copy style", () => {
     expect(issues).toContain("The message contains a broken possessive created by anchor reduction")
   })
 
-  it("rejects stacked mechanical bridges while allowing one concise bridge", () => {
+  it("rejects even one mechanical evidence-to-analysis bridge", () => {
     const issues = review(
       "Screenshot to Code documents screenshot conversion. I used that capability to frame the Japan review. A second workflow is documented. This helps narrow the scope.",
       "Screenshot to Code documents screenshot conversion. I used that capability to frame the Japan review.",
       "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
     )
 
-    expect(issues).toContain("The message repeats mechanical evidence-to-analysis bridge language; keep only the strongest bridge")
+    expect(issues).toContain("Mechanical evidence-to-analysis bridge language is prohibited; state the company-specific observation directly")
   })
 })
