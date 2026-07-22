@@ -10,6 +10,7 @@ import {
 } from "./twenty-sync-company-home"
 import { twentyFetch, type TwentyRecord } from "./twenty-sync-utils"
 import type { ManualCompanyProfile } from "./manual-japan-entry-types"
+import { manualWorkReviewReasonCopies } from "./manual-work-reasons"
 
 export class ManualTwentySyncError extends Error {
   constructor(message: string, readonly companyId: string) {
@@ -129,7 +130,7 @@ function manualTwentyExpected(
     && input.profile.smbStatus === "qualified"
     && input.profile.japanEntryFitStatus === "qualified",
   )
-  const reviewReasons = input.readiness?.reasons ?? []
+  const reviewReasons = manualWorkReviewReasonCopies(input.readiness?.reasons ?? [])
   const classifiedCountry = countrySelectValue(input.profile.countryCode)
   const country = classifiedCountry ?? company.paradigmCountryName ?? null
   const summary = [
@@ -142,7 +143,7 @@ function manualTwentyExpected(
     `Japan Entry fit: ${input.profile.japanEntryFitStatus} (${input.profile.japanEntryFitConfidence}/100)`,
     `Report URL: ${input.reportUrl}`,
     `Form URL: ${input.formUrl ?? "not verified"}`,
-    ...(reviewReasons.length ? ["Review reasons:", ...reviewReasons.map((reason) => `- ${reason}`)] : []),
+    ...(reviewReasons.length ? ["要確認理由:", ...reviewReasons.map((reason) => `- ${reason}`)] : []),
     "--- Initial first-touch draft (never sent automatically) ---",
     input.initialMessage ?? "No draft passed the production quality gate. Regeneration is required before outreach.",
   ].join("\n")
@@ -166,7 +167,7 @@ function manualTwentyExpected(
         : "Manual workbench / analyzed / evidence review required",
       paradigmNextAction: sendReady
         ? "フォーム・初回文面を人間確認（未送信）"
-        : "不足根拠・フォーム・文面を確認（未送信）",
+        : `要確認: ${reviewReasons[0] ?? "不足根拠・フォーム・文面を確認してください。"}`,
       paradigmSmbScore: input.profile.smbConfidence,
       paradigmOpportunityScore: input.profile.japanEntryFitConfidence,
       paradigmKarteSummary: { markdown: summary },

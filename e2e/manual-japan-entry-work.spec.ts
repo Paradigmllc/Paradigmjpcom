@@ -42,7 +42,56 @@ test("fills the active desktop or mobile viewport without horizontal overflow", 
         contentType: "application/json",
         body: JSON.stringify({
           ok: true,
-          items: [],
+          items: [{
+            id: "work-reason-1",
+            report_token: "report-reason-1",
+            input_url: "https://example.com",
+            canonical_url: "https://example.com",
+            domain: "example.com",
+            status: "needs_review",
+            stage: "complete",
+            company_name: "Example",
+            country_code: null,
+            is_japanese_company: false,
+            smb_status: "qualified",
+            smb_confidence: 90,
+            japan_entry_fit_status: "needs_review",
+            japan_entry_fit_confidence: 55,
+            business_model: "saas",
+            industry: "Technology / IT",
+            product_context: "Example software",
+            profile: {},
+            evidence: {},
+            form_discovery: { outcome: "no_public_form", verification: "fallback" },
+            form_url: null,
+            initial_message: null,
+            message_review: {},
+            message_variant_requested: "estimate_off_price_off",
+            message_variant: "estimate_off_price_off",
+            message_variant_fallback_reason: null,
+            message_angle_requested: "problem",
+            message_angle: "problem",
+            message_angle_fallback_reason: null,
+            outreach_playbook: "saas_ai_devtools",
+            qualification_ledger: {},
+            master_lead_ledger: {},
+            source_attributions: [],
+            report_data: {},
+            report_url: "https://paradigmjp.com/en/work-report/report-reason-1",
+            twenty_company_id: "twenty-example-1",
+            twenty_sync_status: "synced",
+            error_message: "Country is unconfirmed; Japan Entry fit needs review; A high-confidence public form was not verified",
+            attempts: 1,
+            sent: false,
+            manually_sent_at: null,
+            reply_received_at: null,
+            founder_forwarded_at: null,
+            meeting_converted_at: null,
+            created_at: "2026-07-23T00:00:00.000Z",
+            updated_at: "2026-07-23T00:00:00.000Z",
+          }],
+          total: 1,
+          hasMore: false,
           metrics: [],
           angleMetrics: [],
           sources: [{ slug: "manual_input", name: "Manual input", tier: "s_plus", roles: ["discovery"], sectors: ["all"], source_url: null, access_mode: "manual_review", priority: 1, active: true, notes: "Direct operator input" }],
@@ -79,6 +128,13 @@ test("fills the active desktop or mobile viewport without horizontal overflow", 
   await expect(page.getByRole("button", { name: /標準（推定あり・価格なし）/ })).toBeVisible()
   await expect(page.getByRole("button", { name: "自動安定割付" })).toBeVisible()
   await expect(page.getByRole("button", { name: "推定あり・価格あり" })).toBeVisible()
+  const reasonPanel = page.getByRole("status", { name: "企業別フォーム文面を再生成してくださいの理由" })
+  await expect(reasonPanel).toBeVisible()
+  await expect(reasonPanel).toContainText("理由")
+  await expect(reasonPanel).toContainText("企業の所在国を公開情報から確定できませんでした")
+  await expect(reasonPanel).toContainText("日本進出との適合性を判断する公開根拠が不足しています")
+  await expect(reasonPanel).toContainText("有効な公開問い合わせフォームを確認できませんでした")
+  await expect(reasonPanel).toContainText("次の対応:")
   await page.emulateMedia({ reducedMotion: "reduce" })
   const initialAccessibility = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

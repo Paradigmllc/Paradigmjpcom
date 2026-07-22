@@ -1,3 +1,9 @@
+## CURRENT STATUS - 2026-07-23 `/work`停止・要確認理由の必須表示（実装検証完了 / 本番release前 / 外部送信0）
+
+- `/work`の`needs_review / rejected / failed / Twenty failed`で一般的な警告だけを表示していた箇所を、DB保存済み`error_message`・フォーム診断・適格性理由から安全な日本語へ変換し、履歴カード上部へ「理由」一覧と「次の対応」を必ず表示する契約へ更新した。日本企業、非企業ページ、所在国/SMB/Japan fit根拠不足、公開フォーム未確認、文面品質gate不合格、公開ページ取得失敗、Twenty保存/read-back失敗を個別表示する。未知のmodel/API生エラーは表示せず安全な説明へ落とす。
+- 文面未生成欄にも同じ理由と次アクションを表示し、フォーム未確認と文面不合格など複数原因が同時にある場合は全件を重複なく表示する。Twentyの`paradigmKarteSummary`にも日本語の「要確認理由」を保存し、`paradigmNextAction`へ先頭理由を投影して、ダッシュボードとCRMの判断を一致させる。外部送信経路は追加していない。
+- 検証は対象Vitest **4 files / 31 tests**、全Vitest **245 files / 1,172 tests**、TypeScript、変更ファイルESLint、Quality Guard **0 errors / 81 existing warnings**、production build **408/408 pages**がpass。モック済みproduction buildのPC/Pixel 7 Playwrightは **4/4** passし、理由3件・次の対応・全幅・横overflow 0・重大アクセシビリティ違反0を確認した。正式PR・`npm run release:prod`・本番履歴/Twenty read-back後に完了へ更新する。
+
 ## CURRENT STATUS - 2026-07-22 `/work`全幅UI・初回文面recovery・129件本番監査（本番release / 違反0 / 外部送信0）
 
 - `/work`が約540pxの左カラムへ縮み右側が空白になる再発に対し、work専用layoutへ`device-width / initialScale=1 / viewportFit=cover`と`html/body`の`w-full / min-w-full / overflow-x-clip`を明示した。production-mode PlaywrightはPC/Pixel 7 **2/2**、実測viewportと`html/body/main`が一致、横overflow 0、console error 0、critical accessibility violation 0。PR **#552** / main **46013c6d** / deployment **mzo5xokfk2bdrmtmq9t7ytc6**。

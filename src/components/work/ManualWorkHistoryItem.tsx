@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, CheckCircle2, ExternalLink, FileText, Globe2, LoaderCircle, RefreshCw, Send, Waypoints } from "lucide-react"
+import { ArrowRight, Check, CheckCircle2, CircleAlert, ExternalLink, FileText, Globe2, LoaderCircle, RefreshCw, Send, Waypoints } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MANUAL_MESSAGE_ANGLE_LABELS } from "@/lib/sales/manual-japan-entry-angle"
@@ -136,7 +136,17 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
 
           {(operatorNotice || item.message_variant_fallback_reason || item.message_angle_fallback_reason) && (
             <div className="mt-5 space-y-2">
-              {operatorNotice && <div className={`rounded-xl border px-3 py-2 text-xs leading-5 ${operatorNotice.tone === "red" ? "border-red-200 bg-red-50 text-red-900" : operatorNotice.tone === "slate" ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-900"}`}><p className="font-semibold">{operatorNotice.title}</p><p>{operatorNotice.detail}</p></div>}
+              {operatorNotice && <div className={`rounded-xl border px-4 py-3 text-xs leading-5 ${operatorNotice.tone === "red" ? "border-red-200 bg-red-50 text-red-950" : operatorNotice.tone === "slate" ? "border-slate-200 bg-slate-50 text-slate-800" : "border-amber-200 bg-amber-50 text-amber-950"}`} role="status" aria-label={`${operatorNotice.title}の理由`}>
+                <p className="font-semibold">{operatorNotice.title}</p>
+                <p className="mt-1">{operatorNotice.detail}</p>
+                <div className="mt-3 rounded-lg border border-current/15 bg-white/70 p-3">
+                  <p className="flex items-center gap-1.5 font-semibold"><CircleAlert className="size-3.5" />理由</p>
+                  <ul className="mt-1.5 list-disc space-y-1 pl-5">
+                    {operatorNotice.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                  </ul>
+                </div>
+                <p className="mt-3 flex items-start gap-1.5"><ArrowRight className="mt-0.5 size-3.5 shrink-0" /><span><span className="font-semibold">次の対応:</span> {operatorNotice.nextAction}</span></p>
+              </div>}
               {item.message_variant_fallback_reason && <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-900">{item.message_variant_fallback_reason}</p>}
               {item.message_angle_fallback_reason && <p className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">{item.message_angle_fallback_reason}</p>}
             </div>

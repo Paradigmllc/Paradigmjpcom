@@ -234,7 +234,12 @@ describe("manual work Twenty persistence", () => {
       paradigmDataStatus: "Manual workbench / analyzed / evidence review required",
       paradigmFormUrl: { primaryLinkUrl: "" },
     });
-    expect(JSON.stringify(saved)).toContain("A verified public form was not found");
+    expect(saved).toMatchObject({
+      paradigmNextAction: "要確認: 入力・本文・送信操作を備えた有効な公開問い合わせフォームを確認できませんでした。",
+    });
+    expect(JSON.stringify(saved)).toContain("要確認理由:");
+    expect(JSON.stringify(saved)).toContain("有効な公開問い合わせフォームを確認できませんでした");
+    expect(JSON.stringify(saved)).not.toContain("A verified public form was not found");
     expect(JSON.stringify(saved)).toContain("No draft passed the production quality gate");
   });
 

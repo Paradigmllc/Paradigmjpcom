@@ -116,6 +116,8 @@ export function ManualMessageIntelligence({ item, onCopy }: {
         </div>
         <div className="border-t border-amber-200 px-4 py-3 text-xs leading-5 text-amber-900">
           <p>{notice?.detail ?? "前回の生成結果が保存されていません。"}</p>
+          {notice && <ul className="mt-2 list-disc space-y-1 pl-5" aria-label="文面が未生成の理由">{notice.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>}
+          {notice && <p className="mt-2"><span className="font-semibold">次の対応:</span> {notice.nextAction}</p>}
           <p className="mt-1 font-semibold">初回処理内の自動生成・品質修正・再生成は完了しています。</p>
         </div>
       </section>
