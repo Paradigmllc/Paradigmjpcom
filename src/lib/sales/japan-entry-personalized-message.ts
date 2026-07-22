@@ -279,7 +279,8 @@ export async function generatePersonalizedJapanEntryMessage(
       : rawCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
-    // Deterministic recovery may finish mechanical safety issues, never uniqueness failures.
+    // Deterministic recovery may rebuild a uniqueness failure from selected public
+    // facts; the rebuilt candidate still has to pass both reviews below.
     const recoveryAllowed = canUseManualDeterministicRecovery({ allowRecovery, similarityPassed: initial.similarity.passed });
     if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed) || !recoveryAllowed) return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity, usedRecovery: false };
     const recoverAndInspect = (variationIndex: number) => {

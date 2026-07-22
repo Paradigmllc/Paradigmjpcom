@@ -36,7 +36,11 @@ export function canUseManualDeterministicRecovery(input: {
   allowRecovery: boolean
   similarityPassed: boolean
 }): boolean {
-  return input.allowRecovery && input.similarityPassed
+  // Recovery rebuilds the middle copy from selected public facts when similarity
+  // failed, then the full safety and distinctness reviews run again. Blocking the
+  // rebuild here left the model in a repair loop even though the deterministic
+  // path is explicitly designed to discard duplicated cross-company sentences.
+  return input.allowRecovery
 }
 
 function inspectionRank(value: CandidateInspection): number {

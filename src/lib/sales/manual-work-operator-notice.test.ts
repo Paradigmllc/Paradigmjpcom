@@ -46,6 +46,30 @@ describe("manualWorkOperatorNotice", () => {
     })
   })
 
+  it("shows a preserved regeneration failure instead of presenting stale artifacts as current", () => {
+    const item = row({
+      initial_message: "Hello Example team,",
+      message_review: {
+        generation_status: "passed",
+        passed: true,
+        last_regeneration_failure: {
+          failed_at: "2026-07-22T00:00:00.000Z",
+          message: "raw deterministic diagnostics",
+          artifacts_preserved: true,
+        },
+      },
+      error_message: "raw deterministic diagnostics",
+    })
+
+    const notice = manualWorkOperatorNotice(item)
+    expect(notice).toMatchObject({
+      title: "最新文面への更新を完了できませんでした",
+      retryLabel: "更新を再実行",
+      tone: "amber",
+    })
+    expect(JSON.stringify(notice)).not.toContain("raw deterministic diagnostics")
+  })
+
   it("labels a Twenty failure as a persistence recovery after automatic retries", () => {
     const notice = manualWorkOperatorNotice(row({ twenty_sync_status: "failed" }))
 

@@ -62,9 +62,10 @@ describe("manual model-copy safe finalizer", () => {
     })).toBe(false)
   })
 
-  it("never lets deterministic padding repair a cross-company uniqueness failure", () => {
-    expect(canUseManualDeterministicRecovery({ allowRecovery: true, similarityPassed: false })).toBe(false)
+  it("allows a fact-grounded rebuild after a uniqueness failure and still requires the recovery flag", () => {
+    expect(canUseManualDeterministicRecovery({ allowRecovery: true, similarityPassed: false })).toBe(true)
     expect(canUseManualDeterministicRecovery({ allowRecovery: true, similarityPassed: true })).toBe(true)
     expect(canUseManualDeterministicRecovery({ allowRecovery: false, similarityPassed: true })).toBe(false)
+    expect(canUseManualDeterministicRecovery({ allowRecovery: false, similarityPassed: false })).toBe(false)
   })
 })
