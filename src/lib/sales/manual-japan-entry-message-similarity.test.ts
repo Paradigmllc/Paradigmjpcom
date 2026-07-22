@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { manualMessageSimilarity, reviewManualMessageDistinctness } from "./manual-japan-entry-message-similarity"
+import { manualMessageSimilarity, reviewManualMessageDistinctness, stripRejectedManualMessageSentences } from "./manual-japan-entry-message-similarity"
 
 describe("manual inquiry-form copy distinctness", () => {
   it("rejects a company-name swap of the same message architecture", () => {
@@ -71,6 +71,10 @@ contact@paradigmjp.com`
     expect(result.passed).toBe(false)
     expect(result.matchedMessageId).toBe("prior-stock")
     expect(result.reasons.join(" ")).toContain("duplicates prior company copy")
+    const stripped = stripRejectedManualMessageSentences(next, result.reasons)
+    expect(stripped).not.toContain(stock)
+    expect(stripped).toContain("Beta documents API approval routing")
+    expect(stripped).toContain("Best regards")
   })
 
   it("does not compare the approved final CTA sentence as diagnosis copy", () => {

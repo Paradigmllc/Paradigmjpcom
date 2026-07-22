@@ -169,6 +169,20 @@ export function manualMessageSimilarity(left: string, right: string, companyName
   return jaccard(shingles(normalizedWords(left, companyNames)), shingles(normalizedWords(right, companyNames)))
 }
 
+export function stripRejectedManualMessageSentences(message: string, reasons: string[]): string {
+  return message
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => block
+      .split(/(?<=[.!?])\s+/)
+      .map((sentence) => sentence.trim())
+      .filter((sentence) => sentence && !reasons.some((reason) => reason.includes(`"${sentence}"`)))
+      .join(" "))
+    .filter(Boolean)
+    .join("\n\n")
+}
+
 export function reviewManualMessageDistinctness(input: {
   message: string
   companyName: string
