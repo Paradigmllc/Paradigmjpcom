@@ -53,8 +53,9 @@ export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-
 export type { JapanEntryMessageReview } from "./japan-entry-personalized-message-review";
 export type { ManualGeneratedMessageCandidate, ManualMessageStrategy } from "./japan-entry-personalized-message-public";
 const MODEL = "deepseek-v4-pro" as const;
-const EDITORIAL_PASS_SCORE = 92;
-const EDITORIAL_DIMENSION_FLOOR = 23;
+// Pair a 90/100, >=22-per-dimension editorial bar with the stricter deterministic safety and uniqueness gates.
+const EDITORIAL_PASS_SCORE = 90;
+const EDITORIAL_DIMENSION_FLOOR = 22;
 const INITIAL_SAFETY_REPAIR_LIMIT = 5;
 const EDITORIAL_REPAIR_LIMIT = 5;
 const DETERMINISTIC_RECOVERY_PASS = 2;

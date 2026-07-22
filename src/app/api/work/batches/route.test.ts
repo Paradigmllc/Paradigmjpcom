@@ -4,6 +4,7 @@ import { NextRequest } from "next/server"
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   create: vi.fn(),
+  createRetry: vi.fn(),
   active: vi.fn(),
   position: vi.fn(),
   queueSummary: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }))
 vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   createManualWorkBatch: mocks.create,
+  createManualWorkRetryBatch: mocks.createRetry,
   getLatestActiveManualWorkBatch: mocks.active,
   getManualWorkBatchQueuePosition: mocks.position,
   getManualWorkBatchQueueSummary: mocks.queueSummary,
@@ -48,6 +50,7 @@ beforeEach(() => {
     return { inputUrl: value, canonicalUrl: `https://${domain}/`, domain }
   })
   mocks.create.mockImplementation(async (input: { urls: unknown[] }) => snapshot(input.urls.length))
+  mocks.createRetry.mockResolvedValue(snapshot(1))
   mocks.position.mockResolvedValue(0)
   mocks.queueSummary.mockResolvedValue({ batchCount: 1, companyCount: 1, runningBatchId: "11111111-1111-4111-8111-111111111111", queuedBatchCount: 0, queuedCompanyCount: 0 })
   mocks.promote.mockImplementation(async () => ({ snapshot: snapshot(1), promoted: true }))
@@ -111,6 +114,35 @@ describe("manual work durable batch API", () => {
     expect(body.automaticDrainStarted).toBe(false)
     expect(mocks.create).toHaveBeenCalledTimes(1)
     expect(mocks.schedule).not.toHaveBeenCalled()
+  })
+
+  it("queues one exact existing row for durable regeneration", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ urls: ["example.com"], retryWorkId: workId }),
+    }))
+    expect(response.status).toBe(201)
+    expect(mocks.create).not.toHaveBeenCalled()
+    expect(mocks.createRetry).toHaveBeenCalledWith(expect.objectContaining({
+      workId,
+      url: expect.objectContaining({ domain: "example.com" }),
+    }))
+    expect(mocks.schedule).toHaveBeenCalled()
+  })
+
+  it("rejects a retry request that contains more than one URL", async () => {
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        urls: ["example.com", "other.example"],
+        retryWorkId: "106db008-80af-4c56-93ee-916643d84c1b",
+      }),
+    }))
+    expect(response.status).toBe(400)
+    expect(mocks.createRetry).not.toHaveBeenCalled()
   })
 
   it("does not enqueue hundreds of doomed jobs when DeepSeek is unavailable", async () => {

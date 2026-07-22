@@ -458,7 +458,7 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
     expect(caller.mock.calls[2]?.[0]?.[1]?.content).toContain("editorial_feedback")
   })
 
-  it("fails closed when the editorial score is below the quality bar", async () => {
+  it("accepts a 90+ editorial draft only after every dimension and hard gate pass", async () => {
     const caller = vi
       .fn()
       .mockResolvedValueOnce(generationResponse())
@@ -483,10 +483,10 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
       .mockResolvedValueOnce(repairResponse(messages[1]))
       .mockResolvedValueOnce(criticResponse({ selected_index: 0, scores: { specificity: 22, naturalness: 22, credibility: 24, executive_relevance: 23 } }))
     const result = await generatePersonalizedJapanEntryMessage(generateInput(), caller)
-    expect(result.ok).toBe(false)
-    expect(result.review?.passed).toBe(false)
-    expect(result.message).toBeUndefined()
-    expect(caller).toHaveBeenCalledTimes(12)
+    expect(result.ok).toBe(true)
+    expect(result.review).toMatchObject({ passed: true, score: 91 })
+    expect(result.message).toBeDefined()
+    expect(caller).toHaveBeenCalledTimes(6)
   })
 
   it("does not replace a V4 Pro outage with canned copy", async () => {

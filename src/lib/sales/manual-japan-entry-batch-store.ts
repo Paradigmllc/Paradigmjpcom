@@ -166,6 +166,33 @@ export async function createManualWorkBatch(input: {
   return created
 }
 
+export async function createManualWorkRetryBatch(input: {
+  url: { inputUrl: string; canonicalUrl: string; domain: string }
+  workId: string
+  variant: ManualMessageVariantSelection
+  angle: ManualMessageAngleSelection
+  sourceSlug: string
+  sourcePageUrl: string | null
+  observedOn: string | null
+}): Promise<ManualWorkBatchSnapshot> {
+  const { data, error } = await client().rpc("manual_japan_entry_create_retry_batch", {
+    p_work_id: input.workId,
+    p_input_url: input.url.inputUrl,
+    p_canonical_url: input.url.canonicalUrl,
+    p_domain: input.url.domain,
+    p_message_variant: input.variant,
+    p_message_angle: input.angle,
+    p_source_slug: input.sourceSlug,
+    p_source_page_url: input.sourcePageUrl,
+    p_observed_on: input.observedOn,
+  })
+  if (error) throw new Error(error.message)
+  if (typeof data !== "string") throw new Error("Manual work retry batch ID was not returned")
+  const created = await getManualWorkBatch(data)
+  if (!created) throw new Error("Created manual work retry batch could not be read back")
+  return created
+}
+
 export async function claimManualWorkBatchItems(batchId: string): Promise<ManualWorkBatchItemRow[]> {
   const { data, error } = await client().rpc("manual_japan_entry_claim_batch_items", {
     p_batch_id: batchId,

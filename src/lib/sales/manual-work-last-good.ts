@@ -42,11 +42,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
 
+function hasCurrentCopyInvalidation(existing: ManualJapanEntryWorkRow): boolean {
+  const review = existing.message_review
+  const priorFailure = isRecord(review.last_regeneration_failure)
+    && review.last_regeneration_failure.artifacts_preserved === true
+  if (priorFailure) return true
+
+  const company = existing.company_name?.trim()
+  if (!company || !existing.initial_message) return false
+  const paragraphs = existing.initial_message
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+  const opening = /^hello\b/i.test(paragraphs[0] ?? "") ? paragraphs[1] ?? "" : paragraphs[0] ?? ""
+  const escaped = company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return new RegExp(`^${escaped}\\s+(?:is|are)\\s+(?:an?\\s+)?`, "i").test(opening)
+}
+
 export function captureManualWorkLastGoodArtifacts(
   existing: ManualJapanEntryWorkRow | null,
 ): ManualWorkLastGoodArtifacts | null {
   if (!existing?.initial_message?.trim() || !existing.report_url) return null
   if (existing.message_review.passed !== true) return null
+  if (hasCurrentCopyInvalidation(existing)) return null
   if (!isRecord(existing.report_data) || existing.report_data.schemaVersion !== MANUAL_JAPAN_ENTRY_REPORT_SCHEMA) return null
 
   return Object.fromEntries(

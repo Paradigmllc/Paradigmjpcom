@@ -770,6 +770,10 @@ function checkStaticReleaseRules() {
   const manualTerminalFailuresMigration = fs.existsSync(manualTerminalFailuresMigrationPath)
     ? fs.readFileSync(manualTerminalFailuresMigrationPath, "utf8")
     : ""
+  const manualDurableRetryMigrationPath = "supabase/migrations/20260722123000_manual_work_durable_retry_queue.sql"
+  const manualDurableRetryMigration = fs.existsSync(manualDurableRetryMigrationPath)
+    ? fs.readFileSync(manualDurableRetryMigrationPath, "utf8")
+    : ""
   const dbVerifier = fs.existsSync("scripts/verify-db-tables.mjs")
     ? fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
     : ""
@@ -950,6 +954,12 @@ function checkStaticReleaseRules() {
     && manualTerminalFailuresMigration.includes("sent = false")
     && noLoginDeploy.includes("20260722044000_manual_work_terminal_source_failures.sql")
     && noLoginDeploy.includes("applyManualWorkTerminalSourceFailuresMigration")
+    && manualDurableRetryMigration.includes("manual_japan_entry_create_retry_batch")
+    && manualDurableRetryMigration.includes("retry_requested")
+    && manualDurableRetryMigration.includes("expected_work_id")
+    && manualDurableRetryMigration.includes("recorded outreach outcomes cannot be regenerated")
+    && noLoginDeploy.includes("20260722123000_manual_work_durable_retry_queue.sql")
+    && noLoginDeploy.includes("applyManualWorkDurableRetryQueueMigration")
     && dbVerifier.includes('"manual_japan_entry_work"')
     && dbVerifier.includes('"manual_japan_entry_source_catalog"')
     && dbVerifier.includes('"manual_japan_entry_work_sources"')
