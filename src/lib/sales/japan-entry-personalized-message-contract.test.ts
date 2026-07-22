@@ -89,6 +89,17 @@ describe("initial-interest evidence contract", () => {
     expect(isInitialInterestProductEvidenceSafe("This site is protected by reCAPTCHA")).toBe(false)
   })
 
+  it("cleans a truncated storefront brand prefix and excludes availability boilerplate", () => {
+    const productContext = [
+      "ible Airvida - Wearable Air Purifier",
+      "Sorry, this product is unavailable. Please choose a different combination.",
+      "Scientific Testing Results of Airvida",
+    ].join(" | ")
+
+    expect(selectGroundedProductEvidence({ companyName: "Airvida", productContext })).toBe("Wearable Air Purifier")
+    expect(selectGroundedProductEvidence({ companyName: "Airvida", productContext })).not.toMatch(/ible|unavailable/i)
+  })
+
   it("uses one short safe public phrase instead of a repeated-brand context fallback", () => {
     const productContext = "Agrohub Benchmarking – | Agrohub HR360 Benchmarking – | Дослідження | AGROHUB"
 
