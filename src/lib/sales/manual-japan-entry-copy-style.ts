@@ -6,6 +6,7 @@ const JAPANESE_BEHAVIOR_PATTERN = /\b(?:for\s+)?Japanese(?:\s+[a-z-]+){0,3}\s+(?
 const STOCK_ROUTING_CTA_PATTERN = /\b(?:I can share a detailed Japan opportunity analysis based on this public evidence|Could you forward (?:this|it) to the founder or person responsible for international growth)\b/i
 const AMBIGUOUS_DECISION_PATTERN = /\bwhether this gap matters for (?:its|the company(?:['’]s)?|the product(?:['’]s)?) [a-z-]+ decision remains unverified\b/i
 const BROKEN_POSSESSIVE_PATTERN = /\b(?:the company|the product|it)['’](?!s\b)/i
+const AWKWARD_PRONOUN_BRIDGE_PATTERN = /\b(?:for|from|around|within) it,\s+(?:the|an?)\b/i
 const MECHANICAL_BRIDGE_PATTERN = /\b(?:I used (?:that capability|that wording|it) to (?:keep|frame|support)|That specific capability is the starting point|That is the product basis used here|This helps narrow the scope|It helps define what the analysis should cover)\b/gi
 
 function containsAnchor(text: string, anchors: string[], minimumLength = 4): boolean {
@@ -46,6 +47,9 @@ export function reviewManualFormBespokeStyle(input: {
   }
   if (BROKEN_POSSESSIVE_PATTERN.test(input.body)) {
     issues.push("The message contains a broken possessive created by anchor reduction")
+  }
+  if (AWKWARD_PRONOUN_BRIDGE_PATTERN.test(input.body)) {
+    issues.push("The message contains an unnatural pronoun bridge; name the documented capability or rewrite the sentence directly")
   }
   if ((input.body.match(MECHANICAL_BRIDGE_PATTERN) ?? []).length > 1) {
     issues.push("The message repeats mechanical evidence-to-analysis bridge language; keep only the strongest bridge")
