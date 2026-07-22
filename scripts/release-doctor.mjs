@@ -1015,7 +1015,7 @@ function checkStaticReleaseRules() {
     && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
     && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存され")
     && manualWorkConsole.includes("retryWorkId: item.id")
-    && !manualWorkConsole.includes('fetch("/api/work",')
+    && !manualWorkConsole.includes("buildManualWorkRequest")
     && manualWorkBatchRoute.includes("createManualWorkRetryBatch")
     && manualWorkBatchRoute.includes("retryWorkId")
     && manualWorkBatchStore.includes('rpc("manual_japan_entry_create_retry_batch"')
