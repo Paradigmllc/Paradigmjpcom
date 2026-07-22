@@ -16,6 +16,17 @@ function generationFailed(item: ManualJapanEntryWorkRow): boolean {
   )
 }
 
+function preservedRegenerationFailure(item: ManualJapanEntryWorkRow): boolean {
+  const value = item.message_review.last_regeneration_failure
+  return Boolean(
+    value
+    && typeof value === "object"
+    && !Array.isArray(value)
+    && "artifacts_preserved" in value
+    && value.artifacts_preserved === true,
+  )
+}
+
 function failedAnalysisDetail(errorMessage: string | null): string {
   if (errorMessage?.includes("No public pages were available") || errorMessage?.includes("Homepage evidence could not be reused")) {
     return "canonical URLと取得済みトップページの再利用を試しましたが、企業サイトの公開ページ監査を完了できませんでした。"
@@ -51,6 +62,14 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       title: "企業別フォーム文面を再生成してください",
       detail: "公開根拠の検証または品質審査が自動修正後も基準を満たしませんでした。解析データはTwentyへ要確認として保存され、外部送信は行いません。",
       retryLabel: "復旧再実行",
+      tone: "amber",
+    }
+  }
+  if (preservedRegenerationFailure(item) && item.status !== "rejected") {
+    return {
+      title: "最新文面への更新を完了できませんでした",
+      detail: "既存の合格済み文面とレポートは保持していますが、最新の品質基準による再生成は自動修正後も完了していません。外部送信は行っていません。",
+      retryLabel: "更新を再実行",
       tone: "amber",
     }
   }
