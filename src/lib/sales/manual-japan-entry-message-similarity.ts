@@ -213,7 +213,18 @@ export function groundRejectedManualMessageSentences(input: {
   if (rejected.length === 0) return input.message
 
   const replacement = `Within the documented “${anchor}” scope, a Japanese-language customer-path test remains a decision to validate before broader localization.`
-  return rejected.reduce((message, sentence) => message.replace(sentence, replacement), input.message)
+  const rejectedKeys = new Set(rejected.map(normalizedSentence))
+  return input.message
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => block
+      .split(/(?<=[.!?])\s+/)
+      .map((sentence) => rejectedKeys.has(normalizedSentence(sentence)) ? replacement : sentence.trim())
+      .filter(Boolean)
+      .join(" "))
+    .filter(Boolean)
+    .join("\n\n")
 }
 
 export function reviewManualMessageDistinctness(input: {
