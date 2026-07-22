@@ -3,6 +3,7 @@ import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
 
 const BODY_MIN_WORDS = 120
+const MECHANICAL_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction)/
 const DANGEROUS_SENTENCE = /(?:https?:\/\/|www\.|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b(?:attached|attachment|downloadable|download)\b|\bunlock\b|\b(?:guarantee(?:d|s|ing)?|ROI|return on investment)\b)/i
 const UNSUPPORTED_CAUSAL_SENTENCE = /(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i
 const PROMOTIONAL_SENTENCE = /(?:logical next step|given that reach|i noticed your site|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|\b(?:is|provides?|offers?) (?:a )?clear value\b|\bis valuable\b|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i
@@ -19,6 +20,15 @@ interface RecoverableCandidate {
 interface CandidateInspection {
   safety: { passed: boolean; score: number }
   similarity: { passed: boolean; maxSimilarity: number }
+}
+
+export function canMechanicallyFinishManualModelCopy(input: {
+  issues: string[]
+  similarityPassed: boolean
+}): boolean {
+  return input.similarityPassed
+    && input.issues.length > 0
+    && input.issues.every((issue) => MECHANICAL_FINISH_ISSUE.test(issue))
 }
 
 function inspectionRank(value: CandidateInspection): number {
@@ -197,7 +207,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const currentBody = bodyBlocks(input.candidate.message)
   const originalMiddle = input.similarityPassed ? currentBody.slice(1, -1) : []
-  const rebuildOpening = !input.similarityPassed || input.issues.some((issue) => /(?:opening|product evidence|product-context|company name|product name|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder)/i.test(issue))
+  const rebuildOpening = !input.similarityPassed || input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder)/i.test(issue))
   const opening = rebuildOpening || !currentBody[0]
     ? productOpening({
         companyName: input.companyName,
