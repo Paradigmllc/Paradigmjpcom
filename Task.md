@@ -1,8 +1,9 @@
-## CURRENT STATUS - 2026-07-23 `/work`停止・要確認理由の必須表示（実装検証完了 / 本番release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-23 `/work`停止・要確認理由の必須表示（本番release / 理由・次対応を必須化 / 外部送信0）
 
 - `/work`の`needs_review / rejected / failed / Twenty failed`で一般的な警告だけを表示していた箇所を、DB保存済み`error_message`・フォーム診断・適格性理由から安全な日本語へ変換し、履歴カード上部へ「理由」一覧と「次の対応」を必ず表示する契約へ更新した。日本企業、非企業ページ、所在国/SMB/Japan fit根拠不足、公開フォーム未確認、文面品質gate不合格、公開ページ取得失敗、Twenty保存/read-back失敗を個別表示する。未知のmodel/API生エラーは表示せず安全な説明へ落とす。
 - 文面未生成欄にも同じ理由と次アクションを表示し、フォーム未確認と文面不合格など複数原因が同時にある場合は全件を重複なく表示する。Twentyの`paradigmKarteSummary`にも日本語の「要確認理由」を保存し、`paradigmNextAction`へ先頭理由を投影して、ダッシュボードとCRMの判断を一致させる。外部送信経路は追加していない。
-- 検証は対象Vitest **4 files / 31 tests**、全Vitest **245 files / 1,172 tests**、TypeScript、変更ファイルESLint、Quality Guard **0 errors / 81 existing warnings**、production build **408/408 pages**がpass。モック済みproduction buildのPC/Pixel 7 Playwrightは **4/4** passし、理由3件・次の対応・全幅・横overflow 0・重大アクセシビリティ違反0を確認した。正式PR・`npm run release:prod`・本番履歴/Twenty read-back後に完了へ更新する。
+- 検証は対象Vitest **4 files / 31 tests**、全Vitest **245 files / 1,172 tests**、TypeScript、変更ファイルESLint、Quality Guard **0 errors / 81 existing warnings**、production build **408/408 pages**がpass。モック済みproduction buildのPC/Pixel 7 Playwrightは **4/4** passし、理由3件・次の対応・全幅・横overflow 0・重大アクセシビリティ違反0を確認した。
+- PR **#558** / main **cdee5dce**を正式`npm run release:prod`のdeployment **l12zo7ozd9qqdbju24k1v8ri**で反映した。release gateはDB **93/93**、Sales health HTTP 200 JSON `ok:true`、Twenty HTTP 200 / worker restart **0**、Realtime/RLS/Traefik/Cloudflare origin lock、zero-sendを含めpass。本番reconciliationはV4 **104/104**、legacy **0**、`sent` **0**。ログイン済みChromeで本番`/work`の全幅表示、履歴、文面、フォーム/レポート導線を確認した。要確認フィルター切替直後にChrome接続が終了したため、本番カード個別のDOM採取は未取得だが、同一main buildのPC/Pixel 7 E2Eで理由欄・次対応の表示契約を検証済み。
 
 ## CURRENT STATUS - 2026-07-22 `/work`全幅UI・初回文面recovery・129件本番監査（本番release / 違反0 / 外部送信0）
 
