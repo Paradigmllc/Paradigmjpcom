@@ -334,7 +334,7 @@ export async function processManualJapanEntryUrl(
       stage: "copy_generation",
     })
 
-    const priorMessages = await listRecentManualMessages(80, work.id)
+    const priorMessages = await listRecentManualMessages(200, work.id)
     const messageInput = buildManualInitialMessageInput({
       profile,
       evidence,

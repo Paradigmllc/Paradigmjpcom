@@ -269,7 +269,7 @@ export async function generatePersonalizedJapanEntryMessage(
       candidateAngle: candidate.angle,
     }),
     similarity: purpose === "initial_interest"
-      ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [] })
+      ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [], allowedRepeatedSentences: facts.filter((fact) => candidate.fact_ids.includes(fact.id)).map((fact) => fact.statement) })
       : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
   });
 

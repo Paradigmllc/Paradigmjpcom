@@ -51,6 +51,38 @@ contact@paradigmjp.com`
       message: next,
       companyName: "Beta",
       priorMessages: [{ id: "prior-audit", companyName: "Alpha", domain: "alpha.example", message: prior }],
+      allowedRepeatedSentences: ["The checked public pages did not show a Japanese-language customer path."],
+    })
+
+    expect(result.passed).toBe(true)
+  })
+
+  it("rejects an exact reusable diagnosis sentence even when the full messages differ", () => {
+    const stock = "That observation is limited to what the pages display; it does not confirm demand, buyer behavior, or commercial readiness in Japan."
+    const prior = `Hello Alpha team,\n\nAlpha documents inventory reconciliation for independent shops.\n\n${stock}\n\nI can send Alpha's analysis. Would you like it?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+    const next = `Hello Beta team,\n\nBeta documents API approval routing for security teams.\n\n${stock}\n\nI can prepare Beta's analysis. Who should receive it?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+
+    const result = reviewManualMessageDistinctness({
+      message: next,
+      companyName: "Beta",
+      priorMessages: [{ id: "prior-stock", companyName: "Alpha", domain: "alpha.example", message: prior }],
+    })
+
+    expect(result.passed).toBe(false)
+    expect(result.matchedMessageId).toBe("prior-stock")
+    expect(result.reasons.join(" ")).toContain("duplicates prior company copy")
+  })
+
+  it("does not compare the approved final CTA sentence as diagnosis copy", () => {
+    const sharedCta = "I can send a short Japan opportunity analysis focused on the Japanese-language question. Would you like me to send it?"
+    const prior = `Hello Alpha team,\n\nAlpha documents inventory reconciliation for independent shops.\n\nThe storefront review leaves catalog localization as the unverified decision.\n\n${sharedCta}\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+    const next = `Hello Beta team,\n\nBeta documents API approval routing for security teams.\n\nThe security workflow review leaves Japanese administrator onboarding as the open validation decision.\n\n${sharedCta}\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+
+    const result = reviewManualMessageDistinctness({
+      message: next,
+      companyName: "Beta",
+      priorMessages: [{ id: "prior-cta", companyName: "Alpha", domain: "alpha.example", message: prior }],
+      ctaThreshold: 1.01,
     })
 
     expect(result.passed).toBe(true)

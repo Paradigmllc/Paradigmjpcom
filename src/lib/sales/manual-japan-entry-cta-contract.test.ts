@@ -79,6 +79,7 @@ ${MANUAL_FORM_SIGNATURE}`,
       message: applied.message,
       companyName: "Beta",
       priorMessages: [{ id: "prior", companyName: "Alpha", domain: "alpha.example", message: priorMessage }],
+      allowedRepeatedSentences: ["The checked public pages did not show a Japanese-language customer path."],
     })
 
     expect(applied.message).toContain("Beta documents a review workflow")
