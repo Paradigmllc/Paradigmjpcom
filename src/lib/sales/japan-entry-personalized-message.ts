@@ -10,7 +10,7 @@ import { withManualFormCopyReadyEnvelope } from "./manual-japan-entry-copy-envel
 import { buildPersonalizedMessageRepairInput } from "./japan-entry-personalized-message-repair";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
-  manualMessageSimilarity, stripRejectedManualMessageSentences,
+  groundRejectedManualMessageSentences, manualMessageSimilarity, stripRejectedManualMessageSentences,
   reviewManualMessageDistinctness,
   type ManualMessageSimilarityReview,
   type PriorManualMessage,
@@ -96,7 +96,6 @@ interface GenerateInput {
   sourceUrl?: string | null;
   priorMessages?: PriorManualMessage[];
 }
-
 type LlmCaller = DeepSeekStructuredCaller;
 const candidateSchema = z.object({
   message: z.string().min(1).max(1_800),
@@ -108,7 +107,6 @@ const candidateSchema = z.object({
   diagnostic_focus: z.string().min(1).max(240).default("legacy_unspecified"),
   cta_type: z.enum(["permission_to_send", "right_person", "founder_forward", "legacy_unspecified"]).default("legacy_unspecified"),
 }).strict();
-
 const prohibitedClaimsSchema = z.preprocess((value) => {
   if (typeof value !== "string") return value;
   return value
@@ -116,7 +114,6 @@ const prohibitedClaimsSchema = z.preprocess((value) => {
     .map((item) => item.trim())
     .filter(Boolean);
 }, z.array(z.string().min(1).max(180)).max(12));
-
 const strategySchema = z.object({
   primary_observation: z.string().min(1).max(400),
   why_now: z.string().min(1).max(400),
@@ -129,22 +126,18 @@ const strategySchema = z.object({
   country_adaptation: z.string().min(1).max(240),
   prohibited_claims: prohibitedClaimsSchema,
 }).strict();
-
 const generationSchema = z.object({
   strategy: strategySchema.optional(),
   candidates: z.array(candidateSchema).min(1).max(3),
 }).strict();
-
 const repairSchema = z.object({
   candidate: candidateSchema,
 }).strict();
-
 const riskFlagsSchema = z.preprocess((value) => {
   if (typeof value !== "string") return value;
   const normalized = value.trim();
   return /^(?:none|no risks?|n\/a)$/i.test(normalized) ? [] : [normalized];
 }, z.array(z.string().min(1).max(160)).max(5));
-
 const criticSchema = z.object({
   selected_index: z.number().int().min(0).max(2),
   product_evidence_faithful: z.boolean(),
@@ -157,7 +150,6 @@ const criticSchema = z.object({
   rationale: z.string().min(1).max(1_200),
   risk_flags: riskFlagsSchema,
 }).strict();
-
 function buildReview(input: {
   selected: { candidate: z.infer<typeof candidateSchema>; safety: ReturnType<typeof reviewPersonalizedJapanEntryMessage> };
   criticized: z.infer<typeof criticSchema>;
@@ -206,13 +198,11 @@ function buildReview(input: {
     candidateCount: input.candidateCount,
   };
 }
-
 function hasDifferentiationMetadata(candidate: z.infer<typeof candidateSchema>): boolean {
   return candidate.opening_style !== "legacy_unspecified"
     && candidate.diagnostic_focus !== "legacy_unspecified"
     && candidate.cta_type !== "legacy_unspecified";
 }
-
 export async function generatePersonalizedJapanEntryMessage(
   input: GenerateInput,
   caller: LlmCaller = callDeepSeek,
@@ -230,14 +220,12 @@ export async function generatePersonalizedJapanEntryMessage(
   if (facts.length === 0) {
     return { ok: false, error: "No high-signal Japan-specific public fact is available for personalized copy" };
   }
-
   const purpose = input.purpose ?? "commercial_offer";
   const mode = purpose === "initial_interest" && input.initialInterestOptions?.includeEstimate !== true
     ? "audit"
     : getJapanEntryMessageMode(facts);
   let totalAttempts = 0;
   let totalUsage: DeepSeekResponse["usage"];
-
   const ctaAnchors = resolveManualCtaAnchors({ companyName: input.companyName, productNames: input.productNames, facts });
   const requiredInitialProductEvidence = purpose === "initial_interest"
     ? selectGroundedProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames })
@@ -252,7 +240,6 @@ export async function generatePersonalizedJapanEntryMessage(
         priorMessages: input.priorMessages ?? [],
       })
     : [];
-
   const deterministicInspection = (candidate: z.infer<typeof candidateSchema>) => ({
     safety: reviewPersonalizedJapanEntryMessage({
       message: candidate.message,
@@ -272,7 +259,6 @@ export async function generatePersonalizedJapanEntryMessage(
       ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [], allowedRepeatedSentences: facts.filter((fact) => candidate.fact_ids.includes(fact.id)).map((fact) => fact.statement) })
       : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
   });
-
   const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>, candidateIndex = 0, allowRecovery = false) => {
     const evidenceLocked = purpose === "initial_interest"
       && requiredInitialProductEvidence
@@ -306,7 +292,6 @@ export async function generatePersonalizedJapanEntryMessage(
     };
     return selectBestManualCandidateInspection(recoverAndInspect);
   };
-
   const generated = await callDeepSeekStructured({
     stage: "generation",
     messages: generationMessages(input, facts, mode),
@@ -324,7 +309,6 @@ export async function generatePersonalizedJapanEntryMessage(
   if (purpose === "initial_interest" && generated.data.candidates.some((candidate) => !hasDifferentiationMetadata(candidate))) {
     return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro did not return complete candidate differentiation metadata" };
   }
-
   const reviewedCandidates = generated.data.candidates.map((candidate, index) => inspectCandidate(candidate, index));
   let valid: typeof reviewedCandidates = [];
   for (const item of reviewedCandidates) {
@@ -372,6 +356,19 @@ export async function generatePersonalizedJapanEntryMessage(
         inspected = inspectCandidate(repaired.data.candidate, 0, true);
         passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
       }
+      if (!passed && purpose === "initial_interest" && repairPass === INITIAL_SAFETY_REPAIR_LIMIT) {
+        const groundedCandidate = {
+          ...inspected.candidate,
+          message: groundRejectedManualMessageSentences({
+            message: inspected.candidate.message,
+            reasons: inspected.similarity.reasons,
+            companyName: input.companyName,
+            productEvidence: inspected.candidate.product_evidence_rendering,
+          }),
+        };
+        inspected = inspectCandidate(groundedCandidate);
+        passed = inspected.safety.passed && inspected.similarity.passed && hasDifferentiationMetadata(inspected.candidate);
+      }
       if (passed) {
         if (inspected.usedRecovery && repairPass < INITIAL_SAFETY_REPAIR_LIMIT) {
           repairTarget = inspected;
@@ -388,7 +385,6 @@ export async function generatePersonalizedJapanEntryMessage(
       };
     }
   }
-
   const criticize = async (candidates: typeof valid) => {
     const criticized = await callDeepSeekStructured({
       stage: "critic",
@@ -410,7 +406,6 @@ export async function generatePersonalizedJapanEntryMessage(
     totalUsage = addDeepSeekUsage(totalUsage, criticized.usage);
     return criticized;
   };
-
   const criticized = await criticize(valid);
   if (!criticized.ok) {
     return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro editorial review failed: ${criticized.error}` };
@@ -419,7 +414,6 @@ export async function generatePersonalizedJapanEntryMessage(
   if (!selected) {
     return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro critic selected an invalid candidate" };
   }
-
   const strategy = publicManualMessageStrategy(generated.data.strategy, input.productContext);
   const evidencePack = facts.map((fact): ManualMessageEvidence => ({
     id: fact.id,
