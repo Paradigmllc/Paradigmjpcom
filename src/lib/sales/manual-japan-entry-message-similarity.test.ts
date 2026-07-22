@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { manualMessageSimilarity, reviewManualMessageDistinctness, stripRejectedManualMessageSentences } from "./manual-japan-entry-message-similarity"
+import {
+  groundRejectedManualMessageSentences,
+  manualMessageSimilarity,
+  reviewManualMessageDistinctness,
+  stripRejectedManualMessageSentences,
+} from "./manual-japan-entry-message-similarity"
 
 describe("manual inquiry-form copy distinctness", () => {
   it("rejects a company-name swap of the same message architecture", () => {
@@ -75,6 +80,21 @@ contact@paradigmjp.com`
     expect(stripped).not.toContain(stock)
     expect(stripped).toContain("Beta documents API approval routing")
     expect(stripped).toContain("Best regards")
+  })
+
+  it("grounds an exhausted duplicate in the company's documented product evidence", () => {
+    const duplicate = "That leaves one decision open: whether to validate the observed path before committing to wider localization."
+    const message = `Hello Airvida team,\n\nAirvida documents a wearable air purifier.\n\n${duplicate}\n\nMay I send the analysis?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+    const grounded = groundRejectedManualMessageSentences({
+      message,
+      reasons: [`A non-evidence sentence duplicates prior company copy: "${duplicate}"`],
+      companyName: "Airvida",
+      productEvidence: "Airvida – Wearable Air Purifier",
+    })
+
+    expect(grounded).not.toContain(duplicate)
+    expect(grounded).toContain("documented “Wearable Air Purifier” scope")
+    expect(grounded).toContain("Japanese-language customer-path test")
   })
 
   it("does not compare the approved final CTA sentence as diagnosis copy", () => {

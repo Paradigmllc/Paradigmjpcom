@@ -183,6 +183,39 @@ export function stripRejectedManualMessageSentences(message: string, reasons: st
     .join("\n\n")
 }
 
+function escapedPattern(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+function groundedDecisionAnchor(productEvidence: string, companyName: string): string | null {
+  const withoutCompany = productEvidence
+    .replace(new RegExp(`${escapedPattern(companyName)}(?:['’]s)?`, "giu"), " ")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/\s+/g, " ")
+    .trim()
+  const words = withoutCompany.split(/\s+/).filter(Boolean)
+  if (words.length < 2) return null
+  return words.slice(0, 7).join(" ").replace(/[,:;.!?]+$/g, "")
+}
+
+export function groundRejectedManualMessageSentences(input: {
+  message: string
+  reasons: string[]
+  companyName: string
+  productEvidence: string
+}): string {
+  const anchor = groundedDecisionAnchor(input.productEvidence, input.companyName)
+  if (!anchor) return input.message
+  const rejected = input.reasons.flatMap((reason) => {
+    const match = reason.match(/^A non-evidence sentence duplicates prior company copy: "([\s\S]+)"$/)
+    return match?.[1] ? [match[1]] : []
+  })
+  if (rejected.length === 0) return input.message
+
+  const replacement = `Within the documented “${anchor}” scope, a Japanese-language customer-path test remains a decision to validate before broader localization.`
+  return rejected.reduce((message, sentence) => message.replace(sentence, replacement), input.message)
+}
+
 export function reviewManualMessageDistinctness(input: {
   message: string
   companyName: string
