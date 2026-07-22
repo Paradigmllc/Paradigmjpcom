@@ -10,11 +10,12 @@ import { withManualFormCopyReadyEnvelope } from "./manual-japan-entry-copy-envel
 import { buildPersonalizedMessageRepairInput } from "./japan-entry-personalized-message-repair";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
-  groundRejectedManualMessageSentences, manualMessageSimilarity, stripRejectedManualMessageSentences,
+  manualMessageSimilarity, stripRejectedManualMessageSentences,
   reviewManualMessageDistinctness,
   type ManualMessageSimilarityReview,
   type PriorManualMessage,
 } from "./manual-japan-entry-message-similarity";
+import { finalizeManualMessageUniqueness } from "./manual-japan-entry-uniqueness-finalizer";
 import {
   getJapanEntryMessageMode,
   reviewPersonalizedJapanEntryMessage,
@@ -362,16 +363,11 @@ export async function generatePersonalizedJapanEntryMessage(
         passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
       }
       if (!passed && purpose === "initial_interest" && repairPass === INITIAL_SAFETY_REPAIR_LIMIT) {
-        const groundedCandidate = {
-          ...inspected.candidate,
-          message: groundRejectedManualMessageSentences({
-            message: inspected.candidate.message,
-            reasons: inspected.similarity.reasons,
-            companyName: input.companyName,
-            productEvidence: inspected.candidate.product_evidence_rendering,
-          }),
-        };
-        inspected = inspectCandidate(groundedCandidate);
+        inspected = finalizeManualMessageUniqueness({
+          inspection: inspected,
+          companyName: input.companyName,
+          inspect: inspectCandidate,
+        });
         passed = inspected.safety.passed && inspected.similarity.passed && hasDifferentiationMetadata(inspected.candidate);
       }
       if (passed) {
