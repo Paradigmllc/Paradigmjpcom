@@ -70,6 +70,34 @@ function recentCopyDigest(message: string): { opening: string; diagnosis: string
   };
 }
 
+function repeatedRecentSentences(
+  messages: Array<{ message: string }>,
+  allowedEvidence: string[],
+): string[] {
+  const allowed = new Set(allowedEvidence.map((value) => value.toLowerCase().replace(/\s+/g, " ").trim()))
+  const observed = new Map<string, { sentence: string; count: number }>()
+  for (const item of messages) {
+    const blocks = item.message.replace(/\r\n?/g, "\n").trim().split(/\n\s*\n/).map((block) => block.trim()).filter(Boolean)
+    if (/^hello\b/i.test(blocks[0] ?? "")) blocks.shift()
+    if (/(?:best|kind|warm) regards/i.test(blocks.at(-1) ?? "")) blocks.pop()
+    if (blocks.length > 1) blocks.pop()
+    const seen = new Set<string>()
+    for (const sentence of blocks.flatMap((block) => block.split(/(?<=[.!?])\s+/)).map((value) => value.trim()).filter(Boolean)) {
+      const normalized = sentence.toLowerCase().replace(/[“”‘’]/g, '"').replace(/\s+/g, " ").trim()
+      if (normalized.length < 45 || allowed.has(normalized) || seen.has(normalized)) continue
+      seen.add(normalized)
+      const current = observed.get(normalized) ?? { sentence, count: 0 }
+      current.count += 1
+      observed.set(normalized, current)
+    }
+  }
+  return [...observed.values()]
+    .filter(({ count }) => count > 1)
+    .sort((left, right) => right.count - left.count || left.sentence.localeCompare(right.sentence))
+    .slice(0, 80)
+    .map(({ sentence }) => sentence)
+}
+
 export const JAPAN_ENTRY_GENERATION_SYSTEM_PROMPT = [
   "You write concise, natural B2B inquiry-form messages to founders and senior decision-makers at overseas SMBs.",
   "Return JSON only. When task is generate_candidates, return {candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle}, ...]} with exactly three materially different candidates. When task is repair_candidate, return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle}} with exactly one corrected candidate and no additional keys.",
@@ -129,7 +157,7 @@ export function initialInterestGenerationPrompt(
     "The middle body paragraph or paragraphs must state the selected public-page Japan finding separately from the product observation and explain the exact decision that remains unverified for this company and product. Use only the selected angle and supplied evidence, without asserting demand, buyer behavior, causation, or loss.",
     "Every sentence must add a distinct point. Never repeat or lightly rephrase the product description, public-page finding, decision implication, CTA, or evidence disclaimer in another sentence. Use the exact company name no more than twice in the personalized body: once in the grounded opening and at most once in the final CTA paragraph. After that, use natural pronouns such as your product, your team, it, or the analysis. Never form an awkward possessive such as a multi-word product name followed by 's. In repair mode, delete the weaker duplicate instead of substituting synonyms.",
     "Choose a narrative architecture that is materially different from recent_copy_to_avoid. Available shapes include: product workflow then audit then open decision; product use case then open decision then supporting audit; product capability then one combined evidence-boundary paragraph then a permission CTA; or product evidence then audit boundary then a right-person routing CTA. Select the shape that best fits this company's evidence. Do not print the architecture label. If recent copy uses the same paragraph count, evidence order, or CTA construction, change all applicable dimensions rather than swapping synonyms.",
-    "Do not copy any complete sentence from recent_copy_to_avoid. The only sentence that may repeat verbatim is an exact selected evidence statement required by evidence_contract. Write every explanatory, transition, implication, and evidence-boundary sentence specifically for this company and its documented product.",
+    "Do not copy any complete sentence from recent_copy_to_avoid or verbatim_sentences_to_avoid. The only sentence that may repeat verbatim is an exact selected evidence statement required by evidence_contract. Write every explanatory, transition, implication, and evidence-boundary sentence specifically for this company and its documented product. In repair mode, every duplicate sentence quoted in issues is a hard-forbidden string and must be deleted, not lightly paraphrased.",
     estimateRule,
     "After a missing public-page observation, never write 'This means' and never describe what Japanese developers, teams, buyers, or customers may do or lack. State what was absent, then name one concrete validation decision for the documented product while keeping the commercial result unverified. Do not reuse the stock sentence 'whether this gap matters for its Japanese-language decision remains unverified', stack multiple disclaimer sentences, or refer vaguely to 'its decision'. For repair_candidate, delete the whole unsupported audience-behavior sentence; do not preserve or paraphrase it.",
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
@@ -247,6 +275,9 @@ export function generationMessages(
               company_name: item.companyName,
               ...recentCopyDigest(item.message),
             }))
+          : [],
+        verbatim_sentences_to_avoid: purpose === "initial_interest"
+          ? repeatedRecentSentences(input.priorMessages ?? [], promptFacts.map((fact) => fact.statement))
           : [],
         fixed_offer: purpose === "commercial_offer" ? {
           setup_fee_usd: 13_000,

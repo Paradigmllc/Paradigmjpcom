@@ -69,12 +69,14 @@ export function reviewManualFormBespokeStyle(input: {
     issues.push("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
   }
 
-  if (exactOccurrences(input.body, input.companyName) > 2) {
+  const unavoidableEvidenceCompanyMentions = Math.min(1, exactOccurrences(input.productEvidence, input.companyName))
+  if (exactOccurrences(input.body, input.companyName) > 2 + unavoidableEvidenceCompanyMentions) {
     issues.push("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
   }
   for (const productName of input.productNames) {
     if (productName.toLowerCase() === input.companyName.toLowerCase()) continue
-    if (exactOccurrences(input.body, productName) > 2) {
+    const unavoidableEvidenceProductMentions = Math.min(1, exactOccurrences(input.productEvidence, productName))
+    if (exactOccurrences(input.body, productName) > 2 + unavoidableEvidenceProductMentions) {
       issues.push(`The product name must appear no more than twice in the personalized body: ${productName}`)
     }
   }

@@ -101,6 +101,21 @@ describe("bespoke form-copy style", () => {
     expect(issues).not.toContain("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
   })
 
+  it("allows one unavoidable company mention inside the exact product evidence", () => {
+    const issues = reviewManualFormBespokeStyle({
+      body: "Airvida publicly documents ible Airvida wearable purification. The checked pages did not show a Japanese-language path. I can send a Japan opportunity analysis for Airvida.",
+      openingParagraph: "Airvida publicly documents ible Airvida wearable purification.",
+      finalParagraph: "I can send a Japan opportunity analysis for Airvida.",
+      companyName: "Airvida",
+      productEvidence: "ible Airvida wearable purification",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+    })
+
+    expect(issues).not.toContain("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
+  })
+
   it("rejects stock decision wording and broken possessive reductions", () => {
     const issues = review(
       "Screenshot to Code documents screenshot conversion. Whether this gap matters for its Japanese-language decision remains unverified. The company’ launch path remains open.",

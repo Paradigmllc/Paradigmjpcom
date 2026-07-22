@@ -84,7 +84,8 @@ describe("manual Japan Entry personalization contract", () => {
   })
 
   it("sends bounded recent-copy digests instead of repeating full messages in every repair prompt", () => {
-    const longMiddle = "A bounded diagnostic sentence. ".repeat(40)
+    const reusableSentence = "This diagnosis sentence is long enough and should not be reused across company messages."
+    const longMiddle = `${reusableSentence} `.repeat(40)
     const priorMessage = `${manualFormGreeting("Prior")}\n\nPrior documents a workflow.\n\n${longMiddle}\n\nWho owns the Prior decision?\n\n${MANUAL_FORM_SIGNATURE}`
     const messages = generationMessages({
       companyName: "Example",
@@ -93,10 +94,11 @@ describe("manual Japan Entry personalization contract", () => {
       targetCountry: "US",
       businessModel: "saas",
       purpose: "initial_interest",
-      priorMessages: [{ companyName: "Prior", message: priorMessage }],
+      priorMessages: [{ companyName: "Prior", message: priorMessage }, { companyName: "Earlier", message: priorMessage }],
     }, [fact], "audit")
     const payload = JSON.parse(messages[1]?.content ?? "{}") as {
       recent_copy_to_avoid?: Array<{ opening: string; diagnosis: string; cta: string; message?: string }>
+      verbatim_sentences_to_avoid?: string[]
     }
 
     expect(payload.recent_copy_to_avoid?.[0]).toMatchObject({
@@ -105,6 +107,7 @@ describe("manual Japan Entry personalization contract", () => {
     })
     expect(payload.recent_copy_to_avoid?.[0]?.diagnosis.length).toBeLessThanOrEqual(480)
     expect(payload.recent_copy_to_avoid?.[0]).not.toHaveProperty("message")
+    expect(payload.verbatim_sentences_to_avoid).toContain(reusableSentence)
   })
 
   it("fails closed when form copy contains a citation even without a URL", () => {
