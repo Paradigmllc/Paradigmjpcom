@@ -117,7 +117,19 @@ function qualificationStatus(value: unknown): unknown {
 function businessModel(value: unknown): unknown {
   if (typeof value !== "string") return value
   const normalized = value.trim().toLowerCase().replace(/[\s_-]+/g, " ")
-  if (["saas", "software", "software as a service", "ai software"].includes(normalized)) return "saas"
+  if ([
+    "saas",
+    "software",
+    "software as a service",
+    "ai software",
+    "platform",
+    "software platform",
+    "online platform",
+    "marketplace",
+    "online marketplace",
+    "b2b marketplace",
+    "marketplace platform",
+  ].includes(normalized)) return "saas"
   if (["ecommerce", "e commerce", "ecomerce", "online retail", "d2c"].includes(normalized)) return "ecommerce"
   if (["service", "services", "professional service", "professional services", "consulting"].includes(normalized)) return "service"
   return value

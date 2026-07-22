@@ -219,6 +219,18 @@ describe("manual company DeepSeek response compatibility", () => {
     expect(parsed).not.toHaveProperty("unexpectedModelKey")
   })
 
+  it.each([
+    "platform",
+    "software platform",
+    "online platform",
+    "marketplace",
+    "online marketplace",
+    "B2B marketplace",
+    "marketplace_platform",
+  ])("maps the observed online-platform model variant %s to the canonical SaaS bucket", (variant) => {
+    expect(parseManualCompanyProfile(modelProfile({ businessModel: variant })).businessModel).toBe("saas")
+  })
+
   it("keeps evidence bounded by item count and item length", () => {
     const parsed = parseManualCompanyProfile(modelProfile({
       smbEvidence: Array.from({ length: 12 }, (_, index) => `Evidence ${index + 1}`),
@@ -267,7 +279,7 @@ describe("manual company DeepSeek response compatibility", () => {
   it.each([
     ["confidence above the allowed range", { smbConfidence: "101" }],
     ["non-numeric confidence", { smbConfidence: "high" }],
-    ["unknown business model", { businessModel: "marketplace" }],
+    ["unknown business model", { businessModel: "reseller-network" }],
     ["non-string evidence", { smbEvidence: { claim: "Public evidence" } }],
   ])("rejects %s", (_label, overrides) => {
     expect(() => parseManualCompanyProfile(modelProfile(overrides))).toThrow()
