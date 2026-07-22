@@ -348,7 +348,7 @@ export async function generatePersonalizedJapanEntryMessage(
           issues: repairTarget.usedRecovery ? [RECOVERY_REWRITE_ISSUE] : [...repairTarget.safety.issues, ...repairTarget.similarity.reasons],
           wordCount: repairTarget.safety.wordCount,
           purpose,
-          includePrice: input.initialInterestOptions?.includePrice === true,
+          includePrice: input.initialInterestOptions?.includePrice === true, editorialFeedback: `Uniqueness repair variation ${repairPass}: delete every sentence quoted as duplicate prior copy; use a different syntax tied to the required product evidence and do not return any quoted duplicate string.`,
         })),
         schema: repairSchema,
         caller,
