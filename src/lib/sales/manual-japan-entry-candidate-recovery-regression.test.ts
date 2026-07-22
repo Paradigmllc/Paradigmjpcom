@@ -63,7 +63,7 @@ ${MANUAL_FORM_SIGNATURE}`,
     })
 
     expect(recovered.message).toContain(`“${evidence}”`)
-    expect(recovered.message).not.toContain(`“${evidence.replace(/\.$/, "")}”.`)
+    expect(recovered.message).not.toMatch(/[.!?]”\./)
     expect(review).toMatchObject({ passed: true, issues: [] })
   })
 
