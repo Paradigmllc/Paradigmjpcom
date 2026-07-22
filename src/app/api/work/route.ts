@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       const { notifyBothChannels } = await import("@/lib/notify")
       await notifyBothChannels("sales", {
         title: `Manual Japan Entry: ${result.item.company_name ?? result.item.domain}`,
-        message: `${result.item.status} / Twenty ${result.item.twenty_sync_status} / 外部送信0件`,
+        message: `${result.artifactsPreserved ? "再生成失敗・旧成果物保持" : result.item.status} / Twenty ${result.item.twenty_sync_status} / 外部送信0件`,
         link: "/work",
         type: "manual_japan_entry_work_completed",
         region: "global",

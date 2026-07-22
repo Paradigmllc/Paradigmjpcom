@@ -103,7 +103,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
           await completeManualWorkBatchItem({
             itemId: item.id,
             claimToken: item.claim_token,
-            status: completedStatus(result.item.status),
+            status: result.artifactsPreserved ? "failed" : completedStatus(result.item.status),
             workId: result.item.id,
             errorMessage: result.item.error_message,
           })

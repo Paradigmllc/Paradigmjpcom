@@ -263,7 +263,6 @@ export async function generatePersonalizedJapanEntryMessage(
     const evidenceLocked = purpose === "initial_interest"
       && requiredInitialProductEvidence
       && isInitialInterestProductEvidenceSafe(requiredInitialProductEvidence)
-      && (!isInitialInterestProductEvidenceSafe(rawCandidate.product_evidence) || !isInitialInterestProductEvidenceSafe(rawCandidate.product_evidence_rendering))
       ? {
           ...rawCandidate,
           product_evidence: requiredInitialProductEvidence,

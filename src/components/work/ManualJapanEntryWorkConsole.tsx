@@ -191,9 +191,10 @@ export function ManualJapanEntryWorkConsole({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(buildManualWorkRequest({ url, variant, angle, sourceSlug, sourcePageUrl, retryItem })),
         })
-        const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; error?: string }
+        const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; artifactsPreserved?: boolean; error?: string }
         if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
         setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
+        if (body.artifactsPreserved) throw new Error(body.item.error_message ?? `${url} の再生成に失敗し、直前の正常な成果物を保持しました`)
         if (body.item.status === "failed") throw new Error(manualWorkFailureToast(body.item))
         if (body.item.twenty_sync_status === "failed") throw new Error(manualWorkFailureToast(body.item))
         if (body.item.status === "needs_review" && !body.item.initial_message) throw new Error(manualWorkFailureToast(body.item))

@@ -17,7 +17,7 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example publicly describes RetailScope as a subscription analytics platform for independent retailers. The documented workflow connects inventory forecasting with replenishment decisions and supplies inventory insights for independent operators.
+Example publicly describes its offering as RetailScope, a subscription analytics platform for independent retailers with inventory insights. The documented workflow connects inventory forecasting with replenishment decisions for independent operators.
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. These are bounded observations about the pages checked, not findings about demand, buyer behavior, or performance in Japan.
 
@@ -43,8 +43,8 @@ const strategy = {
 const candidate = {
   message,
   fact_ids: ["japan-audit-language", "japan-audit-jpy"],
-  product_evidence: "subscription analytics platform for independent retailers",
-  product_evidence_rendering: "subscription analytics platform for independent retailers",
+  product_evidence: "RetailScope, a subscription analytics platform for independent retailers with inventory insights.",
+  product_evidence_rendering: "RetailScope, a subscription analytics platform for independent retailers with inventory insights.",
   angle: "problem",
   opening_style: "public-observation-led",
   diagnostic_focus: "Japanese-language evaluation path",

@@ -54,6 +54,7 @@ beforeEach(() => {
   mocks.process.mockImplementation(async (url: string) => ({
     item: { id: url.includes("one") ? "work-1" : "work-2", status: url.includes("one") ? "completed" : "needs_review", error_message: null },
     duplicate: false,
+    artifactsPreserved: false,
   }))
   mocks.complete.mockResolvedValue(undefined)
   mocks.refresh.mockResolvedValue({ ...before, batch: { ...before.batch, status: "completed" }, remaining: 0, finished: 2, counts: { ...before.counts, queued: 0, completed: 1, needs_review: 1 } })
@@ -89,6 +90,28 @@ describe("manual work durable batch drain", () => {
       itemId: "item-1",
       status: "failed",
       errorMessage: "DeepSeek temporarily unavailable",
+    }))
+  })
+
+  it("marks a refresh attempt failed when only the last-known-good artifact was preserved", async () => {
+    mocks.claim.mockResolvedValue([{ id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1" }])
+    mocks.process.mockResolvedValue({
+      item: { id: "work-1", status: "needs_review", error_message: "New generation failed" },
+      duplicate: false,
+      artifactsPreserved: true,
+    })
+
+    const response = await POST(
+      new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
+      { params: Promise.resolve({ batchId }) },
+    )
+
+    expect(response.status).toBe(200)
+    expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({
+      itemId: "item-1",
+      status: "failed",
+      workId: "work-1",
+      errorMessage: "New generation failed",
     }))
   })
 

@@ -8,6 +8,87 @@ function response(value: unknown): DeepSeekResponse {
 }
 
 describe("initial-interest product-evidence lock", () => {
+  it("replaces a safe-but-inferior model phrase with the deterministic public-evidence selection", async () => {
+    const [approvedCta] = buildManualCtaContracts({
+      companyName: "Airvida",
+      requiredAnchor: "Airvida",
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const message = `Hello Airvida team,
+
+Airvida describes a Wearable Air Purifier designed around personal air-cleaning use. That documented product category creates a specific Japan-entry question: how the current proposition should be evaluated for a Japanese customer path without assuming that the product, its audience, or its performance changes across markets.
+
+The checked public pages did not show a Japanese-language customer path. This does not establish demand or buyer behaviour in Japan; it leaves open whether a localized evaluation route is worth testing before broader market work receives time or budget.
+
+A Japan opportunity analysis would separate the current product evidence from the unanswered market questions, identify the smallest validation steps, and define which customer-path signals should determine whether further localization deserves priority. The scope would remain tied to the documented purifier rather than a generic expansion plan.
+
+${approvedCta!.paragraph}
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
+    const caller = vi.fn()
+      .mockResolvedValueOnce(response({
+        strategy: {
+          primary_observation: "Wearable air purifier",
+          why_now: "Japan path unverified",
+          japanese_segment: "Unverified",
+          japan_gap: "No Japanese-language path",
+          opportunity_angle: "Decision quality",
+          offer_relevance: "Opportunity analysis",
+          tone: "Direct",
+          cta: "Receive the analysis",
+          country_adaptation: "Direct",
+          prohibited_claims: ["Demand", "Performance"],
+        },
+        candidates: [{
+          message,
+          fact_ids: ["japan-audit-language"],
+          product_evidence: "ible Airvida - Wearable Air Purifier",
+          product_evidence_rendering: "ible Airvida - Wearable Air Purifier",
+          angle: "problem",
+          opening_style: "product_category",
+          diagnostic_focus: "language_path_validation",
+          cta_type: approvedCta!.ctaType,
+        }],
+      }))
+      .mockResolvedValueOnce(response({
+        selected_index: 0,
+        product_evidence_faithful: true,
+        scores: { specificity: 23, naturalness: 23, credibility: 23, executive_relevance: 23 },
+        rationale: "Grounded and decision-relevant.",
+        risk_flags: [],
+      }))
+
+    const result = await generatePersonalizedJapanEntryMessage({
+      companyName: "Airvida",
+      industry: "Consumer Products",
+      productContext: "ible Airvida - Wearable Air Purifier | Airvida – Wearable Air Purifier | Scientific Testing Results of Airvida",
+      targetCountry: "US",
+      businessModel: "ecommerce",
+      audit: {
+        status: { japanese_language_missing: true },
+        signals: { japanese_language: [] },
+        pages_checked: ["https://airvida.co/en/home/"],
+      },
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+    }, caller)
+
+    expect(result.ok, JSON.stringify(result)).toBe(true)
+    expect(result.review?.passed).toBe(true)
+    expect(result.candidates?.[0]).toMatchObject({
+      productEvidence: "Wearable Air Purifier",
+      productEvidenceRendering: "Wearable Air Purifier",
+    })
+    expect(result.message).not.toMatch(/\bible Airvida\b/i)
+    expect(caller).toHaveBeenCalledTimes(2)
+  })
+
   it("locks unsafe evidence and requires a bespoke model rewrite before editorial review", async () => {
     const unsafeMessage = `Hello Canny team,
 
