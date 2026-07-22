@@ -3,11 +3,12 @@ import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
 
 const BODY_MIN_WORDS = 120
-const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected|The opening must describe the company's product without conflating the company with its product category)/
+const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|The exact product-evidence phrase must appear no more than twice|The message contains an unnatural pronoun bridge|Mechanical exact-evidence CTA language is prohibited|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected|The opening must describe the company's product without conflating the company with its product category)/
 const DANGEROUS_SENTENCE = /(?:https?:\/\/|www\.|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b(?:attached|attachment|downloadable|download)\b|\bunlock\b|\b(?:guarantee(?:d|s|ing)?|ROI|return on investment)\b)/i
 const UNSUPPORTED_CAUSAL_SENTENCE = /(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i
 const PROMOTIONAL_SENTENCE = /(?:logical next step|given that reach|i noticed your site|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|\b(?:is|provides?|offers?) (?:a )?clear value\b|\bis valuable\b|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i
 const UNRESOLVED_SENTENCE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
+const UNNATURAL_PRONOUN_SENTENCE = /\b(?:for|from|around|within) it,\s+(?:the|an?|that|this|one)\b/i
 const STOP_WORDS = new Set(["a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "with"])
 
 interface RecoverableCandidate {
@@ -119,6 +120,7 @@ function safeSentences(paragraphs: string[], input: {
       if (input.removeUnsupportedCausal && UNSUPPORTED_CAUSAL_SENTENCE.test(sentence)) continue
       if (input.removePromotional && PROMOTIONAL_SENTENCE.test(sentence)) continue
       if (UNRESOLVED_SENTENCE.test(sentence)) continue
+      if (UNNATURAL_PRONOUN_SENTENCE.test(sentence)) continue
       if (accepted.some((prior) => tooSimilar(sentence, prior))) continue
       accepted.push(sentence)
     }
@@ -241,7 +243,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const currentBody = bodyBlocks(input.candidate.message)
   const originalMiddle = input.similarityPassed ? currentBody.slice(1, -1) : []
-  const rebuildOpening = !input.similarityPassed || input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder)/i.test(issue))
+  const rebuildOpening = !input.similarityPassed || input.issues.some((issue) => /(?:opening|product evidence|product-context|promotional|causal inference|attached-material|Revenue wording|numeric claims|Repeated|template placeholder|pronoun bridge)/i.test(issue))
   const opening = rebuildOpening || !currentBody[0]
     ? productOpening({
         companyName: input.companyName,
@@ -319,17 +321,17 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     productNames: input.productNames ?? [],
   })
   const paddingPool = [
-    `For the ${subject}, the page check establishes only the observed ${input.customerPathAnchor} condition; its commercial importance remains unverified.`,
-    `The decision around the ${subject} is whether that customer-path observation should be tested before choosing a wider localization scope.`,
-    `Any Japan assessment of the ${subject} should separate the documented page condition from assumptions that still require direct evidence.`,
-    `The ${subject} review can define a bounded validation step without presuming Japanese demand, audience response, or a commercial result.`,
-    `For this ${subject} decision, the current public material supports a page-level finding rather than a forecast about product-market fit.`,
-    `A focused check around the ${subject} would test the observed ${input.customerPathAnchor} condition before any broader market commitment.`,
-    `The open question for the ${subject} is therefore narrow: whether the documented customer path merits further localization work.`,
-    `Evidence for the ${subject} can be organized into what the pages establish, what remains unknown, and what a bounded test should resolve.`,
-    `The ${subject} analysis would keep that validation choice separate from unsupported claims about buyers, conversion, or commercial conclusions.`,
-    `A decision brief for the ${subject} can stay within the verified product scope while marking every Japan assumption as unconfirmed.`,
-    `The next decision for the ${subject} is not a full launch; it is whether the observed customer-path condition deserves direct validation.`,
+    `For the ${subject}, the page review establishes the observed ${input.customerPathAnchor} condition, while its commercial importance still requires validation.`,
+    `A practical first decision for the ${subject} is whether to test that customer-path observation before choosing a wider localization scope.`,
+    `Any Japan assessment of the ${subject} should keep the documented page condition separate from assumptions that still need direct evidence.`,
+    `The ${subject} review can define a focused validation step without presuming Japanese demand, audience response, or a commercial result.`,
+    `For this ${subject} decision, the current public material supports a page-level finding, not a forecast about product-market fit.`,
+    `A focused check would test the observed ${input.customerPathAnchor} condition before any broader market commitment.`,
+    `The immediate question is narrow: whether the documented customer path merits further localization work.`,
+    `The evidence can be organized into what the pages establish, what remains unknown, and what a bounded test should resolve.`,
+    `That analysis would keep the validation choice separate from unsupported claims about buyers, conversion, or commercial outcomes.`,
+    `A concise brief can stay within the verified product scope while marking every Japan assumption as unconfirmed.`,
+    `The next decision is not a full launch; it is whether the observed customer-path condition deserves direct validation.`,
   ]
   const offset = (stableHash(`${input.companyName}:${subject}:${input.customerPathAnchor}:padding`) + (input.variationIndex ?? 0)) % paddingPool.length
   const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
@@ -362,6 +364,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
       variationIndex: input.variationIndex,
     })
   }
+  boundedBody = limitAnchorOccurrences(boundedBody, faithfulRendering, "the documented offering")
   return {
     ...recovered,
     message: [manualFormGreeting(input.companyName), ...boundedBody, MANUAL_FORM_SIGNATURE].join("\n\n"),

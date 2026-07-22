@@ -32,6 +32,34 @@ describe("bespoke form-copy style", () => {
     expect(issues).toContain("The message contains an unnatural pronoun bridge; name the documented capability or rewrite the sentence directly")
   })
 
+  it("rejects the live For it, that leaves regression", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code. For it, that leaves one decision open: whether to test the customer path.",
+      "Screenshot to Code converts screenshots to code.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues).toContain("The message contains an unnatural pronoun bridge; name the documented capability or rewrite the sentence directly")
+  })
+
+  it("rejects repeated exact product evidence and mechanical exact-evidence CTA copy", () => {
+    const productEvidence = "Wearable Air Purifier"
+    const finalParagraph = "I can prepare a Japan opportunity analysis for Airvida around the exact Japanese-language evidence. Would you like to receive it?"
+    const issues = reviewManualFormBespokeStyle({
+      body: `Airvida describes its product as ${productEvidence}. The ${productEvidence} review concerns the customer path. A brief for the ${productEvidence} would separate facts from assumptions. ${finalParagraph}`,
+      openingParagraph: `Airvida describes its product as ${productEvidence}.`,
+      finalParagraph,
+      companyName: "Airvida",
+      productEvidence,
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+    })
+
+    expect(issues).toContain("The exact product-evidence phrase must appear no more than twice in the personalized body")
+    expect(issues).toContain("Mechanical exact-evidence CTA language is prohibited; offer a concrete decision brief in natural language")
+  })
+
   it("accepts a three-character company anchor in the final question", () => {
     const issues = reviewManualFormBespokeStyle({
       body: "Dub documents a link attribution workflow. Would you like the Dub analysis?",

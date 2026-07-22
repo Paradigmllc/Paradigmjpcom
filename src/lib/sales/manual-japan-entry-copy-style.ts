@@ -6,8 +6,9 @@ const JAPANESE_BEHAVIOR_PATTERN = /\b(?:for\s+)?Japanese(?:\s+[a-z-]+){0,3}\s+(?
 const STOCK_ROUTING_CTA_PATTERN = /\b(?:I can share a detailed Japan opportunity analysis based on this public evidence|Could you forward (?:this|it) to the founder or person responsible for international growth)\b/i
 const AMBIGUOUS_DECISION_PATTERN = /\bwhether this gap matters for (?:its|the company(?:['’]s)?|the product(?:['’]s)?) [a-z-]+ decision remains unverified\b/i
 const BROKEN_POSSESSIVE_PATTERN = /\b(?:the company|the product|it)['’](?!s\b)/i
-const AWKWARD_PRONOUN_BRIDGE_PATTERN = /\b(?:for|from|around|within) it,\s+(?:the|an?)\b/i
+const AWKWARD_PRONOUN_BRIDGE_PATTERN = /\b(?:for|from|around|within) it,\s+(?:the|an?|that|this|one)\b/i
 const MECHANICAL_BRIDGE_PATTERN = /\b(?:I used (?:that capability|that wording|it) to (?:keep|frame|support)|That specific capability is the starting point|That is the product basis used here|This helps narrow the scope|It helps define what the analysis should cover)\b/gi
+const MECHANICAL_CTA_PATTERN = /\baround the exact [^.?!]{2,80} evidence\b/i
 
 function containsAnchor(text: string, anchors: string[], minimumLength = 4): boolean {
   const normalized = text.toLowerCase()
@@ -54,6 +55,9 @@ export function reviewManualFormBespokeStyle(input: {
   if ((input.body.match(MECHANICAL_BRIDGE_PATTERN) ?? []).length > 0) {
     issues.push("Mechanical evidence-to-analysis bridge language is prohibited; state the company-specific observation directly")
   }
+  if (MECHANICAL_CTA_PATTERN.test(input.finalParagraph)) {
+    issues.push("Mechanical exact-evidence CTA language is prohibited; offer a concrete decision brief in natural language")
+  }
 
   const selectedFacts = [...new Map(input.selectedFacts.map((fact) => [fact.id, fact])).values()]
   const auditFacts = selectedFacts.filter((fact) => fact.id.startsWith("japan-audit-"))
@@ -83,6 +87,9 @@ export function reviewManualFormBespokeStyle(input: {
     if (exactOccurrences(input.body, productName) > 2 + unavoidableEvidenceProductMentions) {
       issues.push(`The product name must appear no more than twice in the personalized body: ${productName}`)
     }
+  }
+  if (input.productEvidence.trim().length >= 4 && exactOccurrences(input.body, input.productEvidence) > 2) {
+    issues.push("The exact product-evidence phrase must appear no more than twice in the personalized body")
   }
   const evidenceBoundaries = input.body.match(EVIDENCE_BOUNDARY_PATTERN)?.length ?? 0
   if (evidenceBoundaries > 2) {
