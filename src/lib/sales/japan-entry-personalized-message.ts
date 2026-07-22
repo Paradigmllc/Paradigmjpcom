@@ -375,10 +375,6 @@ export async function generatePersonalizedJapanEntryMessage(
         passed = inspected.safety.passed && inspected.similarity.passed && hasDifferentiationMetadata(inspected.candidate);
       }
       if (passed) {
-        if (inspected.usedRecovery && repairPass < INITIAL_SAFETY_REPAIR_LIMIT) {
-          repairTarget = inspected;
-          continue;
-        }
         valid = [inspected];
         break;
       }
@@ -470,11 +466,6 @@ export async function generatePersonalizedJapanEntryMessage(
       repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
       if (repairPass === EDITORIAL_REPAIR_LIMIT) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };
       finalCandidate = inspected;
-      continue;
-    }
-    if (inspected.usedRecovery && repairPass < EDITORIAL_REPAIR_LIMIT) {
-      finalCandidate = inspected;
-      repairIssues = [RECOVERY_REWRITE_ISSUE];
       continue;
     }
     const repairedCritic = await criticize([inspected]);

@@ -51,15 +51,26 @@ describe("manual model-copy safe finalizer", () => {
     expect(bodyWords.length).toBeGreaterThanOrEqual(120)
   })
 
-  it("does not authorize semantic evidence or similarity failures", () => {
+  it("does not authorize unsupported semantic or similarity failures", () => {
     expect(canSafelyFinishManualModelCopy({
-      issues: ["The faithful English product-evidence rendering is missing from the message"],
+      issues: ["Unsupported causal inference or invented package deliverable is prohibited"],
       similarityPassed: true,
     })).toBe(false)
     expect(canSafelyFinishManualModelCopy({
       issues: ["Message must be 120-190 words"],
       similarityPassed: false,
     })).toBe(false)
+  })
+
+  it("authorizes restoring required product evidence because recovery re-runs every hard gate", () => {
+    expect(canSafelyFinishManualModelCopy({
+      issues: [
+        "The faithful English product-evidence rendering is missing from the message",
+        "The opening product section must contain the company or exact product name and faithful English product-evidence rendering",
+        "Message must be 120-190 words",
+      ],
+      similarityPassed: true,
+    })).toBe(true)
   })
 
   it("allows a fact-grounded rebuild after a uniqueness failure and still requires the recovery flag", () => {
