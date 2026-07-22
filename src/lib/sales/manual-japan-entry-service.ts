@@ -46,7 +46,11 @@ import { runWithManualWorkAutoRecovery } from "./manual-work-auto-recovery"
 import { isExplicitManualWorkArtifactRefresh, isManualWorkRecoveryAvailable } from "./manual-work-recovery-policy"
 import { rejectManualWorkNonCompanyEvidence } from "./manual-company-evidence-policy"
 import { buildManualWorkRetryPatch } from "./manual-work-retry-patch"
-import { classifyManualWorkFailure } from "./manual-work-failure-policy"
+import {
+  buildLastGoodArtifactRestorePatch,
+  captureManualWorkLastGoodArtifacts,
+} from "./manual-work-last-good"
+import { failManualWork } from "./manual-work-failure-persistence"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { verifyExternalFormDiscoveryHit } from "./sources/external-form-verification"
 import { discoverWithCrawl4Ai } from "./sources/external-form-discovery"
@@ -74,22 +78,6 @@ export interface ManualWorkProcessOptions {
 function jsonRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
-}
-
-async function failWork(item: ManualJapanEntryWorkRow, error: unknown): Promise<ManualJapanEntryWorkRow> {
-  const disposition = classifyManualWorkFailure(item.stage, error)
-  console.error("[manual-work] processing stopped:", {
-    id: item.id,
-    stage: item.stage,
-    disposition: disposition.status,
-    error,
-  })
-  return updateManualWork(item.id, {
-    status: disposition.status,
-    stage: disposition.stage,
-    error_message: disposition.message,
-    twenty_sync_status: "skipped",
-  })
 }
 
 export function isRetryableManualWork(
@@ -125,6 +113,7 @@ export async function processManualJapanEntryUrl(
   const sourceCatalog = await findManualLeadSource(sourceInput.sourceSlug)
   if (!sourceCatalog) throw new Error("選択した営業ソースは台帳に存在しません")
   const existing = await findManualWorkByDomain(normalized.domain)
+  const lastGoodArtifacts = captureManualWorkLastGoodArtifacts(existing)
   const explicitArtifactRefresh = existing ? isExplicitManualWorkArtifactRefresh(existing, Boolean(options.retryRequested)) : false
   if (options.retryRequested) {
     if (!existing || options.expectedWorkId !== existing.id) {
@@ -365,6 +354,13 @@ export async function processManualJapanEntryUrl(
         domain: normalized.domain,
         error: generationError,
       })
+      if (lastGoodArtifacts) {
+        const item = await updateManualWork(
+          work.id,
+          buildLastGoodArtifactRestorePatch(lastGoodArtifacts, `Initial message generation failed: ${generationError}`),
+        )
+        return { item, duplicate: false }
+      }
     }
     const messageReview = {
       ...jsonRecord(generated.review),
@@ -472,6 +468,6 @@ export async function processManualJapanEntryUrl(
     }
     return { item: work, duplicate: false }
   } catch (error) {
-    return { item: await failWork(work, error), duplicate: false }
+    return { item: await failManualWork(work, error, lastGoodArtifacts), duplicate: false }
   }
 }
