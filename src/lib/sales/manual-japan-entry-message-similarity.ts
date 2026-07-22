@@ -61,6 +61,39 @@ function contentParagraphs(message: string): string[] {
   return blocks.filter((block) => block.length >= 45)
 }
 
+function normalizedSentence(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[“”‘’]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function nonCtaSentences(message: string): Array<{ sentence: string; normalized: string }> {
+  const paragraphs = contentParagraphs(message)
+  if (paragraphs.length > 1) paragraphs.pop()
+  return paragraphs.flatMap((paragraph) => paragraph
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => ({ sentence: sentence.trim(), normalized: normalizedSentence(sentence) }))
+    .filter(({ normalized }) => normalized.length >= 45))
+}
+
+function reusedSentence(input: {
+  message: string
+  priorMessages: PriorManualMessage[]
+  allowedRepeatedSentences: string[]
+}): { sentence: string; prior: PriorManualMessage } | null {
+  const allowed = new Set(input.allowedRepeatedSentences.map(normalizedSentence))
+  const current = nonCtaSentences(input.message).filter(({ normalized }) => !allowed.has(normalized))
+  if (current.length === 0) return null
+  for (const prior of input.priorMessages) {
+    const priorSentences = new Set(nonCtaSentences(prior.message).map(({ normalized }) => normalized))
+    const match = current.find(({ normalized }) => priorSentences.has(normalized))
+    if (match) return { sentence: match.sentence, prior }
+  }
+  return null
+}
+
 const STANDARDIZED_RECOVERY_SENTENCE = /(?:checked public pages did not show|whether that observation matters .+? remains unverified|page check establishes only|open question for .+? is whether|nothing in the public evidence resolves|deliberately a page-level finding|can therefore treat the .+? point as a validation question|bounded test would determine|checked material supports a narrow|leaves one practical decision open|bounded observation about the pages checked|open decision is whether to test the observed|decision remains unverified from the public evidence|kept this review within that stated capability|used that wording as the boundary of this review|review stays with that documented capability|treated the quoted capability as the product evidence)/i
 
 function companySpecificCore(message: string): string {
@@ -140,6 +173,7 @@ export function reviewManualMessageDistinctness(input: {
   message: string
   companyName: string
   priorMessages: PriorManualMessage[]
+  allowedRepeatedSentences?: string[]
   threshold?: number
   ctaThreshold?: number
 }): ManualMessageSimilarityReview {
@@ -158,9 +192,14 @@ export function reviewManualMessageDistinctness(input: {
     }
   }
   const repeated = repeatedPhrase(input.message, input.companyName)
+  const reused = reusedSentence({
+    message: input.message,
+    priorMessages: input.priorMessages,
+    allowedRepeatedSentences: input.allowedRepeatedSentences ?? [],
+  })
   const wholeMessagePassed = maxSimilarity < threshold
   const ctaPassed = maxCtaSimilarity < ctaThreshold
-  const passed = wholeMessagePassed && ctaPassed && repeated === null
+  const passed = wholeMessagePassed && ctaPassed && repeated === null && reused === null
   const reasons: string[] = []
   if (!wholeMessagePassed) {
     reasons.push(`Company-name-neutral copy similarity ${Math.round(maxSimilarity * 100)}% exceeds the ${Math.round(threshold * 100)}% limit`)
@@ -169,12 +208,13 @@ export function reviewManualMessageDistinctness(input: {
     reasons.push(`The final routing or permission paragraph is ${Math.round(maxCtaSimilarity * 100)}% similar to recent company copy; use a company-specific CTA construction`)
   }
   if (repeated) reasons.push(`Repeated phrase inside one sentence is prohibited: "${repeated}"`)
+  if (reused) reasons.push(`A non-evidence sentence duplicates prior company copy: "${reused.sentence}"`)
   if (!passed) reasons.push("Rewrite the observation, diagnostic logic, paragraph order, and CTA for this company")
   return {
     passed,
     maxSimilarity: Number(Math.max(maxSimilarity, maxCtaSimilarity).toFixed(3)),
-    matchedMessageId: strongest?.id ?? null,
-    matchedCompany: strongest?.companyName ?? strongest?.domain ?? null,
+    matchedMessageId: reused?.prior.id ?? strongest?.id ?? null,
+    matchedCompany: reused?.prior.companyName ?? reused?.prior.domain ?? strongest?.companyName ?? strongest?.domain ?? null,
     reasons,
   }
 }
