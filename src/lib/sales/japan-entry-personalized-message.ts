@@ -323,8 +323,7 @@ export async function generatePersonalizedJapanEntryMessage(
       : rawCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
-    const envelopeOnlyRepair = initial.safety.issues.length > 0 && initial.safety.issues.every((issue) => /(?:Message must be \d|body paragraphs|greeting|signature|CTA|final question|final paragraph)/i.test(issue));
-    const recoveryAllowed = allowRecovery || evidenceLocked !== rawCandidate || envelopeOnlyRepair;
+    const recoveryAllowed = allowRecovery || evidenceLocked !== rawCandidate;
     if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed) || !recoveryAllowed) return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity };
     const recoverAndInspect = (variationIndex: number) => {
       const candidate = recoverManualInitialInterestCandidate({
