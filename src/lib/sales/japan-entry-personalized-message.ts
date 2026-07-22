@@ -52,6 +52,7 @@ const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 23;
 const INITIAL_SAFETY_REPAIR_LIMIT = 5;
 const EDITORIAL_REPAIR_LIMIT = 5;
+const DETERMINISTIC_RECOVERY_PASS = 2;
 const RECOVERY_REWRITE_ISSUE = "A deterministic safety recovery was used. Rewrite the complete body in fresh, natural, company-specific language; preserve every exact evidence and CTA contract, and do not reuse any recovery sentence.";
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
@@ -333,6 +334,7 @@ export async function generatePersonalizedJapanEntryMessage(
   }
   if (valid.length === 0) {
     let repairTarget = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
+    let deterministicRecoveryUsed = false;
     if (!repairTarget) return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro returned no candidate to repair" };
     for (let repairPass = 1; repairPass <= INITIAL_SAFETY_REPAIR_LIMIT; repairPass += 1) {
       const repaired = await callDeepSeekStructured({
@@ -352,7 +354,11 @@ export async function generatePersonalizedJapanEntryMessage(
       if (!repaired.ok) return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
       let inspected = inspectCandidate(repaired.data.candidate);
       let passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
-      if (!passed && repairPass === INITIAL_SAFETY_REPAIR_LIMIT - 1) { inspected = inspectCandidate(repaired.data.candidate, 0, true); passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate)); }
+      if (!passed && !deterministicRecoveryUsed && repairPass === DETERMINISTIC_RECOVERY_PASS) {
+        inspected = inspectCandidate(repaired.data.candidate, 0, true);
+        deterministicRecoveryUsed = inspected.usedRecovery;
+        passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
+      }
       if (passed) {
         if (inspected.usedRecovery && repairPass < INITIAL_SAFETY_REPAIR_LIMIT) {
           repairTarget = inspected;
@@ -412,6 +418,7 @@ export async function generatePersonalizedJapanEntryMessage(
   let finalCandidate = selected;
   let finalReview = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts, similarity: selected.similarity, candidateCount: valid.length });
   let repairIssues = finalReview.issues;
+  let deterministicEditorialRecoveryUsed = false;
   for (let repairPass = 1; !finalReview.passed && repairPass <= EDITORIAL_REPAIR_LIMIT; repairPass += 1) {
     const exactCtaAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName;
     const editorialFeedback = `Score ${finalReview.score}/100. ${finalReview.rationale}. Material risks: ${finalReview.riskFlags.join(", ") || "none"}. Rewrite substantially: make paragraph 1 a concrete product observation using the required and supplemental product evidence; connect only the verified Japan audit gap to a decision question without claiming buyer behaviour, product-market fit, demand, impact, or causation; mention the exact company or product anchor '${exactCtaAnchor}' no more than twice in the body and exactly once in the final CTA paragraph; let the final question use a natural pronoun instead of repeating the anchor; keep only one concise evidence-boundary statement; and make the final paragraph contain the exact audited customer-path anchor supplied in required_cta_contract while saying what Japan customer-path decision the analysis informs. Add no facts, URLs, sources, unsupported modals, or unchanged sentences. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`;
@@ -432,7 +439,14 @@ export async function generatePersonalizedJapanEntryMessage(
     totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
     if (!repaired.ok) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
     let inspected = inspectCandidate(repaired.data.candidate);
-    if ((!inspected.safety.passed || !inspected.similarity.passed) && repairPass === EDITORIAL_REPAIR_LIMIT - 1) inspected = inspectCandidate(repaired.data.candidate, 0, true);
+    if (
+      (!inspected.safety.passed || !inspected.similarity.passed)
+      && !deterministicEditorialRecoveryUsed
+      && repairPass === DETERMINISTIC_RECOVERY_PASS
+    ) {
+      inspected = inspectCandidate(repaired.data.candidate, 0, true);
+      deterministicEditorialRecoveryUsed = inspected.usedRecovery;
+    }
     if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {
       repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
       if (repairPass === EDITORIAL_REPAIR_LIMIT) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };

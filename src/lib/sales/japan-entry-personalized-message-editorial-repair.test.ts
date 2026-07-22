@@ -238,8 +238,6 @@ describe("Japan Entry editorial repair loop", () => {
       .mockResolvedValueOnce(critic(22))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
-      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
-      .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
       .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23))
 
@@ -259,8 +257,8 @@ describe("Japan Entry editorial repair loop", () => {
     expect(result.ok, JSON.stringify(result)).toBe(true)
     expect(result.message).toBe(modelRepairedMessage)
     expect(result.message).not.toContain("The concrete capability documented")
-    expect(caller).toHaveBeenCalledTimes(8)
-    const recoveryRewrite = JSON.parse(caller.mock.calls[6]?.[0]?.[1]?.content ?? "{}") as {
+    expect(caller).toHaveBeenCalledTimes(6)
+    const recoveryRewrite = JSON.parse(caller.mock.calls[4]?.[0]?.[1]?.content ?? "{}") as {
       repair?: { issues?: string[] }
     }
     expect(recoveryRewrite.repair?.issues, JSON.stringify(recoveryRewrite)).toContain("A deterministic safety recovery was used. Rewrite the complete body in fresh, natural, company-specific language; preserve every exact evidence and CTA contract, and do not reuse any recovery sentence.")
