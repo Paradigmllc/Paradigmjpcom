@@ -14,6 +14,59 @@ const auditFact: JapanEntryPersonalizationFact = {
 }
 
 describe("manual candidate live-copy regressions", () => {
+  it("preserves terminal punctuation in exact public product evidence", () => {
+    const evidence = "Host scheduling links on a custom domain for a white-labeled booking experience."
+    const contract: ManualCtaContract = {
+      id: "terminal-punctuation-evidence",
+      ctaType: "permission_to_send",
+      paragraph: "I can send a short Japan opportunity analysis for SavvyCal focused on the Japanese-language customer path. Would you like me to send it?",
+      question: "Would you like me to send it?",
+    }
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting("SavvyCal")}
+
+SavvyCal offers flexible scheduling.
+
+${auditFact.statement}
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: evidence,
+        product_evidence_rendering: evidence,
+        cta_type: "legacy_unspecified",
+      },
+      companyName: "SavvyCal",
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract,
+      issues: [
+        "The faithful English product-evidence rendering is missing from the message",
+        "The opening product section must contain the company or exact product name and faithful English product-evidence rendering",
+      ],
+      similarityPassed: true,
+    })
+    const review = reviewPersonalizedJapanEntryMessage({
+      message: recovered.message,
+      companyName: "SavvyCal",
+      productContext: evidence,
+      productEvidence: evidence,
+      productEvidenceRendering: evidence,
+      factIds: recovered.fact_ids,
+      facts: [auditFact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
+
+    expect(recovered.message).toContain(`“${evidence}”`)
+    expect(recovered.message).not.toContain(`“${evidence.replace(/\.$/, "")}”.`)
+    expect(review).toMatchObject({ passed: true, issues: [] })
+  })
+
   it("repairs the Airvida pronoun and exact-evidence repetition regression", () => {
     const evidence = "Wearable Air Purifier"
     const contract: ManualCtaContract = {
