@@ -63,8 +63,18 @@ function contentParagraphs(message: string): string[] {
 
 function normalizedSentence(value: string): string {
   return value
+    .normalize("NFKC")
     .toLowerCase()
     .replace(/[“”‘’]/g, '"')
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function normalizedSentenceMatchKey(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
 }
@@ -213,14 +223,14 @@ export function groundRejectedManualMessageSentences(input: {
   if (rejected.length === 0) return input.message
 
   const replacement = `Within the documented “${anchor}” scope, a Japanese-language customer-path test remains a decision to validate before broader localization.`
-  const rejectedKeys = new Set(rejected.map(normalizedSentence))
+  const rejectedKeys = new Set(rejected.map(normalizedSentenceMatchKey))
   return input.message
     .replace(/\r\n?/g, "\n")
     .trim()
     .split(/\n\s*\n/)
     .map((block) => block
       .split(/(?<=[.!?])\s+/)
-      .map((sentence) => rejectedKeys.has(normalizedSentence(sentence)) ? replacement : sentence.trim())
+      .map((sentence) => rejectedKeys.has(normalizedSentenceMatchKey(sentence)) ? replacement : sentence.trim())
       .filter(Boolean)
       .join(" "))
     .filter(Boolean)

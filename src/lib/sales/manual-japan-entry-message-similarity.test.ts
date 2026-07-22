@@ -112,6 +112,21 @@ contact@paradigmjp.com`
     expect(grounded).toContain("documented “Wearable Air Purifier” scope")
   })
 
+  it("grounds the production duplicate despite Unicode and terminal punctuation differences", () => {
+    const actual = "The practical question is whether the Japanese-language observation deserves a focused test before a broader market commitment.\u00a0"
+    const rejected = "The practical question is whether the Japanese–language observation deserves a focused test before a broader market commitment"
+    const message = `Hello Airvida team,\n\nAirvida documents a wearable air purifier.\n\n${actual}\n\nMay I send the analysis?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+    const grounded = groundRejectedManualMessageSentences({
+      message,
+      reasons: [`A non-evidence sentence duplicates prior company copy: "${rejected}"`],
+      companyName: "Airvida",
+      productEvidence: "Airvida – Wearable Air Purifier",
+    })
+
+    expect(grounded).not.toContain("The practical question")
+    expect(grounded).toContain("documented “Wearable Air Purifier” scope")
+  })
+
   it("does not compare the approved final CTA sentence as diagnosis copy", () => {
     const sharedCta = "I can send a short Japan opportunity analysis focused on the Japanese-language question. Would you like me to send it?"
     const prior = `Hello Alpha team,\n\nAlpha documents inventory reconciliation for independent shops.\n\nThe storefront review leaves catalog localization as the unverified decision.\n\n${sharedCta}\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
