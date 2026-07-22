@@ -94,7 +94,7 @@ const CTA_ROUTES: CtaRoute[] = [
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `I can prepare a Japan opportunity analysis for ${anchor} around the exact ${path} evidence.`,
+      offer: `I can send a short Japan opportunity analysis for ${anchor} that separates the verified ${path} finding from the decisions still to test.`,
       question: "Should I route it to the founder or international-growth owner?",
     }),
   },
