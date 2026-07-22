@@ -10,7 +10,7 @@ import { withManualFormCopyReadyEnvelope } from "./manual-japan-entry-copy-envel
 import { buildPersonalizedMessageRepairInput } from "./japan-entry-personalized-message-repair";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
-  manualMessageSimilarity,
+  manualMessageSimilarity, stripRejectedManualMessageSentences,
   reviewManualMessageDistinctness,
   type ManualMessageSimilarityReview,
   type PriorManualMessage,
@@ -344,7 +344,7 @@ export async function generatePersonalizedJapanEntryMessage(
       const repaired = await callDeepSeekStructured({
         stage: "repair",
         messages: generationMessages(input, facts, mode, buildPersonalizedMessageRepairInput({
-          candidate: repairTarget.candidate,
+          candidate: { ...repairTarget.candidate, message: stripRejectedManualMessageSentences(repairTarget.candidate.message, repairTarget.similarity.reasons) },
           issues: repairTarget.usedRecovery ? [RECOVERY_REWRITE_ISSUE] : [...repairTarget.safety.issues, ...repairTarget.similarity.reasons],
           wordCount: repairTarget.safety.wordCount,
           purpose,
