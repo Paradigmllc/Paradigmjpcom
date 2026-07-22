@@ -23,6 +23,15 @@ function review(body: string, openingParagraph: string, finalParagraph: string) 
 }
 
 describe("bespoke form-copy style", () => {
+  it("rejects an unnatural pronoun bridge that is not paste-ready English", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code. For it, the open question is whether to test the customer path.",
+      "Screenshot to Code converts screenshots to code.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+    expect(issues).toContain("The message contains an unnatural pronoun bridge; name the documented capability or rewrite the sentence directly")
+  })
+
   it("accepts a three-character company anchor in the final question", () => {
     const issues = reviewManualFormBespokeStyle({
       body: "Dub documents a link attribution workflow. Would you like the Dub analysis?",
