@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { buildManualCtaContracts } from "./manual-japan-entry-cta-contract"
 import {
   canSafelyFinishManualModelCopy,
+  canUseManualDeterministicRecovery,
   recoverManualInitialInterestCandidate,
 } from "./manual-japan-entry-candidate-recovery"
 import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-copy-envelope"
@@ -59,5 +60,11 @@ describe("manual model-copy safe finalizer", () => {
       issues: ["Message must be 120-190 words"],
       similarityPassed: false,
     })).toBe(false)
+  })
+
+  it("never lets deterministic padding repair a cross-company uniqueness failure", () => {
+    expect(canUseManualDeterministicRecovery({ allowRecovery: true, similarityPassed: false })).toBe(false)
+    expect(canUseManualDeterministicRecovery({ allowRecovery: true, similarityPassed: true })).toBe(true)
+    expect(canUseManualDeterministicRecovery({ allowRecovery: false, similarityPassed: true })).toBe(false)
   })
 })
