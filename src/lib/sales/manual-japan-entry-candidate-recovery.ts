@@ -3,7 +3,7 @@ import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
 
 const BODY_MIN_WORDS = 120
-const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected)/
+const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected|The opening must describe the company's product without conflating the company with its product category)/
 const DANGEROUS_SENTENCE = /(?:https?:\/\/|www\.|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b(?:attached|attachment|downloadable|download)\b|\bunlock\b|\b(?:guarantee(?:d|s|ing)?|ROI|return on investment)\b)/i
 const UNSUPPORTED_CAUSAL_SENTENCE = /(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i
 const PROMOTIONAL_SENTENCE = /(?:logical next step|given that reach|i noticed your site|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|\b(?:is|provides?|offers?) (?:a )?clear value\b|\bis valuable\b|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i
@@ -133,7 +133,7 @@ function productOpening(input: {
   variationIndex?: number
 }): string {
   const rendering = input.rendering.trim()
-  const renderedSentence = /[.!?]$/.test(rendering) ? rendering : `${rendering}.`
+  const quotedRendering = `“${rendering.replace(/[.!?]+$/, "")}”`
   const productName = input.productNames.map((name) => name.trim()).find((name) => (
     name
     && name.toLowerCase() !== input.companyName.trim().toLowerCase()
@@ -144,16 +144,16 @@ function productOpening(input: {
   const renderingIncludesCompany = rendering.toLowerCase().includes(input.companyName.toLowerCase())
   const variants = renderingIncludesCompany
     ? [
-        `The public product description is concrete: ${renderedSentence} For Japan, the open product question concerns the customer path around that documented capability.`,
-        `The checked product page describes ${renderedSentence} The Japan-specific issue is whether its current customer path has a localized evaluation route.`,
-        `The product page defines the offering as ${renderedSentence} The relevant Japan question concerns the customer path for that existing proposition.`,
-        `The public description centers on ${renderedSentence} For Japan, the open question is how that proposition maps to a Japanese customer path.`,
+        `The public product description uses the phrase ${quotedRendering}. For Japan, the open product question concerns the customer path around that documented capability.`,
+        `The checked product page describes the offering as ${quotedRendering}. The Japan-specific issue is whether its current customer path has a localized evaluation route.`,
+        `The product page defines the offering with ${quotedRendering}. The relevant Japan question concerns the customer path for that existing proposition.`,
+        `The public description centers on ${quotedRendering}. For Japan, the open question is how that proposition maps to a Japanese customer path.`,
       ]
     : [
-        `${input.companyName} publicly describes ${subject} as ${renderedSentence} The product-specific Japan question concerns the customer path around that existing proposition.`,
-        `For ${subject}, ${input.companyName} documents ${renderedSentence} The Japan-specific issue is whether its current customer path has a localized evaluation route.`,
-        `In its public product description, ${input.companyName} defines ${subject} around ${renderedSentence} The corresponding Japan question concerns the customer path for that existing proposition.`,
-        `${input.companyName} presents ${subject} through this product description: ${renderedSentence} For Japan, the open question is how that proposition maps to a Japanese customer path.`,
+        `${input.companyName} publicly describes ${subject} with the phrase ${quotedRendering}. The product-specific Japan question concerns the customer path around that existing proposition.`,
+        `For ${subject}, ${input.companyName} documents the phrase ${quotedRendering}. The Japan-specific issue is whether its current customer path has a localized evaluation route.`,
+        `In its public product description, ${input.companyName} defines ${subject} around ${quotedRendering}. The corresponding Japan question concerns the customer path for that existing proposition.`,
+        `${input.companyName} presents ${subject} through the description ${quotedRendering}. For Japan, the open question is how that proposition maps to a Japanese customer path.`,
       ]
   return variants[(stableHash(`${input.companyName}:${rendering}`) + (input.variationIndex ?? 0)) % variants.length]!
 }
@@ -327,7 +327,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     `A focused check around the ${subject} would test the observed ${input.customerPathAnchor} condition before any broader market commitment.`,
     `The open question for the ${subject} is therefore narrow: whether the documented customer path merits further localization work.`,
     `Evidence for the ${subject} can be organized into what the pages establish, what remains unknown, and what a bounded test should resolve.`,
-    `The ${subject} analysis would keep that validation choice separate from unsupported claims about buyers, conversion, or financial outcomes.`,
+    `The ${subject} analysis would keep that validation choice separate from unsupported claims about buyers, conversion, or commercial conclusions.`,
     `A decision brief for the ${subject} can stay within the verified product scope while marking every Japan assumption as unconfirmed.`,
     `The next decision for the ${subject} is not a full launch; it is whether the observed customer-path condition deserves direct validation.`,
   ]

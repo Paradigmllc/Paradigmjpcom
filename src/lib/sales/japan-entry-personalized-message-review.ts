@@ -286,8 +286,14 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     const productSection = customInitialInterest
       ? paragraphs.slice(0, 2).find((paragraph) => paragraph.toLowerCase().includes(productEvidenceRendering.toLowerCase())) ?? paragraphs[0] ?? ""
       : productParagraph;
+    const normalizedProductSection = productSection.toLowerCase().replace(/[“”'’]/g, "").replace(/\s+/g, " ").trim();
+    const normalizedCompany = input.companyName.toLowerCase().trim();
+    const normalizedRendering = productEvidenceRendering.toLowerCase().replace(/[“”'’]/g, "").trim();
+    const conflatesCompanyAndProduct = ["is", "is a", "is an", "are", "are a", "are an"]
+      .some((verb) => normalizedProductSection.startsWith(`${normalizedCompany} ${verb} ${normalizedRendering}`));
     if (!customInitialInterest && (paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
     if (!containsCompanyOrProductAnchor(productSection) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company or exact product name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (customInitialInterest && conflatesCompanyAndProduct) { issues.push("The opening must describe the company's product without conflating the company with its product category"); score -= 25; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
     if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
     const unsupportedProductTerms = [

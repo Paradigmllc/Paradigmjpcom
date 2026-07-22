@@ -9,7 +9,7 @@ import { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-
 describe("manual recovery uniqueness", () => {
   it("pads short copy with product-grounded sentences instead of the shared recovery pool", () => {
     const companyName = "Airvida"
-    const rendering = "Airvida – Wearable Air Purifier"
+    const rendering = "Wearable Air Purifier"
     const fact: JapanEntryPersonalizationFact = {
       id: "japan-audit-language",
       statement: "The checked public pages did not show a Japanese-language customer path.",
@@ -25,19 +25,32 @@ describe("manual recovery uniqueness", () => {
       count: 1,
     })
     const candidate = {
-      message: `${manualFormGreeting(companyName)}\n\n${companyName} documents ${rendering}.\n\n${fact.statement}\n\nWould you like the analysis for ${companyName}?\n\n${MANUAL_FORM_SIGNATURE}`,
+      message: `${manualFormGreeting(companyName)}\n\n${companyName} is a ${rendering}.\n\n${fact.statement}\n\nWould you like the analysis for ${companyName}?\n\n${MANUAL_FORM_SIGNATURE}`,
       fact_ids: [fact.id],
       product_evidence: rendering,
       product_evidence_rendering: rendering,
       cta_type: "permission_to_send",
     }
+    const initialSafety = reviewPersonalizedJapanEntryMessage({
+      message: candidate.message,
+      companyName,
+      productContext: `${companyName} documents ${rendering}.`,
+      productEvidence: rendering,
+      productEvidenceRendering: rendering,
+      factIds: candidate.fact_ids,
+      facts: [fact],
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: false },
+      messageAngle: "problem",
+      candidateAngle: "problem",
+    })
     const recovered = recoverManualInitialInterestCandidate({
       candidate,
       companyName,
       facts: [fact],
       customerPathAnchor: "Japanese-language",
       contract: contract!,
-      issues: ["Message must be 120-190 words"],
+      issues: initialSafety.issues,
       similarityPassed: true,
     })
     const priorGeneric = [
@@ -71,6 +84,8 @@ describe("manual recovery uniqueness", () => {
     expect(recovered.message).toContain("Wearable Air Purifier")
     expect(recovered.message).not.toContain("The practical question is whether")
     expect(recovered.message).not.toContain("The public evidence does not resolve")
+    expect(initialSafety.issues).toContain("The opening must describe the company's product without conflating the company with its product category")
+    expect(recovered.message).not.toContain("Airvida is a Wearable Air Purifier")
     expect(similarity.passed, similarity.reasons.join("\n")).toBe(true)
     expect(safety.passed, safety.issues.join("\n")).toBe(true)
   })
