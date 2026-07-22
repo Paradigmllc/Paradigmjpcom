@@ -108,6 +108,51 @@ describe("Japan Entry editorial repair loop", () => {
     expect(editorialPayload.candidates).toHaveLength(1)
   })
 
+  it("uses a bespoke model repair before deterministic recovery for repeated company anchors", async () => {
+    const repeatedAnchorMessage = safeMessage.replace(
+      "The checked public pages",
+      "AtlasMetric's checked public pages",
+    )
+    const caller = vi.fn()
+      .mockResolvedValueOnce(response({
+        strategy: {
+          primary_observation: "AtlasMetric product workflow",
+          why_now: "Japan path unverified",
+          japanese_segment: "Unverified",
+          japan_gap: "No Japanese-language path",
+          opportunity_angle: "Decision quality",
+          offer_relevance: "Opportunity analysis",
+          tone: "Direct",
+          cta: "Route the analysis",
+          country_adaptation: "Direct",
+          prohibited_claims: ["Demand"],
+        },
+        candidates: [candidate(repeatedAnchorMessage)],
+      }))
+      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(critic(23))
+
+    const result = await generatePersonalizedJapanEntryMessage({
+      companyName: "AtlasMetric",
+      industry: "B2B SaaS",
+      productContext: `AtlasMetric provides ${productEvidence}`,
+      targetCountry: "US",
+      businessModel: "saas",
+      projection,
+      audit: { status: { japanese_language_missing: true }, signals: { japanese_language: [] }, pages_checked: ["https://atlasmetric.example/"] },
+      purpose: "initial_interest",
+      initialInterestOptions: { includeEstimate: false, includePrice: false, founderForwardCta: true },
+      messageAngle: "problem",
+    }, caller)
+
+    expect(result.ok).toBe(true)
+    expect(caller).toHaveBeenCalledTimes(3)
+    const repairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as { task?: string }
+    expect(repairPayload.task).toBe("repair_candidate")
+    const body = result.message?.split(/\n\n/).slice(1, -1).join("\n\n") ?? ""
+    expect(body.match(/AtlasMetric/g)).toHaveLength(2)
+  })
+
   it("uses the second editorial repair when the first rewrite violates a deterministic safety rule", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(response({
