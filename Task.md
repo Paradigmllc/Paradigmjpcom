@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-22 `/work`全幅UI・初回文面recovery・129件本番監査（本番release / 違反0 / 外部送信0）
+
+- `/work`が約540pxの左カラムへ縮み右側が空白になる再発に対し、work専用layoutへ`device-width / initialScale=1 / viewportFit=cover`と`html/body`の`w-full / min-w-full / overflow-x-clip`を明示した。production-mode PlaywrightはPC/Pixel 7 **2/2**、実測viewportと`html/body/main`が一致、横overflow 0、console error 0、critical accessibility violation 0。PR **#552** / main **46013c6d** / deployment **mzo5xokfk2bdrmtmq9t7ytc6**。
+- 文面生成は、重複または安全性違反時に公開商品根拠から決定論recoveryし、同じ安全・根拠・独自性gateを再実行する。合格済みrecoveryを再度LLMへ全面書換えして根拠を落とす経路を削除し、公開根拠の末尾句読点を完全保持しつつ`.”.`を作らない。古い成果物を保持した再生成失敗は現行成功として見せず、UIに明示する。PR **#553 / #554 / #555 / #556**、最終main **d2072bb3**、最終deployment **dg5jnwy3fknduszk5zmcp8tv**。
+- 本番で旧パターン13件と文面欠損4件を耐久キューへ投入し、追加の根因修正後にAersure、Acwise、SavvyCal、Affableを実データで再生成した。最終例はAcwise **92点 / safety 100 / 121語**、SavvyCal **92 / 100 / 129語**、Affable **93 / 100 / 130語**。全てV4、Twenty同一company ID、`artifacts_preserved=false`、`sent=false`。手動の再解析連打なしでqueue position 0以降を自動drainした。
+- 本番129履歴の独立監査は`complete stage 129/129`、運用対象文面 **101/101**、固有全文hash **101/101**、文面違反 **0**、文面欠損 **0**、Twenty ID欠損 **0**、V4レポート **104/104**、legacy **0**、`sent=true` **0**、成果timestamp **0**。Twentyは`synced 107 / skipped 22`。DeepSeek累計はprompt **2,760,944**、Cache Hit **1,871,104**、Miss **889,840**、保存済み全工程のHit率 **67.77%**。
+- 最終検証は全Vitest **244 files / 1,163 tests**、TypeScript、ESLint、Quality Guard **0 errors / 81 existing warnings**、production build **408/408 pages**。release gateはDB **93/93**、Sales health HTTP 200 JSON `ok`、Twenty HTTP 200 / worker restart 0、Realtime/RLS/Traefik/Cloudflare origin lock、V4、zero-sendを含めpassした。
+
 ## CURRENT STATUS - 2026-07-22 `/work`本番102社自然文再生成・決定論recovery（第3release前）
 
 - main **009a9fab** / deployment **fim5z03x0mon27ymuq83bez5**を正式`npm run release:prod`で反映し、新migration `20260722044000_manual_work_terminal_source_failures.sql`をDB SSH経由で適用した。post-deploy gateは既知の取得不能系`failed`残存0、Sales health JSON `ok:true`、Twenty HTTP 200 / worker restart 0、Realtime/RLS/Traefik/zero-send、公開V4レポートを含めpass。本番129件は`completed 13 / needs_review 89 / rejected 27 / failed 0 / sent 0`。
