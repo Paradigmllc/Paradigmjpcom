@@ -14,6 +14,7 @@ import {
 import { MANUAL_FORM_SENDER, MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-copy-envelope";
 import {
   initialInterestFactContract,
+  isInitialInterestProductEvidenceSafe,
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
@@ -198,6 +199,12 @@ export function generationMessages(
   const supplementalProductEvidence = purpose === "initial_interest" && input.productContext
     ? selectSupplementalProductEvidence({ companyName: input.companyName, productContext: input.productContext, productNames: input.productNames })
     : null;
+  const promptProductContext = purpose === "initial_interest"
+    ? [requiredProductEvidence, supplementalProductEvidence]
+        .filter((value): value is string => typeof value === "string" && isInitialInterestProductEvidenceSafe(value))
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .join(" | ")
+    : input.productContext;
   const promptFacts = evidenceContract
     ? facts.filter((fact) => evidenceContract.allowedFactIds.includes(fact.id))
     : facts;
@@ -234,7 +241,7 @@ export function generationMessages(
         task: repair ? "repair_candidate" : "generate_candidates",
         company_name: input.companyName,
         industry: input.industry,
-        product_context: input.productContext,
+        product_context: promptProductContext,
         product_names: input.productNames ?? [],
         target_country: input.targetCountry,
         business_model: input.businessModel,

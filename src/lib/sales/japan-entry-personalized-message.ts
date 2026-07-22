@@ -233,6 +233,12 @@ export async function generatePersonalizedJapanEntryMessage(
   const supplementalInitialProductEvidence = purpose === "initial_interest"
     ? selectSupplementalProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames })
     : null;
+  if (
+    purpose === "initial_interest"
+    && (!requiredInitialProductEvidence || !isInitialInterestProductEvidenceSafe(requiredInitialProductEvidence))
+  ) {
+    return { ok: false, error: "No safe grounded public product evidence is available for initial form copy" };
+  }
   const ctaContracts = purpose === "initial_interest"
     ? buildManualCtaContracts({
         companyName: input.companyName,

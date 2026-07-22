@@ -83,6 +83,30 @@ describe("manual Japan Entry personalization contract", () => {
     expect(criticPayload).not.toContain('"source"')
   })
 
+  it("sends only the selected safe product phrases instead of unsafe raw storefront context", () => {
+    const messages = generationMessages({
+      companyName: "Airvida",
+      industry: "Consumer Products",
+      productContext: [
+        "ible Airvida’s high-concentration negative ions cause PM2.5 and pollen to fall to the ground.",
+        "Sorry, this product is unavailable. Please choose a different combination.",
+        "Airvida – Wearable Air Purifier",
+        "99% pollen removal rate",
+      ].join(" | "),
+      targetCountry: "US",
+      businessModel: "ecommerce",
+      purpose: "initial_interest",
+    }, [fact], "audit")
+    const payload = JSON.parse(messages[1]?.content ?? "{}") as {
+      product_context?: string
+      required_product_evidence?: string
+    }
+
+    expect(payload.required_product_evidence).toBe("Wearable Air Purifier")
+    expect(payload.product_context).toBe("Wearable Air Purifier")
+    expect(payload.product_context).not.toMatch(/PM2\.5|unavailable|99%|\bible\b/i)
+  })
+
   it("sends bounded recent-copy digests instead of repeating full messages in every repair prompt", () => {
     const reusableSentence = "This diagnosis sentence is long enough and should not be reused across company messages."
     const longMiddle = `${reusableSentence} `.repeat(40)
