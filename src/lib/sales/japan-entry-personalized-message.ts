@@ -30,7 +30,7 @@ import {
   type DeepSeekStructuredCaller,
 } from "./japan-entry-personalized-message-structured";
 import {
-  canMechanicallyFinishManualModelCopy,
+  canSafelyFinishManualModelCopy,
   recoverManualInitialInterestCandidate,
   selectBestManualCandidateInspection,
 } from "./manual-japan-entry-candidate-recovery";
@@ -366,7 +366,7 @@ export async function generatePersonalizedJapanEntryMessage(
       if (
         !passed
         && repairPass === INITIAL_SAFETY_REPAIR_LIMIT
-        && canMechanicallyFinishManualModelCopy({ issues: inspected.safety.issues, similarityPassed: inspected.similarity.passed })
+        && canSafelyFinishManualModelCopy({ issues: inspected.safety.issues, similarityPassed: inspected.similarity.passed })
       ) {
         inspected = inspectCandidate(repaired.data.candidate, 0, true);
         passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
@@ -462,7 +462,7 @@ export async function generatePersonalizedJapanEntryMessage(
     if (
       (!inspected.safety.passed || !inspected.similarity.passed)
       && repairPass === EDITORIAL_REPAIR_LIMIT
-      && canMechanicallyFinishManualModelCopy({ issues: inspected.safety.issues, similarityPassed: inspected.similarity.passed })
+      && canSafelyFinishManualModelCopy({ issues: inspected.safety.issues, similarityPassed: inspected.similarity.passed })
     ) {
       inspected = inspectCandidate(repaired.data.candidate, 0, true);
     }

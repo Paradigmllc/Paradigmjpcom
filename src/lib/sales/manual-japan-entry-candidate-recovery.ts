@@ -3,7 +3,7 @@ import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
 
 const BODY_MIN_WORDS = 120
-const MECHANICAL_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction)/
+const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected)/
 const DANGEROUS_SENTENCE = /(?:https?:\/\/|www\.|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b(?:attached|attachment|downloadable|download)\b|\bunlock\b|\b(?:guarantee(?:d|s|ing)?|ROI|return on investment)\b)/i
 const UNSUPPORTED_CAUSAL_SENTENCE = /(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i
 const PROMOTIONAL_SENTENCE = /(?:logical next step|given that reach|i noticed your site|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|\b(?:is|provides?|offers?) (?:a )?clear value\b|\bis valuable\b|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i
@@ -22,13 +22,13 @@ interface CandidateInspection {
   similarity: { passed: boolean; maxSimilarity: number }
 }
 
-export function canMechanicallyFinishManualModelCopy(input: {
+export function canSafelyFinishManualModelCopy(input: {
   issues: string[]
   similarityPassed: boolean
 }): boolean {
   return input.similarityPassed
     && input.issues.length > 0
-    && input.issues.every((issue) => MECHANICAL_FINISH_ISSUE.test(issue))
+    && input.issues.every((issue) => SAFE_FINISH_ISSUE.test(issue))
 }
 
 function inspectionRank(value: CandidateInspection): number {
@@ -217,6 +217,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
       })
     : currentBody[0]
   const facts = selectedFacts(input.candidate, input.facts)
+  const positioningConceptSelected = facts.some((fact) => fact.id === "prepared-positioning-concept")
   const positioningSourcePhrases = facts
     .filter((fact) => fact.id === "prepared-positioning-concept")
     .flatMap((fact) => fact.anchors.slice(1))
@@ -226,7 +227,10 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     removeRevenue: input.issues.some((issue) => /Revenue wording is not tied/i.test(issue)),
     removeUnsupportedCausal: input.issues.some((issue) => /Unsupported causal inference/i.test(issue)),
     removePromotional: input.issues.some((issue) => /Generic, promotional/i.test(issue)),
-  }).filter((sentence) => !positioningSourcePhrases.some((phrase) => sentence.toLowerCase().includes(phrase)))
+  }).filter((sentence) => (
+    !positioningSourcePhrases.some((phrase) => sentence.toLowerCase().includes(phrase))
+    && (positioningConceptSelected || !/(?:draft|unpublished) Japanese positioning concept|positioning concept.{0,80}remains unpublished/i.test(sentence))
+  ))
   const supplemental = input.supplementalProductEvidence?.trim()
   if (
     supplemental
@@ -284,6 +288,9 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     `A bounded test could determine whether the observed customer-path condition merits further work without presuming a result.`,
     `The checked material supports a narrow ${input.customerPathAnchor} observation and no claim about audience response.`,
     `That leaves one decision open: whether to validate the observed path before committing to wider localization.`,
+    `The analysis would map the current customer path, list the assumptions that still need evidence, and define a bounded validation step before any wider commitment.`,
+    `Its purpose is decision quality: separating what the public pages establish from the questions that require direct market validation.`,
+    `The review can therefore stay focused on one practical choice rather than presuming a full Japanese launch or a commercial result.`,
   ]
   const offset = (stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) + (input.variationIndex ?? 0)) % paddingPool.length
   const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
