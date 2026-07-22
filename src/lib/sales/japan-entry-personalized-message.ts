@@ -15,7 +15,7 @@ import {
   type ManualMessageSimilarityReview,
   type PriorManualMessage,
 } from "./manual-japan-entry-message-similarity";
-import { finalizeManualMessageUniqueness } from "./manual-japan-entry-uniqueness-finalizer";
+import { finalizeManualMessageProduction } from "./manual-japan-entry-uniqueness-finalizer";
 import {
   getJapanEntryMessageMode,
   reviewPersonalizedJapanEntryMessage,
@@ -363,10 +363,12 @@ export async function generatePersonalizedJapanEntryMessage(
         passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
       }
       if (!passed && purpose === "initial_interest" && repairPass === INITIAL_SAFETY_REPAIR_LIMIT) {
-        inspected = finalizeManualMessageUniqueness({
+        inspected = finalizeManualMessageProduction({
           inspection: inspected,
           companyName: input.companyName,
           inspect: inspectCandidate,
+          recoverSafety: (candidate) => inspectCandidate(candidate, 0, true),
+          canRecoverSafety: (inspection) => canSafelyFinishManualModelCopy({ issues: inspection.safety.issues, similarityPassed: inspection.similarity.passed }),
         });
         passed = inspected.safety.passed && inspected.similarity.passed && hasDifferentiationMetadata(inspected.candidate);
       }
