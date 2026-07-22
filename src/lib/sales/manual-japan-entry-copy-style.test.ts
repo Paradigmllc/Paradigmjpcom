@@ -86,6 +86,21 @@ describe("bespoke form-copy style", () => {
     expect(issues).toContain("The message repeats evidence disclaimers; keep one concise boundary statement and use the remaining space for decision relevance")
   })
 
+  it("does not count a company anchor inside an ordinary plural product noun", () => {
+    const issues = reviewManualFormBespokeStyle({
+      body: "Testimonial captures testimonials and case studies. The checked pages did not show a Japanese-language path. I can send a Japan opportunity analysis for Testimonial. Would you like to receive it?",
+      openingParagraph: "Testimonial captures testimonials and case studies.",
+      finalParagraph: "I can send a Japan opportunity analysis for Testimonial. Would you like to receive it?",
+      companyName: "Testimonial",
+      productEvidence: "captures testimonials and case studies",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+    })
+
+    expect(issues).not.toContain("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
+  })
+
   it("rejects stock decision wording and broken possessive reductions", () => {
     const issues = review(
       "Screenshot to Code documents screenshot conversion. Whether this gap matters for its Japanese-language decision remains unverified. The company’ launch path remains open.",

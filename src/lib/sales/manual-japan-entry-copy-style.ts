@@ -17,7 +17,8 @@ function exactOccurrences(text: string, value: string): number {
   const normalized = value.trim()
   if (!normalized) return 0
   const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  return text.match(new RegExp(escaped, "gi"))?.length ?? 0
+  const boundaryPattern = new RegExp(`(?:^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, "giu")
+  return text.match(boundaryPattern)?.length ?? 0
 }
 
 const EVIDENCE_BOUNDARY_PATTERN = /\b(?:not evidence|not proof|does not establish|remains? unverified|left [^.]{0,80} unverified|not a conclusion|without (?:adding|treating|implying)|does not infer)\b/gi
