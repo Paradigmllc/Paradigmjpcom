@@ -310,7 +310,7 @@ export async function generatePersonalizedJapanEntryMessage(
       : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] },
   });
 
-  const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>, candidateIndex = 0) => {
+  const inspectCandidate = (rawCandidate: z.infer<typeof candidateSchema>, candidateIndex = 0, allowRecovery = false) => {
     const evidenceLocked = purpose === "initial_interest"
       && requiredInitialProductEvidence
       && isInitialInterestProductEvidenceSafe(requiredInitialProductEvidence)
@@ -323,9 +323,9 @@ export async function generatePersonalizedJapanEntryMessage(
       : rawCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
-    if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed)) {
-      return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity };
-    }
+    const envelopeOnlyRepair = initial.safety.issues.length > 0 && initial.safety.issues.every((issue) => /(?:Message must be \d|body paragraphs|greeting|signature|CTA|final question|final paragraph)/i.test(issue));
+    const recoveryAllowed = allowRecovery || evidenceLocked !== rawCandidate || envelopeOnlyRepair;
+    if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed) || !recoveryAllowed) return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity };
     const recoverAndInspect = (variationIndex: number) => {
       const candidate = recoverManualInitialInterestCandidate({
           candidate: enveloped,
@@ -392,9 +392,9 @@ export async function generatePersonalizedJapanEntryMessage(
       totalAttempts += repaired.attempts;
       totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
       if (!repaired.ok) return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
-      const inspected = inspectCandidate(repaired.data.candidate);
-      const passed = inspected.safety.passed && inspected.similarity.passed
-        && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
+      let inspected = inspectCandidate(repaired.data.candidate);
+      let passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
+      if (!passed && repairPass === INITIAL_SAFETY_REPAIR_LIMIT) { inspected = inspectCandidate(repaired.data.candidate, 0, true); passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate)); }
       if (passed) {
         valid = [inspected];
         break;
@@ -469,7 +469,8 @@ export async function generatePersonalizedJapanEntryMessage(
     totalAttempts += repaired.attempts;
     totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
     if (!repaired.ok) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
-    const inspected = inspectCandidate(repaired.data.candidate);
+    let inspected = inspectCandidate(repaired.data.candidate);
+    if ((!inspected.safety.passed || !inspected.similarity.passed) && repairPass === EDITORIAL_REPAIR_LIMIT) inspected = inspectCandidate(repaired.data.candidate, 0, true);
     if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {
       repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
       if (repairPass === EDITORIAL_REPAIR_LIMIT) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };

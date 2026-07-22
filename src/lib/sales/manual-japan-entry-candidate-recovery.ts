@@ -159,7 +159,7 @@ function limitAnchorOccurrences(paragraphs: string[], anchor: string, replacemen
   const normalized = anchor.trim()
   if (!normalized) return paragraphs
   const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped})(['’]s)?(?=$|[^\\p{L}\\p{N}])`, "giu")
+  const pattern = new RegExp(`(^|[^\\p{L}\\p{N}])(${escaped})(['’](?:s)?)?(?=$|[^\\p{L}\\p{N}])`, "giu")
   const finalIndex = paragraphs.length - 1
   let keptBodyAnchor = false
   let keptFinalAnchor = false
@@ -206,30 +206,40 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
         variationIndex: input.variationIndex,
       })
     : currentBody[0]
+  const facts = selectedFacts(input.candidate, input.facts)
+  const positioningSourcePhrases = facts
+    .filter((fact) => fact.id === "prepared-positioning-concept")
+    .flatMap((fact) => fact.anchors.slice(1))
+    .map((anchor) => anchor.trim().toLowerCase())
+    .filter(Boolean)
   const middleSentences = safeSentences(originalMiddle, {
     removeRevenue: input.issues.some((issue) => /Revenue wording is not tied/i.test(issue)),
     removeUnsupportedCausal: input.issues.some((issue) => /Unsupported causal inference/i.test(issue)),
     removePromotional: input.issues.some((issue) => /Generic, promotional/i.test(issue)),
-  })
-  const facts = selectedFacts(input.candidate, input.facts)
+  }).filter((sentence) => !positioningSourcePhrases.some((phrase) => sentence.toLowerCase().includes(phrase)))
   const supplemental = input.supplementalProductEvidence?.trim()
   if (
     supplemental
     && !opening.toLowerCase().includes(supplemental.toLowerCase())
+    && !supplemental.toLowerCase().includes(input.companyName.trim().toLowerCase())
+    && !(input.productNames ?? []).some((name) => supplemental.toLowerCase().includes(name.trim().toLowerCase()))
     && !tooSimilar(supplemental, input.candidate.product_evidence_rendering)
     && !middleSentences.join(" ").toLowerCase().includes(supplemental.toLowerCase())
   ) {
     const renderedSupplemental = /[.!?]$/.test(supplemental) ? supplemental : `${supplemental}.`
     const supplementalVariants = [
-      `The same public material also documents “${renderedSupplemental}” That gives the review a second concrete product detail.`,
-      `A separate public capability is “${renderedSupplemental}” This helps narrow the scope of the analysis.`,
-      `The public description also includes “${renderedSupplemental}” I used it as supporting product context.`,
-      `Another documented product point is “${renderedSupplemental}” It helps define what the analysis should cover.`,
+      `The same public material also documents “${renderedSupplemental}”`,
+      `A separate public capability is “${renderedSupplemental}”`,
+      `The public description also includes “${renderedSupplemental}”`,
+      `Another documented product point is “${renderedSupplemental}”`,
     ]
     middleSentences.unshift(supplementalVariants[stableHash(`${input.companyName}:${supplemental}`) % supplementalVariants.length]!)
   }
   for (const fact of facts) {
-    if (!includesFactAnchor(middleSentences.join(" "), fact)) middleSentences.push(fact.statement)
+    if (includesFactAnchor(middleSentences.join(" "), fact)) continue
+    middleSentences.push(fact.id === "prepared-positioning-concept"
+      ? "A draft Japanese positioning concept has been prepared from the documented product wording and remains unpublished."
+      : fact.statement)
   }
 
   const uniqueMiddleSentences: string[] = []
@@ -282,7 +292,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     const question = ctaParagraph.match(/[^.!?]*\?\s*$/)?.[0]?.trim() || "Would you like me to send it?"
     recoveredBody[ctaIndex] = `I can send a short Japan opportunity analysis for ${requiredAnchor}, focused on the ${input.customerPathAnchor} question. ${question}`
   }
-  let boundedBody = limitAnchorOccurrences(recoveredBody, input.companyName, "the company")
+  let boundedBody = limitAnchorOccurrences(recoveredBody, input.companyName, "it")
   for (const productName of input.productNames ?? []) {
     if (productName.trim().toLowerCase() === input.companyName.trim().toLowerCase()) continue
     boundedBody = limitAnchorOccurrences(boundedBody, productName, "the product")

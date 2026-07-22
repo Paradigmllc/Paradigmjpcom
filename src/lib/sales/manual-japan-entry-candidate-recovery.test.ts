@@ -419,4 +419,41 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(review.issues).not.toContain("Unsupported numeric claims: 149")
     expect(review).toMatchObject({ passed: true, issues: [] })
   })
+
+  it("reduces a plural possessive company anchor without leaving a broken apostrophe", () => {
+    const companyName = "149 Technologies"
+    const [contract] = buildManualCtaContracts({
+      companyName,
+      requiredAnchor: companyName,
+      customerPathAnchor: "Japanese-language",
+      priorMessages: [],
+      count: 1,
+    })
+    const recovered = recoverManualInitialInterestCandidate({
+      candidate: {
+        message: `${manualFormGreeting(companyName)}
+
+${companyName} documents a workspace discovery workflow.
+
+${companyName}’ workflow keeps research in one place. ${auditFact.statement}
+
+Can we talk?
+
+${MANUAL_FORM_SIGNATURE}`,
+        fact_ids: [auditFact.id],
+        product_evidence: "a workspace discovery workflow",
+        product_evidence_rendering: "a workspace discovery workflow",
+        cta_type: "legacy_unspecified",
+      },
+      companyName,
+      facts: [auditFact],
+      customerPathAnchor: "Japanese-language",
+      contract: contract!,
+      issues: ["The company name must appear no more than twice in the personalized body"],
+      similarityPassed: true,
+    })
+
+    expect(recovered.message).not.toMatch(/company[’']/i)
+    expect(recovered.message).toContain("Its workflow")
+  })
 })

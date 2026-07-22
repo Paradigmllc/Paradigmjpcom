@@ -85,4 +85,25 @@ describe("bespoke form-copy style", () => {
     expect(issues).toContain("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
     expect(issues).toContain("The message repeats evidence disclaimers; keep one concise boundary statement and use the remaining space for decision relevance")
   })
+
+  it("rejects stock decision wording and broken possessive reductions", () => {
+    const issues = review(
+      "Screenshot to Code documents screenshot conversion. Whether this gap matters for its Japanese-language decision remains unverified. The company’ launch path remains open.",
+      "Screenshot to Code documents screenshot conversion.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues).toContain("The message uses an ambiguous stock decision sentence; name the documented product and one concrete validation decision")
+    expect(issues).toContain("The message contains a broken possessive created by anchor reduction")
+  })
+
+  it("rejects stacked mechanical bridges while allowing one concise bridge", () => {
+    const issues = review(
+      "Screenshot to Code documents screenshot conversion. I used that capability to frame the Japan review. A second workflow is documented. This helps narrow the scope.",
+      "Screenshot to Code documents screenshot conversion. I used that capability to frame the Japan review.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues).toContain("The message repeats mechanical evidence-to-analysis bridge language; keep only the strongest bridge")
+  })
 })
