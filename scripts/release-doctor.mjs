@@ -855,6 +855,12 @@ function checkStaticReleaseRules() {
   const manualWorkBatchEvents = fs.existsSync("src/app/api/work/batches/[batchId]/events/route.ts")
     ? fs.readFileSync("src/app/api/work/batches/[batchId]/events/route.ts", "utf8")
     : ""
+  const manualWorkBatchRoute = fs.existsSync("src/app/api/work/batches/route.ts")
+    ? fs.readFileSync("src/app/api/work/batches/route.ts", "utf8")
+    : ""
+  const manualWorkBatchStore = fs.existsSync("src/lib/sales/manual-japan-entry-batch-store.ts")
+    ? fs.readFileSync("src/lib/sales/manual-japan-entry-batch-store.ts", "utf8")
+    : ""
   const instrumentation = fs.existsSync("src/instrumentation.ts")
     ? fs.readFileSync("src/instrumentation.ts", "utf8")
     : ""
@@ -1008,8 +1014,11 @@ function checkStaticReleaseRules() {
     && !manualMessageIntelligence.includes("generation_error")
     && manualWorkOperatorNotice.includes("企業別フォーム文面を再生成してください")
     && manualWorkOperatorNotice.includes("解析データはTwentyへ要確認として保存され")
-    && manualWorkConsole.includes("retry: Boolean(input.retryItem)")
-    && manualWorkConsole.includes("workId: input.retryItem.id")
+    && manualWorkConsole.includes("retryWorkId: item.id")
+    && !manualWorkConsole.includes('fetch("/api/work",')
+    && manualWorkBatchRoute.includes("createManualWorkRetryBatch")
+    && manualWorkBatchRoute.includes("retryWorkId")
+    && manualWorkBatchStore.includes('rpc("manual_japan_entry_create_retry_batch"')
     && manualWorkPage.includes('redirect("/admin/login?redirect=%2Fwork")')
     && manualWorkDeepSeekGateway.includes("DeepSeek APIの残高不足で解析を停止しました")
     && manualWorkHelpers.includes("productContext: input.evidence.productContext")
