@@ -31,6 +31,13 @@ export function canSafelyFinishManualModelCopy(input: {
     && input.issues.every((issue) => SAFE_FINISH_ISSUE.test(issue))
 }
 
+export function canUseManualDeterministicRecovery(input: {
+  allowRecovery: boolean
+  similarityPassed: boolean
+}): boolean {
+  return input.allowRecovery && input.similarityPassed
+}
+
 function inspectionRank(value: CandidateInspection): number {
   return Number(value.safety.passed) * 1000
     + Number(value.similarity.passed) * 500

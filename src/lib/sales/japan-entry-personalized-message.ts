@@ -30,7 +30,7 @@ import {
   type DeepSeekStructuredCaller,
 } from "./japan-entry-personalized-message-structured";
 import {
-  canSafelyFinishManualModelCopy,
+  canSafelyFinishManualModelCopy, canUseManualDeterministicRecovery,
   recoverManualInitialInterestCandidate,
   selectBestManualCandidateInspection,
 } from "./manual-japan-entry-candidate-recovery";
@@ -286,8 +286,8 @@ export async function generatePersonalizedJapanEntryMessage(
       : rawCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
-    // Evidence locking must not bypass the bespoke model-repair loop.
-    const recoveryAllowed = allowRecovery;
+    // Deterministic recovery may finish mechanical safety issues, never uniqueness failures.
+    const recoveryAllowed = canUseManualDeterministicRecovery({ allowRecovery, similarityPassed: initial.similarity.passed });
     if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed) || !recoveryAllowed) return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity, usedRecovery: false };
     const recoverAndInspect = (variationIndex: number) => {
       const candidate = recoverManualInitialInterestCandidate({
