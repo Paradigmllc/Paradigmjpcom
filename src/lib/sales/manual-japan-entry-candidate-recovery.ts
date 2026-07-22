@@ -158,6 +158,33 @@ function productOpening(input: {
   return variants[(stableHash(`${input.companyName}:${rendering}`) + (input.variationIndex ?? 0)) % variants.length]!
 }
 
+function productDecisionSubject(input: {
+  rendering: string
+  companyName: string
+  productNames: string[]
+}): string {
+  let withoutIdentity = input.rendering.normalize("NFKC")
+  for (const identity of [input.companyName, ...input.productNames]) {
+    const value = identity.trim()
+    if (!value) continue
+    const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    withoutIdentity = withoutIdentity.replace(new RegExp(escaped, "giu"), " ")
+  }
+  const segments = withoutIdentity
+    .split(/\s+[–—-]\s+/)
+    .map((segment) => segment.replace(/[^\p{L}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim())
+    .filter((segment) => segment.split(/\s+/).length >= 2)
+  const selected = segments.at(-1) ?? withoutIdentity
+  const words = selected
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((word, index) => index > 1 || !/^(?:a|an|the)$/i.test(word))
+  return words.length >= 2 ? words.slice(0, 4).join(" ") : "documented offering"
+}
+
 function selectedFacts(candidate: RecoverableCandidate, facts: JapanEntryPersonalizationFact[]): JapanEntryPersonalizationFact[] {
   const ids = new Set(candidate.fact_ids)
   return facts.filter((fact) => ids.has(fact.id))
@@ -286,20 +313,25 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   }, input.companyName, input.contract)
 
   const recoveredBody = bodyBlocks(recovered.message)
+  const subject = productDecisionSubject({
+    rendering: input.candidate.product_evidence_rendering,
+    companyName: input.companyName,
+    productNames: input.productNames ?? [],
+  })
   const paddingPool = [
-    `The page check establishes only the observed ${input.customerPathAnchor} condition; whether it matters commercially remains unverified.`,
-    `The practical question is whether the ${input.customerPathAnchor} observation deserves a focused test before a broader market commitment.`,
-    `The public evidence does not resolve that decision, so the analysis keeps assumptions separate from observed facts.`,
-    `This is a page-level finding, not a conclusion about Japanese demand or product-market fit.`,
-    `The ${input.customerPathAnchor} point is therefore a validation question rather than a forecast.`,
-    `A bounded test could determine whether the observed customer-path condition merits further work without presuming a result.`,
-    `The checked material supports a narrow ${input.customerPathAnchor} observation and no claim about audience response.`,
-    `That leaves one decision open: whether to validate the observed path before committing to wider localization.`,
-    `The analysis would map the current customer path, list the assumptions that still need evidence, and define a bounded validation step before any wider commitment.`,
-    `Its purpose is decision quality: separating what the public pages establish from the questions that require direct market validation.`,
-    `The review can therefore stay focused on one practical choice rather than presuming a full Japanese launch or a commercial result.`,
+    `For the ${subject}, the page check establishes only the observed ${input.customerPathAnchor} condition; its commercial importance remains unverified.`,
+    `The decision around the ${subject} is whether that customer-path observation should be tested before choosing a wider localization scope.`,
+    `Any Japan assessment of the ${subject} should separate the documented page condition from assumptions that still require direct evidence.`,
+    `The ${subject} review can define a bounded validation step without presuming Japanese demand, audience response, or a commercial result.`,
+    `For this ${subject} decision, the current public material supports a page-level finding rather than a forecast about product-market fit.`,
+    `A focused check around the ${subject} would test the observed ${input.customerPathAnchor} condition before any broader market commitment.`,
+    `The open question for the ${subject} is therefore narrow: whether the documented customer path merits further localization work.`,
+    `Evidence for the ${subject} can be organized into what the pages establish, what remains unknown, and what a bounded test should resolve.`,
+    `The ${subject} analysis would keep that validation choice separate from unsupported claims about buyers, conversion, or financial outcomes.`,
+    `A decision brief for the ${subject} can stay within the verified product scope while marking every Japan assumption as unconfirmed.`,
+    `The next decision for the ${subject} is not a full launch; it is whether the observed customer-path condition deserves direct validation.`,
   ]
-  const offset = (stableHash(`${input.companyName}:${input.customerPathAnchor}:padding`) + (input.variationIndex ?? 0)) % paddingPool.length
+  const offset = (stableHash(`${input.companyName}:${subject}:${input.customerPathAnchor}:padding`) + (input.variationIndex ?? 0)) % paddingPool.length
   const padding = [...paddingPool.slice(offset), ...paddingPool.slice(0, offset)]
   const existingSentences = paragraphSentences(recoveredBody)
   for (const sentence of padding) {
