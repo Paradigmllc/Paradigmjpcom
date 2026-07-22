@@ -230,6 +230,7 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
     angle: ManualMessageAngleSelection
     sourceSlug: string
     sourcePageUrl: string
+    retryWorkId?: string
   }) => {
     if (submitting) return false
     setSubmitting(true)
@@ -248,9 +249,9 @@ export function useManualWorkBatch(onHistoryRefresh: () => Promise<void>) {
       setRunning(!isManualWorkBatchTerminal(body.snapshot.batch.status))
       lastHistoryRefreshRef.current = body.snapshot.finished
       if ((body.queuePosition ?? 0) > 0) {
-        toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録しました（前方${body.queuePosition}バッチ）`)
+        toast.success(`${input.retryWorkId ? "再解析" : `${body.snapshot.batch.total_count}件`}を永続キューへ登録しました（前方${body.queuePosition}バッチ）`)
       } else {
-        toast.success(`${body.snapshot.batch.total_count}件を永続キューへ登録し、サーバー自動処理を開始しました`)
+        toast.success(`${input.retryWorkId ? "再解析" : `${body.snapshot.batch.total_count}件`}を永続キューへ登録し、サーバー自動処理を開始しました`)
       }
       return true
     } catch (error) {

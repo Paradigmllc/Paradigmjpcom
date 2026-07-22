@@ -3,6 +3,7 @@ import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import {
   createManualWorkBatch,
+  createManualWorkRetryBatch,
   getManualWorkBatchQueuePosition,
   getManualWorkBatchQueueSummary,
   getLatestActiveManualWorkBatch,
@@ -32,7 +33,12 @@ const createBatchSchema = z.object({
     z.literal(""),
   ]).default(""),
   observedOn: z.string().date().optional(),
-}).strict()
+  retryWorkId: z.string().uuid().optional(),
+}).strict().superRefine((value, context) => {
+  if (value.retryWorkId && value.urls.length !== 1) {
+    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "再解析は履歴1件ずつ永続キューへ登録してください" })
+  }
+})
 
 async function notify(title: string, message: string, type: string): Promise<void> {
   try {
@@ -112,14 +118,21 @@ export async function POST(req: NextRequest) {
         error: `バッチは開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
       }, { status: 503 })
     }
-    const batch = await createManualWorkBatch({
-      urls: [...byDomain.values()],
+    const normalizedUrls = [...byDomain.values()]
+    const common = {
       variant: parsed.data.variant,
       angle: parsed.data.angle,
       sourceSlug: parsed.data.sourceSlug,
       sourcePageUrl: parsed.data.sourcePageUrl || null,
       observedOn: parsed.data.observedOn ?? null,
-    })
+    }
+    const batch = parsed.data.retryWorkId
+      ? await createManualWorkRetryBatch({
+          ...common,
+          url: normalizedUrls[0]!,
+          workId: parsed.data.retryWorkId,
+        })
+      : await createManualWorkBatch({ ...common, urls: normalizedUrls })
     const active = await promoteNextManualWorkBatch()
     if (active?.promoted) scheduleManualWorkBatchDrain(active.snapshot.batch.id)
     const [queuePosition, queueSummary] = await Promise.all([
@@ -127,9 +140,13 @@ export async function POST(req: NextRequest) {
       getManualWorkBatchQueueSummary(),
     ])
     await notify(
-      queuePosition === 0 ? "Manual Japan Entryバッチ開始" : "Manual Japan Entryバッチ待機",
+      parsed.data.retryWorkId
+        ? (queuePosition === 0 ? "Manual Japan Entry再解析開始" : "Manual Japan Entry再解析待機")
+        : (queuePosition === 0 ? "Manual Japan Entryバッチ開始" : "Manual Japan Entryバッチ待機"),
       `${batch.batch.total_count}件を永続キューへ登録しました。前方バッチ${queuePosition}件。解析後にTwentyへ未送信データとして同期します。外部送信0件。`,
-      queuePosition === 0 ? "manual_japan_entry_batch_started" : "manual_japan_entry_batch_queued",
+      parsed.data.retryWorkId
+        ? "manual_japan_entry_retry_queued"
+        : (queuePosition === 0 ? "manual_japan_entry_batch_started" : "manual_japan_entry_batch_queued"),
     )
     return NextResponse.json({
       ok: true,

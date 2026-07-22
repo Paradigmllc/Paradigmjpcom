@@ -93,6 +93,29 @@ describe("manual work durable batch drain", () => {
     }))
   })
 
+  it("passes the exact durable retry target to the manual work service", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    mocks.claim.mockResolvedValue([{
+      id: "item-1",
+      canonical_url: "https://one.example/",
+      claim_token: "claim-1",
+      retry_requested: true,
+      expected_work_id: workId,
+    }])
+    const response = await POST(
+      new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
+      { params: Promise.resolve({ batchId }) },
+    )
+    expect(response.status).toBe(200)
+    expect(mocks.process).toHaveBeenCalledWith(
+      "https://one.example/",
+      "auto",
+      "auto",
+      expect.objectContaining({ sourceSlug: "manual_input" }),
+      { retryRequested: true, expectedWorkId: workId },
+    )
+  })
+
   it("marks a refresh attempt failed when only the last-known-good artifact was preserved", async () => {
     mocks.claim.mockResolvedValue([{ id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1" }])
     mocks.process.mockResolvedValue({

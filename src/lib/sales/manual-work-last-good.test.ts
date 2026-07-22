@@ -26,6 +26,16 @@ describe("manual work last-known-good artifact preservation", () => {
     })
     expect(captureManualWorkLastGoodArtifacts(row({ message_review: { passed: false } }))).toBeNull()
     expect(captureManualWorkLastGoodArtifacts(row({ report_data: { schemaVersion: "legacy" } }))).toBeNull()
+    expect(captureManualWorkLastGoodArtifacts(row({
+      company_name: "Acme",
+      initial_message: "Hello Acme team,\n\nAcme is a workflow platform.\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com",
+    }))).toBeNull()
+    expect(captureManualWorkLastGoodArtifacts(row({
+      message_review: {
+        passed: true,
+        last_regeneration_failure: { artifacts_preserved: true },
+      },
+    }))).toBeNull()
   })
 
   it("restores saved artifacts while exposing the regeneration failure", () => {

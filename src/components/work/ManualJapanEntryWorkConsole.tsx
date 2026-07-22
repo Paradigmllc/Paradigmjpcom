@@ -16,7 +16,6 @@ import {
 } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
-import { manualWorkFailureToast } from "@/lib/sales/manual-work-operator-notice"
 import { ManualWorkExperimentControls } from "./ManualWorkExperimentControls"
 import { ManualWorkHistory } from "./ManualWorkHistory"
 import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
@@ -28,25 +27,6 @@ import { Button } from "@/components/ui/button"
 
 export function parseManualWorkUrls(value: string): string[] {
   return [...new Set(value.split(/[\s,]+/).map((url) => url.trim()).filter(Boolean))]
-}
-
-export function buildManualWorkRequest(input: {
-  url: string
-  variant: ManualMessageVariantSelection
-  angle: ManualMessageAngleSelection
-  sourceSlug: string
-  sourcePageUrl: string
-  retryItem?: Pick<ManualJapanEntryWorkRow, "id">
-}): Record<string, unknown> {
-  return {
-    url: input.url,
-    variant: input.variant,
-    angle: input.angle,
-    sourceSlug: input.sourceSlug,
-    sourcePageUrl: input.sourcePageUrl,
-    retry: Boolean(input.retryItem),
-    ...(input.retryItem ? { workId: input.retryItem.id } : {}),
-  }
 }
 
 function mergeItems(current: ManualJapanEntryWorkRow[], incoming: ManualJapanEntryWorkRow[]): ManualJapanEntryWorkRow[] {
@@ -81,8 +61,6 @@ export function ManualJapanEntryWorkConsole({
   const [sources, setSources] = useState(initialSources)
   const [sourceSlug, setSourceSlug] = useState("manual_input")
   const [sourcePageUrl, setSourcePageUrl] = useState("")
-  const [retryQueue, setRetryQueue] = useState<ManualWorkQueueState>({})
-  const [retryRunning, setRetryRunning] = useState(false)
   const [updatingOutcome, setUpdatingOutcome] = useState<string | null>(null)
   const [historyError, setHistoryError] = useState<string | null>(initialHistoryError)
   const [historyTotal, setHistoryTotal] = useState(initialHistoryTotal)
@@ -156,10 +134,9 @@ export function ManualJapanEntryWorkConsole({
   }, [historyHasMore, historyLoading, historyPage, refreshHistory])
 
   const batch = useManualWorkBatch(useCallback(() => refreshHistory(true), [refreshHistory]))
-  const workflowRunning = batch.running || retryRunning
-  const inputBusy = batch.submitting || retryRunning
+  const workflowRunning = batch.running
+  const inputBusy = batch.submitting
   const queue = useMemo<ManualWorkQueueState>(() => {
-    if (retryRunning || Object.keys(retryQueue).length > 0) return retryQueue
     if (!batch.snapshot) return {}
     return Object.fromEntries(batch.snapshot.items.map((item) => [item.canonical_url,
       item.status === "queued" ? "waiting"
@@ -167,7 +144,7 @@ export function ManualJapanEntryWorkConsole({
           : item.status === "failed" ? "error"
             : "done",
     ]))
-  }, [batch.snapshot, retryQueue, retryRunning])
+  }, [batch.snapshot])
   const finished = batch.snapshot?.finished
     ?? Object.values(queue).filter((value) => value === "done" || value === "error").length
 
@@ -178,51 +155,20 @@ export function ManualJapanEntryWorkConsole({
   const start = async () => {
     if (urls.length === 0) return toast.error("海外企業のURLを1件以上入力してください")
     if (urls.length > MANUAL_WORK_BATCH_MAX_URLS) return toast.error(`1回の上限は${MANUAL_WORK_BATCH_MAX_URLS}件です`)
-    setRetryQueue({})
     const accepted = await batch.start({ urls, variant, angle, sourceSlug, sourcePageUrl })
     if (accepted) setInput("")
   }
 
-  const processUrl = async (url: string, retryItem?: ManualJapanEntryWorkRow) => {
-      setRetryQueue((current) => ({ ...current, [url]: "processing" }))
-      try {
-        const response = await fetch("/api/work", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildManualWorkRequest({ url, variant, angle, sourceSlug, sourcePageUrl, retryItem })),
-        })
-        const body = await response.json() as { ok?: boolean; item?: ManualJapanEntryWorkRow; duplicate?: boolean; artifactsPreserved?: boolean; error?: string }
-        if (!response.ok || !body.ok || !body.item) throw new Error(body.error ?? `${url} の解析に失敗しました`)
-        setItems((current) => mergeItems(current, [body.item as ManualJapanEntryWorkRow]))
-        if (body.artifactsPreserved) throw new Error(body.item.error_message ?? `${url} の再生成に失敗し、直前の正常な成果物を保持しました`)
-        if (body.item.status === "failed") throw new Error(manualWorkFailureToast(body.item))
-        if (body.item.twenty_sync_status === "failed") throw new Error(manualWorkFailureToast(body.item))
-        if (body.item.status === "needs_review" && !body.item.initial_message) throw new Error(manualWorkFailureToast(body.item))
-        setRetryQueue((current) => ({ ...current, [url]: "done" }))
-        if (body.item.status === "needs_review") {
-          toast.warning(`${url} の文面生成まで完了しました。対象判定を確認してください`)
-        } else if (body.item.status === "rejected") {
-          toast.warning(`${url} は対象外として安全に停止しました`)
-        } else {
-          toast.success(body.duplicate ? `${url} は既存履歴またはTwentyにあります` : `${url} の解析が完了しました`)
-        }
-      } catch (error) {
-        console.error("[manual-work-ui] URL processing failed:", { url, error })
-        setRetryQueue((current) => ({ ...current, [url]: "error" }))
-        toast.error(error instanceof Error ? error.message : `${url} の解析に失敗しました`)
-      }
-      await refreshHistory(true)
-  }
-
   const retry = async (item: ManualJapanEntryWorkRow) => {
-    setRetryQueue({ [item.canonical_url]: "processing" })
-    setRetryRunning(true)
-    try {
-      await processUrl(item.canonical_url, item)
-    } finally {
-      setRetryRunning(false)
-      await refreshHistory(true)
-    }
+    const attribution = item.source_attributions[0]
+    await batch.start({
+      urls: [item.canonical_url],
+      variant: item.message_variant_requested,
+      angle: item.message_angle_requested,
+      sourceSlug: attribution?.source_slug ?? "manual_input",
+      sourcePageUrl: attribution?.source_page_url ?? "",
+      retryWorkId: item.id,
+    })
   }
 
   const copy = async (value: string, label: string) => {

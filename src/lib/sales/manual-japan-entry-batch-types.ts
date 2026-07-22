@@ -65,6 +65,8 @@ export interface ManualWorkBatchItemRow {
   domain: string
   status: ManualWorkBatchItemStatus
   work_id: string | null
+  retry_requested: boolean
+  expected_work_id: string | null
   attempts: number
   claim_token: string | null
   claimed_at: string | null

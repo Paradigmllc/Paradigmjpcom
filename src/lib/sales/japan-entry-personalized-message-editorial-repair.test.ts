@@ -190,7 +190,7 @@ describe("Japan Entry editorial repair loop", () => {
         },
         candidates: [candidate(modelRepairedMessage, approvedCta!.ctaType)],
       }))
-      .mockResolvedValueOnce(critic(22))
+      .mockResolvedValueOnce(critic(21))
       .mockResolvedValueOnce(response({ candidate: candidate(unsafeRepair) }))
       .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23))
@@ -235,7 +235,7 @@ describe("Japan Entry editorial repair loop", () => {
         },
         candidates: [candidate(modelRepairedMessage, approvedCta!.ctaType)],
       }))
-      .mockResolvedValueOnce(critic(22))
+      .mockResolvedValueOnce(critic(21))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
       .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))

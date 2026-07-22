@@ -99,6 +99,10 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
               sourcePageUrl: runningBatch.batch.source_page_url,
               observedOn: runningBatch.batch.observed_on,
             },
+            {
+              retryRequested: item.retry_requested,
+              expectedWorkId: item.expected_work_id,
+            },
           )
           await completeManualWorkBatchItem({
             itemId: item.id,
