@@ -94,4 +94,17 @@ describe("initial-interest evidence contract", () => {
 
     expect(selectGroundedProductEvidence({ companyName: "AGROHUB", productContext })).toBe("Agrohub Benchmarking")
   })
+
+  it("skips evidence that repeats the company anchor and makes the copy contract impossible", () => {
+    const productContext = [
+      "Simple Analytics is a privacy-first analytics platform.",
+      "When consent is rejected, traffic can go missing, be modeled, or lose source data.",
+      "Simple Analytics works without cookies. Simple Analytics measures visits without building visitor profiles.",
+    ].join(" | ")
+
+    const selected = selectGroundedProductEvidence({ companyName: "Simple Analytics", productContext })
+
+    expect(selected).toBe("privacy-first analytics platform.")
+    expect(selected.match(/Simple Analytics/g)).toBeNull()
+  })
 })

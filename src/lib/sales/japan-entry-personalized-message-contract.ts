@@ -67,12 +67,22 @@ function exactCapabilityClauses(value: string): string[] {
   return clauses
 }
 
+function repeatsCompanyOrProductAnchor(value: string, anchors: string[]): boolean {
+  return anchors.some((anchor) => {
+    const normalized = anchor.trim()
+    if (!normalized) return false
+    const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    return (value.match(new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, "giu"))?.length ?? 0) > 1
+  })
+}
+
 function productEvidenceCandidates(input: {
   companyName: string
   productContext: string
   productNames?: string[]
 }): string[] {
   const productNames = new Set((input.productNames ?? []).map((name) => name.trim().toLowerCase()))
+  const copyAnchors = [input.companyName, ...(input.productNames ?? [])]
   return input.productContext
     .split(/\s*\|\s*|\n+|(?<=[.!?])\s+/)
     .map((value) => cleanEvidenceSegment(value, input.companyName))
@@ -88,6 +98,7 @@ function productEvidenceCandidates(input: {
     .filter((value) => !PROMOTIONAL_QUALIFIER_RE.test(value))
     .filter((value) => !UNRESOLVED_PUBLIC_TEXT_RE.test(value))
     .filter((value) => !PUBLIC_BOILERPLATE_RE.test(value))
+    .filter((value) => !repeatsCompanyOrProductAnchor(value, copyAnchors))
     .filter((value) => !productNames.has(value.toLowerCase()))
     .filter((value) => evidenceTokens(value).length >= 4)
 }
@@ -139,6 +150,7 @@ function shortGroundedEvidenceFallback(input: {
       && value.length <= 180
       && evidenceTokens(value).length >= 2
       && !excludedNames.has(value.toLowerCase())
+      && !repeatsCompanyOrProductAnchor(value, [input.companyName, ...(input.productNames ?? [])])
       && isInitialInterestProductEvidenceSafe(value)
     )) ?? null
 }
