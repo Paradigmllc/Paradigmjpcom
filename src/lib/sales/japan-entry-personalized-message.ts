@@ -36,15 +36,23 @@ import {
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
 import { boundedGeneratedEvidence } from "./manual-generated-evidence-schema"
+import {
+  publicManualMessageCandidate,
+  publicManualMessageStrategy,
+  type ManualGeneratedMessageCandidate,
+  type ManualMessageStrategy,
+} from "./japan-entry-personalized-message-public"
 export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
 export type { JapanEntryMessageReview } from "./japan-entry-personalized-message-review";
+export type { ManualGeneratedMessageCandidate, ManualMessageStrategy } from "./japan-entry-personalized-message-public";
 const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 23;
-const INITIAL_SAFETY_REPAIR_LIMIT = 3;
-const EDITORIAL_REPAIR_LIMIT = 3;
+const INITIAL_SAFETY_REPAIR_LIMIT = 5;
+const EDITORIAL_REPAIR_LIMIT = 5;
+const RECOVERY_REWRITE_ISSUE = "A deterministic safety recovery was used. Rewrite the complete body in fresh, natural, company-specific language; preserve every exact evidence and CTA contract, and do not reuse any recovery sentence.";
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
   message?: string;
@@ -56,28 +64,6 @@ export interface PersonalizedJapanEntryMessageResult {
   selectedIndex?: number;
   evidencePack?: ManualMessageEvidence[];
   similarity?: ManualMessageSimilarityReview;
-}
-export interface ManualMessageStrategy {
-  primaryObservation: string;
-  whyNow: string;
-  japaneseSegment: string;
-  japanGap: string;
-  opportunityAngle: string;
-  offerRelevance: string;
-  tone: string;
-  cta: string;
-  countryAdaptation: string;
-  prohibitedClaims: string[];
-}
-export interface ManualGeneratedMessageCandidate {
-  message: string;
-  factIds: string[];
-  productEvidence: string;
-  productEvidenceRendering: string;
-  angle: string;
-  openingStyle: string;
-  diagnosticFocus: string;
-  ctaType: string;
 }
 export interface ManualMessageEvidence {
   id: string;
@@ -216,34 +202,6 @@ function buildReview(input: {
   };
 }
 
-function publicStrategy(value: z.infer<typeof strategySchema> | undefined, input: GenerateInput): ManualMessageStrategy {
-  return {
-    primaryObservation: value?.primary_observation ?? input.productContext ?? "Public product evidence",
-    whyNow: value?.why_now ?? "Japan applicability remains unverified",
-    japaneseSegment: value?.japanese_segment ?? "Relevant Japanese buyers require validation",
-    japanGap: value?.japan_gap ?? "The checked public pages do not yet establish a Japan customer path",
-    opportunityAngle: value?.opportunity_angle ?? "Evidence-led Japan validation",
-    offerRelevance: value?.offer_relevance ?? "A public-evidence opportunity analysis can test the hypothesis",
-    tone: value?.tone ?? "Direct, respectful, and low pressure",
-    cta: value?.cta ?? "Permission to share the analysis",
-    countryAdaptation: value?.country_adaptation ?? "Business-formal without nationality assumptions",
-    prohibitedClaims: value?.prohibited_claims ?? ["Measured demand", "Guaranteed revenue", "Legal conclusions"],
-  };
-}
-
-function publicCandidate(candidate: z.infer<typeof candidateSchema>): ManualGeneratedMessageCandidate {
-  return {
-    message: candidate.message.trim(),
-    factIds: candidate.fact_ids,
-    productEvidence: candidate.product_evidence,
-    productEvidenceRendering: candidate.product_evidence_rendering,
-    angle: candidate.angle,
-    openingStyle: candidate.opening_style,
-    diagnosticFocus: candidate.diagnostic_focus,
-    ctaType: candidate.cta_type,
-  };
-}
-
 function hasDifferentiationMetadata(candidate: z.infer<typeof candidateSchema>): boolean {
   return candidate.opening_style !== "legacy_unspecified"
     && candidate.diagnostic_focus !== "legacy_unspecified"
@@ -325,7 +283,7 @@ export async function generatePersonalizedJapanEntryMessage(
     const initial = deterministicInspection(enveloped);
     // Evidence locking must not bypass the bespoke model-repair loop.
     const recoveryAllowed = allowRecovery;
-    if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed) || !recoveryAllowed) return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity };
+    if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed) || !recoveryAllowed) return { candidate: enveloped, safety: initial.safety, similarity: initial.similarity, usedRecovery: false };
     const recoverAndInspect = (variationIndex: number) => {
       const candidate = recoverManualInitialInterestCandidate({
           candidate: enveloped,
@@ -339,7 +297,7 @@ export async function generatePersonalizedJapanEntryMessage(
           similarityPassed: initial.similarity.passed,
           variationIndex,
         });
-      return { candidate, ...deterministicInspection(candidate) };
+      return { candidate, ...deterministicInspection(candidate), usedRecovery: true };
     };
     return selectBestManualCandidateInspection(recoverAndInspect);
   };
@@ -381,7 +339,7 @@ export async function generatePersonalizedJapanEntryMessage(
         stage: "repair",
         messages: generationMessages(input, facts, mode, buildPersonalizedMessageRepairInput({
           candidate: repairTarget.candidate,
-          issues: [...repairTarget.safety.issues, ...repairTarget.similarity.reasons],
+          issues: repairTarget.usedRecovery ? [RECOVERY_REWRITE_ISSUE] : [...repairTarget.safety.issues, ...repairTarget.similarity.reasons],
           wordCount: repairTarget.safety.wordCount,
           purpose,
           includePrice: input.initialInterestOptions?.includePrice === true,
@@ -394,8 +352,12 @@ export async function generatePersonalizedJapanEntryMessage(
       if (!repaired.ok) return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
       let inspected = inspectCandidate(repaired.data.candidate);
       let passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate));
-      if (!passed && repairPass === INITIAL_SAFETY_REPAIR_LIMIT) { inspected = inspectCandidate(repaired.data.candidate, 0, true); passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate)); }
+      if (!passed && repairPass === INITIAL_SAFETY_REPAIR_LIMIT - 1) { inspected = inspectCandidate(repaired.data.candidate, 0, true); passed = inspected.safety.passed && inspected.similarity.passed && (purpose !== "initial_interest" || hasDifferentiationMetadata(inspected.candidate)); }
       if (passed) {
+        if (inspected.usedRecovery && repairPass < INITIAL_SAFETY_REPAIR_LIMIT) {
+          repairTarget = inspected;
+          continue;
+        }
         valid = [inspected];
         break;
       }
@@ -439,7 +401,7 @@ export async function generatePersonalizedJapanEntryMessage(
     return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro critic selected an invalid candidate" };
   }
 
-  const strategy = publicStrategy(generated.data.strategy, input);
+  const strategy = publicManualMessageStrategy(generated.data.strategy, input.productContext);
   const evidencePack = facts.map((fact): ManualMessageEvidence => ({
     id: fact.id,
     statement: fact.statement,
@@ -470,11 +432,16 @@ export async function generatePersonalizedJapanEntryMessage(
     totalUsage = addDeepSeekUsage(totalUsage, repaired.usage);
     if (!repaired.ok) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
     let inspected = inspectCandidate(repaired.data.candidate);
-    if ((!inspected.safety.passed || !inspected.similarity.passed) && repairPass === EDITORIAL_REPAIR_LIMIT) inspected = inspectCandidate(repaired.data.candidate, 0, true);
+    if ((!inspected.safety.passed || !inspected.similarity.passed) && repairPass === EDITORIAL_REPAIR_LIMIT - 1) inspected = inspectCandidate(repaired.data.candidate, 0, true);
     if (!inspected.safety.passed || !inspected.similarity.passed || (purpose === "initial_interest" && !hasDifferentiationMetadata(inspected.candidate))) {
       repairIssues = [...inspected.safety.issues, ...inspected.similarity.reasons];
       if (repairPass === EDITORIAL_REPAIR_LIMIT) return { ok: false, review: finalReview, usage: totalUsage, error: `DeepSeek V4 Pro targeted repair failed the deterministic safety or uniqueness gate: ${repairIssues.join("; ")}` };
       finalCandidate = inspected;
+      continue;
+    }
+    if (inspected.usedRecovery && repairPass < EDITORIAL_REPAIR_LIMIT) {
+      finalCandidate = inspected;
+      repairIssues = [RECOVERY_REWRITE_ISSUE];
       continue;
     }
     const repairedCritic = await criticize([inspected]);
@@ -490,7 +457,7 @@ export async function generatePersonalizedJapanEntryMessage(
     review: finalReview,
     usage: totalUsage,
     strategy,
-    candidates: finalCandidate === selected ? valid.map((item) => publicCandidate(item.candidate)) : [publicCandidate(finalCandidate.candidate)],
+    candidates: finalCandidate === selected ? valid.map((item) => publicManualMessageCandidate(item.candidate)) : [publicManualMessageCandidate(finalCandidate.candidate)],
     selectedIndex: finalCandidate === selected ? criticized.data.selected_index : 0,
     evidencePack,
     similarity: finalCandidate.similarity,
