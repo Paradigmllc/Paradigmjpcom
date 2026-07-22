@@ -75,6 +75,11 @@ export interface ManualWorkProcessOptions {
   retryRequested?: boolean
   expectedWorkId?: string | null
 }
+export interface ManualWorkProcessResult {
+  item: ManualJapanEntryWorkRow
+  duplicate: boolean
+  artifactsPreserved: boolean
+}
 function jsonRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
@@ -99,10 +104,7 @@ export async function processManualJapanEntryUrl(
   angleSelection: ManualMessageAngleSelection = "auto",
   sourceInput: ManualWorkSourceInput = { sourceSlug: "manual_input" },
   options: ManualWorkProcessOptions = {},
-): Promise<{
-  item: ManualJapanEntryWorkRow
-  duplicate: boolean
-}> {
+): Promise<ManualWorkProcessResult> {
   const normalized = normalizeManualWorkUrl(rawUrl)
   const requestedVariant = isManualMessageVariant(variantSelection)
     ? variantSelection
@@ -125,7 +127,7 @@ export async function processManualJapanEntryUrl(
   }
   if (existing && !isRetryableManualWork(existing) && !explicitArtifactRefresh) {
     await attachManualWorkSource(existing.id, sourceInput)
-    return { item: existing, duplicate: true }
+    return { item: existing, duplicate: true, artifactsPreserved: false }
   }
 
   if (existing && shouldUseTwentyOnlyRetry(existing, Boolean(options.retryRequested))) {
@@ -138,7 +140,7 @@ export async function processManualJapanEntryUrl(
         twenty_sync_status: "skipped",
         error_message: "Twenty再同期に必要な保存済みレポートURLが不足しています。解析をやり直してください。",
       })
-      return { item, duplicate: false }
+      return { item, duplicate: false, artifactsPreserved: false }
     }
     try {
       const retryProfile = parseManualCompanyProfile(existing.profile)
@@ -170,7 +172,7 @@ export async function processManualJapanEntryUrl(
         twenty_sync_status: synced.status,
         error_message: retrySendReady ? null : retryReasons.join("; "),
       })
-      return { item, duplicate: false }
+      return { item, duplicate: false, artifactsPreserved: false }
     } catch (error) {
       console.error("[manual-work] Twenty re-sync failed:", { id: existing.id, error })
       const item = await updateManualWork(existing.id, {
@@ -179,7 +181,7 @@ export async function processManualJapanEntryUrl(
         twenty_sync_status: "failed",
         error_message: error instanceof Error ? error.message : "Twenty re-sync failed",
       })
-      return { item, duplicate: false }
+      return { item, duplicate: false, artifactsPreserved: false }
     }
   }
 
@@ -217,7 +219,7 @@ export async function processManualJapanEntryUrl(
       product_context: evidence.productContext,
     })
     const rejectedEvidence = await rejectManualWorkNonCompanyEvidence(work, evidence)
-    if (rejectedEvidence) return { item: rejectedEvidence, duplicate: false }
+    if (rejectedEvidence) return { item: rejectedEvidence, duplicate: false, artifactsPreserved: false }
 
     const profileRun = await runWithManualWorkAutoRecovery({
       phase: "company classification",
@@ -256,7 +258,7 @@ export async function processManualJapanEntryUrl(
         twenty_sync_status: "skipped",
         error_message: "Japanese companies are outside the Japan Entry Package target.",
       })
-      return { item: work, duplicate: false }
+      return { item: work, duplicate: false, artifactsPreserved: false }
     }
 
     const origin = new URL(evidence.sourceUrl).origin
@@ -359,7 +361,7 @@ export async function processManualJapanEntryUrl(
           work.id,
           buildLastGoodArtifactRestorePatch(lastGoodArtifacts, `Initial message generation failed: ${generationError}`),
         )
-        return { item, duplicate: false }
+        return { item, duplicate: false, artifactsPreserved: true }
       }
     }
     const messageReview = {
@@ -466,8 +468,12 @@ export async function processManualJapanEntryUrl(
         error_message: error instanceof Error ? error.message : "Twenty sync failed",
       })
     }
-    return { item: work, duplicate: false }
+    return { item: work, duplicate: false, artifactsPreserved: false }
   } catch (error) {
-    return { item: await failManualWork(work, error, lastGoodArtifacts), duplicate: false }
+    return {
+      item: await failManualWork(work, error, lastGoodArtifacts),
+      duplicate: false,
+      artifactsPreserved: Boolean(lastGoodArtifacts),
+    }
   }
 }

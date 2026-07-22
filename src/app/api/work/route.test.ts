@@ -37,7 +37,7 @@ beforeEach(() => {
   mocks.angleMetrics.mockResolvedValue([])
   mocks.sources.mockResolvedValue([])
   mocks.outcome.mockResolvedValue({ id: "106db008-80af-4c56-93ee-916643d84c1b", manually_sent_at: "2026-07-16T00:00:00.000Z" })
-  mocks.process.mockResolvedValue({ item: { id: "work-1", domain: "example.com" }, duplicate: false })
+  mocks.process.mockResolvedValue({ item: { id: "work-1", domain: "example.com" }, duplicate: false, artifactsPreserved: false })
   mocks.notify.mockResolvedValue({ ok: true })
 })
 
@@ -66,11 +66,35 @@ describe("manual Japan Entry work API", () => {
       body: JSON.stringify({ url: "https://example.com" }),
     }))
     expect(response.status).toBe(201)
+    expect(await response.json()).toMatchObject({ ok: true, artifactsPreserved: false })
     expect(mocks.process).toHaveBeenCalledWith("https://example.com", "auto", "auto", {
       sourceSlug: "manual_input",
       sourcePageUrl: null,
       observedOn: null,
     }, { retryRequested: false, expectedWorkId: null })
+  })
+
+  it("exposes a preserved last-known-good artifact as a non-successful refresh outcome", async () => {
+    mocks.process.mockResolvedValue({
+      item: { id: "work-1", domain: "example.com", error_message: "New generation failed" },
+      duplicate: false,
+      artifactsPreserved: true,
+    })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        url: "https://example.com",
+        retry: true,
+        workId: "106db008-80af-4c56-93ee-916643d84c1b",
+      }),
+    }))
+
+    expect(response.status).toBe(201)
+    expect(await response.json()).toMatchObject({ ok: true, artifactsPreserved: true })
+    expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({
+      message: expect.stringContaining("再生成失敗・旧成果物保持"),
+    }))
   })
 
   it("passes an explicit experiment cell to the processor", async () => {

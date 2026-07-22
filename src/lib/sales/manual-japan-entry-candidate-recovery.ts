@@ -144,16 +144,16 @@ function productOpening(input: {
   const renderingIncludesCompany = rendering.toLowerCase().includes(input.companyName.toLowerCase())
   const variants = renderingIncludesCompany
     ? [
-        `The public product description states: ${renderedSentence} That specific capability is the starting point for this Japan review.`,
-        `The checked product page describes the offering this way: ${renderedSentence} I used that concrete wording to frame the Japan review.`,
-        `The product page defines the offering as follows: ${renderedSentence} That is the product basis used here.`,
-        `The public description is specific: ${renderedSentence} I used that capability to keep the Japan review focused.`,
+        `The public product description is concrete: ${renderedSentence} For Japan, the open product question concerns the customer path around that documented capability.`,
+        `The checked product page describes ${renderedSentence} The Japan-specific issue is whether its current customer path has a localized evaluation route.`,
+        `The product page defines the offering as ${renderedSentence} The relevant Japan question concerns the customer path for that existing proposition.`,
+        `The public description centers on ${renderedSentence} For Japan, the open question is how that proposition maps to a Japanese customer path.`,
       ]
     : [
-        `${input.companyName} publicly describes ${subject} this way: ${renderedSentence} That specific capability is the starting point for this Japan review.`,
-        `The concrete capability documented by ${input.companyName} for ${subject} is: ${renderedSentence} I used that wording to frame the Japan review.`,
-        `In its public product description, ${input.companyName} defines ${subject} around this capability: ${renderedSentence} That is the product basis used here.`,
-        `The public wording from ${input.companyName} for ${subject} is: ${renderedSentence} I used that capability to keep the Japan review focused.`,
+        `${input.companyName} publicly describes ${subject} as ${renderedSentence} The product-specific Japan question concerns the customer path around that existing proposition.`,
+        `For ${subject}, ${input.companyName} documents ${renderedSentence} The Japan-specific issue is whether its current customer path has a localized evaluation route.`,
+        `In its public product description, ${input.companyName} defines ${subject} around ${renderedSentence} The corresponding Japan question concerns the customer path for that existing proposition.`,
+        `${input.companyName} presents ${subject} through this product description: ${renderedSentence} For Japan, the open question is how that proposition maps to a Japanese customer path.`,
       ]
   return variants[(stableHash(`${input.companyName}:${rendering}`) + (input.variationIndex ?? 0)) % variants.length]!
 }
