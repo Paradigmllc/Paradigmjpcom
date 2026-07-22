@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 import type { DeepSeekResponse } from "@/lib/deepseek"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { buildJapanEntryProjection } from "./japan-entry-projection"
+import { buildManualCtaContracts } from "./manual-japan-entry-cta-contract"
 
 const productEvidence = "subscription analytics for independent retailers with inventory forecasting and replenishment insights."
 const projection = buildJapanEntryProjection({
@@ -35,12 +36,28 @@ const unsafeRepair = safeMessage.replace(
   "A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.",
   "Japanese independent retailers typically need localized access before they evaluate a product.",
 )
+const [approvedCta] = buildManualCtaContracts({
+  companyName: "AtlasMetric",
+  requiredAnchor: "AtlasMetric",
+  customerPathAnchor: "Japanese-language",
+  priorMessages: [],
+  count: 1,
+})
+const modelRepairedMessage = safeMessage
+  .replace(
+    "A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.",
+    "The open decision is whether to test a Japanese-language evaluation path for the documented inventory-analytics workflow before allocating effort to broader localization. The analysis would compare that bounded test with the current proposition while keeping public observations separate from assumptions about demand, adoption, or commercial results. It would also identify which page, onboarding, and support assumptions require evidence before the test is designed, keeping the scope tied to this analytics workflow rather than a generic market-entry plan.",
+  )
+  .replace(
+    "I can send a short Japan opportunity analysis for AtlasMetric focused on the Japanese-language customer-path question. Could you forward it to the person responsible for international growth?",
+    approvedCta!.paragraph,
+  )
 
 function response(value: unknown): DeepSeekResponse {
   return { ok: true, text: JSON.stringify(value) }
 }
 
-function candidate(message: string) {
+function candidate(message: string, ctaType = "founder_forward") {
   return {
     message,
     fact_ids: ["japan-audit-language"],
@@ -49,7 +66,7 @@ function candidate(message: string) {
     angle: "problem",
     opening_style: "public_observation",
     diagnostic_focus: "verified_language_path",
-    cta_type: "founder_forward",
+    cta_type: ctaType,
   }
 }
 
@@ -64,7 +81,7 @@ function critic(specificity: number, productEvidenceFaithful = true) {
 }
 
 describe("Japan Entry editorial repair loop", () => {
-  it("repairs a short draft deterministically before the editorial call", async () => {
+  it("repairs a short draft with a bespoke model rewrite before the editorial call", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(response({
         strategy: {
@@ -81,6 +98,7 @@ describe("Japan Entry editorial repair loop", () => {
         },
         candidates: [candidate(shortMessage)],
       }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23))
 
     const result = await generatePersonalizedJapanEntryMessage({
@@ -99,8 +117,10 @@ describe("Japan Entry editorial repair loop", () => {
     expect(result.ok).toBe(true)
     expect(result.review?.wordCount).toBeGreaterThanOrEqual(120)
     expect(result.review?.wordCount).toBeLessThanOrEqual(190)
-    expect(caller).toHaveBeenCalledTimes(2)
-    const editorialPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as {
+    expect(caller).toHaveBeenCalledTimes(3)
+    const repairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as { task?: string }
+    expect(repairPayload.task).toBe("repair_candidate")
+    const editorialPayload = JSON.parse(caller.mock.calls[2]?.[0]?.[1]?.content ?? "{}") as {
       deterministic_contracts_passed?: boolean
       candidates?: unknown[]
     }
@@ -129,7 +149,7 @@ describe("Japan Entry editorial repair loop", () => {
         },
         candidates: [candidate(repeatedAnchorMessage)],
       }))
-      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23))
 
     const result = await generatePersonalizedJapanEntryMessage({
@@ -168,11 +188,11 @@ describe("Japan Entry editorial repair loop", () => {
           country_adaptation: "Direct",
           prohibited_claims: ["Demand"],
         },
-        candidates: [candidate(safeMessage)],
+        candidates: [candidate(modelRepairedMessage, approvedCta!.ctaType)],
       }))
       .mockResolvedValueOnce(critic(22))
       .mockResolvedValueOnce(response({ candidate: candidate(unsafeRepair) }))
-      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23))
 
     const result = await generatePersonalizedJapanEntryMessage({
@@ -212,16 +232,16 @@ describe("Japan Entry editorial repair loop", () => {
         country_adaptation: "Direct",
         prohibited_claims: ["Demand"],
       },
-      candidates: [candidate(safeMessage)],
+      candidates: [candidate(modelRepairedMessage, approvedCta!.ctaType)],
     })
     const caller = vi.fn()
       .mockResolvedValueOnce(generation)
       .mockResolvedValueOnce(critic(23, false))
-      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23, false))
-      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23, false))
-      .mockResolvedValueOnce(response({ candidate: candidate(safeMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23, false))
 
     const result = await generatePersonalizedJapanEntryMessage({
