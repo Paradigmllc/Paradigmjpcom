@@ -141,6 +141,48 @@ contact@paradigmjp.com`)
     expect(result.passed).toBe(false)
   })
 
+  it("rejects the live Salesfire CTA residue and repeated analysis scaffolding", () => {
+    const result = review(`Hello Screenshot to Code team,
+
+A retailer using Screenshot to Code can Explore customer preferences. They may also Book a consultation now.
+
+The checked public pages did not show a Japanese-language customer path. The next concrete step is not a launch assumption but a bounded test.
+
+I can prepare a Japan opportunity analysis that separates the verified finding from the decisions still to test.
+
+The Japan opportunity analysis I can provide for Screenshot to Code would evaluate the documented product scope through a bounded Japan validation around product evaluation. Who owns the Japanese-language evaluation-path decision?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`)
+
+    expect(result.passed).toBe(false)
+    expect(result.dimensions.languageIntegrity).toBe(0)
+    expect(result.reusableTemplateRisk).toBe(true)
+  })
+
+  it("rejects the model-authored verified-scope filler that previously scored 92", () => {
+    const result = review(`Hello Screenshot to Code team,
+
+Screenshot to Code provides “turn screenshots into React code” as a documented product workflow.
+
+The checked public pages did not show a Japanese-language path. The analysis would scope that decision.
+
+A Japan opportunity analysis for the product would define an evaluation route. The analysis stays within the verified product scope and marks every Japan assumption as unconfirmed.
+
+I can send a Japan opportunity analysis for Screenshot to Code focused on the Japanese-language decision. Who owns the evaluation-path decision?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`)
+
+    expect(result.passed).toBe(false)
+    expect(result.reusableTemplateRisk).toBe(true)
+    expect(result.dimensions.narrativeOriginality).toBeLessThan(23)
+  })
+
   it("rejects a generic founder-forward question and inferred Japanese user behaviour", () => {
     const result = review(`Hello Screenshot to Code team,
 

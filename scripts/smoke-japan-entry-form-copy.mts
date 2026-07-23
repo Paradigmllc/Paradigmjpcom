@@ -73,6 +73,10 @@ const checks = {
   noAttachment: !/(?:attached|attachment|添付|資料をお送り)/i.test(result.message),
   noCommercialTerms: !/(?:[$€£¥￥]\s?\d|\bUSD\b|\bJPY\b|12,?000|setup fee|pricing|price|料金|価格)/i.test(result.message),
   noPromotionalNumericClaim: !/10x|10\s+times/i.test(result.message),
+  noCausalAuditExtension: !/\b(?:did not show|did not find|showed no|found no)\b[^.!?]{0,160},?\s+(?:so|therefore|which)\b/i.test(result.message),
+  noBareWorkflowReference: !/\b(?:this|that|the)\s+workflow\b/i.test(result.message),
+  noGenericAnalysisFocus: !/\bproduct evaluation and Japanese positioning\b/i.test(result.message),
+  noInventedJapanAudience: !/\b(?:audiences?|developers?|evaluators?|users?|buyers?|customers?|teams?)\s+in Japan\b/i.test(result.message),
   noPlaceholder: !/(?:\[[^\]\n]+\]|［[^］\n]+］|【[^】\n]+】|\{[^{}\n]+\}|<[^<>\n]+>|__[A-Z0-9_ -]+__|\bTBD\b|\bPLACEHOLDER\b)/i.test(result.message),
   personalizedBodyParagraphs: envelope.bodyParagraphs.length >= 3 && envelope.bodyParagraphs.length <= 4,
 };

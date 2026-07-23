@@ -19,12 +19,12 @@ const audit = {
   },
   pages_checked: ["https://example.com/", "https://example.com/terms"],
 };
-const productContext = "Example provides a subscription analytics platform for independent retailers with inventory insights.";
+const productContext = "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in a single workflow.";
 const productEvidence = "subscription analytics platform for independent retailers";
 const diagnosis = "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; the customer path available for a Japan entry decision remains unverified from the pages checked. The management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.";
 const opening = "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in a single workflow.";
-const product = "That documented workflow gives the review a concrete product basis without assuming how retailers in Japan would evaluate or use it.";
-const tailoredClose = "I can share a Japan opportunity analysis focused on Example’s Japanese-language customer path and JPY presentation question. Would you be open to receiving it?";
+const product = "That documented workflow gives the review a concrete product basis without assuming how it would be evaluated or used in Japan.";
+const tailoredClose = "I can share a Japan opportunity analysis focused on testing Example’s subscription-analytics and inventory-insights workflow through its Japanese-language customer path and JPY presentation question. Would you be open to receiving it?";
 
 function copyReady(...bodyParagraphs: string[]): string {
   return [manualFormGreeting("Example"), ...bodyParagraphs, MANUAL_FORM_SIGNATURE].join("\n\n");

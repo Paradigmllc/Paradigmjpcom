@@ -20,17 +20,25 @@ The checked public pages did not show a Japanese-language customer path. That is
 
 A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.
 
-I can send a short Japan opportunity analysis for AtlasMetric focused on the Japanese-language customer-path question. Could you forward it to the person responsible for international growth?
+I can send a Japan opportunity analysis for AtlasMetric focused on testing the inventory-forecasting and replenishment workflow through a Japanese-language evaluation path. Would the founder or international-growth owner be the right person to review the evaluation-path decision?
 
 Best regards,
 Tomohiro H
 Paradigm LLC
 contact@paradigmjp.com`
 
-const shortMessage = safeMessage.replace(
-  "That is a page-level observation, not proof of demand or performance in Japan.",
-  "This is a bounded public-page observation.",
-)
+const shortMessage = `Hello AtlasMetric team,
+
+AtlasMetric provides subscription analytics for independent retailers with inventory forecasting and replenishment insights.
+
+The checked public pages did not show a Japanese-language customer path.
+
+I can send a Japan opportunity analysis for AtlasMetric focused on testing the inventory-forecasting and replenishment workflow through a Japanese-language evaluation path. Would the founder or international-growth owner be the right person to review the evaluation-path decision?
+
+Best regards,
+Tomohiro H
+Paradigm LLC
+contact@paradigmjp.com`
 
 const unsafeRepair = safeMessage.replace(
   "A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.",
@@ -46,11 +54,7 @@ const [approvedCta] = buildManualCtaContracts({
 const modelRepairedMessage = safeMessage
   .replace(
     "A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.",
-    "The open decision is whether to test a Japanese-language evaluation path for the documented inventory-analytics workflow before allocating effort to broader localization. The analysis would compare that bounded test with the current proposition while keeping public observations separate from assumptions about demand, adoption, or commercial results. It would also identify which page, onboarding, and support assumptions require evidence before the test is designed, keeping the scope tied to this analytics workflow rather than a generic market-entry plan.",
-  )
-  .replace(
-    "I can send a short Japan opportunity analysis for AtlasMetric focused on the Japanese-language customer-path question. Could you forward it to the person responsible for international growth?",
-    approvedCta!.paragraph,
+    "The open decision is whether to test a Japanese-language evaluation path for the inventory-analytics workflow before allocating effort to broader localization. The evaluation path would keep the existing inventory-forecasting and replenishment workflow as its subject while leaving demand, adoption, and commercial results unassumed.",
   )
 
 function response(value: unknown): DeepSeekResponse {
@@ -114,8 +118,8 @@ describe("Japan Entry editorial repair loop", () => {
       messageAngle: "problem",
     }, caller)
 
-    expect(result.ok).toBe(true)
-    expect(result.review?.wordCount).toBeGreaterThanOrEqual(120)
+    expect(result.ok, JSON.stringify(result)).toBe(true)
+    expect(result.review?.wordCount).toBeGreaterThanOrEqual(75)
     expect(result.review?.wordCount).toBeLessThanOrEqual(190)
     expect(caller).toHaveBeenCalledTimes(3)
     const repairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as { task?: string }
@@ -165,7 +169,7 @@ describe("Japan Entry editorial repair loop", () => {
       messageAngle: "problem",
     }, caller)
 
-    expect(result.ok).toBe(true)
+    expect(result.ok, JSON.stringify(result)).toBe(true)
     expect(caller).toHaveBeenCalledTimes(3)
     const repairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as { task?: string }
     expect(repairPayload.task).toBe("repair_candidate")
@@ -212,7 +216,7 @@ describe("Japan Entry editorial repair loop", () => {
       messageAngle: "problem",
     }, caller)
 
-    expect(result.ok).toBe(true)
+    expect(result.ok, JSON.stringify(result)).toBe(true)
     expect(result.review?.passed).toBe(true)
     expect(result.review?.attempts).toBe(5)
     expect(caller).toHaveBeenCalledTimes(5)
@@ -304,7 +308,7 @@ describe("Japan Entry editorial repair loop", () => {
     }, caller)
 
     expect(result.ok, JSON.stringify(result)).toBe(true)
-    expect(result.review?.wordCount).toBeGreaterThanOrEqual(120)
+    expect(result.review?.wordCount).toBeGreaterThanOrEqual(75)
     expect(result.review?.wordCount).toBeLessThanOrEqual(190)
     expect(result.message).toContain("AtlasMetric provides subscription analytics")
     expect(result.message).not.toContain("The concrete capability documented")

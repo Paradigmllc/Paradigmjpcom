@@ -50,7 +50,11 @@ export const personalizedGenerationSchema = z.object({
 }).strict()
 
 export const personalizedRepairSchema = z.object({ candidate: personalizedCandidateSchema }).strict()
-export const bespokeRewriteSchema = z.object({ message: z.string().min(1).max(1_800) }).strict()
+export const bespokeRewriteSchema = z.object({
+  message: z.string().min(1).max(1_800),
+  personalization_anchors: z.array(boundedGeneratedEvidence(180)).min(2).max(5).default(["legacy", "unspecified"]),
+  solution_focus: boundedGeneratedEvidence(300).default("legacy_unspecified"),
+}).strict()
 
 const riskFlagsSchema = z.preprocess((value) => {
   if (typeof value !== "string") return value

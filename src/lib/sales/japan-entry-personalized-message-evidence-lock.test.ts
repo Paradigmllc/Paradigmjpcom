@@ -47,7 +47,7 @@ Airvida describes a Wearable Air Purifier designed around personal air-cleaning 
 
 The checked public pages did not show a Japanese-language customer path. This does not establish demand or buyer behaviour in Japan; it leaves open whether a localized evaluation route is worth testing before broader market work receives time or budget.
 
-A Japan opportunity analysis would separate the current product evidence from the unanswered market questions, identify the smallest validation steps, and define which customer-path signals should determine whether further localization deserves priority. The scope would remain tied to the documented purifier rather than a generic expansion plan.
+As this is a wearable purifier rather than a software-only workflow, the open decision is which product explanation and evaluation evidence must be understandable in Japanese before a limited market test. That scope stays centered on personal air-cleaning use and does not presume demand or performance.
 
 ${approvedCta!.paragraph}
 

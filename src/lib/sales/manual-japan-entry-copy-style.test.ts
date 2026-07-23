@@ -56,7 +56,7 @@ describe("bespoke form-copy style", () => {
       includeEstimate: false,
     })
 
-    expect(issues).toContain("The exact product-evidence phrase must appear no more than twice in the personalized body")
+    expect(issues).toContain("The exact product-evidence phrase must appear once in the opening and must not be repeated later")
     expect(issues).toContain("Mechanical exact-evidence CTA language is prohibited; offer a concrete decision brief in natural language")
   })
 
@@ -258,4 +258,218 @@ describe("bespoke form-copy style", () => {
     expect(issues.join(" ")).toContain("Unsupported product or commercial outcome is prohibited")
     expect(issues.join(" ")).toContain("expands a verified page gap into an unsupported missing surface")
   })
+
+  it("rejects the unsupported outcome and missing-surface wording from the live DeepSeek smoke", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code, letting developers skip manual translation of design to front-end code. The proposal refers to a verified onboarding or documentation gap and lets developers test the workflow in their native context.",
+      "Screenshot to Code converts screenshots to code, letting developers skip manual translation of design to front-end code.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues.join(" ")).toContain("Unsupported product or commercial outcome is prohibited")
+    expect(issues.join(" ")).toContain("expands a verified page gap into an unsupported missing surface")
+  })
+
+  it("rejects evaluator behavior, English-only surfaces, and conversion impact from the second live smoke", () => {
+    const body = `Screenshot to Code offers conversion from screenshots into code. Its workflow turns a visual mockup into code in one step, which makes rapid prototyping unusually direct.
+
+The public pages show no Japanese-language customer path. A non-English evaluator can still test the engine, but the surrounding onboarding, documentation, and UI remain English-only. That gap leaves open whether a lightweight Japanese interface layer would materially lift trial completion and paid conversion.
+
+I can send the Screenshot to Code Japan opportunity analysis. Who owns the Japanese-language evaluation-path decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues.join(" ")).toContain("Unsupported product or commercial outcome is prohibited")
+    expect(issues.join(" ")).toContain("unsupported audience behaviour")
+    expect(issues.join(" ")).toContain("invents specific English-only onboarding")
+  })
+
+  it("rejects an invented Japanese developer segment and claimed adoption effect", () => {
+    const body = `Screenshot to Code converts screenshots to code.
+
+The public pages show no Japanese-language path. The decision is whether to invest in an evaluation experience for Japanese developers.
+
+I can send a Screenshot to Code Japan opportunity analysis focused on a test that would strengthen adoption and readiness. Who owns the Japanese-language evaluation-path decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues.join(" ")).toContain("invents an unverified Japanese target segment")
+    expect(issues.join(" ")).toContain("Unsupported product or commercial outcome is prohibited")
+  })
+
+  it("rejects the ungrounded product expansion and malformed analysis focus from the latest smoke", () => {
+    const body = `Screenshot to Code provides AI-powered conversion from screenshots and videos to clean, production-ready code.
+
+The workflow takes a visual input and generates framework-specific output ready for a developer environment. The public pages did not show a Japanese-language customer path.
+
+The decision is whether the product explanation should be tested through a Japanese-language path.
+
+I can send a Screenshot to Code Japan opportunity analysis focused on assess whether the path should be tested. Who owns the evaluation-path decision?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Screenshot to Code",
+      productEvidence: "AI-powered conversion from screenshots and videos to clean, production-ready code",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "AI-powered conversion from screenshots and videos to clean, production-ready code | Supports HTML/CSS, React, Vue, Tailwind, Bootstrap, and Ionic",
+    })
+
+    expect(issues).toContain("An additional product claim is not grounded in the supplied public product context")
+    expect(issues).toContain("The analysis focus contains an ungrammatical verb form and is not copy-ready English")
+  })
+
+  it("rejects Japanese-lens inference and an analysis described before the CTA", () => {
+    const body = `Screenshot to Code converts screenshots to code.
+
+The pages did not show a Japanese-language path, which means the capability has not been tested through a Japanese lens.
+
+The analysis would center on how the current interface performs when the user's context is Japanese.
+
+I can send a Screenshot to Code Japan opportunity analysis. Who owns the evaluation-path decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues.join(" ")).toContain("unsupported audience behaviour")
+    expect(issues).toContain("The analysis is offered or described before the final CTA; state only the product-specific decision in earlier paragraphs")
+  })
+
+  it("rejects live copied CTA residue, malformed capitalization, and a generic user scenario", () => {
+    const issues = review(
+      "A retailer using Screenshot to Code can Explore customer preferences. They may also Book a consultation now.",
+      "A retailer using Screenshot to Code can Explore customer preferences. They may also Book a consultation now.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues).toContain("Public-site conversion CTA text is prohibited in the personalized message")
+    expect(issues).toContain("A copied marketing imperative is embedded with invalid English capitalization")
+    expect(issues).toContain("The opening invents a generic user scenario instead of stating the company's documented capability")
+  })
+
+  it("rejects the live reusable reasoning chain", () => {
+    const body = `Screenshot to Code documents a screenshot-to-code workflow.
+
+The next concrete step is not a launch assumption but a bounded test.
+
+I can prepare a Japan opportunity analysis that separates the verified finding from the decisions still to test.
+
+The Japan opportunity analysis I can provide for Screenshot to Code would evaluate the documented product scope. Who owns the Japanese-language evaluation-path decision?`
+    const issues = review(body, "Screenshot to Code documents a screenshot-to-code workflow.", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues).toContain("Reusable analysis-process wording is prohibited; connect the product fact directly to one company-specific decision")
+  })
+
+  it("rejects repeated analysis offers and evidence reused in the CTA", () => {
+    const evidence = "conversion from screenshots and videos to production-ready code"
+    const body = `Screenshot to Code provides ${evidence}.
+
+The checked public pages did not show a Japanese-language customer path. The analysis would scope that decision and marks every Japan assumption as unconfirmed.
+
+A Japan opportunity analysis for the product would define the evaluation path.
+
+I can send a Japan opportunity analysis for Screenshot to Code using ${evidence}. Who owns the Japanese-language evaluation-path decision?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Screenshot to Code",
+      productEvidence: evidence,
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+    })
+
+    expect(issues).toContain("The analysis offer is repeated across paragraphs; make it once in the final CTA")
+    expect(issues).toContain("The exact product-evidence phrase must appear once in the opening and must not be repeated later")
+    expect(issues).toContain("Reusable analysis-process wording is prohibited; connect the product fact directly to one company-specific decision")
+  })
+
+  it("rejects invented untested surfaces, vague audiences, and generic product-scope filler", () => {
+    const body = `Screenshot to Code provides AI-powered conversion from screenshots and videos to clean, production-ready code.
+
+The checked public pages did not show a Japanese-language customer path, so the product explanation and onboarding experience remain untested for that audience. This leaves one concrete decision around the current product scope and the product's documented capability.
+
+I can provide Screenshot to Code with a Japan opportunity analysis focused on a Japanese-language evaluation-path test. Who owns that decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues).toContain("The message invents an untested product, onboarding, documentation, UI, checkout, or support surface")
+    expect(issues).toContain("The message uses an undefined audience reference instead of naming the verified product path")
+    expect(issues).toContain("Reusable analysis-process wording is prohibited; connect the product fact directly to one company-specific decision")
+    expect(issues).toContain("The message uses a generic product-capability reference instead of naming the grounded workflow")
+  })
+
+  it("rejects a generic market-readiness CTA from the live smoke", () => {
+    const body = `Screenshot to Code converts screenshots and videos to code.
+
+The checked pages did not show a Japanese-language path. The screenshot-to-code workflow has one open localization decision.
+
+A Japan opportunity analysis for Screenshot to Code would frame the current market-readiness question as a testable entry decision. Who owns the Japanese-language evaluation-path decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues).toContain("The final CTA uses a generic market-entry label instead of naming the company-specific validation")
+  })
+
+  it("rejects a contrived hyphen-chained workflow label from the Salesfire smoke", () => {
+    const body = `Salesfire integrates with existing eCommerce platforms to explore customer preferences and purchase history.
+
+The integrate-and-explore workflow should be tested through a Japanese-language evaluation path.
+
+I can send a Japan opportunity analysis for Salesfire. Who owns the Japanese-language evaluation-path decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues).toContain("The message invents a hyphen-chained workflow label instead of using a natural grounded noun phrase")
+  })
+
+  it("allows grounded customer-behaviour analysis before the sender CTA", () => {
+    const body = `Salesfire documents customer-behaviour analysis across preferences and purchase history.
+
+The customer-behaviour analysis path should be tested through a Japanese-language evaluation route.
+
+I can send a Japan opportunity analysis for Salesfire. Who owns the Japanese-language evaluation-path decision?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "customer-behaviour analysis across preferences and purchase history",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "customer-behaviour analysis across preferences and purchase history",
+    })
+
+    expect(issues).not.toContain("The analysis is offered or described before the final CTA; state only the product-specific decision in earlier paragraphs")
+  })
+
+  it("rejects a vague workflow pronoun in the Salesfire CTA", () => {
+    const body = `Salesfire documents customer-behaviour analysis across preferences and purchase history.
+
+The customer-behaviour analysis should be tested through a Japanese-language evaluation route.
+
+A Japan opportunity analysis would define a bounded evaluation test for that workflow. Who owns Salesfire's Japanese-language evaluation-path decision?`
+    const issues = review(body, body.split(/\n\s*\n/)[0] ?? "", body.split(/\n\s*\n/).at(-1) ?? "")
+
+    expect(issues).toContain("The final CTA refers to a generic workflow instead of naming the grounded product subject")
+  })
+
+  it("requires the Salesfire CTA to retain its grounded product subject", () => {
+    const body = `Salesfire describes analysis of customer preferences, behavioural trends, and purchase history.
+
+The customer-behaviour analysis should be tested through a Japanese-language evaluation route.
+
+I can send a Japan opportunity analysis for Salesfire, focused on product evaluation and Japanese positioning. Who owns the Japanese-language evaluation-path decision?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences, behavioural trends, and purchase history",
+    })
+
+    expect(issues).toContain("The final CTA does not repeat enough of the grounded product subject to be company-specific")
+  })
+
 })

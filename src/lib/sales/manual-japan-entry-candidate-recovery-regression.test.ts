@@ -97,7 +97,7 @@ ${MANUAL_FORM_SIGNATURE}`,
       contract,
       issues: [
         "The message contains an unnatural pronoun bridge; name the documented capability or rewrite the sentence directly",
-        "The exact product-evidence phrase must appear no more than twice in the personalized body",
+        "The exact product-evidence phrase must appear once in the opening and must not be repeated later",
         "Mechanical exact-evidence CTA language is prohibited; offer a concrete decision brief in natural language",
       ],
       similarityPassed: true,
@@ -120,7 +120,7 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(body).not.toMatch(/For it, that leaves/i)
     expect(body).not.toMatch(/around the exact [^.?!]+ evidence/i)
     expect(body.match(new RegExp(evidence, "g"))?.length ?? 0).toBeLessThanOrEqual(2)
-    expect(body).toContain(contract.paragraph)
+    expect(body).toContain(contract.question)
     expect(review).toMatchObject({ passed: true, issues: [] })
   })
 })

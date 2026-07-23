@@ -13,6 +13,30 @@ const FORM_COPY_UNSAFE_EVIDENCE_RE = /(?:https?:\/\/|www\.|\b[a-z0-9-]+(?:\.[a-z
 const CUSTOMER_QUOTE_RE = /(?:\b(?:I|we|our|my|I've|we've)\b|trusted by|definitely recommended|absolutely love)/i
 const UNRESOLVED_PUBLIC_TEXT_RE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
 const PUBLIC_BOILERPLATE_RE = /(?:reCAPTCHA|privacy policy|terms of service|cookie policy|all rights reserved|accept all cookies|cookie settings|skip to (?:main )?content|navigation menu|javascript (?:is|required|disabled)|display\s*:\s*none|visibility\s*:\s*hidden|aria-hidden|window\.innerWidth|screen size|hidden (?:text|when|on)|teks ini|akan tersembunyi|ketika ukuran|politique de confidentialit[ée]|pol[ií]tica de privacidad|datenschutz(?:erkl[aä]rung)?)/i
+const PUBLIC_ACTION_CTA_RE = /^(?:book|schedule|request)\s+(?:a|an|your)?\s*(?:demo|consultation|call|meeting)|^(?:get started|start (?:a )?(?:free )?trial|sign up|contact sales|talk to sales|learn more|shop now|buy now|order now|join now|apply now|register now)\b/i
+const PRODUCT_IMPERATIVE_RE = /^(?:analy[sz]e|automate|build|convert|create|discover|explore|generate|get|identify|integrate|leverage|make|manage|start|track|transform|try|turn|use)\b/i
+const IMPERATIVE_NOMINALIZATIONS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^analy[sz]e\s+(.+)$/i, "analysis of "],
+  [/^automate\s+(.+)$/i, "automation of "],
+  [/^build\s+(.+)$/i, "building "],
+  [/^convert\s+(.+)$/i, "conversion of "],
+  [/^create\s+(.+)$/i, "creation of "],
+  [/^discover\s+(.+)$/i, "discovery of "],
+  [/^explore\s+(.+)$/i, "analysis of "],
+  [/^generate\s+(.+)$/i, "generation of "],
+  [/^get\s+(.+)$/i, "access to "],
+  [/^identify\s+(.+)$/i, "identification of "],
+  [/^integrate\s+(.+)$/i, "integration of "],
+  [/^leverage\s+(.+)$/i, "use of "],
+  [/^make\s+(.+)$/i, "creation of "],
+  [/^manage\s+(.+)$/i, "management of "],
+  [/^start\s+(.+)$/i, "starting "],
+  [/^track\s+(.+)$/i, "tracking "],
+  [/^transform\s+(.+)$/i, "transformation of "],
+  [/^try\s+(.+)$/i, "evaluation of "],
+  [/^turn\s+(.+)$/i, "conversion of "],
+  [/^use\s+(.+)$/i, "use of "],
+]
 
 function evidenceToken(value: string): string {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -46,7 +70,7 @@ function cleanEvidenceSegment(value: string, companyName: string): string {
   const company = companyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   return value
     .replace(new RegExp(`^(?:ible\\s+)?${company}\\s*(?:[–—:-]\\s*)`, "i"), "")
-    .replace(new RegExp(`^${company}\\s+(?:provides?|offers?|builds?|creates?|makes?|is)\\s+`, "i"), "")
+    .replace(new RegExp(`^${company}\\s+(?:provides?|offers?|builds?|creates?|makes?|integrates?|measures?|works?|is)\\s+`, "i"), "")
     .replace(/^(?:a|an|the)\s+/i, "")
     .replace(/^[\s"'“”‘’|,:;–—-]+|[\s"'“”‘’|,:;–—-]+$/g, "")
     .replace(/\s+/g, " ")
@@ -100,6 +124,7 @@ function productEvidenceCandidates(input: {
     .filter((value) => !PROMOTIONAL_QUALIFIER_RE.test(value))
     .filter((value) => !UNRESOLVED_PUBLIC_TEXT_RE.test(value))
     .filter((value) => !PUBLIC_BOILERPLATE_RE.test(value))
+    .filter((value) => !PUBLIC_ACTION_CTA_RE.test(value))
     .filter((value) => !repeatsCompanyOrProductAnchor(value, copyAnchors))
     .filter((value) => !productNames.has(value.toLowerCase()))
     .filter((value) => evidenceTokens(value).length >= 3)
@@ -113,13 +138,29 @@ export function isInitialInterestProductEvidenceSafe(value: string): boolean {
     && !PROMOTIONAL_QUALIFIER_RE.test(value)
     && !UNRESOLVED_PUBLIC_TEXT_RE.test(value)
     && !PUBLIC_BOILERPLATE_RE.test(value)
+    && !PUBLIC_ACTION_CTA_RE.test(value)
+}
+
+export function shouldPreserveProductEvidenceAsRendering(value: string): boolean {
+  return !PRODUCT_IMPERATIVE_RE.test(value.trim())
+}
+
+export function renderInitialInterestProductEvidence(value: string): string {
+  const trimmed = value.trim()
+  for (const [pattern, prefix] of IMPERATIVE_NOMINALIZATIONS) {
+    const object = trimmed.match(pattern)?.[1]
+    if (object) return `${prefix}${object}`
+  }
+  return trimmed
 }
 
 function primaryEvidenceScore(value: string): number {
   const terms = evidenceTokens(value).length
   const descriptiveBonus = /\bai-powered\b/i.test(value)
     ? 16
-    : /\b(?:conversion|workflow|platform|software|product|purifier|supports?|integrates?|enables?)\b/i.test(value) ? 10 : 0
+    : /\b(?:customer preferences?|behavio(?:u)?ral trends?|purchase history|analytics?)\b/i.test(value)
+      ? 14
+      : /\b(?:conversion|workflow|platform|software|product|purifier|supports?|integrates?|enables?)\b/i.test(value) ? 10 : 0
   const imperativePenalty = /^(?:convert|build|get|try|start|ready)\b/i.test(value) ? 8 : 0
   return terms + descriptiveBonus - imperativePenalty
 }

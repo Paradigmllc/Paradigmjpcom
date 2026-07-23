@@ -48,7 +48,7 @@ describe("manual model-copy safe finalizer", () => {
     expect(recovered.message).toContain(`${companyName} ${evidence}.`)
     expect(recovered.message).not.toMatch(/positioning concept/i)
     const bodyWords = recovered.message.split(/\n\n/).slice(1, -1).join(" ").split(/\s+/).filter(Boolean)
-    expect(bodyWords.length).toBeGreaterThanOrEqual(120)
+    expect(bodyWords.length).toBeGreaterThanOrEqual(75)
   })
 
   it("does not authorize unsupported semantic or similarity failures", () => {
@@ -57,7 +57,7 @@ describe("manual model-copy safe finalizer", () => {
       similarityPassed: true,
     })).toBe(false)
     expect(canSafelyFinishManualModelCopy({
-      issues: ["Message must be 120-190 words"],
+      issues: ["Message must be 95-190 words"],
       similarityPassed: false,
     })).toBe(false)
   })
@@ -67,7 +67,7 @@ describe("manual model-copy safe finalizer", () => {
       issues: [
         "The faithful English product-evidence rendering is missing from the message",
         "The opening product section must contain the company or exact product name and faithful English product-evidence rendering",
-        "Message must be 120-190 words",
+        "Message must be 95-190 words",
       ],
       similarityPassed: true,
     })).toBe(true)

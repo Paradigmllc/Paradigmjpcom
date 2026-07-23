@@ -1,12 +1,14 @@
 import { applyManualCtaContract, type ManualCtaContract } from "./manual-japan-entry-cta-contract"
 import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-copy-envelope"
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
+import { manualProductDecisionSubject } from "./manual-japan-entry-product-subject"
 
-const BODY_MIN_WORDS = 120
-const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|The exact product-evidence phrase must appear no more than twice|The faithful English product-evidence rendering is missing from the message|The opening product section must contain the company or exact product name and faithful English product-evidence rendering|The message contains an unnatural pronoun bridge|Mechanical exact-evidence CTA language is prohibited|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected|The opening must describe the company's product without conflating the company with its product category)/
+const BODY_MIN_WORDS = 75
+const SAFE_FINISH_ISSUE = /^(?:The company name must appear no more than twice|The product name must appear no more than twice|The exact product-evidence phrase must appear once|The faithful English product-evidence rendering is missing from the message|The opening product section must contain the company or exact product name and faithful English product-evidence rendering|The message contains an unnatural pronoun bridge|Mechanical exact-evidence CTA language is prohibited|Message must be \d+-\d+ words|The message contains a broken possessive created by anchor reduction|An unpublished positioning concept must not be claimed unless its stored fact is selected|The opening must describe the company's product without conflating the company with its product category)/
 const DANGEROUS_SENTENCE = /(?:https?:\/\/|www\.|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\b(?:attached|attachment|downloadable|download)\b|\bunlock\b|\b(?:guarantee(?:d|s|ing)?|ROI|return on investment)\b)/i
 const UNSUPPORTED_CAUSAL_SENTENCE = /(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i
 const PROMOTIONAL_SENTENCE = /(?:logical next step|given that reach|i noticed your site|untapped|huge opportunity|game.changer|revolutionary|impressive|interesting detail|well presented|global potential|missed opportunity|emerging applications|\b(?:is|provides?|offers?) (?:a )?clear value\b|\bis valuable\b|position(?:s|ed|ing)? .{0,40} uniquely|uniquely position(?:s|ed|ing)?|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i
+const EARLY_SENDER_ANALYSIS_SENTENCE = /\b(?:Japan opportunity analysis|Japan (?:entry|launch) brief|opportunity snapshot|(?:an?|the|this|that|our) (?:analysis|brief|snapshot)|(?:analysis|brief|snapshot) (?:would|can|could|will|stays?|remains?|covers?|focuses?))\b/i
 const UNRESOLVED_SENTENCE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
 const UNNATURAL_PRONOUN_SENTENCE = /\b(?:for|from|around|within) it,\s+(?:the|an?|that|this|one)\b/i
 const STOP_WORDS = new Set(["a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "with"])
@@ -167,33 +169,6 @@ function productOpening(input: {
   return variants[(stableHash(`${input.companyName}:${rendering}`) + (input.variationIndex ?? 0)) % variants.length]!
 }
 
-function productDecisionSubject(input: {
-  rendering: string
-  companyName: string
-  productNames: string[]
-}): string {
-  let withoutIdentity = input.rendering.normalize("NFKC")
-  for (const identity of [input.companyName, ...input.productNames]) {
-    const value = identity.trim()
-    if (!value) continue
-    const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    withoutIdentity = withoutIdentity.replace(new RegExp(escaped, "giu"), " ")
-  }
-  const segments = withoutIdentity
-    .split(/\s+[–—-]\s+/)
-    .map((segment) => segment.replace(/[^\p{L}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim())
-    .filter((segment) => segment.split(/\s+/).length >= 2)
-  const selected = segments.at(-1) ?? withoutIdentity
-  const words = selected
-    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .filter((word, index) => index > 1 || !/^(?:a|an|the)$/i.test(word))
-  return words.length >= 2 ? words.slice(0, 4).join(" ") : "documented offering"
-}
-
 function selectedFacts(candidate: RecoverableCandidate, facts: JapanEntryPersonalizationFact[]): JapanEntryPersonalizationFact[] {
   const ids = new Set(candidate.fact_ids)
   return facts.filter((fact) => ids.has(fact.id))
@@ -271,6 +246,8 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     removeUnsupportedCausal: input.issues.some((issue) => /Unsupported causal inference/i.test(issue)),
     removePromotional: input.issues.some((issue) => /Generic, promotional/i.test(issue)),
   }).filter((sentence) => (
+    !EARLY_SENDER_ANALYSIS_SENTENCE.test(sentence)
+    &&
     !positioningSourcePhrases.some((phrase) => sentence.toLowerCase().includes(phrase))
     && (positioningConceptSelected || !/(?:draft|unpublished) Japanese positioning concept|positioning concept.{0,80}remains unpublished/i.test(sentence))
   ))
@@ -322,7 +299,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
   }, input.companyName, input.contract)
 
   const recoveredBody = bodyBlocks(recovered.message)
-  const subject = productDecisionSubject({
+  const subject = manualProductDecisionSubject({
     rendering: input.candidate.product_evidence_rendering,
     companyName: input.companyName,
     productNames: input.productNames ?? [],
@@ -332,12 +309,12 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
     `A practical first decision for the ${subject} is whether to test that customer-path observation before choosing a wider localization scope.`,
     `Any Japan assessment of the ${subject} should keep the documented page condition separate from assumptions that still need direct evidence.`,
     `The ${subject} review can define a focused validation step without presuming Japanese demand, audience response, or a commercial result.`,
-    `For this ${subject} decision, the current public material supports a page-level finding, not a forecast about product-market fit.`,
+    `For this ${subject} decision, the current public material supports a page-level finding, not a forecast about demand or performance.`,
     `A focused check would test the observed ${input.customerPathAnchor} condition before any broader market commitment.`,
     `The immediate question is narrow: whether the documented customer path merits further localization work.`,
     `The evidence can be organized into what the pages establish, what remains unknown, and what a bounded test should resolve.`,
-    `That analysis would keep the validation choice separate from unsupported claims about buyers, conversion, or commercial outcomes.`,
-    `A concise brief can stay within the verified product scope while marking every Japan assumption as unconfirmed.`,
+    `That validation choice stays separate from unsupported claims about buyers, conversion, or commercial outcomes.`,
+    `The first test can keep the verified product wording separate from Japan assumptions that remain unconfirmed.`,
     `The next decision is not a full launch; it is whether the observed customer-path condition deserves direct validation.`,
   ]
   const offset = (stableHash(`${input.companyName}:${subject}:${input.customerPathAnchor}:padding`) + (input.variationIndex ?? 0)) % paddingPool.length
@@ -352,11 +329,7 @@ export function recoverManualInitialInterestCandidate<T extends RecoverableCandi
 
   const requiredAnchor = input.productNames?.map((name) => name.trim()).find(Boolean) ?? input.companyName
   const ctaIndex = recoveredBody.length - 1
-  const ctaParagraph = recoveredBody[ctaIndex] ?? ""
-  if (!ctaParagraph.toLowerCase().includes(requiredAnchor.toLowerCase())) {
-    const question = ctaParagraph.match(/[^.!?]*\?\s*$/)?.[0]?.trim() || "Would you like me to send it?"
-    recoveredBody[ctaIndex] = `I can send a short Japan opportunity analysis for ${requiredAnchor}, focused on the ${input.customerPathAnchor} question. ${question}`
-  }
+  recoveredBody[ctaIndex] = `I can prepare a Japan opportunity analysis for ${requiredAnchor}, focused on a bounded test of the ${subject} using the ${input.customerPathAnchor} finding. ${input.contract.question}`
   let boundedBody = limitAnchorOccurrences(recoveredBody, input.companyName, "it")
   for (const productName of input.productNames ?? []) {
     if (productName.trim().toLowerCase() === input.companyName.trim().toLowerCase()) continue
