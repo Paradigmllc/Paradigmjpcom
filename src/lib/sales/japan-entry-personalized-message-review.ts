@@ -180,7 +180,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
-  const minWords = customInitialInterest ? initialInterestOptions.includePrice ? 145 : 120 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
+  const minWords = customInitialInterest ? initialInterestOptions.includePrice ? 145 : selected.length <= 1 ? 75 : 105 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
   const maxWords = customInitialInterest ? initialInterestOptions.includePrice ? 210 : 190 : enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
 
   if (containsUnresolvedPlaceholder(message)) {
@@ -219,6 +219,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
       productNames,
       selectedFacts: selected,
       includeEstimate: initialInterestOptions.includeEstimate,
+      productContext: input.productContext,
     });
     if (bespokeIssues.length > 0) {
       issues.push(...bespokeIssues);
@@ -230,8 +231,12 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (purpose === "commercial_offer" && !/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
   const sourceEvidenceIsExact = input.productContext.toLowerCase().includes(productEvidence.toLowerCase());
   const renderedEvidenceIsExact = message.toLowerCase().includes(productEvidenceRendering.toLowerCase());
+  const renderingIsFaithful = productEvidenceRendering.toLowerCase() === productEvidence.toLowerCase()
+    || isGroundedProductEvidence(input.productContext, productEvidenceRendering)
+    || /[^\x00-\x7F]/.test(productEvidence);
   if (!sourceEvidenceIsExact && !isGroundedProductEvidence(input.productContext, productEvidence)) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
   else if (customInitialInterest && !sourceEvidenceIsExact) { issues.push("Initial-interest product evidence must preserve an exact public source phrase"); score -= 30; }
+  else if (customInitialInterest && !renderingIsFaithful) { issues.push("Product-evidence rendering is not a faithful grammatical rendering of the exact public source phrase"); score -= 30; }
   else if (customInitialInterest && !renderedEvidenceIsExact) { issues.push("The faithful English product-evidence rendering is missing from the message"); score -= 25; }
   else if (!customInitialInterest && !isGroundedProductEvidence(message, productEvidence)) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
   if (customInitialInterest && productNames.length > 0 && !productNames.some((name) => substantiveMessage.toLowerCase().includes(name.toLowerCase()))) {
@@ -288,6 +293,12 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     const productSection = customInitialInterest
       ? paragraphs.slice(0, 2).find((paragraph) => paragraph.toLowerCase().includes(productEvidenceRendering.toLowerCase())) ?? paragraphs[0] ?? ""
       : productParagraph;
+    const ungroundedAdditionalProductClaim = customInitialInterest
+      ? productSection.split(/(?<=[.!?])\s+/).slice(1).find((sentence) => (
+          !/\b(?:Japan(?:ese)?|decision|question|unverified|customer path|evaluation path)\b/i.test(sentence)
+          && !isGroundedProductEvidence(input.productContext, sentence)
+        ))
+      : null;
     const normalizedProductSection = productSection.toLowerCase().replace(/[“”'’]/g, "").replace(/\s+/g, " ").trim();
     const normalizedCompany = input.companyName.toLowerCase().trim();
     const normalizedRendering = productEvidenceRendering.toLowerCase().replace(/[“”'’]/g, "").trim();
@@ -295,6 +306,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
       .some((verb) => normalizedProductSection.startsWith(`${normalizedCompany} ${verb} ${normalizedRendering}`));
     if (!customInitialInterest && (paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
     if (!containsCompanyOrProductAnchor(productSection) || (customInitialInterest ? !productSection.toLowerCase().includes(productEvidenceRendering.toLowerCase()) : !isGroundedProductEvidence(productSection, productEvidence))) { issues.push(customInitialInterest ? "The opening product section must contain the company or exact product name and faithful English product-evidence rendering" : "Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (ungroundedAdditionalProductClaim) { issues.push("Every additional opening product claim must be grounded in the supplied public product context"); score -= 45; }
     if (customInitialInterest && conflatesCompanyAndProduct) { issues.push("The opening must describe the company's product without conflating the company with its product category"); score -= 25; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
     if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
@@ -371,7 +383,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   }
   const unsupportedJapanInvestment = /Japan(?:ese)?.{0,80}(?:manufacturers?|companies|retailers?|buyers?|consumers?|customers?).{0,80}invest(?:ing|ment)/i.test(message)
     && !selected.some((fact) => /invest(?:ing|ment)/i.test(fact.statement) && includesAny(message, fact.anchors));
-  if (/(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i.test(message) || unsupportedJapanInvestment) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
+  if (/(?:\bpotentially\b|may (?:cause|limit|affect)|might overlook|could (?:cause|be (?:a )?barrier)|\bcaus(?:e|es|ing)\b|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|(?:lift|raise|increase|improve|affect|change|drive|strengthen)(?:s|d|ing)? .{0,70}(?:trial|completion|conversion|adoption|readiness|revenue|sales)|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints|(?:details|gaps|options|features).{0,80}(?:decide|determine|influence).{0,80}(?:purchas|buy|checkout|convert|complete))/i.test(message) || unsupportedJapanInvestment) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
 
   const selectedModeled = selected.some((fact) => fact.id.startsWith("modeled-"));
   const mode = customInitialInterest && !initialInterestOptions.includeEstimate

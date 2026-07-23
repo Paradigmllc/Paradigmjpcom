@@ -46,13 +46,13 @@ function stableHash(value: string): number {
 }
 
 function solutionFocus(playbook: ManualOutreachPlaybook): string {
-  if (playbook === "premium_hobby_ecommerce") return "a bounded Japan validation around product explanation, landed-purchase readiness, and the verified customer-path gap"
-  if (playbook === "saas_ai_devtools" || playbook === "creator_tools" || playbook === "gaming_tools") return "a bounded Japan validation around product evaluation, Japanese positioning, and the verified onboarding or documentation gap"
-  if (playbook === "cyber_b2b_infrastructure") return "a bounded Japan validation around technical evaluation, trust, procurement readiness, and the verified public-page gap"
-  if (playbook === "hospitality_saas" || playbook === "marketplace_platform") return "a bounded Japan validation around the operating workflow, buyer or supplier journey, and the verified customer-path gap"
-  if (playbook === "education_membership" || playbook === "research_data_media") return "a bounded Japan validation around offer comprehension, purchase readiness, and the verified public-page gap"
-  if (playbook === "web3_blockchain") return "a bounded Japan validation around developer evaluation, trust, and the verified customer-path or regulatory-readiness gap"
-  return "a bounded Japan validation around positioning, customer-path readiness, and the exact public-page decision still open"
+  if (playbook === "premium_hobby_ecommerce") return "a bounded test of product explanation and purchase-path readiness"
+  if (playbook === "saas_ai_devtools" || playbook === "creator_tools" || playbook === "gaming_tools") return "a bounded test of product evaluation and Japanese positioning"
+  if (playbook === "cyber_b2b_infrastructure") return "a bounded test of technical evaluation and procurement readiness"
+  if (playbook === "hospitality_saas" || playbook === "marketplace_platform") return "a bounded test of the documented operating workflow"
+  if (playbook === "education_membership" || playbook === "research_data_media") return "a bounded test of offer comprehension and purchase readiness"
+  if (playbook === "web3_blockchain") return "a bounded test of technical evaluation and trust"
+  return "a bounded test of positioning and customer-path readiness"
 }
 
 function countryTone(countryCode: string | null): string {
@@ -64,7 +64,7 @@ function countryTone(countryCode: string | null): string {
 
 const ARCHITECTURE_INSTRUCTIONS: Record<ManualCopyArchitecture, string> = {
   product_audit_decision: "Start from the product workflow, move to the verified Japan-page observation, then frame the one launch decision the evidence leaves open.",
-  use_case_decision_evidence: "Start from a concrete customer use case, state the Japan decision it raises, then support that decision with the verified page evidence.",
+  use_case_decision_evidence: "Start from the documented capability or use case without assigning it to an unverified Japanese audience, state the product-path decision it raises, then support that decision with the verified page evidence.",
   capability_gap_validation: "Connect one documented capability to one verified customer-path gap, then define the narrow validation needed before a wider Japan launch.",
   product_signal_opportunity: "Start from the strongest product signal, introduce the modeled opportunity only when supplied, then connect it to one audited Japan customer-path decision.",
   evidence_routing_decision: "Lead with a precise product observation, establish the evidence boundary, and finish by routing a company-specific Japan decision brief to its owner.",

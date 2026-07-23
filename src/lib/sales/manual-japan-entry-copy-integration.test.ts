@@ -17,11 +17,11 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example publicly describes its offering as RetailScope, a subscription analytics platform for independent retailers with inventory insights. The documented workflow connects inventory forecasting with replenishment decisions for independent operators.
+Example publicly describes its offering as RetailScope, a subscription analytics platform for independent retailers with inventory insights.
 
 In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. These are bounded observations about the pages checked, not findings about demand, buyer behavior, or performance in Japan.
 
-The decision that remains unverified is whether the documented product needs a Japanese evaluation route before a broader localization commitment. The public evidence does not resolve that choice, so the analysis must keep assumptions separate from observed facts.
+The decision that remains unverified is whether the documented product needs a Japanese evaluation route before a broader localization commitment. A limited validation can compare the current product explanation with Japanese-language and JPY presentation without presuming demand or commercial performance.
 
 I can share a Japan opportunity analysis focused on RetailScope’s Japanese-language customer path and JPY presentation question. Would the founder or international-growth lead be the right owner for that evaluation-path decision?
 
@@ -30,7 +30,7 @@ ${MANUAL_FORM_SIGNATURE}`
 const strategy = {
   primary_observation: "Example describes subscription analytics for independent retailers.",
   why_now: "Japan applicability remains unverified from the checked pages.",
-  japanese_segment: "Independent retail operators evaluating inventory analytics.",
+  japanese_segment: "Unverified",
   japan_gap: "The checked pages did not show a Japanese-language customer path.",
   opportunity_angle: "Validate the buyer evaluation path before market entry.",
   offer_relevance: "A public-evidence analysis can test the entry hypothesis.",

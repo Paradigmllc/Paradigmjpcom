@@ -54,7 +54,7 @@ ${MANUAL_FORM_SIGNATURE}`,
         "Unsupported causal inference or invented package deliverable is prohibited",
         "Revenue wording is not tied to the modeled opportunity fact",
         "Generic, promotional, invented, or unsupported market phrasing is prohibited",
-        "Message must be 120-190 words",
+        "Message must be 95-190 words",
       ],
       similarityPassed: true,
     })
@@ -74,7 +74,7 @@ ${MANUAL_FORM_SIGNATURE}`,
     })
 
     expect(review).toMatchObject({ passed: true, issues: [] })
-    expect(review.wordCount).toBeGreaterThanOrEqual(120)
+    expect(review.wordCount).toBeGreaterThanOrEqual(95)
     expect(review.wordCount).toBeLessThanOrEqual(190)
     expect(recovered.message).toContain(productEvidenceRendering)
     expect(recovered.message).toContain(auditFact.statement)
@@ -202,7 +202,7 @@ ${MANUAL_FORM_SIGNATURE}`,
 
     expect(first.message).not.toBe(second.message)
     expect(review).toMatchObject({ passed: true, issues: [] })
-    expect(first.message).toContain(contract.paragraph)
+    expect(first.message).toContain(contract.question)
   })
 
   it("keeps one grounded and one CTA anchor while replacing model repetition with natural references", () => {

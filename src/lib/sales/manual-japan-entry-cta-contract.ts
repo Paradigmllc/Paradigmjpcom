@@ -38,85 +38,85 @@ const CTA_ROUTES: CtaRoute[] = [
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `I can send a short Japan opportunity analysis for ${anchor}, focused on the ${path} question.`,
-      question: "Would you like me to send it?",
+      offer: `I can send a short Japan opportunity analysis for ${anchor}, focused on the open Japan evaluation question.`,
+      question: `Would you like me to send it for the ${path} decision?`,
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `I can prepare a concise Japan opportunity analysis for ${anchor} around the open ${path} decision.`,
-      question: "Who would be the right person to review it?",
+      offer: `I can prepare a concise Japan opportunity analysis for ${anchor} around the open Japan entry decision.`,
+      question: `Who owns the ${path} decision?`,
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `A short Japan opportunity analysis for ${anchor} can set out the observed ${path} gap and the decision it leaves open.`,
-      question: "Would the founder or international-growth lead be the best recipient?",
+      offer: `A short Japan opportunity analysis for ${anchor} can set out the product evidence and the entry decision it leaves open.`,
+      question: `Would the founder or international-growth lead be the right recipient for the ${path} decision?`,
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `I can share a focused Japan opportunity analysis for ${anchor} based on the public ${path} finding.`,
-      question: "May I send it for review?",
+      offer: `I can share a focused Japan opportunity analysis for ${anchor} based on the public product and Japan-path findings.`,
+      question: `May I send it for the ${path} review?`,
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `I can send a Japan opportunity analysis for ${anchor} that treats the ${path} point as a testable question.`,
-      question: "Who is the right person to receive it?",
+      offer: `I can send a Japan opportunity analysis for ${anchor} that treats the observed market-readiness point as a testable question.`,
+      question: `Who should receive it to decide how to handle the ${path} question?`,
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `The useful next step for ${anchor} would be a short Japan opportunity analysis linking the product evidence to the unresolved ${path} decision.`,
-      question: "Should I route it to the founder or international-growth lead?",
+      offer: `The useful next step for ${anchor} would be a short Japan opportunity analysis linking the product evidence to the unresolved Japan entry decision.`,
+      question: `Should I route the ${path} decision brief to the founder or international-growth lead?`,
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `I can turn the ${path} observation into a Japan opportunity analysis for ${anchor}, with evidence and assumptions clearly separated.`,
-      question: "Would you like to receive it?",
+      offer: `I can prepare a Japan opportunity analysis for ${anchor}, with product evidence and assumptions clearly separated.`,
+      question: `Would you like to receive it for the ${path} decision?`,
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `A Japan opportunity analysis for ${anchor} would frame the ${path} question as a testable entry decision.`,
-      question: "Are you the person who owns that decision?",
+      offer: `A Japan opportunity analysis for ${anchor} would frame the current market-readiness question as a testable entry decision.`,
+      question: `Are you the person who owns the ${path} entry decision?`,
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `I can send a short Japan opportunity analysis for ${anchor} that separates the verified ${path} finding from the decisions still to test.`,
-      question: "Should I route it to the founder or international-growth owner?",
+      offer: `I can send a short Japan opportunity analysis for ${anchor} focused on whether the observed public-page gap warrants a limited evaluation.`,
+      question: `Should I route the ${path} evaluation decision to the founder or international-growth owner?`,
     }),
   },
   {
     ctaType: "permission_to_send",
     build: (anchor, path) => ({
-      offer: `I can provide a short Japan opportunity analysis for ${anchor}, focused on the observed ${path} signal.`,
-      question: "Would you like to receive it?",
+      offer: `I can provide a short Japan opportunity analysis for ${anchor}, focused on the unresolved Japan validation choice.`,
+      question: `Would you like to receive it for the ${path} validation decision?`,
     }),
   },
   {
     ctaType: "right_person",
     build: (anchor, path) => ({
-      offer: `I can document the ${path} finding and the unresolved validation choice in a Japan opportunity analysis for ${anchor}.`,
-      question: "Who should receive it to decide what to test first?",
+      offer: `I can document the public-page finding and the unresolved validation choice in a Japan opportunity analysis for ${anchor}.`,
+      question: `Who should receive it to decide what to test first for the ${path} path?`,
     }),
   },
   {
     ctaType: "founder_forward",
     build: (anchor, path) => ({
-      offer: `A Japan opportunity analysis for ${anchor} can turn the documented product capability and the unresolved ${path} path into a concrete first validation decision.`,
-      question: "Should I send it to the founder to decide what to test first?",
+      offer: `A Japan opportunity analysis for ${anchor} can turn the documented product capability and customer-path gap into a concrete first validation decision.`,
+      question: `Should I send it to the founder to decide what to test first for the ${path} path?`,
     }),
   },
 ]

@@ -37,6 +37,7 @@ import {
 } from "./manual-japan-entry-candidate-recovery";
 import {
   isInitialInterestProductEvidenceSafe,
+  renderInitialInterestProductEvidence,
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
@@ -68,7 +69,7 @@ export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-
 export type { JapanEntryMessageReview } from "./japan-entry-personalized-message-review";
 export type { ManualGeneratedMessageCandidate, ManualMessageStrategy } from "./japan-entry-personalized-message-public";
 const INITIAL_SAFETY_REPAIR_LIMIT = 2;
-const BESPOKE_REWRITE_LIMIT = 3;
+const BESPOKE_REWRITE_LIMIT = 8;
 const EDITORIAL_REPAIR_LIMIT = 5;
 const DETERMINISTIC_RECOVERY_PASS = 2;
 const RECOVERY_REWRITE_ISSUE = "A deterministic safety recovery was used. Rewrite the complete body in fresh, natural, company-specific language; preserve every exact evidence and CTA contract, and do not reuse any recovery sentence.";
@@ -233,6 +234,7 @@ export async function generatePersonalizedJapanEntryMessage(
       ? {
           ...plannedCandidate,
           product_evidence: requiredInitialProductEvidence,
+          product_evidence_rendering: renderInitialInterestProductEvidence(requiredInitialProductEvidence),
         }
       : plannedCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
@@ -367,8 +369,8 @@ export async function generatePersonalizedJapanEntryMessage(
         ...repairTarget.candidate,
         message: rewritten.data.message,
         architecture: copyPlan.architecture,
-        personalization_anchors: [repairTarget.candidate.product_evidence_rendering, ctaAnchors.customerPathAnchor],
-        solution_focus: copyPlan.solutionFocus,
+        personalization_anchors: rewritten.data.personalization_anchors[0] === "legacy" ? [repairTarget.candidate.product_evidence_rendering, ctaAnchors.customerPathAnchor] : rewritten.data.personalization_anchors,
+        solution_focus: rewritten.data.solution_focus === "legacy_unspecified" ? copyPlan.solutionFocus : rewritten.data.solution_focus,
       }
       let inspected = inspectCandidate(rewrittenCandidate)
       if (!inspected.safety.passed || !inspected.similarity.passed || !inspected.personalization.passed) {
@@ -377,7 +379,7 @@ export async function generatePersonalizedJapanEntryMessage(
           companyName: input.companyName,
           customerPathAnchor: ctaAnchors.customerPathAnchor,
           questionDecisionAnchor,
-          solutionFocus: copyPlan.solutionFocus,
+          solutionFocus: rewrittenCandidate.solution_focus,
           founderForwardCta: input.initialInterestOptions?.founderForwardCta === true,
           productEvidenceRendering: repairTarget.candidate.product_evidence_rendering,
         }))

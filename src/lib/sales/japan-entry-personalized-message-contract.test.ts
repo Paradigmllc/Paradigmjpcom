@@ -5,6 +5,8 @@ import {
   isGroundedProductEvidence,
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
+  renderInitialInterestProductEvidence,
+  shouldPreserveProductEvidenceAsRendering,
 } from "./japan-entry-personalized-message-contract"
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
 
@@ -55,6 +57,31 @@ describe("initial-interest evidence contract", () => {
 
     expect(selectGroundedProductEvidence({ companyName: "Salesfire", productContext })).toBe("Customer journey analytics across onsite search and email")
     expect(selectSupplementalProductEvidence({ companyName: "Salesfire", productContext })).toBe("Connected solutions for smarter eCommerce operations")
+  })
+
+  it("excludes public conversion CTAs from the grounded capability pair", () => {
+    const productContext = [
+      "Salesfire's all-in-one CRO solution can boost conversion and maximise revenue. Book a consultation now.",
+      "Explore customer preferences, behavioural trends, and purchase history on an individual or collective level.",
+      "Book a consultation now.",
+      "Customer journey analytics across onsite search and email.",
+    ].join(" | ")
+
+    const primary = selectGroundedProductEvidence({ companyName: "Salesfire", productContext })
+    const supplemental = selectSupplementalProductEvidence({ companyName: "Salesfire", productContext })
+
+    expect(primary).toBe("Explore customer preferences, behavioural trends, and purchase history on an individual or collective level.")
+    expect([primary, supplemental]).not.toContain("Book a consultation now.")
+    expect(isInitialInterestProductEvidenceSafe("Book a consultation now.")).toBe(false)
+  })
+
+  it("locks declarative evidence but allows grammatical rendering of marketing imperatives", () => {
+    expect(shouldPreserveProductEvidenceAsRendering("AI-powered conversion from screenshots to production-ready code")).toBe(true)
+    expect(shouldPreserveProductEvidenceAsRendering("Explore customer preferences and behavioural trends")).toBe(false)
+    expect(shouldPreserveProductEvidenceAsRendering("Convert any screenshot or design to clean code")).toBe(false)
+    expect(renderInitialInterestProductEvidence("Explore customer preferences and behavioural trends")).toBe("analysis of customer preferences and behavioural trends")
+    expect(renderInitialInterestProductEvidence("Convert any screenshot or design to clean code")).toBe("conversion of any screenshot or design to clean code")
+    expect(renderInitialInterestProductEvidence("AI-powered conversion from screenshots to production-ready code")).toBe("AI-powered conversion from screenshots to production-ready code")
   })
 
   it("extracts a clean exact capability clause instead of repeated promotional Paperform copy", () => {
