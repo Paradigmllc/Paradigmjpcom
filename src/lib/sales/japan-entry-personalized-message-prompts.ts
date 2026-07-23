@@ -18,7 +18,11 @@ import {
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
-import { buildManualCtaContracts, resolveManualCtaAnchors } from "./manual-japan-entry-cta-contract";
+import { resolveManualCtaAnchors } from "./manual-japan-entry-cta-contract";
+import {
+  buildManualCopyPlan,
+  buildManualQuestionDecisionAnchor,
+} from "./manual-japan-entry-copy-plan";
 
 interface PromptInput {
   companyName: string;
@@ -45,6 +49,9 @@ interface PromptCandidate {
   opening_style?: string;
   diagnostic_focus?: string;
   cta_type?: string;
+  architecture?: string;
+  personalization_anchors?: string[];
+  solution_focus?: string;
 }
 
 interface RepairInput {
@@ -148,21 +155,21 @@ export function initialInterestGenerationPrompt(
     : "Ask whether the recipient would like to receive the analysis."
   return [
     "You write concise, natural B2B inquiry-form messages to founders and senior decision-makers at overseas SMBs.",
-    "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type}}.",
+    "Return JSON only. For generate_candidates return {strategy:{primary_observation,why_now,japanese_segment,japan_gap,opportunity_angle,offer_relevance,tone,cta,country_adaptation,prohibited_claims},candidates:[{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type,architecture,personalization_anchors,solution_focus},...]}. prohibited_claims must be a JSON array of short strings, never one combined string. Return one to three candidates, and include an alternative only when its reasoning and structure are materially different. For repair_candidate return {candidate:{message,fact_ids,product_evidence,product_evidence_rendering,angle,opening_style,diagnostic_focus,cta_type,architecture,personalization_anchors,solution_focus}}.",
     "Build the strategy before drafting. Connect a supplied company observation to a Japanese customer-segment hypothesis, the exact public-page gap, why a Japan opportunity analysis is relevant, and a low-friction permission or routing CTA. Every strategy field is subject to the same evidence limits as the message: when the payload does not verify a segment, demand, underserved status, discoverability, evaluation behavior, or effect, write 'Unverified' rather than inventing it.",
     "Use the supplied evidence_contract exactly. Every fact_id must be in allowed_fact_ids, every required_fact_id must be present, and no product-context or company-observed fact belongs in fact_ids because product evidence is tracked separately. Never use more than four fact_ids.",
     `The personalized body, excluding the greeting and signature, must be ${options.includePrice ? "145-210" : "120-190"} English words and contain three to five short paragraphs separated by a blank line (\\n\\n). The first body paragraph is a grounded product observation and the final body paragraph is the permission or routing CTA. Place the public-page Japan finding and company-specific decision implication naturally in the middle; they may be combined or ordered differently. Aim for ${options.includePrice ? "165-185" : "145-165"} body words. Before returning JSON, count whitespace-delimited words in the body and rewrite until the count is inside the required range. Do not use headings, bullets, or Markdown.`,
     `Start with the exact standalone greeting supplied in fixed_sender.greeting. Use the first body paragraph for a company-specific observation, not a sender biography. End with this exact four-line signature and nothing after it: '${MANUAL_FORM_SIGNATURE.replaceAll("\n", " / ")}'. Do not invent a title, city, office, or company category.`,
     "Open directly with the observable company detail. The first body paragraph must contain the exact company_name and product_evidence_rendering verbatim. When supplemental_product_evidence is non-null, use its concrete capability as the only second product detail so the observation demonstrates real product understanding. Keep this paragraph free of Japan claims, audit gaps, estimates, buyer behavior, demand, outcomes, praise, or sender biography. Do not begin with I noticed, I came across, I was impressed, I am reaching out, I wanted to reach out, hope this message finds you well, or another reusable prospecting opener.",
-    "Return required_product_evidence exactly and unchanged as product_evidence. It describes a real capability, workflow, product category, or customer use; do not conjugate, paraphrase, shorten, or broaden it. Return product_evidence_rendering as a faithful English rendering of that exact source phrase, with no added fact, outcome, customer claim, or interpretation, and use the rendering verbatim in the first body paragraph. If required_product_evidence is already English, product_evidence_rendering must be identical to it. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
+    "Return required_product_evidence exactly and unchanged as product_evidence. It describes a real capability, workflow, product category, or customer use; do not conjugate, shorten, or broaden it. Return product_evidence_rendering as clean, natural English that faithfully preserves that source phrase with no added fact, outcome, customer claim, or interpretation, and use the rendering verbatim in the first body paragraph. Never copy hidden text, responsive-display instructions, cookie text, navigation labels, or other UI residue into the rendering. If required_product_evidence is already grammatical English, product_evidence_rendering must be identical to it. When product_names is non-empty, mention at least one supplied product name exactly in the personalized body. Mention at most two supplied capabilities. Do not invent customer outcomes, needs, demand, or Japan applicability.",
     "The middle body paragraph or paragraphs must state the selected public-page Japan finding separately from the product observation and explain the exact decision that remains unverified for this company and product. Use only the selected angle and supplied evidence, without asserting demand, buyer behavior, causation, or loss.",
     "Every sentence must add a distinct point. Never repeat or lightly rephrase the product description, public-page finding, decision implication, CTA, or evidence disclaimer in another sentence. Use the exact company name no more than twice in the personalized body: once in the grounded opening and at most once in the final CTA paragraph. After that, use natural pronouns such as your product, your team, it, or the analysis. Never form an awkward possessive such as a multi-word product name followed by 's. In repair mode, delete the weaker duplicate instead of substituting synonyms.",
-    "Choose a narrative architecture that is materially different from recent_copy_to_avoid. Available shapes include: product workflow then audit then open decision; product use case then open decision then supporting audit; product capability then one combined evidence-boundary paragraph then a permission CTA; or product evidence then audit boundary then a right-person routing CTA. Select the shape that best fits this company's evidence. Do not print the architecture label. If recent copy uses the same paragraph count, evidence order, or CTA construction, change all applicable dimensions rather than swapping synonyms.",
+    "Follow copy_plan.architecture and copy_plan.narrativeInstruction. Return that exact architecture identifier in architecture, two to five exact grounded phrases actually used in the body in personalization_anchors, and a concise description of the tailored analysis focus in solution_focus. These metadata are audited and may not contain invented facts. If recent copy uses the same paragraph count, evidence order, or CTA construction, change all applicable dimensions rather than swapping synonyms.",
     "Do not copy any complete sentence from recent_copy_to_avoid or verbatim_sentences_to_avoid. The only sentence that may repeat verbatim is an exact selected evidence statement required by evidence_contract. Write every explanatory, transition, implication, and evidence-boundary sentence specifically for this company and its documented product. In repair mode, every duplicate sentence quoted in issues is a hard-forbidden string and must be deleted, not lightly paraphrased.",
     estimateRule,
     "After a missing public-page observation, never write 'This means' and never describe what Japanese developers, teams, buyers, or customers may do or lack. State what was absent, then name one concrete validation decision for the documented product while keeping the commercial result unverified. Do not reuse the stock sentence 'whether this gap matters for its Japanese-language decision remains unverified', stack multiple disclaimer sentences, or refer vaguely to 'its decision'. For repair_candidate, delete the whole unsupported audience-behavior sentence; do not preserve or paraphrase it.",
     `Every candidate must use the exact outreach angle '${angle}', return '${angle}' in its angle field, and follow this rule: ${angleRule}`,
-    `The final body paragraph, immediately before the signature, must offer only a Japan opportunity analysis and end with exactly one permission or routing question. Required CTA meaning: ${ctaMeaning} For each candidate, copy one complete approved_cta_contract paragraph exactly, including punctuation, and return its matching cta_type. Do not combine or paraphrase contracts. The paragraph contains the required company/product anchor once; the final question may refer naturally to 'it' or 'the analysis' instead of repeating the name. Never write 'I can share a detailed Japan opportunity analysis based on this public evidence' or 'Could you forward this to the founder or person responsible for international growth'. Do not offer both a report and a call.`,
+    `The final body paragraph, immediately before the signature, must explain what the Japan opportunity analysis would help this company decide, using copy_plan.solutionFocus without copying it mechanically, and end with exactly one original permission or routing question. The question itself must express the required_question_decision_anchor meaning by naming the concrete decision, customer path, evaluation, purchase, localization, positioning, readiness, validation, or what to test; use natural wording rather than mechanically copying the label. A generic 'would you like it?' or 'could you forward this to the founder/person responsible for international growth?' is invalid. Required CTA meaning: ${ctaMeaning} Satisfy every required_cta_contract field, include the required company/product anchor once and the exact customer-path anchor once, and return cta_type as exactly one of permission_to_send, right_person, or founder_forward. Use founder_forward only for an explicit founder/international-growth forwarding request, right_person for owner routing, and permission_to_send for permission to send the analysis. Do not reuse an approved stock paragraph. Never write 'I can share a detailed Japan opportunity analysis based on this public evidence'. Do not offer both a report and a call.`,
     options.includePrice
       ? "Use only the exact fixed commercial term in paragraph 4. Do not add scarcity, a founding-company claim, a normal monthly price, continuation pricing, or any other commercial term."
       : "Do not mention price, payment terms, a package scope, scarcity or continuation pricing.",
@@ -213,14 +220,19 @@ export function generationMessages(
     productNames: input.productNames,
     facts: promptFacts,
   });
-  const approvedCtaContracts = purpose === "initial_interest"
-    ? buildManualCtaContracts({
+  const copyPlan = purpose === "initial_interest"
+    ? buildManualCopyPlan({
         companyName: input.companyName,
-        requiredAnchor: requiredCtaAnchor,
-        customerPathAnchor: requiredCustomerPathAnchor,
-        priorMessages: input.priorMessages ?? [],
+        countryCode: input.targetCountry,
+        businessModel: input.businessModel,
+        playbook: outreachPlaybook,
+        angle: messageAngle,
+        hasModeledOpportunity: facts.some((fact) => fact.id === "modeled-annual-opportunity-range"),
       })
-    : [];
+    : null;
+  const questionDecisionAnchor = purpose === "initial_interest"
+    ? buildManualQuestionDecisionAnchor(outreachPlaybook, requiredCustomerPathAnchor)
+    : null;
   const ctaContract = purpose === "initial_interest" ? {
     final_question_must_be_permission_or_routing: true,
     final_question_must_end_with_question_mark: true,
@@ -260,12 +272,9 @@ export function generationMessages(
         supplemental_product_evidence: supplementalProductEvidence,
         required_cta_anchor: purpose === "initial_interest" ? requiredCtaAnchor : null,
         required_customer_path_anchor: purpose === "initial_interest" ? requiredCustomerPathAnchor : null,
+        required_question_decision_anchor: questionDecisionAnchor,
         required_cta_contract: ctaContract,
-        approved_cta_contracts: approvedCtaContracts.map((contract) => ({
-          id: contract.id,
-          cta_type: contract.ctaType,
-          exact_final_paragraph: contract.paragraph,
-        })),
+        copy_plan: copyPlan,
         evidence_contract: evidenceContract,
         fixed_sender: purpose === "initial_interest" ? {
           greeting: manualFormGreeting(input.companyName),

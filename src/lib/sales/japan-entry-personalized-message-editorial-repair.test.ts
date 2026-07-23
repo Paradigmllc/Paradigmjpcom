@@ -218,7 +218,7 @@ describe("Japan Entry editorial repair loop", () => {
     expect(caller).toHaveBeenCalledTimes(5)
   })
 
-  it("accepts a deterministic recovery seed after it passes every hard gate and the critic", async () => {
+  it("requires a fresh model rewrite after deterministic recovery supplies only a repair seed", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(response({
         strategy: {
@@ -238,6 +238,7 @@ describe("Japan Entry editorial repair loop", () => {
       .mockResolvedValueOnce(critic(21))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ candidate: candidate(modelRepairedMessage, approvedCta!.ctaType) }))
       .mockResolvedValueOnce(critic(23))
 
     const result = await generatePersonalizedJapanEntryMessage({
@@ -254,12 +255,12 @@ describe("Japan Entry editorial repair loop", () => {
     }, caller)
 
     expect(result.ok, JSON.stringify(result)).toBe(true)
-    expect(result.message).not.toBe(modelRepairedMessage)
+    expect(result.message).toBe(modelRepairedMessage)
     expect(result.message).toContain(productEvidence.replace(/[.!?]+$/, ""))
     expect(result.review?.passed).toBe(true)
     expect(result.message).not.toContain("The concrete capability documented")
-    expect(caller).toHaveBeenCalledTimes(5)
-    const recoveredCritic = JSON.parse(caller.mock.calls[4]?.[0]?.[1]?.content ?? "{}") as {
+    expect(caller).toHaveBeenCalledTimes(6)
+    const recoveredCritic = JSON.parse(caller.mock.calls[5]?.[0]?.[1]?.content ?? "{}") as {
       deterministic_contracts_passed?: boolean
       candidates?: unknown[]
     }
@@ -267,7 +268,7 @@ describe("Japan Entry editorial repair loop", () => {
     expect(recoveredCritic.candidates).toHaveLength(1)
   })
 
-  it("mechanically finishes a model-authored length failure after bounded bespoke rewrites", async () => {
+  it("uses deterministic length recovery only as a seed for a final model-authored rewrite", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(response({
         strategy: {
@@ -286,6 +287,7 @@ describe("Japan Entry editorial repair loop", () => {
       }))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
       .mockResolvedValueOnce(response({ candidate: candidate(shortMessage) }))
+      .mockResolvedValueOnce(response({ message: modelRepairedMessage }))
       .mockResolvedValueOnce(critic(23))
 
     const result = await generatePersonalizedJapanEntryMessage({
@@ -306,7 +308,7 @@ describe("Japan Entry editorial repair loop", () => {
     expect(result.review?.wordCount).toBeLessThanOrEqual(190)
     expect(result.message).toContain("AtlasMetric provides subscription analytics")
     expect(result.message).not.toContain("The concrete capability documented")
-    expect(caller).toHaveBeenCalledTimes(4)
+    expect(caller).toHaveBeenCalledTimes(5)
   })
 
   it("fails closed when the critic cannot verify product-evidence translation fidelity", async () => {

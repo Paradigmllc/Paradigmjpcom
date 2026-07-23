@@ -113,6 +113,44 @@ describe("bespoke form-copy style", () => {
     expect(issues).toContain("Generalized Japanese audience behavior is not grounded in a selected fact; delete the entire behavior sentence and state only that whether the observed gap matters for this company's Japan customer path remains unverified")
   })
 
+  it("rejects inferred product outcomes appended to the grounded opening", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code, giving teams a direct path to deployable output.",
+      "Screenshot to Code converts screenshots to code, giving teams a direct path to deployable output.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+    expect(issues).toContain("The opening adds an inferred user outcome after the grounded product evidence")
+  })
+
+  it("rejects gap-to-adoption and Japan-audience inferences that are not public facts", () => {
+    const issues = review(
+      "This means adoption depends on typical discovery behavior of technical audiences in Japan and could strengthen its reach.",
+      "Screenshot to Code converts screenshots to code.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+    expect(issues).toContain("The message turns a public-page gap into unsupported audience behaviour, adoption, reach, or friction")
+  })
+
+  it("rejects passive Japan-audience behaviour inferred by the live DeepSeek smoke", () => {
+    const issues = review(
+      "The checked pages did not show a Japanese-language path. That leaves open whether a Japanese evaluation path would change how the product is discovered and assessed by teams in Japan.",
+      "Screenshot to Code converts screenshots to code.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues).toContain("The message turns a public-page gap into unsupported audience behaviour, adoption, reach, or friction")
+  })
+
+  it("rejects Japanese-speaking audience behavior inferred by the live DeepSeek smoke", () => {
+    const issues = review(
+      "The checked pages did not show a Japanese-language path. The open question is whether the current documentation would let a Japanese-speaking developer evaluate output quality before adopting the tool.",
+      "Screenshot to Code converts screenshots to code.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues).toContain("The message turns a public-page gap into unsupported audience behaviour, adoption, reach, or friction")
+  })
+
   it("rejects repeated company naming and repeated evidence disclaimers", () => {
     const issues = review(
       "Screenshot to Code documents screenshot conversion. Screenshot to Code has no Japanese-language path. Screenshot to Code remains unverified; it is not evidence of demand and does not establish outcomes.",
@@ -121,6 +159,16 @@ describe("bespoke form-copy style", () => {
     )
     expect(issues).toContain("The company name must appear no more than twice in the personalized body; use natural pronouns after the grounded introduction")
     expect(issues).toContain("The message repeats evidence disclaimers; keep one concise boundary statement and use the remaining space for decision relevance")
+  })
+
+  it("rejects an audited customer-path phrase repeated like a template", () => {
+    const issues = review(
+      "Screenshot to Code documents screenshot conversion. The Japanese-language path was not shown. The Japanese-language decision is open. A Japanese-language analysis can frame the Japanese-language test.",
+      "Screenshot to Code documents screenshot conversion.",
+      "A Japan analysis for Screenshot to Code can frame the Japanese-language evaluation-path decision. Would you like it?",
+    )
+
+    expect(issues).toContain("The audited customer-path anchor is repeated too often; use 'Japanese-language' no more than three times and vary the reasoning naturally")
   })
 
   it("does not count a company anchor inside an ordinary plural product noun", () => {
@@ -155,7 +203,7 @@ describe("bespoke form-copy style", () => {
 
   it("rejects stock decision wording and broken possessive reductions", () => {
     const issues = review(
-      "Screenshot to Code documents screenshot conversion. Whether this gap matters for its Japanese-language decision remains unverified. The company’ launch path remains open.",
+      "Screenshot to Code documents screenshot conversion. Whether this gap matters for its Japanese-language evaluation-path decision remains unverified. The company’ launch path remains open.",
       "Screenshot to Code documents screenshot conversion.",
       "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
     )
@@ -172,5 +220,42 @@ describe("bespoke form-copy style", () => {
     )
 
     expect(issues).toContain("Mechanical evidence-to-analysis bridge language is prohibited; state the company-specific observation directly")
+  })
+
+  it("rejects unsupported praise added to grounded product evidence", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code. The workflow creates a seamless experience with a broad technical surface.",
+      "Screenshot to Code converts screenshots to code. The workflow creates a seamless experience with a broad technical surface.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues.join(" ")).toContain("Unsupported praise or product outcome is prohibited")
+  })
+
+  it("rejects an unsupported purchase outcome and repeated product phrase", () => {
+    const issues = reviewManualFormBespokeStyle({
+      body: "Salesfire uses onsite search and product recommendations to guide shoppers to purchase.",
+      openingParagraph: "Salesfire uses onsite search and product recommendations before repeating onsite search and product recommendations.",
+      finalParagraph: "May I send the Salesfire Japanese-language evaluation-path analysis?",
+      companyName: "Salesfire",
+      productEvidence: "onsite search and product recommendations",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+    })
+
+    expect(issues.join(" ")).toContain("Unsupported product or commercial outcome is prohibited")
+    expect(issues.join(" ")).toContain("opening repeats a product-evidence phrase")
+  })
+
+  it("rejects unsupported workflow outcomes and invented missing surfaces", () => {
+    const issues = review(
+      "Screenshot to Code converts screenshots to code, removing manual translation steps. The checked pages lacked Japanese documentation or localized onboarding flow.",
+      "Screenshot to Code converts screenshots to code, removing manual translation steps.",
+      "May I send the Screenshot to Code Japanese-language customer-path opportunity snapshot?",
+    )
+
+    expect(issues.join(" ")).toContain("Unsupported product or commercial outcome is prohibited")
+    expect(issues.join(" ")).toContain("expands a verified page gap into an unsupported missing surface")
   })
 })

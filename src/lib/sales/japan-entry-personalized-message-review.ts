@@ -12,6 +12,7 @@ import {
 } from "./manual-japan-entry-copy-envelope";
 import { reviewManualFormBespokeStyle } from "./manual-japan-entry-copy-style";
 import { isGroundedProductEvidence } from "./japan-entry-personalized-message-contract";
+import type { ManualPersonalizationReview } from "./manual-japan-entry-copy-quality";
 
 const BASE_MIN_WORDS = 100;
 const BASE_MAX_WORDS = 160;
@@ -36,6 +37,7 @@ export interface JapanEntryMessageReview {
   maxSimilarity?: number;
   matchedMessageId?: string | null;
   candidateCount?: number;
+  personalization?: ManualPersonalizationReview;
 }
 
 function numericTokens(value: string): string[] {

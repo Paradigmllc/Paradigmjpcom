@@ -22,6 +22,21 @@ describe("manual inquiry-form copy distinctness", () => {
     expect(reviewManualMessageDistinctness({ message: next, companyName: "Beta", priorMessages: [{ id: "prior-1", companyName: "Alpha", domain: "alpha.example", message: prior }] }).passed).toBe(true)
   })
 
+  it("keeps CTA similarity separate from the stricter company-body threshold", () => {
+    const prior = `Hello Alpha team,\n\nAlpha documents inventory reconciliation for independent shops.\n\nThe open decision concerns product catalog localization.\n\nI can prepare a Japan opportunity analysis for Alpha around the Japanese-language observation. Would the founder or international-growth owner be the right person to review it?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+    const next = `Hello Beta team,\n\nBeta provides security approval routing for infrastructure teams.\n\nThe unresolved decision concerns Japanese administrator onboarding.\n\nI can prepare a Japan opportunity analysis for Beta around the Japanese-language observation. Is the evaluation-path decision best reviewed by the founder or international-growth lead?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`
+    const result = reviewManualMessageDistinctness({
+      message: next,
+      companyName: "Beta",
+      priorMessages: [{ id: "alpha", companyName: "Alpha", domain: "alpha.example", message: prior }],
+    })
+
+    expect(result.maxCoreSimilarity).toBeLessThan(0.35)
+    expect(result.maxCtaSimilarity).toBeGreaterThan(result.maxCoreSimilarity ?? 0)
+    expect(result.maxCtaSimilarity).toBeLessThan(0.72)
+    expect(result.passed).toBe(true)
+  })
+
   it("allows the same required audit fact when the overall draft and CTA are distinct", () => {
     const prior = `Hello Alpha team,
 

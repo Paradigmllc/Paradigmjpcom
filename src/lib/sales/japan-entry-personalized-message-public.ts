@@ -20,6 +20,9 @@ export interface ManualGeneratedMessageCandidate {
   openingStyle: string
   diagnosticFocus: string
   ctaType: string
+  architecture: string
+  personalizationAnchors: string[]
+  solutionFocus: string
 }
 
 interface StrategyValue {
@@ -44,6 +47,9 @@ interface CandidateValue {
   opening_style: string
   diagnostic_focus: string
   cta_type: string
+  architecture: string
+  personalization_anchors: string[]
+  solution_focus: string
 }
 
 export function publicManualMessageStrategy(
@@ -74,5 +80,8 @@ export function publicManualMessageCandidate(candidate: CandidateValue): ManualG
     openingStyle: candidate.opening_style,
     diagnosticFocus: candidate.diagnostic_focus,
     ctaType: candidate.cta_type,
+    architecture: candidate.architecture,
+    personalizationAnchors: candidate.personalization_anchors,
+    solutionFocus: candidate.solution_focus,
   }
 }

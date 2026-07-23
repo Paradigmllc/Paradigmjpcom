@@ -129,6 +129,10 @@ export function ManualMessageIntelligence({ item, onCopy }: {
   const facts = records(review.evidence_pack)
   const score = number(review.score)
   const uniqueness = number(review.uniquenessScore)
+  const personalization = record(review.personalization)
+  const personalizationScore = number(personalization?.score)
+  const personalizationDimensions = record(personalization?.dimensions)
+  const architecture = text(personalization?.architecture)
   const projection = projectionSnapshot(item.evidence)
   const usage = trackedDeepSeekUsage(item)
 
@@ -138,6 +142,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
         <MessageSquareText className="size-4 text-blue-600" />企業別フォーム文面（未送信）
         <span className="ml-auto flex gap-1.5">
           {score !== null && <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">品質 {score}</Badge>}
+          {personalizationScore !== null && <Badge variant="outline" className="border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700">個別性 {personalizationScore}</Badge>}
           {uniqueness !== null && <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">固有性 {uniqueness}</Badge>}
           {usage && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">Cache {Math.round(usage.cacheRatio * 100)}%</Badge>}
         </span>
@@ -148,6 +153,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
           <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{item.initial_message}</p>
           <Button variant="outline" size="sm" className="mt-3 rounded-lg" onClick={() => onCopy(item.initial_message ?? "", "初回文面")}><Copy />コピー</Button>
         </div>
+        {personalization && <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50/60 p-4" aria-label="企業別文面品質ゲート"><div className="flex flex-wrap items-center gap-2"><p className="text-xs font-semibold text-fuchsia-950">テンプレ感・営業品質ゲート</p>{architecture && <Badge variant="outline" className="border-fuchsia-200 bg-white text-fuchsia-800">構成 {architecture}</Badge>}</div><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{[["企業固有性", "companySpecificity"], ["構成独自性", "narrativeOriginality"], ["営業関連性", "commercialRelevance"], ["言語品質", "languageIntegrity"]].map(([label, key]) => <div key={key} className="rounded-lg border border-fuchsia-100 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-fuchsia-700">{label}</p><p className="mt-1 text-sm font-semibold text-slate-900">{number(personalizationDimensions?.[key]) ?? "-"} / 25</p></div>)}</div><p className="mt-3 text-[11px] leading-5 text-fuchsia-900">企業名・商品根拠・日本向け判断・解決焦点・固有CTA・過去文面との差分・異言語/UI文言混入を保存前に検査しています。</p></div>}
         {usage && <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs text-violet-950"><span className="inline-flex items-center gap-2 font-semibold"><Gauge className="size-4" />追跡済みDeepSeek {usage.requests} calls</span><span>Input {usage.promptTokens.toLocaleString("en-US")}</span><span>Output {usage.completionTokens.toLocaleString("en-US")}</span><span>Cache Hit {usage.cacheHitTokens.toLocaleString("en-US")} ({Math.round(usage.cacheRatio * 100)}%)</span></div>}
         {projection.length > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4"><p className="flex items-center gap-2 text-xs font-semibold text-amber-950"><Calculator className="size-4" />無料公開シグナルによる企業別試算</p><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{projection.map(([label, value]) => <div key={label} className="rounded-lg border border-amber-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{label}</p><p className="mt-1 text-sm font-semibold text-slate-900">{value}</p></div>)}</div><p className="mt-3 text-[11px] leading-5 text-amber-900">Tranco・Cloudflare Radar・Common Crawl・sitemap等の公開シグナルと業態別仮定による幅のある試算です。実測PV・実売上・保証値ではありません。</p></div>}
         {rows.length > 0 && <div><p className="flex items-center gap-2 text-xs font-semibold text-slate-700"><Sparkles className="size-4 text-violet-600" />企業別メッセージ戦略</p><div className="mt-2 grid gap-2 sm:grid-cols-2">{rows.map(([label, value]) => <div key={label} className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 text-xs leading-5 text-slate-700">{value}</p></div>)}</div></div>}

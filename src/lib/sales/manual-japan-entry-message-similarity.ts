@@ -7,6 +7,8 @@ export interface PriorManualMessage {
 export interface ManualMessageSimilarityReview {
   passed: boolean
   maxSimilarity: number
+  maxCoreSimilarity?: number
+  maxCtaSimilarity?: number
   matchedMessageId: string | null
   matchedCompany: string | null
   reasons: string[]
@@ -246,7 +248,7 @@ export function reviewManualMessageDistinctness(input: {
   ctaThreshold?: number
 }): ManualMessageSimilarityReview {
   const threshold = input.threshold ?? 0.35
-  const ctaThreshold = input.ctaThreshold ?? 0.72
+  const ctaThreshold = input.ctaThreshold ?? 0.48
   let strongest: PriorManualMessage | null = null
   let maxSimilarity = 0
   let maxCtaSimilarity = 0
@@ -281,6 +283,8 @@ export function reviewManualMessageDistinctness(input: {
   return {
     passed,
     maxSimilarity: Number(Math.max(maxSimilarity, maxCtaSimilarity).toFixed(3)),
+    maxCoreSimilarity: Number(maxSimilarity.toFixed(3)),
+    maxCtaSimilarity: Number(maxCtaSimilarity.toFixed(3)),
     matchedMessageId: reused?.prior.id ?? strongest?.id ?? null,
     matchedCompany: reused?.prior.companyName ?? reused?.prior.domain ?? strongest?.companyName ?? strongest?.domain ?? null,
     reasons,
