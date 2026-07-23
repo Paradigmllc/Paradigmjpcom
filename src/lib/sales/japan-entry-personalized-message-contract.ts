@@ -12,7 +12,7 @@ const PROMOTIONAL_QUALIFIER_RE = /\b(?:free|significantly|effectively|effortless
 const FORM_COPY_UNSAFE_EVIDENCE_RE = /(?:https?:\/\/|www\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b|\b(?:attached|attachment|downloadable|download|unlock(?:ed|s|ing)?|ROI|return on investment|revenue|guarantee(?:d|s|ing)?)\b)/i
 const CUSTOMER_QUOTE_RE = /(?:\b(?:I|we|our|my|I've|we've)\b|trusted by|definitely recommended|absolutely love)/i
 const UNRESOLVED_PUBLIC_TEXT_RE = /(?:\[[^\]\n]{1,80}\]|\{[^{}\n]{1,80}\}|<[^<>\n]{1,80}>|&(?:hellip|nbsp|amp);)/i
-const PUBLIC_BOILERPLATE_RE = /(?:reCAPTCHA|privacy policy|terms of service|cookie policy|all rights reserved)/i
+const PUBLIC_BOILERPLATE_RE = /(?:reCAPTCHA|privacy policy|terms of service|cookie policy|all rights reserved|accept all cookies|cookie settings|skip to (?:main )?content|navigation menu|javascript (?:is|required|disabled)|display\s*:\s*none|visibility\s*:\s*hidden|aria-hidden|window\.innerWidth|screen size|hidden (?:text|when|on)|teks ini|akan tersembunyi|ketika ukuran|politique de confidentialit[ée]|pol[ií]tica de privacidad|datenschutz(?:erkl[aä]rung)?)/i
 
 function evidenceToken(value: string): string {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "")

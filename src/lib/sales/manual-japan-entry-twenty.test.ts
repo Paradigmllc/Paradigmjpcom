@@ -98,10 +98,25 @@ describe("manual work Twenty persistence", () => {
       reportUrl: "https://paradigmjp.com/en/opportunity/screenshottocode",
       initialMessage:
         "Screenshot to Code向けに作成した、未送信の初回フォーム文面です。",
+      messageReview: {
+        personalization: {
+          passed: true,
+          score: 96,
+          architecture: "capability_gap_validation",
+          dimensions: {
+            companySpecificity: 24,
+            narrativeOriginality: 24,
+            commercialRelevance: 24,
+            languageIntegrity: 24,
+          },
+        },
+      },
     });
 
     expect(result).toEqual({ status: "synced", companyId: "company-1" });
     expect(JSON.stringify(saved)).toContain("未送信の初回フォーム文面");
+    expect(JSON.stringify(saved)).toContain("Personalized copy gate: passed (96/100)");
+    expect(JSON.stringify(saved)).toContain("Narrative architecture: capability_gap_validation");
     expect(saved).toMatchObject({
       paradigmSalesStatus: "手動確認 / 未対応",
       paradigmNextAction: "フォーム・初回文面を人間確認（未送信）",

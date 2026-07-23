@@ -51,6 +51,7 @@ export interface ManualTwentySyncInput {
   formUrl: string | null
   reportUrl: string
   initialMessage: string | null
+  messageReview?: unknown
   ownedCompanyId?: string | null
   readiness?: { sendReady: boolean; reasons: string[] }
 }
@@ -60,6 +61,25 @@ interface ManualTwentyExpected {
   summary: string
   country: string | null
   sendReady: boolean
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
+}
+
+function copyQualitySummary(value: unknown): string[] {
+  const review = record(value)
+  const personalization = record(review?.personalization)
+  const dimensions = record(personalization?.dimensions)
+  if (!personalization || personalization.passed !== true) return []
+  const score = typeof personalization.score === "number" ? personalization.score : null
+  const architecture = typeof personalization.architecture === "string" ? personalization.architecture : null
+  const dimension = (key: string): number | null => typeof dimensions?.[key] === "number" ? dimensions[key] : null
+  return [
+    `Personalized copy gate: passed${score === null ? "" : ` (${score}/100)`}`,
+    ...(architecture ? [`Narrative architecture: ${architecture}`] : []),
+    `Copy dimensions: specificity ${dimension("companySpecificity") ?? "-"}/25, originality ${dimension("narrativeOriginality") ?? "-"}/25, commercial relevance ${dimension("commercialRelevance") ?? "-"}/25, language integrity ${dimension("languageIntegrity") ?? "-"}/25`,
+  ]
 }
 
 export interface ManualTwentyBatchResult {
@@ -143,6 +163,7 @@ function manualTwentyExpected(
     `Japan Entry fit: ${input.profile.japanEntryFitStatus} (${input.profile.japanEntryFitConfidence}/100)`,
     `Report URL: ${input.reportUrl}`,
     `Form URL: ${input.formUrl ?? "not verified"}`,
+    ...copyQualitySummary(input.messageReview),
     ...(reviewReasons.length ? ["要確認理由:", ...reviewReasons.map((reason) => `- ${reason}`)] : []),
     "--- Initial first-touch draft (never sent automatically) ---",
     input.initialMessage ?? "No draft passed the production quality gate. Regeneration is required before outreach.",

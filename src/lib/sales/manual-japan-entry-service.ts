@@ -9,6 +9,7 @@ import { buildManualJapanEntryReport } from "./manual-japan-entry-report"
 import { collectManualMarketProjection } from "./manual-japan-entry-market-context"
 import { analyzeManualCompanyProfile, parseManualCompanyProfile } from "./manual-japan-entry-profile"
 import {
+  automaticManualMessageVariant,
   assignManualMessageVariant,
   isManualMessageVariant,
   nonEstimateVariant,
@@ -106,6 +107,7 @@ export async function processManualJapanEntryUrl(
   options: ManualWorkProcessOptions = {},
 ): Promise<ManualWorkProcessResult> {
   const normalized = normalizeManualWorkUrl(rawUrl)
+  const automaticVariant = !isManualMessageVariant(variantSelection)
   const requestedVariant = isManualMessageVariant(variantSelection)
     ? variantSelection
     : assignManualMessageVariant(normalized.domain)
@@ -158,6 +160,7 @@ export async function processManualJapanEntryUrl(
         formUrl: existing.form_url,
         reportUrl: existing.report_url,
         initialMessage: existing.initial_message,
+        messageReview: existing.message_review,
         ownedCompanyId: existing.twenty_company_id,
         readiness: {
           sendReady: retrySendReady,
@@ -278,9 +281,11 @@ export async function processManualJapanEntryUrl(
       ? await verifyExternalFormDiscoveryHit({ origin, hit: crawl4ai, timeoutMs: 10_000 })
       : null
     const form = selectBestManualFormResult([baselineForm, verifiedCrawl4Ai])
-    const effectiveVariant = requestedOptions.includeEstimate && !marketProjection.projection
-      ? nonEstimateVariant(requestedVariant)
-      : requestedVariant
+    const effectiveVariant = automaticVariant
+      ? automaticManualMessageVariant(Boolean(marketProjection.projection))
+      : requestedOptions.includeEstimate && !marketProjection.projection
+        ? nonEstimateVariant(requestedVariant)
+        : requestedVariant
     const effectiveOptions = variantOptions(effectiveVariant)
     const resolvedAngle = resolveManualMessageAngle({
       requested: requestedAngle,
@@ -437,6 +442,7 @@ export async function processManualJapanEntryUrl(
           formUrl: form.formUrl,
           reportUrl,
           initialMessage: generated.message ?? null,
+          messageReview,
           ownedCompanyId: work.twenty_company_id,
           readiness: { sendReady: eligibility.eligible, reasons: blockingReasons },
         }),

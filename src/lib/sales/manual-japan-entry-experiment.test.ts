@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  automaticManualMessageVariant,
   assignManualMessageVariant,
   MANUAL_MESSAGE_VARIANTS,
   nonEstimateVariant,
@@ -8,10 +9,15 @@ import {
 } from "./manual-japan-entry-experiment"
 
 describe("manual Japan Entry copy experiment", () => {
-  it("uses the evidence-led no-price cell for every automatic assignment", () => {
+  it("requests the evidence-led estimate and no-price cell for automatic assignment", () => {
     expect(MANUAL_MESSAGE_VARIANTS).toContain(assignManualMessageVariant("example.com"))
-    expect(assignManualMessageVariant("example.com")).toBe("estimate_off_price_off")
-    expect(assignManualMessageVariant("another.example")).toBe("estimate_off_price_off")
+    expect(assignManualMessageVariant("example.com")).toBe("estimate_on_price_off")
+    expect(assignManualMessageVariant("another.example")).toBe("estimate_on_price_off")
+  })
+
+  it("automatically includes conservative modeled ranges only when public signals support them", () => {
+    expect(automaticManualMessageVariant(true)).toBe("estimate_on_price_off")
+    expect(automaticManualMessageVariant(false)).toBe("estimate_off_price_off")
   })
 
   it("maps all four estimate and price combinations exactly", () => {

@@ -23,7 +23,7 @@ In a review of the public pages, I did not find a Japanese-language customer pat
 
 The decision that remains unverified is whether the documented product needs a Japanese evaluation route before a broader localization commitment. The public evidence does not resolve that choice, so the analysis must keep assumptions separate from observed facts.
 
-I can share a Japan opportunity analysis focused on RetailScope’s Japanese-language customer path and JPY presentation question. Would the founder or international-growth lead be the best recipient?
+I can share a Japan opportunity analysis focused on RetailScope’s Japanese-language customer path and JPY presentation question. Would the founder or international-growth lead be the right owner for that evaluation-path decision?
 
 ${MANUAL_FORM_SIGNATURE}`
 
@@ -117,7 +117,7 @@ describe("manual work first-touch generation integration", () => {
     expect(result.message).toBe(message)
     expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
-    expect(result.message).toContain("Would the founder or international-growth lead be the best recipient?")
+    expect(result.message).toContain("Would the founder or international-growth lead be the right owner for that evaluation-path decision?")
     expect(result.message).toMatch(/^Hello Example team,/)
     expect(result.message).toMatch(/Best regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp\.com$/)
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })

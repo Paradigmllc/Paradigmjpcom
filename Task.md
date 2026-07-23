@@ -1,3 +1,11 @@
+## CURRENT STATUS - 2026-07-23 `/work`初回文面の企業別構成・テンプレ再利用防止（release前 / 外部送信0）
+
+- 本番保存済み102文面の旧92点を品質証明にせず、企業・国・業態playbook・business model・訴求角度・公開推定の有無から5種類の企業別narrative architectureを決める。DeepSeekは固定段落へ穴埋めせず、商品観察、Japan signal、障壁/判断、企業別analysis focus、固有CTAを会社ごとの順序と文型で生成する。固定するのは会社名入り挨拶、`Tomohiro H / Paradigm LLC / contact@paradigmjp.com`署名、根拠境界だけ。
+- 生の公開原文は`product_evidence`へ監査保存し、本文用の自然な`product_evidence_rendering`と分離した。Cookie/Privacy/hidden UI、異言語残骸、見出しの不自然な大文字接続、根拠外の日本ユーザー行動・採用・購買・CV・到達・製品成果・欠落surface、過剰な監査語反復、同一文内の近似重複、実モデルで反復したstock句を保存前に拒否する。DeepSeekのCTA enum別名と12件超の禁止事項配列は安全に正規化し、schema揺れによる再試行を減らした。
+- 通常repair 2回後は本文だけを企業別に書き直す軽量bespoke rewriteを最大3回実行する。モデル本文・CTAが合格すればそのまま採用し、不合格時だけ根拠外文、重複文、冒頭混入、監査語過剰を削除して商品固有anchor入りCTAへ収束させる。決定論recovery全文は完成文として採用しない。本文類似度上限35%、CTA上限48%、企業固有性・構成独自性・営業関連性・言語品質は各23/25以上、総合92点以上を必須とする。
+- `message_review.personalization`へarchitecture・score・4次元・6段階coverage・template riskをDB保存し、`/work`へ「個別性」と4次元を表示する。Twentyのカルテ要約にもcopy gate、architecture、4次元、完全な初回文面を保存し、retry同期でも同じreviewをread-backする。公開rankから保守的projectionを作れる場合だけ`estimate_on_price_off`、それ以外は`estimate_off_price_off`。外部送信経路は追加していない。
+- DeepSeek実在業種横断matrix（Screenshot to Code / L'ABC du Parfum / Salesfire）は **3/3 pass / 外部送信0**。architectureは3種類、score **92/92/92**、個別性 **100/100/100**、本文類似度 **0% / 2.5% / 0%**、CTA類似度 **0% / 11.5% / 26.3%**、語数 **127 / 156 / 125**、Cache Hit率 **81.9% / 78.6% / 75.6%**。全Vitest **530 suites / 1,207 tests**、TypeScript、ESLint、Quality Guard **0 errors / 82 existing warnings**、production build **408/408 pages**、PC/Pixel 7 Playwright **4/4**がpass。PR、正式`npm run release:prod`、本番再生成とTwenty/read-back後にrelease完了へ更新する。
+
 ## CURRENT STATUS - 2026-07-23 `/work`停止・要確認理由の必須表示（本番release / 理由・次対応を必須化 / 外部送信0）
 
 - `/work`の`needs_review / rejected / failed / Twenty failed`で一般的な警告だけを表示していた箇所を、DB保存済み`error_message`・フォーム診断・適格性理由から安全な日本語へ変換し、履歴カード上部へ「理由」一覧と「次の対応」を必ず表示する契約へ更新した。日本企業、非企業ページ、所在国/SMB/Japan fit根拠不足、公開フォーム未確認、文面品質gate不合格、公開ページ取得失敗、Twenty保存/read-back失敗を個別表示する。未知のmodel/API生エラーは表示せず安全な説明へ落とす。

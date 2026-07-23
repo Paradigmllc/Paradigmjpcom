@@ -101,6 +101,17 @@ describe("ManualMessageIntelligence", () => {
             generation_status: "passed",
             passed: true,
             score: 96,
+            personalization: {
+              passed: true,
+              score: 96,
+              architecture: "capability_gap_validation",
+              dimensions: {
+                companySpecificity: 24,
+                narrativeOriginality: 24,
+                commercialRelevance: 24,
+                languageIntegrity: 24,
+              },
+            },
             evidence_pack: [{ id: "fact-1", statement: "Japanese-language path was not observed.", source: "Japan market public-page audit" }],
           },
         })}
@@ -109,6 +120,9 @@ describe("ManualMessageIntelligence", () => {
     ))
 
     expect(container.textContent).toContain("I noticed your screenshot-to-code workflow.")
+    expect(container.textContent).toContain("個別性 96")
+    expect(container.textContent).toContain("構成 capability_gap_validation")
+    expect(container.textContent).toContain("企業固有性24 / 25")
     const copy = container.querySelector<HTMLButtonElement>("button")
     await act(async () => copy?.click())
     expect(onCopy).toHaveBeenCalledWith("I noticed your screenshot-to-code workflow.", "初回文面")
