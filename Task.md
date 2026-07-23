@@ -1,10 +1,12 @@
-## CURRENT STATUS - 2026-07-23 `/work`初回文面のオーダーメイド化・実文品質gate（release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-23 `/work`初回文面のオーダーメイド化・実文品質gate（本番release / Twenty全文一致 / 外部送信0）
 
 - 初回文面を固定テンプレへの穴埋めではなく、公開根拠から選んだ主商品と別の実機能を使う企業別の意思決定へ変更した。4段落の役割は商品観察・独立した公開ページ監査・「何を日本で先に訴求するか」のeither-or判断・Japan opportunity analysisと担当者確認。会社別に文型とrouting questionを変え、直近文面との本文/CTA類似度は各25%未満を必須とする。
 - 生成・最大9回のbespoke rewrite・保存前reviewの全段階で、公開根拠外の利用者像、需要、機会損失、CV/売上、導入成果、日本語UI/文書/オンボーディング等を拒否する。`these documented capabilities`、`Japanese-language evaluation-path decision`、`your X or Y capability`などの内部評価語、公開CTA転記、テンプレ導入句、抽象workflow、文法崩れも保存不可。決定論処理は会社名置換やeCommerce integrationの文法修復など非創造的な表層修正だけに限定した。
 - 本文は会社名入り挨拶、4つの企業別本文段落、`Best regards / Tomohiro H / Paradigm LLC / contact@paradigmjp.com`をそのままコピー可能な形で返す。URL・ドメイン・出典・提携文・添付・未承認メールは本文へ入れない。外部自動送信経路は追加せず、Twentyへは全文・品質結果・根拠を未送信状態で保存する既存境界を維持する。
 - DeepSeek実canaryはSalesfire **92点 / safety 100 / uniqueness 100 / 99語 / Cache Hit 13,312÷16,347（81.4%）**。`individual-level preference analysis`と`eCommerce platform integration`のどちらを先に試すかを提案した。Screenshot to Codeは **92点 / safety 100 / uniqueness 98 / 106語 / Cache Hit 13,952÷16,629（83.9%）**で、`screenshot-to-code conversion`と対応framework rangeを比較した。両文面は事実・論点・CTAが別で、Salesfire既存文に対するScreenshot to Codeの最大類似度は2.2%。
-- 全Vitest **251 files / 1,272 tests**、TypeScript、ESLint、Quality Guard **0 errors / 84 existing warnings**、production build **408/408 pages**、`git diff --check`がpass。PR、正式`npm run release:prod`、本番Salesfire再解析、Twenty全文/read-back、`sent=false`確認後にrelease完了へ更新する。
+- PR **#563** / main **c83b8b7e**を正式`npm run release:prod`のdeployment **p11xqooz7vgv1ekufxi3ot0h**で本番反映した。DB **93/93**、Sales health HTTP 200 JSON `ok:true`、Twenty HTTP 200 / worker restart 0、Realtime/RLS/Traefik/Cloudflare origin lock、manual work V4 **104/104**、legacy 0、`sent` 0を含む`release gate passed`を確認した。
+- 本番Salesfire履歴 **8465bb25-1d93-446d-a279-7332b3203a69**を再解析し、1回で`completed / complete`、文面 **92点 / safety 100 / uniqueness 98 / personalization 100 / 105語**、最大既存類似度 **2.3%**、確認済みフォーム`https://www.salesfire.co.uk/contact-us`、V4レポートへ更新した。本文は公開商品事実から`individual-level preference analysis`と`collective-level behavioural-trend analysis`のどちらを先に日本語テストするかというSalesfire固有の判断を提示する。
+- Twenty会社 **e1ea7fd7-bb5d-401d-8e37-dd80e09025e4**をAPIで直接read-backし、会社・domain・フォーム・レポート・品質要約・初回文面全文がDBと完全一致した。CRMは`Manual workbench / analyzed / pre-send review`、次対応`フォーム・初回文面を人間確認（未送信）`、DBは`sent=false / manually_sent_at=null / twenty_sync_status=synced`。全Vitest **251 files / 1,272 tests**、TypeScript、ESLint、Quality Guard **0 errors / 84 existing warnings**、production build **408/408 pages**、`git diff --check`もpass済み。
 
 ## CURRENT STATUS - 2026-07-23 `/work`初回文面の企業別構成・テンプレ再利用防止（release前 / 外部送信0）
 
