@@ -120,7 +120,7 @@ ${MANUAL_FORM_SIGNATURE}`,
     expect(body).not.toMatch(/For it, that leaves/i)
     expect(body).not.toMatch(/around the exact [^.?!]+ evidence/i)
     expect(body.match(new RegExp(evidence, "g"))?.length ?? 0).toBeLessThanOrEqual(2)
-    expect(body).toContain(contract.question)
+    expect(body).toMatch(/one Japanese-language test of Wearable Purifier/i)
     expect(review).toMatchObject({ passed: true, issues: [] })
   })
 })

@@ -198,7 +198,8 @@ Paradigm LLC
 contact@paradigmjp.com`)
 
     expect(result.passed).toBe(false)
-    expect(result.coverage.routingCta).toBe(false)
+    expect(result.coverage.routingCta).toBe(true)
+    expect(result.reusableTemplateRisk).toBe(true)
   })
 })
 
@@ -214,7 +215,7 @@ describe("manual company copy plan", () => {
     }
     expect(buildManualCopyPlan(input)).toEqual(buildManualCopyPlan(input))
     expect(buildManualCopyPlan(input).requiredMoves).toHaveLength(5)
-    expect(buildManualCopyPlan(input).solutionFocus).toContain("product evaluation")
+    expect(buildManualCopyPlan(input).solutionFocus).toContain("evaluation-path test")
   })
 
   it("does not select the opportunity architecture without grounded modeled evidence", () => {

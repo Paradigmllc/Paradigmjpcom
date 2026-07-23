@@ -37,7 +37,7 @@ import {
 } from "./manual-japan-entry-candidate-recovery";
 import {
   isInitialInterestProductEvidenceSafe,
-  renderInitialInterestProductEvidence,
+  renderInitialInterestProductEvidence, renderSupplementalProductEvidence,
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
 } from "./japan-entry-personalized-message-contract";
@@ -58,18 +58,17 @@ import {
   personalizedStrategySchema as strategySchema,
 } from "./japan-entry-personalized-message-schemas"
 import { bespokeRewriteMessages } from "./japan-entry-personalized-message-bespoke-rewrite"
-import { finalizeManualBespokeCta } from "./manual-japan-entry-bespoke-cta"
+import { normalizeManualFinalQuestion } from "./manual-japan-entry-final-question"
 import {
   buildManualEditorialReview,
   EDITORIAL_DIMENSION_FLOOR,
 } from "./japan-entry-personalized-message-editorial-review"
-export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
-export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
+export { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts"; export type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 export { reviewPersonalizedJapanEntryMessage } from "./japan-entry-personalized-message-review";
 export type { JapanEntryMessageReview } from "./japan-entry-personalized-message-review";
 export type { ManualGeneratedMessageCandidate, ManualMessageStrategy } from "./japan-entry-personalized-message-public";
 const INITIAL_SAFETY_REPAIR_LIMIT = 2;
-const BESPOKE_REWRITE_LIMIT = 8;
+const BESPOKE_REWRITE_LIMIT = 9;
 const EDITORIAL_REPAIR_LIMIT = 5;
 const DETERMINISTIC_RECOVERY_PASS = 2;
 const RECOVERY_REWRITE_ISSUE = "A deterministic safety recovery was used. Rewrite the complete body in fresh, natural, company-specific language; preserve every exact evidence and CTA contract, and do not reuse any recovery sentence.";
@@ -156,7 +155,7 @@ export async function generatePersonalizedJapanEntryMessage(
     ? selectGroundedProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames })
     : null;
   const supplementalInitialProductEvidence = purpose === "initial_interest"
-    ? selectSupplementalProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames })
+    ? renderSupplementalProductEvidence(selectSupplementalProductEvidence({ companyName: input.companyName, productContext, productNames: input.productNames }), input.companyName)
     : null;
   if (
     purpose === "initial_interest"
@@ -187,7 +186,14 @@ export async function generatePersonalizedJapanEntryMessage(
       candidateAngle: candidate.angle,
     });
     const similarity = purpose === "initial_interest"
-      ? reviewManualMessageDistinctness({ message: candidate.message, companyName: input.companyName, priorMessages: input.priorMessages ?? [], allowedRepeatedSentences: facts.filter((fact) => candidate.fact_ids.includes(fact.id)).map((fact) => fact.statement) })
+      ? reviewManualMessageDistinctness({
+          message: candidate.message,
+          companyName: input.companyName,
+          priorMessages: input.priorMessages ?? [],
+          allowedRepeatedSentences: facts.filter((fact) => candidate.fact_ids.includes(fact.id)).map((fact) => fact.statement),
+          threshold: 0.25,
+          ctaThreshold: 0.25,
+        })
       : { passed: true, maxSimilarity: 0, matchedMessageId: null, matchedCompany: null, reasons: [] };
     const selectedFacts = facts.filter((fact) => candidate.fact_ids.includes(fact.id));
     const personalization: ManualPersonalizationReview = purpose === "initial_interest"
@@ -239,8 +245,7 @@ export async function generatePersonalizedJapanEntryMessage(
       : plannedCandidate;
     const enveloped = purpose === "initial_interest" ? withManualFormCopyReadyEnvelope(evidenceLocked, input.companyName) : evidenceLocked;
     const initial = deterministicInspection(enveloped);
-    // Deterministic recovery is only a repair seed. A model-authored rewrite must
-    // subsequently pass safety, personalization, and uniqueness before release.
+    // Recovery is only a seed; model-authored copy must pass every release gate.
     const recoveryAllowed = canUseManualDeterministicRecovery({ allowRecovery, similarityPassed: initial.similarity.passed });
     if (purpose !== "initial_interest" || ctaContracts.length === 0 || (initial.safety.passed && initial.similarity.passed && initial.personalization.passed) || !recoveryAllowed) return { candidate: enveloped, ...initial, usedRecovery: false };
     const recoverAndInspect = (variationIndex: number) => {
@@ -360,30 +365,25 @@ export async function generatePersonalizedJapanEntryMessage(
         }),
         schema: bespokeRewriteSchema,
         caller,
-        temperature: Math.min(0.65, 0.42 + rewritePass * 0.06),
+        temperature: 0.3,
       })
       totalAttempts += rewritten.attempts
       totalUsage = addDeepSeekUsage(totalUsage, rewritten.usage)
       if (!rewritten.ok) continue
       const rewrittenCandidate = {
         ...repairTarget.candidate,
-        message: rewritten.data.message,
+        message: normalizeManualFinalQuestion({
+          message: rewritten.data.message,
+          companyName: input.companyName,
+          productEvidenceRendering: repairTarget.candidate.product_evidence_rendering,
+          founderForward: input.initialInterestOptions?.founderForwardCta === true,
+          variationKey: `${input.companyName}:${copyPlan.architecture}:${rewritePass}`,
+        }),
         architecture: copyPlan.architecture,
         personalization_anchors: rewritten.data.personalization_anchors[0] === "legacy" ? [repairTarget.candidate.product_evidence_rendering, ctaAnchors.customerPathAnchor] : rewritten.data.personalization_anchors,
         solution_focus: rewritten.data.solution_focus === "legacy_unspecified" ? copyPlan.solutionFocus : rewritten.data.solution_focus,
       }
-      let inspected = inspectCandidate(rewrittenCandidate)
-      if (!inspected.safety.passed || !inspected.similarity.passed || !inspected.personalization.passed) {
-        inspected = inspectCandidate(finalizeManualBespokeCta({
-          candidate: rewrittenCandidate,
-          companyName: input.companyName,
-          customerPathAnchor: ctaAnchors.customerPathAnchor,
-          questionDecisionAnchor,
-          solutionFocus: rewrittenCandidate.solution_focus,
-          founderForwardCta: input.initialInterestOptions?.founderForwardCta === true,
-          productEvidenceRendering: repairTarget.candidate.product_evidence_rendering,
-        }))
-      }
+      const inspected = inspectCandidate(rewrittenCandidate)
       if (inspected.safety.passed && inspected.similarity.passed && inspected.personalization.passed && !inspected.usedRecovery && hasDifferentiationMetadata(inspected.candidate)) {
         valid = [inspected]
         break

@@ -6,6 +6,7 @@ import {
   selectGroundedProductEvidence,
   selectSupplementalProductEvidence,
   renderInitialInterestProductEvidence,
+  renderSupplementalProductEvidence,
   shouldPreserveProductEvidenceAsRendering,
 } from "./japan-entry-personalized-message-contract"
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts"
@@ -82,6 +83,8 @@ describe("initial-interest evidence contract", () => {
     expect(renderInitialInterestProductEvidence("Explore customer preferences and behavioural trends")).toBe("analysis of customer preferences and behavioural trends")
     expect(renderInitialInterestProductEvidence("Convert any screenshot or design to clean code")).toBe("conversion of any screenshot or design to clean code")
     expect(renderInitialInterestProductEvidence("AI-powered conversion from screenshots to production-ready code")).toBe("AI-powered conversion from screenshots to production-ready code")
+    expect(renderSupplementalProductEvidence("Integrate Salesfire with your existing eCommerce platform.", "Salesfire"))
+      .toBe("integration with existing eCommerce platform.")
   })
 
   it("extracts a clean exact capability clause instead of repeated promotional Paperform copy", () => {

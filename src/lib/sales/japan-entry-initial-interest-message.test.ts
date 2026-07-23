@@ -21,10 +21,10 @@ const audit = {
 };
 const productContext = "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in a single workflow.";
 const productEvidence = "subscription analytics platform for independent retailers";
-const diagnosis = "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; the customer path available for a Japan entry decision remains unverified from the pages checked. The management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.";
-const opening = "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in a single workflow.";
-const product = "That documented workflow gives the review a concrete product basis without assuming how it would be evaluated or used in Japan.";
-const tailoredClose = "I can share a Japan opportunity analysis focused on testing Example’s subscription-analytics and inventory-insights workflow through its Japanese-language customer path and JPY presentation question. Would you be open to receiving it?";
+const diagnosis = "The checked public pages did not show a Japanese-language customer path or customer-facing JPY pricing.";
+const opening = "Example documents a subscription analytics platform for independent retailers, connecting inventory forecasting, replenishment decisions, and inventory insights in one product.";
+const product = "For a first Japan test, should the subscription analytics platform lead with inventory forecasting or replenishment decisions for independent retailers? The checked pages cannot determine which of those two concrete product emphases should appear first, and no demand or performance conclusion follows from that open choice.";
+const tailoredClose = "I can prepare a Japan opportunity analysis comparing how the subscription analytics platform should present inventory forecasting and replenishment decisions, including the Japanese-language customer path and JPY presentation question. Is Example’s founder the right recipient, or should I send it to the person leading international growth?";
 
 function copyReady(...bodyParagraphs: string[]): string {
   return [manualFormGreeting("Example"), ...bodyParagraphs, MANUAL_FORM_SIGNATURE].join("\n\n");
@@ -44,7 +44,7 @@ function review(message: string) {
 
 describe("initial-interest form message safety", () => {
   it("accepts a light first contact without price, URL, or existing-report claims", () => {
-    const message = copyReady(opening, product, diagnosis, tailoredClose);
+    const message = copyReady(opening, diagnosis, product, tailoredClose);
     const result = review(message);
     expect(result.issues).toEqual([]);
     expect(result).toMatchObject({ passed: true, score: 100 });
@@ -52,9 +52,9 @@ describe("initial-interest form message safety", () => {
 
   it("accepts a company-specific opening when options are omitted", () => {
     const message = copyReady(
-      "Example documents a subscription analytics platform for independent retailers. Its public description connects inventory forecasting, replenishment decisions, and inventory insights in one workflow.",
-      "That documented workflow gives the review a concrete product basis without inferring demand, customer behavior, or results in Japan.",
-      "In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked. The next decision is whether that observed path warrants a focused validation test before wider localization work.",
+      opening,
+      diagnosis,
+      "Should the subscription analytics platform first present inventory forecasting or the replenishment-decision workflow in a Japanese-language test? The public pages do not answer which product emphasis should lead, and the question can be tested without inferring demand, retailer behaviour, or commercial results.",
       tailoredClose,
     );
     const result = review(message);

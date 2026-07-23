@@ -315,7 +315,7 @@ I can send a Screenshot to Code Japan opportunity analysis focused on assess whe
       productContext: "AI-powered conversion from screenshots and videos to clean, production-ready code | Supports HTML/CSS, React, Vue, Tailwind, Bootstrap, and Ionic",
     })
 
-    expect(issues).toContain("An additional product claim is not grounded in the supplied public product context")
+    expect(issues.some((issue) => issue.startsWith("An additional product claim is not grounded in the supplied public product context:"))).toBe(true)
     expect(issues).toContain("The analysis focus contains an ungrammatical verb form and is not copy-ready English")
   })
 
@@ -451,7 +451,7 @@ A Japan opportunity analysis would define a bounded evaluation test for that wor
     expect(issues).toContain("The final CTA refers to a generic workflow instead of naming the grounded product subject")
   })
 
-  it("requires the Salesfire CTA to retain its grounded product subject", () => {
+  it("uses the company anchor for CTA specificity while still rejecting a generic analysis focus", () => {
     const body = `Salesfire describes analysis of customer preferences, behavioural trends, and purchase history.
 
 The customer-behaviour analysis should be tested through a Japanese-language evaluation route.
@@ -470,6 +470,7 @@ I can send a Japan opportunity analysis for Salesfire, focused on product evalua
     })
 
     expect(issues).toContain("The final CTA does not repeat enough of the grounded product subject to be company-specific")
+    expect(issues).toContain("The final CTA uses a generic product-evaluation and positioning focus instead of the grounded company-specific decision")
   })
 
 })

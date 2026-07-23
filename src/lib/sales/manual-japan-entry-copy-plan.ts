@@ -46,13 +46,13 @@ function stableHash(value: string): number {
 }
 
 function solutionFocus(playbook: ManualOutreachPlaybook): string {
-  if (playbook === "premium_hobby_ecommerce") return "a bounded test of product explanation and purchase-path readiness"
-  if (playbook === "saas_ai_devtools" || playbook === "creator_tools" || playbook === "gaming_tools") return "a bounded test of product evaluation and Japanese positioning"
-  if (playbook === "cyber_b2b_infrastructure") return "a bounded test of technical evaluation and procurement readiness"
-  if (playbook === "hospitality_saas" || playbook === "marketplace_platform") return "a bounded test of the documented operating workflow"
-  if (playbook === "education_membership" || playbook === "research_data_media") return "a bounded test of offer comprehension and purchase readiness"
-  if (playbook === "web3_blockchain") return "a bounded test of technical evaluation and trust"
-  return "a bounded test of positioning and customer-path readiness"
+  if (playbook === "premium_hobby_ecommerce") return "which Japanese-language purchase-path test should precede wider localization"
+  if (playbook === "saas_ai_devtools" || playbook === "creator_tools" || playbook === "gaming_tools") return "which Japanese-language evaluation-path test should precede wider localization"
+  if (playbook === "cyber_b2b_infrastructure") return "which Japanese-language technical-evaluation test should precede procurement planning"
+  if (playbook === "hospitality_saas" || playbook === "marketplace_platform") return "which Japanese-language operating-workflow test should come first"
+  if (playbook === "education_membership" || playbook === "research_data_media") return "which Japanese-language offer and purchase-path test should come first"
+  if (playbook === "web3_blockchain") return "which Japanese-language technical-evaluation test should come first"
+  return "which Japanese-language customer-path test should come first"
 }
 
 function countryTone(countryCode: string | null): string {
