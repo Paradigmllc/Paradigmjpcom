@@ -75,6 +75,7 @@ const checks = {
   noCausalAuditExtension: !/\b(?:did not show|did not find|showed no|found no)\b[^.!?]{0,160},?\s+(?:so|therefore|which)\b/i.test(result.message),
   noInventedUrgency: !/\b(?:immediate|urgent|essential|necessary)\b/i.test(result.message),
   noGenericAnalysisFocus: !/\bproduct evaluation and Japanese positioning\b/i.test(result.message),
+  noAwkwardIntegrationPhrase: !/\b(?:the\s+)?integration with (?:an?\s+)?existing eCommerce platform/i.test(result.message),
   noUrlOrCitation: !/(?:https?:\/\/|www\.|according to|source:|citation)/i.test(result.message),
   copyReadyEnvelope: envelope.greetingValid && envelope.signatureValid,
   productionScores: result.review.score >= 92
@@ -83,7 +84,7 @@ const checks = {
 }
 
 if (Object.values(checks).some((passed) => !passed)) {
-  throw new Error(`Salesfire form-copy smoke failed: ${JSON.stringify(checks)}`)
+  throw new Error(`Salesfire form-copy smoke failed: ${JSON.stringify({ checks, review: result.review, similarity: result.similarity, message: result.message })}`)
 }
 
 process.stdout.write(`${JSON.stringify({

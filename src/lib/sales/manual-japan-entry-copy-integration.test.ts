@@ -17,13 +17,13 @@ const audit = {
 
 const message = `${manualFormGreeting("Example")}
 
-Example publicly describes its offering as RetailScope, a subscription analytics platform for independent retailers with inventory insights.
+Example provides RetailScope, a subscription analytics platform for independent retailers with inventory insights.
 
-In a review of the public pages, I did not find a Japanese-language customer path or customer-facing JPY pricing. These are bounded observations about the pages checked, not findings about demand, buyer behavior, or performance in Japan.
+The checked public pages did not show a Japanese-language customer path or customer-facing JPY pricing.
 
-The decision that remains unverified is whether the documented product needs a Japanese evaluation route before a broader localization commitment. A limited validation can compare the current product explanation with Japanese-language and JPY presentation without presuming demand or commercial performance.
+For a first Japan test, should RetailScope lead with subscription analytics for independent retailers or with inventory insights? The checked pages cannot determine which product emphasis should come first, and neither option is evidence of demand, buyer behaviour, or commercial performance.
 
-I can share a Japan opportunity analysis focused on RetailScope’s Japanese-language customer path and JPY presentation question. Would the founder or international-growth lead be the right owner for that evaluation-path decision?
+I can prepare a Japan opportunity analysis comparing those two RetailScope entry points alongside the Japanese-language customer path and JPY presentation question. Is Example’s founder the right recipient, or should I send it to the international-growth lead?
 
 ${MANUAL_FORM_SIGNATURE}`
 
@@ -113,11 +113,12 @@ describe("manual work first-touch generation integration", () => {
 
     const result = await generatePersonalizedJapanEntryMessage(generationInput, caller)
 
-    expect(result).toMatchObject({ ok: true, review: { passed: true, score: 96 } })
+    expect(result.ok, JSON.stringify(result)).toBe(true)
+    expect(result.review).toMatchObject({ passed: true, score: 96 })
     expect(result.message).toBe(message)
     expect(result.strategy?.prohibitedClaims).toEqual(["Measured demand", "Guaranteed revenue"])
     expect(result.message).not.toMatch(/\$12,?000|paid upfront|Japan Entry Package|15-minute|https?:\/\//i)
-    expect(result.message).toContain("Would the founder or international-growth lead be the right owner for that evaluation-path decision?")
+    expect(result.message).toContain("Is Example’s founder the right recipient, or should I send it to the international-growth lead?")
     expect(result.message).toMatch(/^Hello Example team,/)
     expect(result.message).toMatch(/Best regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp\.com$/)
     expect(generationInput).toMatchObject({ purpose: "initial_interest" })
@@ -148,7 +149,8 @@ describe("manual work first-touch generation integration", () => {
 
     const result = await generatePersonalizedJapanEntryMessage(manualGenerationInput(), caller)
 
-    expect(result).toMatchObject({ ok: true, review: { passed: true, score: 96 } })
+    expect(result.ok, JSON.stringify(result)).toBe(true)
+    expect(result.review).toMatchObject({ passed: true, score: 96 })
     expect(callIndex).toBe(3)
   })
 })

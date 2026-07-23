@@ -31,7 +31,7 @@ const DOM_OR_UI_COPY = /(?:display\s*:\s*none|visibility\s*:\s*hidden|aria-hidde
 const MALFORMED_ENGLISH = /(?:\bFor the (?:Enable|Build|Create|Get|Make|Allows?|Lets?)\b|\bthe (?:enable|allows?|lets?) (?:long|lower|better|faster)\b|\b(?:a|an) [A-Z]{2,}\s+(?:are|were)\b|\b(?:it|this|that) (?:are|were)\b|\b(?:that|where|because|as) (?:Customers|Users|Teams|Developers|Merchants|Buyers)\b|\b(?:can|may(?:\s+also)?|to)\s+(?:Explore|Book|Integrate|Identify|Leverage|Convert|Build|Create|Use|Get|Make|Start|Try|Schedule|Request)\b|\b(?:focused on|frames?|into|around)\s+(?:Assess|Evaluate|Test|Validate|Determine|Decide|Compare|Define|Whether|assess|evaluate|test|validate|determine|decide|compare|define)\b|\ba bounded test of whether\s+to\s+test\b|\ba bounded test of whether\b[^.!?]{0,140}\bshould be tested\b|\b(?:integrate|explore|identify|leverage|convert|build|create|use|get|make|start|try|schedule|request)-and-(?:integrate|explore|identify|leverage|convert|build|create|use|get|make|start|try|schedule|request)(?:-and-(?:integrate|explore|identify|leverage|convert|build|create|use|get|make|start|try|schedule|request))*\s+(?:workflow|path|process)\b|\.{2,})/
 const STOCK_BODY = /(?:the public-page review leaves the .{0,80} decision unverified|the next decision is not a full launch|the next concrete step is not a launch assumption|a concise brief can stay within the verified product scope|the evidence can be organized into what the pages establish|so your team can assess that step with evidence|the surfaces an evaluator would use .{0,120} are not present|leaves (?:one|a) concrete (?:question|decision) open|the output would be a clear basis for|keep the focus on what the public pages establish and what requires direct market input|(?:current|documented|verified) product scope|(?:the|its|your) product['’]s documented capability|the documented capability(?: itself)?|(?:analysis|brief) (?:stays?|remains?) within the verified product scope|marks? every Japan assumption as unconfirmed|would scope that decision)/i
 const STOCK_CTA = /(?:I can share a detailed Japan opportunity analysis based on this public evidence|Could you forward (?:this|it) to (?:the )?founder or (?:the )?person responsible for international growth|current market-readiness question|testable entry decision|market-entry question|entry-readiness decision|\b(?:for|around|about|of) (?:this|that|the) workflow\b)/i
-const DECISION_LANGUAGE = /(?:decision|validate|validation|test|customer path|evaluation path|purchase path|onboarding|locali[sz]ation|positioning|readiness|unverified|not yet establish)/i
+const DECISION_LANGUAGE = /(?:decision|choice|compar|prioriti[sz]|which|whether|validate|validation|test|customer path|evaluation path|purchase path|onboarding|locali[sz]ation|positioning|readiness|unverified|not yet establish)/i
 const SOLUTION_LANGUAGE = /(?:Japan opportunity (?:analysis|brief|snapshot)|Japan (?:entry|launch) (?:analysis|brief)|bounded Japan validation|analysis (?:would|can|could) (?:test|compare|define|separate|show|map|assess|frame))/i
 const CTA_LANGUAGE = /(?:would\b|may I\b|could\b|who\b|should I\b|are you\b).+\?$/i
 const CTA_DECISION_LANGUAGE = /(?:decision|customer path|evaluation|purchase|onboarding|locali[sz]ation|positioning|readiness|validation|what to test|who owns|right owner)/i
@@ -88,7 +88,7 @@ export function reviewManualMessagePersonalization(input: {
     solution: SOLUTION_LANGUAGE.test(final) && /\bJapan\b/i.test(final),
     routingCta: containsAnchor(final, productAnchors)
       && CTA_LANGUAGE.test(finalQuestion)
-      && (containsAnchor(finalQuestion, [input.questionDecisionAnchor]) || CTA_DECISION_LANGUAGE.test(finalQuestion)),
+      && (containsAnchor(final, [input.questionDecisionAnchor]) || CTA_DECISION_LANGUAGE.test(final) || DECISION_LANGUAGE.test(final)),
   }
   const unsafeLanguage = FOREIGN_OR_HIDDEN_COPY.test(body) || DOM_OR_UI_COPY.test(body) || MALFORMED_ENGLISH.test(body)
   const repeatedAnalysisOffer = bodyBlocks.filter((paragraph) => /\b(?:Japan opportunity analysis|Japan (?:entry|launch) brief|opportunity snapshot)\b/i.test(paragraph)).length > 1
@@ -122,7 +122,7 @@ export function reviewManualMessagePersonalization(input: {
     ...(!coverage.decisionBarrier ? ["The message does not frame a concrete company-specific Japan decision or barrier"] : []),
     ...(!coverage.opportunity ? ["The estimate variant does not carry its selected modeled opportunity evidence"] : []),
     ...(!coverage.solution ? ["The final paragraph does not explain the tailored Japan analysis focus"] : []),
-    ...(!coverage.routingCta ? [`The final CTA must contain one company or product anchor and name the '${input.questionDecisionAnchor}' meaning inside a single routing or permission question`] : []),
+    ...(!coverage.routingCta ? [`The final CTA paragraph must contain one company or product anchor, explain the '${input.questionDecisionAnchor}' meaning, and end with a single routing or permission question`] : []),
     ...(unsafeLanguage ? ["The form copy contains hidden-page text, non-English UI copy, or malformed English"] : []),
     ...(templatePattern ? ["The body contains a reusable stock sentence instead of company-specific reasoning"] : []),
     ...(input.maxPriorSimilarity >= 0.35 ? ["The body is too similar to a previously generated company message"] : []),

@@ -75,6 +75,19 @@ function includesAny(value: string, candidates: string[]): boolean {
   return candidates.some((candidate) => candidate.length >= 3 && lower.includes(candidate.toLowerCase()));
 }
 
+const UNSUPPORTED_PRODUCT_TERMS = [
+  { label: "need", pattern: /\bneed(?:s|ed|ing)?\b/i },
+  { label: "pain point", pattern: /\bpain points?\b/i },
+  { label: "challenge", pattern: /\bchallenges?\b/i },
+  { label: "demand", pattern: /\bdemand(?:s|ed|ing)?\b/i },
+] as const;
+
+function findUnsupportedProductTerms(section: string, productContext: string): string[] {
+  return UNSUPPORTED_PRODUCT_TERMS
+    .filter(({ pattern }) => pattern.test(section) && !pattern.test(productContext))
+    .map(({ label }) => label);
+}
+
 function escapeRegularExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -180,7 +193,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const messageAngle = input.messageAngle;
   const enhanced = (!messageAngle || messageAngle === "competitor")
     && input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
-  const minWords = customInitialInterest ? initialInterestOptions.includePrice ? 145 : selected.length <= 1 ? 75 : 105 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
+  const minWords = customInitialInterest ? initialInterestOptions.includePrice ? 145 : selected.length <= 1 ? 80 : 105 : enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
   const maxWords = customInitialInterest ? initialInterestOptions.includePrice ? 210 : 190 : enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
 
   if (containsUnresolvedPlaceholder(message)) {
@@ -283,10 +296,17 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     }
   }
 
+  const unsupportedTermSection = customInitialInterest ? paragraphs[0] ?? "" : paragraphs[1] ?? "";
+  const unsupportedTerms = findUnsupportedProductTerms(unsupportedTermSection, input.productContext);
+  if (unsupportedTerms.length > 0) {
+    issues.push(`Unsupported product-context terms in paragraph 2: ${unsupportedTerms.join(", ")}`);
+    score -= 35;
+  }
+
   const validParagraphCount = customInitialInterest
-    ? paragraphs.length >= 3 && paragraphs.length <= 5
+    ? paragraphs.length >= 4 && paragraphs.length <= 5
     : paragraphs.length === 4;
-  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain three to five short body paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
+  if (!validParagraphCount) { issues.push(customInitialInterest ? "Message must contain four to five short body paragraphs separated by blank lines" : "Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
   else {
     const expectedIntro = "Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.";
     const productParagraph = paragraphs[1] ?? "";
@@ -310,16 +330,6 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (customInitialInterest && conflatesCompanyAndProduct) { issues.push("The opening must describe the company's product without conflating the company with its product category"); score -= 25; }
     if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph) && !customInitialInterest) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
     if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext) && !customInitialInterest) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
-    const unsupportedProductTerms = [
-      { label: "need", pattern: /\bneed(?:s|ed|ing)?\b/i },
-      { label: "pain point", pattern: /\bpain points?\b/i },
-      { label: "challenge", pattern: /\bchallenges?\b/i },
-      { label: "demand", pattern: /\bdemand(?:s|ed|ing)?\b/i },
-    ];
-    const unsupportedTerms = unsupportedProductTerms
-      .filter(({ pattern }) => pattern.test(productSection) && !pattern.test(input.productContext))
-      .map(({ label }) => label);
-    if (unsupportedTerms.length > 0) { issues.push(`Unsupported product-context terms in paragraph 2: ${unsupportedTerms.join(", ")}`); score -= 35; }
     if (!selected.some((fact) => includesAny(customInitialInterest ? message : paragraphs[2] ?? "", fact.anchors))) { issues.push(customInitialInterest ? "A selected Japan-specific diagnosis must be reflected in the message" : "Japan-specific diagnosis must be in paragraph 3"); score -= 20; }
     if (purpose === "initial_interest") {
       if (customInitialInterest) {

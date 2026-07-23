@@ -202,7 +202,7 @@ ${MANUAL_FORM_SIGNATURE}`,
 
     expect(first.message).not.toBe(second.message)
     expect(review).toMatchObject({ passed: true, issues: [] })
-    expect(first.message).toContain(contract.question)
+    expect(first.message).toMatch(/which Japanese-language customer-path test should cover verified workspace approval workflow/i)
   })
 
   it("keeps one grounded and one CTA anchor while replacing model repetition with natural references", () => {
@@ -240,7 +240,6 @@ ${MANUAL_FORM_SIGNATURE}`,
     const body = recovered.message.split(/\n\n/).slice(1, -1).join("\n\n")
 
     expect(body.match(new RegExp(companyName, "g"))).toHaveLength(2)
-    expect(body).toMatch(/the company|its/i)
     expect(body.split(/\n\n/).at(-1)).toContain(companyName)
   })
 
@@ -284,8 +283,8 @@ ${MANUAL_FORM_SIGNATURE}`,
     const finalQuestion = recovered.message.match(/[^.!?]*\?\s*(?:\n|$)/g)?.at(-1) ?? ""
 
     expect(recovered.message).toContain("Dub")
-    expect(finalQuestion).not.toContain("Dub")
-    expect(finalQuestion.trim()).toBe("Would you like to receive it?")
+    expect(finalQuestion).toContain("Dub")
+    expect(finalQuestion.trim()).toContain("customer-path decision")
   })
 
   it("rebuilds a multi-sentence opening when one sentence is duplicated later", () => {
@@ -454,7 +453,7 @@ ${MANUAL_FORM_SIGNATURE}`,
     })
 
     expect(recovered.message).not.toMatch(/company[’']/i)
-    expect(recovered.message).toContain("Its workflow")
+    expect(recovered.message).toContain("workspace discovery")
   })
 
 })

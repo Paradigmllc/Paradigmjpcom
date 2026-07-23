@@ -10,6 +10,177 @@ const auditFact = {
 }
 
 describe("bespoke form-copy live regressions", () => {
+  it("rejects invented audiences and benefits from the cross-company Screenshot to Code canary", () => {
+    const body = `Screenshot to Code provides AI-powered conversion from screenshots and videos to clean, production-ready code.
+
+The checked public pages did not show a Japanese-language customer path.
+
+For a first Japan test, should you lead with the instant HTML/CSS output that lets a non-technical stakeholder see a live page immediately, or with the React/Vue component generation that fits an engineering team's existing stack?
+
+A Japan opportunity analysis would examine the early-adopter developer workflow. Who at Screenshot to Code owns international growth?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Screenshot to Code",
+      productEvidence: "AI-powered conversion from screenshots and videos to clean, production-ready code",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "AI-powered conversion from screenshots and videos to clean, production-ready code | supports HTML/CSS, React, Vue, Tailwind, Bootstrap, and Ionic",
+    })
+
+    expect(issues.some((issue) => issue.startsWith("Unsupported praise or product outcome is prohibited: instant"))).toBe(true)
+    expect(issues.some((issue) => issue.startsWith("Unsupported product or commercial outcome is prohibited:"))).toBe(true)
+    expect(issues.some((issue) => issue.startsWith("The message invents a product audience not present in public product evidence:"))).toBe(true)
+    expect(issues).toContain("The company-specific decision must use the primary product subject, not only split a supplemental feature list")
+  })
+
+  it("rejects the evidence-boundary filler sentence from the live Salesfire canary", () => {
+    const body = `Salesfire provides analysis of customer preferences, behavioural trends, and purchase history.
+
+The checked public pages did not show a Japanese-language customer path.
+
+The first Japan test should distinguish preference analysis from platform integration.
+
+We would rely solely on the public-page audit to define the evidence boundary.
+
+I can prepare a Japan opportunity analysis for Salesfire. Would its founder be the right recipient?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences, behavioural trends, and purchase history | platform integration",
+    })
+
+    expect(issues).toContain("Reusable analysis-process wording is prohibited; connect the product fact directly to one company-specific decision")
+  })
+
+  it("accepts a grounded individual-versus-collective Salesfire decision", () => {
+    const body = `Salesfire presents analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.
+
+The checked public pages did not show a Japanese-language customer path.
+
+Should a first Japanese-language test lead with individual-level preference analysis or collective behavioural trends? The checked pages cannot determine which emphasis to prioritize.
+
+I can prepare a Japan opportunity analysis comparing those two Salesfire analysis levels. Is Salesfire's founder the right recipient?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level | platform integration",
+    })
+
+    expect(issues).not.toContain("The company-specific decision must use the primary product subject, not only split a supplemental feature list")
+  })
+
+  it("rejects internal evaluation-path jargon and an awkward either-or capability CTA", () => {
+    const body = `Salesfire presents analysis of customer preferences and behavioural trends.
+
+The checked public pages did not show a Japanese-language customer path.
+
+Should the first test lead with preference analysis or platform integration?
+
+I can prepare a Japan opportunity analysis examining the specific Japanese-language evaluation-path decision for your preference-analysis or platform-integration capability. Is Salesfire's founder the right recipient?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences and behavioural trends",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences and behavioural trends | platform integration",
+    })
+
+    expect(issues).toContain("The final CTA uses a generic market-entry label instead of naming the company-specific validation")
+    expect(issues).toContain("The final CTA uses an awkward either-or capability label instead of natural product names")
+  })
+
+  it("requires one product-specific term in a company-named CTA without demanding the full opening", () => {
+    const body = `Salesfire provides analysis of customer preferences, behavioural trends, and purchase history.
+
+The checked public pages did not show a Japanese-language customer path.
+
+The first test should distinguish preference analysis from platform integration, without treating that choice as evidence of demand.
+
+I can prepare a Japan opportunity analysis comparing those entry angles. Would Salesfire's founder or international-growth lead be the right person for me to send it to?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences, behavioural trends, and purchase history | platform integration",
+    })
+
+    expect(issues).toContain("The final CTA does not repeat enough of the grounded product subject to be company-specific")
+  })
+
+  it("rejects the formulaic Salesfire canary even when every fact is grounded", () => {
+    const body = `Salesfire publicly describes its offering around “analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.”
+
+The checked public pages did not show a Japanese-language customer path.
+
+A practical next step is deciding whether the customer-behaviour analysis should first be tested through a Japanese-language path before wider localization is considered.
+
+I can prepare a Japan opportunity analysis for Salesfire that defines a bounded test for the customer-behaviour analysis and informs the Japanese-language evaluation-path decision. Could the founder or international-growth lead weigh in on that evaluation-path decision for the customer-behaviour analysis?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.",
+    })
+
+    expect(issues).toContain("The opening uses reusable evidence-meta wording instead of describing the product directly")
+    expect(issues).toContain("The decision paragraph uses reusable transition scaffolding instead of company-specific reasoning")
+    expect(issues).toContain("The message repeats the same product phrase too often: customer behaviour")
+    expect(issues).toContain("The message uses validation-program jargon instead of plain company-specific language")
+  })
+
+  it("rejects deterministic Screenshot to Code scaffolding as a final message", () => {
+    const body = `Screenshot to Code publicly describes its offering with the phrase “AI-powered conversion from screenshots and videos to clean, production-ready code.”
+
+The checked public pages did not show a Japanese-language customer path.
+
+The decision is whether a bounded Japanese-language customer-path test should cover the conversion from screenshots and videos.
+
+A Japan opportunity analysis for Screenshot to Code can set out a bounded evaluation of the conversion from screenshots and videos through a Japanese-language customer path. Should I address the evaluation-path decision brief to the person responsible for the conversion from screenshots and videos?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Screenshot to Code",
+      productEvidence: "AI-powered conversion from screenshots and videos to clean, production-ready code.",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "AI-powered conversion from screenshots and videos to clean, production-ready code.",
+    })
+
+    expect(issues).toContain("The decision paragraph uses reusable transition scaffolding instead of company-specific reasoning")
+    expect(issues).toContain("The message repeats bounded-validation jargon instead of using natural company-specific language")
+  })
+
   it("rejects a repeated wider-localization boundary", () => {
     const body = `Salesfire describes analysis of customer preferences and behavioural trends.
 
@@ -211,5 +382,90 @@ A Japan opportunity analysis for Screenshot to Code would define a bounded test 
     })
 
     expect(issues).toContain("The message invents a Japanese-language product surface not present in selected facts or product context")
+  })
+
+  it("rejects the production Salesfire draft that passed by collapsing the decision into a generic CTA", () => {
+    const body = `Salesfire publicly describes its offering with the phrase “analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.”
+
+The checked public pages did not show a Japanese-language customer path.
+
+I can send a Japan opportunity analysis for Salesfire, focused on a bounded test of whether to validate a Japanese-language path for the customer-behaviour analysis before wider localization. Would the founder or international-growth owner be the right person to review the evaluation-path decision?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level",
+    })
+
+    expect(issues).toContain("The message must separate the audited finding and the company-specific product decision into distinct paragraphs")
+    expect(issues).toContain("The analysis focus uses a generic validate-the-path construction instead of a company-specific test")
+    expect(issues).toContain("The final routing question must name the company or grounded product subject")
+  })
+
+  it("rejects the malformed company substitution found in live generated copy", () => {
+    const body = `Screenshot to Code documents conversion from screenshots and videos to code.
+
+The checked public pages did not show a Japanese-language customer path.
+
+The decision is whether to lead with screenshot conversion or video conversion.
+
+I can prepare a Japan opportunity analysis examining that your company Japanese-language evaluation-path decision.`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Screenshot to Code",
+      productEvidence: "conversion from screenshots and videos to code",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+    })
+
+    expect(issues).toContain("The analysis focus contains an ungrammatical verb form and is not copy-ready English")
+  })
+
+  it("does not misclassify a capability-priority decision as an invented product claim", () => {
+    const body = `Salesfire documents analysis of customer preferences, behavioural trends, and purchase history.
+
+The checked public pages did not show a Japanese-language customer path.
+
+Should the first test lead with individual preference analysis or eCommerce integration? The checked pages cannot settle which of these documented capabilities to lead with.
+
+I can prepare a Japan opportunity analysis centred on customer-preference analysis. Is Salesfire's founder the right recipient?`
+    const issues = reviewManualFormBespokeStyle({
+      body,
+      openingParagraph: body.split(/\n\s*\n/)[0] ?? "",
+      finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire",
+      productEvidence: "analysis of customer preferences, behavioural trends, and purchase history",
+      productNames: [],
+      selectedFacts: [auditFact],
+      includeEstimate: false,
+      productContext: "Analysis of customer preferences, behavioural trends, and purchase history | Integrate with an existing eCommerce platform",
+    })
+
+    expect(issues.some((issue) => issue.startsWith("An additional product claim is not grounded in the supplied public product context:"))).toBe(false)
+  })
+
+  it("rejects documented-capabilities filler in place of the actual Salesfire alternatives", () => {
+    const body = `Salesfire documents preference analysis and eCommerce platform integration.
+
+The checked public pages did not show a Japanese-language customer path.
+
+Should preference analysis or platform integration lead? The public-page audit cannot settle which of these documented capabilities to prioritize.
+
+I can prepare a Japan opportunity analysis comparing preference analysis with platform integration. Is Salesfire's founder the right recipient?`
+    const issues = reviewManualFormBespokeStyle({
+      body, openingParagraph: body.split(/\n\s*\n/)[0] ?? "", finalParagraph: body.split(/\n\s*\n/).at(-1) ?? "",
+      companyName: "Salesfire", productEvidence: "preference analysis and eCommerce platform integration", productNames: [],
+      selectedFacts: [auditFact], includeEstimate: false, productContext: "preference analysis and eCommerce platform integration",
+    })
+
+    expect(issues).toContain("The message uses a generic product-capability reference instead of naming the grounded workflow")
   })
 })

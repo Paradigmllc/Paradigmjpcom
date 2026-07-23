@@ -36,21 +36,36 @@ function normalizedSolutionFocus(value: string): string {
     .replace(/,\s*$/g, "")
     .trim()
   const whetherToTest = withoutGenericFinding.match(/^whether\s+to\s+test\s+(.+)$/i)
-  if (whetherToTest?.[1]) return `a bounded test of ${whetherToTest[1]}`
+  if (whetherToTest?.[1]) return `a single test of ${whetherToTest[1]}`
   const testedClause = withoutGenericFinding.match(/^whether\s+(.+?)\s+should be tested\s+(.+)$/i)
   if (testedClause?.[1] && testedClause[2]) {
-    return `a bounded test of ${testedClause[1]} ${testedClause[2]}`
+    return `a single test of ${testedClause[1]} ${testedClause[2]}`
   }
   if (/^whether\b/i.test(withoutGenericFinding)) {
-    return `a bounded test of ${withoutGenericFinding.charAt(0).toLowerCase()}${withoutGenericFinding.slice(1)}`
+    return `the decision on ${withoutGenericFinding.charAt(0).toLowerCase()}${withoutGenericFinding.slice(1)}`
   }
   if (/^(?:assess|evaluate|test|validate|determine|decide|compare|define)\b/i.test(withoutGenericFinding)) {
-    return `a bounded test to ${withoutGenericFinding.charAt(0).toLowerCase()}${withoutGenericFinding.slice(1)}`
+    return `a single test to ${withoutGenericFinding.charAt(0).toLowerCase()}${withoutGenericFinding.slice(1)}`
   }
   if (/^bounded\s+(?:test|validation|evaluation)\b/i.test(withoutGenericFinding)) {
-    return `a ${withoutGenericFinding}`
+    return `a ${withoutGenericFinding.replace(/^bounded\s+/i, "single ")}`
   }
-  return withoutGenericFinding || "a bounded Japan customer-path test"
+  return withoutGenericFinding || "a single Japan customer-path test"
+}
+
+function withProductArticle(subject: string): string {
+  return /^(?:analysis|automation|conversion|generation|integration|management|tracking|use)\b/i.test(subject)
+    ? `the ${subject}`
+    : subject
+}
+
+function inferredOpeningSubject(opening: string, companyName: string): string {
+  const escapedCompany = companyName.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return opening
+    .replace(new RegExp(escapedCompany, "giu"), " ")
+    .replace(/^(?:on its public pages,?\s*)?(?:publicly\s+)?(?:describes?|documents?|provides?|offers?|publishes?)\s+/i, "")
+    .replace(/[.!?]+$/g, "")
+    .trim()
 }
 
 function removeRepeatedLocalizationBoundary(focus: string, earlierBody: string): string {
@@ -160,11 +175,6 @@ function sanitizeModelBody(body: string[], customerPathAnchor: string, productEv
   if (removedOpeningAudit && !cleaned.slice(1, -1).some((paragraph) => phraseOccurrences(paragraph, customerPathAnchor) > 0)) {
     cleaned.splice(1, 0, `The checked public pages did not show a ${customerPathAnchor} customer path.`)
   }
-  const middle = cleaned.slice(1, -1).join(" ")
-  if (!/(?:decision|validat|what to test|customer path|evaluation path|purchase path|readiness|locali[sz]ation)/i.test(middle)) {
-    const insertAt = Math.max(1, cleaned.length - 1)
-    cleaned.splice(insertAt, 0, `For the documented ${customerPathAnchor} condition, the open decision is whether to run a bounded test before selecting a broader localization scope.`)
-  }
   return cleaned
 }
 
@@ -186,6 +196,46 @@ function ensurePublicPathObservation(body: string[], customerPathAnchor: string)
   return body
 }
 
+function separateAuditAndProductDecision(
+  body: string[],
+  customerPathAnchor: string,
+  productSubject: string,
+): string[] {
+  let auditIndex = -1
+  for (let paragraphIndex = 1; paragraphIndex < body.length - 1; paragraphIndex += 1) {
+    const sentences = body[paragraphIndex]?.split(/(?<=[.!?])\s+/).filter(Boolean) ?? []
+    const sentenceIndex = sentences.findIndex((sentence) => (
+      phraseOccurrences(sentence, customerPathAnchor) > 0
+      && /\b(?:did not|did not find|showed no|found no|not shown|missing|absence)\b/i.test(sentence)
+    ))
+    if (sentenceIndex < 0) continue
+    const auditSentence = sentences[sentenceIndex]!
+    const remaining = sentences.filter((_sentence, index) => index !== sentenceIndex).join(" ").trim()
+    body.splice(paragraphIndex, 1, auditSentence, ...(remaining ? [remaining] : []))
+    auditIndex = paragraphIndex
+    break
+  }
+  if (auditIndex < 0) return body
+
+  const subjectWords = sentenceTokens(productSubject)
+  const hasSeparateDecision = body.slice(auditIndex + 1, -1).some((paragraph) => {
+    const tokens = sentenceTokens(paragraph)
+    const overlap = [...subjectWords].filter((word) => tokens.has(word)).length
+    return /\b(?:decision|whether|what to test|which .{0,50} test|evaluate|evaluation|validate|validation|locali[sz])\b/i.test(paragraph)
+      && (subjectWords.size < 2 || overlap >= 2)
+  })
+  if (hasSeparateDecision) return body
+
+  const localizationBoundaryAlreadyUsed = /\bbefore (?:wider|broader) localization(?: is considered)?\b/i.test(body.join(" "))
+  const boundary = localizationBoundaryAlreadyUsed ? "" : " before broader localization is considered"
+  body.splice(
+    auditIndex + 1,
+    0,
+    `The open question is which Japanese-language customer-path test should cover ${withProductArticle(productSubject)}${boundary}. The audit does not establish demand or commercial impact; both remain open to direct evidence.`,
+  )
+  return body
+}
+
 export function finalizeManualBespokeCta<T extends { message: string; cta_type: string }>(input: {
   candidate: T
   companyName: string
@@ -201,34 +251,35 @@ export function finalizeManualBespokeCta<T extends { message: string; cta_type: 
   if (messageBlocks.length === 0) return input.candidate
 
   const productScope = input.productEvidenceRendering?.trim()
+  const productSubjectSource = productScope || inferredOpeningSubject(messageBlocks[0] ?? "", input.companyName)
+  const productSubject = productSubjectSource
+    ? manualProductDecisionSubject({ rendering: productSubjectSource, companyName: input.companyName, productNames: [] })
+    : "documented offering"
   let normalizedFocus = removeRepeatedLocalizationBoundary(
     normalizedSolutionFocus(input.solutionFocus),
     messageBlocks.slice(0, -1).join(" "),
   )
   if (productScope) {
-    const productSubject = manualProductDecisionSubject({
-      rendering: productScope,
-      companyName: input.companyName,
-      productNames: [],
-    })
     const subjectWords = productSubject.toLowerCase().split(/\s+/).filter((word) => word.length >= 4)
     const focusSubjectOverlap = subjectWords.filter((word) => normalizedFocus.toLowerCase().includes(word)).length
     const requiredOverlap = Math.min(2, subjectWords.length)
-    if (requiredOverlap > 0 && focusSubjectOverlap < requiredOverlap) {
-      const article = /^(?:analysis|automation|conversion|generation|integration|management|tracking|use)\b/i.test(productSubject) ? "the " : ""
-      normalizedFocus = `a bounded evaluation of ${article}${productSubject} through a ${input.customerPathAnchor} customer path`
+    if (
+      requiredOverlap > 0 && focusSubjectOverlap < requiredOverlap
+      || /\b(?:bounded\s+)?test\s+of\s+whether\s+to\s+validate\s+(?:a\s+)?Japanese-language\s+(?:customer\s+)?path\b|\bwhether\s+to\s+validate\s+(?:a\s+)?Japanese-language\s+(?:customer\s+)?path\b/i.test(normalizedFocus)
+    ) {
+      normalizedFocus = `the first evaluation of ${withProductArticle(productSubject)} through a ${input.customerPathAnchor} customer path`
     }
   }
   const anchoredFocus = normalizedFocus.toLowerCase().includes(input.customerPathAnchor.toLowerCase())
     ? normalizedFocus
     : `${normalizedFocus} using the ${input.customerPathAnchor} finding`
   const offers = [
-    `I can send a Japan opportunity analysis for ${input.companyName}, focused on ${anchoredFocus}.`,
-    `For ${input.companyName}, I can prepare a Japan opportunity analysis built around ${anchoredFocus}.`,
-    `I can prepare a focused Japan opportunity analysis for ${input.companyName} that sets out ${anchoredFocus}.`,
-    `A Japan opportunity analysis for ${input.companyName} can set out ${anchoredFocus}.`,
-    `I can provide ${input.companyName} with a Japan opportunity analysis focused on ${anchoredFocus}.`,
-    `For ${input.companyName}, I can build a Japan opportunity analysis around ${anchoredFocus}.`,
+    `I can send a Japan opportunity analysis focused on ${anchoredFocus}.`,
+    `I can prepare a Japan opportunity analysis built around ${anchoredFocus}.`,
+    `I can prepare a focused Japan opportunity analysis that sets out ${anchoredFocus}.`,
+    `I can send a Japan opportunity analysis that examines ${anchoredFocus}.`,
+    `I can provide a Japan opportunity analysis focused on ${anchoredFocus}.`,
+    `I can prepare a Japan opportunity analysis around ${anchoredFocus}.`,
   ]
   const variant = stableHash(`${input.companyName}:${input.questionDecisionAnchor}:${input.solutionFocus}`) % offers.length
   const offer = offers[variant]!
@@ -236,27 +287,31 @@ export function finalizeManualBespokeCta<T extends { message: string; cta_type: 
     ? input.questionDecisionAnchor.slice(input.customerPathAnchor.length).trim() || "customer-path decision"
     : input.questionDecisionAnchor
   const founderQuestions = [
-    `Would the founder or international-growth owner be the right person to review the ${decisionLabel}?`,
-    `Who owns the ${decisionLabel}, and should the analysis be routed to that person?`,
-    `Is the ${decisionLabel} best reviewed by the founder or international-growth lead?`,
-    `Should I address the ${decisionLabel} brief to the founder or international-growth owner?`,
-    `Would the person accountable for international growth be the right owner for the ${decisionLabel}?`,
-    `Who owns the ${decisionLabel} on your team?`,
+    `Would the founder or international-growth owner at ${input.companyName} be the right person to review that Japan customer-path decision?`,
+    `Who at ${input.companyName} owns that Japan customer-path decision?`,
+    `Is the founder or international-growth lead at ${input.companyName} responsible for that first Japan test?`,
+    `Should I address the ${decisionLabel} brief to the person responsible for Japan validation at ${input.companyName}?`,
+    `Would the international-growth owner at ${input.companyName} be the right person to review that customer-path test?`,
+    `Who at ${input.companyName} owns the first Japan evaluation decision?`,
   ]
   const permissionQuestions = [
-    `May I send it to the person who owns the ${decisionLabel}?`,
-    `Would you like the analysis for the ${decisionLabel}?`,
-    `Should I send the analysis before the ${decisionLabel} is tested?`,
-    `Who should receive it to evaluate the ${decisionLabel}?`,
-    `May I provide it for the ${decisionLabel} review?`,
-    `Would it be useful to receive the analysis for the ${decisionLabel}?`,
+    `May I send it to the person who owns that Japan customer-path decision at ${input.companyName}?`,
+    `Would the team at ${input.companyName} like the analysis before that first Japan evaluation?`,
+    `Should I send the analysis to the person handling that customer-path test at ${input.companyName}?`,
+    `Who at ${input.companyName} should receive it for the Japan-path evaluation?`,
+    `May I provide it to the person reviewing that customer path at ${input.companyName}?`,
+    `Would ${input.companyName} like to receive the analysis before deciding on that first Japan test?`,
   ]
   const question = (input.founderForwardCta ? founderQuestions : permissionQuestions)[variant]!
   messageBlocks[messageBlocks.length - 1] = `${offer} ${question}`
   let boundedBody = limitCustomerPathRepetition(replaceMiddleCompanyMentions(
-    ensurePublicPathObservation(
-      sanitizeModelBody(messageBlocks, input.customerPathAnchor, productScope),
+    separateAuditAndProductDecision(
+      ensurePublicPathObservation(
+        sanitizeModelBody(messageBlocks, input.customerPathAnchor, productScope),
+        input.customerPathAnchor,
+      ),
       input.customerPathAnchor,
+      productSubject,
     ),
     input.companyName,
   ), input.customerPathAnchor)

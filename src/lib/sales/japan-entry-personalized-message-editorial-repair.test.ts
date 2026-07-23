@@ -16,11 +16,11 @@ const safeMessage = `Hello AtlasMetric team,
 
 AtlasMetric provides subscription analytics for independent retailers with inventory forecasting and replenishment insights.
 
-The checked public pages did not show a Japanese-language customer path. That is a page-level observation, not proof of demand or performance in Japan.
+The checked public pages did not show a Japanese-language customer path.
 
-A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.
+For the inventory-forecasting and replenishment workflow, the unverified decision is which Japanese-language customer-path test would justify broader localization. No conclusion about demand, adoption, or commercial performance follows from that public-page observation.
 
-I can send a Japan opportunity analysis for AtlasMetric focused on testing the inventory-forecasting and replenishment workflow through a Japanese-language evaluation path. Would the founder or international-growth owner be the right person to review the evaluation-path decision?
+I can send a Japan opportunity analysis that frames a first test of inventory forecasting and replenishment through the Japanese-language customer path. Would the AtlasMetric founder or international-growth owner be the right recipient for that Japan customer-path decision?
 
 Best regards,
 Tomohiro H
@@ -33,7 +33,7 @@ AtlasMetric provides subscription analytics for independent retailers with inven
 
 The checked public pages did not show a Japanese-language customer path.
 
-I can send a Japan opportunity analysis for AtlasMetric focused on testing the inventory-forecasting and replenishment workflow through a Japanese-language evaluation path. Would the founder or international-growth owner be the right person to review the evaluation-path decision?
+I can send a Japan opportunity analysis for AtlasMetric focused on the inventory-forecasting and replenishment workflow through a Japanese-language evaluation path. Would the founder or international-growth owner be the right person to decide what to test first for inventory forecasting and replenishment?
 
 Best regards,
 Tomohiro H
@@ -41,7 +41,7 @@ Paradigm LLC
 contact@paradigmjp.com`
 
 const unsafeRepair = safeMessage.replace(
-  "A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.",
+  "For the inventory-forecasting and replenishment workflow, the unverified decision is which Japanese-language customer-path test would justify broader localization. No conclusion about demand, adoption, or commercial performance follows from that public-page observation.",
   "Japanese independent retailers typically need localized access before they evaluate a product.",
 )
 const [approvedCta] = buildManualCtaContracts({
@@ -52,10 +52,6 @@ const [approvedCta] = buildManualCtaContracts({
   count: 1,
 })
 const modelRepairedMessage = safeMessage
-  .replace(
-    "A focused test could compare the current inventory-analytics proposition with a Japanese-language evaluation route while keeping observed facts separate from assumptions. The decision is whether this customer path warrants validation before any broader localization commitment.",
-    "The open decision is whether to test a Japanese-language evaluation path for the inventory-analytics workflow before allocating effort to broader localization. The evaluation path would keep the existing inventory-forecasting and replenishment workflow as its subject while leaving demand, adoption, and commercial results unassumed.",
-  )
 
 function response(value: unknown): DeepSeekResponse {
   return { ok: true, text: JSON.stringify(value) }
@@ -119,7 +115,7 @@ describe("Japan Entry editorial repair loop", () => {
     }, caller)
 
     expect(result.ok, JSON.stringify(result)).toBe(true)
-    expect(result.review?.wordCount).toBeGreaterThanOrEqual(75)
+    expect(result.review?.wordCount).toBeGreaterThanOrEqual(90)
     expect(result.review?.wordCount).toBeLessThanOrEqual(190)
     expect(caller).toHaveBeenCalledTimes(3)
     const repairPayload = JSON.parse(caller.mock.calls[1]?.[0]?.[1]?.content ?? "{}") as { task?: string }
@@ -308,7 +304,7 @@ describe("Japan Entry editorial repair loop", () => {
     }, caller)
 
     expect(result.ok, JSON.stringify(result)).toBe(true)
-    expect(result.review?.wordCount).toBeGreaterThanOrEqual(75)
+    expect(result.review?.wordCount).toBeGreaterThanOrEqual(90)
     expect(result.review?.wordCount).toBeLessThanOrEqual(190)
     expect(result.message).toContain("AtlasMetric provides subscription analytics")
     expect(result.message).not.toContain("The concrete capability documented")

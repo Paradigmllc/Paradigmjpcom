@@ -6,9 +6,9 @@ import { MANUAL_FORM_SIGNATURE, manualFormGreeting } from "./manual-japan-entry-
 
 const companyName = "Example"
 const productEvidence = "subscription analytics platform for independent retailers"
-const productContext = `Example’s public pages describe a ${productEvidence}. The documented workflow centers on inventory decisions and gives this review a concrete product starting point. The same public description includes inventory insights, which narrows the review to the stated workflow without inferring demand or customer behavior.`
-const introduction = `Example’s public pages describe a ${productEvidence}. The documented workflow centers on inventory decisions and gives this review a concrete product starting point.`
-const productParagraph = "The same public description includes inventory insights, which narrows the review to the stated workflow without inferring demand or customer behavior."
+const productContext = `Example’s public pages describe a ${productEvidence}. The same public description connects inventory forecasting, replenishment decisions, and inventory insights.`
+const introduction = `Example provides a ${productEvidence}, connecting inventory forecasting, replenishment decisions, and inventory insights.`
+const productParagraph = "Should the subscription analytics platform first emphasize inventory forecasting or replenishment decisions in Japan? The checked pages cannot determine which should lead. The first emphasis introduces inventory forecasting before replenishment decisions; the second begins with replenishment decisions and then adds inventory insights. That choice adds no audience, result, or commercial claim."
 const audit: JapanEntryPersonalizationFact = {
   id: "japan-audit-language",
   statement: "The checked public pages did not show a Japanese-language customer path.",
@@ -33,11 +33,11 @@ const traffic: JapanEntryPersonalizationFact = {
 
 function copyReady(diagnosis: string, close: string): string {
   const bespokeClose = close
-    .replace("a one-page Japan Opportunity Snapshot", "a one-page Japan Opportunity Snapshot focused on testing Example’s subscription-analytics and inventory-insights workflow through its Japanese-language customer path")
-    .replace("a more detailed Japan opportunity analysis", "a more detailed Japan opportunity analysis focused on testing Example’s subscription-analytics and inventory-insights workflow through its Japanese-language customer path")
-    .replace("a detailed Japan opportunity analysis", "a detailed Japan opportunity analysis focused on testing Example’s subscription-analytics and inventory-insights workflow through its Japanese-language customer path")
-    .replace("Could you forward this to the founder or person responsible for international growth?", "Would the founder or international-growth lead be the best recipient?")
-  return [manualFormGreeting(companyName), introduction, productParagraph, diagnosis, bespokeClose, MANUAL_FORM_SIGNATURE].join("\n\n")
+    .replace("a one-page Japan Opportunity Snapshot", "a one-page Japan Opportunity Snapshot focused on testing the subscription-analytics and inventory-insights workflow through its Japanese-language customer path")
+    .replace("a more detailed Japan opportunity analysis", "a more detailed Japan opportunity analysis focused on testing the subscription-analytics and inventory-insights workflow through its Japanese-language customer path")
+    .replace("a detailed Japan opportunity analysis", "a detailed Japan opportunity analysis focused on testing the subscription-analytics and inventory-insights workflow through its Japanese-language customer path")
+    .replace("Could you forward this to the founder or person responsible for international growth?", "Is Example’s founder the right recipient, or should I send it to the international-growth lead?")
+  return [manualFormGreeting(companyName), introduction, diagnosis, audit.statement, productParagraph, bespokeClose, MANUAL_FORM_SIGNATURE].filter(Boolean).join("\n\n")
 }
 
 function review(input: {
@@ -66,14 +66,14 @@ function review(input: {
 describe("manual initial-interest message variants", () => {
   it("accepts the price cell only with the current fixed terms", () => {
     const options = { includeEstimate: false, includePrice: true, founderForwardCta: true }
-    const message = copyReady("In a review of the public pages, I did not find a Japanese-language customer path. This is not a finding about demand or performance; it means the customer path available for a Japan entry decision remains unverified from the pages checked. The open management question is whether a focused Japanese evaluation route should be tested before a broader localization or channel investment is approved.", initialInterestClose(options))
+    const message = copyReady("", initialInterestClose(options))
     expect(review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: true })).toMatchObject({ passed: true, score: 100 })
     expect(message).not.toMatch(/founding compan|normally \$|paid upfront|month 7|continuation/i)
   })
 
   it("accepts a non-assertive annual estimate with its public-signal disclaimers", () => {
     const options = { includeEstimate: true, includePrice: true, founderForwardCta: true }
-    const diagnosis = `${traffic.statement} ${annual.statement} A public-page review also found that the checked pages did not show a Japanese-language customer path. These modeled estimates are not observed revenue and performance is not guaranteed.`
+    const diagnosis = `${traffic.statement} ${annual.statement} These modeled estimates are not observed revenue and performance is not guaranteed.`
     const message = copyReady(diagnosis, initialInterestClose(options))
     const result = review({ message, facts: [audit, traffic, annual], factIds: [traffic.id, annual.id, audit.id], includeEstimate: true, includePrice: true })
     expect(result.issues).toEqual([])
@@ -82,7 +82,7 @@ describe("manual initial-interest message variants", () => {
 
   it("allows a grounded USD opportunity range in the automatic no-price cell", () => {
     const options = { includeEstimate: true, includePrice: false, founderForwardCta: true }
-    const diagnosis = `${traffic.statement} ${annual.statement} A public-page review also found that the checked pages did not show a Japanese-language customer path. These modeled estimates are not observed revenue and performance is not guaranteed.`
+    const diagnosis = `${traffic.statement} ${annual.statement} These modeled estimates are not observed revenue and performance is not guaranteed.`
     const message = copyReady(diagnosis, initialInterestClose(options))
     const result = review({ message, facts: [audit, traffic, annual], factIds: [traffic.id, annual.id, audit.id], includeEstimate: true, includePrice: false })
 
@@ -136,11 +136,11 @@ describe("manual initial-interest message variants", () => {
       "A public-page review did not show a Japanese-language customer path. This is not a finding about demand or performance; it leaves one concrete question for a Japan entry decision.",
       initialInterestClose(options),
     )
-      .replace(" focused on testing Example’s subscription-analytics and inventory-insights workflow through its Japanese-language customer path", "")
-      .replace("the Example customer-path snapshot", "it")
+      .replace(" focused on testing the subscription-analytics and inventory-insights workflow through its Japanese-language customer path", "")
+      .replace("Is Example’s founder the right recipient, or should I send it to the international-growth lead?", "Would you be open to receiving it?")
     const result = review({ message, facts: [audit], factIds: [audit.id], includeEstimate: false, includePrice: false })
 
     expect(result.passed).toBe(false)
-    expect(result.issues).toContain("The final CTA paragraph must include the exact company or product anchor: Example")
+    expect(result.issues).toContain("The final routing question must name the company or grounded product subject")
   })
 })

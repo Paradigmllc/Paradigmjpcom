@@ -2,6 +2,29 @@ import { describe, expect, it } from "vitest"
 import { finalizeManualBespokeCta } from "./manual-japan-entry-bespoke-cta"
 
 describe("finalizeManualBespokeCta", () => {
+  it("turns the rejected production Salesfire close into a separate product decision and grounded question", () => {
+    const result = finalizeManualBespokeCta({
+      candidate: {
+        cta_type: "founder_forward",
+        message: `Hello Salesfire team,\n\nSalesfire publicly describes its offering with the phrase “analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.”\n\nThe checked public pages did not show a Japanese-language customer path.\n\nI can send a Japan opportunity analysis for Salesfire, focused on a bounded test of whether to validate a Japanese-language path for the customer-behaviour analysis before wider localization. Would the founder or international-growth owner be the right person to review the evaluation-path decision?\n\nBest regards,\nTomohiro H\nParadigm LLC\ncontact@paradigmjp.com`,
+      },
+      companyName: "Salesfire",
+      customerPathAnchor: "Japanese-language",
+      questionDecisionAnchor: "Japanese-language evaluation-path decision",
+      solutionFocus: "whether to validate a Japanese-language path for the customer-behaviour analysis before wider localization",
+      founderForwardCta: true,
+      productEvidenceRendering: "analysis of customer preferences, behavioural trends, and purchase history on an individual or collective level.",
+    })
+    const body = result.message.split(/\n\s*\n/).slice(1, -1)
+    const finalQuestion = body.at(-1)?.match(/[^.!?]*\?$/)?.[0] ?? ""
+
+    expect(body).toHaveLength(4)
+    expect(body[1]).toBe("The checked public pages did not show a Japanese-language customer path.")
+    expect(body[2]).toMatch(/customer preferences|behavioural trends/i)
+    expect(body.at(-1)).not.toContain("bounded test of whether to validate")
+    expect(finalQuestion).toMatch(/Salesfire/i)
+    expect(finalQuestion).toMatch(/customer-path decision/i)
+  })
   it("keeps the model-authored body but replaces a generic close with a company decision CTA", () => {
     const result = finalizeManualBespokeCta({
       candidate: {
@@ -19,7 +42,7 @@ describe("finalizeManualBespokeCta", () => {
     expect(result.message).not.toContain("giving teams")
     expect(result.message).not.toContain("technical audiences")
     expect(result.message).not.toContain("Please let me know")
-    expect(result.message).toContain("evaluation-path decision")
+    expect(result.message).toContain("fraud-review workflow")
     expect(result.message.split("\n\n").slice(1, -1).join(" ").match(/\bExample\b/g)).toHaveLength(2)
     expect(result.cta_type).toBe("founder_forward")
   })
@@ -38,7 +61,7 @@ describe("finalizeManualBespokeCta", () => {
     })
 
     expect(result.message).not.toContain("discovered and assessed by teams in Japan")
-    expect(result.message).toContain("evaluation-path decision")
+    expect(result.message).toContain("fraud review workflow")
   })
 
   it("removes Japanese-speaking developer behavior before finalizing the message", () => {
@@ -55,7 +78,7 @@ describe("finalizeManualBespokeCta", () => {
     })
 
     expect(result.message).not.toContain("Japanese-speaking developer")
-    expect(result.message).toContain("evaluation-path decision")
+    expect(result.message).toContain("fraud review workflow")
   })
 
   it("keeps the audited path anchor to three uses or fewer in fallback copy", () => {
@@ -108,7 +131,7 @@ describe("finalizeManualBespokeCta", () => {
 
     expect(result.message.split(/\n\s*\n/)[1]).toContain("API-first fraud review workflow")
     expect(result.message.split(/\n\s*\n/).at(-2)).not.toContain("API-first fraud review workflow")
-    expect(result.message.split(/\n\s*\n/).at(-2)).toContain("evaluation-path decision")
+    expect(result.message.split(/\n\s*\n/).at(-2)).toContain("fraud review")
   })
 
   it("restores the exact grounded opening when a mixed Japan sentence is removed", () => {
@@ -197,7 +220,7 @@ describe("finalizeManualBespokeCta", () => {
     })
     const finalParagraph = result.message.split(/\n\s*\n/).at(-2) ?? ""
 
-    expect(finalParagraph).toContain("a bounded test of the fraud-review workflow before wider localization")
+    expect(finalParagraph).toContain("a single test of the fraud-review workflow before wider localization")
     expect(finalParagraph).not.toMatch(/into Whether|\.\./)
   })
 
@@ -216,7 +239,7 @@ describe("finalizeManualBespokeCta", () => {
     })
     const finalParagraph = result.message.split(/\n\s*\n/).at(-2) ?? ""
 
-    expect(finalParagraph).toContain("a bounded test of a Japanese-language evaluation path for customer-behaviour analysis")
+    expect(finalParagraph).toContain("a single test of a Japanese-language evaluation path for customer-behaviour analysis")
     expect(finalParagraph).not.toContain("whether to test")
   })
 
@@ -273,7 +296,7 @@ describe("finalizeManualBespokeCta", () => {
     expect(result.message).not.toContain("For the documented Japanese-language condition")
   })
 
-  it("repairs a missing article before a bounded test", () => {
+  it("repairs a missing article before a single test", () => {
     const result = finalizeManualBespokeCta({
       candidate: {
         cta_type: "founder_forward",
@@ -287,8 +310,8 @@ describe("finalizeManualBespokeCta", () => {
       productEvidenceRendering: "analysis of customer preferences and behavioural trends",
     })
 
-    expect(result.message.split(/\n\s*\n/).at(-2)).toContain("a bounded test")
-    expect(result.message.split(/\n\s*\n/).at(-2)).not.toContain("around bounded test")
+    expect(result.message.split(/\n\s*\n/).at(-2)).toContain("a single test")
+    expect(result.message.split(/\n\s*\n/).at(-2)).not.toContain("around single test")
   })
 
   it("uses the grounded conversion subject when the model focus is too generic", () => {
@@ -306,7 +329,7 @@ describe("finalizeManualBespokeCta", () => {
     })
     const finalParagraph = result.message.split(/\n\s*\n/).at(-2) ?? ""
 
-    expect(finalParagraph).toContain("a bounded evaluation of the conversion from screenshots and videos through a Japanese-language customer path")
+    expect(finalParagraph).toContain("the first evaluation of the conversion from screenshots and videos through a Japanese-language customer path")
     expect(finalParagraph).not.toContain("product evaluation and Japanese positioning")
   })
 })

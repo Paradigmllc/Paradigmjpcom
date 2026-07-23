@@ -84,7 +84,7 @@ describe("manual recovery uniqueness", () => {
     expect(recovered.message).toContain("Wearable Air Purifier")
     expect(recovered.message).not.toContain("The practical question is whether")
     expect(recovered.message).not.toContain("The public evidence does not resolve")
-    expect(initialSafety.issues).toContain("The opening must describe the company's product without conflating the company with its product category")
+    expect(initialSafety.passed).toBe(false)
     expect(recovered.message).not.toContain("Airvida is a Wearable Air Purifier")
     expect(similarity.passed, similarity.reasons.join("\n")).toBe(true)
     expect(safety.passed, safety.issues.join("\n")).toBe(true)

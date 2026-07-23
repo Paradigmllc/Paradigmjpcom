@@ -154,6 +154,14 @@ export function renderInitialInterestProductEvidence(value: string): string {
   return trimmed
 }
 
+export function renderSupplementalProductEvidence(value: string | null, companyName: string): string | null {
+  if (!value) return null
+  const companyPattern = companyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return renderInitialInterestProductEvidence(value)
+    .replace(new RegExp(`integration of ${companyPattern} with`, "gi"), "integration with")
+    .replace(/\byour existing\b/gi, "existing")
+}
+
 function primaryEvidenceScore(value: string): number {
   const terms = evidenceTokens(value).length
   const descriptiveBonus = /\bai-powered\b/i.test(value)

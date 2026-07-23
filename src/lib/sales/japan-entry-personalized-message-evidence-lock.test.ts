@@ -22,7 +22,7 @@ function evidenceLockCaller(input: {
       rationale: "Grounded and decision-relevant.",
       risk_flags: [],
     })
-    if (system.includes("Write one fresh, natural English inquiry-form message")) {
+    if (system.includes("Write one fresh, natural English inquiry-form message") || system.includes("Rewrite one inquiry-form message")) {
       return response({ message: input.repairedMessage })
     }
     if (user.includes('"task":"repair_candidate"')) {
@@ -43,13 +43,13 @@ describe("initial-interest product-evidence lock", () => {
     })
     const message = `Hello Airvida team,
 
-Airvida describes a Wearable Air Purifier designed around personal air-cleaning use. That documented product category creates a specific Japan-entry question: how the current proposition should be evaluated for a Japanese customer path without assuming that the product, its audience, or its performance changes across markets.
+Airvida offers a Wearable Air Purifier.
 
-The checked public pages did not show a Japanese-language customer path. This does not establish demand or buyer behaviour in Japan; it leaves open whether a localized evaluation route is worth testing before broader market work receives time or budget.
+The checked public pages did not show a Japanese-language customer path.
 
-As this is a wearable purifier rather than a software-only workflow, the open decision is which product explanation and evaluation evidence must be understandable in Japanese before a limited market test. That scope stays centered on personal air-cleaning use and does not presume demand or performance.
+Should the first Japanese-language test introduce the wearable purifier through its core product category or through the publicly named scientific testing results? The checked pages do not indicate which of those two facts should come first, and neither is treated as evidence of demand or performance.
 
-${approvedCta!.paragraph}
+I can prepare a Japan opportunity analysis comparing those two opening approaches and the public information available for each, centred on the wearable purifier. Would you like me to send the Airvida analysis?
 
 Best regards,
 Tomohiro H
@@ -141,13 +141,13 @@ contact@paradigmjp.com`
     })
     const repairedMessage = `Hello Canny team,
 
-Canny describes an AI-powered customer feedback platform alongside a customer feedback prioritization workflow. Together, those documented capabilities define a specific Japan-entry question around how the existing feedback-to-roadmap path should be presented and tested in another language, without treating the workflow itself as changed.
+Canny provides an AI-powered customer feedback platform.
 
-The checked public pages did not show a Japanese-language customer path. That observation does not establish demand or customer behavior in Japan; it leaves open whether a Japanese evaluation path is worth validating for this product before the team commits to broader localization.
+The checked public pages did not show a Japanese-language customer path.
 
-The analysis would separate the current product proposition from the unanswered market-entry questions, then identify the smallest evidence needed to decide whether a Japanese-language test deserves priority. Its scope would stay tied to the documented feedback workflow rather than a generic Japan launch plan.
+Should a first Japanese-language test lead with the customer feedback platform or with the customer feedback prioritization workflow? The checked pages cannot determine which product emphasis should come first, and the choice does not establish demand, adoption, or commercial performance.
 
-${approvedCta!.paragraph}
+I can prepare a Japan opportunity analysis comparing the platform proposition with the prioritization workflow, centred on customer feedback. Would you like me to send the Canny analysis?
 
 Best regards,
 Tomohiro H
@@ -230,13 +230,13 @@ contact@paradigmjp.com`
     })
     const repairedMessage = `Hello Canny team,
 
-Canny describes an AI-powered customer feedback platform alongside a customer feedback prioritization workflow. Together, those documented capabilities define a specific Japan-entry question around how the existing feedback-to-roadmap path should be presented and tested in another language, without treating the workflow itself as changed.
+Canny provides an AI-powered customer feedback platform.
 
-The checked public pages did not show a Japanese-language customer path. That observation does not establish demand or customer behavior in Japan; it leaves open whether a Japanese evaluation path is worth validating for this product before the team commits to broader localization.
+The checked public pages did not show a Japanese-language customer path.
 
-The analysis would separate the current product proposition from the unanswered market-entry questions, then identify the smallest evidence required to decide whether a Japanese-language test deserves priority. Its scope would stay tied to the documented feedback workflow rather than a generic Japan launch plan.
+Should a first Japanese-language test lead with the customer feedback platform or with the customer feedback prioritization workflow? The checked pages cannot determine which product emphasis should come first, and the choice does not establish demand, adoption, or commercial performance.
 
-${approvedCta!.paragraph}
+I can prepare a Japan opportunity analysis comparing the platform proposition with the prioritization workflow, centred on customer feedback. Would you like me to send the Canny analysis?
 
 Best regards,
 Tomohiro H

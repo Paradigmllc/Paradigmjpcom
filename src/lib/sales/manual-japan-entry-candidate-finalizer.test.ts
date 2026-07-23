@@ -45,10 +45,11 @@ describe("manual model-copy safe finalizer", () => {
     })
 
     expect(canSafelyFinishManualModelCopy({ issues: [issue], similarityPassed: true })).toBe(true)
-    expect(recovered.message).toContain(`${companyName} ${evidence}.`)
+    expect(recovered.message).toContain(`“${evidence}”`)
+    expect(recovered.message).toContain("customer testimonials")
     expect(recovered.message).not.toMatch(/positioning concept/i)
     const bodyWords = recovered.message.split(/\n\n/).slice(1, -1).join(" ").split(/\s+/).filter(Boolean)
-    expect(bodyWords.length).toBeGreaterThanOrEqual(75)
+    expect(bodyWords.length).toBeGreaterThanOrEqual(90)
   })
 
   it("does not authorize unsupported semantic or similarity failures", () => {

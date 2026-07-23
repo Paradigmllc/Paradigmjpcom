@@ -15,7 +15,7 @@ describe("manual Japan Entry personalization contract", () => {
     expect(prompt).toContain("Use the supplied evidence_contract exactly")
     expect(prompt).toContain("Follow copy_plan.architecture")
     expect(prompt).toContain("one original permission or routing question")
-    expect(prompt).toContain("three to five short paragraphs")
+    expect(prompt).toContain("four to five short paragraphs")
     expect(prompt).toContain("Do not copy any complete sentence from recent_copy_to_avoid")
     expect(prompt).toContain("Satisfy every required_cta_contract field")
     expect(prompt).toContain("Never write 'I can share a detailed Japan opportunity analysis based on this public evidence'")

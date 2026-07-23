@@ -4,6 +4,7 @@ const IDENTITY_STOP_WORDS = new Set([
 const EXACT_PHRASE_GENERIC_WORDS = new Set([
   "ai-powered", "air", "offering", "platform", "product", "service", "software", "tool", "workflow",
 ])
+const LEADING_ACTION_WORDS = /^(?:analy[sz]es|builds?|captures?|collects?|converts?|creates?|delivers?|documents?|enables?|generates?|integrates?|manages?|offers?|provides?|supports?|tracks?|uses?)$/i
 
 function normalizedWords(value: string): string[] {
   return value
@@ -31,7 +32,15 @@ export function manualProductDecisionSubject(input: {
     .map((segment) => normalizedWords(segment).join(" "))
     .filter((segment) => segment.split(/\s+/).length >= 2)
   const selected = segments.at(-1) ?? withoutIdentity
-  const words = normalizedWords(selected).filter((word) => !IDENTITY_STOP_WORDS.has(word.toLowerCase()))
+  const sourceWords = normalizedWords(selected)
+  if (LEADING_ACTION_WORDS.test(sourceWords[0] ?? "")) {
+    sourceWords.shift()
+    const prepositionIndex = sourceWords.findIndex((word) => /^(?:across|for|from|into|through|using|with)$/i.test(word))
+    if (prepositionIndex >= 2) sourceWords.splice(prepositionIndex)
+  }
+  const outcomeClauseIndex = sourceWords.findIndex((word) => /^(?:allowing|enabling|giving|helping|thereby)$/i.test(word))
+  if (outcomeClauseIndex >= 2) sourceWords.splice(outcomeClauseIndex)
+  const words = sourceWords.filter((word) => !IDENTITY_STOP_WORDS.has(word.toLowerCase()))
   if (words[0]?.toLowerCase() === "ai-powered") words.shift()
   if (words.length < 2) return "documented offering"
 

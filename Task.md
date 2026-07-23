@@ -1,10 +1,10 @@
-## CURRENT STATUS - 2026-07-23 `/work`初回文面の実生成監査・テンプレ感/推測表現の排除（release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-23 `/work`初回文面のオーダーメイド化・実文品質gate（release前 / 外部送信0）
 
-- 旧来の92点判定だけでは「文法的には正しいが、どの会社にも送れる抽象文」を通す余地があったため、DeepSeekの実出力を全文で読むcanaryを反復し、保存前契約を強化した。公開商品根拠は企業名と具体的な商品機能を含む自然な1文へ限定し、CTAはその商品の主語語を2語以上保持する。企業固有の商材を言い換えすぎて`the workflow / this / that`へ薄める文面、定型の`product evaluation and Japanese positioning`、監査プロセスを説明する機械的な文、公開サイトのCTAや販促命令の転記を拒否する。
-- 「確認ページに日本語導線が見当たらない」という観測は独立した1文だけで記述し、カンマや`so / therefore / which`で実際の運用欠陥・因果・機会損失へ拡張しない。日本の利用者/評価者、導入準備、技術適合、市場適合、第一印象、市場反応、日本語UI/オンボーディング/文書など、公開根拠にないsegment・surface・outcome・urgencyは生成、repair、最終化の全段階で拒否する。単なる語句置換ではなく、最大8回の企業別rewriteを同じ根拠境界・品質gateへ通す。
-- 商品主語を根拠から抽出する共通utilityを追加し、Salesfireは`analysis of customer preferences`、Screenshot to Codeは`conversion from screenshots and videos`、Cannyは`customer feedback`をCTAまで保持する。モデルCTAが固有性を落とした場合だけ、商品主語と確認済みの日本語導線gapを結ぶ自然な限定評価へ決定論的に収束する。外部送信経路は追加しておらず、署名は`Tomohiro H / Paradigm LLC / contact@paradigmjp.com`、本文URL/出典なし、Twentyは未送信保存のまま。
-- DeepSeek実canary最終結果はSalesfire **93点 / safety 100 / uniqueness 100 / 92語 / Cache Hit 13,184÷16,757（78.7%）**、Screenshot to Code **92点 / safety 100 / uniqueness 100 / 93語 / Cache Hit 13,312÷16,585（80.3%）**。両方とも公開商品の具体文→確認済みの日本語導線gap→商品主語を保持した限定評価→担当者確認という企業別本文になり、URL・出典・提携文・推測数値・因果・成果保証・テンプレ足場・外部送信は0。
-- 全Vitest **250 files / 1,249 tests**、TypeScript、ESLint、Quality Guard **0 errors / 83 existing warnings**、production build **408/408 pages**、`git diff --check`がpass。PR、正式`npm run release:prod`、本番Salesfire再解析、Twenty全文/read-back、`sent=false`確認後にrelease完了へ更新する。
+- 初回文面を固定テンプレへの穴埋めではなく、公開根拠から選んだ主商品と別の実機能を使う企業別の意思決定へ変更した。4段落の役割は商品観察・独立した公開ページ監査・「何を日本で先に訴求するか」のeither-or判断・Japan opportunity analysisと担当者確認。会社別に文型とrouting questionを変え、直近文面との本文/CTA類似度は各25%未満を必須とする。
+- 生成・最大9回のbespoke rewrite・保存前reviewの全段階で、公開根拠外の利用者像、需要、機会損失、CV/売上、導入成果、日本語UI/文書/オンボーディング等を拒否する。`these documented capabilities`、`Japanese-language evaluation-path decision`、`your X or Y capability`などの内部評価語、公開CTA転記、テンプレ導入句、抽象workflow、文法崩れも保存不可。決定論処理は会社名置換やeCommerce integrationの文法修復など非創造的な表層修正だけに限定した。
+- 本文は会社名入り挨拶、4つの企業別本文段落、`Best regards / Tomohiro H / Paradigm LLC / contact@paradigmjp.com`をそのままコピー可能な形で返す。URL・ドメイン・出典・提携文・添付・未承認メールは本文へ入れない。外部自動送信経路は追加せず、Twentyへは全文・品質結果・根拠を未送信状態で保存する既存境界を維持する。
+- DeepSeek実canaryはSalesfire **92点 / safety 100 / uniqueness 100 / 99語 / Cache Hit 13,312÷16,347（81.4%）**。`individual-level preference analysis`と`eCommerce platform integration`のどちらを先に試すかを提案した。Screenshot to Codeは **92点 / safety 100 / uniqueness 98 / 106語 / Cache Hit 13,952÷16,629（83.9%）**で、`screenshot-to-code conversion`と対応framework rangeを比較した。両文面は事実・論点・CTAが別で、Salesfire既存文に対するScreenshot to Codeの最大類似度は2.2%。
+- 全Vitest **251 files / 1,272 tests**、TypeScript、ESLint、Quality Guard **0 errors / 84 existing warnings**、production build **408/408 pages**、`git diff --check`がpass。PR、正式`npm run release:prod`、本番Salesfire再解析、Twenty全文/read-back、`sent=false`確認後にrelease完了へ更新する。
 
 ## CURRENT STATUS - 2026-07-23 `/work`初回文面の企業別構成・テンプレ再利用防止（release前 / 外部送信0）
 
