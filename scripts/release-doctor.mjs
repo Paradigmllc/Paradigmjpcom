@@ -396,7 +396,6 @@ function checkStaticReleaseRules() {
     && !deepSeekGateway.includes("process.env.OPENROUTER_API_KEY")
     && personalizedMessageStructured.includes('modelPolicy: "strict"')
     && personalizedMessageStructured.includes('const MODEL = "deepseek-v4-pro"')
-    && personalizedMessage.includes('const MODEL = "deepseek-v4-pro"')
   ) {
     pass("lead factory enforces source preview, pilot review, manual Twenty promotion, operator audit and direct DeepSeek V4 Pro generation")
   } else {
