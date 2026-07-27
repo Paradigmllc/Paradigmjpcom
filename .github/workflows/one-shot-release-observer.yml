@@ -1,4 +1,4 @@
-name: One-shot Country Partner Release Observer
+name: One-shot Country Partner Final Verification
 
 on:
   push:
@@ -11,8 +11,9 @@ permissions:
   issues: write
 
 jobs:
-  observe:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
       COOLIFY_API_URL: https://coolify.paradigmjp.com
@@ -20,32 +21,95 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-      - name: Read Coolify and public state
+      - name: Seed and verify production
         run: |
-          node --input-type=module <<'NODE' > /tmp/status.txt
+          set -o pipefail
+          node --input-type=module <<'NODE' 2>&1 | tee /tmp/final-verification.txt
           const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
           const token = process.env.COOLIFY_API_TOKEN
           const app = process.env.PARADIGM_APP_UUID
-          async function get(path) {
-            const r = await fetch(`${base}/api/v1${path}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30000) })
+          const site = 'https://paradigmjp.com'
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+          async function coolify(path) {
+            const r = await fetch(`${base}/api/v1${path}`, {
+              headers: { Authorization: `Bearer ${token}` },
+              signal: AbortSignal.timeout(30_000),
+            })
             const t = await r.text()
-            if (!r.ok) return { error: `HTTP ${r.status}`, text: t.slice(0,200) }
-            try { return JSON.parse(t) } catch { return { text: t.slice(0,200) } }
+            if (!r.ok) throw new Error(`Coolify ${path} -> HTTP ${r.status}: ${t.slice(0, 300)}`)
+            return t ? JSON.parse(t) : null
           }
-          const deployments = await get(`/deployments/applications/${app}`)
-          const rows = Array.isArray(deployments) ? deployments : deployments?.data ?? []
-          console.log('Latest Coolify deployments:')
-          for (const d of rows.slice(0, 8)) console.log(`- ${d.deployment_uuid || d.uuid || 'unknown'} | ${d.status || 'unknown'} | ${d.created_at || ''}`)
-          for (const path of ['/api/ready','/en']) {
-            try {
-              const r = await fetch(`https://paradigmjp.com${path}?observer=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(30000) })
-              const text = await r.text()
-              console.log(`${path}: HTTP ${r.status}; countryPartner=${text.includes('Your Japan Country Partner')}; oldHero=${text.includes('Launch in Japan without hiring a local team')}`)
-            } catch (e) {
-              console.log(`${path}: ${e instanceof Error ? e.message : String(e)}`)
+
+          function normalizeEnvRows(rows) {
+            const map = new Map()
+            for (const row of [...rows].sort((a, b) => Number(Boolean(a?.is_preview)) - Number(Boolean(b?.is_preview)))) {
+              if (!row?.key) continue
+              const raw = typeof row.real_value === 'string' && row.real_value.length > 0 ? row.real_value : row.value
+              if (raw === undefined || raw === null) continue
+              map.set(row.key, String(raw).trim().replace(/^['"]|['"]$/g, ''))
             }
+            return Object.fromEntries(map)
           }
+
+          const envRows = await coolify(`/applications/${app}/envs`)
+          const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
+          const adminSecret = env.ADMIN_SCRIPT_SECRET
+          const healthSecret = env.TRIGGER_WEBHOOK_SECRET
+          if (!adminSecret || adminSecret.length < 16) throw new Error('ADMIN_SCRIPT_SECRET unavailable')
+          if (!healthSecret) throw new Error('TRIGGER_WEBHOOK_SECRET unavailable')
+
+          let seedOk = false
+          for (let attempt = 1; attempt <= 8; attempt += 1) {
+            const r = await fetch(`${site}/api/admin/seed-all-content`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+              body: JSON.stringify({ confirm: true, scope: 'homepage' }),
+              signal: AbortSignal.timeout(180_000),
+            })
+            const t = await r.text()
+            console.log(`homepage seed ${attempt}/8: HTTP ${r.status}`)
+            if (r.ok) { seedOk = true; break }
+            if (![502, 503, 504].includes(r.status)) throw new Error(`Homepage seed failed: HTTP ${r.status} ${t.slice(0, 500)}`)
+            await sleep(10_000)
+          }
+          if (!seedOk) throw new Error('Homepage seed never reached HTTP success')
+
+          const expected = [
+            'Your Japan Country Partner',
+            'Japan Market Setup',
+            'Apply for a Japan Partnership — $13K',
+            'Limited founding-partner capacity',
+          ]
+          const page = await fetch(`${site}/en?final_verify=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache' },
+            signal: AbortSignal.timeout(30_000),
+          })
+          const html = await page.text()
+          const missing = expected.filter((text) => !html.includes(text))
+          console.log(`/en: HTTP ${page.status}`)
+          for (const text of expected) console.log(`${html.includes(text) ? 'PASS' : 'FAIL'}: ${text}`)
+          if (!page.ok || missing.length) throw new Error(`Country Partner fingerprint missing: ${missing.join(' | ')}`)
+          if (html.includes('Launch in Japan without hiring a local team')) throw new Error('Retired hero is still exposed')
+
+          const ready = await fetch(`${site}/api/ready?final_verify=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache' },
+            signal: AbortSignal.timeout(30_000),
+          })
+          console.log(`/api/ready: HTTP ${ready.status}`)
+          if (!ready.ok) throw new Error(`/api/ready returned HTTP ${ready.status}`)
+
+          const health = await fetch(`${site}/api/sales/health?final_verify=${Date.now()}`, {
+            headers: { 'x-webhook-secret': healthSecret, 'Cache-Control': 'no-cache' },
+            signal: AbortSignal.timeout(30_000),
+          })
+          const healthText = await health.text()
+          let healthJson = null
+          try { healthJson = healthText ? JSON.parse(healthText) : null } catch {}
+          console.log(`/api/sales/health: HTTP ${health.status}; ok=${healthJson?.ok === true}; status=${healthJson?.status || 'unknown'}`)
+          if (!health.ok || healthJson?.ok !== true) throw new Error(`Sales health failed: HTTP ${health.status} ${healthText.slice(0, 1000)}`)
+          console.log('FINAL VERIFICATION PASSED')
           NODE
-          BODY="$(cat /tmp/status.txt)"
-          printf -v COMMENT 'Observer run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$BODY"
+          BODY="$(cat /tmp/final-verification.txt)"
+          printf -v COMMENT 'Final verification run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$BODY"
           gh issue comment 568 --repo "$GITHUB_REPOSITORY" --body "$COMMENT"
