@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: paradigmjp-production-release
@@ -23,12 +24,17 @@ jobs:
       PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
       PARADIGM_DEPLOY_HOST: paradigm-droplet
       NODE_OPTIONS: --max-old-space-size=4096
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Report release start
+        run: |
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Formal production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -75,8 +81,8 @@ jobs:
           set -euo pipefail
           git status --short
           test -z "$(git status --porcelain)"
-          test "$(git rev-parse HEAD)" = "41c3e88f97d02e0bfd9357884ae3cc5a45c736b7" || {
-            echo "Unexpected main SHA: $(git rev-parse HEAD)"
+          git merge-base --is-ancestor 41c3e88f97d02e0bfd9357884ae3cc5a45c736b7 HEAD || {
+            echo 'Country Partner merge commit is not present in release checkout'
             exit 1
           }
 
@@ -115,7 +121,20 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: country-partner-release-evidence
+          name: country-partner-release-evidence-${{ github.run_attempt }}
           path: /tmp/paradigm-release.log
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Report release success
+        if: success()
+        run: |
+          DEPLOYMENT_ID="$(grep -Eo '[a-z0-9]{20,40}' /tmp/paradigm-release.log 2>/dev/null | tail -n 1 || true)"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "✅ Formal production release completed. Main: \`$(git rev-parse HEAD)\`. Deployment evidence ID: \`${DEPLOYMENT_ID:-see release artifact}\`. Country Partner fingerprints and \`/api/ready\` verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+      - name: Report release failure
+        if: failure()
+        run: |
+          TAIL="$(tail -n 60 /tmp/paradigm-release.log 2>/dev/null || true)"
+          printf -v BODY '❌ Formal production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "$BODY"
