@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process"
 const COOLIFY_URL = (process.env.COOLIFY_API_URL || "https://coolify.paradigmjp.com").replace(/\/+$/, "")
 const TOKEN = process.env.COOLIFY_API_TOKEN
 const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
-const FALLBACK_HOST = "178.105.138.55"
+const SERVER = { name: "paradigm-prod-01", ip: "178.105.138.55", user: "root", port: 22 }
 
 if (!TOKEN) throw new Error("COOLIFY_API_TOKEN is missing")
 
@@ -35,41 +35,9 @@ function run(command, args, options = {}) {
   })
 }
 
-async function resolveServer() {
-  const rows = arrayData(await api("/servers"))
-  if (rows.length === 0) throw new Error("Coolify returned no servers")
-  const details = []
-  for (const row of rows) {
-    if (!row?.uuid) continue
-    try {
-      details.push(await api(`/servers/${encodeURIComponent(row.uuid)}`))
-    } catch {
-      details.push(row)
-    }
-  }
-  const server = details.find((item) =>
-    item?.ip === FALLBACK_HOST || /paradigm-prod|paradigm.*production|paradigm-droplet|paradigm-hetzner/i.test(String(item?.name || "")),
-  )
-  if (!server) {
-    console.log(`Available servers: ${details.map((item) => item?.name || item?.uuid || "unknown").join(", ")}`)
-    throw new Error("Paradigm production server not found")
-  }
-  const result = {
-    uuid: server.uuid,
-    name: server.name || "paradigm-production",
-    ip: server.ip || FALLBACK_HOST,
-    user: server.user || "root",
-    port: Number(server.port || 22),
-    privateKeyUuid: server.private_key_uuid || server.privateKeyUuid || null,
-  }
-  console.log(`Production server resolved: ${result.name}; configured-key=${Boolean(result.privateKeyUuid)}`)
-  return result
-}
-
-async function materializeKeys(server) {
+async function materializeKeys() {
   const rows = arrayData(await api("/security/keys"))
   if (rows.length === 0) throw new Error("Coolify returned no SSH keys")
-  rows.sort((a, b) => Number(b?.uuid === server.privateKeyUuid) - Number(a?.uuid === server.privateKeyUuid))
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "paradigm-coolify-keys-"))
   const candidates = []
   for (const row of rows) {
@@ -90,25 +58,23 @@ async function materializeKeys(server) {
     }
     const file = path.join(directory, `key-${String(candidates.length).padStart(2, "0")}`)
     fs.writeFileSync(file, `${key}\n`, { mode: 0o600 })
-    candidates.push({ file, name: detail.name || row.name || row.uuid, uuid: row.uuid })
+    candidates.push({ file, name: detail.name || row.name || row.uuid })
   }
-  if (candidates.length === 0) {
-    throw new Error("No readable Coolify SSH key returned; token needs read:sensitive permission")
-  }
-  console.log(`Readable SSH key candidates: ${candidates.length}`)
+  if (candidates.length === 0) throw new Error("No readable Coolify SSH key returned; token needs read:sensitive permission")
+  console.log(`Known production host: ${SERVER.name}; readable SSH candidates=${candidates.length}`)
   return { directory, candidates }
 }
 
-function selectWorkingKey(server, candidates) {
+function selectWorkingKey(candidates) {
   for (const candidate of candidates) {
     const result = run("ssh", [
       "-i", candidate.file,
-      "-p", String(server.port),
+      "-p", String(SERVER.port),
       "-o", "IdentitiesOnly=yes",
       "-o", "StrictHostKeyChecking=no",
       "-o", "UserKnownHostsFile=/dev/null",
       "-o", "ConnectTimeout=15",
-      `${server.user}@${server.ip}`,
+      `${SERVER.user}@${SERVER.ip}`,
       "printf production-ssh-ok",
     ], { timeout: 20_000 })
     if (result.status === 0 && result.stdout.includes("production-ssh-ok")) {
@@ -119,7 +85,7 @@ function selectWorkingKey(server, candidates) {
   throw new Error("None of the Coolify-registered SSH keys authenticated to production")
 }
 
-function repairRoute(server, key) {
+function repairRoute(key) {
   const remoteScript = String.raw`set -euo pipefail
 app_uuid='${APP_UUID}'
 route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
@@ -130,11 +96,7 @@ new_ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Ne
 test -n "$new_ip" || { echo 'Live application coolify-network IP missing'; exit 1; }
 docker exec "$container" sh -lc 'wget -qO- http://127.0.0.1:3000/api/ready >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/ready >/dev/null'
 python3 - "$route_file" "$new_ip" <<'PY'
-import os
-import re
-import stat
-import sys
-import tempfile
+import os, re, stat, sys, tempfile
 from pathlib import Path
 route = Path(sys.argv[1])
 new_ip = sys.argv[2]
@@ -143,13 +105,13 @@ marker = text.find('paradigmhp-svc:')
 if marker < 0:
     raise SystemExit('paradigmhp-svc marker not found')
 prefix, tail = text[:marker], text[marker:]
-pattern = re.compile(r'(?m)^(\s*-\s*url:\s*)https?://[^\s]+:3000\s*$')
-match = pattern.search(tail)
+match = re.search(r'(?m)^(\s*-\s*url:\s*)https?://[^\s]+:3000\s*$', tail)
 if not match:
     raise SystemExit('paradigmhp-svc upstream not found')
 updated = prefix + tail[:match.start()] + f"{match.group(1)}http://{new_ip}:3000" + tail[match.end():]
 if updated == text:
-    raise SystemExit('Traefik route update produced no change')
+    print('Traefik upstream already current')
+    raise SystemExit(0)
 st = route.stat()
 fd, temporary = tempfile.mkstemp(prefix=f'.{route.name}.', dir=route.parent)
 try:
@@ -173,12 +135,12 @@ echo 'Host route repair complete'`
 
   const result = run("ssh", [
     "-i", key.file,
-    "-p", String(server.port),
+    "-p", String(SERVER.port),
     "-o", "IdentitiesOnly=yes",
     "-o", "StrictHostKeyChecking=no",
     "-o", "UserKnownHostsFile=/dev/null",
     "-o", "ConnectTimeout=20",
-    `${server.user}@${server.ip}`,
+    `${SERVER.user}@${SERVER.ip}`,
     "bash -s",
   ], { input: remoteScript, timeout: 120_000 })
   if (result.stdout) console.log(result.stdout.trim())
@@ -219,11 +181,10 @@ async function verifyPublicRoutes() {
   }
 }
 
-const server = await resolveServer()
-const { directory, candidates } = await materializeKeys(server)
+const { directory, candidates } = await materializeKeys()
 try {
-  const key = selectWorkingKey(server, candidates)
-  repairRoute(server, key)
+  const key = selectWorkingKey(candidates)
+  repairRoute(key)
   await verifyPublicRoutes()
   console.log("PRODUCTION TRAEFIK REPAIR PASSED")
 } finally {
