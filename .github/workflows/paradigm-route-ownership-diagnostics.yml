@@ -1,0 +1,119 @@
+name: Diagnose Paradigm Route Ownership
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/paradigm-route-ownership-diagnostics.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Inspect domain owners and proxy labels
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
+          const token = process.env.COOLIFY_API_TOKEN
+          const targetUuid = process.env.PARADIGM_APP_UUID
+          const targetDomain = 'paradigmjp.com'
+
+          async function api(pathname) {
+            const response = await fetch(`${base}/api/v1${pathname}`, {
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+              signal: AbortSignal.timeout(30_000),
+            })
+            const text = await response.text()
+            let data = null
+            try { data = text ? JSON.parse(text) : null } catch {}
+            return { ok: response.ok, status: response.status, text, data }
+          }
+
+          const [applicationsResult, serversResult] = await Promise.all([
+            api('/applications'),
+            api('/servers'),
+          ])
+          const applications = Array.isArray(applicationsResult.data) ? applicationsResult.data : []
+          const servers = Array.isArray(serversResult.data) ? serversResult.data : []
+
+          const domainApps = applications.filter((app) => {
+            const domains = `${app.fqdn || ''},${app.domains || ''}`.toLowerCase()
+            const labels = String(app.custom_labels || '').toLowerCase()
+            return domains.includes(targetDomain) || labels.includes(targetDomain) || app.uuid === targetUuid
+          }).map((app) => {
+            const relevantLabels = String(app.custom_labels || '')
+              .split(/\r?\n|,/)
+              .map((line) => line.trim())
+              .filter((line) => /traefik|caddy|paradigmjp\.com|loadbalancer|server\.port/i.test(line))
+              .slice(0, 80)
+            return {
+              uuid: app.uuid,
+              name: app.name,
+              status: app.status,
+              fqdn: app.fqdn,
+              domains: app.domains,
+              git_repository: app.git_repository,
+              git_branch: app.git_branch,
+              git_commit_sha: app.git_commit_sha,
+              destination_id: app.destination_id,
+              source_id: app.source_id,
+              ports_exposes: app.ports_exposes,
+              redirect: app.redirect,
+              force_domain_override: app.force_domain_override,
+              relevant_labels: relevantLabels,
+            }
+          })
+
+          const serverSummary = servers.map((server) => ({
+            uuid: server.uuid,
+            name: server.name,
+            ip: server.ip,
+            proxy_type: server.proxy_type,
+            is_reachable: server.settings?.is_reachable,
+            is_usable: server.settings?.is_usable,
+            is_cloudflare_tunnel: server.settings?.is_cloudflare_tunnel,
+            destination_ids: server.destinations?.map?.((d) => d.id || d.uuid) || [],
+          }))
+
+          const output = { applications_api_status: applicationsResult.status, domain_apps: domainApps, servers_api_status: serversResult.status, servers: serverSummary }
+          fs.writeFileSync('/tmp/paradigm-route-ownership.json', JSON.stringify(output, null, 2))
+
+          const lines = [
+            `Applications API: HTTP ${applicationsResult.status}`,
+            `Matching applications: ${domainApps.length}`,
+            ...domainApps.flatMap((app, index) => [
+              `\n[${index + 1}] ${app.name || '(unnamed)'} — ${app.uuid}`,
+              `status=${app.status}; fqdn=${app.fqdn || '(none)'}; domains=${app.domains || '(none)'}`,
+              `commit=${app.git_commit_sha || '(none)'}; destination=${app.destination_id || '(none)'}; port=${app.ports_exposes || '(none)'}`,
+              `labels:\n${app.relevant_labels.length ? app.relevant_labels.join('\n') : '(no relevant proxy labels returned)'}`,
+            ]),
+            `\nServers API: HTTP ${serversResult.status}`,
+            ...serverSummary.map((server) => `${server.name || '(unnamed)'} — ${server.uuid}; ip=${server.ip}; proxy=${server.proxy_type}; reachable=${server.is_reachable}; usable=${server.is_usable}; cloudflare_tunnel=${server.is_cloudflare_tunnel}`),
+          ]
+          fs.writeFileSync('/tmp/paradigm-route-ownership.md', `${lines.join('\n')}\n`)
+          NODE
+
+      - name: Post route ownership diagnostic
+        run: |
+          BODY="$(cat /tmp/paradigm-route-ownership.md)"
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "🧭 **Domain route ownership diagnostic**\n\n\`\`\`text\n${BODY}\n\`\`\`"
+
+      - name: Upload route ownership diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paradigm-route-ownership
+          path: /tmp/paradigm-route-ownership.json
+          if-no-files-found: warn
+          retention-days: 7
