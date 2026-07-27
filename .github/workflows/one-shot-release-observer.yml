@@ -1,4 +1,4 @@
-name: One-shot Country Partner Final Verification
+name: One-shot Country Partner Release Cleanup
 
 on:
   push:
@@ -7,109 +7,50 @@ on:
       - .github/workflows/one-shot-release-observer.yml
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
-  verify:
+  cleanup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     env:
-      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-      COOLIFY_API_URL: https://coolify.paradigmjp.com
-      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-      - name: Seed and verify production
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Record production proof and remove temporary runners
         run: |
-          set -o pipefail
-          node --input-type=module <<'NODE' 2>&1 | tee /tmp/final-verification.txt
-          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
-          const token = process.env.COOLIFY_API_TOKEN
-          const app = process.env.PARADIGM_APP_UUID
-          const site = 'https://paradigmjp.com'
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python <<'PY'
+          from pathlib import Path
+          task = Path('Task.md')
+          current = task.read_text(encoding='utf-8')
+          marker = '## CURRENT STATUS - 2026-07-28 Japan Country Partner本番反映完了'
+          if marker not in current:
+              proof = '''## CURRENT STATUS - 2026-07-28 Japan Country Partner本番反映完了
 
-          async function coolify(path) {
-            const r = await fetch(`${base}/api/v1${path}`, {
-              headers: { Authorization: `Bearer ${token}` },
-              signal: AbortSignal.timeout(30_000),
-            })
-            const t = await r.text()
-            if (!r.ok) throw new Error(`Coolify ${path} -> HTTP ${r.status}: ${t.slice(0, 300)}`)
-            return t ? JSON.parse(t) : null
-          }
+- PR **#565** を `main` へ統合し、英語サイトの主軸を **Your Japan Country Partner**、初期有料契約を **Japan Market Setup**、主CTAを **Apply for a Japan Partnership — $13K**、公開キャパシティ表記を **Limited founding-partner capacity** へ変更した。セットアップ費 **$13,000**、14営業日納品保証、選定パートナー向け6か月運用条件は維持し、未定義の売上20%は公開していない。
+- 関連Vitest **34件**、TypeScript、production build、Quality Guard **0 errors / 84 existing warnings**を通過。Coolify deployment **bm4w5btityiz1814a8bh8xf7** は `finished`。固定Traefikルートが旧Docker IPを向いたため一時502になったが、旧IP解放後の制御された再デプロイサイクルで公開ルートを復旧した。
+- 最終検証 **GitHub Actions run 30311462742** でホームページCMS seed **HTTP 200**、`/en` **HTTP 200**、新4文言すべてPASS、旧heroなし、`/api/ready` **HTTP 200**、認証済み`/api/sales/health` **HTTP 200 / ok:true / status:degraded**をread-backした。`degraded`はerrorではなく、任意サービスの未設定を含む状態。
+- 緊急復旧専用のone-shot GitHub Actions 2本は証跡記録後に削除し、通常のデプロイ入口へ残していない。Issue **#566 / #568** を完了として閉じた。
 
-          function normalizeEnvRows(rows) {
-            const map = new Map()
-            for (const row of [...rows].sort((a, b) => Number(Boolean(a?.is_preview)) - Number(Boolean(b?.is_preview)))) {
-              if (!row?.key) continue
-              const raw = typeof row.real_value === 'string' && row.real_value.length > 0 ? row.real_value : row.value
-              if (raw === undefined || raw === null) continue
-              map.set(row.key, String(raw).trim().replace(/^['"]|['"]$/g, ''))
-            }
-            return Object.fromEntries(map)
-          }
+'''
+              task.write_text(proof + current, encoding='utf-8')
+          PY
+          rm -f .github/workflows/one-shot-country-partner-release.yml
+          rm -f .github/workflows/one-shot-release-observer.yml
+          git add Task.md .github/workflows/one-shot-country-partner-release.yml .github/workflows/one-shot-release-observer.yml
+          git commit -m 'docs: record Country Partner production release'
+          git push origin HEAD:main
 
-          const envRows = await coolify(`/applications/${app}/envs`)
-          const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
-          const adminSecret = env.ADMIN_SCRIPT_SECRET
-          const healthSecret = env.TRIGGER_WEBHOOK_SECRET
-          if (!adminSecret || adminSecret.length < 16) throw new Error('ADMIN_SCRIPT_SECRET unavailable')
-          if (!healthSecret) throw new Error('TRIGGER_WEBHOOK_SECRET unavailable')
-
-          let seedOk = false
-          for (let attempt = 1; attempt <= 8; attempt += 1) {
-            const r = await fetch(`${site}/api/admin/seed-all-content`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-              body: JSON.stringify({ confirm: true, scope: 'homepage' }),
-              signal: AbortSignal.timeout(180_000),
-            })
-            const t = await r.text()
-            console.log(`homepage seed ${attempt}/8: HTTP ${r.status}`)
-            if (r.ok) { seedOk = true; break }
-            if (![502, 503, 504].includes(r.status)) throw new Error(`Homepage seed failed: HTTP ${r.status} ${t.slice(0, 500)}`)
-            await sleep(10_000)
-          }
-          if (!seedOk) throw new Error('Homepage seed never reached HTTP success')
-
-          const expected = [
-            'Your Japan Country Partner',
-            'Japan Market Setup',
-            'Apply for a Japan Partnership — $13K',
-            'Limited founding-partner capacity',
-          ]
-          const page = await fetch(`${site}/en?final_verify=${Date.now()}`, {
-            headers: { 'Cache-Control': 'no-cache' },
-            signal: AbortSignal.timeout(30_000),
-          })
-          const html = await page.text()
-          const missing = expected.filter((text) => !html.includes(text))
-          console.log(`/en: HTTP ${page.status}`)
-          for (const text of expected) console.log(`${html.includes(text) ? 'PASS' : 'FAIL'}: ${text}`)
-          if (!page.ok || missing.length) throw new Error(`Country Partner fingerprint missing: ${missing.join(' | ')}`)
-          if (html.includes('Launch in Japan without hiring a local team')) throw new Error('Retired hero is still exposed')
-
-          const ready = await fetch(`${site}/api/ready?final_verify=${Date.now()}`, {
-            headers: { 'Cache-Control': 'no-cache' },
-            signal: AbortSignal.timeout(30_000),
-          })
-          console.log(`/api/ready: HTTP ${ready.status}`)
-          if (!ready.ok) throw new Error(`/api/ready returned HTTP ${ready.status}`)
-
-          const health = await fetch(`${site}/api/sales/health?final_verify=${Date.now()}`, {
-            headers: { 'x-webhook-secret': healthSecret, 'Cache-Control': 'no-cache' },
-            signal: AbortSignal.timeout(30_000),
-          })
-          const healthText = await health.text()
-          let healthJson = null
-          try { healthJson = healthText ? JSON.parse(healthText) : null } catch {}
-          console.log(`/api/sales/health: HTTP ${health.status}; ok=${healthJson?.ok === true}; status=${healthJson?.status || 'unknown'}`)
-          if (!health.ok || healthJson?.ok !== true) throw new Error(`Sales health failed: HTTP ${health.status} ${healthText.slice(0, 1000)}`)
-          console.log('FINAL VERIFICATION PASSED')
-          NODE
-          BODY="$(cat /tmp/final-verification.txt)"
-          printf -v COMMENT 'Final verification run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$BODY"
-          gh issue comment 568 --repo "$GITHUB_REPOSITORY" --body "$COMMENT"
+      - name: Close completed release issues
+        run: |
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body '✅ Production release, public verification, Task.md evidence, and temporary-runner cleanup are complete.'
+          gh issue close 566 --repo "$GITHUB_REPOSITORY" --reason completed
+          gh issue comment 568 --repo "$GITHUB_REPOSITORY" --body '✅ Final verification passed and temporary observer/release workflows were removed from main.'
+          gh issue close 568 --repo "$GITHUB_REPOSITORY" --reason completed
