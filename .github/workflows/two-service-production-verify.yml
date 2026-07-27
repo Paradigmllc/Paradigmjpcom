@@ -1,0 +1,65 @@
+name: Verify Two-Service Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/two-service-production-verify.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Report verification start
+        run: |
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "Final production content verification started. The live route is already HTTP 200; this checks page titles and service content without rebuilding. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+      - name: Verify live pages
+        run: |
+          node --input-type=module <<'NODE'
+          const site = 'https://paradigmjp.com'
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+          const pages = [
+            ['/en', ['Japan Market Partner &amp; Video as a Service', 'Japan Market Partner', 'Video as a Service']],
+            ['/ja', ['動画・Web・AI制作支援', 'Video as a Service', 'Web制作', 'AI制作・導入支援']],
+            ['/en/japan-market-partner', ['Japan Market Partner', 'Japan Market Setup', '$13,000']],
+            ['/en/video-as-a-service', ['Video as a Service', 'One active request']],
+            ['/ja/video-as-a-service', ['Video as a Service', '一件ずつ制作']],
+          ]
+
+          for (const [path, expected] of pages) {
+            let passed = false
+            for (let attempt = 1; attempt <= 12; attempt += 1) {
+              const response = await fetch(`${site}${path}?verify=${Date.now()}`, {
+                headers: { 'Cache-Control': 'no-cache' },
+                signal: AbortSignal.timeout(20_000),
+              })
+              const html = await response.text()
+              const missing = expected.filter((value) => !html.includes(value))
+              console.log(`${path}: HTTP ${response.status}; missing=${JSON.stringify(missing)}`)
+              if (response.ok && missing.length === 0) {
+                passed = true
+                break
+              }
+              await sleep(5_000)
+            }
+            if (!passed) throw new Error(`${path} production verification failed`)
+          }
+          NODE
+
+      - name: Report verification success
+        if: success()
+        run: |
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Production content verification passed. The refreshed \`/en\`, \`/ja\`, Japan Market Partner, and both Video as a Service pages are live. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+      - name: Report verification failure
+        if: failure()
+        run: |
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "❌ Final production content verification failed. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
