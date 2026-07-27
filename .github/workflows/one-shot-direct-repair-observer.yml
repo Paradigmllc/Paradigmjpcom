@@ -1,0 +1,80 @@
+name: Observe Direct Production Route Repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/one-shot-direct-repair-observer.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Report observer start
+        run: |
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "Production observer started. It will poll the live routes while the direct Traefik repair runs. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+      - name: Poll live production
+        run: |
+          set -o pipefail
+          node --input-type=module <<'NODE' 2>&1 | tee /tmp/observer.log
+          const site = 'https://paradigmjp.com'
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+          const pages = [
+            ['/en', ['Japan Market Partner', 'Video as a Service']],
+            ['/ja', ['Video as a Service', 'Web制作', 'AI制作・導入支援']],
+            ['/en/japan-market-partner', ['Japan Market Partner', 'Japan Market Setup', '$13,000']],
+            ['/en/video-as-a-service', ['Video as a Service', 'One active request']],
+            ['/ja/video-as-a-service', ['Video as a Service', '一件ずつ制作']],
+            ['/api/ready', []],
+          ]
+
+          for (let cycle = 1; cycle <= 60; cycle += 1) {
+            let all = true
+            const summary = []
+            for (const [path, markers] of pages) {
+              try {
+                const response = await fetch(`${site}${path}?observer=${Date.now()}`, {
+                  headers: { 'Cache-Control': 'no-cache' },
+                  signal: AbortSignal.timeout(20_000),
+                })
+                const text = await response.text()
+                const missing = markers.filter((marker) => !text.includes(marker))
+                const ok = response.ok && missing.length === 0
+                all &&= ok
+                summary.push(`${path}=HTTP${response.status}/missing${missing.length}`)
+              } catch (error) {
+                all = false
+                summary.push(`${path}=error`)
+              }
+            }
+            console.log(`[${cycle}/60] ${summary.join(' ')}`)
+            if (all) {
+              console.log('PUBLIC ROUTES VERIFIED')
+              process.exit(0)
+            }
+            await sleep(10_000)
+          }
+          throw new Error('Public routes did not recover within observer window')
+          NODE
+
+      - name: Report observer success
+        if: success()
+        run: |
+          TAIL="$(tail -n 20 /tmp/observer.log)"
+          printf -v BODY '✅ Public production routes are live with the two-service content.\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$BODY"
+
+      - name: Report observer failure
+        if: failure()
+        run: |
+          TAIL="$(tail -n 30 /tmp/observer.log 2>/dev/null || true)"
+          printf -v BODY '❌ Public routes are still not fully recovered.\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$BODY"

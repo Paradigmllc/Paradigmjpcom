@@ -1,0 +1,161 @@
+name: Repair Paradigm Proxy Routing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/repair-paradigm-proxy-routing.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Rebuild proxy configuration and verify
+        run: |
+          set -o pipefail
+          node --input-type=module <<'NODE' 2>&1 | tee /tmp/paradigm-proxy-repair.log
+          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
+          const token = process.env.COOLIFY_API_TOKEN
+          const appUuid = process.env.PARADIGM_APP_UUID
+          const site = 'https://paradigmjp.com'
+          const domains = 'https://paradigmjp.com,https://www.paradigmjp.com,https://keystatic.paradigmjp.com,https://status.paradigmjp.com'
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+          async function api(pathname, options = {}) {
+            const response = await fetch(`${base}/api/v1${pathname}`, {
+              ...options,
+              signal: options.signal ?? AbortSignal.timeout(30_000),
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+              },
+            })
+            const text = await response.text()
+            let data = null
+            try { data = text ? JSON.parse(text) : null } catch {}
+            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 1000)}`)
+            return data
+          }
+
+          console.log('Saving application domains, proxy network, port, and health configuration')
+          const updated = await api(`/applications/${appUuid}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              domains,
+              ports_exposes: '3000',
+              connect_to_docker_network: true,
+              force_domain_override: true,
+              is_force_https_enabled: true,
+              redirect: 'www',
+              health_check_enabled: true,
+              health_check_path: '/api/ready',
+              health_check_port: '3000',
+              health_check_host: 'localhost',
+              health_check_method: 'GET',
+              health_check_return_code: 200,
+              health_check_scheme: 'http',
+              health_check_interval: 10,
+              health_check_timeout: 5,
+              health_check_retries: 6,
+              health_check_start_period: 20,
+            }),
+          })
+          console.log(`Application update response: ${JSON.stringify(updated)}`)
+
+          const restart = await api(`/applications/${appUuid}/restart`, { method: 'POST' })
+          const deploymentUuid = restart?.deployment_uuid
+          console.log(`Restart queued: ${JSON.stringify(restart)}`)
+
+          if (deploymentUuid) {
+            for (let attempt = 1; attempt <= 60; attempt += 1) {
+              await sleep(5_000)
+              const deployment = await api(`/deployments/${deploymentUuid}`)
+              const status = deployment?.status || 'unknown'
+              console.log(`restart ${attempt}/60 -> ${status}`)
+              if (['finished', 'running:healthy', 'success', 'succeeded'].includes(status)) break
+              if (['failed', 'error', 'cancelled', 'canceled'].includes(status)) {
+                throw new Error(`Restart deployment failed: ${status}\n${String(deployment?.logs || '').slice(-6000)}`)
+              }
+              if (attempt === 60) throw new Error('Restart deployment did not reach a terminal state')
+            }
+          } else {
+            await sleep(30_000)
+          }
+
+          async function getPage(pathname) {
+            const separator = pathname.includes('?') ? '&' : '?'
+            const response = await fetch(`${site}${pathname}${separator}proxy_repair=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              signal: AbortSignal.timeout(20_000),
+            })
+            const html = await response.text()
+            return { response, html }
+          }
+
+          const specs = [
+            ['/en', ['Japan Market Partner', 'Video as a Service']],
+            ['/ja', ['Video as a Service', 'Web制作', 'AI制作・導入支援']],
+            ['/en/japan-market-partner', ['Japan Market Partner', 'Japan Market Setup', '$13,000']],
+            ['/en/video-as-a-service', ['Video as a Service', 'One active request']],
+            ['/ja/video-as-a-service', ['Video as a Service', '一件ずつ制作']],
+          ]
+
+          let routeHealthy = false
+          for (let routeAttempt = 1; routeAttempt <= 60; routeAttempt += 1) {
+            const probe = await getPage('/api/ready').catch((error) => ({ response: { ok: false, status: 0 }, html: String(error) }))
+            console.log(`route ${routeAttempt}/60 -> HTTP ${probe.response.status}`)
+            if (probe.response.ok) {
+              routeHealthy = true
+              break
+            }
+            await sleep(5_000)
+          }
+          if (!routeHealthy) throw new Error('Public route remained unavailable after proxy configuration repair')
+
+          for (const [pathname, expected] of specs) {
+            const { response, html } = await getPage(pathname)
+            const missing = expected.filter((value) => !html.includes(value))
+            console.log(`${pathname} -> HTTP ${response.status}; missing=${missing.join(' | ') || 'none'}`)
+            if (!response.ok || missing.length > 0) {
+              throw new Error(`${pathname} verification failed: HTTP ${response.status}; missing=${missing.join(' | ')}`)
+            }
+          }
+
+          const app = await api(`/applications/${appUuid}`)
+          console.log(`Final application status: ${app.status}; fqdn=${app.fqdn}; connect_to_docker_network=${app.connect_to_docker_network}; labels_present=${Boolean(app.custom_labels)}`)
+          NODE
+
+      - name: Report repair success
+        if: success()
+        run: |
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "✅ **Proxy routing repaired and production verified.** Application domains, shared Docker network connectivity, port 3000, and health checks were saved; all five public pages passed."
+          gh issue close 572 --repo "$GITHUB_REPOSITORY" --reason completed
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Production deployment completed after proxy-route repair. All five refreshed pages are live."
+          gh issue close 569 --repo "$GITHUB_REPOSITORY" --reason completed
+
+      - name: Report repair failure
+        if: failure()
+        run: |
+          TAIL="$(tail -n 220 /tmp/paradigm-proxy-repair.log 2>/dev/null || true)"
+          printf -v BODY '❌ **Proxy routing repair failed**\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "$BODY"
+
+      - name: Upload repair evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paradigm-proxy-repair
+          path: /tmp/paradigm-proxy-repair.log
+          if-no-files-found: warn
+          retention-days: 7

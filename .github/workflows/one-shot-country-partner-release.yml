@@ -1,10 +1,11 @@
-name: One-shot Two-Service Site Release
+name: One-shot Direct Production Traefik Repair
 
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/one-shot-country-partner-release.yml
+      - scripts/ops/repair-production-traefik.mjs
 
 permissions:
   contents: read
@@ -15,248 +16,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release:
+  repair:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 20
     env:
       COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
       COOLIFY_API_URL: https://coolify.paradigmjp.com
       PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
-      NODE_OPTIONS: --max-old-space-size=4096
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout latest main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Report release start
+      - name: Report repair start
         run: |
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "Two-service route-recovery release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "Direct host-route repair script started. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: npm
-
-      - name: Validate release input
-        run: |
-          set -euo pipefail
-          test -n "$COOLIFY_API_TOKEN" || { echo 'COOLIFY_TOKEN secret is missing'; exit 1; }
-          git merge-base --is-ancestor ded7db6d57953622fa6e8c89d2eca8f192108402 HEAD
-
-      - name: Install locked dependencies
-        run: npm ci
-
-      - name: Recheck application code
-        run: |
-          set -euo pipefail
-          npm exec -- tsc --noEmit --pretty false
-          npm exec -- eslint \
-            next.config.ts \
-            'src/app/[locale]/home-v2/page.tsx' \
-            'src/app/[locale]/japan-market-partner/page.tsx' \
-            'src/app/[locale]/video-as-a-service/page.tsx' \
-            src/components/aesop/SiteHeader.tsx \
-            src/components/aesop/SiteFooter.tsx \
-            --max-warnings=0
-          npm run build
-
-      - name: Deploy, recover route, and verify production
+      - name: Repair Traefik upstream and verify public routes
         run: |
           set -o pipefail
-          node --input-type=module <<'NODE' 2>&1 | tee /tmp/paradigm-release.log
-          import fs from 'node:fs'
+          node scripts/ops/repair-production-traefik.mjs 2>&1 | tee /tmp/direct-traefik-repair.log
 
-          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
-          const token = process.env.COOLIFY_API_TOKEN
-          const appUuid = process.env.PARADIGM_APP_UUID
-          const site = 'https://paradigmjp.com'
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-          async function coolify(pathname, options = {}) {
-            const response = await fetch(`${base}/api/v1${pathname}`, {
-              ...options,
-              signal: options.signal ?? AbortSignal.timeout(30_000),
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                ...(options.headers || {}),
-              },
-            })
-            const text = await response.text()
-            let data = null
-            try { data = text ? JSON.parse(text) : null } catch {}
-            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 500)}`)
-            return data
-          }
-
-          function normalizeEnvRows(rows) {
-            const map = new Map()
-            for (const row of [...rows].sort((a, b) => Number(Boolean(a?.is_preview)) - Number(Boolean(b?.is_preview)))) {
-              if (!row?.key) continue
-              const raw = typeof row.real_value === 'string' && row.real_value.length > 0 ? row.real_value : row.value
-              if (raw === undefined || raw === null) continue
-              map.set(row.key, String(raw).trim().replace(/^['"]|['"]$/g, ''))
-            }
-            return Object.fromEntries(map)
-          }
-
-          async function triggerAndWait(cycle) {
-            const queued = await coolify(`/deploy?uuid=${appUuid}&force=true`, { method: 'POST' })
-            const uuid = queued?.deployments?.[0]?.deployment_uuid || queued?.deployment_uuid
-            if (!uuid) throw new Error(`No deployment UUID returned by Coolify in cycle ${cycle}`)
-            fs.appendFileSync('/tmp/deployment-id', `${uuid}\n`)
-            console.log(`[cycle ${cycle}] Deployment queued: ${uuid}`)
-
-            for (let attempt = 1; attempt <= 120; attempt += 1) {
-              await sleep(15_000)
-              const status = await coolify(`/deployments/${uuid}`)
-              const state = status?.status || 'unknown'
-              console.log(`[cycle ${cycle} deploy ${attempt}/120] ${state}`)
-              if (['finished', 'running:healthy', 'success', 'succeeded'].includes(state)) {
-                console.log(`[cycle ${cycle}] Deployment finished: ${uuid}`)
-                return uuid
-              }
-              if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) {
-                const logs = typeof status?.logs === 'string' ? status.logs.slice(-8000) : ''
-                throw new Error(`Coolify deployment ${uuid} ${state}\n${logs}`)
-              }
-            }
-            throw new Error(`Deployment ${uuid} timed out`)
-          }
-
-          async function routeProbe() {
-            try {
-              const response = await fetch(`${site}/api/ready?route_recovery=${Date.now()}`, {
-                headers: { 'Cache-Control': 'no-cache' },
-                signal: AbortSignal.timeout(20_000),
-              })
-              console.log(`[route probe] HTTP ${response.status}`)
-              return response.ok
-            } catch (error) {
-              console.warn(`[route probe] ${error instanceof Error ? error.message : String(error)}`)
-              return false
-            }
-          }
-
-          async function fetchPage(pathname) {
-            const separator = pathname.includes('?') ? '&' : '?'
-            const response = await fetch(`${site}${pathname}${separator}release_check=${Date.now()}`, {
-              headers: { 'Cache-Control': 'no-cache' },
-              signal: AbortSignal.timeout(30_000),
-            })
-            return { response, html: await response.text() }
-          }
-
-          async function verifyPage(pathname, expected) {
-            for (let attempt = 1; attempt <= 30; attempt += 1) {
-              try {
-                const { response, html } = await fetchPage(pathname)
-                const missing = expected.filter((text) => !html.includes(text))
-                console.log(`[${pathname} ${attempt}/30] HTTP ${response.status}; missing=${missing.length}`)
-                if (response.ok && missing.length === 0) {
-                  for (const text of expected) console.log(`verified ${pathname}: ${text}`)
-                  return
-                }
-              } catch (error) {
-                console.warn(`[${pathname} ${attempt}/30] ${error instanceof Error ? error.message : String(error)}`)
-              }
-              await sleep(10_000)
-            }
-            throw new Error(`Production ${pathname} did not expose the expected two-service fingerprints`)
-          }
-
-          console.log('Reading production environment through Coolify API')
-          const envRows = await coolify(`/applications/${appUuid}/envs`)
-          const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
-
-          let routeHealthy = false
-          const deploymentIds = []
-          for (let cycle = 1; cycle <= 4 && !routeHealthy; cycle += 1) {
-            deploymentIds.push(await triggerAndWait(cycle))
-            for (let probe = 1; probe <= 18; probe += 1) {
-              await sleep(10_000)
-              routeHealthy = await routeProbe()
-              console.log(`[cycle ${cycle} route ${probe}/18] healthy=${routeHealthy}`)
-              if (routeHealthy) break
-            }
-            if (!routeHealthy) {
-              console.warn(`[cycle ${cycle}] public route still targets an unavailable container; triggering another deployment to rotate the fixed Docker route`)
-            }
-          }
-          if (!routeHealthy) throw new Error('Public route remained unavailable after four Coolify deployment cycles')
-          console.log(`Public route recovered; deployments=${deploymentIds.join(',')}`)
-
-          await verifyPage('/en', [
-            'Enter Japan. Scale video production.',
-            'Japan Market Partner',
-            'Video as a Service',
-          ])
-          await verifyPage('/ja', [
-            '動画・Web・AIを、必要なときに動かせる制作体制へ。',
-            'Video as a Service',
-            'Web制作',
-            'AI制作・導入支援',
-          ])
-          await verifyPage('/en/japan-market-partner', [
-            'Your outsourced Japan team, from setup to operation.',
-            'Japan Market Setup',
-            '$13,000',
-          ])
-          await verifyPage('/en/video-as-a-service', [
-            'Turn video production into a reliable recurring workflow.',
-            'One active request',
-          ])
-          await verifyPage('/ja/video-as-a-service', [
-            '動画制作を、単発発注から継続できる制作体制へ。',
-            '一件ずつ制作',
-          ])
-
-          const ready = await fetch(`${site}/api/ready?release_check=${Date.now()}`, {
-            headers: { 'Cache-Control': 'no-cache' },
-            signal: AbortSignal.timeout(30_000),
-          })
-          if (!ready.ok) throw new Error(`/api/ready returned HTTP ${ready.status}`)
-          console.log(`/api/ready -> HTTP ${ready.status}`)
-
-          const healthSecret = env.TRIGGER_WEBHOOK_SECRET
-          if (!healthSecret) throw new Error('TRIGGER_WEBHOOK_SECRET is unavailable from Coolify environment')
-          const health = await fetch(`${site}/api/sales/health?release_check=${Date.now()}`, {
-            headers: { 'x-webhook-secret': healthSecret, 'Cache-Control': 'no-cache' },
-            signal: AbortSignal.timeout(30_000),
-          })
-          const healthText = await health.text()
-          let healthJson = null
-          try { healthJson = healthText ? JSON.parse(healthText) : null } catch {}
-          if (!health.ok || healthJson?.ok !== true) {
-            throw new Error(`/api/sales/health failed: HTTP ${health.status} ${healthText.slice(0, 1000)}`)
-          }
-          console.log('/api/sales/health -> ok:true')
-          NODE
-
-      - name: Upload release evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: two-service-site-release-evidence-${{ github.run_attempt }}
-          path: |
-            /tmp/paradigm-release.log
-            /tmp/deployment-id
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Report release success
+      - name: Report repair success
         if: success()
         run: |
-          DEPLOYMENT_IDS="$(tr '\n' ',' < /tmp/deployment-id 2>/dev/null | sed 's/,$//' || true)"
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Two-service production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployments: \`${DEPLOYMENT_IDS:-unknown}\`. The public route was recovered and the new \`/ja\`, \`/en\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          TAIL="$(tail -n 30 /tmp/direct-traefik-repair.log)"
+          printf -v BODY '✅ Direct Traefik repair completed and all public two-service routes were verified.\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$BODY"
 
-      - name: Report release failure
+      - name: Report repair failure
         if: failure()
         run: |
-          TAIL="$(tail -n 220 /tmp/paradigm-release.log 2>/dev/null || true)"
-          printf -v BODY '❌ Two-service route-recovery release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          TAIL="$(tail -n 80 /tmp/direct-traefik-repair.log 2>/dev/null || true)"
+          printf -v BODY '❌ Direct Traefik repair failed.\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$BODY"
