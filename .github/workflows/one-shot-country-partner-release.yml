@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/one-shot-country-partner-release.yml
+      - scripts/ops/repair-production-traefik.mjs
 
 permissions:
   contents: read
