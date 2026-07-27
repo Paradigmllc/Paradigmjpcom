@@ -81,7 +81,7 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
     badge: "Revenue OS for Japan growth",
     h1: "Build a web presence that turns interest into qualified sales conversations.",
     lead: "Paradigm connects web, SEO/GEO, local search, and AI operations into one revenue system: audit, improve, route leads, and keep follow-up visible.",
-    primary: "Apply for Japan Entry — $13K",
+    primary: "Apply for a Japan Partnership — $13K",
     secondary: "View services",
     proof: ["Audit-to-action workflow", "Built for SMB and local-service growth", "Pipeline visibility through Revenue OS"],
     visualTitle: "Revenue OS",

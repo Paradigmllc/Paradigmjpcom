@@ -20,9 +20,9 @@ const altNamesOf = (locale: string) =>
   (LOCALE_ORG_ALTERNATE_NAMES as Record<string, string[]>)[locale] ??
   LOCALE_ORG_ALTERNATE_NAMES.en
 
-export const JAPAN_ENTRY_TITLE = "Japan Entry Package for Fast-Decision SMBs"
+export const JAPAN_ENTRY_TITLE = "Your Japan Country Partner | Paradigm"
 export const JAPAN_ENTRY_DESCRIPTION =
-  "$13,000 fixed Japan entry setup. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. Launch a market-ready Japanese revenue path with one accountable Tokyo-based team."
+  "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with the fixed $13,000 Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms."
 export const JAPAN_ENTRY_URL = "https://paradigmjp.com/en"
 export const JAPAN_ENTRY_CONTACT_CANONICAL_URL =
   "https://paradigmjp.com/en/contact"
@@ -78,7 +78,7 @@ function getJapanEntryServiceJsonLd() {
     "@id": `${JAPAN_ENTRY_URL}#japan-entry-service`,
     name: JAPAN_ENTRY_TITLE,
     description: JAPAN_ENTRY_DESCRIPTION,
-    serviceType: "Japan market entry implementation and managed operation",
+    serviceType: "Outsourced Japan team and market execution",
     url: JAPAN_ENTRY_URL,
     provider: {
       "@type": "Organization",
@@ -94,16 +94,17 @@ function getJapanEntryServiceJsonLd() {
     offers: {
       "@type": "Offer",
       "@id": `${JAPAN_ENTRY_URL}#fixed-offer`,
+      name: "Japan Market Setup",
       url: JAPAN_ENTRY_CONTACT_URL,
       price: "13000",
       priceCurrency: "USD",
       description:
-        "$13,000 one-time setup. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
+        "$13,000 Japan Market Setup as the initial paid engagement. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
       eligibleRegion: ["US", "CA", "GB", "EU", "AU", "NZ"],
       priceSpecification: [
         {
           "@type": "UnitPriceSpecification",
-          name: "Fixed setup",
+          name: "Japan Market Setup",
           price: "13000",
           priceCurrency: "USD",
         },
@@ -145,7 +146,7 @@ export function getJapanEntryApplicationJsonLd() {
     about: getJapanEntryServiceJsonLd(),
     potentialAction: {
       "@type": "CommunicateAction",
-      name: "Submit a Japan Entry application",
+      name: "Apply for a Japan Partnership",
       target: {
         "@type": "EntryPoint",
         urlTemplate: JAPAN_ENTRY_CONTACT_URL,
@@ -174,7 +175,7 @@ export function getOrganizationJsonLd(locale: string = "ja") {
     knowsAbout:
       variant === "ja"
         ? ["Web制作", "MEO", "SEO/GEO", "AI導入支援", "デジタルマーケティング", "運用改善"]
-        : ["Japan Market Entry", "Localization", "Revenue Operations", "Buyer Trust", "Bilingual Support"],
+        : ["Japan Country Partnership", "Localization", "Sales Channels", "Japanese Customer Support", "Local Operations", "Market Execution"],
   }
 }
 
@@ -195,7 +196,7 @@ export function getServicesJsonLd(locale: string = "ja") {
           desc: JAPAN_ENTRY_DESCRIPTION,
           url: `/${pageLocale}`,
           price: "13000",
-          priceDesc: "Fixed one-time setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included",
+          priceDesc: "Fixed Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included",
         },
       ]
   return {

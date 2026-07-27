@@ -34,6 +34,20 @@ describe("Japanese public content safety", () => {
   it("accepts only a single commercially aligned English Japan Entry offer", () => {
     const safeBlocks = [
       {
+        blockType: "hero",
+        title: "Your Japan Country Partner",
+        subtitle:
+          "The initial paid engagement is Japan Market Setup. Paradigm becomes your outsourced Japan team.",
+        primaryCta: {
+          label: "Apply for a Japan Partnership — $13K",
+          href: "/en/contact?intent=japan-entry",
+        },
+        secondaryCta: {
+          label: "See the partnership model",
+          href: "#launch-partner-value",
+        },
+      },
+      {
         blockType: "pricing",
         tiers: [
           {
@@ -45,9 +59,9 @@ describe("Japanese public content safety", () => {
       },
       {
         blockType: "cta",
-        title: "Month-one target: 20 qualified launches",
+        title: "Limited founding-partner capacity",
         subtitle:
-          "Paradigm's internal operating target for month one — not a customer outcome guarantee.",
+          "Availability and scope are confirmed in writing before kickoff.",
         primaryCta: { href: "/en/contact?intent=japan-entry" },
       },
     ]

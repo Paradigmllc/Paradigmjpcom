@@ -1,7 +1,7 @@
 // @ts-nocheck — seed data file, PayloadCMS collection types vary at runtime
 import type { getPayload as getPayloadType } from "payload"
 import { EN_JAPAN_ENTRY_COMPARISON_BLOCK, EN_JAPAN_ENTRY_PROCESS_BLOCK, EN_PROFESSIONAL_USE_CASE_SECTION } from "./homepage-en-blocks"
-import { JAPAN_ENTRY_MONTH_ONE_TARGET, JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE, JAPAN_ENTRY_MONTH_ONE_TARGET_STAT } from "@/lib/japan-entry-public-copy"
+import { JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY, JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE, JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT } from "@/lib/japan-entry-public-copy"
 function textToLexical(text: string) {
   return {
     root: { type: "root" as const, direction: "ltr" as const, format: "" as const, indent: 0, version: 1,
@@ -356,16 +356,16 @@ export async function seedAllContent(
     const layoutEn = [
       {
         blockType: "hero", variant: "centered",
-        badge: "FOR FAST-DECISION GLOBAL SMBs",
-        title: "Launch in Japan without hiring a local team",
-        subtitle: "Paradigm LLC is a Japan-based market-entry and digital operations partner. We have supported overseas e-commerce, SaaS, and Web3.0 companies entering Japan or establishing a Japan-facing operating base. For fast-decision teams, we build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
-        primaryCta: { label: "Apply for Japan Entry — $13K", href: "/en/contact?intent=japan-entry" },
-        secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
+        badge: "YOUR OUTSOURCED JAPAN TEAM",
+        title: "Your Japan Country Partner",
+        subtitle: "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. The initial paid engagement is Japan Market Setup. Paradigm has supported overseas e-commerce, SaaS, and Web3.0 companies with practical Japan-facing delivery.",
+        primaryCta: { label: "Apply for a Japan Partnership — $13K", href: "/en/contact?intent=japan-entry" },
+        secondaryCta: { label: "See the partnership model", href: "#launch-partner-value" },
         stats: [
-          { value: "$13K", label: "fixed setup" },
+          { value: "$13K", label: "Japan Market Setup" },
           { value: "6", label: "months included for selected launch partners" },
           { value: "14", label: "business-day delivery guarantee" },
-          JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
+          JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT,
         ],
       },
       {
@@ -376,17 +376,17 @@ export async function seedAllContent(
           { text: "Europe" },
           { text: "Australia & New Zealand" },
           { text: "Tokyo-based execution" },
-          { text: "Fast executive decisions" },
-          { text: "Fixed scope, fixed price" },
+          { text: "Outsourced Japan team" },
+          { text: "Limited founding-partner capacity" },
         ],
         direction: "left", speed: "slow",
       },
       EN_PROFESSIONAL_USE_CASE_SECTION,
       {
         blockType: "section",
-        kicker: "THE OUTCOME",
-        title: "A Japan-ready revenue path, not another strategy deck",
-        subtitle: "As a Japan-based professional partner, Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a 14-business-day delivery guarantee from the recorded Start Date, and one accountable Tokyo-based team.",
+        kicker: "THE COUNTRY PARTNER MODEL",
+        title: "An outsourced Japan team, not another strategy deck",
+        subtitle: "Paradigm becomes the accountable Japan team behind localization, sales channels, Japanese customer support, local operations, and market execution, with a clear scope and a 14-business-day delivery guarantee from the recorded Start Date.",
         alignment: "center", background: "default",
       },
       {
@@ -404,17 +404,17 @@ export async function seedAllContent(
       EN_JAPAN_ENTRY_COMPARISON_BLOCK,
       {
         blockType: "pricing",
-        title: "One fixed Japan entry offer",
-        subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
+        title: "Start with Japan Market Setup",
+        subtitle: "Japan Market Setup is the initial paid engagement. We accept companies only after confirming the fixed scope can be delivered, then operate the agreed Japan execution layer under the selected-launch-partner terms.",
         tiers: [
-          { name: "Japan Entry Package", price: "$13,000", period: "one-time", description: "A fixed-scope setup covering localization, Social Media, market evidence, regulatory screening, launch operations, and handover, with a standard $2,000/month managed-operation layer. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included.", features: "LP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing", ctaLabel: "Apply for Japan Entry — $13K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Market Setup", price: "$13,000", period: "initial engagement", description: "A fixed-scope market setup covering localization, sales-channel readiness, Japanese customer support, local operations, market execution, and handover. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included.", features: "LP / HP localization and Japanese buyer path\nSales-channel setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese customer support, local operations, market execution, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing", ctaLabel: "Apply for a Japan Partnership — $13K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
         blockType: "section",
         kicker: "BUILT FOR FAST DECISIONS",
         title: "Company size does not matter. Decision speed does.",
-        subtitle: "This package is for companies that can assign one decision-maker, approve the fixed setup this week, and provide the required assets within 48 hours.",
+        subtitle: "This partnership is for companies that can assign one decision-maker, approve Japan Market Setup this week, and provide the required assets within 48 hours.",
         alignment: "center", background: "surface",
       },
       {
@@ -429,11 +429,11 @@ export async function seedAllContent(
       {
         blockType: "faq",
         title: "Before you apply",
-        subtitle: "Paradigm LLC supports overseas e-commerce, SaaS, and Web3.0 companies with a professional, evidence-led Japan launch path. The terms are deliberately simple so qualified companies can decide quickly.",
+        subtitle: "Paradigm acts as an outsourced Japan team for qualified overseas companies. The Japan Market Setup and selected-launch-partner operating terms are deliberately clear so decision-makers can evaluate the partnership quickly.",
         items: [
           { question: "Is the setup fee always $13,000?", answer: textToLexical("Yes. The setup fee is fixed at $13,000 and paid before kickoff. If your launch cannot fit the published scope, we will decline the application rather than expand the price after the fact.") },
           { question: "What does the selected-launch-partner operating period include?", answer: textToLexical("For selected launch partners, the first six months of managed operation are included at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain your responsibility.") },
-          { question: "What happens after six months?", answer: textToLexical("After the included period, continuation pricing is agreed separately under written scope and terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
+          { question: "What happens after six months?", answer: textToLexical("From month 7 onward, managed operation is $2,000/month under the signed terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
           { question: "Do I need a Japanese entity or bank account?", answer: textToLexical("Not for every launch. Eligibility depends on your product, regulated category, payment methods, and provider account location. We confirm the viable route before accepting the fixed-scope engagement and do not promise unsupported payment methods.") },
           { question: "Do you guarantee Japanese sales?", answer: textToLexical("No. Product-market fit and purchasing decisions remain yours. We deliver the agreed market-ready environment and launch work, not a specific revenue outcome.") },
           { question: "Is this only for SaaS or e-commerce?", answer: textToLexical("No. We evaluate the launch path, decision speed, and commercial fit rather than filtering primarily by industry or employee count.") },
@@ -446,10 +446,10 @@ export async function seedAllContent(
       },
       {
         blockType: "cta",
-        title: JAPAN_ENTRY_MONTH_ONE_TARGET,
-        subtitle: `${JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE} If your company can approve the $13,000 setup this week and assign one launch owner, apply now. We reply with a fit decision and fixed deployment scope — not a low-cost pilot.`,
-        primaryCta: { label: "Apply for Japan Entry — $13K", href: "/en/contact?intent=japan-entry" },
-        secondaryCta: { label: "Review the fixed offer", href: "#japan-entry-pricing" },
+        title: JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
+        subtitle: `${JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE} If your company can approve the $13,000 Japan Market Setup this week and assign one launch owner, apply now. We reply with a fit decision and fixed setup scope.`,
+        primaryCta: { label: "Apply for a Japan Partnership — $13K", href: "/en/contact?intent=japan-entry" },
+        secondaryCta: { label: "See the partnership model", href: "#launch-partner-value" },
         background: "gradient",
       },
     ]
@@ -479,8 +479,8 @@ export async function seedAllContent(
         layoutJa, "ja")
     }
     await upsertHomePage("home-en",
-      "Paradigm — Fixed-Price Japan Entry for Fast-Decision Global SMBs",
-      "$13,000 fixed Japan entry setup. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms.",
+      "Your Japan Country Partner | Paradigm",
+      "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with the fixed $13,000 Japan Market Setup; selected launch partners retain the existing six-month operating terms.",
       layoutEn, "en")
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
   return summary

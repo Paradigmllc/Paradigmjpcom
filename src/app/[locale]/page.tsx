@@ -22,9 +22,9 @@ import {
   isSafeJapaneseHomepageBlock,
 } from "@/lib/public-content-safety"
 import {
-  JAPAN_ENTRY_MONTH_ONE_TARGET,
-  JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
-  JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE,
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT,
 } from "@/lib/japan-entry-public-copy"
 
 export const dynamic = "force-dynamic"
@@ -61,50 +61,50 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
   {
     blockType: "hero",
     variant: "split-image",
-    badge: "FOR FAST-DECISION GLOBAL SMBs",
-    title: "Launch in Japan without hiring a local team",
+    badge: "YOUR OUTSOURCED JAPAN TEAM",
+    title: "Your Japan Country Partner",
     subtitle:
-      "A fixed-scope Japan entry operation for companies ready to move this month. One accountable Tokyo-based team builds, launches, and operates your Japanese revenue path.",
+      "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. The initial paid engagement is Japan Market Setup.",
     primaryCta: {
-      label: "Apply for Japan Entry — $13K",
+      label: "Apply for a Japan Partnership — $13K",
       href: "/en/contact?intent=japan-entry",
     },
-    secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
+    secondaryCta: { label: "See the partnership model", href: "#launch-partner-value" },
     image: {
       url: "/japan-entry/tokyo-sakura-panorama.svg",
       alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
     },
     stats: [
-      { value: "$13K", label: "fixed setup" },
+      { value: "$13K", label: "Japan Market Setup" },
       { value: "$12K value", label: "$2,000/month × 6 months included for selected launch partners" },
       { value: "14", label: "business-day delivery guarantee" },
-      JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
+      JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT,
     ],
   },
   {
     blockType: "section",
-    kicker: "THE OUTCOME",
-    title: "A Japan-ready revenue path, not another strategy deck",
+    kicker: "THE COUNTRY PARTNER MODEL",
+    title: "An outsourced Japan team, not another strategy deck",
     subtitle:
-      "Localized positioning, buyer trust, eligible payment or inquiry routing, Japanese support, analytics, and handover in one fixed launch scope.",
+      "One accountable Japan-based team owns localization, sales-channel setup, Japanese customer support, local operations, and market execution across the agreed scope.",
     alignment: "center",
     background: "default",
   },
   {
     blockType: "pricing",
-    title: "One fixed Japan entry offer",
+    title: "Start with Japan Market Setup",
     subtitle:
-      "No low-cost pilot, no tier maze, and no surprise agency retainer. We confirm scope before accepting the engagement.",
+      "Japan Market Setup is the initial paid engagement. We confirm the fixed scope before accepting a partnership, then operate the agreed Japan execution layer under the selected-launch-partner terms.",
     tiers: [
       {
-        name: "Japan Entry Package",
+        name: "Japan Market Setup",
         price: "$13,000",
-        period: "one-time",
+        period: "initial engagement",
         description:
-        "A market-ready launch with a standard $2,000/month managed-operation layer. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee.",
+        "A fixed-scope market setup followed by an outsourced Japan operating layer. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee.",
         features:
         "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
-        ctaLabel: "Apply for Japan Entry — $13K",
+        ctaLabel: "Apply for a Japan Partnership — $13K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,
       },
@@ -121,14 +121,14 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
   },
   {
     blockType: "cta",
-    title: JAPAN_ENTRY_MONTH_ONE_TARGET,
+    title: JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
     subtitle:
-      `${JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE} Apply with your decision authority and launch timing. We reply with a fit decision and fixed deployment scope.`,
+      `${JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE} Apply with your decision authority and launch timing. We reply with a fit decision and fixed Japan Market Setup scope.`,
     primaryCta: {
-      label: "Apply for Japan Entry — $13K",
+      label: "Apply for a Japan Partnership — $13K",
       href: "/en/contact?intent=japan-entry",
     },
-    secondaryCta: { label: "Review the fixed offer", href: "#japan-entry-pricing" },
+    secondaryCta: { label: "See the partnership model", href: "#launch-partner-value" },
     background: "gradient",
   },
 ]
@@ -313,7 +313,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: "/en/opengraph-image",
           width: 1200,
           height: 630,
-          alt: `${JAPAN_ENTRY_TITLE} — $13,000 fixed setup`,
+          alt: "Your Japan Country Partner — $13,000 Japan Market Setup",
         },
       ],
     },
