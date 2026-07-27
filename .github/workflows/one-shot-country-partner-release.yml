@@ -1,0 +1,121 @@
+name: One-shot Country Partner Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/one-shot-country-partner-release.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paradigmjp-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      PARADIGM_DEPLOY_HOST: paradigm-droplet
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Validate release credentials
+        env:
+          DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$COOLIFY_API_TOKEN" || { echo 'COOLIFY_TOKEN secret is missing'; exit 1; }
+          test -n "$DROPLET_SSH_KEY" || { echo 'DROPLET_SSH_KEY secret is missing'; exit 1; }
+
+      - name: Configure production SSH
+        env:
+          DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DROPLET_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          cat > "$HOME/.ssh/config" <<'EOF'
+          Host paradigm-droplet
+              HostName 178.105.138.55
+              User root
+              IdentityFile ~/.ssh/id_ed25519
+              IdentitiesOnly yes
+              StrictHostKeyChecking no
+              UserKnownHostsFile /dev/null
+              ConnectTimeout 20
+              ServerAliveInterval 15
+              ServerAliveCountMax 4
+          EOF
+          chmod 600 "$HOME/.ssh/config"
+          ssh paradigm-droplet 'echo production-ssh-ok'
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Verify clean release checkout
+        run: |
+          set -euo pipefail
+          git status --short
+          test -z "$(git status --porcelain)"
+          test "$(git rev-parse HEAD)" = "41c3e88f97d02e0bfd9357884ae3cc5a45c736b7" || {
+            echo "Unexpected main SHA: $(git rev-parse HEAD)"
+            exit 1
+          }
+
+      - name: Run formal production release gate
+        run: |
+          set -o pipefail
+          npm run release:prod 2>&1 | tee /tmp/paradigm-release.log
+
+      - name: Verify public Country Partner fingerprint
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          const expected = [
+            'Your Japan Country Partner',
+            'Japan Market Setup',
+            'Apply for a Japan Partnership — $13K',
+            'Limited founding-partner capacity',
+          ]
+          const response = await fetch(`https://paradigmjp.com/en?release_check=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache' },
+          })
+          if (!response.ok) throw new Error(`/en returned HTTP ${response.status}`)
+          const html = await response.text()
+          for (const text of expected) {
+            if (!html.includes(text)) throw new Error(`Missing production fingerprint: ${text}`)
+            console.log(`verified: ${text}`)
+          }
+          const ready = await fetch(`https://paradigmjp.com/api/ready?release_check=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache' },
+          })
+          if (!ready.ok) throw new Error(`/api/ready returned HTTP ${ready.status}`)
+          console.log(`/api/ready -> HTTP ${ready.status}`)
+          NODE
+
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: country-partner-release-evidence
+          path: /tmp/paradigm-release.log
+          if-no-files-found: warn
+          retention-days: 7
