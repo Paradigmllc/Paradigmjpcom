@@ -33,7 +33,7 @@ jobs:
 
       - name: Report release start
         run: |
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "API production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Production route-recovery release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -41,7 +41,7 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Validate Coolify credential
+      - name: Validate release input
         run: |
           set -euo pipefail
           test -n "$COOLIFY_API_TOKEN" || { echo 'COOLIFY_TOKEN secret is missing'; exit 1; }
@@ -56,7 +56,7 @@ jobs:
           npm exec -- tsc --noEmit --pretty false
           npm exec -- vitest run src/lib/japan-entry-public-copy.test.ts src/lib/public-content-safety.test.ts src/lib/jsonld.test.ts
 
-      - name: Deploy, seed, and verify production
+      - name: Recover route, seed, and verify production
         run: |
           set -o pipefail
           node --input-type=module <<'NODE' 2>&1 | tee /tmp/paradigm-release.log
@@ -65,6 +65,7 @@ jobs:
           const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
           const token = process.env.COOLIFY_API_TOKEN
           const appUuid = process.env.PARADIGM_APP_UUID
+          const site = 'https://paradigmjp.com'
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
           async function coolify(pathname, options = {}) {
@@ -95,46 +96,89 @@ jobs:
             return Object.fromEntries(map)
           }
 
+          async function triggerAndWait(cycle) {
+            const queued = await coolify(`/deploy?uuid=${appUuid}&force=true`, { method: 'POST' })
+            const uuid = queued?.deployments?.[0]?.deployment_uuid || queued?.deployment_uuid
+            if (!uuid) throw new Error(`No deployment UUID returned in cycle ${cycle}`)
+            fs.appendFileSync('/tmp/deployment-id', `${uuid}\n`)
+            console.log(`[cycle ${cycle}] Deployment queued: ${uuid}`)
+            for (let attempt = 1; attempt <= 100; attempt += 1) {
+              await sleep(15_000)
+              const status = await coolify(`/deployments/${uuid}`)
+              const state = status?.status || 'unknown'
+              console.log(`[cycle ${cycle} deploy ${attempt}/100] ${state}`)
+              if (['finished', 'running:healthy', 'success', 'succeeded'].includes(state)) {
+                console.log(`[cycle ${cycle}] Deployment finished: ${uuid}`)
+                return uuid
+              }
+              if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) {
+                const logs = typeof status?.logs === 'string' ? status.logs.slice(-6000) : ''
+                throw new Error(`Coolify deployment ${uuid} ${state}\n${logs}`)
+              }
+            }
+            throw new Error(`Deployment ${uuid} timed out`)
+          }
+
+          async function readyProbe() {
+            try {
+              const response = await fetch(`${site}/api/ready?route_recovery=${Date.now()}`, {
+                headers: { 'Cache-Control': 'no-cache' },
+                signal: AbortSignal.timeout(20_000),
+              })
+              return response.ok
+            } catch {
+              return false
+            }
+          }
+
           console.log('Reading production environment through Coolify API')
           const envRows = await coolify(`/applications/${appUuid}/envs`)
           const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
 
-          console.log('Triggering forced Coolify deployment')
-          const queued = await coolify(`/deploy?uuid=${appUuid}&force=true`, { method: 'POST' })
-          const deploymentUuid = queued?.deployments?.[0]?.deployment_uuid || queued?.deployment_uuid
-          if (!deploymentUuid) throw new Error('No deployment UUID returned by Coolify')
-          fs.writeFileSync('/tmp/deployment-id', `${deploymentUuid}\n`)
-          console.log(`Deployment queued: ${deploymentUuid}`)
-
-          let final = null
-          for (let attempt = 1; attempt <= 100; attempt += 1) {
-            await sleep(15_000)
-            const status = await coolify(`/deployments/${deploymentUuid}`)
-            const state = status?.status || 'unknown'
-            console.log(`[deploy ${attempt}/100] ${state}`)
-            if (['finished', 'running:healthy', 'success', 'succeeded'].includes(state)) {
-              final = status
-              break
+          let routeHealthy = await readyProbe()
+          console.log(`Initial public route healthy: ${routeHealthy}`)
+          const deploymentIds = []
+          for (let cycle = 1; cycle <= 3 && !routeHealthy; cycle += 1) {
+            deploymentIds.push(await triggerAndWait(cycle))
+            for (let probe = 1; probe <= 18; probe += 1) {
+              await sleep(10_000)
+              routeHealthy = await readyProbe()
+              console.log(`[cycle ${cycle} route ${probe}/18] healthy=${routeHealthy}`)
+              if (routeHealthy) break
             }
-            if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) {
-              const logs = typeof status?.logs === 'string' ? status.logs.slice(-6000) : ''
-              throw new Error(`Coolify deployment ${state}\n${logs}`)
+            if (!routeHealthy) {
+              console.warn(`[cycle ${cycle}] fixed route still points to a retired container; cycling once more to reuse the released Docker IP`)
             }
           }
-          if (!final) throw new Error(`Deployment ${deploymentUuid} timed out without terminal success`)
-          console.log(`Deployment finished: ${deploymentUuid}`)
-          await sleep(15_000)
+          if (!routeHealthy) throw new Error('Public route remained unavailable after three deployment cycles')
+          console.log(`Public route recovered; deployments=${deploymentIds.join(',') || 'existing deployment'}`)
 
           const adminSecret = env.ADMIN_SCRIPT_SECRET
           if (!adminSecret || adminSecret.length < 16) throw new Error('ADMIN_SCRIPT_SECRET is unavailable from Coolify environment')
-          const seedResponse = await fetch('https://paradigmjp.com/api/admin/seed-all-content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-            body: JSON.stringify({ confirm: true, scope: 'homepage' }),
-            signal: AbortSignal.timeout(180_000),
-          })
-          const seedText = await seedResponse.text()
-          if (!seedResponse.ok) throw new Error(`Homepage seed HTTP ${seedResponse.status}: ${seedText.slice(0, 500)}`)
+          let seeded = false
+          for (let attempt = 1; attempt <= 12; attempt += 1) {
+            try {
+              const response = await fetch(`${site}/api/admin/seed-all-content`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+                body: JSON.stringify({ confirm: true, scope: 'homepage' }),
+                signal: AbortSignal.timeout(180_000),
+              })
+              const text = await response.text()
+              console.log(`[homepage seed ${attempt}/12] HTTP ${response.status}`)
+              if (response.ok) {
+                seeded = true
+                break
+              }
+              if (![502, 503, 504].includes(response.status)) {
+                throw new Error(`Homepage seed HTTP ${response.status}: ${text.slice(0, 500)}`)
+              }
+            } catch (error) {
+              console.warn(`[homepage seed ${attempt}/12] ${error instanceof Error ? error.message : String(error)}`)
+            }
+            await sleep(10_000)
+          }
+          if (!seeded) throw new Error('Homepage CMS seed did not succeed after route recovery')
           console.log('Homepage CMS seed completed')
 
           const expected = [
@@ -144,14 +188,14 @@ jobs:
             'Limited founding-partner capacity',
           ]
           let fingerprintOk = false
-          for (let attempt = 1; attempt <= 18; attempt += 1) {
-            const response = await fetch(`https://paradigmjp.com/en?release_check=${Date.now()}`, {
+          for (let attempt = 1; attempt <= 24; attempt += 1) {
+            const response = await fetch(`${site}/en?release_check=${Date.now()}`, {
               headers: { 'Cache-Control': 'no-cache' },
               signal: AbortSignal.timeout(30_000),
             })
             const html = await response.text()
             const missing = expected.filter((text) => !html.includes(text))
-            console.log(`[fingerprint ${attempt}/18] HTTP ${response.status}; missing=${missing.length}`)
+            console.log(`[fingerprint ${attempt}/24] HTTP ${response.status}; missing=${missing.length}`)
             if (response.ok && missing.length === 0) {
               for (const text of expected) console.log(`verified: ${text}`)
               fingerprintOk = true
@@ -161,7 +205,7 @@ jobs:
           }
           if (!fingerprintOk) throw new Error('Production /en did not expose all Country Partner fingerprints')
 
-          const ready = await fetch(`https://paradigmjp.com/api/ready?release_check=${Date.now()}`, {
+          const ready = await fetch(`${site}/api/ready?release_check=${Date.now()}`, {
             headers: { 'Cache-Control': 'no-cache' },
             signal: AbortSignal.timeout(30_000),
           })
@@ -170,7 +214,7 @@ jobs:
 
           const healthSecret = env.TRIGGER_WEBHOOK_SECRET
           if (!healthSecret) throw new Error('TRIGGER_WEBHOOK_SECRET is unavailable from Coolify environment')
-          const health = await fetch(`https://paradigmjp.com/api/sales/health?release_check=${Date.now()}`, {
+          const health = await fetch(`${site}/api/sales/health?release_check=${Date.now()}`, {
             headers: { 'x-webhook-secret': healthSecret, 'Cache-Control': 'no-cache' },
             signal: AbortSignal.timeout(30_000),
           })
@@ -197,12 +241,12 @@ jobs:
       - name: Report release success
         if: success()
         run: |
-          DEPLOYMENT_ID="$(cat /tmp/deployment-id 2>/dev/null || true)"
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "✅ Production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployment: \`${DEPLOYMENT_ID:-unknown}\`. Country Partner 4 fingerprints, homepage CMS seed, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          DEPLOYMENT_IDS="$(tr '\n' ',' < /tmp/deployment-id 2>/dev/null | sed 's/,$//' || true)"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "✅ Production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployments: \`${DEPLOYMENT_IDS:-existing deployment}\`. Fixed route recovered, homepage CMS seed completed, Country Partner 4 fingerprints, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Report release failure
         if: failure()
         run: |
-          TAIL="$(tail -n 120 /tmp/paradigm-release.log 2>/dev/null || true)"
+          TAIL="$(tail -n 140 /tmp/paradigm-release.log 2>/dev/null || true)"
           printf -v BODY '❌ Production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
           gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "$BODY"
