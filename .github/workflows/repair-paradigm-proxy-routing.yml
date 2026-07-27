@@ -48,13 +48,12 @@ jobs:
             return data
           }
 
-          console.log('Saving application routing configuration and resetting custom labels')
+          console.log('Saving application domains, proxy network, port, and health configuration')
           const updated = await api(`/applications/${appUuid}`, {
             method: 'PATCH',
             body: JSON.stringify({
               domains,
               ports_exposes: '3000',
-              custom_labels: '',
               connect_to_docker_network: true,
               force_domain_override: true,
               is_force_https_enabled: true,
@@ -95,7 +94,8 @@ jobs:
           }
 
           async function getPage(pathname) {
-            const response = await fetch(`${site}${pathname}?proxy_repair=${Date.now()}`, {
+            const separator = pathname.includes('?') ? '&' : '?'
+            const response = await fetch(`${site}${pathname}${separator}proxy_repair=${Date.now()}`, {
               headers: { 'Cache-Control': 'no-cache' },
               signal: AbortSignal.timeout(20_000),
             })
@@ -111,13 +111,17 @@ jobs:
             ['/ja/video-as-a-service', ['Video as a Service', '一件ずつ制作']],
           ]
 
+          let routeHealthy = false
           for (let routeAttempt = 1; routeAttempt <= 60; routeAttempt += 1) {
             const probe = await getPage('/api/ready').catch((error) => ({ response: { ok: false, status: 0 }, html: String(error) }))
             console.log(`route ${routeAttempt}/60 -> HTTP ${probe.response.status}`)
-            if (probe.response.ok) break
-            if (routeAttempt === 60) throw new Error('Public route remained unavailable after proxy-label repair')
+            if (probe.response.ok) {
+              routeHealthy = true
+              break
+            }
             await sleep(5_000)
           }
+          if (!routeHealthy) throw new Error('Public route remained unavailable after proxy configuration repair')
 
           for (const [pathname, expected] of specs) {
             const { response, html } = await getPage(pathname)
@@ -135,7 +139,7 @@ jobs:
       - name: Report repair success
         if: success()
         run: |
-          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "✅ **Proxy routing repaired and production verified.** Default proxy labels were regenerated, the application was connected to the shared Docker network, and all five public pages passed."
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "✅ **Proxy routing repaired and production verified.** Application domains, shared Docker network connectivity, port 3000, and health checks were saved; all five public pages passed."
           gh issue close 572 --repo "$GITHUB_REPOSITORY" --reason completed
           gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Production deployment completed after proxy-route repair. All five refreshed pages are live."
           gh issue close 569 --repo "$GITHUB_REPOSITORY" --reason completed
