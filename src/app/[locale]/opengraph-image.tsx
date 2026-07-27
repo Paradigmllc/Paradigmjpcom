@@ -19,7 +19,7 @@ export const contentType = "image/png"
 // `alt` is read by Next.js at build time for og:image:alt, so we keep it
 // brand-neutral here. (For per-locale alt strings, they're emitted via the
 // generateImageMetadata pattern — out of scope for this fast-fix.)
-export const alt = "Paradigm — digital growth partner"
+export const alt = "Paradigm — Your Japan Country Partner"
 
 interface CopyBundle {
   brand: string
@@ -35,12 +35,12 @@ const COPY: Record<string, CopyBundle> = {
   },
   en: {
     brand: "Paradigm",
-    tagline: "Launch in Japan. Move this month.",
+    tagline: "Your Japan Country Partner",
     services: [
-      "$13K fixed",
+      "Japan Market Setup · $13K",
       "14-business-day delivery guarantee",
-      "6 months included for selected launch partners",
-      "selected partners · continuation terms agreed separately",
+      "Outsourced Japan team",
+      "Limited founding-partner capacity",
     ],
   },
   ko: {

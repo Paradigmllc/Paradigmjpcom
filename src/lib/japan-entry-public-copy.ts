@@ -1,13 +1,22 @@
-export const JAPAN_ENTRY_MONTH_ONE_TARGET =
-  "Month-one target: 20 qualified launches"
+export const JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY =
+  "Limited founding-partner capacity"
 
-export const JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE =
-  "Paradigm's internal operating target for month one — not a customer outcome guarantee or a promise that every applicant will launch."
+export const JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE =
+  "Founding-partner capacity is limited and confirmed in writing before kickoff."
 
-export const JAPAN_ENTRY_MONTH_ONE_TARGET_STAT = {
-  value: "20",
-  label: JAPAN_ENTRY_MONTH_ONE_TARGET,
+export const JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT = {
+  value: "Limited",
+  label: JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
 } as const
 
-export const JAPAN_ENTRY_CTA_EN = "Apply for Japan Entry — $13K"
+// Compatibility aliases for internal imports that still use the established
+// Japan Entry identifiers. Public copy no longer exposes the old month-one target.
+export const JAPAN_ENTRY_MONTH_ONE_TARGET =
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY
+export const JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE =
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE
+export const JAPAN_ENTRY_MONTH_ONE_TARGET_STAT =
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT
+
+export const JAPAN_ENTRY_CTA_EN = "Apply for a Japan Partnership — $13K"
 export const JAPAN_ENTRY_CTA_JA = "Japan Entryについて問い合わせる"

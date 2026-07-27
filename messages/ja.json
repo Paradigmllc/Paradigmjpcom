@@ -2041,12 +2041,12 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
-      "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
-      "ctaPrimary": "Apply for Japan Entry — $13K",
+      "eyebrow": "YOUR OUTSOURCED JAPAN TEAM",
+      "h1": "Your Japan Country Partner",
+      "sub": "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. The initial paid engagement is Japan Market Setup.",
+      "ctaPrimary": "Apply for a Japan Partnership — $13K",
       "ctaPrimaryNote": "$13,000 setup · selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included · month 7 onward $2,000/month",
-      "ctaSecondary": "Review fixed scope",
+      "ctaSecondary": "See the partnership model",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
     "loss": {
@@ -2063,13 +2063,13 @@
       "card4Label": "Are inquiry routing, ownership, analytics, and escalation ready?"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One agreed engagement coordinates the launch modules that would otherwise be split across multiple vendors. Your working language with Paradigm is English.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Trust and compliance coordination — implementation of the agreed launch requirements, without replacing licensed advice",
-      "point3": "Eligible inquiry or payment routing — provider-dependent paths agreed for your offer",
-      "point4": "Discovery and support setup — eligible channels, measurement, knowledge, routing, and handover"
+      "eyebrow": "THE COUNTRY PARTNER MODEL",
+      "heading": "Your outsourced Japan team, accountable for execution",
+      "sub": "One partnership coordinates localization, sales channels, Japanese customer support, local operations, and market execution. Your working language with Paradigm is English.",
+      "point1": "Localization — Japanese positioning and buyer journeys, not literal translation",
+      "point2": "Sales channels — eligible discovery, inquiry, payment, and partner routes",
+      "point3": "Japanese customer support — knowledge, routing, human review, and escalation",
+      "point4": "Local operations and market execution — measurement, coordination, improvement, and handover"
     },
     "mechanism": {
       "eyebrow": "WHY IT WORKS",
@@ -2098,31 +2098,31 @@
       "metric3Label": "$2,000/month × 6 months of managed operation included for selected launch partners",
       "metric4Value": "$2,000/mo",
       "metric4Label": "standard managed operation from month 7 onward",
-      "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
+      "footnote": "Limited founding-partner capacity. Availability, delivery commitments, and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
     },
     "report": {
       "eyebrow": "ONE COMMERCIAL DECISION",
-      "heading": "Apply for the fixed $13,000 Japan Entry setup",
+      "heading": "Apply for the $13,000 Japan Market Setup",
       "body": "We review company fit, decision authority, timing, offer context, and known launch constraints before accepting an engagement.",
       "bullet1": "One empowered approval path",
       "bullet2": "Required source content, access, and launch context",
       "bullet3": "Written scope, dependencies, exclusions, and start date",
-      "cta": "Apply for Japan Entry — $13K",
+      "cta": "Apply for a Japan Partnership — $13K",
       "note": "Submitting an application does not create a contract or reserve a slot."
     },
     "pricing": {
-      "eyebrow": "JAPAN ENTRY PACKAGE",
-      "heading": "One package across three commercial stages.",
-      "sub": "The English public price does not change by country or package tier.",
+      "eyebrow": "JAPAN COUNTRY PARTNERSHIP",
+      "heading": "Japan Market Setup first. Ongoing execution second.",
+      "sub": "The initial paid engagement is the fixed $13,000 Japan Market Setup; the selected-launch-partner operating terms remain unchanged.",
       "cycle": "fixed terms",
       "popular": "Fixed offer",
-      "cta": "Apply for Japan Entry — $13K",
+      "cta": "Apply for a Japan Partnership — $13K",
       "note": "Third-party fees and approved work outside the fixed launch scope are separate.",
       "tiers": {
         "essential": {
-          "name": "Setup",
+          "name": "Japan Market Setup",
           "price": "$13,000",
-          "desc": "The fixed Japan Entry implementation scope.",
+          "desc": "The fixed initial engagement that establishes the agreed Japan execution layer.",
           "feature1": "Japan-ready landing page and core localization",
           "feature2": "Compliance and trust checklist",
           "feature3": "Lead capture flow with English handoff"
@@ -2160,15 +2160,15 @@
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
-      "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
+      "a7": "Hiring builds internal capability. Paradigm instead becomes your outsourced Japan team across the agreed localization, sales-channel, customer-support, local-operations, and market-execution scope.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
       "a8": "The agreed handover materials and ownership are documented in scope. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, then managed operation is $2,000/month from month 7 onward under the signed terms; availability and scope are confirmed in writing."
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Apply if your company can approve the fixed $13,000 setup and provide launch inputs without a long procurement cycle.",
-      "button": "Apply for Japan Entry — $13K",
-      "secondary": "Review fixed scope"
+      "heading": "Limited founding-partner capacity",
+      "sub": "Apply if your company can approve the fixed $13,000 Japan Market Setup and provide launch inputs without a long procurement cycle.",
+      "button": "Apply for a Japan Partnership — $13K",
+      "secondary": "See the partnership model"
     },
     "comparison": {
       "eyebrow": "WHY PARADIGM",

@@ -4,9 +4,11 @@ import { join } from "node:path"
 import messages from "../../messages/en.json"
 import jaMessages from "../../messages/ja.json"
 import {
+  JAPAN_ENTRY_CTA_EN,
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE,
+  JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT,
   JAPAN_ENTRY_MONTH_ONE_TARGET,
-  JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
-  JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
 } from "./japan-entry-public-copy"
 import { JAPAN_ENTRY_BLOG_POSTS } from "./japan-entry-blog"
 
@@ -37,8 +39,8 @@ describe("public English Japan Entry copy", () => {
     expect(messages.packagePage.campaign.steps[1].price).toBe("$0/mo")
     expect(messages.packagePage.campaign.steps[2].price).toBe("$2,000/mo")
     expect(JSON.stringify(messages)).not.toMatch(/first 10 selected|first-10 launch-partner/i)
-    expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for Japan Entry — $13K")
-    expect(messages.cta.primary).toBe("Apply — $13K")
+    expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for a Japan Partnership — $13K")
+    expect(messages.cta.primary).toBe("Apply for a Japan Partnership — $13K")
     expect(messages.lpWeb.plans.map((plan) => plan.name)).toEqual([
       "Japan Entry setup",
       "Months 1–6",
@@ -158,17 +160,22 @@ describe("public English Japan Entry copy", () => {
     expect(readFileSync(join(process.cwd(), "public/japan-entry/tokyo-sakura-panorama.svg"), "utf8")).toContain("Tokyo skyline")
   })
 
-  it("keeps the legacy homeEn catalog identical across en and ja bundles", () => {
+  it("keeps the shared English homepage catalog identical across en and ja bundles", () => {
     expect(jaMessages.homeEn).toEqual(messages.homeEn)
 
     const copy = JSON.stringify(jaMessages.homeEn)
     for (const term of [
+      "Your Japan Country Partner",
+      "Japan Market Setup",
+      "outsourced Japan team",
+      "localization, sales channels, Japanese customer support, local operations, and market execution",
+      "Apply for a Japan Partnership — $13K",
+      "See the partnership model",
+      "Limited founding-partner capacity",
       "$13,000",
       "$2,000/month",
       "$2,000/month × 6 months = $12,000",
       "standard managed operation from month 7 onward",
-      "Month-one target: 20 qualified launches",
-      "not a customer outcome guarantee",
     ]) {
       expect(copy).toContain(term)
     }
@@ -177,18 +184,22 @@ describe("public English Japan Entry copy", () => {
     )
   })
 
-  it("defines the 20-launch figure as one shared internal operating target", () => {
+  it("publishes limited founding-partner capacity while preserving internal aliases", () => {
+    expect(JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY).toBe(
+      "Limited founding-partner capacity",
+    )
+    expect(JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT).toEqual({
+      value: "Limited",
+      label: "Limited founding-partner capacity",
+    })
+    expect(JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE).toContain(
+      "confirmed in writing before kickoff",
+    )
     expect(JAPAN_ENTRY_MONTH_ONE_TARGET).toBe(
-      "Month-one target: 20 qualified launches",
+      JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
     )
-    expect(JAPAN_ENTRY_MONTH_ONE_TARGET_STAT.label).toBe(
-      JAPAN_ENTRY_MONTH_ONE_TARGET,
-    )
-    expect(JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE).toContain(
-      "internal operating target",
-    )
-    expect(JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE).toContain(
-      "not a customer outcome guarantee",
+    expect(JAPAN_ENTRY_CTA_EN).toBe(
+      "Apply for a Japan Partnership — $13K",
     )
 
     const sources = [
@@ -199,11 +210,53 @@ describe("public English Japan Entry copy", () => {
       ),
     ]
     for (const source of sources) {
-      expect(source).toContain("JAPAN_ENTRY_MONTH_ONE_TARGET_STAT")
-      expect(source).toContain("JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE")
+      expect(source).toContain("JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT")
+      expect(source).toContain("JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE")
       expect(source).not.toContain("qualified-launch target")
       expect(source).not.toContain("initial cohort of 20")
     }
+  })
+
+  it("aligns homepage, Payload seed, metadata, and Open Graph copy to the country-partner model", () => {
+    const homepage = readFileSync(
+      join(process.cwd(), "src/app/[locale]/page.tsx"),
+      "utf8",
+    )
+    const seed = readFileSync(
+      join(process.cwd(), "src/app/api/admin/seed-all-content/seed-data.ts"),
+      "utf8",
+    )
+    const jsonLd = readFileSync(join(process.cwd(), "src/lib/jsonld.ts"), "utf8")
+    const openGraph = readFileSync(
+      join(process.cwd(), "src/app/[locale]/opengraph-image.tsx"),
+      "utf8",
+    )
+    const publicSources = [homepage, seed, jsonLd, openGraph, JSON.stringify(messages.homeEn)]
+
+    for (const source of publicSources) {
+      expect(source).toContain("Your Japan Country Partner")
+      expect(source).toContain("Japan Market Setup")
+      expect(source).not.toMatch(/Month-one target: 20 qualified launches/i)
+      expect(source).not.toMatch(/20\s*%|20 percent|revenue[- ]share/i)
+    }
+
+    for (const source of [homepage, seed, JSON.stringify(messages.homeEn)]) {
+      expect(source).toContain("Apply for a Japan Partnership — $13K")
+      expect(source).toContain("See the partnership model")
+      expect(source).toContain("localization")
+      expect(source).toContain("sales channels")
+      expect(source).toContain("Japanese customer support")
+      expect(source).toContain("local operations")
+      expect(source).toContain("market execution")
+    }
+
+    expect(homepage).toContain("JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY")
+    expect(seed).toContain("Limited founding-partner capacity")
+    expect(JSON.stringify(messages.homeEn)).toContain("Limited founding-partner capacity")
+    expect(homepage).toContain("/en/contact?intent=japan-entry")
+    expect(seed).toContain("/en/contact?intent=japan-entry")
+    expect(jsonLd).toContain("/en/contact?intent=japan-entry")
+    expect(openGraph).toContain("14-business-day delivery guarantee")
   })
 
   it("contains no other public dollar price", () => {

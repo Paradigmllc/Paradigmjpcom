@@ -66,8 +66,11 @@ export function isSafeEnglishJapanEntryHomepage(
     "$2,000/month × 6 months = $12,000 value included",
     "Month 7 onward: $2,000/month",
     "availability and scope are confirmed in writing",
-    "Month-one target: 20 qualified launches",
-    "not a customer outcome guarantee",
+    "Your Japan Country Partner",
+    "Japan Market Setup",
+    "Limited founding-partner capacity",
+    "Apply for a Japan Partnership — $13K",
+    "See the partnership model",
     "/en/contact?intent=japan-entry",
   ] as const
 

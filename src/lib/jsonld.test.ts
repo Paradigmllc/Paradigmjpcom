@@ -8,6 +8,8 @@ import { describe, it, expect } from "vitest"
 import {
   BREADCRUMB_JSONLD,
   FAQ_JSONLD,
+  JAPAN_ENTRY_DESCRIPTION,
+  JAPAN_ENTRY_TITLE,
   getJapanEntryApplicationJsonLd,
   getJapanEntryHomeJsonLd,
   getOrganizationJsonLd,
@@ -25,7 +27,7 @@ describe("getOrganizationJsonLd", () => {
   it("returns EN brand name for en", () => {
     const o = getOrganizationJsonLd("en")
     expect(o.name).toBe("Paradigm LLC")
-    expect(o.knowsAbout).toContain("Japan Market Entry")
+    expect(o.knowsAbout).toContain("Japan Country Partnership")
     expect(o).not.toHaveProperty("foundingDate")
     expect(o).not.toHaveProperty("email")
   })
@@ -44,10 +46,10 @@ describe("getServicesJsonLd", () => {
     expect(s.itemListElement[0].provider.name).toBe("Paradigm合同会社")
   })
 
-  it("emits the fixed USD Japan Entry offer for en", () => {
+  it("emits the fixed USD Japan Market Setup offer for en", () => {
     const s = getServicesJsonLd("en")
     expect(s.itemListElement).toHaveLength(1)
-    expect(s.itemListElement[0].name).toContain("Japan Entry Package")
+    expect(s.itemListElement[0].name).toBe("Your Japan Country Partner | Paradigm")
     expect(s.itemListElement[0].offers).toMatchObject({
       priceCurrency: "USD",
       price: "13000",
@@ -56,12 +58,29 @@ describe("getServicesJsonLd", () => {
 })
 
 describe("Japan Entry structured data", () => {
+  it("positions Paradigm as the outsourced Japan country partner", () => {
+    expect(JAPAN_ENTRY_TITLE).toBe("Your Japan Country Partner | Paradigm")
+    for (const term of [
+      "outsourced Japan team",
+      "localization",
+      "sales channels",
+      "Japanese customer support",
+      "local operations",
+      "market execution",
+      "Japan Market Setup",
+    ]) {
+      expect(JAPAN_ENTRY_DESCRIPTION).toContain(term)
+    }
+    expect(JAPAN_ENTRY_DESCRIPTION).not.toMatch(/20\s*%|20 percent|revenue[- ]share/i)
+  })
+
   it("publishes one fixed Service offer and FAQPage on the homepage", () => {
     const data = getJapanEntryHomeJsonLd()
     expect(data["@graph"][0]).toMatchObject({
       "@type": "Service",
       offers: {
         "@type": "Offer",
+        name: "Japan Market Setup",
         price: "13000",
         priceCurrency: "USD",
         priceSpecification: [

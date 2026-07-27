@@ -1,3 +1,10 @@
+## CURRENT STATUS - 2026-07-28 `/en` Japan Country Partner repositioning（PR checks待ち / 本番未deploy）
+
+- 英語ホームページの最上位訴求を`Japan Entry Package`から`Your Japan Country Partner`へ変更した。最初の有償契約は`Japan Market Setup`、主CTAは`Apply for a Japan Partnership — $13K`、副CTAは`See the partnership model`、公開キャパシティ表現は`Limited founding-partner capacity`へ統一した。
+- Paradigmをlocalization、sales channels、Japanese customer support、local operations、market executionを担うoutsourced Japan teamとして説明する。$13,000 setup、recorded Start Dateからの14-business-day delivery guarantee、selected launch partners向け`$2,000/month × 6 months = $12,000`の運用価値とmonth 7以降`$2,000/month`の既存条件は維持した。20% revenue shareは公開していない。
+- homepage fallback、Payload CMS `home-en` seed、next-intl英語コピーと共有`homeEn` bundle、SEO metadata、JSON-LD、動的Open Graph画像、CMS安全gate、公開DEMOの英語CTAを同じpositioningへ更新した。`intent=japan-entry`、既存contact URL、JSON-LDの内部offer ID、内部互換exportは変更していない。
+- 検証は対象Vitest **3 files / 34 tests**、TypeScript、production build（`.next/BUILD_ID=qIN4nWCk7cvzekTATsgKZ`）、Quality Guard **0 errors / 84 existing warnings**、`git diff --check`がpass。本番deployとPayload seed実行は行っていない。PR checks合格後にのみproduction releaseへ進む。
+
 ## CURRENT STATUS - 2026-07-23 `/work`初回文面のオーダーメイド化・実文品質gate（本番release / Twenty全文一致 / 外部送信0）
 
 - 初回文面を固定テンプレへの穴埋めではなく、公開根拠から選んだ主商品と別の実機能を使う企業別の意思決定へ変更した。4段落の役割は商品観察・独立した公開ページ監査・「何を日本で先に訴求するか」のeither-or判断・Japan opportunity analysisと担当者確認。会社別に文型とrouting questionを変え、直近文面との本文/CTA類似度は各25%未満を必須とする。
