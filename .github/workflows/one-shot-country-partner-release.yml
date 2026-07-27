@@ -33,7 +33,7 @@ jobs:
 
       - name: Report release start
         run: |
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "Two-service production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "Two-service route-recovery release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -64,7 +64,7 @@ jobs:
             --max-warnings=0
           npm run build
 
-      - name: Deploy and verify production
+      - name: Deploy, recover route, and verify production
         run: |
           set -o pipefail
           node --input-type=module <<'NODE' 2>&1 | tee /tmp/paradigm-release.log
@@ -104,20 +104,20 @@ jobs:
             return Object.fromEntries(map)
           }
 
-          async function triggerAndWait() {
+          async function triggerAndWait(cycle) {
             const queued = await coolify(`/deploy?uuid=${appUuid}&force=true`, { method: 'POST' })
             const uuid = queued?.deployments?.[0]?.deployment_uuid || queued?.deployment_uuid
-            if (!uuid) throw new Error('No deployment UUID returned by Coolify')
-            fs.writeFileSync('/tmp/deployment-id', `${uuid}\n`)
-            console.log(`Deployment queued: ${uuid}`)
+            if (!uuid) throw new Error(`No deployment UUID returned by Coolify in cycle ${cycle}`)
+            fs.appendFileSync('/tmp/deployment-id', `${uuid}\n`)
+            console.log(`[cycle ${cycle}] Deployment queued: ${uuid}`)
 
             for (let attempt = 1; attempt <= 120; attempt += 1) {
               await sleep(15_000)
               const status = await coolify(`/deployments/${uuid}`)
               const state = status?.status || 'unknown'
-              console.log(`[deploy ${attempt}/120] ${state}`)
+              console.log(`[cycle ${cycle} deploy ${attempt}/120] ${state}`)
               if (['finished', 'running:healthy', 'success', 'succeeded'].includes(state)) {
-                console.log(`Deployment finished: ${uuid}`)
+                console.log(`[cycle ${cycle}] Deployment finished: ${uuid}`)
                 return uuid
               }
               if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) {
@@ -126,6 +126,20 @@ jobs:
               }
             }
             throw new Error(`Deployment ${uuid} timed out`)
+          }
+
+          async function routeProbe() {
+            try {
+              const response = await fetch(`${site}/api/ready?route_recovery=${Date.now()}`, {
+                headers: { 'Cache-Control': 'no-cache' },
+                signal: AbortSignal.timeout(20_000),
+              })
+              console.log(`[route probe] HTTP ${response.status}`)
+              return response.ok
+            } catch (error) {
+              console.warn(`[route probe] ${error instanceof Error ? error.message : String(error)}`)
+              return false
+            }
           }
 
           async function fetchPage(pathname) {
@@ -159,8 +173,22 @@ jobs:
           const envRows = await coolify(`/applications/${appUuid}/envs`)
           const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
 
-          const deploymentId = await triggerAndWait()
-          console.log(`Latest main deployed through Coolify: ${deploymentId}`)
+          let routeHealthy = false
+          const deploymentIds = []
+          for (let cycle = 1; cycle <= 4 && !routeHealthy; cycle += 1) {
+            deploymentIds.push(await triggerAndWait(cycle))
+            for (let probe = 1; probe <= 18; probe += 1) {
+              await sleep(10_000)
+              routeHealthy = await routeProbe()
+              console.log(`[cycle ${cycle} route ${probe}/18] healthy=${routeHealthy}`)
+              if (routeHealthy) break
+            }
+            if (!routeHealthy) {
+              console.warn(`[cycle ${cycle}] public route still targets an unavailable container; triggering another deployment to rotate the fixed Docker route`)
+            }
+          }
+          if (!routeHealthy) throw new Error('Public route remained unavailable after four Coolify deployment cycles')
+          console.log(`Public route recovered; deployments=${deploymentIds.join(',')}`)
 
           await verifyPage('/en', [
             'Enter Japan. Scale video production.',
@@ -223,12 +251,12 @@ jobs:
       - name: Report release success
         if: success()
         run: |
-          DEPLOYMENT_ID="$(cat /tmp/deployment-id 2>/dev/null | tail -n 1 || true)"
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Two-service production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployment: \`${DEPLOYMENT_ID:-unknown}\`. The new \`/ja\`, \`/en\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          DEPLOYMENT_IDS="$(tr '\n' ',' < /tmp/deployment-id 2>/dev/null | sed 's/,$//' || true)"
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Two-service production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployments: \`${DEPLOYMENT_IDS:-unknown}\`. The public route was recovered and the new \`/ja\`, \`/en\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Report release failure
         if: failure()
         run: |
-          TAIL="$(tail -n 180 /tmp/paradigm-release.log 2>/dev/null || true)"
-          printf -v BODY '❌ Two-service production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
+          TAIL="$(tail -n 220 /tmp/paradigm-release.log 2>/dev/null || true)"
+          printf -v BODY '❌ Two-service route-recovery release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
           gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "$BODY"
