@@ -18,7 +18,6 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Probe all public pages in parallel
-        id: probe
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
@@ -49,30 +48,30 @@ jobs:
             const detail = result.error ? `error=${result.error}` : `missing=${result.missing.length ? result.missing.join(' | ') : 'none'}`
             return `${result.ok ? '✅' : '❌'} ${result.path} — HTTP ${result.status}; ${detail}`
           })
-          const allPassed = results.every((result) => result.ok)
           fs.writeFileSync('/tmp/two-service-fast-probe.md', `${lines.join('\n')}\n`)
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `passed=${allPassed}\n`)
-          if (!allPassed) process.exitCode = 1
+          if (!results.every((result) => result.ok)) process.exitCode = 1
           NODE
 
-      - name: Report success and close release issue
+      - name: Report success and close release issues
         if: success()
         run: |
           BODY="$(cat /tmp/two-service-fast-probe.md)"
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ **Production release verified**\n\n${BODY}\nAll refreshed public pages are live."
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "✅ **Production release verified**\n\n${BODY}\nAll refreshed public pages are live."
+          gh issue close 572 --repo "$GITHUB_REPOSITORY" --reason completed
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Final clean production probe passed in issue #572. All five refreshed public pages are live."
           gh issue close 569 --repo "$GITHUB_REPOSITORY" --reason completed
 
       - name: Report exact failure
         if: failure()
         run: |
           BODY="$(cat /tmp/two-service-fast-probe.md 2>/dev/null || echo 'Probe did not produce results.')"
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "❌ **Fast production probe failed**\n\n${BODY}"
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "❌ **Fast production probe failed**\n\n${BODY}"
 
       - name: Upload probe evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: two-service-fast-probe
+          name: two-service-fast-probe-clean
           path: /tmp/two-service-fast-probe.md
           if-no-files-found: warn
           retention-days: 7
