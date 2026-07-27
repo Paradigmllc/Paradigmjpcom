@@ -51,22 +51,40 @@ jobs:
           src/app/api/contact/contact-payload.video-service.test.ts
 
       - name: TypeScript
-        run: npm exec -- tsc --noEmit
+        run: |
+          set -o pipefail
+          npm exec -- tsc --noEmit 2>&1 | tee /tmp/typescript.log
 
       - name: Lint changed implementation
-        run: >-
-          npm exec -- eslint
-          next.config.ts
-          'src/app/[locale]/home-v2/page.tsx'
-          'src/app/[locale]/japan-market-partner/page.tsx'
-          'src/app/[locale]/video-as-a-service/**/*.tsx'
-          'src/app/[locale]/contact/**/*.tsx'
-          'src/app/api/contact/**/*.ts'
-          src/app/sitemap.ts
-          'src/lib/video-service-*.ts'
-          src/components/aesop/SiteHeader.tsx
-          src/components/aesop/SiteFooter.tsx
-          --max-warnings=0
+        run: |
+          set -o pipefail
+          npm exec -- eslint \
+            next.config.ts \
+            'src/app/[locale]/home-v2/page.tsx' \
+            'src/app/[locale]/japan-market-partner/page.tsx' \
+            'src/app/[locale]/video-as-a-service/**/*.tsx' \
+            'src/app/[locale]/contact/**/*.tsx' \
+            'src/app/api/contact/**/*.ts' \
+            src/app/sitemap.ts \
+            'src/lib/video-service-*.ts' \
+            src/components/aesop/SiteHeader.tsx \
+            src/components/aesop/SiteFooter.tsx \
+            --max-warnings=0 \
+            2>&1 | tee /tmp/eslint.log
 
       - name: Production build
-        run: npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee /tmp/build.log
+
+      - name: Upload validation logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: two-service-validation-logs
+          path: |
+            /tmp/typescript.log
+            /tmp/eslint.log
+            /tmp/build.log
+          if-no-files-found: warn
+          retention-days: 7
