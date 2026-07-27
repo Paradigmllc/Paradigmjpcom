@@ -58,6 +58,7 @@ jobs:
         if: success()
         run: |
           gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Production content verification passed. The refreshed \`/en\`, \`/ja\`, Japan Market Partner, and both Video as a Service pages are live. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue close 569 --repo "$GITHUB_REPOSITORY" --reason completed
 
       - name: Report verification failure
         if: failure()
