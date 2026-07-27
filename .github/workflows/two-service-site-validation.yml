@@ -1,0 +1,56 @@
+name: Two-service site validation
+
+on:
+  pull_request:
+    paths:
+      - "next.config.ts"
+      - "src/app/[locale]/home-v2/page.tsx"
+      - "src/app/[locale]/japan-market-partner/page.tsx"
+      - "src/app/[locale]/video-as-a-service/page.tsx"
+      - "src/components/aesop/SiteHeader.tsx"
+      - "src/components/aesop/SiteFooter.tsx"
+      - ".github/workflows/two-service-site-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: two-service-site-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript
+        run: npm exec -- tsc --noEmit
+
+      - name: Lint changed implementation
+        run: >-
+          npm exec -- eslint
+          next.config.ts
+          'src/app/[locale]/home-v2/page.tsx'
+          'src/app/[locale]/japan-market-partner/page.tsx'
+          'src/app/[locale]/video-as-a-service/page.tsx'
+          src/components/aesop/SiteHeader.tsx
+          src/components/aesop/SiteFooter.tsx
+          --max-warnings=0
+
+      - name: Production build
+        run: npm run build
