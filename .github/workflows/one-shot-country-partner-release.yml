@@ -25,7 +25,6 @@ jobs:
       PARADIGM_DEPLOY_HOST: paradigm-droplet
       NODE_OPTIONS: --max-old-space-size=4096
       GH_TOKEN: ${{ github.token }}
-      PRODUCTION_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY || secrets.SSH_PRIVATE_KEY || secrets.HETZNER_SSH_KEY || secrets.COOLIFY_SSH_KEY || secrets.DEPLOY_SSH_KEY || secrets.SERVER_SSH_KEY || secrets.SSH_KEY }}
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v4
@@ -43,29 +42,97 @@ jobs:
           node-version: '24'
           cache: npm
 
-      - name: Validate release credentials
+      - name: Validate Coolify credential
         run: |
           set -euo pipefail
           if [ -z "$COOLIFY_API_TOKEN" ]; then
             gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Credential check failed: repository secret \`COOLIFY_TOKEN\` is missing. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             exit 1
           fi
-          if [ -z "$PRODUCTION_SSH_KEY" ]; then
-            gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Credential check failed: no supported production SSH secret was found (DROPLET_SSH_KEY / SSH_PRIVATE_KEY / HETZNER_SSH_KEY / COOLIFY_SSH_KEY / DEPLOY_SSH_KEY / SERVER_SSH_KEY / SSH_KEY). Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-            exit 1
-          fi
-          echo 'Coolify and production SSH credentials are available'
+          echo 'Coolify API credential is available'
 
-      - name: Configure production SSH
+      - name: Restore production SSH from Coolify key vault
         run: |
           set -euo pipefail
           install -m 700 -d "$HOME/.ssh"
-          printf '%s\n' "$PRODUCTION_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
-          chmod 600 "$HOME/.ssh/id_ed25519"
-          cat > "$HOME/.ssh/config" <<'EOF'
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          import path from 'node:path'
+
+          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
+          const token = process.env.COOLIFY_API_TOKEN
+          async function api(pathname) {
+            const response = await fetch(`${base}/api/v1${pathname}`, {
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+              signal: AbortSignal.timeout(30_000),
+            })
+            const text = await response.text()
+            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 180)}`)
+            return text ? JSON.parse(text) : null
+          }
+
+          const serversRaw = await api('/servers')
+          const servers = Array.isArray(serversRaw) ? serversRaw : serversRaw?.data ?? []
+          const server = servers.find((item) =>
+            item?.ip === '178.105.138.55' ||
+            /paradigm-prod|paradigm/i.test(String(item?.name ?? ''))
+          )
+          if (!server) throw new Error('Paradigm production server was not found through Coolify API')
+          const serverInfo = {
+            ip: server.ip,
+            user: server.user || 'root',
+            port: Number(server.port || 22),
+            name: server.name || 'paradigm-production',
+          }
+          fs.writeFileSync('/tmp/paradigm-server.json', JSON.stringify(serverInfo), { mode: 0o600 })
+
+          const keysRaw = await api('/security/keys')
+          const listed = Array.isArray(keysRaw) ? keysRaw : keysRaw?.data ?? []
+          let saved = 0
+          for (const listedKey of listed) {
+            let key = listedKey
+            if ((!key?.private_key || !String(key.private_key).includes('PRIVATE KEY')) && key?.uuid) {
+              try {
+                key = await api(`/security/keys/${encodeURIComponent(key.uuid)}`)
+              } catch (error) {
+                console.warn(`Could not read one Coolify key detail: ${error instanceof Error ? error.message : String(error)}`)
+                continue
+              }
+            }
+            const privateKey = typeof key?.private_key === 'string' ? key.private_key.trim() : ''
+            if (!privateKey.includes('PRIVATE KEY')) continue
+            const target = path.join('/tmp', `coolify-ssh-key-${saved}`)
+            fs.writeFileSync(target, `${privateKey}\n`, { mode: 0o600 })
+            saved += 1
+          }
+          if (saved === 0) {
+            throw new Error('Coolify token cannot read any registered SSH private key; read:sensitive permission is required')
+          }
+          console.log(`Coolify SSH candidates restored: ${saved}; production server: ${serverInfo.name}`)
+          NODE
+
+          SERVER_IP="$(node -e "const x=require('/tmp/paradigm-server.json');process.stdout.write(x.ip)")"
+          SERVER_USER="$(node -e "const x=require('/tmp/paradigm-server.json');process.stdout.write(x.user)")"
+          SERVER_PORT="$(node -e "const x=require('/tmp/paradigm-server.json');process.stdout.write(String(x.port))")"
+          SELECTED=''
+          for candidate in /tmp/coolify-ssh-key-*; do
+            if ssh -i "$candidate" -p "$SERVER_PORT" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15 "$SERVER_USER@$SERVER_IP" 'echo production-ssh-ok' >/tmp/ssh-test.out 2>/tmp/ssh-test.err; then
+              SELECTED="$candidate"
+              break
+            fi
+          done
+          if [ -z "$SELECTED" ]; then
+            echo 'No Coolify key authenticated to the production server'
+            sed -n '1,20p' /tmp/ssh-test.err || true
+            exit 1
+          fi
+          install -m 600 "$SELECTED" "$HOME/.ssh/id_ed25519"
+          rm -f /tmp/coolify-ssh-key-* /tmp/ssh-test.out /tmp/ssh-test.err
+          cat > "$HOME/.ssh/config" <<EOF
           Host paradigm-droplet
-              HostName 178.105.138.55
-              User root
+              HostName $SERVER_IP
+              User $SERVER_USER
+              Port $SERVER_PORT
               IdentityFile ~/.ssh/id_ed25519
               IdentitiesOnly yes
               StrictHostKeyChecking no
@@ -75,7 +142,7 @@ jobs:
               ServerAliveCountMax 4
           EOF
           chmod 600 "$HOME/.ssh/config"
-          ssh paradigm-droplet 'echo production-ssh-ok'
+          ssh paradigm-droplet 'echo production-ssh-restored'
 
       - name: Install locked dependencies
         run: npm ci
@@ -139,6 +206,6 @@ jobs:
       - name: Report release failure
         if: failure()
         run: |
-          TAIL="$(tail -n 80 /tmp/paradigm-release.log 2>/dev/null || true)"
+          TAIL="$(tail -n 100 /tmp/paradigm-release.log 2>/dev/null || true)"
           printf -v BODY '❌ Formal production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
           gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "$BODY"
