@@ -25,6 +25,7 @@ jobs:
       PARADIGM_DEPLOY_HOST: paradigm-droplet
       NODE_OPTIONS: --max-old-space-size=4096
       GH_TOKEN: ${{ github.token }}
+      PRODUCTION_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY || secrets.SSH_PRIVATE_KEY || secrets.HETZNER_SSH_KEY || secrets.COOLIFY_SSH_KEY || secrets.DEPLOY_SSH_KEY || secrets.SERVER_SSH_KEY || secrets.SSH_KEY }}
     steps:
       - name: Checkout latest main
         uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
 
       - name: Report release start
         run: |
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Formal production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Formal production release attempt started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -43,20 +44,23 @@ jobs:
           cache: npm
 
       - name: Validate release credentials
-        env:
-          DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
         run: |
           set -euo pipefail
-          test -n "$COOLIFY_API_TOKEN" || { echo 'COOLIFY_TOKEN secret is missing'; exit 1; }
-          test -n "$DROPLET_SSH_KEY" || { echo 'DROPLET_SSH_KEY secret is missing'; exit 1; }
+          if [ -z "$COOLIFY_API_TOKEN" ]; then
+            gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Credential check failed: repository secret \`COOLIFY_TOKEN\` is missing. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            exit 1
+          fi
+          if [ -z "$PRODUCTION_SSH_KEY" ]; then
+            gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Credential check failed: no supported production SSH secret was found (DROPLET_SSH_KEY / SSH_PRIVATE_KEY / HETZNER_SSH_KEY / COOLIFY_SSH_KEY / DEPLOY_SSH_KEY / SERVER_SSH_KEY / SSH_KEY). Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            exit 1
+          fi
+          echo 'Coolify and production SSH credentials are available'
 
       - name: Configure production SSH
-        env:
-          DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
         run: |
           set -euo pipefail
           install -m 700 -d "$HOME/.ssh"
-          printf '%s\n' "$DROPLET_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$PRODUCTION_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
           chmod 600 "$HOME/.ssh/id_ed25519"
           cat > "$HOME/.ssh/config" <<'EOF'
           Host paradigm-droplet
@@ -135,6 +139,6 @@ jobs:
       - name: Report release failure
         if: failure()
         run: |
-          TAIL="$(tail -n 60 /tmp/paradigm-release.log 2>/dev/null || true)"
+          TAIL="$(tail -n 80 /tmp/paradigm-release.log 2>/dev/null || true)"
           printf -v BODY '❌ Formal production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
           gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "$BODY"
