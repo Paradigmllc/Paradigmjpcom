@@ -35,6 +35,23 @@ const nextConfig: NextConfig = {
     ],
   },
   /**
+   * Public root URLs stay stable while the two audience-specific homepages are
+   * implemented as code-owned routes. Rewrites avoid exposing /home-v2 and
+   * prevent stale Payload homepage records from overriding the new structure.
+   */
+  async rewrites() {
+    return [
+      {
+        source: "/ja",
+        destination: "/ja/home-v2",
+      },
+      {
+        source: "/en",
+        destination: "/en/home-v2",
+      },
+    ]
+  },
+  /**
    * 顧客向け公開 URL は /report/[slug] に統一 (CLAUDE.md s10-5 永久ルール)。
    * /p/[slug] は廃止 — Next.js redirects() で 308 (permanent) を framework level
    * で返し、page.tsx は不要 (zero render cost)。
@@ -44,6 +61,11 @@ const nextConfig: NextConfig = {
    */
   async redirects() {
     return [
+      {
+        source: "/en/japan-entry-package",
+        destination: "/en/japan-market-partner",
+        permanent: true,
+      },
       // /[locale]/p/[slug] → /[locale]/report/[slug]
       {
         source: "/:locale(ja|en|ko|zh|de|fr|es|pt|ru|ar|vi|id)/p/:slug",
