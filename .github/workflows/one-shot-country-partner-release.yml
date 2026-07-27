@@ -1,4 +1,4 @@
-name: One-shot Two-Service Host Route Repair
+name: One-shot Direct Production Traefik Repair
 
 on:
   push:
@@ -24,297 +24,30 @@ jobs:
       PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout latest main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Report host repair start
+      - name: Report repair start
         run: |
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "Direct Traefik host-route repair started from \`$(git rev-parse HEAD)\`. The application image is already built; this run retrieves the SSH key registered in Coolify, rewrites the fixed upstream to the live container, and verifies production. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "Direct host-route repair script started. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
-      - name: Resolve Coolify server and registered SSH keys
+      - name: Repair Traefik upstream and verify public routes
         run: |
-          set -euo pipefail
-          test -n "$COOLIFY_API_TOKEN" || { echo 'COOLIFY_TOKEN secret is missing'; exit 1; }
-          install -m 700 -d "$HOME/.ssh"
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs'
-          import path from 'node:path'
+          set -o pipefail
+          node scripts/ops/repair-production-traefik.mjs 2>&1 | tee /tmp/direct-traefik-repair.log
 
-          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
-          const token = process.env.COOLIFY_API_TOKEN
-
-          async function api(pathname) {
-            const response = await fetch(`${base}/api/v1${pathname}`, {
-              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-              signal: AbortSignal.timeout(30_000),
-            })
-            const text = await response.text()
-            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 300)}`)
-            return text ? JSON.parse(text) : null
-          }
-
-          const serverRowsRaw = await api('/servers')
-          const serverRows = Array.isArray(serverRowsRaw) ? serverRowsRaw : serverRowsRaw?.data ?? []
-          if (serverRows.length === 0) throw new Error('Coolify returned no servers')
-
-          const detailedServers = []
-          for (const row of serverRows) {
-            if (!row?.uuid) continue
-            try {
-              detailedServers.push(await api(`/servers/${encodeURIComponent(row.uuid)}`))
-            } catch (error) {
-              console.warn(`Could not read server detail ${row.uuid}: ${error instanceof Error ? error.message : String(error)}`)
-              detailedServers.push(row)
-            }
-          }
-
-          const server = detailedServers.find((item) =>
-            item?.ip === '178.105.138.55' ||
-            /paradigm-prod|paradigm.*production|paradigm-droplet|paradigm-hetzner/i.test(String(item?.name ?? ''))
-          ) ?? detailedServers.find((item) => String(item?.ip ?? '') === '178.105.138.55')
-          if (!server) {
-            console.log(`Available Coolify server names: ${detailedServers.map((item) => item?.name || item?.uuid).join(', ')}`)
-            throw new Error('Paradigm production server was not found in Coolify')
-          }
-
-          const serverInfo = {
-            uuid: server.uuid,
-            name: server.name || 'paradigm-production',
-            ip: server.ip || '178.105.138.55',
-            user: server.user || 'root',
-            port: Number(server.port || 22),
-            privateKeyUuid: server.private_key_uuid || server.privateKeyUuid || null,
-          }
-          fs.writeFileSync('/tmp/paradigm-server.json', JSON.stringify(serverInfo), { mode: 0o600 })
-          console.log(`Production server resolved: ${serverInfo.name}; configured-key=${Boolean(serverInfo.privateKeyUuid)}`)
-
-          const keyRowsRaw = await api('/security/keys')
-          const keyRows = Array.isArray(keyRowsRaw) ? keyRowsRaw : keyRowsRaw?.data ?? []
-          if (keyRows.length === 0) throw new Error('Coolify returned no registered SSH keys')
-
-          const ordered = [...keyRows].sort((a, b) => {
-            const aMatch = serverInfo.privateKeyUuid && a?.uuid === serverInfo.privateKeyUuid ? 1 : 0
-            const bMatch = serverInfo.privateKeyUuid && b?.uuid === serverInfo.privateKeyUuid ? 1 : 0
-            return bMatch - aMatch
-          })
-
-          let saved = 0
-          for (const row of ordered) {
-            if (!row?.uuid) continue
-            let detail = row
-            if (typeof detail?.private_key !== 'string' || !detail.private_key.includes('PRIVATE KEY')) {
-              try {
-                detail = await api(`/security/keys/${encodeURIComponent(row.uuid)}`)
-              } catch (error) {
-                console.warn(`Could not read key detail ${row.uuid}: ${error instanceof Error ? error.message : String(error)}`)
-                continue
-              }
-            }
-            const privateKey = typeof detail?.private_key === 'string' ? detail.private_key.trim() : ''
-            if (!privateKey.includes('PRIVATE KEY')) {
-              console.warn(`Coolify key ${detail?.name || row.uuid} has no readable private material`)
-              continue
-            }
-            const filename = path.join('/tmp', `coolify-key-${String(saved).padStart(2, '0')}`)
-            fs.writeFileSync(filename, `${privateKey}\n`, { mode: 0o600 })
-            fs.writeFileSync(`${filename}.meta`, JSON.stringify({ uuid: row.uuid, name: detail?.name || row.name || row.uuid }), { mode: 0o600 })
-            saved += 1
-          }
-          if (saved === 0) throw new Error('No readable private SSH key was returned; Coolify token requires read:sensitive access')
-          console.log(`Readable Coolify SSH candidates: ${saved}`)
-          NODE
-
-      - name: Authenticate and atomically repair Traefik route
-        run: |
-          set -euo pipefail
-          SERVER_IP="$(node -e "const x=require('/tmp/paradigm-server.json');process.stdout.write(x.ip)")"
-          SERVER_USER="$(node -e "const x=require('/tmp/paradigm-server.json');process.stdout.write(x.user)")"
-          SERVER_PORT="$(node -e "const x=require('/tmp/paradigm-server.json');process.stdout.write(String(x.port))")"
-
-          SELECTED=''
-          for candidate in /tmp/coolify-key-[0-9][0-9]; do
-            [ -f "$candidate" ] || continue
-            if ssh -i "$candidate" -p "$SERVER_PORT" \
-              -o IdentitiesOnly=yes \
-              -o StrictHostKeyChecking=no \
-              -o UserKnownHostsFile=/dev/null \
-              -o ConnectTimeout=15 \
-              "$SERVER_USER@$SERVER_IP" 'printf production-ssh-ok' >/tmp/ssh-ok 2>/tmp/ssh-error; then
-              SELECTED="$candidate"
-              break
-            fi
-          done
-          if [ -z "$SELECTED" ]; then
-            echo 'None of the Coolify-registered keys authenticated to the production server.'
-            sed -n '1,20p' /tmp/ssh-error || true
-            exit 1
-          fi
-          KEY_NAME="$(node -e "const x=require('${SELECTED}.meta');process.stdout.write(x.name)")"
-          echo "Authenticated with Coolify key: $KEY_NAME"
-
-          ssh -i "$SELECTED" -p "$SERVER_PORT" \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            -o ConnectTimeout=20 \
-            "$SERVER_USER@$SERVER_IP" 'bash -s' <<'REMOTE'
-          set -euo pipefail
-          app_uuid='n8i2sjiqvr2d8hrzppop2m2i'
-          route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
-
-          test -f "$route_file" || { echo 'Traefik route file is missing'; exit 1; }
-          container="$(docker ps --filter "name=$app_uuid" --format '{{.Names}}' | head -n1)"
-          test -n "$container" || { echo 'Live application container was not found'; exit 1; }
-          new_ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
-          test -n "$new_ip" || { echo 'Live application has no coolify-network IP'; exit 1; }
-          docker exec "$container" sh -lc 'wget -qO- http://127.0.0.1:3000/api/ready >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/ready >/dev/null'
-
-          python3 - "$route_file" "$new_ip" <<'PY'
-          import os
-          import re
-          import stat
-          import sys
-          import tempfile
-          from pathlib import Path
-
-          route = Path(sys.argv[1])
-          new_ip = sys.argv[2]
-          text = route.read_text(encoding='utf-8')
-          marker = text.find('paradigmhp-svc:')
-          if marker < 0:
-              raise SystemExit('paradigmhp-svc service marker not found')
-          prefix = text[:marker]
-          tail = text[marker:]
-          pattern = re.compile(r'(?m)^(\s*-\s*url:\s*)https?://[^\s/:]+:3000\s*$')
-          match = pattern.search(tail)
-          if not match:
-              pattern = re.compile(r'(?m)^(\s*-\s*url:\s*)https?://[^\s]+:3000\s*$')
-              match = pattern.search(tail)
-          if not match:
-              raise SystemExit('paradigmhp-svc upstream URL not found')
-          updated_tail = tail[:match.start()] + f"{match.group(1)}http://{new_ip}:3000" + tail[match.end():]
-          updated = prefix + updated_tail
-          if updated == text:
-              raise SystemExit('Traefik route update produced no change')
-          st = route.stat()
-          fd, temporary = tempfile.mkstemp(prefix=f'.{route.name}.', dir=route.parent)
-          try:
-              with os.fdopen(fd, 'w', encoding='utf-8') as handle:
-                  handle.write(updated)
-                  handle.flush()
-                  os.fsync(handle.fileno())
-              os.chmod(temporary, stat.S_IMODE(st.st_mode))
-              try:
-                  os.chown(temporary, st.st_uid, st.st_gid)
-              except PermissionError:
-                  pass
-              os.replace(temporary, route)
-          finally:
-              if os.path.exists(temporary):
-                  os.unlink(temporary)
-          print('Traefik upstream replaced atomically')
-          PY
-
-          sleep 5
-          docker ps --filter 'name=coolify-proxy' --format '{{.Names}}' | head -n1 >/tmp/proxy-name || true
-          echo 'Host route repair complete'
-          REMOTE
-
-          rm -f /tmp/coolify-key-* /tmp/ssh-ok /tmp/ssh-error
-
-      - name: Verify latest two-service production
-        run: |
-          set -euo pipefail
-          node --input-type=module <<'NODE' 2>&1 | tee /tmp/host-route-verification.log
-          const site = 'https://paradigmjp.com'
-          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
-          const token = process.env.COOLIFY_API_TOKEN
-          const app = process.env.PARADIGM_APP_UUID
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-          async function coolify(pathname) {
-            const response = await fetch(`${base}/api/v1${pathname}`, {
-              headers: { Authorization: `Bearer ${token}` },
-              signal: AbortSignal.timeout(30_000),
-            })
-            const text = await response.text()
-            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 300)}`)
-            return text ? JSON.parse(text) : null
-          }
-
-          function normalizeEnvRows(rows) {
-            const map = new Map()
-            for (const row of [...rows].sort((a, b) => Number(Boolean(a?.is_preview)) - Number(Boolean(b?.is_preview)))) {
-              if (!row?.key) continue
-              const raw = typeof row.real_value === 'string' && row.real_value.length > 0 ? row.real_value : row.value
-              if (raw === undefined || raw === null) continue
-              map.set(row.key, String(raw).trim().replace(/^['"]|['"]$/g, ''))
-            }
-            return Object.fromEntries(map)
-          }
-
-          async function verify(pathname, markers) {
-            for (let attempt = 1; attempt <= 30; attempt += 1) {
-              try {
-                const response = await fetch(`${site}${pathname}?host_repair=${Date.now()}`, {
-                  headers: { 'Cache-Control': 'no-cache' },
-                  signal: AbortSignal.timeout(30_000),
-                })
-                const text = await response.text()
-                const missing = markers.filter((marker) => !text.includes(marker))
-                console.log(`${pathname} ${attempt}/30 -> HTTP ${response.status}; missing=${missing.length}`)
-                if (response.ok && missing.length === 0) return
-              } catch (error) {
-                console.warn(`${pathname} ${attempt}/30 -> ${error instanceof Error ? error.message : String(error)}`)
-              }
-              await sleep(5_000)
-            }
-            throw new Error(`${pathname} verification failed`)
-          }
-
-          await verify('/en', ['Enter Japan. Scale video production.', 'Japan Market Partner', 'Video as a Service'])
-          await verify('/ja', ['動画・Web・AIを、必要なときに動かせる制作体制へ。', 'Video as a Service', 'Web制作', 'AI制作・導入支援'])
-          await verify('/en/japan-market-partner', ['Your outsourced Japan team, from setup to operation.', 'Japan Market Setup', '$13,000'])
-          await verify('/en/video-as-a-service', ['Turn video production into a reliable recurring workflow.', 'One active request'])
-          await verify('/ja/video-as-a-service', ['動画制作を、単発発注から継続できる制作体制へ。', '一件ずつ制作'])
-          await verify('/api/ready', [])
-
-          const envRows = await coolify(`/applications/${app}/envs`)
-          const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
-          const healthSecret = env.TRIGGER_WEBHOOK_SECRET
-          if (!healthSecret) throw new Error('TRIGGER_WEBHOOK_SECRET unavailable')
-          const health = await fetch(`${site}/api/sales/health?host_repair=${Date.now()}`, {
-            headers: { 'x-webhook-secret': healthSecret, 'Cache-Control': 'no-cache' },
-            signal: AbortSignal.timeout(30_000),
-          })
-          const healthText = await health.text()
-          let healthJson = null
-          try { healthJson = healthText ? JSON.parse(healthText) : null } catch {}
-          console.log(`/api/sales/health -> HTTP ${health.status}; ok=${healthJson?.ok === true}; status=${healthJson?.status || 'unknown'}`)
-          if (!health.ok || healthJson?.ok !== true) throw new Error(`Sales health failed: ${healthText.slice(0, 1000)}`)
-          console.log('HOST ROUTE REPAIR AND FINAL VERIFICATION PASSED')
-          NODE
-
-      - name: Upload repair evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: two-service-host-route-repair-${{ github.run_attempt }}
-          path: /tmp/host-route-verification.log
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Report host repair success
+      - name: Report repair success
         if: success()
         run: |
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Direct host-route repair completed. The fixed Traefik upstream now points to the live application container. Production \`/en\`, \`/ja\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          TAIL="$(tail -n 30 /tmp/direct-traefik-repair.log)"
+          printf -v BODY '✅ Direct Traefik repair completed and all public two-service routes were verified.\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$BODY"
 
-      - name: Report host repair failure
+      - name: Report repair failure
         if: failure()
         run: |
-          TAIL="$(tail -n 180 /tmp/host-route-verification.log 2>/dev/null || true)"
-          printf -v BODY '❌ Direct host-route repair failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          TAIL="$(tail -n 80 /tmp/direct-traefik-repair.log 2>/dev/null || true)"
+          printf -v BODY '❌ Direct Traefik repair failed.\n\n```text\n%s\n```' "$TAIL"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$BODY"
