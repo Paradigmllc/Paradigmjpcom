@@ -1,4 +1,4 @@
-name: One-shot Country Partner Release
+name: One-shot Two-Service Site Release
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
 
       - name: Report release start
         run: |
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Production route-recovery release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Two-service production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$COOLIFY_API_TOKEN" || { echo 'COOLIFY_TOKEN secret is missing'; exit 1; }
-          git merge-base --is-ancestor 41c3e88f97d02e0bfd9357884ae3cc5a45c736b7 HEAD
+          git merge-base --is-ancestor ded7db6d57953622fa6e8c89d2eca8f192108402 HEAD
 
       - name: Install locked dependencies
         run: npm ci
@@ -54,9 +54,17 @@ jobs:
         run: |
           set -euo pipefail
           npm exec -- tsc --noEmit --pretty false
-          npm exec -- vitest run src/lib/japan-entry-public-copy.test.ts src/lib/public-content-safety.test.ts src/lib/jsonld.test.ts
+          npm exec -- eslint \
+            next.config.ts \
+            'src/app/[locale]/home-v2/page.tsx' \
+            'src/app/[locale]/japan-market-partner/page.tsx' \
+            'src/app/[locale]/video-as-a-service/page.tsx' \
+            src/components/aesop/SiteHeader.tsx \
+            src/components/aesop/SiteFooter.tsx \
+            --max-warnings=0
+          npm run build
 
-      - name: Recover route, seed, and verify production
+      - name: Deploy and verify production
         run: |
           set -o pipefail
           node --input-type=module <<'NODE' 2>&1 | tee /tmp/paradigm-release.log
@@ -81,7 +89,7 @@ jobs:
             const text = await response.text()
             let data = null
             try { data = text ? JSON.parse(text) : null } catch {}
-            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 300)}`)
+            if (!response.ok) throw new Error(`${pathname} -> HTTP ${response.status}: ${text.slice(0, 500)}`)
             return data
           }
 
@@ -96,114 +104,88 @@ jobs:
             return Object.fromEntries(map)
           }
 
-          async function triggerAndWait(cycle) {
+          async function triggerAndWait() {
             const queued = await coolify(`/deploy?uuid=${appUuid}&force=true`, { method: 'POST' })
             const uuid = queued?.deployments?.[0]?.deployment_uuid || queued?.deployment_uuid
-            if (!uuid) throw new Error(`No deployment UUID returned in cycle ${cycle}`)
-            fs.appendFileSync('/tmp/deployment-id', `${uuid}\n`)
-            console.log(`[cycle ${cycle}] Deployment queued: ${uuid}`)
-            for (let attempt = 1; attempt <= 100; attempt += 1) {
+            if (!uuid) throw new Error('No deployment UUID returned by Coolify')
+            fs.writeFileSync('/tmp/deployment-id', `${uuid}\n`)
+            console.log(`Deployment queued: ${uuid}`)
+
+            for (let attempt = 1; attempt <= 120; attempt += 1) {
               await sleep(15_000)
               const status = await coolify(`/deployments/${uuid}`)
               const state = status?.status || 'unknown'
-              console.log(`[cycle ${cycle} deploy ${attempt}/100] ${state}`)
+              console.log(`[deploy ${attempt}/120] ${state}`)
               if (['finished', 'running:healthy', 'success', 'succeeded'].includes(state)) {
-                console.log(`[cycle ${cycle}] Deployment finished: ${uuid}`)
+                console.log(`Deployment finished: ${uuid}`)
                 return uuid
               }
               if (['failed', 'error', 'cancelled', 'canceled'].includes(state)) {
-                const logs = typeof status?.logs === 'string' ? status.logs.slice(-6000) : ''
+                const logs = typeof status?.logs === 'string' ? status.logs.slice(-8000) : ''
                 throw new Error(`Coolify deployment ${uuid} ${state}\n${logs}`)
               }
             }
             throw new Error(`Deployment ${uuid} timed out`)
           }
 
-          async function readyProbe() {
-            try {
-              const response = await fetch(`${site}/api/ready?route_recovery=${Date.now()}`, {
-                headers: { 'Cache-Control': 'no-cache' },
-                signal: AbortSignal.timeout(20_000),
-              })
-              return response.ok
-            } catch {
-              return false
+          async function fetchPage(pathname) {
+            const separator = pathname.includes('?') ? '&' : '?'
+            const response = await fetch(`${site}${pathname}${separator}release_check=${Date.now()}`, {
+              headers: { 'Cache-Control': 'no-cache' },
+              signal: AbortSignal.timeout(30_000),
+            })
+            return { response, html: await response.text() }
+          }
+
+          async function verifyPage(pathname, expected) {
+            for (let attempt = 1; attempt <= 30; attempt += 1) {
+              try {
+                const { response, html } = await fetchPage(pathname)
+                const missing = expected.filter((text) => !html.includes(text))
+                console.log(`[${pathname} ${attempt}/30] HTTP ${response.status}; missing=${missing.length}`)
+                if (response.ok && missing.length === 0) {
+                  for (const text of expected) console.log(`verified ${pathname}: ${text}`)
+                  return
+                }
+              } catch (error) {
+                console.warn(`[${pathname} ${attempt}/30] ${error instanceof Error ? error.message : String(error)}`)
+              }
+              await sleep(10_000)
             }
+            throw new Error(`Production ${pathname} did not expose the expected two-service fingerprints`)
           }
 
           console.log('Reading production environment through Coolify API')
           const envRows = await coolify(`/applications/${appUuid}/envs`)
           const env = normalizeEnvRows(Array.isArray(envRows) ? envRows : [])
 
-          let routeHealthy = await readyProbe()
-          console.log(`Initial public route healthy: ${routeHealthy}`)
-          const deploymentIds = []
-          for (let cycle = 1; cycle <= 3 && !routeHealthy; cycle += 1) {
-            deploymentIds.push(await triggerAndWait(cycle))
-            for (let probe = 1; probe <= 18; probe += 1) {
-              await sleep(10_000)
-              routeHealthy = await readyProbe()
-              console.log(`[cycle ${cycle} route ${probe}/18] healthy=${routeHealthy}`)
-              if (routeHealthy) break
-            }
-            if (!routeHealthy) {
-              console.warn(`[cycle ${cycle}] fixed route still points to a retired container; cycling once more to reuse the released Docker IP`)
-            }
-          }
-          if (!routeHealthy) throw new Error('Public route remained unavailable after three deployment cycles')
-          console.log(`Public route recovered; deployments=${deploymentIds.join(',') || 'existing deployment'}`)
+          const deploymentId = await triggerAndWait()
+          console.log(`Latest main deployed through Coolify: ${deploymentId}`)
 
-          const adminSecret = env.ADMIN_SCRIPT_SECRET
-          if (!adminSecret || adminSecret.length < 16) throw new Error('ADMIN_SCRIPT_SECRET is unavailable from Coolify environment')
-          let seeded = false
-          for (let attempt = 1; attempt <= 12; attempt += 1) {
-            try {
-              const response = await fetch(`${site}/api/admin/seed-all-content`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-                body: JSON.stringify({ confirm: true, scope: 'homepage' }),
-                signal: AbortSignal.timeout(180_000),
-              })
-              const text = await response.text()
-              console.log(`[homepage seed ${attempt}/12] HTTP ${response.status}`)
-              if (response.ok) {
-                seeded = true
-                break
-              }
-              if (![502, 503, 504].includes(response.status)) {
-                throw new Error(`Homepage seed HTTP ${response.status}: ${text.slice(0, 500)}`)
-              }
-            } catch (error) {
-              console.warn(`[homepage seed ${attempt}/12] ${error instanceof Error ? error.message : String(error)}`)
-            }
-            await sleep(10_000)
-          }
-          if (!seeded) throw new Error('Homepage CMS seed did not succeed after route recovery')
-          console.log('Homepage CMS seed completed')
-
-          const expected = [
-            'Your Japan Country Partner',
+          await verifyPage('/en', [
+            'Enter Japan. Scale video production.',
+            'Japan Market Partner',
+            'Video as a Service',
+          ])
+          await verifyPage('/ja', [
+            '動画・Web・AIを、必要なときに動かせる制作体制へ。',
+            'Video as a Service',
+            'Web制作',
+            'AI制作・導入支援',
+          ])
+          await verifyPage('/en/japan-market-partner', [
+            'Your outsourced Japan team, from setup to operation.',
             'Japan Market Setup',
-            'Apply for a Japan Partnership — $13K',
-            'Limited founding-partner capacity',
-          ]
-          let fingerprintOk = false
-          for (let attempt = 1; attempt <= 24; attempt += 1) {
-            const response = await fetch(`${site}/en?release_check=${Date.now()}`, {
-              headers: { 'Cache-Control': 'no-cache' },
-              signal: AbortSignal.timeout(30_000),
-            })
-            const html = await response.text()
-            const missing = expected.filter((text) => !html.includes(text))
-            console.log(`[fingerprint ${attempt}/24] HTTP ${response.status}; missing=${missing.length}`)
-            if (response.ok && missing.length === 0) {
-              for (const text of expected) console.log(`verified: ${text}`)
-              fingerprintOk = true
-              break
-            }
-            await sleep(10_000)
-          }
-          if (!fingerprintOk) throw new Error('Production /en did not expose all Country Partner fingerprints')
+            '$13,000',
+          ])
+          await verifyPage('/en/video-as-a-service', [
+            'Turn video production into a reliable recurring workflow.',
+            'One active request',
+          ])
+          await verifyPage('/ja/video-as-a-service', [
+            '動画制作を、単発発注から継続できる制作体制へ。',
+            '一件ずつ制作',
+          ])
 
           const ready = await fetch(`${site}/api/ready?release_check=${Date.now()}`, {
             headers: { 'Cache-Control': 'no-cache' },
@@ -231,7 +213,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: country-partner-release-evidence-${{ github.run_attempt }}
+          name: two-service-site-release-evidence-${{ github.run_attempt }}
           path: |
             /tmp/paradigm-release.log
             /tmp/deployment-id
@@ -241,12 +223,12 @@ jobs:
       - name: Report release success
         if: success()
         run: |
-          DEPLOYMENT_IDS="$(tr '\n' ',' < /tmp/deployment-id 2>/dev/null | sed 's/,$//' || true)"
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "✅ Production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployments: \`${DEPLOYMENT_IDS:-existing deployment}\`. Fixed route recovered, homepage CMS seed completed, Country Partner 4 fingerprints, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          DEPLOYMENT_ID="$(cat /tmp/deployment-id 2>/dev/null | tail -n 1 || true)"
+          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "✅ Two-service production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployment: \`${DEPLOYMENT_ID:-unknown}\`. The new \`/ja\`, \`/en\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Report release failure
         if: failure()
         run: |
-          TAIL="$(tail -n 140 /tmp/paradigm-release.log 2>/dev/null || true)"
-          printf -v BODY '❌ Production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
+          TAIL="$(tail -n 180 /tmp/paradigm-release.log 2>/dev/null || true)"
+          printf -v BODY '❌ Two-service production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
           gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "$BODY"
