@@ -1,4 +1,11 @@
+import {
+  isVideoServicePlanId,
+  VIDEO_SERVICE_INTENT,
+  type VideoServicePlanId,
+} from "@/lib/video-service-content"
+
 export const JAPAN_ENTRY_INTENT = "japan-entry" as const
+export { VIDEO_SERVICE_INTENT }
 
 const DECISION_AUTHORITIES = new Set([
   "final-decision-maker",
@@ -27,6 +34,19 @@ export const JAPAN_ENTRY_PAYMENT_METHODS = new Set([
   "credit-card",
 ])
 
+const VIDEO_MONTHLY_DEMAND = new Set(["1-4", "5-10", "11-20", "21-plus"])
+const VIDEO_ASSET_READINESS = new Set(["ready", "partial", "concept-only"])
+const VIDEO_PREFERRED_START = new Set([
+  "within-7-days",
+  "within-30-days",
+  "later",
+])
+
+export type ContactIntent =
+  | typeof JAPAN_ENTRY_INTENT
+  | typeof VIDEO_SERVICE_INTENT
+  | "general"
+
 export interface ContactPayload {
   name: string
   company: string
@@ -37,7 +57,7 @@ export interface ContactPayload {
   budget: string
   locale: string
   turnstileToken: string
-  intent: typeof JAPAN_ENTRY_INTENT | "general"
+  intent: ContactIntent
   companyWebsite: string
   companyCountry: string
   decisionAuthority: string
@@ -45,6 +65,11 @@ export interface ContactPayload {
   desiredLaunch: string
   paymentMethod: string
   setupFeeAcknowledged: boolean
+  videoPlan: VideoServicePlanId | ""
+  monthlyVideoDemand: string
+  videoAssetReadiness: string
+  videoPreferredStart: string
+  videoTermsAcknowledged: boolean
   idempotencyKey: string
   utmSource: string
   utmMedium: string
@@ -132,13 +157,25 @@ function readHttpUrl(source: Record<string, unknown>, key: string): string {
   return protocol === "https:" || protocol === "http:" ? value : ""
 }
 
+function resolveIntent(
+  requestedIntent: string,
+  locale: string,
+): ContactIntent {
+  if (requestedIntent === VIDEO_SERVICE_INTENT) return VIDEO_SERVICE_INTENT
+  const englishLocale =
+    locale.toLowerCase() === "en" || locale.toLowerCase().startsWith("en-")
+  if (englishLocale || requestedIntent === JAPAN_ENTRY_INTENT) {
+    return JAPAN_ENTRY_INTENT
+  }
+  return "general"
+}
+
 export function parseContactPayload(value: unknown): ContactPayload | null {
   if (!isRecord(value)) return null
 
   const locale = readString(value, "locale", 16)
   const requestedIntent = readString(value, "intent", 40)
-  const englishLocale =
-    locale.toLowerCase() === "en" || locale.toLowerCase().startsWith("en-")
+  const videoPlanValue = readString(value, "videoPlan", 40)
 
   return {
     name: readString(value, "name", 120),
@@ -150,12 +187,7 @@ export function parseContactPayload(value: unknown): ContactPayload | null {
     budget: readString(value, "budget", 100),
     locale,
     turnstileToken: readString(value, "turnstileToken", 4_096),
-    // English is the dedicated Japan Entry funnel. Never trust a client-sent
-    // `general` intent to bypass its commercial qualification requirements.
-    intent:
-      englishLocale || requestedIntent === JAPAN_ENTRY_INTENT
-        ? JAPAN_ENTRY_INTENT
-        : "general",
+    intent: resolveIntent(requestedIntent, locale),
     companyWebsite: readString(value, "companyWebsite", 2_048),
     companyCountry: readString(value, "companyCountry", 120),
     decisionAuthority: readString(value, "decisionAuthority", 80),
@@ -163,6 +195,11 @@ export function parseContactPayload(value: unknown): ContactPayload | null {
     desiredLaunch: readString(value, "desiredLaunch", 80),
     paymentMethod: readString(value, "paymentMethod", 40),
     setupFeeAcknowledged: value.setupFeeAcknowledged === true,
+    videoPlan: isVideoServicePlanId(videoPlanValue) ? videoPlanValue : "",
+    monthlyVideoDemand: readString(value, "monthlyVideoDemand", 40),
+    videoAssetReadiness: readString(value, "videoAssetReadiness", 40),
+    videoPreferredStart: readString(value, "videoPreferredStart", 40),
+    videoTermsAcknowledged: value.videoTermsAcknowledged === true,
     idempotencyKey: readString(value, "idempotencyKey", 128),
     utmSource: readString(value, "utmSource", 200),
     utmMedium: readString(value, "utmMedium", 200),
@@ -189,9 +226,61 @@ export function normalizeCompanyCountry(
   return /^[A-Z]{2}$/.test(possibleCode) ? possibleCode : value.trim()
 }
 
+function scoreVideoService(
+  payload: ContactPayload,
+): ContactQualification {
+  const planPoints: Record<VideoServicePlanId, number> = {
+    essential: 55,
+    unlimited: 75,
+    priority: 88,
+  }
+  const demandPoints: Record<string, number> = {
+    "1-4": 2,
+    "5-10": 5,
+    "11-20": 8,
+    "21-plus": 10,
+  }
+  const readinessPoints: Record<string, number> = {
+    ready: 7,
+    partial: 4,
+    "concept-only": 1,
+  }
+  const startPoints: Record<string, number> = {
+    "within-7-days": 5,
+    "within-30-days": 3,
+    later: 0,
+  }
+  const plan = payload.videoPlan || "essential"
+  const score = Math.min(
+    100,
+    planPoints[plan] +
+      (demandPoints[payload.monthlyVideoDemand] ?? 0) +
+      (readinessPoints[payload.videoAssetReadiness] ?? 0) +
+      (startPoints[payload.videoPreferredStart] ?? 0),
+  )
+  const reasons = [
+    `video_plan_${plan}`,
+    `monthly_demand_${payload.monthlyVideoDemand || "unknown"}`,
+    `asset_readiness_${payload.videoAssetReadiness || "unknown"}`,
+    `preferred_start_${payload.videoPreferredStart || "unknown"}`,
+  ]
+  const tier = score >= 80 ? "hot" : score >= 60 ? "warm" : "nurture"
+  return {
+    score,
+    priority: Math.min(100, 55 + Math.round(score / 2)),
+    tier,
+    reasons,
+    disqualifiers: [],
+  }
+}
+
 export function scoreContactQualification(
   payload: ContactPayload,
 ): ContactQualification {
+  if (payload.intent === VIDEO_SERVICE_INTENT) {
+    return scoreVideoService(payload)
+  }
+
   if (payload.intent !== JAPAN_ENTRY_INTENT) {
     return {
       score: 50,
@@ -228,17 +317,21 @@ export function scoreContactQualification(
   score += launchPoints[payload.desiredLaunch] ?? 0
   if (payload.setupFeeAcknowledged) score += 10
 
-  if (payload.decisionAuthority === "final-decision-maker")
+  if (payload.decisionAuthority === "final-decision-maker") {
     reasons.push("final_decision_maker")
-  else if (payload.decisionAuthority === "direct-access")
+  } else if (payload.decisionAuthority === "direct-access") {
     reasons.push("direct_access_to_approval")
-  else reasons.push("multiple_internal_approvals")
+  } else {
+    reasons.push("multiple_internal_approvals")
+  }
 
-  if (payload.approvalTimeline === "within-7-days")
+  if (payload.approvalTimeline === "within-7-days") {
     reasons.push("approval_within_7_days")
-  else if (payload.approvalTimeline === "within-30-days")
+  } else if (payload.approvalTimeline === "within-30-days") {
     reasons.push("approval_within_30_days")
-  else reasons.push("slow_or_uncertain_approval")
+  } else {
+    reasons.push("slow_or_uncertain_approval")
+  }
 
   if (
     payload.desiredLaunch === "this-month" ||
@@ -249,9 +342,6 @@ export function scoreContactQualification(
     reasons.push("later_launch")
   }
 
-  // This funnel is deliberately optimized for SMB buyers who can approve the
-  // fixed setup fee now. Additive scoring must never let a slow/non-decision
-  // maker become HOT by compensating with unrelated answers.
   let scoreCap = 100
   if (payload.decisionAuthority === "not-final") {
     disqualifiers.push("not_final_decision_maker")
@@ -290,45 +380,108 @@ function isValidWebsite(value: string): boolean {
   return protocol === "https:" || protocol === "http:"
 }
 
+function videoError(payload: ContactPayload, ja: string, en: string): string {
+  return payload.locale.toLowerCase().startsWith("ja") ? ja : en
+}
+
+function validateVideoService(payload: ContactPayload): string | null {
+  if (!payload.company || !isValidWebsite(payload.companyWebsite)) {
+    return videoError(
+      payload,
+      "会社名と有効な会社・サービスURLを入力してください。",
+      "Company and a valid company or product URL are required.",
+    )
+  }
+  if (!payload.videoPlan || !isVideoServicePlanId(payload.videoPlan)) {
+    return videoError(payload, "希望プランを選択してください。", "Select a plan.")
+  }
+  if (!VIDEO_MONTHLY_DEMAND.has(payload.monthlyVideoDemand)) {
+    return videoError(
+      payload,
+      "想定する月間需要を選択してください。",
+      "Select the expected monthly demand.",
+    )
+  }
+  if (!VIDEO_ASSET_READINESS.has(payload.videoAssetReadiness)) {
+    return videoError(
+      payload,
+      "素材の準備状況を選択してください。",
+      "Select the asset readiness.",
+    )
+  }
+  if (!VIDEO_PREFERRED_START.has(payload.videoPreferredStart)) {
+    return videoError(
+      payload,
+      "希望開始時期を選択してください。",
+      "Select the preferred start timing.",
+    )
+  }
+  if (!payload.videoTermsAcknowledged) {
+    return videoError(
+      payload,
+      "Video as a Service利用規約と取引条件への確認が必要です。",
+      "Confirm the Video as a Service Terms and commercial conditions.",
+    )
+  }
+  return null
+}
+
 export function validateContactPayload(payload: ContactPayload): string | null {
   if (!payload.name || !payload.email || !payload.message) {
-    return payload.intent === JAPAN_ENTRY_INTENT
-      ? "Name, work email, and launch details are required."
-      : "必須項目が入力されていません"
+    if (payload.intent === JAPAN_ENTRY_INTENT) {
+      return "Name, work email, and launch details are required."
+    }
+    return payload.locale.toLowerCase().startsWith("ja")
+      ? "必須項目が入力されていません"
+      : "Name, work email, and the first request are required."
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
-    return payload.intent === JAPAN_ENTRY_INTENT
-      ? "Enter a valid work email address."
-      : "メールアドレスの形式が正しくありません"
+    if (payload.intent === JAPAN_ENTRY_INTENT) {
+      return "Enter a valid work email address."
+    }
+    return payload.locale.toLowerCase().startsWith("ja")
+      ? "メールアドレスの形式が正しくありません"
+      : "Enter a valid email address."
   }
 
-  if (payload.intent !== JAPAN_ENTRY_INTENT) return null
+  if (payload.intent === VIDEO_SERVICE_INTENT) {
+    const videoValidation = validateVideoService(payload)
+    if (videoValidation) return videoValidation
+  }
+
+  if (payload.intent === JAPAN_ENTRY_INTENT) {
+    if (
+      !payload.company ||
+      !payload.companyCountry ||
+      !isValidWebsite(payload.companyWebsite)
+    ) {
+      return "Company, headquarters country, and a valid company website are required."
+    }
+    if (!DECISION_AUTHORITIES.has(payload.decisionAuthority)) {
+      return "Select your decision authority."
+    }
+    if (!APPROVAL_TIMELINES.has(payload.approvalTimeline)) {
+      return "Select the $13,000 approval timeline."
+    }
+    if (!DESIRED_LAUNCHES.has(payload.desiredLaunch)) {
+      return "Select the desired Japan launch timing."
+    }
+    if (!JAPAN_ENTRY_PAYMENT_METHODS.has(payload.paymentMethod)) {
+      return "Select a supported payment method."
+    }
+    if (!payload.setupFeeAcknowledged) {
+      return "Confirm the $13,000 setup fee and 14-business-day delivery refund terms before applying."
+    }
+  }
 
   if (
-    !payload.company ||
-    !payload.companyCountry ||
-    !isValidWebsite(payload.companyWebsite)
+    payload.intent !== "general" &&
+    !/^[A-Za-z0-9_-]{16,128}$/.test(payload.idempotencyKey)
   ) {
-    return "Company, headquarters country, and a valid company website are required."
-  }
-  if (!DECISION_AUTHORITIES.has(payload.decisionAuthority)) {
-    return "Select your decision authority."
-  }
-  if (!APPROVAL_TIMELINES.has(payload.approvalTimeline)) {
-    return "Select the $13,000 approval timeline."
-  }
-  if (!DESIRED_LAUNCHES.has(payload.desiredLaunch)) {
-    return "Select the desired Japan launch timing."
-  }
-  if (!JAPAN_ENTRY_PAYMENT_METHODS.has(payload.paymentMethod)) {
-    return "Select a supported payment method."
-  }
-  if (!payload.setupFeeAcknowledged) {
-    return "Confirm the $13,000 setup fee and 14-business-day delivery refund terms before applying."
-  }
-  if (!/^[A-Za-z0-9_-]{16,128}$/.test(payload.idempotencyKey)) {
-    return "Form verification identity is missing. Reload the page and try again."
+    return payload.locale.toLowerCase().startsWith("ja")
+      ? "フォーム認証情報がありません。ページを再読み込みしてください。"
+      : "Form verification identity is missing. Reload the page and try again."
   }
 
   return null

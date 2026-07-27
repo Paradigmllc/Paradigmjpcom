@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import {
   JAPAN_ENTRY_INTENT,
+  VIDEO_SERVICE_INTENT,
   type ContactPayload,
   type ContactQualification,
 } from "./contact-payload"
@@ -57,6 +58,64 @@ export function contactChallengeHash(input: {
     .digest("hex")
 }
 
+function videoServiceMeta(payload: ContactPayload): Record<string, unknown> | null {
+  if (payload.intent !== VIDEO_SERVICE_INTENT) return null
+  const activeSlots = payload.videoPlan === "priority" ? 2 : 1
+  const capacity =
+    payload.videoPlan === "essential"
+      ? "up_to_10_short_videos_per_billing_month"
+      : "unlimited_request_queue"
+  const revisions =
+    payload.videoPlan === "essential"
+      ? "up_to_3_rounds_per_video"
+      : "unlimited_within_agreed_brief"
+  return {
+    plan: payload.videoPlan,
+    monthly_demand: payload.monthlyVideoDemand,
+    asset_readiness: payload.videoAssetReadiness,
+    preferred_start: payload.videoPreferredStart,
+    terms_acknowledged: payload.videoTermsAcknowledged,
+    billing: {
+      cadence: "monthly",
+      timing: "prepaid",
+      auto_renews: true,
+      cancellation_effective: "next_renewal_date",
+    },
+    operating_model: {
+      capacity,
+      active_slots: activeSlots,
+      revisions,
+      ready_start_target: "normally_within_2_business_days",
+      ready_start_is_completion_guarantee: false,
+      client_review_can_release_slot: true,
+    },
+    contract_status: "pending_fit_review_and_service_order",
+  }
+}
+
+function japanEntryMeta(payload: ContactPayload): Record<string, unknown> | null {
+  if (payload.intent !== JAPAN_ENTRY_INTENT) return null
+  return {
+    delivery_guarantee: {
+      business_days: 14,
+      refund: "100_percent_setup_fee",
+      clock_starts:
+        "written_scope_payment_cleared_complete_inputs_access_and_approver",
+      client_holds_recorded: true,
+      start_date: null,
+      acceptance_record_required: true,
+      outcome_guarantees: false,
+    },
+    payment_collection: {
+      requested_method: payload.paymentMethod || null,
+      status: "pending_manual_invoice",
+      invoice_authoritative: true,
+      public_form_collects_sensitive_details: false,
+      credit_card_route: "stripe_invoice_or_payment_link",
+    },
+  }
+}
+
 export function buildContactLeadMeta(input: {
   payload: ContactPayload
   qualification: ContactQualification
@@ -84,22 +143,8 @@ export function buildContactLeadMeta(input: {
       desired_launch: payload.desiredLaunch || null,
       payment_method: payload.paymentMethod || null,
       setup_fee_acknowledged: payload.setupFeeAcknowledged,
-      delivery_guarantee: {
-        business_days: 14,
-        refund: "100_percent_setup_fee",
-        clock_starts: "written_scope_payment_cleared_complete_inputs_access_and_approver",
-        client_holds_recorded: true,
-        start_date: null,
-        acceptance_record_required: true,
-        outcome_guarantees: false,
-      },
-      payment_collection: {
-        requested_method: payload.paymentMethod || null,
-        status: "pending_manual_invoice",
-        invoice_authoritative: true,
-        public_form_collects_sensitive_details: false,
-        credit_card_route: "stripe_invoice_or_payment_link",
-      },
+      video_service: videoServiceMeta(payload),
+      ...(japanEntryMeta(payload) ?? {}),
       qualification_score: qualification.score,
       qualification_tier: qualification.tier,
       qualification_reasons: qualification.reasons,
@@ -141,6 +186,18 @@ export function slackInline(value: string): string {
   return escapeSlackText(value).replace(/\s+/g, " ").trim()
 }
 
+function videoSlackLines(payload: ContactPayload): Array<string | null> {
+  if (payload.intent !== VIDEO_SERVICE_INTENT) return []
+  return [
+    `*VaaSプラン:* ${payload.videoPlan || "未選択"}`,
+    `*月間需要:* ${payload.monthlyVideoDemand || "未選択"}`,
+    `*素材準備:* ${payload.videoAssetReadiness || "未選択"}`,
+    `*開始希望:* ${payload.videoPreferredStart || "未選択"}`,
+    `*規約確認:* ${payload.videoTermsAcknowledged ? "yes" : "no"}`,
+    "*運用条件:* 月額前払い / Ready後原則2営業日以内に着手 / 完成時間の保証ではない",
+  ]
+}
+
 export function buildContactSlackText(input: {
   payload: ContactPayload
   reportLocale: string
@@ -148,7 +205,9 @@ export function buildContactSlackText(input: {
 }): string {
   const { payload, qualification } = input
   return [
-    "📩 *paradigmjp.com お問い合わせ*",
+    payload.intent === VIDEO_SERVICE_INTENT
+      ? "🎬 *Video as a Service 申込み*"
+      : "📩 *paradigmjp.com お問い合わせ*",
     "*lead ID:* {{lead_id}}",
     `*intent:* ${payload.intent}`,
     `*locale:* ${input.reportLocale}`,
@@ -173,6 +232,7 @@ export function buildContactSlackText(input: {
       : null,
     payload.desiredLaunch ? `*開始希望:* ${payload.desiredLaunch}` : null,
     payload.paymentMethod ? `*支払方法:* ${payload.paymentMethod}` : null,
+    ...videoSlackLines(payload),
     payload.intent === JAPAN_ENTRY_INTENT
       ? "*納品保証:* 14営業日以内に合意したセットアップを納品できない場合はセットアップ費用全額返金（契約条件・起算条件を記録）"
       : null,
@@ -186,7 +246,11 @@ export function contactNotificationTitle(
   intent: ContactPayload["intent"],
   qualification: ContactQualification,
 ): string {
-  return intent === JAPAN_ENTRY_INTENT
-    ? `Japan Entry application — ${qualification.tier.toUpperCase()} ${qualification.score}`
-    : "Website inquiry"
+  if (intent === VIDEO_SERVICE_INTENT) {
+    return `VaaS application — ${qualification.tier.toUpperCase()} ${qualification.score}`
+  }
+  if (intent === JAPAN_ENTRY_INTENT) {
+    return `Japan Entry application — ${qualification.tier.toUpperCase()} ${qualification.score}`
+  }
+  return "Website inquiry"
 }

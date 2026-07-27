@@ -6,9 +6,15 @@ on:
       - "next.config.ts"
       - "src/app/[locale]/home-v2/page.tsx"
       - "src/app/[locale]/japan-market-partner/page.tsx"
-      - "src/app/[locale]/video-as-a-service/page.tsx"
+      - "src/app/[locale]/video-as-a-service/**"
+      - "src/app/[locale]/contact/**"
+      - "src/app/api/contact/**"
+      - "src/app/sitemap.ts"
+      - "src/lib/video-service-*.ts"
       - "src/components/aesop/SiteHeader.tsx"
       - "src/components/aesop/SiteFooter.tsx"
+      - "docs/knowledge/video-as-a-service-operating-system.md"
+      - "docs/templates/video-service-*.md"
       - ".github/workflows/two-service-site-validation.yml"
   workflow_dispatch:
 
@@ -38,6 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Contact payload tests
+        run: >-
+          npm exec -- vitest run
+          src/app/api/contact/contact-payload.test.ts
+          src/app/api/contact/contact-payload.video-service.test.ts
+
       - name: TypeScript
         run: npm exec -- tsc --noEmit
 
@@ -47,7 +59,11 @@ jobs:
           next.config.ts
           'src/app/[locale]/home-v2/page.tsx'
           'src/app/[locale]/japan-market-partner/page.tsx'
-          'src/app/[locale]/video-as-a-service/page.tsx'
+          'src/app/[locale]/video-as-a-service/**/*.tsx'
+          'src/app/[locale]/contact/**/*.tsx'
+          'src/app/api/contact/**/*.ts'
+          src/app/sitemap.ts
+          'src/lib/video-service-*.ts'
           src/components/aesop/SiteHeader.tsx
           src/components/aesop/SiteFooter.tsx
           --max-warnings=0

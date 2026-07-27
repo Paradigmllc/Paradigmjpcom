@@ -1,17 +1,6 @@
-/**
- * /[locale]/contact — お問い合わせ (form + Cal.com sidebar)
- *
- * 役割:   お問い合わせ (form + Cal.com sidebar)
- * 入力:   params.locale
- * 出力:   PageHero + ContactForm + Cal.com booking aside
- *
- * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:contactPage 経由に統一.
- *   旧 isJa ? "JP" : "EN" の二択 hardcode → 12 locale 対応 (next-intl getTranslations).
- * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
- */
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Mail, Clock, Calendar } from "lucide-react"
+import { Calendar, Clock, Mail } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildPageSchema } from "@/lib/seo/schemas"
@@ -20,6 +9,7 @@ import {
   JAPAN_ENTRY_TITLE,
   getJapanEntryApplicationJsonLd,
 } from "@/lib/jsonld"
+import { VIDEO_SERVICE_INTENT } from "@/lib/video-service-content"
 import PageHero from "@/components/PageHero"
 import { ContactForm } from "./ContactForm"
 import { calendarUrlFor, getSiteSettings } from "@/lib/settings"
@@ -31,25 +21,42 @@ interface Props {
   searchParams: Promise<{ intent?: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+function isVideoServiceIntent(intent?: string): boolean {
+  return intent === VIDEO_SERVICE_INTENT
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
   const { locale } = await params
-  // The domestic Japanese site always uses the Web-production contact flow.
-  // An old intent query must not switch /ja back to the international offer.
+  const { intent } = await searchParams
+  const isVideoService = isVideoServiceIntent(intent)
+
+  if (isVideoService) {
+    const isJa = locale === "ja"
+    return {
+      title: isJa
+        ? "Video as a Service 申込み"
+        : "Apply for Video as a Service",
+      description: isJa
+        ? "希望プラン、月間需要、素材状況、最初に作りたい動画を送信してください。原則1営業日以内に適合可否と次の手順を回答します。"
+        : "Submit your preferred plan, monthly demand, asset readiness, and first video need. We normally respond with fit and next steps within one business day.",
+      alternates: pageAlternates(locale, "/contact"),
+    }
+  }
+
   const isJapanEntry = locale !== "ja"
   if (isJapanEntry) {
-    const title = locale === "ja" ? "Japan Entryパッケージの適合審査" : `Apply for the ${JAPAN_ENTRY_TITLE}`
-    const description = locale === "ja"
-      ? "セットアップ13,000ドル固定。最初の6か月は標準月額運用込み。記録した開始日から14営業日の納品保証を適用します。"
-      : JAPAN_ENTRY_DESCRIPTION
     return {
-      title,
-      description,
+      title: `Apply for the ${JAPAN_ENTRY_TITLE}`,
+      description: JAPAN_ENTRY_DESCRIPTION,
       alternates: pageAlternates(locale, "/contact"),
       openGraph: {
         type: "website",
         url: `https://paradigmjp.com/${locale}/contact`,
-        title,
-        description,
+        title: `Apply for the ${JAPAN_ENTRY_TITLE}`,
+        description: JAPAN_ENTRY_DESCRIPTION,
         images: [
           {
             url: `/${locale}/opengraph-image`,
@@ -58,12 +65,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             alt: `${JAPAN_ENTRY_TITLE} — application`,
           },
         ],
-      },
-      twitter: {
-        card: "summary_large_image",
-        title,
-        description,
-        images: [`/${locale}/opengraph-image`],
       },
     }
   }
@@ -76,138 +77,259 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ContactPage({ params }: Props) {
+export default async function ContactPage({ params, searchParams }: Props) {
   const { locale } = await params
+  const { intent } = await searchParams
   const t = await getTranslations({ locale, namespace: "contactPage" })
-  // Keep /ja domestic even when an old campaign link includes intent=japan-entry.
-  const isJapanEntry = locale !== "ja"
   const isJapanese = locale === "ja"
-  const entryCopy = isJapanese
-      ? {
-        badge: "Japan Entry",
-        title: "Japan Entryパッケージの適合審査",
-        highlight: "適合審査",
-        desc: "セットアップ13,000ドル固定。Wise・銀行振込・USDC・クレジットカードに対応し、必要条件が揃った開始日から14営業日以内に納品できない場合はセットアップ費用全額を返金します。",
-        aside: "今月中に判断でき、社内の公開責任者を1名置ける企業向けです。",
-        application: "申込み",
-        formTitle: "適合条件と開始時期を確認",
-        back: "← Japan Entryパッケージに戻る",
-        fixedLabel: "固定の取引条件",
-        fixedItems: ["セットアップ13,000ドル（着手前払い）", "支払方法：Wise・銀行振込・USDC・クレジットカード", "必要条件受領後14営業日以内に納品できない場合はセットアップ費用全額返金", "選定した契約先には最初の6か月の運用を追加月額なしで提供", "期間終了後の継続条件・月額は個別協議のうえ書面合意"],
-        fitLabel: "迅速な意思決定に必要な条件",
-        fitItems: ["7日以内に最終承認", "社内の公開責任者1名", "48時間以内に必要素材を共有", "起算日から14営業日以内の納品保証"],
+  const isVideoService = isVideoServiceIntent(intent)
+  const isJapanEntry = !isVideoService && locale !== "ja"
+
+  const videoCopy = isJapanese
+    ? {
+        badge: "VIDEO AS A SERVICE · APPLICATION",
+        title: "継続的な動画制作を、明確なプランで開始する。",
+        highlight: "明確なプラン",
+        desc: "希望プラン、月間需要、素材状況、希望開始時期、最初に作りたい動画を送信してください。申請だけでは契約は成立せず、適合確認後にService Orderを発行します。",
+        aside:
+          "原則1営業日以内に適合可否を回答。契約・初回決済・オンボーディング完了後、Ready依頼へ原則2営業日以内に着手します。",
+        formEyebrow: "APPLICATION",
+        formTitle: "制作需要と最初の依頼を確認",
+        fixedLabel: "標準の取引条件",
+        fixedItems: [
+          "Essential $1,500 / Unlimited $3,500 / Priority $5,500",
+          "月額前払い・月単位の自動更新",
+          "Ready後、標準依頼へ原則2営業日以内に着手",
+          "解約・ダウングレードは次回更新日から適用",
+        ],
+        fitLabel: "申請前に準備するもの",
+        fitItems: [
+          "会社・サービスURL",
+          "希望プランと月間本数感",
+          "ブランド資料・素材の準備状況",
+          "最終承認者と最初に作りたい動画",
+        ],
+        back: "← Video as a Serviceへ戻る",
       }
     : {
-        badge: "Japan Entry",
-        title: "Apply for the fixed Japan Entry package.",
-        highlight: "Japan Entry package.",
-        desc: "$13,000 fixed setup. Wise, bank transfer, USDC, or credit card. If the agreed setup is not delivered within 14 business days from the Start Date, the full setup fee is refunded.",
-        aside: "Built for companies that can decide this week and launch with one accountable owner.",
-        application: "Application",
-        formTitle: "Confirm your fit and launch timing",
-        back: "← Back to the Japan Entry Package",
-        fixedLabel: "Fixed commercial terms",
-        fixedItems: ["$13,000 setup paid before kickoff", "Payment: Wise, bank transfer, USDC, or credit card", "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date", "$2,000/month × 6 months = $12,000 managed-operation value included for selected launch partners", "Month 7 onward is $2,000/month under the signed terms"],
-        fitLabel: "Fast-decision qualification",
-        fitItems: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "14-business-day delivery guarantee from the Start Date"],
+        badge: "VIDEO AS A SERVICE · APPLICATION",
+        title: "Start recurring video production with a clear plan.",
+        highlight: "clear plan",
+        desc: "Submit your preferred plan, monthly demand, asset readiness, desired start, and first video need. An application does not create a contract; we issue a Service Order after fit review.",
+        aside:
+          "We normally respond within one business day. After agreement, first payment, and onboarding, standard Ready requests normally begin within two business days.",
+        formEyebrow: "APPLICATION",
+        formTitle: "Confirm your production demand and first request",
+        fixedLabel: "Standard commercial terms",
+        fixedItems: [
+          "Essential $1,500 / Unlimited $3,500 / Priority $5,500",
+          "Monthly prepaid billing and automatic renewal",
+          "Standard Ready requests normally start within two business days",
+          "Cancellation and downgrade take effect on the next renewal date",
+        ],
+        fitLabel: "Prepare before applying",
+        fitItems: [
+          "Company or product URL",
+          "Preferred plan and monthly demand",
+          "Brand guidance and asset readiness",
+          "Final approver and first video need",
+        ],
+        back: "← Back to Video as a Service",
       }
-  const sidebarBlocks = isJapanEntry
-    ? [
-        {
-          icon: Calendar,
-          gradient: "from-zinc-950 via-zinc-800 to-blue-700",
-          label: entryCopy.fixedLabel,
-          items: entryCopy.fixedItems,
-        },
-        {
-          icon: Mail,
-          gradient: "from-zinc-900 via-blue-800 to-emerald-700",
-          label: entryCopy.fitLabel,
-          items: entryCopy.fitItems,
-        },
-      ]
-    : [
-        {
-          icon: Calendar,
-          gradient: "from-zinc-950 via-zinc-800 to-blue-700",
-          label: t("consultLabel"),
-          items: t.raw("consultItems") as string[],
-        },
-        {
-          icon: Mail,
-          gradient: "from-zinc-900 via-blue-800 to-emerald-700",
-          label: t("contactLabel"),
-          items: t.raw("contactItems") as string[],
-        },
-      ]
-  // PayloadCMS Settings global から admin 編集可能な calendar URL を取得
+
+  const entryCopy = {
+    badge: "JAPAN COUNTRY PARTNER",
+    title: "Apply for a Japan partnership.",
+    highlight: "Japan partnership.",
+    desc: "$13,000 fixed setup. Wise, bank transfer, USDC, or credit card. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded.",
+    aside:
+      "Built for companies that can decide this week and launch with one accountable owner.",
+    formEyebrow: "APPLICATION",
+    formTitle: "Confirm your fit and launch timing",
+    fixedLabel: "Fixed commercial terms",
+    fixedItems: [
+      "$13,000 setup paid before kickoff",
+      "Payment: Wise, bank transfer, USDC, or credit card",
+      "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date",
+      "Selected partners receive the first six months of operation under the signed offer",
+    ],
+    fitLabel: "Fast-decision qualification",
+    fitItems: [
+      "Final approval within seven days",
+      "One internal launch owner",
+      "Required assets within 48 hours",
+      "A near-term Japan launch",
+    ],
+    back: "← Back to Japan Country Partner",
+  }
+
+  const heroCopy = isVideoService
+    ? videoCopy
+    : isJapanEntry
+      ? entryCopy
+      : {
+          badge: t("heroBadge"),
+          title: t("heroTitle"),
+          highlight: t("heroHighlight"),
+          desc: t("heroDesc"),
+          aside: undefined,
+          formEyebrow: t("formEyebrow"),
+          formTitle: t("formTitle"),
+          fixedLabel: t("consultLabel"),
+          fixedItems: t.raw("consultItems") as string[],
+          fitLabel: t("contactLabel"),
+          fitItems: t.raw("contactItems") as string[],
+          back: "",
+        }
+
+  const sidebarBlocks = [
+    {
+      icon: Calendar,
+      gradient: "from-zinc-950 via-zinc-800 to-blue-700",
+      label: heroCopy.fixedLabel,
+      items: heroCopy.fixedItems,
+    },
+    {
+      icon: Mail,
+      gradient: "from-zinc-900 via-blue-800 to-emerald-700",
+      label: heroCopy.fitLabel,
+      items: heroCopy.fitItems,
+    },
+  ]
+
   const settings = await getSiteSettings(locale)
   const bookingUrl = calendarUrlFor(settings, locale)
-  const nextSteps = isJapanEntry
+  const nextSteps = isVideoService
     ? isJapanese
       ? [
-          { title: "適合確認", body: "会社、商品、意思決定権限、開始時期、必要な公開情報を確認します。" },
-          { title: "固定範囲を確定", body: "13,000ドルの提供範囲、依存条件、第三者費用、除外事項を文書で確定します。" },
-          { title: "着手と公開", body: "支払確認、素材・アクセス・承認者の受領日をStart Dateとして記録し、14営業日以内の納品保証と返金条件を適用します。" },
+          {
+            title: "適合確認",
+            body: "会社、需要、希望プラン、制作範囲、素材状況を確認し、原則1営業日以内に回答します。",
+          },
+          {
+            title: "Service Orderと初回決済",
+            body: "プラン、請求日、対象ブランド、除外事項、承認者を文書化し、初月料金を前払いします。",
+          },
+          {
+            title: "オンボーディングとReady",
+            body: "共有ワークスペースへ素材と最初のブリーフを登録し、Ready後に制作キューを開始します。",
+          },
         ]
-      : t.raw("nextSteps") as Array<{ title: string; body: string }>
-    : []
+      : [
+          {
+            title: "Fit review",
+            body: "We review the company, demand, preferred plan, scope, and asset readiness, normally within one business day.",
+          },
+          {
+            title: "Service Order and first payment",
+            body: "We document the plan, billing date, brands, exclusions, and approver, then collect the first month in advance.",
+          },
+          {
+            title: "Onboarding and Ready",
+            body: "Add the assets and first brief to the shared workspace. Production begins through the Ready queue.",
+          },
+        ]
+    : isJapanEntry
+      ? [
+          {
+            title: "Fit review",
+            body: "We confirm the company, product, authority, timing, and required public information.",
+          },
+          {
+            title: "Fix the written scope",
+            body: "The $13,000 scope, dependencies, third-party costs, and exclusions are documented before payment.",
+          },
+          {
+            title: "Start and deliver",
+            body: "The Start Date is recorded after payment, inputs, access, and approver are complete, activating the signed delivery terms.",
+          },
+        ]
+      : []
+
+  const pageTitle = heroCopy.title
+  const pageDescription = heroCopy.desc
 
   return (
     <>
       <PageHero
-        badge={isJapanEntry ? entryCopy.badge : t("heroBadge")}
-        title={isJapanEntry ? entryCopy.title : t("heroTitle")}
-        highlight={isJapanEntry ? entryCopy.highlight : t("heroHighlight")}
-        desc={isJapanEntry ? entryCopy.desc : t("heroDesc")}
-        asideText={isJapanEntry ? entryCopy.aside : undefined}
-        asideCta={isJapanEntry ? { label: isJapanese ? "固定オファーを見る" : "Review the fixed offer", href: isJapanese ? "/ja#japan-entry-pricing" : "/en#japan-entry-pricing" } : undefined}
+        badge={heroCopy.badge}
+        title={heroCopy.title}
+        highlight={heroCopy.highlight}
+        desc={heroCopy.desc}
+        asideText={heroCopy.aside}
+        asideCta={
+          isVideoService
+            ? {
+                label: isJapanese ? "料金・利用条件を確認" : "Review plans and terms",
+                href: "/video-as-a-service#pricing",
+              }
+            : isJapanEntry
+              ? {
+                  label: "Review Japan Country Partner",
+                  href: "/japan-market-partner",
+                }
+              : undefined
+        }
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8 grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
           <div className="lg:col-span-3 paradigm-glass rounded-lg p-6 md:p-8 paradigm-glow-md">
-            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{isJapanEntry ? entryCopy.application : t("formEyebrow")}</p>
-            <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7 ">
-              {isJapanEntry ? entryCopy.formTitle : t("formTitle")}
+            <p className="paradigm-eyebrow text-paradigm-accent mb-3">
+              {heroCopy.formEyebrow}
+            </p>
+            <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7">
+              {heroCopy.formTitle}
             </h2>
-            {isJapanEntry && (
+            {(isVideoService || isJapanEntry) && (
               <Link
-                href={isJapanese ? "/ja" : "/en"}
+                href={
+                  isVideoService
+                    ? `/${locale}/video-as-a-service`
+                    : `/${locale}/japan-market-partner`
+                }
                 className="mb-6 inline-flex min-h-11 items-center text-sm font-semibold text-paradigm-accent underline decoration-paradigm-accent/40 underline-offset-4 transition-colors hover:text-paradigm-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-paradigm-accent"
               >
-                {entryCopy.back}
+                {heroCopy.back}
               </Link>
             )}
             <ContactForm />
           </div>
 
           <aside className="lg:col-span-2 space-y-4">
-            {sidebarBlocks.map((b) => {
-              const Icon = b.icon
+            {sidebarBlocks.map((block) => {
+              const Icon = block.icon
               return (
-                <div key={b.label} className="paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
-                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${b.gradient} text-paradigm-paper mb-3 paradigm-glow-sm`}>
+                <div
+                  key={block.label}
+                  className="paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500"
+                >
+                  <div
+                    className={`inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${block.gradient} text-paradigm-paper mb-3 paradigm-glow-sm`}
+                  >
                     <Icon aria-hidden="true" size={18} strokeWidth={1.5} />
                   </div>
-                  <p className="paradigm-eyebrow text-paradigm-accent mb-3">{b.label}</p>
+                  <p className="paradigm-eyebrow text-paradigm-accent mb-3">
+                    {block.label}
+                  </p>
                   <ul className="space-y-2 text-[13px] text-paradigm-ink-soft leading-[1.75]">
-                    {b.items.map((item) => (<li key={item}>{item}</li>))}
+                    {block.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
                   </ul>
                 </div>
               )
             })}
 
-            {/* 2026-05-13 fail-soft: bookingUrl 未設定なら CTA カードを skip render.
-                admin が PayloadCMS Settings > calendarByLocale (12-locale) で URL を
-                設定したら自動的に表示される。 */}
-            {!isJapanEntry && bookingUrl && (
+            {!isVideoService && !isJapanEntry && bookingUrl && (
               <div className="paradigm-glass rounded-lg p-6 paradigm-glow-md border border-paradigm-accent/30">
                 <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-paradigm-glow via-paradigm-accent to-paradigm-accent text-paradigm-paper mb-3 paradigm-glow-sm">
                   <Clock aria-hidden="true" size={18} strokeWidth={1.5} />
                 </div>
-                <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("hurryLabel")}</p>
+                <p className="paradigm-eyebrow text-paradigm-accent mb-3">
+                  {t("hurryLabel")}
+                </p>
                 <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-4">
                   {t("hurryDesc")}
                 </p>
@@ -224,26 +346,50 @@ export default async function ContactPage({ params }: Props) {
           </aside>
         </div>
       </section>
-      {isJapanEntry && nextSteps.length > 0 && (
-        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="application-next-title">
+
+      {nextSteps.length > 0 && (
+        <section
+          className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section"
+          aria-labelledby="application-next-title"
+        >
           <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
             <div className="mb-8 max-w-3xl">
-              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("nextEyebrow")}</p>
-              <h2 id="application-next-title" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[36px]">{t("nextTitle")}</h2>
-              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("nextDesc")}</p>
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">
+                {isJapanese ? "NEXT STEPS" : "NEXT STEPS"}
+              </p>
+              <h2
+                id="application-next-title"
+                className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[36px]"
+              >
+                {isVideoService
+                  ? isJapanese
+                    ? "申請後、制作開始まで"
+                    : "From application to production"
+                  : "From application to Japan execution"}
+              </h2>
             </div>
             <ol className="grid gap-4 md:grid-cols-3">
               {nextSteps.map((step, index) => (
-                <li key={step.title} className="rounded-lg border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm">
-                  <span className="font-display text-[28px] text-paradigm-accent">{String(index + 1).padStart(2, "0")}</span>
-                  <h3 className="mt-4 font-display text-[18px] text-paradigm-ink">{step.title}</h3>
-                  <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">{step.body}</p>
+                <li
+                  key={step.title}
+                  className="rounded-lg border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm"
+                >
+                  <span className="font-display text-[28px] text-paradigm-accent">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h3 className="mt-4 font-display text-[18px] text-paradigm-ink">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">
+                    {step.body}
+                  </p>
                 </li>
               ))}
             </ol>
           </div>
         </section>
       )}
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -252,11 +398,11 @@ export default async function ContactPage({ params }: Props) {
               ? getJapanEntryApplicationJsonLd()
               : buildPageSchema({
                   type: "ContactPage",
-                  title: t("heroTitle"),
-                  description: t("heroDesc"),
+                  title: pageTitle,
+                  description: pageDescription,
                   url: `https://paradigmjp.com/${locale}/contact`,
                   locale,
-                })
+                }),
           ),
         }}
       />
