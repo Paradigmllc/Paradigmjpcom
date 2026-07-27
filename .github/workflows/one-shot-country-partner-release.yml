@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: paradigmjp-production-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -33,7 +33,7 @@ jobs:
 
       - name: Report release start
         run: |
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "Two-service production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "Two-service production release started from \`$(git rev-parse HEAD)\`. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -224,11 +224,11 @@ jobs:
         if: success()
         run: |
           DEPLOYMENT_ID="$(cat /tmp/deployment-id 2>/dev/null | tail -n 1 || true)"
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "✅ Two-service production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployment: \`${DEPLOYMENT_ID:-unknown}\`. The new \`/ja\`, \`/en\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Two-service production release completed. Main: \`$(git rev-parse HEAD)\`. Coolify deployment: \`${DEPLOYMENT_ID:-unknown}\`. The new \`/ja\`, \`/en\`, Japan Market Partner, both Video as a Service pages, \`/api/ready\`, and authenticated \`/api/sales/health ok:true\` were verified. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Report release failure
         if: failure()
         run: |
           TAIL="$(tail -n 180 /tmp/paradigm-release.log 2>/dev/null || true)"
           printf -v BODY '❌ Two-service production release failed. Run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$TAIL"
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "$BODY"
