@@ -1,4 +1,4 @@
-name: One-shot Country Partner Release Cleanup
+name: One-shot Country Partner Release Proof
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   issues: write
 
 jobs:
-  cleanup:
+  proof:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -21,7 +21,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Record production proof and remove temporary runners
+      - name: Record production proof
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
@@ -37,20 +37,16 @@ jobs:
 - PR **#565** を `main` へ統合し、英語サイトの主軸を **Your Japan Country Partner**、初期有料契約を **Japan Market Setup**、主CTAを **Apply for a Japan Partnership — $13K**、公開キャパシティ表記を **Limited founding-partner capacity** へ変更した。セットアップ費 **$13,000**、14営業日納品保証、選定パートナー向け6か月運用条件は維持し、未定義の売上20%は公開していない。
 - 関連Vitest **34件**、TypeScript、production build、Quality Guard **0 errors / 84 existing warnings**を通過。Coolify deployment **bm4w5btityiz1814a8bh8xf7** は `finished`。固定Traefikルートが旧Docker IPを向いたため一時502になったが、旧IP解放後の制御された再デプロイサイクルで公開ルートを復旧した。
 - 最終検証 **GitHub Actions run 30311462742** でホームページCMS seed **HTTP 200**、`/en` **HTTP 200**、新4文言すべてPASS、旧heroなし、`/api/ready` **HTTP 200**、認証済み`/api/sales/health` **HTTP 200 / ok:true / status:degraded**をread-backした。`degraded`はerrorではなく、任意サービスの未設定を含む状態。
-- 緊急復旧専用のone-shot GitHub Actions 2本は証跡記録後に削除し、通常のデプロイ入口へ残していない。Issue **#566 / #568** を完了として閉じた。
+- 緊急復旧専用のone-shot GitHub Actionsは証跡記録後に削除し、通常のデプロイ入口へ残さない。Issue **#566 / #568** はクリーンアップ完了後に閉じる。
 
 '''
               task.write_text(proof + current, encoding='utf-8')
           PY
-          rm -f .github/workflows/one-shot-country-partner-release.yml
-          rm -f .github/workflows/one-shot-release-observer.yml
-          git add Task.md .github/workflows/one-shot-country-partner-release.yml .github/workflows/one-shot-release-observer.yml
-          git commit -m 'docs: record Country Partner production release'
-          git push origin HEAD:main
-
-      - name: Close completed release issues
-        run: |
-          gh issue comment 566 --repo "$GITHUB_REPOSITORY" --body '✅ Production release, public verification, Task.md evidence, and temporary-runner cleanup are complete.'
-          gh issue close 566 --repo "$GITHUB_REPOSITORY" --reason completed
-          gh issue comment 568 --repo "$GITHUB_REPOSITORY" --body '✅ Final verification passed and temporary observer/release workflows were removed from main.'
-          gh issue close 568 --repo "$GITHUB_REPOSITORY" --reason completed
+          if git diff --quiet -- Task.md; then
+            echo 'Task.md already contains production proof'
+          else
+            git add Task.md
+            git commit -m 'docs: record Country Partner production release'
+            git push origin HEAD:main
+          fi
+          gh issue comment 568 --repo "$GITHUB_REPOSITORY" --body 'Task.md production proof recorded; connector cleanup is the remaining step.'
