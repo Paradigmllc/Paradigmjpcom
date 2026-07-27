@@ -27,8 +27,8 @@ jobs:
           const site = 'https://paradigmjp.com'
           const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
           const pages = [
-            ['/en', ['Japan Market Partner &amp; Video as a Service', 'Japan Market Partner', 'Video as a Service']],
-            ['/ja', ['動画・Web・AI制作支援', 'Video as a Service', 'Web制作', 'AI制作・導入支援']],
+            ['/en', ['Japan Market Partner', 'Video as a Service']],
+            ['/ja', ['Video as a Service', 'Web制作', 'AI制作・導入支援']],
             ['/en/japan-market-partner', ['Japan Market Partner', 'Japan Market Setup', '$13,000']],
             ['/en/video-as-a-service', ['Video as a Service', 'One active request']],
             ['/ja/video-as-a-service', ['Video as a Service', '一件ずつ制作']],
