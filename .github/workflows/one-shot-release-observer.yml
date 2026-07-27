@@ -1,0 +1,51 @@
+name: One-shot Country Partner Release Observer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/one-shot-release-observer.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Coolify and public state
+        run: |
+          node --input-type=module <<'NODE' > /tmp/status.txt
+          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
+          const token = process.env.COOLIFY_API_TOKEN
+          const app = process.env.PARADIGM_APP_UUID
+          async function get(path) {
+            const r = await fetch(`${base}/api/v1${path}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30000) })
+            const t = await r.text()
+            if (!r.ok) return { error: `HTTP ${r.status}`, text: t.slice(0,200) }
+            try { return JSON.parse(t) } catch { return { text: t.slice(0,200) } }
+          }
+          const deployments = await get(`/deployments/applications/${app}`)
+          const rows = Array.isArray(deployments) ? deployments : deployments?.data ?? []
+          console.log('Latest Coolify deployments:')
+          for (const d of rows.slice(0, 8)) console.log(`- ${d.deployment_uuid || d.uuid || 'unknown'} | ${d.status || 'unknown'} | ${d.created_at || ''}`)
+          for (const path of ['/api/ready','/en']) {
+            try {
+              const r = await fetch(`https://paradigmjp.com${path}?observer=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(30000) })
+              const text = await r.text()
+              console.log(`${path}: HTTP ${r.status}; countryPartner=${text.includes('Your Japan Country Partner')}; oldHero=${text.includes('Launch in Japan without hiring a local team')}`)
+            } catch (e) {
+              console.log(`${path}: ${e instanceof Error ? e.message : String(e)}`)
+            }
+          }
+          NODE
+          BODY="$(cat /tmp/status.txt)"
+          printf -v COMMENT 'Observer run: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$BODY"
+          gh issue comment 568 --repo "$GITHUB_REPOSITORY" --body "$COMMENT"
