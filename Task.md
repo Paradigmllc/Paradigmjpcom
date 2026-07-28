@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-07-29 `/work`高速一次判定＋選抜詳細解析（PR検証中 / 外部送信0）
+
+- 完全新規URLの標準処理を、従来の全社フル解析から**ホームページ1回取得だけの高速一次判定**へ変更した。URL正規化、企業名・商品/サービス・業態、日本語/JPY/日本配送の公開有無、0〜100点と`promote / review / low`を決定論で保存する。
+- Raw候補ではDeepSeek、Crawl4AI、複数ページ探索、問い合わせフォーム探索、PV/ROI試算、初回文面、10章レポート、Twenty同期を実行しない。DeepSeek残高がなくても500 URLバッチを開始できる。
+- 営業候補として残す企業だけ、履歴の**「詳細解析へ昇格」**から既存の厳格なフル解析へ進める。昇格後は公開根拠収集、フォーム検証、企業別文面、品質・類似度・安全性gate、顧客向けレポート、Twenty read-backを従来どおり実行する。
+- 永続キュー、最大500 URL、最大20バッチ、3件ずつのDB claim、再開、重複統合、RLS、外部自動送信0件の境界は維持した。新しいDB migrationは追加せず、既存スキーマで実装した。
+- Branch: `codex/work-fast-first` / PR: #586 `feat: make /work fast-first for bulk lead qualification`。関連Vitest、TypeScript、ESLint、production build、正式release、本番`/work`確認が次工程。
+
 ## CURRENT STATUS — 2026-07-28 Video制作パイプライン標準化（HyperFrames＋ComfyUI）
 
 - 公開価格は変更しない（Essential `$1,500/月`、Unlimited `$3,500/月`、Priority `$5,500/月`）。価格はAI実行時間ではなく、企画・ブランド設計・修正・派生・ローカライズ・最終QAを含む承認可能な完成動画に対するものとする。
@@ -45,10 +53,12 @@
 
 ## ACTIVE HANDOFF
 
-- Branch: `feat/video-as-a-service-commercial-launch`
-- PR: #573 `feat: launch Video as a Service commercial operations`
-- PR検証でVitest、TypeScript、ESLint、production buildを通し、mainへ統合後に本番公開と公開URL検証を行う。
-- 本番公開後、次の運用準備を完了する。
+- Branch: `codex/work-fast-first`
+- PR: #586 `feat: make /work fast-first for bulk lead qualification`
+- PR検証で関連Vitest、TypeScript、ESLint、production buildを通し、mainへ統合後に正式releaseと本番`/work`確認を行う。
+- VaaS Branch: `feat/video-as-a-service-commercial-launch`
+- VaaS PR: #573 `feat: launch Video as a Service commercial operations`
+- VaaS本番公開後、次の運用準備を完了する。
   - Stripeの3商品・月額Priceと請求方法
   - Notion client workspace template
   - Frame.io project template
@@ -61,5 +71,6 @@
 
 - Previous Country Partner implementation PR: #565
 - Previous production verification run: `30311462742`
+- `/work` fast-first PR: #586
 - VaaS implementation PR: #573
 - VaaS production deployment: pending
