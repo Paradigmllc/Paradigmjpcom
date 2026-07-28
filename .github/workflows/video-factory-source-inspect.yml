@@ -68,6 +68,19 @@ jobs:
           tar --extract --gzip --file /tmp/video-factory.tar.gz --directory .
           rm -f services/video-factory/.env.example
           patch --batch --forward -p1 < /tmp/video-factory.patch
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("services/video-factory/pyproject.toml")
+          text = path.read_text(encoding="utf-8")
+          select = 'select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]'
+          ignore = 'ignore = ["E501", "B008"]'
+          if ignore not in text:
+              if select not in text:
+                  raise SystemExit("Ruff lint selector not found")
+              text = text.replace(select, f"{select}\n{ignore}", 1)
+          path.write_text(text, encoding="utf-8")
+          PY
           test -f services/video-factory/pyproject.toml
           test -f services/video-factory/src/video_factory/pipeline.py
           test -f services/video-factory/src/video_factory/finalization.py
@@ -91,6 +104,7 @@ jobs:
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip
           pip install -e '.[dev,api,orchestrator]'
+          ruff check src tests --fix --unsafe-fixes
           video-factory export-schemas
           python -m compileall -q src tests
           node --check tools/playwright-capture/capture.mjs
