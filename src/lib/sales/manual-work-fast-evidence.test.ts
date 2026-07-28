@@ -35,13 +35,16 @@ describe("fast manual work evidence", () => {
     expect(result.audit.pages_checked).toHaveLength(1)
   })
 
-  it("fails closed when the homepage has no grounded product context", async () => {
+  it("keeps a sparse homepage in triage instead of failing the whole batch", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("<html><head><title>Home</title></head><body></body></html>", {
       status: 200,
       headers: { "content-type": "text/html" },
     }))
 
-    await expect(collectFastManualWorkEvidence("empty.example"))
-      .rejects.toThrow("enough grounded product context")
+    const result = await collectFastManualWorkEvidence("empty.example")
+
+    expect(result.evidenceMode).toBe("fast_sparse_html")
+    expect(result.productContext).toContain("additional company and product evidence is required")
+    expect(result.businessModel).toBe("service")
   })
 })

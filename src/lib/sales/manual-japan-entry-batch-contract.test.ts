@@ -14,8 +14,10 @@ describe("manual work durable batch contract", () => {
   const batchStore = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-japan-entry-batch-store.ts"), "utf8")
   const fastService = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-fast-service.ts"), "utf8")
   const fastEvidence = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-fast-evidence.ts"), "utf8")
+  const editorialBrief = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-editorial-brief.ts"), "utf8")
+  const editorialWriter = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-gpt56-writer.ts"), "utf8")
 
-  it("supports 500 URLs while keeping each server drain bounded", () => {
+  it("supports 500 URLs while keeping each database claim bounded", () => {
     expect(MANUAL_WORK_BATCH_MAX_URLS).toBe(500)
     expect(MANUAL_WORK_BATCH_DRAIN_SIZE).toBe(3)
     expect(migration).toContain("total_count BETWEEN 1 AND 500")
@@ -23,15 +25,24 @@ describe("manual work durable batch contract", () => {
     expect(migration).toContain("least(coalesce(p_limit, 3), 3)")
   })
 
-  it("keeps new batches homepage-only and defers expensive artifacts", () => {
+  it("keeps new batches homepage-only and defers all customer-facing writing", () => {
     expect(fastEvidence).toContain("ParadigmFastQualification/1.0")
-    expect(fastEvidence).toContain("AbortSignal.timeout(8_000)")
+    expect(fastEvidence).toContain("FAST_HOMEPAGE_TIMEOUT_MS = 5_000")
     expect(fastEvidence).toContain("auditJapanMarketReadinessFromHtml")
     expect(fastEvidence).not.toContain("fetchPageWithCrawl4Ai")
     expect(fastService).toContain('analysis_mode: "fast_qualification"')
     expect(fastService).toContain('twenty_sync_status: "skipped"')
     expect(fastService).toContain("form_url: null")
     expect(fastService).toContain("initial_message: null")
+  })
+
+  it("uses bounded multi-page evidence and GPT-5.6 without a DeepSeek or template fallback", () => {
+    expect(editorialBrief).toContain("MAX_EXTRA_PAGES = 4")
+    expect(editorialBrief).toContain("PAGE_TIMEOUT_MS = 5_000")
+    expect(editorialWriter).toContain('"gpt-5.6-terra"')
+    expect(editorialWriter).toContain('"gpt-5.6-sol"')
+    expect(editorialWriter).toContain("DeepSeek fallback is intentionally disabled")
+    expect(editorialWriter).toContain("score < 88")
   })
 
   it("is service-role-only, RLS protected, resumable, and permanently zero-send", () => {

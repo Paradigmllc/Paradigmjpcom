@@ -5,6 +5,7 @@ import { auditJapanMarketReadinessFromHtml } from "./sources/japan-market-audit"
 import type { BusinessModel } from "./japan-entry-projection"
 
 const MAX_FAST_HOMEPAGE_BYTES = 750_000
+const FAST_HOMEPAGE_TIMEOUT_MS = 5_000
 
 function publicOrigin(domain: string): string {
   const normalized = normalizeDomain(domain)
@@ -104,7 +105,7 @@ export async function collectFastManualWorkEvidence(domain: string) {
   const origin = publicOrigin(domain)
   const response = await fetch(origin, getProxyFetchOptions({
     redirect: "follow",
-    signal: AbortSignal.timeout(8_000),
+    signal: AbortSignal.timeout(FAST_HOMEPAGE_TIMEOUT_MS),
     headers: { "User-Agent": "ParadigmFastQualification/1.0 (+https://paradigmjp.com)" },
   }))
   if (!response.ok) throw new Error(`Homepage returned HTTP ${response.status}`)
@@ -120,19 +121,23 @@ export async function collectFastManualWorkEvidence(domain: string) {
   const paragraphs = textMatches(html, /<p\b[^>]*>([\s\S]*?)<\/p>/gi, 3)
     .filter((value) => value.length >= 20 && value.length <= 220)
   const names = productNames(html)
-  const productContext = joinEvidence([...names, description, ...headings, ...paragraphs, title])
-  if (productContext.length < 12) throw new Error("Homepage did not provide enough grounded product context for fast qualification")
+  const companyName = credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title)
+  const observedContext = joinEvidence([...names, description, ...headings, ...paragraphs, title])
+  const productContext = observedContext.length >= 12
+    ? observedContext
+    : `Sparse public homepage for ${companyName ?? domain}; additional company and product evidence is required before outreach.`
+  const sourceUrl = response.url || origin
 
   return {
-    companyName: credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title),
+    companyName,
     productContext,
-    businessModel: inferBusinessModel(productContext),
-    sourceUrl: response.url,
+    businessModel: inferBusinessModel(observedContext),
+    sourceUrl,
     title,
     description,
     headings,
     productNames: names,
-    evidenceMode: "fast_direct_html" as const,
-    audit: auditJapanMarketReadinessFromHtml(response.url, html),
+    evidenceMode: observedContext.length >= 12 ? "fast_direct_html" as const : "fast_sparse_html" as const,
+    audit: auditJapanMarketReadinessFromHtml(sourceUrl, html),
   }
 }

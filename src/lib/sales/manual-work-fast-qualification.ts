@@ -35,20 +35,27 @@ const COUNTRY_BY_TLD: Record<string, string> = {
   uk: "GB", us: "US", vn: "VN", za: "ZA",
 }
 
+const STRUCTURAL_LOW_FIT = /\b(?:hyperscale|data cent(?:er|re)s?|colocation|critical infrastructure|industrial campus|megawatts?|power capacity|subsea cable|telecom(?:munications)? towers?|large-scale construction|property development)\b/i
+const SPARSE_CONTEXT_PREFIX = "Sparse public homepage for "
+
 function countryCodeFromDomain(domain: string): string | null {
   const suffix = domain.toLowerCase().split(".").at(-1) ?? ""
   return COUNTRY_BY_TLD[suffix] ?? null
 }
 
-function isJapaneseCompany(input: FastEvidenceInput): boolean {
-  if (input.domain.toLowerCase().endsWith(".jp")) return true
-  const text = [input.title, input.description, ...input.headings, input.productContext]
+function evidenceText(input: FastEvidenceInput): string {
+  return [input.title, input.description, ...input.headings, input.productContext]
     .filter((value): value is string => Boolean(value))
     .join(" ")
-  return /株式会社|有限会社|合同会社|所在地.{0,30}(?:日本|東京都|大阪府|京都府)/.test(text)
+}
+
+function isJapaneseCompany(input: FastEvidenceInput): boolean {
+  if (input.domain.toLowerCase().endsWith(".jp")) return true
+  return /株式会社|有限会社|合同会社|所在地.{0,30}(?:日本|東京都|大阪府|京都府)/.test(evidenceText(input))
 }
 
 function observedFacts(productContext: string): string[] {
+  if (productContext.startsWith(SPARSE_CONTEXT_PREFIX)) return []
   return [...new Set(productContext
     .split(" | ")
     .map((value) => value.trim().slice(0, 240))
@@ -68,6 +75,34 @@ function scoreFastQualification(input: FastEvidenceInput, japaneseCompany: boole
     }
   }
 
+  if (input.productContext.startsWith(SPARSE_CONTEXT_PREFIX)) {
+    return {
+      score: 20,
+      priority: "low",
+      promotionRecommended: false,
+      reasons: [
+        "ホームページから商品・サービスを具体的に判断できる公開情報を十分に取得できませんでした。",
+        "日本語やJPYが見当たらないことだけでは営業適性の根拠にならないため、機会として加点していません。",
+      ],
+      analysisMode: "fast_qualification",
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
+  if (input.businessModel === "service" && STRUCTURAL_LOW_FIT.test(evidenceText(input))) {
+    return {
+      score: 25,
+      priority: "low",
+      promotionRecommended: false,
+      reasons: [
+        "公開情報は大規模な物理インフラ・不動産・建設型事業を示しています。",
+        "Paradigmの初期Japan Country Partner対象であるSaaS・デジタルサービス・Premium D2Cとは提供構造が大きく異なります。",
+      ],
+      analysisMode: "fast_qualification",
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
   let score = 20
   const reasons: string[] = ["海外企業の公開サイトと商品・サービス説明を確認しました。"]
 
@@ -78,7 +113,7 @@ function scoreFastQualification(input: FastEvidenceInput, japaneseCompany: boole
       : "オンライン提供可能なSaaS・デジタルサービスとして一次適性があります。")
   } else {
     score += 8
-    reasons.push("サービス型のため、日本で提供可能かは詳細確認が必要です。")
+    reasons.push("サービス型のため、日本で提供可能かは追加確認が必要です。")
   }
 
   if (input.productNames.length > 0) {

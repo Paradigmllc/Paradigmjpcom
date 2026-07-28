@@ -17,6 +17,7 @@ import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
 import { preflightManualWorkBatch } from "@/lib/sales/manual-japan-entry-batch-preflight"
 import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
+import { findManualWorkById } from "@/lib/sales/manual-japan-entry-store"
 import { normalizeManualWorkUrl } from "@/lib/sales/manual-japan-entry-service"
 
 export const runtime = "nodejs"
@@ -36,7 +37,7 @@ const createBatchSchema = z.object({
   retryWorkId: z.string().uuid().optional(),
 }).strict().superRefine((value, context) => {
   if (value.retryWorkId && value.urls.length !== 1) {
-    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "詳細解析は履歴1件ずつ永続キューへ登録してください" })
+    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "文面生成は履歴1件ずつ永続キューへ登録してください" })
   }
 })
 
@@ -47,6 +48,15 @@ async function notify(title: string, message: string, type: string): Promise<voi
   } catch (error) {
     console.error("[api/work/batches] notification failed:", error)
   }
+}
+
+function gpt56WriterConfigured(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY?.trim() || process.env.OPENROUTER_API_KEY?.trim())
+}
+
+function usesGpt56EditorialPath(analysisMode: unknown): boolean {
+  return analysisMode === "fast_qualification"
+    || (typeof analysisMode === "string" && analysisMode.startsWith("gpt56_editorial"))
 }
 
 export async function GET(req: NextRequest) {
@@ -106,17 +116,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // New URLs use deterministic homepage-only fast qualification and do not
-    // require an LLM. DeepSeek is required only when an operator promotes one
-    // shortlisted company to the existing full evidence/message/report path.
+    let fastEditorialPromotion = false
     if (parsed.data.retryWorkId) {
-      const preflight = await preflightManualWorkBatch()
-      if (!preflight.ok) {
-        console.error("[api/work/batches] DeepSeek preflight failed:", preflight.error)
-        return NextResponse.json({
-          ok: false,
-          error: `詳細解析は開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
-        }, { status: 503 })
+      const selectedWork = await findManualWorkById(parsed.data.retryWorkId)
+      if (!selectedWork) {
+        return NextResponse.json({ ok: false, error: "選択した企業履歴が見つかりません" }, { status: 404 })
+      }
+      fastEditorialPromotion = usesGpt56EditorialPath(selectedWork.evidence.analysis_mode)
+      if (fastEditorialPromotion) {
+        if (!gpt56WriterConfigured()) {
+          return NextResponse.json({
+            ok: false,
+            error: "GPT-5.6高品質文面は開始していません。OPENAI_API_KEYまたはOPENROUTER_API_KEYを設定してください。DeepSeekや定型文へのフォールバックは行いません。",
+          }, { status: 503 })
+        }
+      } else {
+        const preflight = await preflightManualWorkBatch()
+        if (!preflight.ok) {
+          console.error("[api/work/batches] legacy DeepSeek preflight failed:", preflight.error)
+          return NextResponse.json({
+            ok: false,
+            error: `旧フル解析は開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
+          }, { status: 503 })
+        }
       }
     }
 
@@ -143,13 +165,17 @@ export async function POST(req: NextRequest) {
     ])
     await notify(
       parsed.data.retryWorkId
-        ? (queuePosition === 0 ? "詳細解析開始" : "詳細解析待機")
+        ? fastEditorialPromotion
+          ? (queuePosition === 0 ? "GPT-5.6文面生成開始" : "GPT-5.6文面生成待機")
+          : (queuePosition === 0 ? "旧フル解析開始" : "旧フル解析待機")
         : (queuePosition === 0 ? "高速リード判定開始" : "高速リード判定待機"),
       parsed.data.retryWorkId
-        ? `選択した1社を文面・フォーム・レポート・Twenty同期まで詳細解析します。前方バッチ${queuePosition}件。外部送信0件。`
-        : `${batch.batch.total_count}件を高速一次判定キューへ登録しました。前方バッチ${queuePosition}件。文面・レポート・Twenty同期は上位候補へ昇格した後だけ実行します。外部送信0件。`,
+        ? fastEditorialPromotion
+          ? `選択した1社の公開ページを追加収集し、GPT-5.6 Terra + Solで高品質文面を編集します。前方バッチ${queuePosition}件。外部送信0件。`
+          : `選択した1社を旧フル解析します。前方バッチ${queuePosition}件。外部送信0件。`
+        : `${batch.batch.total_count}件を高速一次判定キューへ登録しました。前方バッチ${queuePosition}件。送信文は残す企業だけに作成します。外部送信0件。`,
       parsed.data.retryWorkId
-        ? "manual_japan_entry_full_analysis_queued"
+        ? fastEditorialPromotion ? "manual_gpt56_editorial_queued" : "manual_japan_entry_full_analysis_queued"
         : (queuePosition === 0 ? "manual_japan_entry_fast_batch_started" : "manual_japan_entry_fast_batch_queued"),
     )
     return NextResponse.json({
