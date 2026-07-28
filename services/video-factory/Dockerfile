@@ -45,5 +45,5 @@ RUN useradd --create-home --uid 10001 factory \
 USER factory
 
 EXPOSE 8080
-ENTRYPOINT ["video-factory"]
-CMD ["api", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["uvicorn", "video_factory.web:app"]
+CMD ["--host", "0.0.0.0", "--port", "8080"]
