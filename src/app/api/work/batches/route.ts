@@ -15,7 +15,6 @@ import {
 } from "@/lib/sales/manual-japan-entry-batch-types"
 import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
-import { preflightManualWorkBatch } from "@/lib/sales/manual-japan-entry-batch-preflight"
 import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
 import { findManualWorkById } from "@/lib/sales/manual-japan-entry-store"
 import { normalizeManualWorkUrl } from "@/lib/sales/manual-japan-entry-service"
@@ -54,9 +53,13 @@ function gpt56WriterConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim() || process.env.OPENROUTER_API_KEY?.trim())
 }
 
-function usesGpt56EditorialPath(analysisMode: unknown): boolean {
-  return analysisMode === "fast_qualification"
-    || (typeof analysisMode === "string" && analysisMode.startsWith("gpt56_editorial"))
+function hasRecordedOutcome(work: Awaited<ReturnType<typeof findManualWorkById>>): boolean {
+  return Boolean(
+    work?.manually_sent_at
+    || work?.reply_received_at
+    || work?.founder_forwarded_at
+    || work?.meeting_converted_at,
+  )
 }
 
 export async function GET(req: NextRequest) {
@@ -116,29 +119,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    let fastEditorialPromotion = false
     if (parsed.data.retryWorkId) {
       const selectedWork = await findManualWorkById(parsed.data.retryWorkId)
       if (!selectedWork) {
         return NextResponse.json({ ok: false, error: "選択した企業履歴が見つかりません" }, { status: 404 })
       }
-      fastEditorialPromotion = usesGpt56EditorialPath(selectedWork.evidence.analysis_mode)
-      if (fastEditorialPromotion) {
-        if (!gpt56WriterConfigured()) {
-          return NextResponse.json({
-            ok: false,
-            error: "GPT-5.6高品質文面は開始していません。OPENAI_API_KEYまたはOPENROUTER_API_KEYを設定してください。DeepSeekや定型文へのフォールバックは行いません。",
-          }, { status: 503 })
-        }
-      } else {
-        const preflight = await preflightManualWorkBatch()
-        if (!preflight.ok) {
-          console.error("[api/work/batches] legacy DeepSeek preflight failed:", preflight.error)
-          return NextResponse.json({
-            ok: false,
-            error: `旧フル解析は開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
-          }, { status: 503 })
-        }
+      if (selectedWork.is_japanese_company || selectedWork.country_code === "JP") {
+        return NextResponse.json({ ok: false, error: "日本企業は海外向け営業文面の対象外です" }, { status: 400 })
+      }
+      if (hasRecordedOutcome(selectedWork)) {
+        return NextResponse.json({ ok: false, error: "送信・返信・商談の記録がある企業は自動で文面を上書きできません" }, { status: 409 })
+      }
+      if (!gpt56WriterConfigured()) {
+        return NextResponse.json({
+          ok: false,
+          error: "GPT-5.6高品質文面は開始していません。OPENAI_API_KEYまたはOPENROUTER_API_KEYを設定してください。DeepSeekや定型文へのフォールバックは行いません。",
+        }, { status: 503 })
       }
     }
 
@@ -165,17 +161,13 @@ export async function POST(req: NextRequest) {
     ])
     await notify(
       parsed.data.retryWorkId
-        ? fastEditorialPromotion
-          ? (queuePosition === 0 ? "GPT-5.6文面生成開始" : "GPT-5.6文面生成待機")
-          : (queuePosition === 0 ? "旧フル解析開始" : "旧フル解析待機")
+        ? (queuePosition === 0 ? "GPT-5.6文面生成開始" : "GPT-5.6文面生成待機")
         : (queuePosition === 0 ? "高速リード判定開始" : "高速リード判定待機"),
       parsed.data.retryWorkId
-        ? fastEditorialPromotion
-          ? `選択した1社の公開ページを追加収集し、GPT-5.6 Terra + Solで高品質文面を編集します。前方バッチ${queuePosition}件。外部送信0件。`
-          : `選択した1社を旧フル解析します。前方バッチ${queuePosition}件。外部送信0件。`
+        ? `選択した1社の公開ページを追加収集し、GPT-5.6 Terra + Solで高品質文面を編集します。前方バッチ${queuePosition}件。DeepSeek不使用・外部送信0件。`
         : `${batch.batch.total_count}件を高速一次判定キューへ登録しました。前方バッチ${queuePosition}件。送信文は残す企業だけに作成します。外部送信0件。`,
       parsed.data.retryWorkId
-        ? fastEditorialPromotion ? "manual_gpt56_editorial_queued" : "manual_japan_entry_full_analysis_queued"
+        ? "manual_gpt56_editorial_queued"
         : (queuePosition === 0 ? "manual_japan_entry_fast_batch_started" : "manual_japan_entry_fast_batch_queued"),
     )
     return NextResponse.json({
