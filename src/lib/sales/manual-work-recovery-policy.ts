@@ -58,6 +58,8 @@ export function isManualWorkRecoveryAvailable(item: RecoveryState): boolean {
 }
 
 export function isExplicitManualWorkArtifactRefresh(item: RecoveryState, retryRequested: boolean): boolean {
-  if (!retryRequested || !["completed", "needs_review", "rejected"].includes(item.status)) return false
+  const standardRefresh = ["completed", "needs_review"].includes(item.status)
+  const fastRejectedRefresh = item.status === "rejected" && isFastQualification(item)
+  if (!retryRequested || (!standardRefresh && !fastRejectedRefresh)) return false
   return !Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
 }
