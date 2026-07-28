@@ -6,6 +6,7 @@ import {
   JapanEntryCompanyFields,
   JapanEntryDecisionFields,
 } from "./JapanEntryFields"
+import VideoServiceFields from "./VideoServiceFields"
 
 const FIELD_BASE =
   "w-full px-0 py-3 bg-transparent border-b border-paradigm-line focus:border-paradigm-accent outline-none transition-colors text-[15px] text-paradigm-ink placeholder:text-paradigm-ink-mute"
@@ -29,6 +30,11 @@ export interface ContactFormState {
   desiredLaunch: string
   paymentMethod: string
   setupFeeAcknowledged: boolean
+  videoPlan: string
+  monthlyVideoDemand: string
+  videoAssetReadiness: string
+  videoPreferredStart: string
+  videoTermsAcknowledged: boolean
 }
 
 export const EMPTY_CONTACT_FORM: ContactFormState = {
@@ -45,10 +51,17 @@ export const EMPTY_CONTACT_FORM: ContactFormState = {
   desiredLaunch: "",
   paymentMethod: "",
   setupFeeAcknowledged: false,
+  videoPlan: "",
+  monthlyVideoDemand: "",
+  videoAssetReadiness: "",
+  videoPreferredStart: "",
+  videoTermsAcknowledged: false,
 }
 
 interface ContactFormFieldsProps {
   isJapanEntry: boolean
+  isVideoService: boolean
+  locale: string
   form: ContactFormState
   setForm: Dispatch<SetStateAction<ContactFormState>>
   services: string[]
@@ -60,6 +73,8 @@ interface ContactFormFieldsProps {
 
 export function ContactFormFields({
   isJapanEntry,
+  isVideoService,
+  locale,
   form,
   setForm,
   services,
@@ -78,6 +93,7 @@ export function ContactFormFields({
         ? current.filter((item) => item !== service)
         : [...current, service],
     )
+  const videoLocale = locale === "ja" ? "ja" : "en"
 
   return (
     <>
@@ -105,15 +121,15 @@ export function ContactFormFields({
             htmlFor="contactCompany"
             className="block paradigm-eyebrow text-paradigm-ink-soft mb-2"
           >
-            {t("company")}{" "}
-            {isJapanEntry && (
+            {t("company")} {" "}
+            {(isJapanEntry || isVideoService) && (
               <span className="text-pink-500">{t("required")}</span>
             )}
           </label>
           <input
             id="contactCompany"
             type="text"
-            required={isJapanEntry}
+            required={isJapanEntry || isVideoService}
             autoComplete="organization"
             value={form.company}
             onChange={(event) => update("company", event.target.value)}
@@ -125,6 +141,14 @@ export function ContactFormFields({
 
       {isJapanEntry && (
         <JapanEntryCompanyFields form={form} setForm={setForm} />
+      )}
+
+      {isVideoService && (
+        <VideoServiceFields
+          locale={videoLocale}
+          form={form}
+          setForm={setForm}
+        />
       )}
 
       <div>
@@ -165,7 +189,7 @@ export function ContactFormFields({
         />
       </div>
 
-      {!isJapanEntry && (
+      {!isJapanEntry && !isVideoService && (
         <fieldset>
           <legend className="block paradigm-eyebrow text-paradigm-ink-soft mb-3">
             {t("services")}
@@ -198,7 +222,13 @@ export function ContactFormFields({
           htmlFor="contactMessage"
           className="block paradigm-eyebrow text-paradigm-ink-soft mb-2"
         >
-          {isJapanEntry ? "What are you launching in Japan?" : t("message")}{" "}
+          {isJapanEntry
+            ? "What are you launching in Japan?"
+            : isVideoService
+              ? videoLocale === "ja"
+                ? "最初に作りたい動画"
+                : "What is the first video you need?"
+              : t("message")} {" "}
           <span className="text-pink-500">{t("required")}</span>
         </label>
         <textarea
@@ -211,12 +241,16 @@ export function ContactFormFields({
           placeholder={
             isJapanEntry
               ? "Product, current markets, Japanese demand signals, and why the launch matters now"
-              : t("messagePh")
+              : isVideoService
+                ? videoLocale === "ja"
+                  ? "目的、掲載先、希望尺、参考動画、素材の有無、希望時期を記載してください"
+                  : "Objective, channel, target duration, references, available assets, and desired timing"
+                : t("messagePh")
           }
         />
       </div>
 
-      {!isJapanEntry && (
+      {!isJapanEntry && !isVideoService && (
         <div>
           <label
             htmlFor="contactBudget"

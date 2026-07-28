@@ -1,17 +1,14 @@
 "use client"
 
-/**
- * Localized contact form with a qualification-first Japan Entry flow.
- * International routes use the Japan Entry application; the Japanese route
- * always remains domestic Web production contact, including legacy campaign
- * links that still carry `intent=japan-entry`.
- */
-
 import { useCallback, useEffect, useRef, useState } from "react"
 import Script from "next/script"
 import { useSearchParams } from "next/navigation"
 import { Link } from "@/i18n/routing"
 import { useLocale, useTranslations } from "next-intl"
+import {
+  isVideoServicePlanId,
+  VIDEO_SERVICE_INTENT,
+} from "@/lib/video-service-content"
 import {
   ContactFormFields,
   EMPTY_CONTACT_FORM,
@@ -44,16 +41,18 @@ function newSubmissionKey(): string {
     return globalThis.crypto.randomUUID()
   }
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  )
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
+export function isVideoServiceContact(intent?: string | null): boolean {
+  return intent === VIDEO_SERVICE_INTENT
 }
 
 export function isJapanEntryContact(
   locale: string,
-  _intent?: string | null,
+  intent?: string | null,
 ): boolean {
-  return locale !== "ja"
+  return locale !== "ja" && !isVideoServiceContact(intent)
 }
 
 export function shouldRotateSubmissionIdentity(status: number): boolean {
@@ -93,9 +92,16 @@ export function ContactForm() {
   const t = useTranslations("contactForm")
   const locale = useLocale()
   const searchParams = useSearchParams()
-  const isJapanEntry = isJapanEntryContact(locale, searchParams.get("intent"))
+  const intent = searchParams.get("intent")
+  const isVideoService = isVideoServiceContact(intent)
+  const isJapanEntry = isJapanEntryContact(locale, intent)
+  const isJa = locale === "ja"
   const servicesList = t.raw("servicesList") as string[]
   const budgetOptions = t.raw("budgetOptions") as BudgetOption[]
+  const requestedPlan = searchParams.get("plan")
+  const initialVideoPlan = isVideoServicePlanId(requestedPlan)
+    ? requestedPlan
+    : ""
   const challengeLoadError =
     locale === "en"
       ? "Form verification could not be loaded. Reload the page and try again."
@@ -104,6 +110,7 @@ export function ContactForm() {
   const [form, setForm] = useState(() => ({
     ...EMPTY_CONTACT_FORM,
     company: (searchParams.get("company") ?? "").trim().slice(0, 200),
+    videoPlan: initialVideoPlan,
   }))
   const [services, setServices] = useState<string[]>([])
   const [status, setStatus] = useState<
@@ -216,8 +223,9 @@ export function ContactForm() {
     event.preventDefault()
     setStatus("loading")
     try {
-      if (!idempotencyKeyRef.current)
+      if (!idempotencyKeyRef.current) {
         idempotencyKeyRef.current = newSubmissionKey()
+      }
 
       const referrer = document.referrer
       const referrerParams =
@@ -239,7 +247,23 @@ export function ContactForm() {
         attributionValue("cta_source") ||
         attributionValue("cta") ||
         attributionValue("source") ||
-        (isJapanEntry ? "japan-entry-application" : "contact-form")
+        (isJapanEntry
+          ? "japan-entry-application"
+          : isVideoService
+            ? "video-service-application"
+            : "contact-form")
+      const submissionIntent = isJapanEntry
+        ? "japan-entry"
+        : isVideoService
+          ? VIDEO_SERVICE_INTENT
+          : "general"
+      const submittedServices = isJapanEntry
+        ? ["Japan Entry Package"]
+        : isVideoService
+          ? [
+              `Video as a Service${form.videoPlan ? ` — ${form.videoPlan}` : ""}`,
+            ]
+          : services
 
       const response = await fetch("/api/contact", {
         method: "POST",
@@ -251,8 +275,8 @@ export function ContactForm() {
         },
         body: JSON.stringify({
           ...form,
-          intent: isJapanEntry ? "japan-entry" : "general",
-          services: isJapanEntry ? ["Japan Entry Package"] : services,
+          intent: submissionIntent,
+          services: submittedServices,
           locale,
           turnstileToken,
           idempotencyKey: idempotencyKeyRef.current,
@@ -301,8 +325,6 @@ export function ContactForm() {
       setStatus("error")
       setMsg(t("errorNetwork"))
       try {
-        // Preserve the same identity after an ambiguous network/5xx failure so
-        // a server-side success can be recovered through the idempotent RPC.
         await refreshVerification({ resetWidget: true })
       } catch (refreshError) {
         console.error(
@@ -321,7 +343,11 @@ export function ContactForm() {
           ✓
         </div>
         <h3 className="font-display text-[22px] md:text-[26px] leading-[1.2] text-paradigm-ink mb-3 tracking-[-0.015em]">
-          {t("success")}
+          {isVideoService
+            ? isJa
+              ? "申請を受け付けました"
+              : "Application received"
+            : t("success")}
         </h3>
         <p className="text-[14px] text-paradigm-ink-soft leading-[1.7]">
           {msg}
@@ -351,8 +377,11 @@ export function ContactForm() {
           onChange={(event) => setHoneypot(event.target.value)}
         />
       </div>
+
       <ContactFormFields
         isJapanEntry={isJapanEntry}
+        isVideoService={isVideoService}
+        locale={locale}
         form={form}
         setForm={setForm}
         services={services}
@@ -403,7 +432,12 @@ export function ContactForm() {
               "data-umami-event": "japan-entry-apply-submit",
               "data-umami-event-source": "contact-form",
             }
-          : {})}
+          : isVideoService
+            ? {
+                "data-umami-event": "video-service-apply-submit",
+                "data-umami-event-plan": form.videoPlan || "not-selected",
+              }
+            : {})}
         disabled={
           status === "loading" ||
           !formChallenge ||
@@ -420,7 +454,11 @@ export function ContactForm() {
             ? t("submitting")
             : isJapanEntry
               ? "Submit Japan Entry Application"
-              : t("submit")}
+              : isVideoService
+                ? isJa
+                  ? "Video as a Serviceに申し込む"
+                  : "Submit Video Service Application"
+                : t("submit")}
         </span>
       </button>
 

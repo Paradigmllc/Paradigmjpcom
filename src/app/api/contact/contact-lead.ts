@@ -15,7 +15,10 @@ export interface ContactNotificationOutbox {
   title: string
   message: string
   link: string | null
-  type: "japan_entry_application" | "contact_inquiry"
+  type:
+    | "japan_entry_application"
+    | "video_service_application"
+    | "contact_inquiry"
   region: "jp" | "global"
   priority: number
   slack_text: string

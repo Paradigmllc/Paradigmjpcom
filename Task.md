@@ -1,24 +1,33 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-07-28 Japan Country Partner本番反映完了
+## CURRENT STATUS — 2026-07-28 Video as a Service 商用運用PR検証中
 
-- PR **#565**を`main`へ統合し、英語サイトの主軸を **Your Japan Country Partner**、初期有料契約を **Japan Market Setup**、主CTAを **Apply for a Japan Partnership — $13K**、公開キャパシティ表記を **Limited founding-partner capacity**へ変更した。
-- セットアップ費 **USD 13,000**、recorded Start Dateからの14営業日納品保証、選定パートナー向け6か月運用条件、month 7以降の既存条件は維持した。契約上の売上定義が未確定のため、20% revenue shareは公開していない。
-- 関連Vitest **34件**、TypeScript、production build、Quality Guard **0 errors / 84 existing warnings**を通過した。
-- Coolify deployment **bm4w5btityiz1814a8bh8xf7**は`finished`。初回は固定Traefikルートが旧Docker IPを向いて一時502となったが、旧IP解放後の制御された再デプロイサイクルで公開ルートを復旧した。
-- 最終検証 **GitHub Actions run 30311462742**でホームページCMS seed **HTTP 200**、`/en` **HTTP 200**、新4文言すべてPASS、旧heroなし、`/api/ready` **HTTP 200**、認証済み`/api/sales/health` **HTTP 200 / ok:true / status:degraded**をread-backした。`degraded`は`ok:true`の範囲で、任意連携の未設定も含む状態。
+- Video as a Serviceの商品設計を3プランに確定した。
+  - Essential: USD 1,500 / month、条件を満たすショート動画を月10本まで、同時進行1本、各動画3修正ラウンド。
+  - Unlimited: USD 3,500 / month、依頼キュー無制限、同時進行1本、合意ブリーフ内の修正無制限。
+  - Priority: USD 5,500 / month、依頼キュー無制限、同時進行2本、合意ブリーフ内の修正無制限、優先キュー。
+- Readyとなった標準依頼へ原則2営業日以内に着手する。これは完成・納品時間の保証ではない。
+- 申込み、適合確認、Service Order、初回決済、オンボーディング、制作キュー、レビュー、納品、更新・解約までの運用仕様を `docs/knowledge/video-as-a-service-operating-system.md` に定義した。
+- 公開用FAQ・日英利用規約、VaaS専用申込フォーム、CRM/Slack用intent・plan保存、Service Order・Client Brief・メールテンプレートを実装した。
+- 既存英語Contact Formが全申請をJapan Entryへ強制変換していたため、`video-as-a-service` intentだけを安全に分離し、その他の英語申請は従来どおりJapan Entryへ正規化する。
 
 ## ACTIVE HANDOFF
 
-- 公開サイトとコードのCountry Partner表記は一致している。
-- 次の事業工程は、Japan Country Partner向けアウトバウンドの実行、返信処理、商談、提案書・MSA・SOW・請求書の即日発行。
-- D2C、SaaS・AI、Web3を同じ文面で扱わず、対象別の適格性・規制・販売チャネル・報酬方式を案件単位で確定する。
-- 売上シェアを提示する場合は、`Net Revenue`の定義、税・返品・返金・送料・モール手数料・広告費の扱い、契約期間、監査権を先に書面化する。
+- Branch: `feat/video-as-a-service-commercial-launch`
+- PR: #573 `feat: launch Video as a Service commercial operations`
+- PR検証でVitest、TypeScript、ESLint、production buildを通し、mainへ統合後に本番公開と公開URL検証を行う。
+- 本番公開後、次の運用準備を完了する。
+  - Stripeの3商品・月額Priceと請求方法
+  - Notion client workspace template
+  - Frame.io project template
+  - Google Drive folder template
+  - 初回ポートフォリオ3〜6本
+  - 日本法弁護士による利用規約とService Orderの最終レビュー
+- 公開利用規約は事業者向け共通条件であり、案件固有の条件はService Orderを優先させる。
 
 ## RELEASE REFERENCES
 
-- Implementation PR: #565
-- Merge commit: `41c3e88f97d02e0bfd9357884ae3cc5a45c736b7`
-- Detailed production proof: `docs/ops/releases/2026-07-28-japan-country-partner.md`
-- Final verification run: `30311462742`
-- 旧長期ログはGit履歴のcommit `861a4600bb2a576d710fc94e10f6bae3ad0afb21`以前から復元可能。
+- Previous Country Partner implementation PR: #565
+- Previous production verification run: `30311462742`
+- VaaS implementation PR: #573
+- VaaS production deployment: pending

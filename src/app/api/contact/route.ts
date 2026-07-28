@@ -1,10 +1,8 @@
 /**
- * /api/contact — お問い合わせ受信エンドポイント
+ * /api/contact — secure public contact and application endpoint.
  *
  * Validates the public form, atomically persists lead + DB outbox, and sends
  * an idempotent Slack alert under a DB-backed notification lease.
- *
- * 永久ルール (BB / E): catch{} 握りつぶし禁止 — エラーは console.error で可視化。
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -15,15 +13,18 @@ import { normalizeReportLocale } from "@/lib/sales/routing"
 import { notifyBothChannels } from "@/lib/notify"
 import {
   JAPAN_ENTRY_INTENT,
+  VIDEO_SERVICE_INTENT,
   normalizeCompanyCountry,
   parseContactPayload,
   scoreContactQualification,
   validateContactPayload,
+  type ContactIntent,
 } from "./contact-payload"
 import {
   ContactChallengeReplayError,
   completeContactNotification,
   persistContactLead,
+  type ContactNotificationOutbox,
 } from "./contact-lead"
 import { startContactEnrichment } from "./contact-enrichment"
 import { verifyContactChallenge } from "./contact-challenge"
@@ -40,6 +41,20 @@ import {
 } from "./contact-route-helpers"
 
 export { GET } from "./contact-challenge-route"
+
+function notificationType(
+  intent: ContactIntent,
+): ContactNotificationOutbox["type"] {
+  if (intent === JAPAN_ENTRY_INTENT) return "japan_entry_application"
+  if (intent === VIDEO_SERVICE_INTENT) return "video_service_application"
+  return "contact_inquiry"
+}
+
+function notificationSummary(intent: ContactIntent): string {
+  if (intent === JAPAN_ENTRY_INTENT) return "a Japan Entry application"
+  if (intent === VIDEO_SERVICE_INTENT) return "a Video as a Service application"
+  return "an inquiry"
+}
 
 export async function POST(req: NextRequest) {
   let responseLanguage = requestLanguage(req)
@@ -224,8 +239,10 @@ export async function POST(req: NextRequest) {
       reportLocale,
       qualification,
     })
-    const notificationTitle = contactNotificationTitle(intent, qualification)
+    const title = contactNotificationTitle(intent, qualification)
     const safeDisplayName = slackInline(company || name)
+    const summary = notificationSummary(intent)
+    const type = notificationType(intent)
 
     const persistedLead = await persistContactLead({
       idempotencyKey,
@@ -241,13 +258,10 @@ export async function POST(req: NextRequest) {
         meta: leadMeta,
       },
       notification: {
-        title: notificationTitle,
-        message: `${safeDisplayName} submitted ${intent === JAPAN_ENTRY_INTENT ? "a Japan Entry application" : "an inquiry"}.`,
+        title,
+        message: `${safeDisplayName} submitted ${summary}.`,
         link: "https://twenty.paradigmjp.com",
-        type:
-          intent === JAPAN_ENTRY_INTENT
-            ? "japan_entry_application"
-            : "contact_inquiry",
+        type,
         region: "global",
         priority: qualification.priority,
         slack_text: slackTextBase,
@@ -263,13 +277,10 @@ export async function POST(req: NextRequest) {
       }
       const slackText = slackTextBase.replace("{{lead_id}}", persistedLead.id)
       const notifyResult = await notifyBothChannels(slackText, {
-        title: notificationTitle,
-        message: `${safeDisplayName} submitted ${intent === JAPAN_ENTRY_INTENT ? "a Japan Entry application" : "an inquiry"}. Lead ${persistedLead.id}.`,
+        title,
+        message: `${safeDisplayName} submitted ${summary}. Lead ${persistedLead.id}.`,
         link: "https://twenty.paradigmjp.com",
-        type:
-          intent === JAPAN_ENTRY_INTENT
-            ? "japan_entry_application"
-            : "contact_inquiry",
+        type,
         region: "global",
         priority: qualification.priority,
         leadId: persistedLead.id,
@@ -306,12 +317,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    const successMessage =
+      intent === VIDEO_SERVICE_INTENT
+        ? localized(responseLanguage, {
+            en: "Application received. We normally reply with fit and next steps within one business day.",
+            ja: "申請を受け付けました。原則1営業日以内に適合可否と次の手順をご連絡します。",
+          })
+        : variant === "ja"
+          ? "お問い合わせを受け付けました。1営業日以内にご連絡いたします。"
+          : "Thank you. We'll reply within one business day."
+
     return NextResponse.json({
       success: true,
-      message:
-        variant === "ja"
-          ? "お問い合わせを受け付けました。1営業日以内にご連絡いたします。"
-          : "Thank you. We'll reply within one business day.",
+      message: successMessage,
       deduplicated: !persistedLead.created,
       notificationStatus,
     })
