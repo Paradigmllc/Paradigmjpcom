@@ -66,6 +66,7 @@ jobs:
           set -euo pipefail
           rm -rf services/video-factory
           tar --extract --gzip --file /tmp/video-factory.tar.gz --directory .
+          rm -f services/video-factory/.env.example
           patch --batch --forward -p1 < /tmp/video-factory.patch
           test -f services/video-factory/pyproject.toml
           test -f services/video-factory/src/video_factory/pipeline.py
