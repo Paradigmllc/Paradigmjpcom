@@ -17,8 +17,6 @@ import {
   type ManualWorkBatchItemStatus,
   type ManualWorkBatchSnapshot,
 } from "@/lib/sales/manual-japan-entry-batch-types"
-import { findManualWorkById } from "@/lib/sales/manual-japan-entry-store"
-import { processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
 import { processManualEditorialMessage } from "@/lib/sales/manual-work-editorial-service"
 import { processFastManualWorkUrl } from "@/lib/sales/manual-work-fast-service"
 import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
@@ -36,17 +34,12 @@ function completedStatus(status: string): Exclude<ManualWorkBatchItemStatus, "qu
   return "failed"
 }
 
-function usesGpt56EditorialPath(analysisMode: unknown): boolean {
-  return analysisMode === "fast_qualification"
-    || (typeof analysisMode === "string" && analysisMode.startsWith("gpt56_editorial"))
-}
-
 async function notifyCompleted(batchId: string, total: number, failed: number): Promise<void> {
   try {
     const { notifyBothChannels } = await import("@/lib/notify")
     await notifyBothChannels("sales", {
       title: "高速リード判定バッチ完了",
-      message: `${total}件の一次判定を完了（失敗${failed}件）。残す企業だけ/workからGPT-5.6高品質文面を作成できます。外部送信0件。`,
+      message: `${total}件の一次判定を完了（失敗${failed}件）。残す企業だけ/workからGPT-5.6高品質文面を作成できます。DeepSeek不使用・外部送信0件。`,
       link: "/work",
       type: "manual_japan_entry_batch_completed",
       region: "global",
@@ -78,39 +71,21 @@ async function processClaimedItem(input: {
   const { item } = input
   if (!item.claim_token) throw new Error(`Batch item ${item.id} did not receive a claim token`)
   try {
-    const sourceInput = {
-      sourceSlug: input.sourceSlug,
-      sourcePageUrl: input.sourcePageUrl,
-      observedOn: input.observedOn,
-    }
-    let result
-    if (item.retry_requested) {
-      if (!item.expected_work_id) throw new Error("A selected work record is required for message generation")
-      const existing = await findManualWorkById(item.expected_work_id)
-      const analysisMode = existing?.evidence.analysis_mode
-      result = usesGpt56EditorialPath(analysisMode)
-        ? await processManualEditorialMessage({
-            rawUrl: item.canonical_url,
-            expectedWorkId: item.expected_work_id,
-          })
-        : await processManualJapanEntryUrl(
-            item.canonical_url,
-            input.variant,
-            input.angle,
-            sourceInput,
-            {
-              retryRequested: true,
-              expectedWorkId: item.expected_work_id,
-            },
-          )
-    } else {
-      result = await processFastManualWorkUrl(
-        item.canonical_url,
-        input.variant,
-        input.angle,
-        sourceInput,
-      )
-    }
+    const result = item.retry_requested
+      ? await processManualEditorialMessage({
+          rawUrl: item.canonical_url,
+          expectedWorkId: item.expected_work_id ?? "",
+        })
+      : await processFastManualWorkUrl(
+          item.canonical_url,
+          input.variant,
+          input.angle,
+          {
+            sourceSlug: input.sourceSlug,
+            sourcePageUrl: input.sourcePageUrl,
+            observedOn: input.observedOn,
+          },
+        )
     await completeManualWorkBatchItem({
       itemId: item.id,
       claimToken: item.claim_token,
