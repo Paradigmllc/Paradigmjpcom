@@ -40,6 +40,6 @@ describe("ManualWorkIntake multi-batch queue", () => {
     expect(html).toContain("次の高速バッチを追加")
     expect(html).toContain('aria-label="一次判定する海外企業URL"')
     expect(html).not.toContain('aria-label="一次判定する海外企業URL" disabled=""')
-    expect(html).toContain("DeepSeek・フォーム探索・長文レポートを使わず")
+    expect(html).toContain("送信候補には短文と公開連絡先候補を作ります")
   })
 })
