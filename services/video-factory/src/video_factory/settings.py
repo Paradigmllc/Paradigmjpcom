@@ -42,6 +42,8 @@ class Settings:
     rclone_remote: str | None
     rclone_base_path: str
     prefect_deployment_name: str
+    queue_backend: str
+    local_queue_workers: int
     frameio_access_token: str | None
     frameio_create_file_url: str | None
     frameio_api_base_url: str
@@ -67,6 +69,14 @@ class Settings:
             or os.getenv("COMFYUI_BASE_URL")
             or ""
         ).rstrip("/") or None
+        queue_backend = os.getenv("VIDEO_FACTORY_QUEUE_BACKEND", "auto").strip().lower()
+        if queue_backend not in {"auto", "prefect", "local"}:
+            raise ValueError(
+                "VIDEO_FACTORY_QUEUE_BACKEND must be auto, prefect, or local"
+            )
+        local_queue_workers = int(os.getenv("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", "1"))
+        if not 1 <= local_queue_workers <= 8:
+            raise ValueError("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS must be between 1 and 8")
         return cls(
             workspace=workspace,
             api_key=os.getenv("VIDEO_FACTORY_API_KEY") or None,
@@ -148,6 +158,8 @@ class Settings:
                 "PREFECT_DEPLOYMENT_NAME",
                 "paradigm-video-production/production-flow",
             ),
+            queue_backend=queue_backend,
+            local_queue_workers=local_queue_workers,
             frameio_access_token=os.getenv("FRAMEIO_ACCESS_TOKEN") or None,
             frameio_create_file_url=os.getenv("FRAMEIO_CREATE_FILE_URL") or None,
             frameio_api_base_url=os.getenv(
