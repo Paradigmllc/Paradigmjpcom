@@ -36,6 +36,11 @@ function completedStatus(status: string): Exclude<ManualWorkBatchItemStatus, "qu
   return "failed"
 }
 
+function usesGpt56EditorialPath(analysisMode: unknown): boolean {
+  return analysisMode === "fast_qualification"
+    || (typeof analysisMode === "string" && analysisMode.startsWith("gpt56_editorial"))
+}
+
 async function notifyCompleted(batchId: string, total: number, failed: number): Promise<void> {
   try {
     const { notifyBothChannels } = await import("@/lib/notify")
@@ -83,7 +88,7 @@ async function processClaimedItem(input: {
       if (!item.expected_work_id) throw new Error("A selected work record is required for message generation")
       const existing = await findManualWorkById(item.expected_work_id)
       const analysisMode = existing?.evidence.analysis_mode
-      result = analysisMode === "fast_qualification"
+      result = usesGpt56EditorialPath(analysisMode)
         ? await processManualEditorialMessage({
             rawUrl: item.canonical_url,
             expectedWorkId: item.expected_work_id,
