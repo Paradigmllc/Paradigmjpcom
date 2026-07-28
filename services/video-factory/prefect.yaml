@@ -1,0 +1,16 @@
+name: paradigm-video-factory
+prefect-version: 3
+
+build: null
+push: null
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: /app
+
+deployments:
+  - name: production-flow
+    entrypoint: src/video_factory/pipeline.py:production_flow
+    work_pool:
+      name: video-factory
+    parameters:
+      dry_run: false

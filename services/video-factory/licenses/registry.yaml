@@ -1,0 +1,59 @@
+version: 1
+updated_at: 2026-07-28
+entries:
+  - id: hyperframes
+    component: code
+    source: https://github.com/heygen-com/hyperframes
+    pinned_version: 0.7.77
+    license: Apache-2.0
+    production_status: approved
+    notes: Media bundled with examples has separate rights and must not be reused automatically.
+  - id: comfyui
+    component: code
+    source: https://github.com/Comfy-Org/ComfyUI
+    pinned_version: v0.28.0
+    license: GPL-3.0
+    production_status: approved_as_separate_service
+    notes: Every model, custom node, LoRA, font, voice, and output API has its own terms.
+  - id: prefect
+    component: code
+    source: https://github.com/PrefectHQ/prefect
+    pinned_version: "3.x"
+    license: Apache-2.0
+    production_status: approved
+  - id: playwright
+    component: code
+    source: https://github.com/microsoft/playwright
+    pinned_version: 1.59.1
+    license: Apache-2.0
+    production_status: approved
+  - id: ffmpeg
+    component: binary
+    source: https://ffmpeg.org
+    pinned_version: system
+    license: BUILD_DEPENDENT
+    production_status: approved_with_build_review
+  - id: blender-adapter
+    component: external_engine
+    source: null
+    pinned_version: null
+    license: REVIEW_REQUIRED
+    production_status: disabled
+  - id: manim-adapter
+    component: external_engine
+    source: null
+    pinned_version: null
+    license: REVIEW_REQUIRED
+    production_status: disabled
+  - id: liveportrait-adapter
+    component: external_engine
+    source: null
+    pinned_version: null
+    license: REVIEW_CODE_AND_MODEL
+    production_status: disabled
+  - id: musetalk-adapter
+    component: external_engine
+    source: null
+    pinned_version: null
+    license: REVIEW_CODE_AND_MODEL
+    production_status: disabled

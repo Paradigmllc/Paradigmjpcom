@@ -1,0 +1,6 @@
+# Project-scoped MCP configuration. Secrets are inherited from the shell/runtime.
+[mcp_servers.comfyui]
+command = "bash"
+args = ["services/video-factory/scripts/run-comfyui-mcp.sh"]
+startup_timeout_sec = 30
+tool_timeout_sec = 600

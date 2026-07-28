@@ -1,0 +1,15 @@
+version: 1
+models:
+  - id: wan-video-approved-example
+    engine: comfyui
+    model_family: wan
+    exact_artifact: REPLACE_WITH_MODEL_FILENAME
+    sha256: REPLACE_WITH_SHA256
+    code_license: Apache-2.0
+    model_license: REVIEW_EXACT_MODEL_CARD
+    commercial_use: pending_review
+    regions: []
+    approved_workflows: []
+    reviewed_by: null
+    reviewed_at: null
+    notes: Do not enable until the exact weight and model card are reviewed.

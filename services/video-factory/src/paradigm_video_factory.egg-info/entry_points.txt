@@ -1,0 +1,2 @@
+[console_scripts]
+video-factory = video_factory.cli:app
