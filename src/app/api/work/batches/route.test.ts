@@ -136,6 +136,20 @@ describe("manual work durable batch API", () => {
     expect(mocks.schedule).toHaveBeenCalled()
   })
 
+  it("keeps a failed GPT-5.6 editorial row on the GPT-5.6 retry path", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "gpt56_editorial_failed" } })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ urls: ["example.com"], retryWorkId: workId }),
+    }))
+
+    expect(response.status).toBe(201)
+    expect(mocks.preflight).not.toHaveBeenCalled()
+    expect(mocks.createRetry).toHaveBeenCalledWith(expect.objectContaining({ workId }))
+  })
+
   it("refuses GPT-5.6 editorial generation when no high-quality provider is configured", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "fast_qualification" } })
