@@ -4,74 +4,137 @@ on:
   push:
     branches: [main]
     paths:
-      - .github/workflows/two-service-production-fast-probe.yml
+      - "src/app/[locale]/video-as-a-service/**"
+      - "src/app/[locale]/contact/**"
+      - "src/app/api/contact/**"
+      - "src/lib/video-service-*.ts"
+      - "src/app/sitemap.ts"
+      - ".github/workflows/two-service-production-fast-probe.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
-  issues: write
+
+concurrency:
+  group: two-service-production-fast-probe
+  cancel-in-progress: true
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
-    env:
-      GH_TOKEN: ${{ github.token }}
+    timeout-minutes: 8
     steps:
-      - name: Probe all public pages in parallel
+      - name: Probe VaaS production pages with deployment retries
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
+          import { setTimeout as sleep } from 'node:timers/promises'
+
           const site = 'https://paradigmjp.com'
           const specs = [
-            { path: '/en', expected: ['Japan Market Partner', 'Video as a Service'] },
-            { path: '/ja', expected: ['Video as a Service', 'Web制作', 'AI制作・導入支援'] },
-            { path: '/en/japan-market-partner', expected: ['Japan Market Partner', 'Japan Market Setup', '$13,000'] },
-            { path: '/en/video-as-a-service', expected: ['Video as a Service', 'One active request'] },
-            { path: '/ja/video-as-a-service', expected: ['Video as a Service', '一件ずつ制作'] },
+            {
+              path: '/ja/video-as-a-service',
+              expected: ['動画制作チームを、採用せずに。', '$1,500', '$3,500', '$5,500', '契約前によくある質問'],
+            },
+            {
+              path: '/en/video-as-a-service',
+              expected: ['Your on-demand video production team.', '$1,500', '$3,500', '$5,500', 'Questions before you subscribe'],
+            },
+            {
+              path: '/ja/video-as-a-service/terms',
+              expected: ['Video as a Service 利用規約', '2026年7月28日', '契約文書の優先順位'],
+            },
+            {
+              path: '/en/video-as-a-service/terms',
+              expected: ['Video as a Service Terms', 'July 28, 2026', 'Order of precedence'],
+            },
+            {
+              path: '/ja/contact?intent=video-as-a-service&plan=unlimited',
+              expected: ['Video as a Service 申込み', '希望プラン', 'Unlimited', '素材の準備状況'],
+            },
+            {
+              path: '/en/contact?intent=video-as-a-service&plan=unlimited',
+              expected: ['Apply for Video as a Service', 'Preferred plan', 'Unlimited', 'Asset readiness'],
+            },
+            {
+              path: '/api/ready',
+              expected: [],
+            },
           ]
 
-          const results = await Promise.all(specs.map(async (spec) => {
+          async function probe(spec) {
             try {
-              const response = await fetch(`${site}${spec.path}?fast_probe=${Date.now()}`, {
+              const url = new URL(spec.path, site)
+              url.searchParams.set('production_probe', String(Date.now()))
+              const response = await fetch(url, {
                 headers: { 'Cache-Control': 'no-cache' },
+                redirect: 'follow',
                 signal: AbortSignal.timeout(25_000),
               })
-              const html = await response.text()
-              const missing = spec.expected.filter((value) => !html.includes(value))
-              return { path: spec.path, status: response.status, ok: response.ok && missing.length === 0, missing }
+              const body = await response.text()
+              const missing = spec.expected.filter((value) => !body.includes(value))
+              return {
+                path: spec.path,
+                finalUrl: response.url,
+                status: response.status,
+                ok: response.ok && missing.length === 0,
+                missing,
+              }
             } catch (error) {
-              return { path: spec.path, status: 0, ok: false, missing: [], error: error instanceof Error ? error.message : String(error) }
+              return {
+                path: spec.path,
+                status: 0,
+                ok: false,
+                missing: [],
+                error: error instanceof Error ? error.message : String(error),
+              }
             }
-          }))
+          }
+
+          let results = []
+          const maxAttempts = 20
+          for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            results = await Promise.all(specs.map(probe))
+            const passed = results.filter((result) => result.ok).length
+            console.log(`Attempt ${attempt}/${maxAttempts}: ${passed}/${results.length} passed`)
+            for (const result of results) {
+              const detail = result.error
+                ? `error=${result.error}`
+                : `missing=${result.missing.length ? result.missing.join(' | ') : 'none'}`
+              console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.path} HTTP ${result.status}; ${detail}`)
+            }
+            if (results.every((result) => result.ok)) break
+            if (attempt < maxAttempts) await sleep(15_000)
+          }
 
           const lines = results.map((result) => {
-            const detail = result.error ? `error=${result.error}` : `missing=${result.missing.length ? result.missing.join(' | ') : 'none'}`
+            const detail = result.error
+              ? `error=${result.error}`
+              : `missing=${result.missing.length ? result.missing.join(' | ') : 'none'}`
             return `${result.ok ? '✅' : '❌'} ${result.path} — HTTP ${result.status}; ${detail}`
           })
           fs.writeFileSync('/tmp/two-service-fast-probe.md', `${lines.join('\n')}\n`)
+          fs.writeFileSync('/tmp/two-service-fast-probe.json', `${JSON.stringify(results, null, 2)}\n`)
+
           if (!results.every((result) => result.ok)) process.exitCode = 1
           NODE
 
-      - name: Report success and close release issues
-        if: success()
+      - name: Add production verification summary
+        if: always()
         run: |
-          BODY="$(cat /tmp/two-service-fast-probe.md)"
-          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "✅ **Production release verified**\n\n${BODY}\nAll refreshed public pages are live."
-          gh issue close 572 --repo "$GITHUB_REPOSITORY" --reason completed
-          gh issue comment 569 --repo "$GITHUB_REPOSITORY" --body "✅ Final clean production probe passed in issue #572. All five refreshed public pages are live."
-          gh issue close 569 --repo "$GITHUB_REPOSITORY" --reason completed
-
-      - name: Report exact failure
-        if: failure()
-        run: |
-          BODY="$(cat /tmp/two-service-fast-probe.md 2>/dev/null || echo 'Probe did not produce results.')"
-          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "❌ **Fast production probe failed**\n\n${BODY}"
+          {
+            echo '## Video as a Service production probe'
+            echo
+            cat /tmp/two-service-fast-probe.md 2>/dev/null || echo 'Probe did not produce results.'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload probe evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: two-service-fast-probe-clean
-          path: /tmp/two-service-fast-probe.md
-          if-no-files-found: warn
-          retention-days: 7
+          name: video-service-production-probe
+          path: |
+            /tmp/two-service-fast-probe.md
+            /tmp/two-service-fast-probe.json
+          if-no-files-found: error
+          retention-days: 14
