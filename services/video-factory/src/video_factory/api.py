@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from pathlib import Path
 from typing import Annotated, Any
@@ -12,6 +13,7 @@ from .delivery import deliver_project
 from .doctor import doctor_report
 from .finalization import finalize_project
 from .io import write_model
+from .local_jobs import load_local_job, local_job_response, submit_local_job
 from .models import (
     ClientBrief,
     PipelineResult,
@@ -71,6 +73,14 @@ def _persist_inbox_brief(brief: ClientBrief, settings: Settings) -> Path:
     return write_model(path, brief)
 
 
+def _use_prefect(settings: Settings) -> bool:
+    if settings.queue_backend == "prefect":
+        return True
+    if settings.queue_backend == "local":
+        return False
+    return bool((os.getenv("PREFECT_API_URL") or "").strip())
+
+
 @app.get("/health")
 def health() -> dict[str, object]:
     return {"status": "ok", "doctor": doctor_report(Settings.from_env())}
@@ -91,7 +101,7 @@ def plan_endpoint(brief: ClientBrief) -> ShotManifest:
 
 @app.post("/v1/runs/sync", dependencies=[Depends(require_api_key)])
 def run_sync_endpoint(request: RunRequest) -> PipelineResult:
-    """Run a local preview synchronously. Production jobs must use the Prefect queue."""
+    """Run a local preview synchronously."""
     _validated_brief(request)
     if not request.dry_run:
         raise HTTPException(
@@ -111,16 +121,48 @@ def run_sync_endpoint(request: RunRequest) -> PipelineResult:
 
 @app.post("/v1/runs", dependencies=[Depends(require_api_key)])
 async def enqueue_run_endpoint(request: RunRequest) -> dict[str, Any]:
-    """Persist an inline brief and enqueue a durable Prefect flow run."""
+    """Persist a brief and queue it through Prefect or the standalone local worker."""
     _validated_brief(request)
     settings = Settings.from_env()
     brief_path = _persist_inbox_brief(request.brief, settings)
+
+    if not _use_prefect(settings):
+        job = submit_local_job(
+            settings,
+            brief_path=brief_path,
+            dry_run=request.dry_run,
+            planner_provider=request.planner_provider,
+            auto_approve=request.auto_approve,
+            delivery_target=request.delivery_target,
+        )
+        return {
+            "accepted": True,
+            "run_id": job.run_id,
+            "backend": "local",
+            "brief_path": str(brief_path),
+        }
+
     try:
         from prefect.deployments import run_deployment
     except ImportError as error:
+        if settings.queue_backend == "auto":
+            job = submit_local_job(
+                settings,
+                brief_path=brief_path,
+                dry_run=request.dry_run,
+                planner_provider=request.planner_provider,
+                auto_approve=request.auto_approve,
+                delivery_target=request.delivery_target,
+            )
+            return {
+                "accepted": True,
+                "run_id": job.run_id,
+                "backend": "local",
+                "brief_path": str(brief_path),
+            }
         raise HTTPException(
             status_code=503,
-            detail="Prefect is not installed; use the orchestrator deployment.",
+            detail="Prefect is not installed; select the local queue backend.",
         ) from error
 
     try:
@@ -136,11 +178,28 @@ async def enqueue_run_endpoint(request: RunRequest) -> dict[str, Any]:
             timeout=0,
         )
     except Exception as error:
+        if settings.queue_backend == "auto":
+            job = submit_local_job(
+                settings,
+                brief_path=brief_path,
+                dry_run=request.dry_run,
+                planner_provider=request.planner_provider,
+                auto_approve=request.auto_approve,
+                delivery_target=request.delivery_target,
+            )
+            return {
+                "accepted": True,
+                "run_id": job.run_id,
+                "backend": "local",
+                "brief_path": str(brief_path),
+                "warning": f"Prefect unavailable; local queue selected: {error}",
+            }
         raise HTTPException(status_code=503, detail=f"Prefect enqueue failed: {error}") from error
 
     return {
         "accepted": True,
         "run_id": str(flow_run.id),
+        "backend": "prefect",
         "deployment": settings.prefect_deployment_name,
         "brief_path": str(brief_path),
     }
@@ -148,6 +207,11 @@ async def enqueue_run_endpoint(request: RunRequest) -> dict[str, Any]:
 
 @app.get("/v1/runs/{run_id}", dependencies=[Depends(require_api_key)])
 async def run_status_endpoint(run_id: str) -> dict[str, Any]:
+    settings = Settings.from_env()
+    local_job = load_local_job(settings, run_id)
+    if local_job is not None:
+        return local_job_response(local_job)
+
     try:
         run_uuid = uuid.UUID(run_id)
     except ValueError as error:
@@ -166,6 +230,7 @@ async def run_status_endpoint(run_id: str) -> dict[str, Any]:
     state = flow_run.state
     return {
         "run_id": str(flow_run.id),
+        "backend": "prefect",
         "name": flow_run.name,
         "state": state.name if state else None,
         "state_type": str(state.type) if state else None,
@@ -255,8 +320,6 @@ def approve_draft_endpoint(project_id: str, request: ReviewRequest) -> dict[str,
 def approve_endpoint(project_id: str, request: ReviewRequest) -> dict[str, Any]:
     """Compatibility alias for draft approval."""
     return _approve_project_review(project_id, request, ReviewStage.DRAFT)
-
-
 
 
 def _request_project_changes(
