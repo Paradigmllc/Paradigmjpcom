@@ -86,10 +86,8 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     : nav?.cta
       ? nav.cta.enabled
       : true
-  const ctaLabel = isInternational ? tCta("primary") : nav?.cta?.label || tCta("primary")
-  const ctaHref = isInternational
-    ? "/contact?intent=japan-entry"
-    : nav?.cta?.href || "/contact"
+  const ctaLabel = isInternational ? t("contact") : nav?.cta?.label || tCta("primary")
+  const ctaHref = isInternational ? "/contact" : nav?.cta?.href || "/contact"
   const showLocale = nav ? nav.showLocaleSwitcher : true
   const showTheme = nav ? nav.showThemeToggle : true
 
