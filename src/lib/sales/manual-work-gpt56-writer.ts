@@ -101,8 +101,8 @@ function provider(): WriterProvider | null {
       provider: "openai",
       endpoint: (process.env.OPENAI_API_BASE ?? "https://api.openai.com/v1").replace(/\/+$/, ""),
       key: openAiKey,
-      draftModel: process.env.SALES_WRITER_MODEL?.trim() || "gpt-5.6-terra",
-      criticModel: process.env.SALES_WRITER_CRITIC_MODEL?.trim() || "gpt-5.6-sol",
+      draftModel: process.env.OPENAI_SALES_WRITER_MODEL?.trim() || "gpt-5.6-terra",
+      criticModel: process.env.OPENAI_SALES_WRITER_CRITIC_MODEL?.trim() || "gpt-5.6-sol",
       headers: {},
     }
   }
@@ -111,8 +111,8 @@ function provider(): WriterProvider | null {
       provider: "openrouter",
       endpoint: (process.env.OPENROUTER_API_BASE ?? "https://openrouter.ai/api/v1").replace(/\/+$/, ""),
       key: openRouterKey,
-      draftModel: process.env.SALES_WRITER_MODEL?.trim() || "openai/gpt-5.6-terra",
-      criticModel: process.env.SALES_WRITER_CRITIC_MODEL?.trim() || "openai/gpt-5.6-sol",
+      draftModel: process.env.OPENROUTER_SALES_WRITER_MODEL?.trim() || "openai/gpt-5.6-terra",
+      criticModel: process.env.OPENROUTER_SALES_WRITER_CRITIC_MODEL?.trim() || "openai/gpt-5.6-sol",
       headers: {
         "HTTP-Referer": "https://paradigmjp.com",
         "X-Title": "Paradigm Japan Country Partner Workbench",
