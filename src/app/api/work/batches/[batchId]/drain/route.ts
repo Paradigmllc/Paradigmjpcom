@@ -17,6 +17,7 @@ import {
   type ManualWorkBatchSnapshot,
 } from "@/lib/sales/manual-japan-entry-batch-types"
 import { processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
+import { processFastManualWorkUrl } from "@/lib/sales/manual-work-fast-service"
 import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
 
 export const runtime = "nodejs"
@@ -35,8 +36,8 @@ async function notifyCompleted(batchId: string, total: number, failed: number): 
   try {
     const { notifyBothChannels } = await import("@/lib/notify")
     await notifyBothChannels("sales", {
-      title: "Manual Japan Entryバッチ完了",
-      message: `${total}件の解析を完了（失敗${failed}件）。Twenty同期結果は/workで確認できます。外部送信0件。`,
+      title: "高速リード判定バッチ完了",
+      message: `${total}件の一次判定を完了（失敗${failed}件）。上位候補だけ/workから詳細解析へ昇格できます。外部送信0件。`,
       link: "/work",
       type: "manual_japan_entry_batch_completed",
       region: "global",
@@ -90,20 +91,28 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
       await Promise.all(claimed.map(async (item) => {
         if (!item.claim_token) throw new Error(`Batch item ${item.id} did not receive a claim token`)
         try {
-          const result = await processManualJapanEntryUrl(
-            item.canonical_url,
-            runningBatch.batch.message_variant_requested,
-            runningBatch.batch.message_angle_requested,
-            {
-              sourceSlug: runningBatch.batch.source_slug,
-              sourcePageUrl: runningBatch.batch.source_page_url,
-              observedOn: runningBatch.batch.observed_on,
-            },
-            {
-              retryRequested: item.retry_requested,
-              expectedWorkId: item.expected_work_id,
-            },
-          )
+          const sourceInput = {
+            sourceSlug: runningBatch.batch.source_slug,
+            sourcePageUrl: runningBatch.batch.source_page_url,
+            observedOn: runningBatch.batch.observed_on,
+          }
+          const result = item.retry_requested
+            ? await processManualJapanEntryUrl(
+                item.canonical_url,
+                runningBatch.batch.message_variant_requested,
+                runningBatch.batch.message_angle_requested,
+                sourceInput,
+                {
+                  retryRequested: true,
+                  expectedWorkId: item.expected_work_id,
+                },
+              )
+            : await processFastManualWorkUrl(
+                item.canonical_url,
+                runningBatch.batch.message_variant_requested,
+                runningBatch.batch.message_angle_requested,
+                sourceInput,
+              )
           await completeManualWorkBatchItem({
             itemId: item.id,
             claimToken: item.claim_token,
