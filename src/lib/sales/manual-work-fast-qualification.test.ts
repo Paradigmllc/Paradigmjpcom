@@ -26,7 +26,7 @@ function audit(overrides: Partial<JapanMarketAudit["status"]> = {}): JapanMarket
 }
 
 describe("fast manual work qualification", () => {
-  it("promotes a non-Japanese SaaS with grounded product evidence and Japan readiness gaps", () => {
+  it("promotes a non-Japanese SaaS with commercial evidence, a contact route, and Japan readiness gaps", () => {
     const result = buildFastManualCompanyProfile({
       domain: "example.sg",
       companyName: "Example Cloud",
@@ -37,11 +37,13 @@ describe("fast manual work qualification", () => {
       description: "AI workflow automation for ecommerce teams",
       headings: ["Automate your operations"],
       audit: audit(),
+      contact: { contactUrl: "https://example.sg/contact", publicEmail: "hello@example.sg" },
     })
 
     expect(result.profile.countryCode).toBe("SG")
     expect(result.profile.businessModel).toBe("saas")
     expect(result.profile.japanEntryFitStatus).toBe("qualified")
+    expect(result.profile.smbStatus).toBe("qualified")
     expect(result.qualification.priority).toBe("promote")
     expect(result.qualification.score).toBeGreaterThanOrEqual(65)
   })
@@ -81,5 +83,23 @@ describe("fast manual work qualification", () => {
     expect(result.profile.commercialSignals).toEqual([])
     expect(result.profile.positioningConcept).toBeNull()
     expect(result.profile.smbStatus).toBe("review_required")
+  })
+
+  it("deprioritizes hyperscale physical infrastructure instead of leaving it in generic review", () => {
+    const result = buildFastManualCompanyProfile({
+      domain: "airtrunk.com",
+      companyName: "AirTrunk",
+      productContext: "Hyperscale data centre platform delivering critical infrastructure across APAC",
+      productNames: ["AirTrunk"],
+      businessModel: "service",
+      title: "AirTrunk hyperscale data centres",
+      description: "Critical data centre infrastructure across APAC",
+      headings: ["Hyperscale infrastructure"],
+      audit: audit(),
+      contact: { contactUrl: "https://airtrunk.com/contact", publicEmail: null },
+    })
+
+    expect(result.qualification.priority).toBe("low")
+    expect(result.qualification.score).toBeLessThan(45)
   })
 })
