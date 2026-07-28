@@ -11,7 +11,8 @@ const mocks = vi.hoisted(() => ({
   notified: vi.fn(),
   promote: vi.fn(),
   releaseDrain: vi.fn(),
-  process: vi.fn(),
+  processFull: vi.fn(),
+  processFast: vi.fn(),
   notify: vi.fn(),
   schedule: vi.fn(),
 }))
@@ -27,7 +28,8 @@ vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   promoteNextManualWorkBatch: mocks.promote,
   releaseManualWorkBatchDrain: mocks.releaseDrain,
 }))
-vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ processManualJapanEntryUrl: mocks.process }))
+vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ processManualJapanEntryUrl: mocks.processFull }))
+vi.mock("@/lib/sales/manual-work-fast-service", () => ({ processFastManualWorkUrl: mocks.processFast }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 vi.mock("@/lib/sales/manual-japan-entry-batch-schedule", () => ({ scheduleManualWorkBatchDrain: mocks.schedule }))
 
@@ -48,16 +50,21 @@ beforeEach(() => {
   mocks.get.mockResolvedValue(before)
   mocks.claimDrain.mockResolvedValue("drain-claim-1")
   mocks.claim.mockResolvedValue([
-    { id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1" },
-    { id: "item-2", canonical_url: "https://two.example/", claim_token: "claim-2" },
+    { id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1", retry_requested: false },
+    { id: "item-2", canonical_url: "https://two.example/", claim_token: "claim-2", retry_requested: false },
   ])
-  mocks.process.mockImplementation(async (url: string) => ({
-    item: { id: url.includes("one") ? "work-1" : "work-2", status: url.includes("one") ? "completed" : "needs_review", error_message: null },
+  mocks.processFast.mockImplementation(async (url: string) => ({
+    item: { id: url.includes("one") ? "work-1" : "work-2", status: url.includes("one") ? "needs_review" : "rejected", error_message: null },
     duplicate: false,
     artifactsPreserved: false,
   }))
+  mocks.processFull.mockResolvedValue({
+    item: { id: "work-full", status: "completed", error_message: null },
+    duplicate: false,
+    artifactsPreserved: false,
+  })
   mocks.complete.mockResolvedValue(undefined)
-  mocks.refresh.mockResolvedValue({ ...before, batch: { ...before.batch, status: "completed" }, remaining: 0, finished: 2, counts: { ...before.counts, queued: 0, completed: 1, needs_review: 1 } })
+  mocks.refresh.mockResolvedValue({ ...before, batch: { ...before.batch, status: "completed" }, remaining: 0, finished: 2, counts: { ...before.counts, queued: 0, needs_review: 1, rejected: 1 } })
   mocks.notify.mockResolvedValue({ ok: true })
   mocks.notified.mockResolvedValue(true)
   mocks.promote.mockResolvedValue(null)
@@ -65,22 +72,23 @@ beforeEach(() => {
 })
 
 describe("manual work durable batch drain", () => {
-  it("claims bounded items, processes them concurrently, and persists terminal outcomes", async () => {
+  it("claims bounded items, fast-qualifies them concurrently, and persists terminal outcomes", async () => {
     const response = await POST(
       new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
       { params: Promise.resolve({ batchId }) },
     )
     expect(response.status).toBe(200)
-    expect(mocks.process).toHaveBeenCalledTimes(2)
-    expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-1", claimToken: "claim-1", status: "completed", workId: "work-1" }))
-    expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-2", claimToken: "claim-2", status: "needs_review", workId: "work-2" }))
+    expect(mocks.processFast).toHaveBeenCalledTimes(2)
+    expect(mocks.processFull).not.toHaveBeenCalled()
+    expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-1", claimToken: "claim-1", status: "needs_review", workId: "work-1" }))
+    expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-2", claimToken: "claim-2", status: "rejected", workId: "work-2" }))
     expect(mocks.releaseDrain).toHaveBeenCalledWith(batchId, "drain-claim-1")
     expect(mocks.notify).toHaveBeenCalledTimes(1)
   })
 
-  it("persists a failed item instead of abandoning its DB claim", async () => {
-    mocks.claim.mockResolvedValue([{ id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1" }])
-    mocks.process.mockRejectedValue(new Error("DeepSeek temporarily unavailable"))
+  it("persists a failed fast item instead of abandoning its DB claim", async () => {
+    mocks.claim.mockResolvedValue([{ id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1", retry_requested: false }])
+    mocks.processFast.mockRejectedValue(new Error("Homepage temporarily unavailable"))
     const response = await POST(
       new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
       { params: Promise.resolve({ batchId }) },
@@ -89,11 +97,11 @@ describe("manual work durable batch drain", () => {
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({
       itemId: "item-1",
       status: "failed",
-      errorMessage: "DeepSeek temporarily unavailable",
+      errorMessage: "Homepage temporarily unavailable",
     }))
   })
 
-  it("passes the exact durable retry target to the manual work service", async () => {
+  it("passes the exact durable promotion target to the full manual work service", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     mocks.claim.mockResolvedValue([{
       id: "item-1",
@@ -107,7 +115,8 @@ describe("manual work durable batch drain", () => {
       { params: Promise.resolve({ batchId }) },
     )
     expect(response.status).toBe(200)
-    expect(mocks.process).toHaveBeenCalledWith(
+    expect(mocks.processFast).not.toHaveBeenCalled()
+    expect(mocks.processFull).toHaveBeenCalledWith(
       "https://one.example/",
       "auto",
       "auto",
@@ -116,9 +125,15 @@ describe("manual work durable batch drain", () => {
     )
   })
 
-  it("marks a refresh attempt failed when only the last-known-good artifact was preserved", async () => {
-    mocks.claim.mockResolvedValue([{ id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1" }])
-    mocks.process.mockResolvedValue({
+  it("marks a full refresh attempt failed when only the last-known-good artifact was preserved", async () => {
+    mocks.claim.mockResolvedValue([{
+      id: "item-1",
+      canonical_url: "https://one.example/",
+      claim_token: "claim-1",
+      retry_requested: true,
+      expected_work_id: "106db008-80af-4c56-93ee-916643d84c1b",
+    }])
+    mocks.processFull.mockResolvedValue({
       item: { id: "work-1", status: "needs_review", error_message: "New generation failed" },
       duplicate: false,
       artifactsPreserved: true,
@@ -139,7 +154,7 @@ describe("manual work durable batch drain", () => {
   })
 
   it("chains the next server-side drain for an automated non-terminal batch", async () => {
-    mocks.refresh.mockResolvedValue({ ...before, remaining: 1, finished: 1, counts: { ...before.counts, queued: 1, completed: 1 } })
+    mocks.refresh.mockResolvedValue({ ...before, remaining: 1, finished: 1, counts: { ...before.counts, queued: 1, needs_review: 1 } })
     const response = await POST(
       new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, {
         method: "POST",
@@ -163,7 +178,8 @@ describe("manual work durable batch drain", () => {
     expect(response.status).toBe(202)
     expect(body.processing).toBe(true)
     expect(mocks.claim).not.toHaveBeenCalled()
-    expect(mocks.process).not.toHaveBeenCalled()
+    expect(mocks.processFast).not.toHaveBeenCalled()
+    expect(mocks.processFull).not.toHaveBeenCalled()
   })
 
   it("promotes and dispatches the next queued batch after completion", async () => {
