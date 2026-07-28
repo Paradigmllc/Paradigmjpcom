@@ -65,13 +65,15 @@ export async function processManualEditorialMessage(input: {
   try {
     const savedEvidence = record(existing.evidence)
     const productNames = strings(savedEvidence.productNames)
+    const observedContext = strings(record(existing.profile).observedFacts).join(" | ").trim()
+    const productContext = existing.product_context?.trim() || observedContext || existing.domain
     const brief = await collectManualEditorialBrief({
       domain: existing.domain,
       companyName: existing.company_name ?? existing.domain,
       countryCode: existing.country_code,
       businessModel: businessModel(existing.business_model),
       productNames,
-      productContext: existing.product_context ?? strings(record(existing.profile).observedFacts).join(" | ") ?? existing.domain,
+      productContext,
     })
     const priorMessages = await listRecentManualMessages(80, existing.id)
     const generated = await generateManualEditorialMessage({ brief, priorMessages })
