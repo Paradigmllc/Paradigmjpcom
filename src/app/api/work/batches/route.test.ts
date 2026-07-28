@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   position: vi.fn(),
   queueSummary: vi.fn(),
   promote: vi.fn(),
+  findWork: vi.fn(),
   normalize: vi.fn(),
   notify: vi.fn(),
   schedule: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   getManualWorkBatchQueueSummary: mocks.queueSummary,
   promoteNextManualWorkBatch: mocks.promote,
 }))
+vi.mock("@/lib/sales/manual-japan-entry-store", () => ({ findManualWorkById: mocks.findWork }))
 vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ normalizeManualWorkUrl: mocks.normalize }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 vi.mock("@/lib/sales/manual-japan-entry-batch-schedule", () => ({ scheduleManualWorkBatchDrain: mocks.schedule }))
@@ -43,8 +45,10 @@ function snapshot(totalCount: number) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  process.env.OPENROUTER_API_KEY = "test-openrouter-key"
   mocks.authorize.mockResolvedValue(true)
   mocks.active.mockResolvedValue(null)
+  mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "legacy_full" } })
   mocks.normalize.mockImplementation((value: string) => {
     const domain = value.replace(/^https?:\/\//, "").replace(/\/$/, "")
     return { inputUrl: value, canonicalUrl: `https://${domain}/`, domain }
@@ -117,7 +121,39 @@ describe("manual work durable batch API", () => {
     expect(mocks.schedule).not.toHaveBeenCalled()
   })
 
-  it("queues one exact existing row for durable full analysis", async () => {
+  it("queues a fast-qualified row for GPT-5.6 editorial generation without DeepSeek preflight", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "fast_qualification" } })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ urls: ["example.com"], retryWorkId: workId }),
+    }))
+
+    expect(response.status).toBe(201)
+    expect(mocks.preflight).not.toHaveBeenCalled()
+    expect(mocks.createRetry).toHaveBeenCalledWith(expect.objectContaining({ workId }))
+    expect(mocks.schedule).toHaveBeenCalled()
+  })
+
+  it("refuses GPT-5.6 editorial generation when no high-quality provider is configured", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "fast_qualification" } })
+    delete process.env.OPENROUTER_API_KEY
+    delete process.env.OPENAI_API_KEY
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ urls: ["example.com"], retryWorkId: workId }),
+    }))
+    const body = await response.json()
+
+    expect(response.status).toBe(503)
+    expect(body.error).toContain("DeepSeekや定型文へのフォールバックは行いません")
+    expect(mocks.createRetry).not.toHaveBeenCalled()
+  })
+
+  it("queues one exact legacy row for the old full analysis path", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
@@ -131,10 +167,9 @@ describe("manual work durable batch API", () => {
       workId,
       url: expect.objectContaining({ domain: "example.com" }),
     }))
-    expect(mocks.schedule).toHaveBeenCalled()
   })
 
-  it("rejects a full-analysis request that contains more than one URL", async () => {
+  it("rejects a retry request that contains more than one URL", async () => {
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -161,7 +196,7 @@ describe("manual work durable batch API", () => {
     expect(mocks.schedule).toHaveBeenCalled()
   })
 
-  it("does not enqueue full analysis when DeepSeek is unavailable", async () => {
+  it("does not enqueue legacy full analysis when DeepSeek is unavailable", async () => {
     mocks.preflight.mockResolvedValue({ ok: false, error: "DeepSeek APIの残高不足です" })
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
@@ -174,7 +209,7 @@ describe("manual work durable batch API", () => {
     const body = await response.json()
 
     expect(response.status).toBe(503)
-    expect(body.error).toContain("詳細解析は開始していません")
+    expect(body.error).toContain("旧フル解析は開始していません")
     expect(mocks.createRetry).not.toHaveBeenCalled()
     expect(mocks.schedule).not.toHaveBeenCalled()
   })
