@@ -11,8 +11,6 @@ const mocks = vi.hoisted(() => ({
   notified: vi.fn(),
   promote: vi.fn(),
   releaseDrain: vi.fn(),
-  findWork: vi.fn(),
-  processFull: vi.fn(),
   processEditorial: vi.fn(),
   processFast: vi.fn(),
   notify: vi.fn(),
@@ -30,8 +28,6 @@ vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   promoteNextManualWorkBatch: mocks.promote,
   releaseManualWorkBatchDrain: mocks.releaseDrain,
 }))
-vi.mock("@/lib/sales/manual-japan-entry-store", () => ({ findManualWorkById: mocks.findWork }))
-vi.mock("@/lib/sales/manual-japan-entry-service", () => ({ processManualJapanEntryUrl: mocks.processFull }))
 vi.mock("@/lib/sales/manual-work-editorial-service", () => ({ processManualEditorialMessage: mocks.processEditorial }))
 vi.mock("@/lib/sales/manual-work-fast-service", () => ({ processFastManualWorkUrl: mocks.processFast }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
@@ -57,7 +53,6 @@ beforeEach(() => {
     { id: "item-1", canonical_url: "https://one.example/", claim_token: "claim-1", retry_requested: false },
     { id: "item-2", canonical_url: "https://two.example/", claim_token: "claim-2", retry_requested: false },
   ])
-  mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "legacy_full" } })
   mocks.processFast.mockImplementation(async (url: string) => ({
     item: { id: url.includes("one") ? "work-1" : "work-2", status: url.includes("one") ? "completed" : "rejected", error_message: null },
     duplicate: false,
@@ -65,11 +60,6 @@ beforeEach(() => {
   }))
   mocks.processEditorial.mockResolvedValue({
     item: { id: "work-editorial", status: "completed", error_message: null },
-    duplicate: false,
-    artifactsPreserved: false,
-  })
-  mocks.processFull.mockResolvedValue({
-    item: { id: "work-full", status: "completed", error_message: null },
     duplicate: false,
     artifactsPreserved: false,
   })
@@ -90,7 +80,6 @@ describe("manual work durable batch drain", () => {
     expect(response.status).toBe(200)
     expect(mocks.processFast).toHaveBeenCalledTimes(2)
     expect(mocks.processEditorial).not.toHaveBeenCalled()
-    expect(mocks.processFull).not.toHaveBeenCalled()
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-1", claimToken: "claim-1", status: "completed", workId: "work-1" }))
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-2", claimToken: "claim-2", status: "rejected", workId: "work-2" }))
     expect(mocks.releaseDrain).toHaveBeenCalledWith(batchId, "drain-claim-1")
@@ -112,9 +101,8 @@ describe("manual work durable batch drain", () => {
     }))
   })
 
-  it("routes a selected fast-qualified row to the GPT-5.6 editorial service", async () => {
+  it("routes every selected row to the GPT-5.6 editorial service", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
-    mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "fast_qualification" } })
     mocks.claim.mockResolvedValue([{
       id: "item-1",
       canonical_url: "https://one.example/",
@@ -129,16 +117,14 @@ describe("manual work durable batch drain", () => {
 
     expect(response.status).toBe(200)
     expect(mocks.processFast).not.toHaveBeenCalled()
-    expect(mocks.processFull).not.toHaveBeenCalled()
     expect(mocks.processEditorial).toHaveBeenCalledWith({
       rawUrl: "https://one.example/",
       expectedWorkId: workId,
     })
   })
 
-  it("routes a failed GPT-5.6 row back through the editorial service", async () => {
+  it("does not branch on legacy or prior analysis mode", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
-    mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "gpt56_editorial_failed" } })
     mocks.claim.mockResolvedValue([{
       id: "item-1",
       canonical_url: "https://one.example/",
@@ -146,38 +132,32 @@ describe("manual work durable batch drain", () => {
       retry_requested: true,
       expected_work_id: workId,
     }])
-    const response = await POST(
+    await POST(
       new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
       { params: Promise.resolve({ batchId }) },
     )
 
-    expect(response.status).toBe(200)
-    expect(mocks.processFull).not.toHaveBeenCalled()
     expect(mocks.processEditorial).toHaveBeenCalledTimes(1)
   })
 
-  it("keeps a non-fast retry on the legacy full-analysis path", async () => {
-    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+  it("persists a missing retry target as a failed batch item", async () => {
     mocks.claim.mockResolvedValue([{
       id: "item-1",
       canonical_url: "https://one.example/",
       claim_token: "claim-1",
       retry_requested: true,
-      expected_work_id: workId,
+      expected_work_id: null,
     }])
     const response = await POST(
       new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
       { params: Promise.resolve({ batchId }) },
     )
+
     expect(response.status).toBe(200)
-    expect(mocks.processEditorial).not.toHaveBeenCalled()
-    expect(mocks.processFull).toHaveBeenCalledWith(
-      "https://one.example/",
-      "auto",
-      "auto",
-      expect.objectContaining({ sourceSlug: "manual_input" }),
-      { retryRequested: true, expectedWorkId: workId },
-    )
+    expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({
+      itemId: "item-1",
+      status: "failed",
+    }))
   })
 
   it("chains the next server-side drain for an automated non-terminal batch", async () => {
@@ -207,7 +187,6 @@ describe("manual work durable batch drain", () => {
     expect(mocks.claim).not.toHaveBeenCalled()
     expect(mocks.processFast).not.toHaveBeenCalled()
     expect(mocks.processEditorial).not.toHaveBeenCalled()
-    expect(mocks.processFull).not.toHaveBeenCalled()
   })
 
   it("promotes and dispatches the next queued batch after completion", async () => {

@@ -23,8 +23,20 @@ describe("manual work recovery policy", () => {
       status: "completed",
       twenty_sync_status: "skipped",
       is_japanese_company: false,
+      country_code: "US",
       evidence: { analysis_mode: "fast_qualification" },
       message_review: { purpose: "fast_qualification", generation_status: "not_requested" },
+    })).toBe(true)
+  })
+
+  it("allows an unsent legacy review row to be rewritten by GPT-5.6", () => {
+    expect(isManualWorkRecoveryAvailable({
+      status: "needs_review",
+      twenty_sync_status: "synced",
+      is_japanese_company: false,
+      country_code: "AU",
+      evidence: { analysis_mode: "legacy_full" },
+      message_review: { generation_status: "passed" },
     })).toBe(true)
   })
 
@@ -33,6 +45,7 @@ describe("manual work recovery policy", () => {
       status: "needs_review",
       twenty_sync_status: "skipped",
       is_japanese_company: false,
+      country_code: "FI",
       evidence: { analysis_mode: "gpt56_editorial" },
       message_review: { purpose: "editorial_generation", generation_status: "failed_quality_gate" },
     })).toBe(true)
@@ -43,6 +56,7 @@ describe("manual work recovery policy", () => {
       status: "completed",
       twenty_sync_status: "skipped",
       is_japanese_company: false,
+      country_code: "SG",
       evidence: { analysis_mode: "gpt56_editorial" },
       message_review: { generation_status: "passed_gpt56_editorial" },
     })).toBe(true)
@@ -53,6 +67,7 @@ describe("manual work recovery policy", () => {
       status: "needs_review",
       twenty_sync_status: "skipped",
       is_japanese_company: false,
+      country_code: "US",
       manually_sent_at: "2026-07-29T00:00:00.000Z",
       evidence: { analysis_mode: "gpt56_editorial_failed" },
       message_review: { generation_status: "failed" },
@@ -64,6 +79,7 @@ describe("manual work recovery policy", () => {
       status: "rejected",
       twenty_sync_status: "skipped",
       is_japanese_company: true,
+      country_code: "JP",
       evidence: { analysis_mode: "fast_qualification" },
       message_review: { purpose: "fast_qualification" },
     })).toBe(false)

@@ -11,6 +11,26 @@ export interface ManualWorkOperatorNotice {
   tone: "amber" | "red" | "slate"
 }
 
+function hasRecordedOutcome(item: ManualJapanEntryWorkRow): boolean {
+  return Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
+}
+
+function isGpt56Editorial(item: ManualJapanEntryWorkRow): boolean {
+  const mode = item.evidence.analysis_mode
+  const status = item.message_review.generation_status
+  return (typeof mode === "string" && mode.startsWith("gpt56_editorial"))
+    || (typeof status === "string" && status.includes("gpt56_editorial"))
+    || item.message_review.purpose === "editorial_generation"
+}
+
+function isLegacyUnsent(item: ManualJapanEntryWorkRow): boolean {
+  return item.evidence.analysis_mode !== "fast_qualification"
+    && !isGpt56Editorial(item)
+    && item.is_japanese_company !== true
+    && item.country_code !== "JP"
+    && !hasRecordedOutcome(item)
+}
+
 function generationFailed(item: ManualJapanEntryWorkRow): boolean {
   return ["failed", "failed_quality_gate"].includes(String(item.message_review.generation_status ?? "")) || (
     item.stage === "complete"
@@ -74,6 +94,21 @@ function reasonsWithForm(item: ManualJapanEntryWorkRow, fallback: string): strin
 }
 
 export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualWorkOperatorNotice | null {
+  if (isLegacyUnsent(item)) {
+    return {
+      title: "旧DeepSeek文面・旧判定を使用しません",
+      detail: "この履歴は以前のDeepSeek中心または固定構造の生成工程で作られたため、表示中の要確認・フォーム警告・旧文面を営業判断に使いません。",
+      reasons: [
+        "企業名や一部の語句だけを差し替えたような薄い文章は採用対象外です。",
+        "再生成では最大5ページの一次情報を読み、GPT-5.6 Terraが異なる論点の案を作り、GPT-5.6 Solが全文を再編集します。",
+        "会社固有性・戦略の中身・自然さ・経営者への関連性が88点未満なら、文面を出さず不採用にします。",
+      ],
+      nextAction: "「GPT-5.6で作り直す」を実行してください。旧レポートや旧文面は上書き前提で扱います。",
+      retryLabel: "GPT-5.6で作り直す",
+      tone: "amber",
+    }
+  }
+
   if (item.twenty_sync_status === "failed") {
     const persistedReasons = manualWorkReasonCopies(item.error_message)
     const reasons = [
@@ -118,7 +153,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       detail: "処理を完了できなかったため、安全に停止しました。",
       reasons: reasonsOrFallback(item, "取得先または生成処理で一時的な問題が発生しました。"),
       nextAction: "URLと企業サイトの稼働状況を確認し、問題が解消した後に再実行してください。",
-      retryLabel: "復旧再実行",
+      retryLabel: "GPT-5.6で再生成",
       tone: "red",
     }
   }
@@ -138,7 +173,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       detail: "既存の合格済み文面とレポートは保持し、外部送信は行っていません。",
       reasons: ["最新の品質基準による文面再生成が、自動修正後も合格しませんでした。"],
       nextAction: "既存文面をそのまま送信せず、更新後の品質スコアと根拠を確認してください。",
-      retryLabel: "更新を再実行",
+      retryLabel: "GPT-5.6で再編集",
       tone: "amber",
     }
   }
@@ -154,7 +189,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       detail: "外部送信と自動文面生成は行っていません。",
       reasons: rejectedReasons,
       nextAction: "判定を覆す具体的な商業根拠がある場合だけ再評価してください。",
-      retryLabel: "再評価",
+      retryLabel: "GPT-5.6で再評価",
       tone: "slate",
     }
   }
@@ -179,7 +214,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
         reasons: [...savedReasons, ...(missingFormReason ? [missingFormReason] : [])]
           .filter((reason, index, reasons) => reasons.indexOf(reason) === index),
         nextAction: "公式サイトのContact・Salesページと文面根拠を人が確認してください。",
-        retryLabel: "人が確認",
+        retryLabel: "GPT-5.6で再生成",
         tone: "amber",
       }
     }
@@ -188,7 +223,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       detail: "文面・フォーム・解析データは保存済みですが、送信前に人の判断が必要です。",
       reasons: savedReasons.length > 0 ? savedReasons : ["公開根拠が不足しています。"],
       nextAction: "会社固有の根拠と送信先を確認してください。",
-      retryLabel: "再解析",
+      retryLabel: "GPT-5.6で再編集",
       tone: "amber",
     }
   }
