@@ -1,7 +1,6 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
-import type { VideoServicePlanId } from "@/lib/video-service-content"
 import {
   JapanEntryAcknowledgement,
   JapanEntryCompanyFields,
@@ -31,7 +30,7 @@ export interface ContactFormState {
   desiredLaunch: string
   paymentMethod: string
   setupFeeAcknowledged: boolean
-  videoPlan: VideoServicePlanId | ""
+  videoPlan: string
   monthlyVideoDemand: string
   videoAssetReadiness: string
   videoPreferredStart: string
