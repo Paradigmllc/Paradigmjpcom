@@ -7,6 +7,7 @@ on:
       - "src/components/work/**"
       - "src/lib/sales/manual-japan-entry-batch-contract.test.ts"
       - "src/lib/sales/manual-work-fast-*.ts"
+      - "src/lib/sales/manual-work-first-touch*.ts"
       - "src/lib/sales/manual-work-operator-notice.ts"
       - "src/lib/sales/manual-work-recovery-policy*.ts"
       - ".github/workflows/work-fast-first-validation.yml"
@@ -38,11 +39,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fast-first unit and API tests
+      - name: Usable fast-work unit and API tests
         run: >-
           npm exec -- vitest run
           src/lib/sales/manual-work-fast-evidence.test.ts
           src/lib/sales/manual-work-fast-qualification.test.ts
+          src/lib/sales/manual-work-first-touch.test.ts
           src/lib/sales/manual-work-recovery-policy.test.ts
           src/lib/sales/manual-japan-entry-batch-contract.test.ts
           src/app/api/work/batches/route.test.ts
@@ -62,10 +64,12 @@ jobs:
             'src/app/api/work/batches/[batchId]/drain/route.ts' \
             src/components/work/ManualJapanEntryWorkConsole.tsx \
             src/components/work/ManualMessageIntelligence.tsx \
+            src/components/work/ManualWorkHistoryItem.tsx \
             src/components/work/ManualWorkIntake.tsx \
             src/lib/sales/manual-work-fast-evidence.ts \
             src/lib/sales/manual-work-fast-qualification.ts \
             src/lib/sales/manual-work-fast-service.ts \
+            src/lib/sales/manual-work-first-touch.ts \
             src/lib/sales/manual-work-operator-notice.ts \
             src/lib/sales/manual-work-recovery-policy.ts \
             --max-warnings=0 \
