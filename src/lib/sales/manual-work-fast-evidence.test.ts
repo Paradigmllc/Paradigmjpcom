@@ -6,7 +6,7 @@ afterEach(() => {
 })
 
 describe("fast manual work evidence", () => {
-  it("uses one direct homepage request and does not crawl secondary paths", async () => {
+  it("uses one direct homepage request and extracts a public contact route", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(`
       <html>
         <head>
@@ -17,6 +17,8 @@ describe("fast manual work evidence", () => {
         <body>
           <h1>Build a better compact workspace</h1>
           <p>Shop modular desk organizers and cable management accessories.</p>
+          <a href="/contact">Contact</a>
+          <a href="mailto:hello@northstar.example">Email us</a>
           <button>Add to cart</button>
         </body>
       </html>
@@ -33,15 +35,18 @@ describe("fast manual work evidence", () => {
     expect(result.businessModel).toBe("ecommerce")
     expect(result.evidenceMode).toBe("fast_direct_html")
     expect(result.audit.pages_checked).toHaveLength(1)
+    expect(result.contact.contactUrl).toBe("https://northstar.example/contact")
+    expect(result.contact.publicEmail).toBe("hello@northstar.example")
   })
 
-  it("fails closed when the homepage has no grounded product context", async () => {
+  it("returns a low-information record instead of failing the whole batch", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("<html><head><title>Home</title></head><body></body></html>", {
       status: 200,
       headers: { "content-type": "text/html" },
     }))
 
-    await expect(collectFastManualWorkEvidence("empty.example"))
-      .rejects.toThrow("enough grounded product context")
+    const result = await collectFastManualWorkEvidence("empty.example")
+    expect(result.productContext).toContain("empty.example")
+    expect(result.businessModel).toBe("service")
   })
 })
