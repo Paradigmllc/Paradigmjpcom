@@ -150,18 +150,21 @@ echo 'Host route repair complete'`
 async function verifyPublicRoutes() {
   const site = "https://paradigmjp.com"
   const pages = [
-    ["/en", ["Japan Market Partner", "Video as a Service"]],
-    ["/ja", ["Video as a Service", "Web制作", "AI制作・導入支援"]],
-    ["/en/japan-market-partner", ["Japan Market Partner", "Japan Market Setup", "$13,000"]],
-    ["/en/video-as-a-service", ["Video as a Service", "One active request"]],
-    ["/ja/video-as-a-service", ["Video as a Service", "一件ずつ制作"]],
+    ["/ja/video-as-a-service", ["動画制作チームを、採用せずに。", "$1,500", "$3,500", "$5,500", "契約前によくある質問"]],
+    ["/en/video-as-a-service", ["Your on-demand video production team.", "$1,500", "$3,500", "$5,500", "Questions before you subscribe"]],
+    ["/ja/video-as-a-service/terms", ["Video as a Service 利用規約", "2026年7月28日", "契約文書の優先順位"]],
+    ["/en/video-as-a-service/terms", ["Video as a Service Terms", "July 28, 2026", "Order of precedence"]],
+    ["/ja/contact?intent=video-as-a-service&plan=unlimited", ["Video as a Service 申込み", "希望プラン", "Unlimited", "素材の準備状況"]],
+    ["/en/contact?intent=video-as-a-service&plan=unlimited", ["Apply for Video as a Service", "Preferred plan", "Unlimited", "Asset readiness"]],
     ["/api/ready", []],
   ]
   for (const [pathname, markers] of pages) {
     let passed = false
     for (let attempt = 1; attempt <= 30; attempt += 1) {
       try {
-        const response = await fetch(`${site}${pathname}?host_repair=${Date.now()}`, {
+        const url = new URL(pathname, site)
+        url.searchParams.set("host_repair", String(Date.now()))
+        const response = await fetch(url, {
           headers: { "Cache-Control": "no-cache" },
           signal: AbortSignal.timeout(30_000),
         })
