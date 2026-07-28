@@ -71,21 +71,25 @@ async function processClaimedItem(input: {
   const { item } = input
   if (!item.claim_token) throw new Error(`Batch item ${item.id} did not receive a claim token`)
   try {
-    const result = item.retry_requested
-      ? await processManualEditorialMessage({
-          rawUrl: item.canonical_url,
-          expectedWorkId: item.expected_work_id ?? "",
-        })
-      : await processFastManualWorkUrl(
-          item.canonical_url,
-          input.variant,
-          input.angle,
-          {
-            sourceSlug: input.sourceSlug,
-            sourcePageUrl: input.sourcePageUrl,
-            observedOn: input.observedOn,
-          },
-        )
+    let result
+    if (item.retry_requested) {
+      if (!item.expected_work_id) throw new Error("A selected work record is required for GPT-5.6 message generation")
+      result = await processManualEditorialMessage({
+        rawUrl: item.canonical_url,
+        expectedWorkId: item.expected_work_id,
+      })
+    } else {
+      result = await processFastManualWorkUrl(
+        item.canonical_url,
+        input.variant,
+        input.angle,
+        {
+          sourceSlug: input.sourceSlug,
+          sourcePageUrl: input.sourcePageUrl,
+          observedOn: input.observedOn,
+        },
+      )
+    }
     await completeManualWorkBatchItem({
       itemId: item.id,
       claimToken: item.claim_token,
