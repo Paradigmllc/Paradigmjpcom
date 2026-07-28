@@ -181,17 +181,24 @@ export async function persistContactLead(
         p_lead: input.lead,
         p_notification: input.notification,
       }),
-      signal: AbortSignal.timeout(10_000),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
     },
   )
   if (!response.ok) {
-    throw new Error(
-      `Atomic contact lead persistence failed: ${await responseFailure(response)}`,
-    )
+    const failure = await responseFailure(response)
+    if (
+      response.status === 409 &&
+      /challenge_hash|contact_challenge_replayed/i.test(failure)
+    ) {
+      throw new ContactChallengeReplayError(failure)
+    }
+    throw new Error(`Atomic contact submission failed: ${failure}`)
   }
+
   return parseSubmissionRepresentation(
-    await response.json(),
-    "Atomic contact lead persistence",
+    (await response.json()) as unknown,
+    "Atomic contact submission",
   )
 }
 
@@ -199,7 +206,7 @@ export async function completeContactNotification(
   input: {
     idempotencyKey: string
     claimToken: string
-    status: Exclude<ContactNotificationStatus, "pending" | "processing">
+    status: "complete" | "degraded"
     slackError?: string
   },
   config: ContactStorageConfig = requireContactStorageConfig(),
@@ -212,10 +219,11 @@ export async function completeContactNotification(
       body: JSON.stringify({
         p_idempotency_key: input.idempotencyKey,
         p_claim_token: input.claimToken,
-        p_notification_status: input.status,
+        p_status: input.status,
         p_slack_error: input.slackError ?? null,
       }),
-      signal: AbortSignal.timeout(10_000),
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
     },
   )
   if (!response.ok) {
