@@ -1,0 +1,41 @@
+name: Inspect Video Factory Source Archive
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/video-factory-source-inspect.yml
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify and extract source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          part_count="$(find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' | wc -l)"
+          test "${part_count}" -eq 9
+          cat bootstrap/video-factory.parts/part-* > /tmp/video-factory.tar.gz.b64
+          echo "5495679899220067d29ff512523565d6c98fea8f23cd5e8ae4f617c10b150ded  /tmp/video-factory.tar.gz.b64" | sha256sum --check --strict
+          base64 --decode /tmp/video-factory.tar.gz.b64 > /tmp/video-factory.tar.gz
+          echo "c7d20da49cfacb462a36dc4ebfefa9fc1e11064e076625cd20217a475a5bcd97  /tmp/video-factory.tar.gz" | sha256sum --check --strict
+          tar --extract --gzip --file /tmp/video-factory.tar.gz --directory .
+          test -f services/video-factory/pyproject.toml
+          test -f services/video-factory/src/video_factory/pipeline.py
+
+      - name: Upload extracted source
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-factory-source-inspection
+          path: |
+            services/video-factory
+            .github/workflows/video-factory-ci.yml
+          if-no-files-found: error
+          retention-days: 1
