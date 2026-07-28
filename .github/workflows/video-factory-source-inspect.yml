@@ -70,56 +70,91 @@ jobs:
           media.write_text("\n".join(media_lines) + "\n", encoding="utf-8")
 
           cli = Path("src/video_factory/cli.py")
-          cli_text = cli.read_text(encoding="utf-8")
-          cli_target = "    output: Path | None = typer.Option(None),"
-          cli_replacement = "    output: Path | None = typer.Option(None),  # noqa: B008"
-          if cli_target not in cli_text and cli_replacement not in cli_text:
-              raise SystemExit("Typer output option signature not found")
-          cli.write_text(cli_text.replace(cli_target, cli_replacement, 1), encoding="utf-8")
+          cli_lines = cli.read_text(encoding="utf-8").splitlines()
+          matches = 0
+          for index, line in enumerate(cli_lines):
+              if line.strip() == "output: Path | None = typer.Option(None),":
+                  cli_lines[index] = f"{line}  # noqa: B008"
+                  matches += 1
+              elif line.strip() == "output: Path | None = typer.Option(None),  # noqa: B008":
+                  matches += 1
+          if matches != 1:
+              raise SystemExit(f"expected one Typer output option signature, found {matches}")
+          cli.write_text("\n".join(cli_lines) + "\n", encoding="utf-8")
 
           playwright = Path("src/video_factory/adapters/playwright.py")
-          playwright_text = playwright.read_text(encoding="utf-8")
-          playwright_target = '''        if context.settings.playwright_allowed_hosts:
-              if (parsed.hostname or "").lower() not in context.settings.playwright_allowed_hosts:
-                  raise ValueError(f"Playwright host is not allow-listed: {parsed.hostname}")'''
-          playwright_replacement = '''        if (
-              context.settings.playwright_allowed_hosts
-              and (parsed.hostname or "").lower()
-              not in context.settings.playwright_allowed_hosts
-          ):
-              raise ValueError(f"Playwright host is not allow-listed: {parsed.hostname}")'''
-          if playwright_target not in playwright_text and playwright_replacement not in playwright_text:
-              raise SystemExit("Playwright allow-list guard not found")
-          playwright.write_text(
-              playwright_text.replace(playwright_target, playwright_replacement, 1),
-              encoding="utf-8",
-          )
+          playwright_lines = playwright.read_text(encoding="utf-8").splitlines()
+          matches = 0
+          index = 0
+          while index < len(playwright_lines) - 2:
+              if (
+                  playwright_lines[index].strip()
+                  == "if context.settings.playwright_allowed_hosts:"
+                  and playwright_lines[index + 1].strip().startswith(
+                      'if (parsed.hostname or "").lower() not in '
+                  )
+                  and playwright_lines[index + 2].strip().startswith(
+                      'raise ValueError(f"Playwright host is not allow-listed:'
+                  )
+              ):
+                  indent = playwright_lines[index][
+                      : len(playwright_lines[index]) - len(playwright_lines[index].lstrip())
+                  ]
+                  playwright_lines[index : index + 3] = [
+                      f"{indent}if (",
+                      f"{indent}    context.settings.playwright_allowed_hosts",
+                      f"{indent}    and (parsed.hostname or \"\").lower()",
+                      f"{indent}    not in context.settings.playwright_allowed_hosts",
+                      f"{indent}):",
+                      f"{indent}    raise ValueError(",
+                      f"{indent}        f\"Playwright host is not allow-listed: {{parsed.hostname}}\"",
+                      f"{indent}    )",
+                  ]
+                  matches += 1
+                  index += 8
+              else:
+                  index += 1
+          if matches != 1:
+              raise SystemExit(f"expected one Playwright allow-list guard, found {matches}")
+          playwright.write_text("\n".join(playwright_lines) + "\n", encoding="utf-8")
 
           validation = Path("src/video_factory/validation.py")
-          validation_text = validation.read_text(encoding="utf-8")
-          replacements = (
-              (
-                  '''    if ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds:
-              if brief.rights.likeness_consent is not LikenessConsent.GRANTED:''',
-                  '''    if (
-              ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds
-              and brief.rights.likeness_consent is not LikenessConsent.GRANTED
-          ):''',
+          validation_lines = validation.read_text(encoding="utf-8").splitlines()
+          guards = {
+              "if ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds:": (
+                  "if brief.rights.likeness_consent is not LikenessConsent.GRANTED:",
+                  "ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds",
+                  "brief.rights.likeness_consent is not LikenessConsent.GRANTED",
               ),
-              (
-                  '''    if ShotKind.LIP_SYNC in brief.requested_shot_kinds:
-              if brief.rights.voice_consent is not LikenessConsent.GRANTED:''',
-                  '''    if (
-              ShotKind.LIP_SYNC in brief.requested_shot_kinds
-              and brief.rights.voice_consent is not LikenessConsent.GRANTED
-          ):''',
+              "if ShotKind.LIP_SYNC in brief.requested_shot_kinds:": (
+                  "if brief.rights.voice_consent is not LikenessConsent.GRANTED:",
+                  "ShotKind.LIP_SYNC in brief.requested_shot_kinds",
+                  "brief.rights.voice_consent is not LikenessConsent.GRANTED",
               ),
-          )
-          for target, replacement in replacements:
-              if target not in validation_text and replacement not in validation_text:
-                  raise SystemExit(f"Validation consent guard not found: {target.splitlines()[0]}")
-              validation_text = validation_text.replace(target, replacement, 1)
-          validation.write_text(validation_text, encoding="utf-8")
+          }
+          matches = 0
+          index = 0
+          while index < len(validation_lines) - 1:
+              first = validation_lines[index].strip()
+              second = validation_lines[index + 1].strip()
+              if first in guards and second == guards[first][0]:
+                  indent = validation_lines[index][
+                      : len(validation_lines[index]) - len(validation_lines[index].lstrip())
+                  ]
+                  condition_one, condition_two = guards[first][1:]
+                  validation_lines[index : index + 2] = [
+                      f"{indent}if (",
+                      f"{indent}    {condition_one}",
+                      f"{indent}    and {condition_two}",
+                      f"{indent}):",
+                  ]
+                  matches += 1
+                  index += 4
+              else:
+                  index += 1
+          if matches != 2:
+              raise SystemExit(f"expected two consent guards, found {matches}")
+          validation.write_text("\n".join(validation_lines) + "\n", encoding="utf-8")
           PY
 
           ruff check src tests --fix --unsafe-fixes
