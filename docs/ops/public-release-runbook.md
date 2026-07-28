@@ -11,7 +11,7 @@ not a successful release.
 The production offer and public promise are fixed:
 
 - `USD 15,000` one-time setup.
-- Standard monthly service is included for the first six months; month seven is
+- Standard monthly service is included for the first 90 days; month four is
   continuation pricing is agreed separately after the included period in the signed scope.
 - Payment is collected only from the invoice or payment instruction issued
   after fit review: Wise, bank transfer, USDC, or credit card through a Stripe

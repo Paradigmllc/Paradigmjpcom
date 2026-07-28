@@ -135,28 +135,28 @@ The objective is not to imitate a paid intelligence platform for free. It is to 
   },
   {
     slug: "managed-japan-desk-six-months-included",
-    title: "Managed Japan Desk: What Six Months of Included Operation Actually Covers",
+    title: "Managed Japan Desk: What the First 90 Days Actually Cover",
     excerpt:
-      "Six months included does not mean an unlimited agency retainer. Here is how a managed Japan desk turns a launched buyer path into a visible, bounded operating queue.",
+      "90 days included does not mean an unlimited agency retainer. Here is how a managed Japan desk turns a launched buyer path into a visible, bounded operating queue.",
     category: "Launch Operations",
     readTime: "10 min",
     publishedAt: "2026-07-16",
     tags: ["japan-entry-public", "Launch Operations", "Managed Japan Desk", "Commercial Scope"],
     content: `## “Included” should describe an operating system, not a vague discount
 
-When an overseas company sees “six months included,” the useful question is not whether every future request is free. It is: what operating layer starts after the Japan launch, what can enter the queue, who approves it, and what remains outside the service? A clear answer protects both sides. The client can plan a realistic launch; the delivery team can keep quality and ownership visible.
+When an overseas company sees “90 days included,” the useful question is not whether every future request is free. It is: what operating layer starts after the Japan launch, what can enter the queue, who approves it, and what remains outside the service? A clear answer protects both sides. The client can plan a realistic launch; the delivery team can keep quality and ownership visible.
 
 The Japan Entry offer separates two milestones. The fixed $15,000 setup builds the Japanese buyer path, trust information, eligible inquiry or payment route, launch assets, operating record, and handover. The Managed Japan Desk then keeps that path usable and improves it through a written request queue. Setup and operation are related, but they are not one unlimited bucket.
 
 ## The commercial model in one view
 
-The standard Managed Japan Desk fee is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee. From month 7 onward, the standard fee is $2,000/month under the signed terms. Eligibility and availability are confirmed in writing; an application alone does not reserve a place.
+The standard Managed Japan Desk fee is $2,000/month. For selected launch partners, $2,000/month × 3 months = $6,000 of managed-operation value is included at no additional monthly fee. From month 4 onward, the standard fee is $2,000/month under the signed terms. Eligibility and availability are confirmed in writing; an application alone does not reserve a place.
 
 | Stage | What the client pays | What the stage is for |
 |---|---:|---|
 | Setup | $15,000 one time | Build, verify, publish, and hand over the agreed Japan launch scope |
-| Months 1–6 campaign | $2,000/month × 6 months = $12,000 value included for selected launch partners | Operate the agreed route, answer questions, and improve priority surfaces |
-| Month 7 onward | $2,000/month | Continue the standard Managed Japan Desk under the signed scope |
+| Days 1–90 campaign | $2,000/month × 3 months = $6,000 value included for selected launch partners | Operate the agreed route, answer questions, and improve priority surfaces |
+| Month 4 onward | $2,000/month | Continue the standard Managed Japan Desk under the signed scope |
 
 The table is a commercial map, not a promise of sales. It does not include advertising spend, payment-provider charges, hosting, fulfilment, inventory, legal or tax advice, licensing, or specialist approval unless the signed scope explicitly adds them.
 
@@ -184,11 +184,11 @@ Requests can be submitted in the private Notion or Trello workspace with context
 
 This is not bureaucracy for its own sake. It gives a founder a current view of what is being produced, what is blocked, and what needs a decision. It also creates a handover record that remains useful if the company later hires locally or changes providers.
 
-## What success should mean after six months
+## What success should mean after 90 days
 
-Do not define the included period as a guaranteed revenue number. A responsible six-month review asks whether the Japanese buyer path is understandable, whether the inquiry or payment route is usable, whether support ownership is clear, which objections recur, which public signals changed, and which first-party measurements the client can now authorize. The answer may be to expand, narrow, pause, or continue the desk at the standard rate.
+Do not define the included period as a guaranteed revenue number. A responsible 90-day review asks whether the Japanese buyer path is understandable, whether the inquiry or payment route is usable, whether support ownership is clear, which objections recur, which public signals changed, and which first-party measurements the client can now authorize. The answer may be to expand, narrow, pause, or continue the desk at the standard rate.
 
-That is the point of a Managed Japan Desk: not to hide an agency retainer behind the word “free,” but to keep a market-ready Japanese operating path accountable after the initial build. A written queue, evidence labels, approval gates, and a defined month-seven rate make the decision easier to evaluate.`
+That is the point of a Managed Japan Desk: not to hide an agency retainer behind the word “free,” but to keep a market-ready Japanese operating path accountable after the initial build. A written queue, evidence labels, approval gates, and a defined month-four rate make the decision easier to evaluate.`
   },
 ]
 

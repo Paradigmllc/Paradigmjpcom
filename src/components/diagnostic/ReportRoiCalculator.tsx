@@ -34,8 +34,8 @@ export default function ReportRoiCalculator({
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             ["Setup", "$15,000 fixed"],
-            ["Managed operation", "$2,000/month × 6 months = $12,000 value included for selected launch partners"],
-            ["Month 7 onward", "$2,000/month under the signed terms"],
+            ["Managed operation", "$2,000/month × 3 months = $6,000 value included for selected launch partners"],
+            ["Month 4 onward", "$2,000/month under the signed terms"],
           ].map(([label, value]) => (
             <div key={label} className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
               <div className="text-xs font-medium text-zinc-500">{label}</div>

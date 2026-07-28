@@ -30,7 +30,7 @@ describe("diagnostic report customer-facing copy", () => {
   })
 
   it("keeps Japan Entry report pricing and international losses in USD", () => {
-    expect(SOLUTION_COSTS.japan_entry).toBe(13_000)
+    expect(SOLUTION_COSTS.japan_entry).toBe(15_000)
     expect(formatMoney(SOLUTION_COSTS.japan_entry, "en")).toBe("$15,000")
     expect(formatMoney(450_000, "ja")).toMatch(/^[¥￥]450,000$/)
     expect(reportCurrencySymbol("en")).toBe("$")

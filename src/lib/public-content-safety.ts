@@ -63,8 +63,8 @@ export function isSafeEnglishJapanEntryHomepage(
   const normalizedCopy = copy.toLowerCase()
   const requiredCopy = [
     "$2,000/month",
-    "$2,000/month × 6 months = $12,000 value included",
-    "Month 7 onward: $2,000/month",
+    "$2,000/month × 3 months = $6,000 value included",
+    "Month 4 onward: $2,000/month",
     "availability and scope are confirmed in writing",
     "Your Japan Country Partner",
     "Japan Market Setup",

@@ -53,7 +53,7 @@ describe("Japanese public content safety", () => {
           {
             price: "$15,000",
             features:
-              "Standard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
+              "Standard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 3 months = $6,000 value included\nMonth 4 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
           },
         ],
       },

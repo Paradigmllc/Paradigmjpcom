@@ -12,9 +12,9 @@ const ALLOWED_DOLLAR_VALUES = new Set([
   "$15K",
   "$15,000",
   "$15000",
-  "$12K",
-  "$12k",
-  "$12,000",
+  "$6K",
+  "$6k",
+  "$6,000",
   "$2,000",
   "$2K",
   "$2k",
@@ -93,7 +93,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("how much") ||
     question.includes("pricing")
   ) {
-    return "Japan Entry is a fixed $15,000 setup, paid before kickoff. For selected launch partners, the standard $2,000/month managed-operation layer is included for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
+    return "Japan Entry is a fixed $15,000 setup, paid before kickoff. For selected launch partners, the standard $2,000/month managed-operation layer is included for 90 days at no additional monthly fee: $2,000/month × 3 months = $6,000 of value. Month 4 onward is $2,000/month under the signed terms. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
   }
   if (
     question.includes("process") ||
@@ -165,7 +165,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("after") ||
     question.includes("launch")
   ) {
-    return "The standard managed-operation fee is $2,000/month. For selected launch partners, six months are included at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. The standard operating envelope is up to four pages or 5,000 words per month, one active creative request at a time, up to two Social Media channels, and a 48-business-hour start commitment for standard requests; exact channels, ownership, and priorities are confirmed in the written scope."
+    return "The standard managed-operation fee is $2,000/month. For selected launch partners, 90 days are included at no additional monthly fee: $2,000/month × 3 months = $6,000 of value. Month 4 onward is $2,000/month under the signed terms. The standard operating envelope is up to four pages or 5,000 words per month, one active creative request at a time, up to two Social Media channels, and a 48-business-hour start commitment for standard requests; exact channels, ownership, and priorities are confirmed in the written scope."
   }
   if (
     question.includes("contact") ||
@@ -183,5 +183,5 @@ function getFallbackAnswerEn(question: string): string {
   ) {
     return "Paradigm LLC is a Tokyo-based Japan market-entry operator for overseas SMBs. We publish only verified company and commercial information; see https://paradigmjp.com/en/about and /en/legal."
   }
-  return "Japan Entry is a fixed $15,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. For selected launch partners, the standard $2,000/month managed-operation layer is included for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
+  return "Japan Entry is a fixed $15,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. For selected launch partners, the standard $2,000/month managed-operation layer is included for 90 days at no additional monthly fee: $2,000/month × 3 months = $6,000 of value. Month 4 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
 }

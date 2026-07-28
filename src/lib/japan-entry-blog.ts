@@ -68,7 +68,7 @@ It does not fit a company that expects a single launch package to replace legal 
 
 ## The commercial shape
 
-The Japan Entry package uses a fixed $15,000 one-time setup. For selected launch partners, $2,000/month × 6 months = $12,000 of standard Managed Japan Desk operation is included at no additional monthly fee, and month 7 onward is $2,000/month under the signed terms. Third-party costs and approved work outside the written scope remain separate.
+The Japan Entry package uses a fixed $15,000 one-time setup. For selected launch partners, $2,000/month × 3 months = $6,000 of standard Managed Japan Desk operation is included at no additional monthly fee, and month 4 onward is $2,000/month under the signed terms. Third-party costs and approved work outside the written scope remain separate.
 
 That structure gives a decision-maker one number to approve for setup, a defined period to operate the launch, and a clear recurring price before the work begins.`
   },
@@ -219,7 +219,7 @@ A fixed package is useful when the company wants a defined starting system, one 
 
 ## The Paradigm commercial structure
 
-The Japan Entry setup is $15,000 one time. For selected launch partners, $2,000/month × 6 months = $12,000 of standard Managed Japan Desk operation is included at no additional monthly fee, and month 7 onward is $2,000/month under the signed terms. Third-party charges and approved work outside scope remain separate.
+The Japan Entry setup is $15,000 one time. For selected launch partners, $2,000/month × 3 months = $6,000 of standard Managed Japan Desk operation is included at no additional monthly fee, and month 4 onward is $2,000/month under the signed terms. Third-party charges and approved work outside scope remain separate.
 
 Before comparing providers, ask each one to show the same items: deliverables, client inputs, acceptance criteria, exclusions, ownership, launch dependencies, ongoing responsibilities, and what stops when the engagement ends.
 
@@ -310,7 +310,7 @@ If the answers depend on a future proposal, the price is not yet comparable. If 
 
 ## The Paradigm commercial shape
 
-Paradigm's Japan Entry package uses a fixed $15,000 one-time setup. For selected launch partners, $2,000/month × 6 months = $12,000 of standard Managed Japan Desk operation is included at no additional monthly fee, and month 7 onward is $2,000/month under the signed terms, with availability and scope confirmed in writing. The point of the fixed structure is to make the first launch decision concrete; third-party costs and approved work outside scope remain separate.`
+Paradigm's Japan Entry package uses a fixed $15,000 one-time setup. For selected launch partners, $2,000/month × 3 months = $6,000 of standard Managed Japan Desk operation is included at no additional monthly fee, and month 4 onward is $2,000/month under the signed terms, with availability and scope confirmed in writing. The point of the fixed structure is to make the first launch decision concrete; third-party costs and approved work outside scope remain separate.`
   },
   {
     slug: "japan-entry-package-vs-diy-hire-agency-stack",
@@ -354,7 +354,7 @@ A fixed-scope package fits a fast-decision SMB that has a real offer, one empowe
 
 Ask every provider to state the same six items: deliverables, client inputs, approval gates, exclusions, launch dependencies, and what remains after the engagement ends. Then include founder time, integration work, and the cost of unresolved ownership in the comparison.
 
-Paradigm's public structure is $15,000 one-time setup, with $2,000/month × 6 months = $12,000 of standard Managed Japan Desk operation included at no additional monthly fee for selected launch partners. From month 7 onward, managed operation is $2,000/month under signed terms. It is designed to reduce the coordination burden around a first Japan launch, not to replace legal advice, a permanent local team, or every specialist you may need later.`
+Paradigm's public structure is $15,000 one-time setup, with $2,000/month × 3 months = $6,000 of standard Managed Japan Desk operation included at no additional monthly fee for selected launch partners. From month 4 onward, managed operation is $2,000/month under signed terms. It is designed to reduce the coordination burden around a first Japan launch, not to replace legal advice, a permanent local team, or every specialist you may need later.`
   },
   {
     slug: "first-30-days-after-japan-launch",

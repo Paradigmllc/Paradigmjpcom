@@ -32,10 +32,10 @@ describe("public English Japan Entry copy", () => {
   })
 
   it("keeps the fixed commercial terms consistent", () => {
-    expect(messages.pricingPage.fixedPlanName).toBe("Japan Entry Package")
+    expect(messages.pricingPage.fixedPlanName).toBe("Initial Japan Country Partnership")
     expect(messages.pricingPage.heroDesc).toContain("$15,000")
     expect(messages.pricingPage.heroDesc).toContain("$2,000/month")
-    expect(messages.pricingPage.heroDesc).toContain("$2,000/month × 6 months = $12,000")
+    expect(messages.pricingPage.heroDesc).toContain("$2,000/month × 3 months = $6,000")
     expect(messages.packagePage.campaign.steps[1].price).toBe("$0/mo")
     expect(messages.packagePage.campaign.steps[2].price).toBe("$2,000/mo")
     expect(JSON.stringify(messages)).not.toMatch(/first 10 selected|first-10 launch-partner/i)
@@ -43,8 +43,8 @@ describe("public English Japan Entry copy", () => {
     expect(messages.cta.primary).toBe("Apply for a Japan Partnership — $15K")
     expect(messages.lpWeb.plans.map((plan) => plan.name)).toEqual([
       "Japan Entry setup",
-      "Months 1–6",
-      "Month 7 onward",
+      "Days 1–90",
+      "Month 4 onward",
     ])
     expect(messages.videoPage.plans).toHaveLength(1)
     expect(messages.videoPage.plans[0].name).toBe("Japan Entry Package")
@@ -174,8 +174,8 @@ describe("public English Japan Entry copy", () => {
       "Limited founding-partner capacity",
       "$15,000",
       "$2,000/month",
-      "$2,000/month × 6 months = $12,000",
-      "standard managed operation from month 7 onward",
+      "$2,000/month × 3 months = $6,000",
+      "standard managed operation from month 4 onward",
     ]) {
       expect(copy).toContain(term)
     }
@@ -263,7 +263,7 @@ describe("public English Japan Entry copy", () => {
     const priceToken = /\$(?:\d{1,3}(?:,\d{3})+|\d+)(?:K)?/g
     const prices = new Set(strings.flatMap(({ value }) => value.match(priceToken) ?? []))
 
-    expect([...prices].sort()).toEqual(["$0", "$12,000", "$12K", "$15,000", "$15K", "$2,000"])
+    expect([...prices].sort()).toEqual(["$0", "$15,000", "$15K", "$2,000", "$6,000", "$6K"])
   })
 
   it("contains no accidental Japanese copy outside the locale-switch label", () => {

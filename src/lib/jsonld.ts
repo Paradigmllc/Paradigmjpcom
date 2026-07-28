@@ -22,7 +22,7 @@ const altNamesOf = (locale: string) =>
 
 export const JAPAN_ENTRY_TITLE = "Your Japan Country Partner | Paradigm"
 export const JAPAN_ENTRY_DESCRIPTION =
-  "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with the fixed $15,000 Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms."
+  "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with the fixed $15,000 Japan Market Setup; selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included, and month 4 onward is $2,000/month under the signed terms."
 export const JAPAN_ENTRY_URL = "https://paradigmjp.com/en"
 export const JAPAN_ENTRY_CONTACT_CANONICAL_URL =
   "https://paradigmjp.com/en/contact"
@@ -36,11 +36,11 @@ export const JAPAN_ENTRY_FAQS = [
   },
   {
     q: "What does the selected-launch-partner operating period include?",
-    a: "The standard managed-operation fee is $2,000/month; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain the client's responsibility.",
+    a: "The standard managed-operation fee is $2,000/month; selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain the client's responsibility.",
   },
   {
-    q: "What happens after six months?",
-    a: "From month 7 onward, managed operation is $2,000/month under the signed terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.",
+    q: "What happens after 90 days?",
+    a: "From month 4 onward, managed operation is $2,000/month under the signed terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.",
   },
   {
     q: "Do I need a Japanese entity or bank account?",
@@ -99,7 +99,7 @@ function getJapanEntryServiceJsonLd() {
       price: "15000",
       priceCurrency: "USD",
       description:
-        "$15,000 Japan Market Setup as the initial paid engagement. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
+        "$15,000 Japan Market Setup as the initial paid engagement. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included, and month 4 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
       eligibleRegion: ["US", "CA", "GB", "EU", "AU", "NZ"],
       priceSpecification: [
         {
@@ -196,7 +196,7 @@ export function getServicesJsonLd(locale: string = "ja") {
           desc: JAPAN_ENTRY_DESCRIPTION,
           url: `/${pageLocale}`,
           price: "15000",
-          priceDesc: "Fixed Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included",
+          priceDesc: "Fixed Japan Market Setup; selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included",
         },
       ]
   return {

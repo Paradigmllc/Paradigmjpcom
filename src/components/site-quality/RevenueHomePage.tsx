@@ -75,7 +75,7 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
       { value: "CRM", label: "商談化と追客状況" },
     ],
     ctaTitle: "日本市場への展開を、実行できる計画に変えます。",
-    ctaBody: "セットアップ費用は15,000ドル固定。月額運用は最初の6か月無料です。意思決定者と必要条件が揃う企業だけを審査します。",
+    ctaBody: "セットアップ費用は15,000ドル固定。月額運用は最初の3か月無料です。意思決定者と必要条件が揃う企業だけを審査します。",
   },
   en: {
     badge: "Revenue OS for Japan growth",
@@ -114,7 +114,7 @@ const COPY: Record<LocaleVariant, HomeCopy> = {
       { value: "CRM", label: "Pipeline follow-up" },
     ],
     ctaTitle: "Turn Japan entry into an execution-ready plan.",
-    ctaBody: "Setup is fixed at $15,000. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included at no additional monthly fee. Apply only if an empowered decision-maker can move now.",
+    ctaBody: "Setup is fixed at $15,000. Selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included at no additional monthly fee. Apply only if an empowered decision-maker can move now.",
   },
 }
 

@@ -160,7 +160,7 @@ export default async function JapanMarketPartnerPage({ params }: Props) {
             <div className="mt-8 border-t border-paradigm-line pt-6">
               <h3 className="font-display text-[20px] text-paradigm-ink">Selected launch-partner operating period</h3>
               <p className="mt-3 text-[13px] leading-[1.85] text-paradigm-ink-soft">
-                The standard managed-operation layer is $2,000/month. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee. Month 7 onward is $2,000/month under the signed terms.
+                The standard managed-operation layer is $2,000/month. For selected launch partners, $2,000/month × 3 months = $6,000 of managed-operation value is included at no additional monthly fee. Month 4 onward is $2,000/month under the signed terms.
               </p>
             </div>
           </FadeIn>

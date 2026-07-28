@@ -8,7 +8,7 @@ test.describe("Japan Entry conversion path", () => {
 
     await expect(page.getByRole("heading", { name: "Launch in Japan without hiring a local team" })).toBeVisible()
     await expect(page.getByText("$15,000", { exact: true })).toBeVisible()
-    await expect(page.getByText("six months of managed operation are included for selected launch partners", { exact: false })).toBeVisible()
+    await expect(page.getByText("90 days of managed operation are included for selected launch partners", { exact: false })).toBeVisible()
     await expect(page.getByText("$1,500", { exact: false })).toHaveCount(0)
     await expect(page.getByText("Book a free 30-min call", { exact: false })).toHaveCount(0)
   })

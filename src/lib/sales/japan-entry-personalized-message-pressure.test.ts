@@ -45,7 +45,7 @@ I reviewed Example’s subscription analytics platform for independent retailers
 
 The public-signal planning model estimates approximately 1,950 monthly visits from Japan and a potential monthly revenue opportunity gap of approximately $10,296 under stated assumptions; these are modeled estimates, not measured analytics. Public-source analysis identifies Japan Analytics Co as a direct comparator. A verified public dataset shows sustained Japanese search interest in retail inventory analytics. The checked pages did not show a Japanese-language customer path. The Consumer Affairs Agency says in-scope failures can bring business-improvement instructions or suspension orders. This screen does not establish applicability or breach. Waiting preserves an untested customer-path gap, while launching without scoping the rules can increase exposure.
 
-Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $15,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`
+Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $15,000 paid upfront, with the first 90 days of managed support included at no additional monthly charge. Would a detailed Japan opportunity analysis be useful?`
     const factIds = ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap", "verified-competitor-1", "verified-japan-demand-1", "regulatory-commerce-enforcement"]
     const review = reviewPersonalizedJapanEntryMessage({
       message,
