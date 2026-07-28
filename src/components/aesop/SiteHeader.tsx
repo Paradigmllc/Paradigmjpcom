@@ -69,8 +69,8 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     { href: "/faq", label: t("faq") },
     { href: "/tools/japan-entry-score", label: t("japanEntryScore") },
   ]
-  // International public routes sell the fixed Japan Entry package. The
-  // Japanese route is the domestic/general site and keeps a normal contact CTA.
+  // Keep the global header neutral. Offer-specific CTAs belong on the page
+  // itself; the top-right navigation should always be an ordinary contact path.
   const isJapanEntryConversionRoute = locale !== "ja"
   const JAPAN_ENTRY_NAV: NavLink[] = [
     { href: "/about", label: t("about") },
@@ -91,10 +91,8 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     : nav?.cta
       ? nav.cta.enabled
       : true
-  const ctaLabel = isJapanEntryConversionRoute ? tCta("primary") : nav?.cta?.label || tCta("primary")
-  const ctaHref = isJapanEntryConversionRoute
-    ? "/contact?intent=japan-entry"
-    : nav?.cta?.href || "/contact"
+  const ctaLabel = isJapanEntryConversionRoute ? t("contact") : nav?.cta?.label || tCta("primary")
+  const ctaHref = isJapanEntryConversionRoute ? "/contact" : nav?.cta?.href || "/contact"
   const showLocale = nav ? nav.showLocaleSwitcher : true
   const showTheme = nav ? nav.showThemeToggle : true
 

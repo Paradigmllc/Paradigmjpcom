@@ -2051,3 +2051,8 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - PR **#494** / commit **48b216cf** をmainへ統合（merge **b24795818fcd58be81a3b1c63e3fbd08b64fe9e8**）。正式 `npm run release:prod` と `npm run release:doctor -- --post-deploy` を完走し、DB **91/91**、公開smoke、Sales health `ok:true`、Twenty/Realtime/Traefik/zero-sendを含むrelease gateを確認した。
 - 本番 `https://paradigmjp.com/en` はHTTP **200**。`/en/pricing`、`/en/package`、`/en/contact`、`/en/faq`、`/en/about`、`/en/blog`もHTTP **200**で、各HTMLから数式をread-backした。固定社数を示す`first 10`/`10 companies`表現は公開HTMLにない。
 - TypeScript、全Vitest、Lint、Quality Guard、`git diff --check`をpass（Quality Guardは既存warningのみ）。ユーザー固有の未関連変更 `e2e/manual-japan-entry-work.spec.ts` と `test-results/` は保持している。
+## CURRENT STATUS - 2026-07-28 英語ヘッダーCTAの中立化（実装・型検査完了 / 外部送信0）
+
+- 英語圏の固定ヘッダー右上CTAを、価格・申込意図を直接押し出す`Apply — $13K`から通常の`Contact`へ変更し、リンクも`/contact?intent=japan-entry`から`/contact`へ統一した。Japan Entryの価格・申込CTAは本文側に残し、ヘッダーはサービス横断の入口に戻した。
+- 変更は`src/components/aesop/SiteHeader.tsx`のみ。既存の日本語`お問い合わせ`、CMSナビが有効な国内ルート、モバイルメニュー、外部送信経路には変更なし。
+- `npm exec -- eslint src/components/aesop/SiteHeader.tsx --max-warnings=0`、`npm exec -- tsc --noEmit --pretty false`、`git diff --check`を通過。未送信・未配信のため、本番read-backはcommit/deploy後に実施する。
