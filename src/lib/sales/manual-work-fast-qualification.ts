@@ -36,6 +36,7 @@ const COUNTRY_BY_TLD: Record<string, string> = {
 }
 
 const STRUCTURAL_LOW_FIT = /\b(?:hyperscale|data cent(?:er|re)s?|colocation|critical infrastructure|industrial campus|megawatts?|power capacity|subsea cable|telecom(?:munications)? towers?|large-scale construction|property development)\b/i
+const SPARSE_CONTEXT_PREFIX = "Sparse public homepage for "
 
 function countryCodeFromDomain(domain: string): string | null {
   const suffix = domain.toLowerCase().split(".").at(-1) ?? ""
@@ -54,6 +55,7 @@ function isJapaneseCompany(input: FastEvidenceInput): boolean {
 }
 
 function observedFacts(productContext: string): string[] {
+  if (productContext.startsWith(SPARSE_CONTEXT_PREFIX)) return []
   return [...new Set(productContext
     .split(" | ")
     .map((value) => value.trim().slice(0, 240))
@@ -68,6 +70,20 @@ function scoreFastQualification(input: FastEvidenceInput, japaneseCompany: boole
       priority: "low",
       promotionRecommended: false,
       reasons: ["日本企業を示す決定的な公開情報を確認しました。"],
+      analysisMode: "fast_qualification",
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
+  if (input.productContext.startsWith(SPARSE_CONTEXT_PREFIX)) {
+    return {
+      score: 20,
+      priority: "low",
+      promotionRecommended: false,
+      reasons: [
+        "ホームページから商品・サービスを具体的に判断できる公開情報を十分に取得できませんでした。",
+        "日本語やJPYが見当たらないことだけでは営業適性の根拠にならないため、機会として加点していません。",
+      ],
       analysisMode: "fast_qualification",
       generatedAt: new Date().toISOString(),
     }
