@@ -62,6 +62,14 @@ export async function processManualEditorialMessage(input: {
       generation_status: "processing",
       automatic_send_allowed: false,
     },
+    form_discovery: {},
+    form_url: null,
+    qualification_ledger: {},
+    master_lead_ledger: {},
+    report_data: {},
+    report_url: null,
+    twenty_company_id: null,
+    twenty_sync_status: "skipped",
   })
 
   try {
@@ -118,6 +126,11 @@ export async function processManualEditorialMessage(input: {
           publicEmail: brief.publicEmail,
         },
         form_url: null,
+        qualification_ledger: {},
+        master_lead_ledger: {},
+        report_data: {},
+        report_url: null,
+        twenty_company_id: null,
         twenty_sync_status: "skipped",
         error_message: generated.error ?? "The editorial quality gate rejected the draft.",
       })
@@ -155,6 +168,11 @@ export async function processManualEditorialMessage(input: {
         publicEmail: brief.publicEmail,
       },
       form_url: null,
+      qualification_ledger: {},
+      master_lead_ledger: {},
+      report_data: {},
+      report_url: null,
+      twenty_company_id: null,
       twenty_sync_status: "skipped",
       error_message: null,
     })
@@ -169,6 +187,13 @@ export async function processManualEditorialMessage(input: {
         generation_status: "failed",
         automatic_send_allowed: false,
       },
+      form_discovery: {},
+      form_url: null,
+      qualification_ledger: {},
+      master_lead_ledger: {},
+      report_data: {},
+      report_url: null,
+      twenty_company_id: null,
       twenty_sync_status: "skipped",
       error_message: error instanceof Error ? error.message.slice(0, 2_000) : "High-quality message generation failed.",
     })
