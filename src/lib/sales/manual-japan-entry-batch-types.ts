@@ -2,7 +2,7 @@ import type { ManualMessageAngleSelection } from "./manual-japan-entry-angle"
 import type { ManualMessageVariantSelection } from "./manual-japan-entry-experiment"
 
 export const MANUAL_WORK_BATCH_MAX_URLS = 500
-export const MANUAL_WORK_BATCH_DRAIN_SIZE = 3
+export const MANUAL_WORK_BATCH_DRAIN_SIZE = 8
 export const MANUAL_WORK_BATCH_QUEUE_MAX_BATCHES = 20
 
 export type ManualWorkBatchStatus =
