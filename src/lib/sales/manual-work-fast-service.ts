@@ -99,6 +99,7 @@ export async function processFastManualWorkUrl(
       : buildManualFirstTouchCopy({
           companyName: profile.companyName,
           productNames: evidence.productNames,
+          productContext: evidence.productContext,
           businessModel: profile.businessModel,
           audit: evidence.audit,
           mode: "fast",
