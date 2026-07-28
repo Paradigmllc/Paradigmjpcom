@@ -9,6 +9,7 @@ type RecoveryState = Pick<ManualJapanEntryWorkRow, "status"> & Partial<Pick<
   | "founder_forwarded_at"
   | "meeting_converted_at"
   | "is_japanese_company"
+  | "country_code"
   | "business_model"
   | "japan_entry_fit_status"
   | "profile"
@@ -48,6 +49,10 @@ function isGpt56Editorial(item: RecoveryState): boolean {
     || item.message_review?.purpose === "editorial_generation"
 }
 
+function isNonJapanese(item: RecoveryState): boolean {
+  return item.is_japanese_company !== true && item.country_code !== "JP"
+}
+
 export function isManualWorkRecoveryAvailable(item: RecoveryState): boolean {
   const hasRecordedOutcome = Boolean(
     item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at,
@@ -57,8 +62,9 @@ export function isManualWorkRecoveryAvailable(item: RecoveryState): boolean {
     ? item.message_review.generation_status
     : ""
   if (item.status === "processing") return generationStatus === "retry_required"
-  if (isFastQualification(item)) return item.is_japanese_company !== true
-  if (isGpt56Editorial(item)) return item.is_japanese_company !== true
+  if (isFastQualification(item)) return isNonJapanese(item)
+  if (isGpt56Editorial(item)) return isNonJapanese(item)
+  if (isNonJapanese(item) && ["completed", "needs_review", "failed"].includes(item.status)) return true
   if (item.status === "rejected" && item.twenty_sync_status !== "failed") return false
   const generationFailed = ["failed", "failed_quality_gate", "retry_required"].includes(generationStatus)
   return item.status === "failed"
