@@ -46,6 +46,24 @@ describe("fast manual work qualification", () => {
     expect(result.qualification.score).toBeGreaterThanOrEqual(65)
   })
 
+  it("deprioritizes hyperscale data-centre infrastructure rather than leaving it in generic review", () => {
+    const result = buildFastManualCompanyProfile({
+      domain: "airtrunk.com",
+      companyName: "AirTrunk",
+      productContext: "Hyperscale data centres and critical infrastructure campuses delivering hundreds of megawatts of capacity",
+      productNames: [],
+      businessModel: "service",
+      title: "AirTrunk | Hyperscale Data Centres",
+      description: "Developing and operating hyperscale data centre campuses across Asia Pacific",
+      headings: ["Critical infrastructure at hyperscale", "Power capacity for cloud growth"],
+      audit: audit(),
+    })
+
+    expect(result.qualification.priority).toBe("low")
+    expect(result.qualification.score).toBe(25)
+    expect(result.qualification.reasons.join(" ")).toContain("大規模な物理インフラ")
+  })
+
   it("rejects a Japanese company deterministically", () => {
     const result = buildFastManualCompanyProfile({
       domain: "example.jp",
