@@ -1,11 +1,10 @@
-name: Deploy Paradigm Production
+name: Migrate and Deploy Paradigm Production
 
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/one-shot-country-partner-release.yml
-      - scripts/ops/repair-production-traefik.mjs
   workflow_dispatch:
 
 permissions:
@@ -19,7 +18,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
       COOLIFY_API_URL: https://coolify.paradigmjp.com
@@ -41,49 +40,142 @@ jobs:
             --header "Authorization: Bearer ${GH_TOKEN}" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
-            --data "$(jq -cn --arg state pending --arg target_url "${STATUS_TARGET}" --arg description 'Deploying the latest main revision to Coolify' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
+            --data "$(jq -cn --arg state pending --arg target_url "${STATUS_TARGET}" --arg description 'Migrating the legacy route and deploying the latest main revision' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
 
-      - name: Force deploy latest main through Coolify
+      - name: Migrate legacy Traefik route to stable Docker DNS
         run: |
           set -euo pipefail
           API="${COOLIFY_API_URL%/}/api/v1"
-          RESPONSE="$(curl --fail-with-body --silent --show-error \
-            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
-            --header "Accept: application/json" \
-            "${API}/deploy?uuid=${PARADIGM_APP_UUID}&force=true")"
-          printf '%s\n' "$RESPONSE" | tee /tmp/coolify-deploy-request.json
-          DEPLOYMENT_UUID="$(printf '%s' "$RESPONSE" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid')"
-          echo "deployment_uuid=${DEPLOYMENT_UUID}" >> "$GITHUB_ENV"
+          APP_ENDPOINT="${API}/applications/${PARADIGM_APP_UUID}"
 
-          for attempt in $(seq 1 120); do
-            DETAIL="$(curl --fail-with-body --silent --show-error \
+          coolify_get() {
+            curl --fail-with-body --silent --show-error \
               --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
               --header "Accept: application/json" \
-              "${API}/deployments/${DEPLOYMENT_UUID}")"
-            STATUS="$(printf '%s' "$DETAIL" | jq -r '.status // "unknown"')"
-            COMMIT="$(printf '%s' "$DETAIL" | jq -r '.commit // "unknown"')"
-            printf '[%s/120] status=%s commit=%s\n' "$attempt" "$STATUS" "$COMMIT" | tee -a /tmp/coolify-deploy.log
-            printf '%s\n' "$DETAIL" > /tmp/coolify-deployment-latest.json
-            case "$STATUS" in
-              finished|success)
-                echo "Coolify deployment completed."
-                exit 0
-                ;;
-              failed|cancelled|canceled|cancelled-by-user|error)
-                echo "Coolify deployment failed with status: $STATUS" >&2
-                printf '%s\n' "$DETAIL" >&2
-                exit 1
-                ;;
-            esac
-            sleep 10
-          done
-          echo "Coolify deployment did not complete within the workflow timeout window." >&2
-          exit 1
+              "$1"
+          }
 
-      - name: Repair production route and verify VaaS funnel
+          coolify_patch() {
+            curl --fail-with-body --silent --show-error \
+              --request PATCH \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              --header "Content-Type: application/json" \
+              "$1" \
+              --data "$2"
+          }
+
+          deploy_and_wait() {
+            local label="$1"
+            local response deployment_uuid detail status commit
+            response="$(coolify_get "${API}/deploy?uuid=${PARADIGM_APP_UUID}&force=true")"
+            printf '%s\n' "$response" | tee "/tmp/${label}-deploy-request.json"
+            deployment_uuid="$(printf '%s' "$response" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid')"
+            echo "${label}_deployment_uuid=${deployment_uuid}" >> "$GITHUB_ENV"
+            for attempt in $(seq 1 150); do
+              detail="$(coolify_get "${API}/deployments/${deployment_uuid}")"
+              status="$(printf '%s' "$detail" | jq -r '.status // "unknown"')"
+              commit="$(printf '%s' "$detail" | jq -r '.commit // "unknown"')"
+              printf '[%s %s/150] status=%s commit=%s\n' "$label" "$attempt" "$status" "$commit" | tee -a "/tmp/${label}-deploy.log"
+              printf '%s\n' "$detail" > "/tmp/${label}-deployment-latest.json"
+              case "$status" in
+                finished|success)
+                  return 0
+                  ;;
+                failed|cancelled|canceled|cancelled-by-user|error)
+                  printf '%s\n' "$detail" >&2
+                  return 1
+                  ;;
+              esac
+              sleep 8
+            done
+            echo "${label} deployment did not complete in time" >&2
+            return 1
+          }
+
+          verify_live() {
+            local label="$1"
+            LABEL="$label" node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          import { setTimeout as sleep } from 'node:timers/promises'
+
+          const label = process.env.LABEL || 'verify'
+          const site = 'https://paradigmjp.com'
+          const specs = [
+            ['/ja/video-as-a-service', ['動画制作チームを、採用せずに。', '$1,500', '$3,500', '$5,500', '契約前によくある質問']],
+            ['/en/video-as-a-service', ['Your on-demand video production team.', '$1,500', '$3,500', '$5,500', 'Questions before you subscribe']],
+            ['/ja/video-as-a-service/terms', ['Video as a Service 利用規約', '2026年7月28日', '契約文書の優先順位']],
+            ['/en/video-as-a-service/terms', ['Video as a Service Terms', 'July 28, 2026', 'Order of precedence']],
+            ['/ja/contact?intent=video-as-a-service&plan=unlimited', ['Video as a Service 申込み', '希望プラン', 'Unlimited', '素材の準備状況']],
+            ['/en/contact?intent=video-as-a-service&plan=unlimited', ['Apply for Video as a Service', 'Preferred plan', 'Unlimited', 'Asset readiness']],
+            ['/api/ready', []],
+          ]
+
+          async function probe(path, markers) {
+            try {
+              const url = new URL(path, site)
+              url.searchParams.set('deployment_verify', String(Date.now()))
+              const response = await fetch(url, {
+                headers: { 'Cache-Control': 'no-cache' },
+                redirect: 'follow',
+                signal: AbortSignal.timeout(25_000),
+              })
+              const body = await response.text()
+              const missing = markers.filter((marker) => !body.includes(marker))
+              return { path, status: response.status, ok: response.ok && missing.length === 0, missing }
+            } catch (error) {
+              return { path, status: 0, ok: false, missing: [], error: error instanceof Error ? error.message : String(error) }
+            }
+          }
+
+          let results = []
+          for (let attempt = 1; attempt <= 30; attempt += 1) {
+            results = await Promise.all(specs.map(([path, markers]) => probe(path, markers)))
+            console.log(`${label} attempt ${attempt}/30: ${results.filter((result) => result.ok).length}/${results.length} passed`)
+            for (const result of results) {
+              console.log(`${result.ok ? 'PASS' : 'FAIL'} ${result.path} HTTP ${result.status}; missing=${result.missing?.join(' | ') || 'none'}${result.error ? `; error=${result.error}` : ''}`)
+            }
+            if (results.every((result) => result.ok)) break
+            await sleep(5_000)
+          }
+          fs.writeFileSync(`/tmp/${label}-production-verification.json`, `${JSON.stringify(results, null, 2)}\n`)
+          if (!results.every((result) => result.ok)) process.exit(1)
+          NODE
+          }
+
+          coolify_get "$APP_ENDPOINT" | tee /tmp/application-before-route-migration.json >/dev/null
+
+          ROUTE_COMMAND="set -e; p=/host-proxy-dynamic/paradigmjp.yml; if [ ! -f \"\$p\" ]; then echo LEGACY_ROUTE_NOT_FOUND; exit 1; fi; echo ROUTE_BACKUP_B64_BEGIN; base64 \"\$p\" | tr -d '\\n'; echo; echo ROUTE_BACKUP_B64_END; node -e 'const fs=require(\"fs\"); const p=process.argv[1]; const host=process.argv[2]; let text=fs.readFileSync(p,\"utf8\"); const marker=text.indexOf(\"paradigmhp-svc:\"); if(marker<0) throw new Error(\"paradigmhp-svc marker missing\"); const prefix=text.slice(0,marker); let tail=text.slice(marker); const re=/^(\\s*-\\s*url:\\s*)https?:\\/\\/[^\\s]+:3000\\s*$/m; if(!re.test(tail)) throw new Error(\"legacy upstream URL missing\"); tail=tail.replace(re, \"\$1http://\"+host+\":3000\"); fs.writeFileSync(p,prefix+tail); console.log(\"ROUTE_UPDATED_TO_DOCKER_DNS=\"+host);' \"\$p\" '${PARADIGM_APP_UUID}'; exit 1"
+
+          TEMP_PATCH="$(jq -cn \
+            --arg options '--user 0:0 --volume /data/coolify/proxy/dynamic:/host-proxy-dynamic' \
+            --arg command "$ROUTE_COMMAND" \
+            '{custom_docker_run_options:$options,post_deployment_command:$command,post_deployment_command_container:""}')"
+          coolify_patch "$APP_ENDPOINT" "$TEMP_PATCH" | tee /tmp/application-route-migration-patch.json
+
+          deploy_and_wait route-migration
+          verify_live route-migration
+
+          CLEAN_PATCH='{"custom_docker_run_options":"","post_deployment_command":"","post_deployment_command_container":""}'
+          coolify_patch "$APP_ENDPOINT" "$CLEAN_PATCH" | tee /tmp/application-clean-settings-patch.json
+          deploy_and_wait clean-runtime
+          verify_live clean-runtime
+
+          coolify_get "$APP_ENDPOINT" | tee /tmp/application-after-route-migration.json >/dev/null
+
+      - name: Restore clean application settings after failure
+        if: failure()
         run: |
-          set -o pipefail
-          node scripts/ops/repair-production-traefik.mjs 2>&1 | tee /tmp/production-route-verification.log
+          set +e
+          API="${COOLIFY_API_URL%/}/api/v1"
+          curl --silent --show-error \
+            --request PATCH \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            "${API}/applications/${PARADIGM_APP_UUID}" \
+            --data '{"custom_docker_run_options":"","post_deployment_command":"","post_deployment_command_container":""}' \
+            | tee /tmp/application-failure-cleanup.json
 
       - name: Publish deployment success status
         if: success()
@@ -94,7 +186,7 @@ jobs:
             --header "Authorization: Bearer ${GH_TOKEN}" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
-            --data "$(jq -cn --arg state success --arg target_url "${STATUS_TARGET}" --arg description 'Coolify deployment and live VaaS verification passed' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
+            --data "$(jq -cn --arg state success --arg target_url "${STATUS_TARGET}" --arg description 'Stable Docker-DNS routing and live VaaS verification passed' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
 
       - name: Publish deployment failure status
         if: failure()
@@ -105,17 +197,18 @@ jobs:
             --header "Authorization: Bearer ${GH_TOKEN}" \
             --header "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
-            --data "$(jq -cn --arg state failure --arg target_url "${STATUS_TARGET}" --arg description 'Coolify deployment or live verification failed' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
+            --data "$(jq -cn --arg state failure --arg target_url "${STATUS_TARGET}" --arg description 'Route migration, deployment, or live verification failed' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
 
       - name: Upload deployment evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: paradigm-production-deployment
+          name: paradigm-route-migration-deployment
           path: |
-            /tmp/coolify-deploy-request.json
-            /tmp/coolify-deploy.log
-            /tmp/coolify-deployment-latest.json
-            /tmp/production-route-verification.log
+            /tmp/application-*.json
+            /tmp/*-deploy-request.json
+            /tmp/*-deploy.log
+            /tmp/*-deployment-latest.json
+            /tmp/*-production-verification.json
           if-no-files-found: warn
           retention-days: 14
