@@ -6,6 +6,8 @@ import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
+from .runtime_config import load_runtime_config
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -51,15 +53,22 @@ class Settings:
             value = os.getenv(name, "").strip()
             return tuple(shlex.split(value)) if value else ()
 
+        workspace = Path(
+            os.getenv("VIDEO_FACTORY_WORKSPACE", "workspace")
+        ).expanduser().resolve()
+        runtime = load_runtime_config(workspace)
         allowed_hosts = tuple(
             item.strip().lower()
             for item in os.getenv("PLAYWRIGHT_ALLOWED_HOSTS", "").split(",")
             if item.strip()
         )
+        environment_comfyui_url = (
+            os.getenv("COMFYUI_API_URL")
+            or os.getenv("COMFYUI_BASE_URL")
+            or ""
+        ).rstrip("/") or None
         return cls(
-            workspace=Path(
-                os.getenv("VIDEO_FACTORY_WORKSPACE", "workspace")
-            ).expanduser().resolve(),
+            workspace=workspace,
             api_key=os.getenv("VIDEO_FACTORY_API_KEY") or None,
             environment=os.getenv("VIDEO_FACTORY_ENVIRONMENT", "local").strip().lower(),
             log_level=os.getenv("VIDEO_FACTORY_LOG_LEVEL", "INFO"),
@@ -73,14 +82,14 @@ class Settings:
             master_compositor=os.getenv("VIDEO_FACTORY_MASTER_COMPOSITOR", "hyperframes"),
             allow_ffmpeg_compositor_fallback=os.getenv(
                 "VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK", "false"
-            ).lower() in {"1", "true", "yes"},
-            comfyui_base_url=(
-                os.getenv("COMFYUI_API_URL")
-                or os.getenv("COMFYUI_BASE_URL")
-                or ""
-            ).rstrip("/")
-            or None,
-            comfyui_api_key=os.getenv("COMFYUI_API_KEY") or None,
+            ).lower()
+            in {"1", "true", "yes"},
+            comfyui_base_url=runtime.comfyui_base_url or environment_comfyui_url,
+            comfyui_api_key=(
+                runtime.comfyui_api_key
+                or os.getenv("COMFYUI_API_KEY")
+                or None
+            ),
             comfyui_profile=os.getenv("COMFYUI_PROFILE", "local").strip().lower(),
             comfyui_timeout_seconds=int(os.getenv("COMFYUI_TIMEOUT_SECONDS", "1800")),
             comfyui_poll_seconds=float(os.getenv("COMFYUI_POLL_SECONDS", "3")),
@@ -109,15 +118,21 @@ class Settings:
             model_registry_path=Path(
                 os.getenv("VIDEO_FACTORY_MODEL_REGISTRY", "config/model-registry.yaml")
             ).expanduser().resolve(),
-            production_region=(os.getenv("VIDEO_FACTORY_PRODUCTION_REGION") or "").strip() or None,
+            production_region=(
+                os.getenv("VIDEO_FACTORY_PRODUCTION_REGION") or ""
+            ).strip()
+            or None,
             playwright_node=os.getenv("PLAYWRIGHT_NODE", "node"),
             playwright_capture_script=Path(
                 os.getenv(
-                    "PLAYWRIGHT_CAPTURE_SCRIPT", "tools/playwright-capture/capture.mjs"
+                    "PLAYWRIGHT_CAPTURE_SCRIPT",
+                    "tools/playwright-capture/capture.mjs",
                 )
             ).expanduser().resolve(),
             playwright_allowed_hosts=allowed_hosts,
-            playwright_chromium_executable=os.getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or None,
+            playwright_chromium_executable=(
+                os.getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or None
+            ),
             external_commands={
                 "blender": command("BLENDER_ADAPTER_COMMAND"),
                 "manim": command("MANIM_ADAPTER_COMMAND"),
@@ -136,7 +151,8 @@ class Settings:
             frameio_access_token=os.getenv("FRAMEIO_ACCESS_TOKEN") or None,
             frameio_create_file_url=os.getenv("FRAMEIO_CREATE_FILE_URL") or None,
             frameio_api_base_url=os.getenv(
-                "FRAMEIO_API_BASE_URL", "https://api.frame.io"
+                "FRAMEIO_API_BASE_URL",
+                "https://api.frame.io",
             ).rstrip("/"),
             frameio_timeout_seconds=float(os.getenv("FRAMEIO_TIMEOUT_SECONDS", "900")),
         )
@@ -153,4 +169,4 @@ class Settings:
         data["comfyui_workflow_registry"] = str(self.comfyui_workflow_registry)
         data["model_registry_path"] = str(self.model_registry_path)
         data["playwright_capture_script"] = str(self.playwright_capture_script)
-        return json.loads(json.dumps(data, default=list))
+        return dict(json.loads(json.dumps(data, default=list)))
