@@ -96,6 +96,50 @@ jobs:
           if target not in cli_text and replacement not in cli_text:
               raise SystemExit("Typer output option signature not found")
           cli.write_text(cli_text.replace(target, replacement, 1), encoding="utf-8")
+
+          playwright = Path("src/video_factory/adapters/playwright.py")
+          playwright_text = playwright.read_text(encoding="utf-8")
+          playwright_target = '''        if context.settings.playwright_allowed_hosts:
+            if (parsed.hostname or "").lower() not in context.settings.playwright_allowed_hosts:
+                raise ValueError(f"Playwright host is not allow-listed: {parsed.hostname}")'''
+          playwright_replacement = '''        if (
+            context.settings.playwright_allowed_hosts
+            and (parsed.hostname or "").lower()
+            not in context.settings.playwright_allowed_hosts
+        ):
+            raise ValueError(f"Playwright host is not allow-listed: {parsed.hostname}")'''
+          if playwright_target not in playwright_text and playwright_replacement not in playwright_text:
+              raise SystemExit("Playwright allow-list guard not found")
+          playwright.write_text(
+              playwright_text.replace(playwright_target, playwright_replacement, 1),
+              encoding="utf-8",
+          )
+
+          validation = Path("src/video_factory/validation.py")
+          validation_text = validation.read_text(encoding="utf-8")
+          replacements = (
+              (
+                  '''    if ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds:
+        if brief.rights.likeness_consent is not LikenessConsent.GRANTED:''',
+                  '''    if (
+        ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds
+        and brief.rights.likeness_consent is not LikenessConsent.GRANTED
+    ):''',
+              ),
+              (
+                  '''    if ShotKind.LIP_SYNC in brief.requested_shot_kinds:
+        if brief.rights.voice_consent is not LikenessConsent.GRANTED:''',
+                  '''    if (
+        ShotKind.LIP_SYNC in brief.requested_shot_kinds
+        and brief.rights.voice_consent is not LikenessConsent.GRANTED
+    ):''',
+              ),
+          )
+          for target, replacement in replacements:
+              if target not in validation_text and replacement not in validation_text:
+                  raise SystemExit(f"Validation consent guard not found: {target.splitlines()[0]}")
+              validation_text = validation_text.replace(target, replacement, 1)
+          validation.write_text(validation_text, encoding="utf-8")
           PY
 
             ruff check src tests --fix --unsafe-fixes
