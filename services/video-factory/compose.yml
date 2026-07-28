@@ -64,6 +64,7 @@ services:
         HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.77}
     profiles: ["gpu"]
     restart: unless-stopped
+    entrypoint: ["video-factory"]
     env_file: .env
     command: ["comfy-proxy", "--host", "0.0.0.0", "--port", "8189"]
     expose:
@@ -79,7 +80,7 @@ services:
     environment:
       VIDEO_FACTORY_WORKSPACE: /data/video-factory
       PREFECT_API_URL: http://prefect-server:4200/api
-    command: ["api", "--host", "0.0.0.0", "--port", "8080"]
+    command: ["--host", "0.0.0.0", "--port", "8080"]
     volumes:
       - factory-workspace:/data/video-factory
       - ./workflows:/app/workflows:ro
