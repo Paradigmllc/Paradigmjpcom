@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-07-28 Video制作パイプライン標準化（HyperFrames＋ComfyUI）
+
+- 公開価格は変更しない（Essential `$1,500/月`、Unlimited `$3,500/月`、Priority `$5,500/月`）。価格はAI実行時間ではなく、企画・ブランド設計・修正・派生・ローカライズ・最終QAを含む承認可能な完成動画に対するものとする。
+- `generateProfessionalVideo`を実運用オーケストレーターへ変更した。会社／診断レポートを入力に、ComfyUIの背景・Bロール・サムネイル（必要時のみアバター・動画）を並列生成し、HyperFramesの決定的な最終合成を独立レーンとして実行する。
+- ComfyUI各レーンとHyperFramesレーンは個別に成功／失敗を返す。未設定・一部失敗でも成功レーンを破棄せず、エラーをQAで確認できる。最終採用は人間が行い、権利・ブランド・事実・字幕・音量・テンポを確認する。
+- ブランドごとのMotion System（色、フォント、ロゴ、CTA、トランジション、字幕、音量、アスペクト比、テンプレート、ワークフロー）を初回に定義し、以後はブリーフ差し替えで量産する。`docs/knowledge/video-as-a-service-operating-system.md`に運用境界と権利方針を追記した。
+- エンリッチメント自動処理からの複合レーン切り替えは`PROFESSIONAL_VIDEO_PIPELINE_ENABLED=true`の明示オプトインとし、認証済みComfyUIがない環境では従来のHyperFrames診断動画へフォールバックする。
+
 ## CURRENT STATUS — 2026-07-28 Initial Japan Country Partnershipを90日へ変更（実装中 / 外部送信0）
 
 - Japan Entryの標準オファーを`$15,000`のJapan Market Setup＋Go-Live Dateから90日間のInitial Japan Country Operationsへ統一する。

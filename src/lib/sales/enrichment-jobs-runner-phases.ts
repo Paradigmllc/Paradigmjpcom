@@ -5,7 +5,8 @@ import { runAssetExtraction } from "./extract-assets"
 import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
 import { autoPersonalize } from "./personalize"
 import { generateReplacementDemo } from "./demo-generator"
-import { generateDiagnosticVideo } from "./video-generator"
+import { generateDiagnosticVideo, generateProfessionalVideo } from "./video-generator"
+import { getComfyuiClientConfig } from "./comfyui-client"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
 import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
@@ -260,6 +261,10 @@ export async function processAssetPhase(
     costGuardVideoEnabled &&
     coverage.score >= videoMinScore &&
     !hasRecentAsset("sales_video")
+  const useProfessionalVideoPipeline =
+    shouldGenerateVideo &&
+    process.env.PROFESSIONAL_VIDEO_PIPELINE_ENABLED === "true" &&
+    getComfyuiClientConfig().ready
 
   if (reportData && isWebProduction && !shouldGenerateDemo && costGuardDemoEnabled) {
     const reason = hasRecentAsset("demo_site") ? "recently_generated" : `coverage_score_${coverage.score}_below_${demoMinScore}`
@@ -293,8 +298,15 @@ export async function processAssetPhase(
       : Promise.resolve({ ok: false, demoUrl: null as string | null }),
 
     shouldGenerateVideo
-      ? generateDiagnosticVideo(company.id, company.report_locale).catch((e: unknown) => {
-          console.error(`[enrichment-phases] diagnostic video generation:`, e instanceof Error ? e.message : String(e))
+      ? (useProfessionalVideoPipeline
+          ? generateProfessionalVideo({
+              companyIdOrSlugOrDomain: company.id,
+              locale: company.report_locale ?? undefined,
+              generateDiagnostic: true,
+            }).then((result) => result.diagnostic ?? { ok: result.ok, error: result.error })
+          : generateDiagnosticVideo(company.id, company.report_locale)
+        ).catch((e: unknown) => {
+          console.error(`[enrichment-phases] ${useProfessionalVideoPipeline ? "professional" : "diagnostic"} video generation:`, e instanceof Error ? e.message : String(e))
           errors.push(`video generation: ${e instanceof Error ? e.message : String(e)}`)
           return null
         })
