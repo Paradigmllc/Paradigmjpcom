@@ -24,6 +24,7 @@ import {
   ContactChallengeReplayError,
   completeContactNotification,
   persistContactLead,
+  type ContactNotificationOutbox,
 } from "./contact-lead"
 import { startContactEnrichment } from "./contact-enrichment"
 import { verifyContactChallenge } from "./contact-challenge"
@@ -41,7 +42,9 @@ import {
 
 export { GET } from "./contact-challenge-route"
 
-function notificationType(intent: ContactIntent): string {
+function notificationType(
+  intent: ContactIntent,
+): ContactNotificationOutbox["type"] {
   if (intent === JAPAN_ENTRY_INTENT) return "japan_entry_application"
   if (intent === VIDEO_SERVICE_INTENT) return "video_service_application"
   return "contact_inquiry"
