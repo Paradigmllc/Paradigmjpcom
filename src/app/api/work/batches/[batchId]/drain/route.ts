@@ -13,6 +13,8 @@ import {
 } from "@/lib/sales/manual-japan-entry-batch-store"
 import {
   isManualWorkBatchTerminal,
+  MANUAL_WORK_BATCH_DRAIN_SIZE,
+  type ManualWorkBatchItemRow,
   type ManualWorkBatchItemStatus,
   type ManualWorkBatchSnapshot,
 } from "@/lib/sales/manual-japan-entry-batch-types"
@@ -26,10 +28,26 @@ export const maxDuration = 900
 
 const paramsSchema = z.object({ batchId: z.string().uuid() })
 const bodySchema = z.object({ automated: z.boolean().default(false) }).strict()
+const FAST_PARALLEL_CLAIM_SLICES = 4
 
 function completedStatus(status: string): Exclude<ManualWorkBatchItemStatus, "queued" | "processing"> {
   if (status === "completed" || status === "needs_review" || status === "rejected" || status === "duplicate") return status
   return "failed"
+}
+
+async function claimFastParallelItems(batchId: string): Promise<ManualWorkBatchItemRow[]> {
+  const claimed: ManualWorkBatchItemRow[] = []
+  const seen = new Set<string>()
+  for (let sliceIndex = 0; sliceIndex < FAST_PARALLEL_CLAIM_SLICES; sliceIndex += 1) {
+    const slice = await claimManualWorkBatchItems(batchId)
+    const fresh = slice.filter((item) => !seen.has(item.id))
+    for (const item of fresh) {
+      seen.add(item.id)
+      claimed.push(item)
+    }
+    if (fresh.length === 0 || slice.length < MANUAL_WORK_BATCH_DRAIN_SIZE) break
+  }
+  return claimed
 }
 
 async function notifyCompleted(batchId: string, total: number, failed: number): Promise<void> {
@@ -37,7 +55,7 @@ async function notifyCompleted(batchId: string, total: number, failed: number): 
     const { notifyBothChannels } = await import("@/lib/notify")
     await notifyBothChannels("sales", {
       title: "高速リード判定バッチ完了",
-      message: `${total}件の一次判定を完了（失敗${failed}件）。上位候補だけ/workから詳細解析へ昇格できます。外部送信0件。`,
+      message: `${total}件の一次判定を完了（失敗${failed}件）。短文を確認し、重要候補だけ/workから詳細解析へ昇格できます。外部送信0件。`,
       link: "/work",
       type: "manual_japan_entry_batch_completed",
       region: "global",
@@ -86,7 +104,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
     let claimedCount = 0
     let refreshed: ManualWorkBatchSnapshot
     try {
-      const claimed = await claimManualWorkBatchItems(runningBatch.batch.id)
+      const claimed = await claimFastParallelItems(runningBatch.batch.id)
       claimedCount = claimed.length
       await Promise.all(claimed.map(async (item) => {
         if (!item.claim_token) throw new Error(`Batch item ${item.id} did not receive a claim token`)
