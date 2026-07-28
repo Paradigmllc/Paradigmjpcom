@@ -108,7 +108,7 @@ const FALLBACK_PRODUCTS: Record<SalesProductCode, Omit<SalesProduct, "id">> = {
     meta: {
       pricing_model: "fixed_setup",
       setup_amount_usd: 15000,
-      monthly_free_months: 6,
+      monthly_free_months: 3,
       continuation_pricing: "agreed_separately_after_included_period",
     },
   },

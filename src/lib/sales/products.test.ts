@@ -46,7 +46,7 @@ describe("inferCompanyProductRecommendations", () => {
     expect(product.default_amount_yen).toBe(15_000)
     expect(product.meta).toMatchObject({
       setup_amount_usd: 15_000,
-      monthly_free_months: 6,
+      monthly_free_months: 3,
       continuation_pricing: "agreed_separately_after_included_period",
     })
   })

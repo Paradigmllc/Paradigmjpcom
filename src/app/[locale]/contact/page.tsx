@@ -151,7 +151,7 @@ export default async function ContactPage({ params, searchParams }: Props) {
       "$15,000 setup paid before kickoff",
       "Payment: Wise, bank transfer, USDC, or credit card",
       "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date",
-      "Selected partners receive the first six months of operation under the signed offer",
+      "Selected partners receive the first 90 days of operation under the signed offer",
     ],
     fitLabel: "Fast-decision qualification",
     fitItems: [

@@ -351,7 +351,7 @@
     "proofItems": [
       { "title": "日本語の購入者導線", "industry": "公開できる実装", "description": "ローカライズルーティング、CMS、構造化されたページ、レスポンシブ表示、申込導線をこのサイトで確認できます。", "metrics": "paradigmjp.comで公開", "tags": ["ローカライズ", "CMS", "レスポンシブ", "SEO"] },
       { "title": "適合審査フロー", "industry": "運用プロセス", "description": "会社、権限、開始時期、商品、公開情報を申込みで受け取り、具体的な入力から確認を始めます。", "metrics": "判断に必要な情報", "tags": ["適合", "入力", "引き継ぎ", "プライバシー"] },
-      { "title": "固定商業スコープ", "industry": "料金の透明性", "description": "セットアップ、含まれる公開作業、除外、月額運用、7か月目以降の条件を申込前に確認できます。", "metrics": "$15K · 6か月$0", "tags": ["固定範囲", "USD", "運用", "引き継ぎ"] },
+      { "title": "固定商業スコープ", "industry": "料金の透明性", "description": "セットアップ、含まれる公開作業、除外、月額運用、4か月目以降の条件を申込前に確認できます。", "metrics": "$15K · 3か月$0", "tags": ["固定範囲", "USD", "運用", "引き継ぎ"] },
       { "title": "公開シグナルスコア", "industry": "市場の可視性", "description": "Signal Checkは公開順位、クロール、登録、サイト信号と自己申告を分離し、未知の訪問数や売上を作りません。", "metrics": "公開根拠 · 未知項目", "tags": ["Tranco", "Common Crawl", "RDAP", "監査"] },
       { "title": "意思決定記事", "industry": "Japan Entry Field Notes", "description": "ローカライズ、採用、業者調整、商業範囲、公開後1か月の判断を記事で整理しています。", "metrics": "7本の実務記事", "tags": ["範囲", "比較", "運用", "信頼"] },
       { "title": "人が確認する自動化", "industry": "運用境界", "description": "自動化はルーティング・要約・シグナル整理に使い、機微・不確実・契約判断は人の確認に残します。", "metrics": "エスカレーションを文書化", "tags": ["レビュー", "ルーティング", "引き継ぎ", "安全"] }
@@ -630,8 +630,8 @@
     "defaultCta": "お問い合わせ",
     "pppHint": "",
     "regionFooter": "地域・要件・第三者費用は見積書で確定します。",
-    "fixedPlanName": "Japan Entry Package",
-    "fixedPlanDescription": "日本語の購入者導線、公開シグナル市場レポート、SNS初期設定、法規制の適用可能性整理、公開運用、引き継ぎを一つにまとめた固定スコープ。",
+    "fixedPlanName": "Initial Japan Country Partnership",
+    "fixedPlanDescription": "15,000ドルの固定パートナー契約です。Japan Market Setupと、Go-Live Dateから90日間の定義済みInitial Japan Country Operationsを含みます。日本語の購入者導線、公開シグナル市場レポート、優先1チャネル、法規制の適用可能性整理、公開運用、引き継ぎを一つの範囲で進め、外部費用と合意外の作業は別途です。",
     "fixedPlanFeatures": [
       "LP / HPローカライズと日本語の購入者導線",
       "優先SNS最大2チャネルの初期設定",
@@ -641,8 +641,8 @@
       "日本語サポート、公開運用、引き継ぎ",
       "支払方法：Wise・銀行振込・USDC・Stripe請求書／決済リンクのクレジットカード",
       "開始日から14営業日以内に合意したセットアップを納品できない場合の15,000ドル全額返金",
-      "最初の6か月は標準月額運用込み",
-      "選定した契約先には最初の6か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別に協議して書面で合意します。"
+      "最初の3か月は標準月額運用込み",
+      "選定した契約先には最初の3か月の運用を追加月額なしで提供し、期間終了後の継続条件・月額は個別に協議して書面で合意します。"
     ],
     "paymentEyebrow": "支払方法と納品保証",
     "paymentTitle": "支払経路を選び、納品条件を文書で固定する。",
@@ -658,7 +658,7 @@
     "deliveryGuaranteeDesc": "書面での範囲確定、入金確認、必要素材・アクセス、社内承認者が揃った日を開始日として記録します。合意した固定セットアップを14営業日以内に納品できない場合、15,000ドルを全額返金します。顧客側の追加変更や保留は記録して時計を一時停止します。売上・順位・アクセス・成約の保証ではありません。",
     "packageEyebrow": "購入するもの",
     "packageTitle": "6つの作業を、1つの公開システムに接続します。",
-    "packageDesc": "15,000ドルは単発の翻訳費ではありません。購入者導線、市場根拠、チャネル、規制確認、公開運用、引き継ぎを同じ範囲・責任者で進めます。含まれる月額運用の通常依頼は48営業時間以内に着手し、完了時期は範囲・承認・第三者依存に左右されます。",
+    "packageDesc": "Initial Japan Country Partnershipは15,000ドルです。単発の翻訳費ではなく、購入者導線、市場根拠、チャネル、規制確認、公開運用、引き継ぎを同じ範囲・責任者で進めます。Japan Market Setupに加え、Go-Live Date（契約日ではなく日本向け販売・問い合わせ受付を開始した日）から90日間の定義済みInitial Japan Country Operationsを含みます。Day 45・65・75・85で4か月目以降を判断し、外部費用と合意外の作業は別途です。",
     "packageModules": [
       { "title": "LP / HPローカライズ", "description": "既存の提案を、日本の購入者が理解して次へ進めるページ構成に変えます。", "deliverables": ["情報設計、コピー方針、CTA、メタデータ", "主要ページ、信頼情報、CMS引き継ぎ", "問い合わせまたは適格な決済導線"] },
       { "title": "SNS初期セットアップ", "description": "運用を約束するのではなく、最初の日本向け発信を始められる状態にします。", "deliverables": ["優先2チャネルのプロフィールと導線", "CTA、ビジュアル方針、投稿テーマ", "スターターテンプレートと所有者ガイド"] },
@@ -674,7 +674,7 @@
       { "title": "承認面を一つに", "description": "サイト、検索、サポート、公開運用を別発注せず、一つの固定範囲で判断できます。" },
       { "title": "未知項目を明示", "description": "法務、税務、銀行、決済、物流、コンテンツの依存条件を着手前に分けます。" },
       { "title": "固定費を先送り", "description": "現地法人、採用、拠点、複数ベンダーを決める前に、購入者導線と次の判断をつくります。" },
-      { "title": "引き継ぎで終える", "description": "所有者、手順、計測、未解決事項、7か月目の判断を残します。" }
+      { "title": "引き継ぎで終える", "description": "所有者、手順、計測、未解決事項、4か月目の判断を残します。" }
     ],
     "comparisonEyebrow": "運用モデルを比較",
     "comparisonTitle": "今の意思決定に合う進め方を選ぶ。",
@@ -683,14 +683,14 @@
     "comparisonRows": [
       { "criterion": "最初の公開導線", "package": "記録した開始日から14営業日の納品保証", "hire": "採用・オンボーディングが先", "vendors": "各社の開始日が分かれる" },
       { "criterion": "責任の所在", "package": "固定範囲、担当、承認、引き継ぎを一つに", "hire": "社員だけでは専門作業が残る", "vendors": "顧客が統合責任を負う" },
-      { "criterion": "費用の形", "package": "$15,000固定、6か月込み、7か月目以降continuation pricing/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
+      { "criterion": "費用の形", "package": "$15,000固定、3か月込み、4か月目以降continuation pricing/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
       { "criterion": "適する企業", "package": "実際の提案と、今月判断できる責任者がいる企業", "hire": "恒久的な日本チームをつくる企業", "vendors": "社内に統合責任者と時間がある企業" }
     ],
     "scopeEyebrow": "範囲の境界",
     "scopeTitle": "申込前に、固定価格の中身を確認する。",
     "scopeDesc": "最終成果物、依存条件、検収は着手前に契約範囲へ記載します。開始日は入金、素材、アクセス、承認者が揃った時点で記録し、顧客側の変更・保留は納品時計を一時停止します。",
     "scopeGroups": [
-      { "title": "合意した公開範囲に含む", "items": ["LP / HPローカライズと購入者導線", "SNS最大2チャネルの初期設定", "公開シグナル市場レポートと深掘り", "特商法・関連規制の適用可能性整理", "問い合わせ、計測、公開、引き継ぎの初期設定", "最初の6か月の定義済み月額運用"] },
+      { "title": "合意した公開範囲に含む", "items": ["LP / HPローカライズと購入者導線", "SNS最大2チャネルの初期設定", "公開シグナル市場レポートと深掘り", "特商法・関連規制の適用可能性整理", "問い合わせ、計測、公開、引き継ぎの初期設定", "最初の3か月の定義済み月額運用"] },
       { "title": "別費用または範囲外", "items": ["正式な法務・税務・銀行・許認可・法人設立助言", "継続投稿、コミュニティ運営、インフルエンサー、広告運用", "未提供の非公開アクセス・売上・コンバージョンデータ", "広告費、在庫、物流、決済プロバイダー費用", "ホスティング、ソフトウェア、AI、その他第三者費用", "契約にない無制限のページ、翻訳、動画、連携"] }
     ],
     "ctaEyebrow": "Custom",
@@ -2045,7 +2045,7 @@
       "h1": "Your Japan Country Partner",
       "sub": "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. The initial paid engagement is Japan Market Setup.",
       "ctaPrimary": "Apply for a Japan Partnership — $15K",
-      "ctaPrimaryNote": "$15,000 setup · selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included · month 7 onward $2,000/month",
+      "ctaPrimaryNote": "$15,000 setup · selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included · month 4 onward $2,000/month",
       "ctaSecondary": "See the partnership model",
       "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
@@ -2094,10 +2094,10 @@
       "metric1Label": "business-day delivery guarantee from the recorded Start Date",
       "metric2Value": "$15K",
       "metric2Label": "fixed setup price in USD",
-      "metric3Value": "$12K",
-      "metric3Label": "$2,000/month × 6 months of managed operation included for selected launch partners",
+      "metric3Value": "$6K",
+      "metric3Label": "$2,000/month × 3 months of managed operation included for selected launch partners",
       "metric4Value": "$2,000/mo",
-      "metric4Label": "standard managed operation from month 7 onward",
+      "metric4Label": "standard managed operation from month 4 onward",
       "footnote": "Limited founding-partner capacity. Availability, delivery commitments, and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
     },
     "report": {
@@ -2128,17 +2128,17 @@
           "feature3": "Lead capture flow with English handoff"
         },
         "growth": {
-          "name": "Months 1–6",
+          "name": "Days 1–90",
           "price": "$0/mo",
-          "desc": "$2,000/month × 6 months = $12,000 of standard managed-operation value included for selected launch partners.",
+          "desc": "$2,000/month × 3 months = $6,000 of standard managed-operation value included for selected launch partners.",
           "feature1": "Localized site sections plus MEO foundation",
           "feature2": "LINE / inquiry flow and AI support setup",
           "feature3": "30-day launch improvement sprint"
         },
         "scale": {
-          "name": "Month 7 onward",
+          "name": "Month 4 onward",
           "price": "$2,000/mo",
-          "desc": "Standard managed operation from month 7 onward under the signed terms.",
+          "desc": "Standard managed operation from month 4 onward under the signed terms.",
           "feature1": "Expanded localization and conversion optimization",
           "feature2": "AI customer support and operations automation",
           "feature3": "Executive report with next-quarter Japan roadmap"
@@ -2156,13 +2156,13 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$15,000 one-time setup. The standard managed-operation fee is $2,000/month; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included. Month 7 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$15,000 one-time setup. The standard managed-operation fee is $2,000/month; selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included. Month 4 onward is $2,000/month under the signed terms. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
       "a7": "Hiring builds internal capability. Paradigm instead becomes your outsourced Japan team across the agreed localization, sales-channel, customer-support, local-operations, and market-execution scope.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "The agreed handover materials and ownership are documented in scope. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, then managed operation is $2,000/month from month 7 onward under the signed terms; availability and scope are confirmed in writing."
+      "a8": "The agreed handover materials and ownership are documented in scope. Selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included, then managed operation is $2,000/month from month 4 onward under the signed terms; availability and scope are confirmed in writing."
     },
     "finalCta": {
       "heading": "Limited founding-partner capacity",

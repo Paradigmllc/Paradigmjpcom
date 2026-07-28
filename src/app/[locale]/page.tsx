@@ -76,7 +76,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     },
     stats: [
       { value: "$15K", label: "Japan Market Setup" },
-      { value: "$12K value", label: "$2,000/month × 6 months included for selected launch partners" },
+      { value: "$6K value", label: "$2,000/month × 3 months included for selected launch partners" },
       { value: "14", label: "business-day delivery guarantee" },
       JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT,
     ],
@@ -101,9 +101,9 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
         price: "$15,000",
         period: "initial engagement",
         description:
-        "A fixed-scope market setup followed by an outsourced Japan operating layer. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee.",
+        "A fixed-scope market setup followed by an outsourced Japan operating layer. For selected launch partners, $2,000/month × 3 months = $6,000 of managed-operation value is included at no additional monthly fee.",
         features:
-        "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
+        "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 3 months = $6,000 value included\nMonth 4 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
         ctaLabel: "Apply for a Japan Partnership — $15K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,

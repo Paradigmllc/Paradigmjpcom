@@ -105,8 +105,8 @@ export function OpportunityActionPlan({
                 ? "イベント・CV計測を確認"
                 : "Verify event and conversion tracking",
               isJa
-                ? "6か月の判断基準を固定"
-                : "Lock six-month decision thresholds",
+                ? "3か月の判断基準を固定"
+                : "Lock 90-day decision thresholds",
             ]}
           />
         </div>

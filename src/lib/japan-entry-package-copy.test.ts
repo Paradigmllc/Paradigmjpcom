@@ -32,8 +32,8 @@ describe("Japan Entry package detail copy", () => {
     expect(JSON.stringify(page.commercial)).toContain("$15,000 USD")
     expect(JSON.stringify(page.campaign)).toContain("selected launch partners")
     expect(JSON.stringify(page.campaign)).toContain("$2,000/month")
-    expect(page.campaign.valueFormula).toBe("$2,000/mo × 6 = $12,000")
-    expect(page.campaign.valueBody).toContain("six-month operating inclusion")
+    expect(page.campaign.valueFormula).toBe("$2,000/mo × 3 = $6,000")
+    expect(page.campaign.valueBody).toContain("90-day operating inclusion")
     expect(page.campaign.steps.map((step) => step.price)).toEqual(["$15,000", "$0/mo", "$2,000/mo"])
     expect(page.tracks.items).toHaveLength(3)
     expect(page.tracks.items.map((track) => track.name)).toEqual([

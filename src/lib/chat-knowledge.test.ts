@@ -3,10 +3,10 @@ import { formatChatKnowledge, retrieveChatKnowledge } from "./chat-knowledge"
 
 describe("approved chat knowledge retrieval", () => {
   it("retrieves localized pricing evidence with an internal source", () => {
-    const sources = retrieveChatKnowledge("What is the $15,000 setup and month seven price?", "en")
+    const sources = retrieveChatKnowledge("What is the $15,000 setup and month four price?", "en")
     expect(sources[0]?.href).toBe("/en/pricing")
     expect(sources[0]?.content).toContain("$2,000/month")
-    expect(sources[0]?.content).toContain("$12,000 of managed-operation value")
+    expect(sources[0]?.content).toContain("$6,000 of managed-operation value")
     expect(formatChatKnowledge(sources)).toContain("[Source 1]")
   })
 

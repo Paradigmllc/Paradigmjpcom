@@ -201,8 +201,8 @@ const FAQS: SeedFaq[] = [
   {
     question: { ja: "競合他社と比べて何が違いますか？", en: "What makes you different from competitors?" },
     answer: {
-      ja: "最大の違いは3点です。①日本語の販売・問い合わせ導線を固定スコープで実装。②決済、法務表示、運用条件を先に確認。③15,000ドル固定で、最初の6か月は月額無料。売上成果は保証せず、合意した成果物と運用範囲を提供します。",
-      en: "Three differences: ① a fixed-scope Japanese revenue and inquiry path, ② payment, disclosure, and operating dependencies confirmed before kickoff, and ③ a fixed $15,000 setup with the first six months of managed operation included for selected launch partners at no additional monthly charge. Sales outcomes are not guaranteed.",
+      ja: "最大の違いは3点です。①日本語の販売・問い合わせ導線を固定スコープで実装。②決済、法務表示、運用条件を先に確認。③15,000ドル固定で、最初の3か月は月額無料。売上成果は保証せず、合意した成果物と運用範囲を提供します。",
+      en: "Three differences: ① a fixed-scope Japanese revenue and inquiry path, ② payment, disclosure, and operating dependencies confirmed before kickoff, and ③ a fixed $15,000 setup with the first 90 days of managed operation included for selected launch partners at no additional monthly charge. Sales outcomes are not guaranteed.",
     },
     category: { ja: "お申し込み前", en: "Before Ordering" },
     sortOrder: 18,

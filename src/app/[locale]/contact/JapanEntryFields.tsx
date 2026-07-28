@@ -34,7 +34,7 @@ export function JapanEntryCompanyFields({
           $15,000 fixed setup
         </p>
         <p className="text-[13px] leading-[1.7] text-paradigm-ink-soft">
-          Selected launch partners receive the standard $2,000/month managed-operation layer for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. Apply only if your
+          Selected launch partners receive the standard $2,000/month managed-operation layer for 90 days at no additional monthly fee: $2,000/month × 3 months = $6,000 of value. Month 4 onward is $2,000/month under the signed terms. Apply only if your
           company can make a final decision within seven days and assign one
           launch owner.
         </p>
