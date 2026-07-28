@@ -93,21 +93,24 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   if (fast && item.is_japanese_company !== true) {
     const score = fast.score === null ? "採点要確認" : `${fast.score}/100`
     const title = fast.priority === "promote"
-      ? `高速一次判定 ${score}・詳細解析推奨`
+      ? `送信候補 ${score}`
       : fast.priority === "review"
-        ? `高速一次判定 ${score}・短い確認が必要`
-        : `高速一次判定 ${score}・優先度低`
+        ? `一次判定完了 ${score}`
+        : `低優先 ${score}`
+    const hasDraft = Boolean(item.initial_message)
     return {
       title,
-      detail: "ホームページだけで高速一次判定しました。時間を使うフォーム探索・文面生成・戦略レポート・Twenty同期はまだ実行していません。",
+      detail: hasDraft
+        ? "ホームページだけで高速判定し、短い初回メッセージを作成しました。追加のフォーム実検証・詳細レポート・Twenty同期はまだ実行していません。"
+        : "ホームページだけで高速判定しました。低優先候補のため初回メッセージは作成していません。",
       reasons: fast.reasons.length > 0
         ? fast.reasons
         : reasonsOrFallback(item, "高速一次判定の根拠を履歴から確認してください。"),
       nextAction: fast.priority === "low"
-        ? "商品・成長性・支払能力に追加の強い根拠がある場合だけ「詳細解析へ昇格」を実行してください。"
-        : "営業候補として残す場合は「詳細解析へ昇格」を実行し、フォーム・企業別文面・レポート・Twenty保存を作成してください。",
+        ? "追加の強い成長・商品・予算根拠がある場合だけ「詳細解析へ昇格」を実行してください。"
+        : "短文をそのまま確認して連絡するか、重要候補だけ「詳細解析へ昇格」でフォーム検証・詳細レポート・Twenty保存へ進めてください。",
       retryLabel: "詳細解析へ昇格",
-      tone: fast.priority === "low" ? "slate" : "amber",
+      tone: fast.priority === "promote" ? "slate" : fast.priority === "review" ? "amber" : "slate",
     }
   }
 
