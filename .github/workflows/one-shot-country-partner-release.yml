@@ -6,6 +6,8 @@ on:
     paths:
       - scripts/ops/ensure-production-routing.mjs
       - scripts/ops/ensure-production-routing.test.mjs
+      - scripts/ops/verify-production-pages.mjs
+      - scripts/ops/verify-production-pages.test.mjs
       - .github/workflows/one-shot-country-partner-release.yml
   push:
     branches: [main]
@@ -25,10 +27,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Validate routing automation
+      - name: Validate routing and public verification automation
         run: |
           node --check scripts/ops/ensure-production-routing.mjs
+          node --check scripts/ops/verify-production-pages.mjs
           node scripts/ops/ensure-production-routing.test.mjs
+          node scripts/ops/verify-production-pages.test.mjs
 
   deploy:
     if: github.event_name != 'pull_request'
@@ -99,61 +103,7 @@ jobs:
           exit 1
 
       - name: Verify public VaaS funnel
-        run: |
-          node --input-type=module <<'NODE'
-          import fs from "node:fs"
-          import { setTimeout as sleep } from "node:timers/promises"
-
-          const site = "https://paradigmjp.com"
-          const specs = [
-            ["/ja", ["Video as a Service", "Web制作", "AI制作・導入支援"]],
-            ["/en", ["Japan Market Partner", "Video as a Service"]],
-            ["/ja/video-as-a-service", ["動画制作チームを、採用せずに。", "$1,500", "$3,500", "$5,500", "契約前によくある質問"]],
-            ["/en/video-as-a-service", ["Your on-demand video production team.", "$1,500", "$3,500", "$5,500", "Questions before you subscribe"]],
-            ["/ja/video-as-a-service/terms", ["Video as a Service 利用規約", "2026年7月28日", "契約文書の優先順位"]],
-            ["/en/video-as-a-service/terms", ["Video as a Service Terms", "July 28, 2026", "Order of precedence"]],
-            ["/ja/contact?intent=video-as-a-service&plan=unlimited", ["Video as a Service 申込み", "希望プラン", "Unlimited", "素材の準備状況"]],
-            ["/en/contact?intent=video-as-a-service&plan=unlimited", ["Apply for Video as a Service", "Preferred plan", "Unlimited", "Asset readiness"]],
-            ["/api/ready", []],
-          ]
-
-          async function probe(pathname, markers) {
-            try {
-              const url = new URL(pathname, site)
-              url.searchParams.set("deployment_verify", String(Date.now()))
-              const response = await fetch(url, {
-                headers: { "Cache-Control": "no-cache" },
-                redirect: "follow",
-                signal: AbortSignal.timeout(25_000),
-              })
-              const body = await response.text()
-              const missing = markers.filter((marker) => !body.includes(marker))
-              return { pathname, status: response.status, ok: response.ok && missing.length === 0, missing }
-            } catch (error) {
-              return {
-                pathname,
-                status: 0,
-                ok: false,
-                missing: [],
-                error: error instanceof Error ? error.message : String(error),
-              }
-            }
-          }
-
-          let results = []
-          for (let attempt = 1; attempt <= 36; attempt += 1) {
-            results = await Promise.all(specs.map(([pathname, markers]) => probe(pathname, markers)))
-            console.log(`attempt ${attempt}/36: ${results.filter((result) => result.ok).length}/${results.length} passed`)
-            for (const result of results) {
-              console.log(`${result.ok ? "PASS" : "FAIL"} ${result.pathname} HTTP ${result.status}; missing=${result.missing.join(" | ") || "none"}${result.error ? `; error=${result.error}` : ""}`)
-            }
-            if (results.every((result) => result.ok)) break
-            await sleep(5_000)
-          }
-
-          fs.writeFileSync("/tmp/production-verification.json", `${JSON.stringify(results, null, 2)}\n`)
-          if (!results.every((result) => result.ok)) process.exit(1)
-          NODE
+        run: node scripts/ops/verify-production-pages.mjs
 
       - name: Publish deployment success status
         if: success()
