@@ -49,12 +49,14 @@ export async function processManualEditorialMessage(input: {
     throw new Error("Japanese companies are outside this outbound workflow.")
   }
 
+  const originalEvidence = record(existing.evidence)
   let work = await updateManualWork(existing.id, {
     status: "processing",
     stage: "copy_generation",
     attempts: existing.attempts + 1,
     error_message: null,
     initial_message: null,
+    evidence: { ...originalEvidence, analysis_mode: "gpt56_editorial_processing" },
     message_review: {
       purpose: "editorial_generation",
       generation_status: "processing",
@@ -63,8 +65,7 @@ export async function processManualEditorialMessage(input: {
   })
 
   try {
-    const savedEvidence = record(existing.evidence)
-    const productNames = strings(savedEvidence.productNames)
+    const productNames = strings(originalEvidence.productNames)
     const observedContext = strings(record(existing.profile).observedFacts).join(" | ").trim()
     const productContext = existing.product_context?.trim() || observedContext || existing.domain
     const brief = await collectManualEditorialBrief({
@@ -103,7 +104,7 @@ export async function processManualEditorialMessage(input: {
           usage: generated.usage ?? null,
           error: generated.error ?? "The editorial quality gate rejected the draft.",
         },
-        evidence: { ...savedEvidence, editorialBrief: editorialEvidence },
+        evidence: { ...originalEvidence, analysis_mode: "gpt56_editorial", editorialBrief: editorialEvidence },
         form_discovery: {
           outcome: brief.contactUrl ? "contact_page_only" : "deferred_to_manual_contact",
           outcomeReason: brief.contactUrl
@@ -138,7 +139,7 @@ export async function processManualEditorialMessage(input: {
         public_email: brief.publicEmail,
         automatic_send_allowed: false,
       },
-      evidence: { ...savedEvidence, analysis_mode: "gpt56_editorial", editorialBrief: editorialEvidence },
+      evidence: { ...originalEvidence, analysis_mode: "gpt56_editorial", editorialBrief: editorialEvidence },
       form_discovery: {
         outcome: brief.contactUrl ? "contact_page_only" : "deferred_to_manual_contact",
         outcomeReason: brief.contactUrl
@@ -162,6 +163,7 @@ export async function processManualEditorialMessage(input: {
     work = await updateManualWork(work.id, {
       status: "failed",
       stage: "failed",
+      evidence: { ...originalEvidence, analysis_mode: "gpt56_editorial_failed" },
       message_review: {
         purpose: "editorial_generation",
         generation_status: "failed",
