@@ -109,6 +109,7 @@ export function ManualMessageIntelligence({ item, onCopy }: {
   const review = item.message_review
   if (!item.initial_message) {
     const notice = manualWorkOperatorNotice(item)
+    const fastQualification = item.evidence.analysis_mode === "fast_qualification"
     return (
       <section className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50" aria-label="フォーム文面の生成状況">
         <div className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-amber-950">
@@ -118,7 +119,9 @@ export function ManualMessageIntelligence({ item, onCopy }: {
           <p>{notice?.detail ?? "前回の生成結果が保存されていません。"}</p>
           {notice && <ul className="mt-2 list-disc space-y-1 pl-5" aria-label="文面が未生成の理由">{notice.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>}
           {notice && <p className="mt-2"><span className="font-semibold">次の対応:</span> {notice.nextAction}</p>}
-          <p className="mt-1 font-semibold">初回処理内の自動生成・品質修正・再生成は完了しています。</p>
+          <p className="mt-1 font-semibold">{fastQualification
+            ? "高速一次判定では文面生成を意図的に省略しています。"
+            : "初回処理内の自動生成・品質修正・再生成は完了しています。"}</p>
         </div>
       </section>
     )

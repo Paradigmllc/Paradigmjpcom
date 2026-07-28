@@ -36,7 +36,7 @@ const createBatchSchema = z.object({
   retryWorkId: z.string().uuid().optional(),
 }).strict().superRefine((value, context) => {
   if (value.retryWorkId && value.urls.length !== 1) {
-    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "再解析は履歴1件ずつ永続キューへ登録してください" })
+    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "詳細解析は履歴1件ずつ永続キューへ登録してください" })
   }
 })
 
@@ -57,14 +57,9 @@ export async function GET(req: NextRequest) {
     let activeBatch = await getLatestActiveManualWorkBatch()
     if (activeBatch?.batch.status === "queued") {
       const promoted = await promoteNextManualWorkBatch()
-      if (promoted) {
-        activeBatch = promoted.snapshot
-      }
+      if (promoted) activeBatch = promoted.snapshot
     }
     if (activeBatch && !isManualWorkBatchTerminal(activeBatch.batch.status)) {
-      // Page/API reads are also recovery events. The DB drain lease makes this
-      // safe when a healthy worker is already running and self-heals a process
-      // that stopped between slices without requiring a button click.
       scheduleManualWorkBatchDrain(activeBatch.batch.id)
     }
     return NextResponse.json({
@@ -110,14 +105,21 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
-    const preflight = await preflightManualWorkBatch()
-    if (!preflight.ok) {
-      console.error("[api/work/batches] DeepSeek preflight failed:", preflight.error)
-      return NextResponse.json({
-        ok: false,
-        error: `バッチは開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
-      }, { status: 503 })
+
+    // New URLs use deterministic homepage-only fast qualification and do not
+    // require an LLM. DeepSeek is required only when an operator promotes one
+    // shortlisted company to the existing full evidence/message/report path.
+    if (parsed.data.retryWorkId) {
+      const preflight = await preflightManualWorkBatch()
+      if (!preflight.ok) {
+        console.error("[api/work/batches] DeepSeek preflight failed:", preflight.error)
+        return NextResponse.json({
+          ok: false,
+          error: `詳細解析は開始していません。${preflight.error ?? "DeepSeek APIを利用できません"}`,
+        }, { status: 503 })
+      }
     }
+
     const normalizedUrls = [...byDomain.values()]
     const common = {
       variant: parsed.data.variant,
@@ -141,12 +143,14 @@ export async function POST(req: NextRequest) {
     ])
     await notify(
       parsed.data.retryWorkId
-        ? (queuePosition === 0 ? "Manual Japan Entry再解析開始" : "Manual Japan Entry再解析待機")
-        : (queuePosition === 0 ? "Manual Japan Entryバッチ開始" : "Manual Japan Entryバッチ待機"),
-      `${batch.batch.total_count}件を永続キューへ登録しました。前方バッチ${queuePosition}件。解析後にTwentyへ未送信データとして同期します。外部送信0件。`,
+        ? (queuePosition === 0 ? "詳細解析開始" : "詳細解析待機")
+        : (queuePosition === 0 ? "高速リード判定開始" : "高速リード判定待機"),
       parsed.data.retryWorkId
-        ? "manual_japan_entry_retry_queued"
-        : (queuePosition === 0 ? "manual_japan_entry_batch_started" : "manual_japan_entry_batch_queued"),
+        ? `選択した1社を文面・フォーム・レポート・Twenty同期まで詳細解析します。前方バッチ${queuePosition}件。外部送信0件。`
+        : `${batch.batch.total_count}件を高速一次判定キューへ登録しました。前方バッチ${queuePosition}件。文面・レポート・Twenty同期は上位候補へ昇格した後だけ実行します。外部送信0件。`,
+      parsed.data.retryWorkId
+        ? "manual_japan_entry_full_analysis_queued"
+        : (queuePosition === 0 ? "manual_japan_entry_fast_batch_started" : "manual_japan_entry_fast_batch_queued"),
     )
     return NextResponse.json({
       ok: true,

@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronRight, CircleDot, Globe2, Layers3, LoaderCircle, Play, XCircle } from "lucide-react"
+import { CheckCircle2, ChevronRight, CircleDot, Gauge, Globe2, Layers3, LoaderCircle, Play, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,9 +14,9 @@ import {
 export type ManualWorkQueueState = Record<string, "waiting" | "processing" | "done" | "error">
 
 const workflowSteps = [
-  ["01", "企業確認", "海外SMB・市場優先度・企業別の商業根拠を判定"],
-  ["02", "営業準備", "フォーム・初回文面・診断を生成"],
-  ["03", "手動実行", "Twentyで確認し人が送信結果を記録"],
+  ["01", "高速一次判定", "ホームページだけで商品・業態・日本未整備・優先度を短時間で判定"],
+  ["02", "上位候補を昇格", "選んだ企業だけフォーム・企業別文面・詳細レポート・Twenty保存を実行"],
+  ["03", "手動送信", "根拠と文面を確認し、人がフォーム送信と結果記録を行う"],
 ] as const
 
 export function ManualWorkIntake({
@@ -73,17 +73,18 @@ export function ManualWorkIntake({
       <div className="grid border-b border-slate-200 lg:grid-cols-[1fr_260px]">
         <div className="p-5 sm:p-7">
           <div className="flex items-start gap-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700"><Globe2 className="size-5" aria-hidden="true" /></span>
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-100 text-emerald-700"><Gauge className="size-5" aria-hidden="true" /></span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">New analysis</p>
-              <h2 id="intake-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">企業URLを入力</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件、DBに保存したキューから3件ずつ安全に解析します。</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Fast qualification</p>
+              <h2 id="intake-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">企業URLをまとめて高速判定</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件。最初はホームページだけを取得し、DeepSeek・フォーム探索・長文レポートを使わずに一次選別します。</p>
             </div>
           </div>
         </div>
         <div className="hidden border-l border-slate-200 bg-slate-50/80 px-5 py-4 lg:block">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">Execution policy</p>
           <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Layers3 className="size-4 text-emerald-600" />500件 × 最大20バッチ</div>
+          <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><Globe2 className="size-4 text-blue-600" />Homepage-only first pass</div>
           <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><CircleDot className="size-4 text-amber-500" />Auto-send disabled</div>
           {queueSummary.batchCount > 0 && <p className="mt-3 text-xs leading-5 text-slate-600">待機・実行中 {queueSummary.batchCount}バッチ / {queueSummary.companyCount.toLocaleString("ja-JP")}社</p>}
         </div>
@@ -123,35 +124,35 @@ export function ManualWorkIntake({
 
           {queueActive && (
             <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-950" aria-live="polite">
-              <p className="font-semibold">{batchStatus === "queued" ? `永続キューで待機中（前方${queuePosition}バッチ）` : "サーバーで解析を継続中"}</p>
-              <p className="mt-1">画面を閉じても処理は継続します。次の500件も入力でき、完了イベントで順番に自動開始します。</p>
+              <p className="font-semibold">{batchStatus === "queued" ? `永続キューで待機中（前方${queuePosition}バッチ）` : "サーバーで高速一次判定を継続中"}</p>
+              <p className="mt-1">画面を閉じても処理は継続します。次の500件も追加でき、完了後に順番に開始します。</p>
             </div>
           )}
 
           <label className="block space-y-2 text-sm font-semibold text-slate-700">
-            <span className="flex items-center justify-between gap-3"><span>解析する海外企業URL</span><span className={invalidCount ? "text-red-600" : "font-normal text-slate-600"}>{urlCount} / {maxUrls}件</span></span>
+            <span className="flex items-center justify-between gap-3"><span>一次判定する海外企業URL</span><span className={invalidCount ? "text-red-600" : "font-normal text-slate-600"}>{urlCount} / {maxUrls}件</span></span>
             <Textarea
               value={input}
               onChange={(event) => onInputChange(event.target.value)}
               placeholder={"https://example.com\nhttps://another-company.com"}
               className="min-h-40 resize-y rounded-2xl border-slate-200 bg-slate-50/70 p-4 font-mono text-sm leading-6 focus-visible:bg-white focus-visible:ring-slate-200"
-              aria-label="解析する海外企業URL"
+              aria-label="一次判定する海外企業URL"
               disabled={submitting}
             />
           </label>
 
           <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動で1件に統合します。</p>
+            <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動統合。上位候補だけ後から詳細解析します。</p>
             <Button onClick={onStart} disabled={submitting || urlCount === 0 || invalidCount} size="lg" className="h-12 w-full rounded-xl bg-slate-950 px-6 text-white shadow-lg shadow-slate-950/10 hover:bg-emerald-700 sm:w-auto">
               {submitting ? <LoaderCircle className="animate-spin" /> : <Play />}
-              {submitting ? "キュー登録中" : queueActive ? "次のバッチを追加" : "解析を開始"}
+              {submitting ? "キュー登録中" : queueActive ? "次の高速バッチを追加" : "高速判定を開始"}
               {!submitting && <ChevronRight />}
             </Button>
           </div>
         </div>
 
         <aside aria-label="処理フロー" className="border-t border-slate-200 bg-slate-950 p-5 text-white sm:p-7 xl:border-l xl:border-t-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Operator flow</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Fast-first flow</p>
           <ol className="mt-5 space-y-5">
             {workflowSteps.map(([number, title, description]) => (
               <li key={number} className="flex gap-3">
@@ -161,8 +162,8 @@ export function ManualWorkIntake({
             ))}
           </ol>
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300"><CheckCircle2 className="size-4" />安全境界</p>
-            <p className="mt-2 text-xs leading-5 text-slate-300">日本企業を除外し、根拠不足は要確認へ。フォーム・メールを自動送信しません。</p>
+            <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300"><CheckCircle2 className="size-4" />品質と速度の境界</p>
+            <p className="mt-2 text-xs leading-5 text-slate-300">一次判定では送信文を作りません。時間のかかる処理は、営業価値がある候補へ昇格した後だけ実行します。</p>
           </div>
         </aside>
       </div>

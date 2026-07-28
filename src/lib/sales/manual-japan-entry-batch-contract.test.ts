@@ -12,6 +12,8 @@ describe("manual work durable batch contract", () => {
   const queueMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260721164000_manual_work_multi_batch_queue.sql"), "utf8")
   const scaleMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260721193000_manual_work_report_ownership_and_scale.sql"), "utf8")
   const batchStore = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-japan-entry-batch-store.ts"), "utf8")
+  const fastService = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-fast-service.ts"), "utf8")
+  const fastEvidence = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-fast-evidence.ts"), "utf8")
 
   it("supports 500 URLs while keeping each server drain bounded", () => {
     expect(MANUAL_WORK_BATCH_MAX_URLS).toBe(500)
@@ -19,6 +21,17 @@ describe("manual work durable batch contract", () => {
     expect(migration).toContain("total_count BETWEEN 1 AND 500")
     expect(migration).toContain("FOR UPDATE SKIP LOCKED")
     expect(migration).toContain("least(coalesce(p_limit, 3), 3)")
+  })
+
+  it("keeps new batches homepage-only and defers expensive artifacts", () => {
+    expect(fastEvidence).toContain("ParadigmFastQualification/1.0")
+    expect(fastEvidence).toContain("AbortSignal.timeout(8_000)")
+    expect(fastEvidence).toContain("auditJapanMarketReadinessFromHtml")
+    expect(fastEvidence).not.toContain("fetchPageWithCrawl4Ai")
+    expect(fastService).toContain('analysis_mode: "fast_qualification"')
+    expect(fastService).toContain('twenty_sync_status: "skipped"')
+    expect(fastService).toContain("form_url: null")
+    expect(fastService).toContain("initial_message: null")
   })
 
   it("is service-role-only, RLS protected, resumable, and permanently zero-send", () => {
@@ -41,7 +54,7 @@ describe("manual work durable batch contract", () => {
     expect(queueMigration).toContain("batch.status = 'running'")
   })
 
-  it("keeps 100-500 row drains constant-size and leaves enough time for bounded model recovery", () => {
+  it("keeps 100-500 row drains constant-size and preserves durable compact snapshots", () => {
     expect(scaleMigration).toContain("queued_count integer NOT NULL DEFAULT 0")
     expect(scaleMigration).toContain("processing_count integer NOT NULL DEFAULT 0")
     expect(scaleMigration).toContain("failed_count integer NOT NULL DEFAULT 0")

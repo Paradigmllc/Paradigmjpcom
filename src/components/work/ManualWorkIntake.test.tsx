@@ -5,7 +5,7 @@ import { ManualWorkIntake } from "./ManualWorkIntake"
 const noop = vi.fn()
 
 describe("ManualWorkIntake multi-batch queue", () => {
-  it("keeps intake available while a queued batch is processed in the background", () => {
+  it("keeps fast intake available while a queued batch is processed in the background", () => {
     const html = renderToStaticMarkup(<ManualWorkIntake
       input="https://next.example"
       sourceSlug="manual_input"
@@ -37,8 +37,9 @@ describe("ManualWorkIntake multi-batch queue", () => {
 
     expect(html).toContain("永続キューで待機中（前方2バッチ）")
     expect(html).toContain("待機・実行中 3バッチ / 1,200社")
-    expect(html).toContain("次のバッチを追加")
-    expect(html).toContain('aria-label="解析する海外企業URL"')
-    expect(html).not.toContain('aria-label="解析する海外企業URL" disabled=""')
+    expect(html).toContain("次の高速バッチを追加")
+    expect(html).toContain('aria-label="一次判定する海外企業URL"')
+    expect(html).not.toContain('aria-label="一次判定する海外企業URL" disabled=""')
+    expect(html).toContain("DeepSeek・フォーム探索・長文レポートを使わず")
   })
 })

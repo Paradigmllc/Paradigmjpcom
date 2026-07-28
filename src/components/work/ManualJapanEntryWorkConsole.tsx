@@ -246,7 +246,7 @@ export function ManualJapanEntryWorkConsole({
         <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-emerald-400 text-slate-950">P</span><span>Paradigm Revenue Operations</span></div>
-            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${deepSeekBalanceBlocked ? "text-amber-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Analysis running" : deepSeekBalanceBlocked ? "DeepSeek balance required" : "System ready"}</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${workflowRunning ? "text-blue-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Fast qualification running" : "Fast qualification ready"}</span></div>
           </div>
         </div>
       </div>
@@ -254,19 +254,19 @@ export function ManualJapanEntryWorkConsole({
       <div className="mx-auto w-full min-w-0 max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Manual Japan Entry Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">Zero-send architecture</span></div>
-            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">海外SMBの初回営業準備</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">完全新規の企業URLから、公開根拠・フォーム・初回文面・10章の戦略レポートを一つの永続ワークスペースへ。海外企業の解析データはTwentyへ保存し、送信可否は別の安全審査で管理します。</p>
+            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Fast-first Opportunity Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">Zero-send architecture</span></div>
+            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">大量URLを先に速く絞り、上位候補だけ深掘り</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">新規URLはホームページだけで高速一次判定します。フォーム探索、DeepSeekによる企業別文面、詳細レポート、Twenty同期は、営業価値がある候補へ人が昇格した後だけ実行します。</p>
           </div>
           <nav aria-label="ワークベンチ内ナビゲーション" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-            <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">新規解析</a>
-            <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">生成条件</a>
-            <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">履歴</a>
+            <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">高速判定</a>
+            <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">詳細生成条件</a>
+            <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">候補履歴</a>
             <Button type="button" variant="ghost" size="sm" aria-label="Twenty成果物の整合性を監査" disabled={reconcilingArtifacts} onClick={() => void reconcileArtifacts()} className="h-auto rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">{reconcilingArtifacts ? "監査中…" : "Twenty整合性"}</Button>
           </nav>
         </motion.header>
 
-        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek APIの残高不足で解析を停止しています</p><p>残高補充後は、失敗した履歴の「復旧再実行」から同じ履歴を安全に再開できます。同じ企業は重複登録されません。</p></div>}
+        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek残高がなくても高速一次判定は継続できます</p><p>影響するのは、選択した候補を企業別文面・詳細レポート・Twenty同期まで昇格する処理だけです。残高補充後に「詳細解析へ昇格」を実行してください。</p></div>}
 
         <div className="mt-7"><ManualWorkOverview summary={summary} /></div>
 
@@ -298,9 +298,9 @@ export function ManualJapanEntryWorkConsole({
         </div>
 
         <section aria-label="生成ガードレール" className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3 sm:p-5">
-          <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" /><div><p className="text-xs font-semibold text-slate-800">海外SMB限定</p><p className="mt-1 text-xs leading-5 text-slate-600">日本企業と不適合企業は同期前に除外。</p></div></div>
-          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">事実と推定を分離</p><p className="mt-1 text-xs leading-5 text-slate-600">Observed / Modeled / Hypothesisを保存。</p></div></div>
-          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">根拠不足は自動降格</p><p className="mt-1 text-xs leading-5 text-slate-600">初回文面は「推定あり／なし × 価格あり／なし」の4セル。根拠不足時は安全な条件へ戻します。</p></div></div>
+          <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" /><div><p className="text-xs font-semibold text-slate-800">一次判定は非生成</p><p className="mt-1 text-xs leading-5 text-slate-600">ホームページの公開事実だけで採点し、送信文を作りません。</p></div></div>
+          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">重い処理は昇格後だけ</p><p className="mt-1 text-xs leading-5 text-slate-600">フォーム・文面・レポート・Twentyを低優先候補へ浪費しません。</p></div></div>
+          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">詳細品質は維持</p><p className="mt-1 text-xs leading-5 text-slate-600">昇格後は既存の根拠・個別性・類似度・安全性ゲートを通します。</p></div></div>
         </section>
 
         <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} total={historyTotal} hasMore={historyHasMore} loading={historyLoading} sources={sources} historyError={historyError} running={workflowRunning} updatingOutcome={updatingOutcome} onCriteriaChange={changeHistoryCriteria} onLoadMore={loadMoreHistory} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
