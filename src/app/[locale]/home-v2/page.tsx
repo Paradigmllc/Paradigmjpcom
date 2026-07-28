@@ -123,7 +123,7 @@ const EN_SERVICES = [
     icon: Globe2,
     highlighted: true,
     bullets: [
-      "$13,000 fixed Japan Market Setup",
+      "$15,000 fixed Japan Market Setup",
       "Localized buyer path, launch assets, and channel setup",
       "Japan-facing support and operating handover",
       "Clear scope, dependencies, and acceptance criteria",
@@ -169,7 +169,7 @@ const EN_MODEL = [
   {
     icon: Globe2,
     title: "Fixed Japan setup",
-    body: "Start with a written $13,000 Japan Market Setup scope before ongoing operation begins.",
+    body: "Start with a written $15,000 Japan Market Setup scope before ongoing operation begins.",
   },
   {
     icon: Clapperboard,
@@ -214,7 +214,7 @@ export default async function BusinessHomePage({ params }: Props) {
         asideCta={
           isJa
             ? { label: "Video as a Serviceを見る", href: "/video-as-a-service" }
-            : { label: "Apply for a Japan Partnership — $13K", href: "/contact?intent=japan-entry" }
+            : { label: "Apply for a Japan Partnership — $15K", href: "/contact?intent=japan-entry" }
         }
       />
 
@@ -372,12 +372,12 @@ export default async function BusinessHomePage({ params }: Props) {
             ? "継続的な動画制作、Webサイトの新規制作・刷新、AIを使った制作や業務導入について、現在の課題と必要な範囲をお知らせください。"
             : "Tell us whether the immediate need is Japan market execution, recurring video production, or a coordinated combination of the two."
         }
-        buttonLabel={isJa ? "相談内容を送る" : "Apply for a Japan Partnership — $13K"}
+        buttonLabel={isJa ? "相談内容を送る" : "Apply for a Japan Partnership — $15K"}
         buttonHref={isJa ? "/contact" : "/contact?intent=japan-entry"}
         bullets={
           isJa
             ? ["Video as a Serviceを第一主力として提案", "Web・AIは必要な範囲だけ組み合わせ", "契約前に範囲と進行方法を明記"]
-            : ["$13,000 fixed Japan Market Setup", "Video production available as a separate recurring service", "Written scope before kickoff"]
+            : ["$15,000 fixed Japan Market Setup", "Video production available as a separate recurring service", "Written scope before kickoff"]
         }
         analyticsSource="business-home-v2"
       />

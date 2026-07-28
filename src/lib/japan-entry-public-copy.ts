@@ -18,5 +18,5 @@ export const JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE =
 export const JAPAN_ENTRY_MONTH_ONE_TARGET_STAT =
   JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT
 
-export const JAPAN_ENTRY_CTA_EN = "Apply for a Japan Partnership — $13K"
+export const JAPAN_ENTRY_CTA_EN = "Apply for a Japan Partnership — $15K"
 export const JAPAN_ENTRY_CTA_JA = "Japan Entryについて問い合わせる"

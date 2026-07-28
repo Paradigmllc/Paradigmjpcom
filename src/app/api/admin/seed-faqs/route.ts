@@ -183,8 +183,8 @@ const FAQS: SeedFaq[] = [
   {
     question: { ja: "見積もりだけでも大丈夫ですか？", en: "Can I just get a quote?" },
     answer: {
-      ja: "Japan Entryの適合審査では、13,000ドル固定の範囲、依存条件、必要な承認者を確認します。契約前に書面で条件を提示し、適合しない場合は受注しません。",
-      en: "The Japan Entry application is a fit review, not contract acceptance. We confirm the fixed $13,000 setup scope, dependencies, and written terms before any work starts.",
+      ja: "Japan Entryの適合審査では、15,000ドル固定の範囲、依存条件、必要な承認者を確認します。契約前に書面で条件を提示し、適合しない場合は受注しません。",
+      en: "The Japan Entry application is a fit review, not contract acceptance. We confirm the fixed $15,000 setup scope, dependencies, and written terms before any work starts.",
     },
     category: { ja: "お申し込み前", en: "Before Ordering" },
     sortOrder: 16,
@@ -201,8 +201,8 @@ const FAQS: SeedFaq[] = [
   {
     question: { ja: "競合他社と比べて何が違いますか？", en: "What makes you different from competitors?" },
     answer: {
-      ja: "最大の違いは3点です。①日本語の販売・問い合わせ導線を固定スコープで実装。②決済、法務表示、運用条件を先に確認。③13,000ドル固定で、最初の6か月は月額無料。売上成果は保証せず、合意した成果物と運用範囲を提供します。",
-      en: "Three differences: ① a fixed-scope Japanese revenue and inquiry path, ② payment, disclosure, and operating dependencies confirmed before kickoff, and ③ a fixed $13,000 setup with the first six months of managed operation included for selected launch partners at no additional monthly charge. Sales outcomes are not guaranteed.",
+      ja: "最大の違いは3点です。①日本語の販売・問い合わせ導線を固定スコープで実装。②決済、法務表示、運用条件を先に確認。③15,000ドル固定で、最初の6か月は月額無料。売上成果は保証せず、合意した成果物と運用範囲を提供します。",
+      en: "Three differences: ① a fixed-scope Japanese revenue and inquiry path, ② payment, disclosure, and operating dependencies confirmed before kickoff, and ③ a fixed $15,000 setup with the first six months of managed operation included for selected launch partners at no additional monthly charge. Sales outcomes are not guaranteed.",
     },
     category: { ja: "お申し込み前", en: "Before Ordering" },
     sortOrder: 18,

@@ -39,13 +39,13 @@ describe("inferCompanyProductRecommendations", () => {
     expect(products.map((product) => product.code)).toEqual(["global_video_subscription", "global_jaas"])
   })
 
-  it("uses the fixed USD 13,000 Japan Entry setup price", () => {
+  it("uses the fixed USD 15,000 Japan Entry setup price", () => {
     const product = productFromFallback("global_jaas")
 
     expect(product.default_currency).toBe("USD")
-    expect(product.default_amount_yen).toBe(13_000)
+    expect(product.default_amount_yen).toBe(15_000)
     expect(product.meta).toMatchObject({
-      setup_amount_usd: 13_000,
+      setup_amount_usd: 15_000,
       monthly_free_months: 6,
       continuation_pricing: "agreed_separately_after_included_period",
     })

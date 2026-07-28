@@ -22,7 +22,7 @@ const altNamesOf = (locale: string) =>
 
 export const JAPAN_ENTRY_TITLE = "Your Japan Country Partner | Paradigm"
 export const JAPAN_ENTRY_DESCRIPTION =
-  "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with the fixed $13,000 Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms."
+  "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with the fixed $15,000 Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms."
 export const JAPAN_ENTRY_URL = "https://paradigmjp.com/en"
 export const JAPAN_ENTRY_CONTACT_CANONICAL_URL =
   "https://paradigmjp.com/en/contact"
@@ -31,8 +31,8 @@ export const JAPAN_ENTRY_CONTACT_URL =
 
 export const JAPAN_ENTRY_FAQS = [
   {
-    q: "Is the setup fee always $13,000?",
-    a: "Yes. The setup fee is fixed at $13,000 and paid before kickoff. If the launch cannot fit the published scope, Paradigm declines the application rather than increasing the price after the fact.",
+    q: "Is the setup fee always $15,000?",
+    a: "Yes. The setup fee is fixed at $15,000 and paid before kickoff. If the launch cannot fit the published scope, Paradigm declines the application rather than increasing the price after the fact.",
   },
   {
     q: "What does the selected-launch-partner operating period include?",
@@ -68,7 +68,7 @@ export const JAPAN_ENTRY_FAQS = [
   },
   {
     q: "What happens if the agreed setup is not delivered within 14 business days?",
-    a: "The Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. If Paradigm misses the 14-business-day delivery commitment for the agreed setup, 100% of the USD 13,000 setup fee is refunded. Client-requested changes or holds pause the clock.",
+    a: "The Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. If Paradigm misses the 14-business-day delivery commitment for the agreed setup, 100% of the USD 15,000 setup fee is refunded. Client-requested changes or holds pause the clock.",
   },
 ] as const
 
@@ -96,16 +96,16 @@ function getJapanEntryServiceJsonLd() {
       "@id": `${JAPAN_ENTRY_URL}#fixed-offer`,
       name: "Japan Market Setup",
       url: JAPAN_ENTRY_CONTACT_URL,
-      price: "13000",
+      price: "15000",
       priceCurrency: "USD",
       description:
-        "$13,000 Japan Market Setup as the initial paid engagement. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
+        "$15,000 Japan Market Setup as the initial paid engagement. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included, and month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
       eligibleRegion: ["US", "CA", "GB", "EU", "AU", "NZ"],
       priceSpecification: [
         {
           "@type": "UnitPriceSpecification",
           name: "Japan Market Setup",
-          price: "13000",
+          price: "15000",
           priceCurrency: "USD",
         },
       ],
@@ -195,7 +195,7 @@ export function getServicesJsonLd(locale: string = "ja") {
           name: JAPAN_ENTRY_TITLE,
           desc: JAPAN_ENTRY_DESCRIPTION,
           url: `/${pageLocale}`,
-          price: "13000",
+          price: "15000",
           priceDesc: "Fixed Japan Market Setup; selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included",
         },
       ]

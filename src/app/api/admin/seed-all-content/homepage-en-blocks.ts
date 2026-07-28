@@ -19,7 +19,7 @@ export const EN_JAPAN_ENTRY_COMPARISON_BLOCK = {
   leftLabel: "Paradigm Japan Entry",
   rightLabel: "Build it yourself",
   rows: [
-    { item: "Commercial model", leftValue: "$13,000 fixed setup", rightValue: "Multiple open-ended budgets" },
+    { item: "Commercial model", leftValue: "$15,000 fixed setup", rightValue: "Multiple open-ended budgets" },
     { item: "Launch ownership", leftValue: "One accountable Tokyo team", rightValue: "Several internal and external owners" },
     { item: "Time to market", leftValue: "14-business-day delivery guarantee", rightValue: "Dependent on hiring and vendor coordination" },
     { item: "Your team's workload", leftValue: "One English-speaking owner", rightValue: "Engineering, legal, marketing, and support" },

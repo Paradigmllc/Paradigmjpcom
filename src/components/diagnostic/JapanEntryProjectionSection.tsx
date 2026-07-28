@@ -154,7 +154,7 @@ export function JapanEntryProjectionSection({ data, lang }: { data: DiagnosticRe
           <div>
             <h3 className="font-semibold">{isJa ? "固定条件" : "Commercial terms"}</h3>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">
-              <li>$13,000 {isJa ? "初期費用・一括前払い" : "setup fee, paid upfront"}</li>
+              <li>$15,000 {isJa ? "初期費用・一括前払い" : "setup fee, paid upfront"}</li>
               <li>{isJa ? "月額2,000ドル×6か月＝12,000ドル相当を選定先に追加月額なしで提供" : "$2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners"}</li>
               <li>{isJa ? "期間終了後の継続条件・月額は個別協議のうえ書面合意" : "Standard Managed Japan Desk is $2,000/month from month 7 onward under the signed terms"}</li>
             </ul>

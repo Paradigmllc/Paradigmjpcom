@@ -343,17 +343,17 @@ export function reviewPersonalizedJapanEntryMessage(input: {
       }
     } else {
       const approvedOfferLead = "Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap.";
-      if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?13,?000|13,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
+      if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?15,?000|15,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
     }
   }
 
   if (words.length < minWords || words.length > maxWords) { issues.push(`Message must be ${minWords}-${maxWords} words`); score -= 15; }
   if (purpose === "commercial_offer") {
-    if (!/\$\s?13,?000|13,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("$13,000 price is missing"); score -= 15; }
+    if (!/\$\s?15,?000|15,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("$15,000 price is missing"); score -= 15; }
     if (!/(?:paid\s+upfront|upfront\s+payment)/i.test(message)) { issues.push("Upfront payment condition is missing"); score -= 10; }
     if (!/(?:first\s+)?six\s+months/i.test(message)) { issues.push("First six months inclusion is missing"); score -= 10; }
   } else if (initialInterestOptions.includePrice) {
-    if (!/\$\s?13,?000|13,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("The selected initial-interest variant requires the $13,000 price"); score -= 30; }
+    if (!/\$\s?15,?000|15,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("The selected initial-interest variant requires the $15,000 price"); score -= 30; }
     if (!/(?:first\s+)?six\s+months/i.test(message)) { issues.push("The selected initial-interest variant requires the included first six months"); score -= 25; }
     if (/(?:founding compan|normally\s+\$|after\s+(?:the\s+)?first\s+six\s+months|month\s*7|continuation\s+(?:fee|price)|paid\s+upfront)/i.test(message)) {
       issues.push("Unsupported scarcity, continuation pricing, or payment terms are prohibited"); score -= 45;
@@ -434,7 +434,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (selectedModeled && !/(?:model(?:ed)?|estimate[sd]?|planning assumption)/i.test(message)) { issues.push("Modeled metrics are not clearly labeled as estimates"); score -= 40; }
   if (/\brevenue\b/i.test(message) && !selected.some((fact) => fact.id === "modeled-monthly-opportunity-gap" || fact.id === "modeled-annual-opportunity-range")) { issues.push("Revenue wording is not tied to the modeled opportunity fact"); score -= 40; }
 
-  const allowed = new Set(purpose === "commercial_offer" || (purpose === "initial_interest" && initialInterestOptions.includePrice) ? ["13000", "2000", "12000", "6", "15"] : []);
+  const allowed = new Set(purpose === "commercial_offer" || (purpose === "initial_interest" && initialInterestOptions.includePrice) ? ["15000", "2000", "12000", "6", "15"] : []);
   for (const fact of selected) for (const token of numericTokens(fact.statement)) allowed.add(normalizeNumber(token));
   for (const groundedIdentity of [input.companyName, ...productNames, productEvidence, productEvidenceRendering]) {
     for (const token of numericTokens(groundedIdentity)) allowed.add(normalizeNumber(token));

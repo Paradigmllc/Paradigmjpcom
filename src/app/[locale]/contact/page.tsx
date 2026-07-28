@@ -141,14 +141,14 @@ export default async function ContactPage({ params, searchParams }: Props) {
     badge: "JAPAN COUNTRY PARTNER",
     title: "Apply for a Japan partnership.",
     highlight: "Japan partnership.",
-    desc: "$13,000 fixed setup. Wise, bank transfer, USDC, or credit card. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded.",
+    desc: "$15,000 fixed setup. Wise, bank transfer, USDC, or credit card. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded.",
     aside:
       "Built for companies that can decide this week and launch with one accountable owner.",
     formEyebrow: "APPLICATION",
     formTitle: "Confirm your fit and launch timing",
     fixedLabel: "Fixed commercial terms",
     fixedItems: [
-      "$13,000 setup paid before kickoff",
+      "$15,000 setup paid before kickoff",
       "Payment: Wise, bank transfer, USDC, or credit card",
       "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date",
       "Selected partners receive the first six months of operation under the signed offer",
@@ -237,7 +237,7 @@ export default async function ContactPage({ params, searchParams }: Props) {
           },
           {
             title: "Fix the written scope",
-            body: "The $13,000 scope, dependencies, third-party costs, and exclusions are documented before payment.",
+            body: "The $15,000 scope, dependencies, third-party costs, and exclusions are documented before payment.",
           },
           {
             title: "Start and deliver",

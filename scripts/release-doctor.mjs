@@ -197,10 +197,10 @@ function checkStaticReleaseRules() {
   )?.[0] ?? ""
   const japanEntryCurrency = japanEntryProductBlock.match(/default_currency:\s*"([A-Z]{3})"/)?.[1]
   const japanEntryAmount = japanEntryProductBlock.match(/default_amount_yen:\s*(\d+)/)?.[1]
-  if (japanEntryCurrency === "USD" && japanEntryAmount === "13000") {
-    pass("Japan Entry sales product matches the public $13,000 USD offer")
+  if (japanEntryCurrency === "USD" && japanEntryAmount === "15000") {
+    pass("Japan Entry sales product matches the public $15,000 USD offer")
   } else {
-    fail("global_jaas must use USD 13000 in the production sales product seed")
+    fail("global_jaas must use USD 15000 in the production sales product seed")
   }
   if (
     noLoginDeploy.includes("https://paradigmjp.com/en") &&
@@ -1999,7 +1999,7 @@ async function checkPostDeployUrls() {
     timeoutMs: 20_000,
     mustContain: [
       "Launch in Japan without hiring a local team",
-      "$13,000",
+      "$15,000",
       "Apply for Japan Entry",
       "Visual proof",
       "package-scope.svg",
@@ -2016,7 +2016,7 @@ async function checkPostDeployUrls() {
       mustContain: [
         "Japan Entry package.",
         "Confirm your fit and launch timing",
-        "$13,000 fixed setup",
+        "$15,000 fixed setup",
         "Preferred payment method",
         "fully refundable",
       ],
@@ -2044,13 +2044,13 @@ async function checkPostDeployUrls() {
       options.mustContain = ["Which payment methods can we use?", "full setup fee is refunded"]
     }
     if (path === "/en/legal") {
-      options.mustContain = ["Wise", "100% of the USD 13,000 setup fee is refunded"]
+      options.mustContain = ["Wise", "100% of the USD 15,000 setup fee is refunded"]
     }
     if (path === "/en/terms") {
-      options.mustContain = ["Terms of Service", "$13,000", "Japan", "14 business days"]
+      options.mustContain = ["Terms of Service", "$15,000", "Japan", "14 business days"]
     }
     if (path === "/en/refund") {
-      options.mustContain = ["Refund", "100% of the USD 13,000 setup fee is refunded", "Start Date"]
+      options.mustContain = ["Refund", "100% of the USD 15,000 setup fee is refunded", "Start Date"]
     }
     if (path === "/en/tools/japan-entry-score") {
       options.mustContain = [

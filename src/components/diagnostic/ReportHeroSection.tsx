@@ -103,7 +103,7 @@ export default function ReportHeroSection({
             data-umami-event-source="hero"
             className="inline-flex h-12 items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-950 shadow-sm transition-transform hover:scale-105"
           >
-            {isJapanese ? "15分相談を予約" : "Apply — $13K fixed"}
+            {isJapanese ? "15分相談を予約" : "Apply — $15K fixed"}
             <ExternalLink size={15} aria-hidden />
           </a>
         </motion.div>
