@@ -1,0 +1,68 @@
+name: Materialize Video Factory Source
+
+on:
+  push:
+    branches:
+      - agent/video-factory-foundation
+    paths:
+      - bootstrap/video-factory.tar.gz.b64
+      - .github/workflows/materialize-video-factory.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-video-factory-foundation
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/video-factory-foundation
+          fetch-depth: 0
+
+      - name: Verify and extract staged source
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode bootstrap/video-factory.tar.gz.b64 > /tmp/video-factory.tar.gz
+          echo "c7d20da49cfacb462a36dc4ebfefa9fc1e11064e076625cd20217a475a5bcd97  /tmp/video-factory.tar.gz" | sha256sum --check --strict
+          python - <<'PY'
+          import tarfile
+          from pathlib import PurePosixPath
+
+          archive = "/tmp/video-factory.tar.gz"
+          with tarfile.open(archive, "r:gz") as handle:
+              members = handle.getmembers()
+              if not members:
+                  raise SystemExit("archive is empty")
+              for member in members:
+                  path = PurePosixPath(member.name)
+                  if path.is_absolute() or ".." in path.parts:
+                      raise SystemExit(f"unsafe archive path: {member.name}")
+                  if member.issym() or member.islnk():
+                      raise SystemExit(f"archive links are not allowed: {member.name}")
+          PY
+          rm -rf services/video-factory
+          tar --extract --gzip --file /tmp/video-factory.tar.gz --directory .
+          test -f services/video-factory/pyproject.toml
+          test -f services/video-factory/src/video_factory/pipeline.py
+          test -f .github/workflows/video-factory-ci.yml
+
+      - name: Replace staging artifacts with source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f bootstrap/video-factory.tar.gz.b64
+          rmdir bootstrap 2>/dev/null || true
+          rm -f .github/workflows/materialize-video-factory.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git diff --cached --check
+          git commit -m "feat: add Paradigm video factory foundation"
+          git push origin HEAD:agent/video-factory-foundation
