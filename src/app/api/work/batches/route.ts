@@ -54,6 +54,11 @@ function gpt56WriterConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim() || process.env.OPENROUTER_API_KEY?.trim())
 }
 
+function usesGpt56EditorialPath(analysisMode: unknown): boolean {
+  return analysisMode === "fast_qualification"
+    || (typeof analysisMode === "string" && analysisMode.startsWith("gpt56_editorial"))
+}
+
 export async function GET(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
@@ -117,7 +122,7 @@ export async function POST(req: NextRequest) {
       if (!selectedWork) {
         return NextResponse.json({ ok: false, error: "選択した企業履歴が見つかりません" }, { status: 404 })
       }
-      fastEditorialPromotion = selectedWork.evidence.analysis_mode === "fast_qualification"
+      fastEditorialPromotion = usesGpt56EditorialPath(selectedWork.evidence.analysis_mode)
       if (fastEditorialPromotion) {
         if (!gpt56WriterConfigured()) {
           return NextResponse.json({
