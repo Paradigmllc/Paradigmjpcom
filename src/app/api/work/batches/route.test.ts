@@ -83,6 +83,7 @@ describe("manual work durable batch API", () => {
       urls: expect.arrayContaining([expect.objectContaining({ domain: "company-0.example" })]),
       sourceSlug: "manual_input",
     }))
+    expect(mocks.preflight).not.toHaveBeenCalled()
     expect(body.automaticDrainStarted).toBe(true)
     expect(mocks.schedule).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
   })
@@ -116,7 +117,7 @@ describe("manual work durable batch API", () => {
     expect(mocks.schedule).not.toHaveBeenCalled()
   })
 
-  it("queues one exact existing row for durable regeneration", async () => {
+  it("queues one exact existing row for durable full analysis", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
@@ -124,6 +125,7 @@ describe("manual work durable batch API", () => {
       body: JSON.stringify({ urls: ["example.com"], retryWorkId: workId }),
     }))
     expect(response.status).toBe(201)
+    expect(mocks.preflight).toHaveBeenCalledTimes(1)
     expect(mocks.create).not.toHaveBeenCalled()
     expect(mocks.createRetry).toHaveBeenCalledWith(expect.objectContaining({
       workId,
@@ -132,7 +134,7 @@ describe("manual work durable batch API", () => {
     expect(mocks.schedule).toHaveBeenCalled()
   })
 
-  it("rejects a retry request that contains more than one URL", async () => {
+  it("rejects a full-analysis request that contains more than one URL", async () => {
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -145,18 +147,35 @@ describe("manual work durable batch API", () => {
     expect(mocks.createRetry).not.toHaveBeenCalled()
   })
 
-  it("does not enqueue hundreds of doomed jobs when DeepSeek is unavailable", async () => {
+  it("continues fast qualification when DeepSeek is unavailable", async () => {
     mocks.preflight.mockResolvedValue({ ok: false, error: "DeepSeek APIの残高不足です" })
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ urls: ["example.com"] }),
     }))
+
+    expect(response.status).toBe(201)
+    expect(mocks.preflight).not.toHaveBeenCalled()
+    expect(mocks.create).toHaveBeenCalledTimes(1)
+    expect(mocks.schedule).toHaveBeenCalled()
+  })
+
+  it("does not enqueue full analysis when DeepSeek is unavailable", async () => {
+    mocks.preflight.mockResolvedValue({ ok: false, error: "DeepSeek APIの残高不足です" })
+    const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        urls: ["example.com"],
+        retryWorkId: "106db008-80af-4c56-93ee-916643d84c1b",
+      }),
+    }))
     const body = await response.json()
 
     expect(response.status).toBe(503)
-    expect(body.error).toContain("バッチは開始していません")
-    expect(mocks.create).not.toHaveBeenCalled()
+    expect(body.error).toContain("詳細解析は開始していません")
+    expect(mocks.createRetry).not.toHaveBeenCalled()
     expect(mocks.schedule).not.toHaveBeenCalled()
   })
 
