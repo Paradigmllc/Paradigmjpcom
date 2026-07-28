@@ -4,19 +4,10 @@ import { motion } from "framer-motion"
 import { CheckCircle2, CircleDot, Database, LockKeyhole, ShieldCheck } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Toaster, toast } from "sonner"
-import {
-  summarizeManualWorkExperiment,
-  type ManualExperimentMetric,
-  type ManualMessageVariantSelection,
-} from "@/lib/sales/manual-japan-entry-experiment"
-import {
-  summarizeManualWorkAngles,
-  type ManualAngleMetric,
-  type ManualMessageAngleSelection,
-} from "@/lib/sales/manual-japan-entry-angle"
+import type { ManualExperimentMetric } from "@/lib/sales/manual-japan-entry-experiment"
+import type { ManualAngleMetric } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
-import { ManualWorkExperimentControls } from "./ManualWorkExperimentControls"
 import { ManualWorkHistory } from "./ManualWorkHistory"
 import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
 import { ManualWorkOverview } from "./ManualWorkOverview"
@@ -39,8 +30,6 @@ export function ManualJapanEntryWorkConsole({
   initialItems,
   initialHistoryTotal,
   initialSummary,
-  initialMetrics,
-  initialAngleMetrics,
   initialSources,
   initialHistoryError,
 }: {
@@ -54,10 +43,6 @@ export function ManualJapanEntryWorkConsole({
 }) {
   const [input, setInput] = useState("")
   const [items, setItems] = useState(initialItems)
-  const [metrics, setMetrics] = useState(initialMetrics)
-  const [angleMetrics, setAngleMetrics] = useState(initialAngleMetrics)
-  const [variant, setVariant] = useState<ManualMessageVariantSelection>("auto")
-  const [angle, setAngle] = useState<ManualMessageAngleSelection>("auto")
   const [sources, setSources] = useState(initialSources)
   const [sourceSlug, setSourceSlug] = useState("manual_input")
   const [sourcePageUrl, setSourcePageUrl] = useState("")
@@ -94,8 +79,6 @@ export function ManualJapanEntryWorkConsole({
         total?: number
         hasMore?: boolean
         summary?: ManualWorkDashboardSummary
-        metrics?: ManualExperimentMetric[]
-        angleMetrics?: ManualAngleMetric[]
         sources?: ManualLeadSourceCatalogRow[]
         error?: string
       }
@@ -105,8 +88,6 @@ export function ManualJapanEntryWorkConsole({
       setHistoryTotal(body.total ?? body.items.length)
       setHistoryHasMore(Boolean(body.hasMore))
       if (body.summary) setSummary(body.summary)
-      setMetrics(body.metrics ?? summarizeManualWorkExperiment(body.items ?? []))
-      setAngleMetrics(body.angleMetrics ?? summarizeManualWorkAngles(body.items ?? []))
       if (body.sources) setSources(body.sources)
       setHistoryError(null)
     } catch (error) {
@@ -151,7 +132,7 @@ export function ManualJapanEntryWorkConsole({
   const start = async () => {
     if (urls.length === 0) return toast.error("海外企業のURLを1件以上入力してください")
     if (urls.length > MANUAL_WORK_BATCH_MAX_URLS) return toast.error(`1回の上限は${MANUAL_WORK_BATCH_MAX_URLS}件です`)
-    const accepted = await batch.start({ urls, variant, angle, sourceSlug, sourcePageUrl })
+    const accepted = await batch.start({ urls, variant: "auto", angle: "auto", sourceSlug, sourcePageUrl })
     if (accepted) setInput("")
   }
 
@@ -256,7 +237,6 @@ export function ManualJapanEntryWorkConsole({
           </div>
           <nav aria-label="ワークベンチ内ナビゲーション" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
             <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">高速判定</a>
-            <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">旧生成条件</a>
             <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">候補履歴</a>
             <Button type="button" variant="ghost" size="sm" aria-label="Twenty成果物の整合性を監査" disabled={reconcilingArtifacts} onClick={() => void reconcileArtifacts()} className="h-auto rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">{reconcilingArtifacts ? "監査中…" : "Twenty整合性"}</Button>
           </nav>
@@ -264,7 +244,7 @@ export function ManualJapanEntryWorkConsole({
 
         <div className="mt-7"><ManualWorkOverview summary={summary} /></div>
 
-        <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(380px,0.75fr)] xl:items-start">
+        <div className="mt-7">
           <ManualWorkIntake
             input={input}
             sourceSlug={sourceSlug}
@@ -288,7 +268,6 @@ export function ManualJapanEntryWorkConsole({
             onStart={() => void start()}
             onResume={() => batch.snapshot && void batch.resume(batch.snapshot)}
           />
-          <ManualWorkExperimentControls variant={variant} angle={angle} running={inputBusy} metrics={metrics} angleMetrics={angleMetrics} onVariantChange={setVariant} onAngleChange={setAngle} />
         </div>
 
         <section aria-label="生成ガードレール" className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3 sm:p-5">
