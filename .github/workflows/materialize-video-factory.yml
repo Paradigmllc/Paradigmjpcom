@@ -73,17 +73,17 @@ jobs:
             python -m pip install --upgrade pip
             pip install -e '.[dev,api,orchestrator]'
 
-            # Normalize two archive-authored constructs before the permanent strict checks.
-            # Ruff then performs its own safe/unsafe autofixes for the remaining style-only findings.
+            # Normalize archive-authored constructs before permanent strict checks.
             python - <<'PY'
           from pathlib import Path
 
           media = Path("src/video_factory/media.py")
           media_lines = media.read_text(encoding="utf-8").splitlines()
           media_matches = 0
+          replacement_line = r'        "".join(f"file {path.as_posix()!r}\n" for path in normalized),'
           for index, line in enumerate(media_lines):
               if "path.as_posix().replace" in line and "for path in normalized" in line:
-                  media_lines[index] = r'''        "".join("file '{}\n".format(path.as_posix().replace("'", "'\\''")) for path in normalized),'''.replace("file '{}\\n", "file '{}'\\n")
+                  media_lines[index] = replacement_line
                   media_matches += 1
           if media_matches != 1:
               raise SystemExit(f"expected one ffconcat path expression, found {media_matches}")
