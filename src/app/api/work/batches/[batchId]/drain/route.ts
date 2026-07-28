@@ -13,10 +13,13 @@ import {
 } from "@/lib/sales/manual-japan-entry-batch-store"
 import {
   isManualWorkBatchTerminal,
+  type ManualWorkBatchItemRow,
   type ManualWorkBatchItemStatus,
   type ManualWorkBatchSnapshot,
 } from "@/lib/sales/manual-japan-entry-batch-types"
+import { findManualWorkById } from "@/lib/sales/manual-japan-entry-store"
 import { processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
+import { processManualEditorialMessage } from "@/lib/sales/manual-work-editorial-service"
 import { processFastManualWorkUrl } from "@/lib/sales/manual-work-fast-service"
 import { scheduleManualWorkBatchDrain } from "@/lib/sales/manual-japan-entry-batch-schedule"
 
@@ -26,6 +29,7 @@ export const maxDuration = 900
 
 const paramsSchema = z.object({ batchId: z.string().uuid() })
 const bodySchema = z.object({ automated: z.boolean().default(false) }).strict()
+const FAST_CLAIM_SLICES = 4
 
 function completedStatus(status: string): Exclude<ManualWorkBatchItemStatus, "queued" | "processing"> {
   if (status === "completed" || status === "needs_review" || status === "rejected" || status === "duplicate") return status
@@ -37,7 +41,7 @@ async function notifyCompleted(batchId: string, total: number, failed: number): 
     const { notifyBothChannels } = await import("@/lib/notify")
     await notifyBothChannels("sales", {
       title: "高速リード判定バッチ完了",
-      message: `${total}件の一次判定を完了（失敗${failed}件）。上位候補だけ/workから詳細解析へ昇格できます。外部送信0件。`,
+      message: `${total}件の一次判定を完了（失敗${failed}件）。残す企業だけ/workからGPT-5.6高品質文面を作成できます。外部送信0件。`,
       link: "/work",
       type: "manual_japan_entry_batch_completed",
       region: "global",
@@ -45,6 +49,79 @@ async function notifyCompleted(batchId: string, total: number, failed: number): 
     await markManualWorkBatchNotified(batchId)
   } catch (error) {
     console.error("[api/work/batches/drain] completion notification failed:", error)
+  }
+}
+
+async function claimFastSlices(batchId: string, totalCount: number): Promise<ManualWorkBatchItemRow[]> {
+  const slices = totalCount > 3 ? FAST_CLAIM_SLICES : 1
+  const claimed = (await Promise.all(
+    Array.from({ length: slices }, () => claimManualWorkBatchItems(batchId)),
+  )).flat()
+  const byId = new Map(claimed.map((item) => [item.id, item]))
+  return [...byId.values()]
+}
+
+async function processClaimedItem(input: {
+  item: ManualWorkBatchItemRow
+  batchId: string
+  sourceSlug: string
+  sourcePageUrl: string | null
+  observedOn: string | null
+  variant: ManualWorkBatchSnapshot["batch"]["message_variant_requested"]
+  angle: ManualWorkBatchSnapshot["batch"]["message_angle_requested"]
+}) {
+  const { item } = input
+  if (!item.claim_token) throw new Error(`Batch item ${item.id} did not receive a claim token`)
+  try {
+    const sourceInput = {
+      sourceSlug: input.sourceSlug,
+      sourcePageUrl: input.sourcePageUrl,
+      observedOn: input.observedOn,
+    }
+    let result
+    if (item.retry_requested) {
+      if (!item.expected_work_id) throw new Error("A selected work record is required for message generation")
+      const existing = await findManualWorkById(item.expected_work_id)
+      const analysisMode = existing?.evidence.analysis_mode
+      result = analysisMode === "fast_qualification"
+        ? await processManualEditorialMessage({
+            rawUrl: item.canonical_url,
+            expectedWorkId: item.expected_work_id,
+          })
+        : await processManualJapanEntryUrl(
+            item.canonical_url,
+            input.variant,
+            input.angle,
+            sourceInput,
+            {
+              retryRequested: true,
+              expectedWorkId: item.expected_work_id,
+            },
+          )
+    } else {
+      result = await processFastManualWorkUrl(
+        item.canonical_url,
+        input.variant,
+        input.angle,
+        sourceInput,
+      )
+    }
+    await completeManualWorkBatchItem({
+      itemId: item.id,
+      claimToken: item.claim_token,
+      status: result.artifactsPreserved ? "failed" : completedStatus(result.item.status),
+      workId: result.item.id,
+      errorMessage: result.item.error_message,
+    })
+  } catch (error) {
+    console.error("[api/work/batches/drain] item failed:", { batchId: input.batchId, itemId: item.id, error })
+    await completeManualWorkBatchItem({
+      itemId: item.id,
+      claimToken: item.claim_token,
+      status: "failed",
+      workId: null,
+      errorMessage: error instanceof Error ? error.message.slice(0, 2_000) : "解析に失敗しました",
+    })
   }
 }
 
@@ -86,51 +163,17 @@ export async function POST(req: NextRequest, context: { params: Promise<{ batchI
     let claimedCount = 0
     let refreshed: ManualWorkBatchSnapshot
     try {
-      const claimed = await claimManualWorkBatchItems(runningBatch.batch.id)
+      const claimed = await claimFastSlices(runningBatch.batch.id, runningBatch.batch.total_count)
       claimedCount = claimed.length
-      await Promise.all(claimed.map(async (item) => {
-        if (!item.claim_token) throw new Error(`Batch item ${item.id} did not receive a claim token`)
-        try {
-          const sourceInput = {
-            sourceSlug: runningBatch.batch.source_slug,
-            sourcePageUrl: runningBatch.batch.source_page_url,
-            observedOn: runningBatch.batch.observed_on,
-          }
-          const result = item.retry_requested
-            ? await processManualJapanEntryUrl(
-                item.canonical_url,
-                runningBatch.batch.message_variant_requested,
-                runningBatch.batch.message_angle_requested,
-                sourceInput,
-                {
-                  retryRequested: true,
-                  expectedWorkId: item.expected_work_id,
-                },
-              )
-            : await processFastManualWorkUrl(
-                item.canonical_url,
-                runningBatch.batch.message_variant_requested,
-                runningBatch.batch.message_angle_requested,
-                sourceInput,
-              )
-          await completeManualWorkBatchItem({
-            itemId: item.id,
-            claimToken: item.claim_token,
-            status: result.artifactsPreserved ? "failed" : completedStatus(result.item.status),
-            workId: result.item.id,
-            errorMessage: result.item.error_message,
-          })
-        } catch (error) {
-          console.error("[api/work/batches/drain] item failed:", { batchId: runningBatch.batch.id, itemId: item.id, error })
-          await completeManualWorkBatchItem({
-            itemId: item.id,
-            claimToken: item.claim_token,
-            status: "failed",
-            workId: null,
-            errorMessage: error instanceof Error ? error.message.slice(0, 2_000) : "解析に失敗しました",
-          })
-        }
-      }))
+      await Promise.all(claimed.map((item) => processClaimedItem({
+        item,
+        batchId: runningBatch.batch.id,
+        sourceSlug: runningBatch.batch.source_slug,
+        sourcePageUrl: runningBatch.batch.source_page_url,
+        observedOn: runningBatch.batch.observed_on,
+        variant: runningBatch.batch.message_variant_requested,
+        angle: runningBatch.batch.message_angle_requested,
+      })))
       refreshed = await refreshManualWorkBatch(runningBatch.batch.id)
       await releaseManualWorkBatchDrain(runningBatch.batch.id, drainClaimToken)
       released = true
