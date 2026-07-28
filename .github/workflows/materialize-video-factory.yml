@@ -6,6 +6,7 @@ on:
     branches:
       - main
     paths:
+      - bootstrap/video-factory.parts/**
       - bootstrap/video-factory.tar.gz.b64
       - .github/workflows/materialize-video-factory.yml
 
@@ -32,7 +33,10 @@ jobs:
         run: |
           set -euo pipefail
           {
-            base64 --decode bootstrap/video-factory.tar.gz.b64 > /tmp/video-factory.tar.gz
+            test "$(find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 9
+            cat bootstrap/video-factory.parts/part-* > /tmp/video-factory.tar.gz.b64
+            echo "5495679899220067d29ff512523565d6c98fea8f23cd5e8ae4f617c10b150ded  /tmp/video-factory.tar.gz.b64" | sha256sum --check --strict
+            base64 --decode /tmp/video-factory.tar.gz.b64 > /tmp/video-factory.tar.gz
             echo "c7d20da49cfacb462a36dc4ebfefa9fc1e11064e076625cd20217a475a5bcd97  /tmp/video-factory.tar.gz" | sha256sum --check --strict
             python - <<'PY'
           import tarfile
@@ -84,7 +88,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cp -R services/video-factory/workspace /tmp/video-factory-workspace 2>/dev/null || true
           rm -f bootstrap/video-factory.tar.gz.b64
+          rm -rf bootstrap/video-factory.parts
           rmdir bootstrap 2>/dev/null || true
           rm -f .github/workflows/materialize-video-factory.yml
           rm -rf services/video-factory/workspace
@@ -122,7 +128,7 @@ jobs:
         with:
           name: materialized-video-factory-validation
           path: |
-            services/video-factory/workspace
+            /tmp/video-factory-workspace
             /tmp/materialize-extract.log
             /tmp/materialize-validation.log
             /tmp/materialize-failure-tail.log
