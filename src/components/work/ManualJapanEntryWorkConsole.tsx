@@ -71,10 +71,6 @@ export function ManualJapanEntryWorkConsole({
   const [summary, setSummary] = useState(initialSummary)
   const historyCriteria = useRef<{ filter: ManualWorkHistoryFilter; query: string }>({ filter: "all", query: "" })
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
-  const deepSeekBalanceBlocked = items.some((item) => item.status === "failed" && (
-    item.error_message?.includes("DeepSeek APIの残高不足")
-    || item.error_message?.includes("Insufficient Balance")
-  ))
   const sourceBySlug = useMemo(() => new Map(sources.map((source) => [source.slug, source])), [sources])
   const selectedSource = sourceBySlug.get(sourceSlug)
 
@@ -246,7 +242,7 @@ export function ManualJapanEntryWorkConsole({
         <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-emerald-400 text-slate-950">P</span><span>Paradigm Revenue Operations</span></div>
-            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${workflowRunning ? "text-blue-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Fast qualification running" : "Fast qualification ready"}</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${workflowRunning ? "text-blue-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Qualification / editorial running" : "System ready"}</span></div>
           </div>
         </div>
       </div>
@@ -254,19 +250,17 @@ export function ManualJapanEntryWorkConsole({
       <div className="mx-auto w-full min-w-0 max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Fast-first Opportunity Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">Zero-send architecture</span></div>
-            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">大量URLを先に速く絞り、上位候補だけ深掘り</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">新規URLはホームページだけで高速一次判定します。フォーム探索、DeepSeekによる企業別文面、詳細レポート、Twenty同期は、営業価値がある候補へ人が昇格した後だけ実行します。</p>
+            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Evidence-first Outreach Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">No template fallback</span></div>
+            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">大量URLは速く選別し、残す企業だけ高品質に書く</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">一次判定はホームページの公開事実だけで高速処理します。送信文は選択した企業について複数ページを読み、GPT-5.6 Terraで複数案を作り、GPT-5.6 Solで編集・採否判定します。DeepSeekと固定テンプレートは送信文に使用しません。</p>
           </div>
           <nav aria-label="ワークベンチ内ナビゲーション" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
             <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">高速判定</a>
-            <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">詳細生成条件</a>
+            <a href="#strategy" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">旧生成条件</a>
             <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">候補履歴</a>
             <Button type="button" variant="ghost" size="sm" aria-label="Twenty成果物の整合性を監査" disabled={reconcilingArtifacts} onClick={() => void reconcileArtifacts()} className="h-auto rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">{reconcilingArtifacts ? "監査中…" : "Twenty整合性"}</Button>
           </nav>
         </motion.header>
-
-        {deepSeekBalanceBlocked && <div role="alert" className="mt-7 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950"><p className="font-semibold">DeepSeek残高がなくても高速一次判定は継続できます</p><p>影響するのは、選択した候補を企業別文面・詳細レポート・Twenty同期まで昇格する処理だけです。残高補充後に「詳細解析へ昇格」を実行してください。</p></div>}
 
         <div className="mt-7"><ManualWorkOverview summary={summary} /></div>
 
@@ -298,9 +292,9 @@ export function ManualJapanEntryWorkConsole({
         </div>
 
         <section aria-label="生成ガードレール" className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3 sm:p-5">
-          <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" /><div><p className="text-xs font-semibold text-slate-800">一次判定は非生成</p><p className="mt-1 text-xs leading-5 text-slate-600">ホームページの公開事実だけで採点し、送信文を作りません。</p></div></div>
-          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">重い処理は昇格後だけ</p><p className="mt-1 text-xs leading-5 text-slate-600">フォーム・文面・レポート・Twentyを低優先候補へ浪費しません。</p></div></div>
-          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">詳細品質は維持</p><p className="mt-1 text-xs leading-5 text-slate-600">昇格後は既存の根拠・個別性・類似度・安全性ゲートを通します。</p></div></div>
+          <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" /><div><p className="text-xs font-semibold text-slate-800">一次判定は非生成</p><p className="mt-1 text-xs leading-5 text-slate-600">ホームページの公開事実だけで選別し、薄い送信文を量産しません。</p></div></div>
+          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">残す企業は複数ページ調査</p><p className="mt-1 text-xs leading-5 text-slate-600">商品、料金、会社、ニュース、連絡先から会社固有の論点を組み立てます。</p></div></div>
+          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">GPT-5.6二段編集</p><p className="mt-1 text-xs leading-5 text-slate-600">Terraの複数案をSolが再編集し、88点未満・テンプレ類似・根拠不足は不採用にします。</p></div></div>
         </section>
 
         <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} total={historyTotal} hasMore={historyHasMore} loading={historyLoading} sources={sources} historyError={historyError} running={workflowRunning} updatingOutcome={updatingOutcome} onCriteriaChange={changeHistoryCriteria} onLoadMore={loadMoreHistory} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
