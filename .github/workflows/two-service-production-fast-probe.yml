@@ -92,7 +92,19 @@ jobs:
                 signal: AbortSignal.timeout(25_000),
               })
               const body = await response.text()
-              const missing = spec.expected.filter((value) => !body.includes(value))
+              // The live page may wrap emphasis words in spans. Compare readable
+              // content rather than raw HTML so the probe validates the UI copy,
+              // not the renderer's tag boundaries.
+              const compactBody = body
+                .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+                .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/&nbsp;|&#160;|&#xa0;/gi, ' ')
+                .replace(/&amp;/gi, '&')
+                .replace(/&quot;|&#34;/gi, '"')
+                .replace(/&apos;|&#39;/gi, "'")
+                .replace(/\s+/g, '')
+              const missing = spec.expected.filter((value) => !compactBody.includes(value.replace(/\s+/g, '')))
               return {
                 path: spec.path,
                 finalUrl: response.url,
