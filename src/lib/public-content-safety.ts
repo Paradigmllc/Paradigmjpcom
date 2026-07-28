@@ -57,7 +57,7 @@ export function isSafeEnglishJapanEntryHomepage(
 
   const price = "price" in tier ? tier.price : null
   const features = "features" in tier ? tier.features : null
-  if (price !== "$13,000" || typeof features !== "string") return false
+  if (price !== "$15,000" || typeof features !== "string") return false
 
   const copy = JSON.stringify(blocks)
   const normalizedCopy = copy.toLowerCase()
@@ -69,7 +69,7 @@ export function isSafeEnglishJapanEntryHomepage(
     "Your Japan Country Partner",
     "Japan Market Setup",
     "Limited founding-partner capacity",
-    "Apply for a Japan Partnership — $13K",
+    "Apply for a Japan Partnership — $15K",
     "See the partnership model",
     "/en/contact?intent=japan-entry",
   ] as const

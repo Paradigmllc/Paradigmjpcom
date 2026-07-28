@@ -61,7 +61,7 @@ function buildEnglishCompanyInfo(
   rows.push(
     ["Email", settings.contact.email ?? "info@paradigmjp.com"],
     ["Website", "https://paradigmjp.com"],
-    ["Public offer", "$13,000 Japan Entry setup · selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included"],
+    ["Public offer", "$15,000 Japan Entry setup · selected launch partners receive $2,000/month × 6 months = $12,000 of managed-operation value included"],
   )
   return rows
 }

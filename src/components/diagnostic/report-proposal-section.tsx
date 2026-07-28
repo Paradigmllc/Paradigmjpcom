@@ -71,7 +71,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
           <p className="mt-3 text-sm text-zinc-500 max-w-2xl mx-auto">
             {lang === "ja"
               ? `診断結果をもとに対象範囲・受入条件・追加費用の有無を着手前の書面で確定します。`
-              : `One $13,000 setup scope, with dependencies, acceptance checks, exclusions, and third-party costs confirmed in writing before payment.`}
+              : `One $15,000 setup scope, with dependencies, acceptance checks, exclusions, and third-party costs confirmed in writing before payment.`}
           </p>
         </motion.div>
 
@@ -149,7 +149,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
               <div className="space-y-3">
                 {[
                   { step: "1", label: lang === "ja" ? "診断レポート確認" : "Confirm decision authority and fit", time: lang === "ja" ? "今すぐ" : "Fit review" },
-                  { step: "2", label: lang === "ja" ? "15分の要件確認" : "Sign, pay $13,000, and provide launch inputs", time: lang === "ja" ? "翌日以降" : "Before kickoff" },
+                  { step: "2", label: lang === "ja" ? "15分の要件確認" : "Sign, pay $15,000, and provide launch inputs", time: lang === "ja" ? "翌日以降" : "Before kickoff" },
                   { step: "3", label: lang === "ja" ? "合意範囲の実装・検証" : "Implement and verify the fixed scope", time: lang === "ja" ? "書面で確定" : "14-business-day guarantee" },
                   { step: "4", label: lang === "ja" ? "公開・効果測定開始" : "Launch, operate, and hand over", time: lang === "ja" ? "検証後" : "6 managed months" },
                 ].map((item, i) => (

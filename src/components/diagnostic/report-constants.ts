@@ -19,7 +19,7 @@ export const SOLUTION_COSTS: Record<string, number> = {
   website_diagnostic: 450000,
   meo: 450000,
   subsidy: 450000,
-  japan_entry: 13000,
+  japan_entry: 15000,
   video_subscription: 250000,
   outreach: 650000,
   security: 350000,

@@ -228,7 +228,7 @@ export function buildContactSlackText(input: {
       : null,
     payload.decisionAuthority ? `*決裁権:* ${payload.decisionAuthority}` : null,
     payload.approvalTimeline
-      ? `*$13K承認時期:* ${payload.approvalTimeline}`
+      ? `*$15K承認時期:* ${payload.approvalTimeline}`
       : null,
     payload.desiredLaunch ? `*開始希望:* ${payload.desiredLaunch}` : null,
     payload.paymentMethod ? `*支払方法:* ${payload.paymentMethod}` : null,

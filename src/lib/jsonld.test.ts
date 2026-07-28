@@ -52,7 +52,7 @@ describe("getServicesJsonLd", () => {
     expect(s.itemListElement[0].name).toBe("Your Japan Country Partner | Paradigm")
     expect(s.itemListElement[0].offers).toMatchObject({
       priceCurrency: "USD",
-      price: "13000",
+      price: "15000",
     })
   })
 })
@@ -81,10 +81,10 @@ describe("Japan Entry structured data", () => {
       offers: {
         "@type": "Offer",
         name: "Japan Market Setup",
-        price: "13000",
+        price: "15000",
         priceCurrency: "USD",
         priceSpecification: [
-          expect.objectContaining({ price: "13000", priceCurrency: "USD" }),
+          expect.objectContaining({ price: "15000", priceCurrency: "USD" }),
         ],
       },
     })
@@ -95,7 +95,7 @@ describe("Japan Entry structured data", () => {
     const faqText = JSON.stringify(faqPage)
     expect(faqText).toContain("Wise")
     expect(faqText).toContain("14 business days")
-    expect(faqText).toContain("100% of the USD 13,000 setup fee is refunded")
+    expect(faqText).toContain("100% of the USD 15,000 setup fee is refunded")
   })
 
   it("publishes an intent-specific application page", () => {

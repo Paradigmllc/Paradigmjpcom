@@ -66,7 +66,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     subtitle:
       "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. The initial paid engagement is Japan Market Setup.",
     primaryCta: {
-      label: "Apply for a Japan Partnership — $13K",
+      label: "Apply for a Japan Partnership — $15K",
       href: "/en/contact?intent=japan-entry",
     },
     secondaryCta: { label: "See the partnership model", href: "#launch-partner-value" },
@@ -75,7 +75,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
       alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
     },
     stats: [
-      { value: "$13K", label: "Japan Market Setup" },
+      { value: "$15K", label: "Japan Market Setup" },
       { value: "$12K value", label: "$2,000/month × 6 months included for selected launch partners" },
       { value: "14", label: "business-day delivery guarantee" },
       JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_STAT,
@@ -98,13 +98,13 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     tiers: [
       {
         name: "Japan Market Setup",
-        price: "$13,000",
+        price: "$15,000",
         period: "initial engagement",
         description:
         "A fixed-scope market setup followed by an outsourced Japan operating layer. For selected launch partners, $2,000/month × 6 months = $12,000 of managed-operation value is included at no additional monthly fee.",
         features:
         "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSocial Media setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\nStandard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
-        ctaLabel: "Apply for a Japan Partnership — $13K",
+        ctaLabel: "Apply for a Japan Partnership — $15K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,
       },
@@ -125,7 +125,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     subtitle:
       `${JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY_DISCLOSURE} Apply with your decision authority and launch timing. We reply with a fit decision and fixed Japan Market Setup scope.`,
     primaryCta: {
-      label: "Apply for a Japan Partnership — $13K",
+      label: "Apply for a Japan Partnership — $15K",
       href: "/en/contact?intent=japan-entry",
     },
     secondaryCta: { label: "See the partnership model", href: "#launch-partner-value" },
@@ -313,7 +313,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: "/en/opengraph-image",
           width: 1200,
           height: 630,
-          alt: "Your Japan Country Partner — $13,000 Japan Market Setup",
+          alt: "Your Japan Country Partner — $15,000 Japan Market Setup",
         },
       ],
     },

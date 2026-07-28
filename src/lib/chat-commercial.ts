@@ -8,10 +8,10 @@ const STALE_ENGLISH_ANSWER =
 
 const ALLOWED_DOLLAR_VALUES = new Set([
   "$0",
-  "$13K",
-  "$13k",
-  "$13,000",
-  "$13000",
+  "$15K",
+  "$15K",
+  "$15,000",
+  "$15000",
   "$12K",
   "$12k",
   "$12,000",
@@ -68,7 +68,7 @@ function getFallbackAnswerJa(question: string): string {
     question.includes("期間") ||
     question.includes("どのくらい")
   ) {
-    return "開始日は、書面での範囲確定、入金確認、必要素材・アクセス、承認者の受領後に記録します。開始日から14営業日以内に合意したセットアップを納品できない場合、13,000ドルを全額返金します。顧客側の追加変更や保留は契約上記録して時計を一時停止します。"
+    return "開始日は、書面での範囲確定、入金確認、必要素材・アクセス、承認者の受領後に記録します。開始日から14営業日以内に合意したセットアップを納品できない場合、15,000ドルを全額返金します。顧客側の追加変更や保留は契約上記録して時計を一時停止します。"
   }
   if (
     question.includes("wise") ||
@@ -80,7 +80,7 @@ function getFallbackAnswerJa(question: string): string {
     return "適合確認後の支払方法はWise、銀行振込、USDC、クレジットカード（Stripe請求書または決済リンク）です。請求書で受取人、手数料、USDCのネットワークとウォレットを確認し、公開フォームには送金情報を入力しません。"
   }
   if (question.includes("返金") || question.includes("保証")) {
-    return "納品保証は売上成果ではなく、合意した固定セットアップが対象です。記録した開始日から14営業日以内に納品できない場合、13,000ドルを全額返金します。顧客側の追加変更や保留は書面で記録して時計を一時停止します。"
+    return "納品保証は売上成果ではなく、合意した固定セットアップが対象です。記録した開始日から14営業日以内に納品できない場合、15,000ドルを全額返金します。顧客側の追加変更や保留は書面で記録して時計を一時停止します。"
   }
   return "ご質問ありがとうございます。公開情報にない実績・価格・保証は推測せず、契約前に書面で確認します。お問い合わせ: https://paradigmjp.com/ja/contact ／ info@paradigmjp.com"
 }
@@ -93,7 +93,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("how much") ||
     question.includes("pricing")
   ) {
-    return "Japan Entry is a fixed $13,000 setup, paid before kickoff. For selected launch partners, the standard $2,000/month managed-operation layer is included for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
+    return "Japan Entry is a fixed $15,000 setup, paid before kickoff. For selected launch partners, the standard $2,000/month managed-operation layer is included for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. Apply: https://paradigmjp.com/en/contact?intent=japan-entry"
   }
   if (
     question.includes("process") ||
@@ -101,7 +101,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("how does") ||
     question.includes("workflow")
   ) {
-    return "We confirm fit and fixed scope, sign and collect the $13,000 setup, receive access/assets, localize the revenue path, connect the Japan operation, verify the buyer journey, and launch. One English-speaking owner stays accountable."
+    return "We confirm fit and fixed scope, sign and collect the $15,000 setup, receive access/assets, localize the revenue path, connect the Japan operation, verify the buyer journey, and launch. One English-speaking owner stays accountable."
   }
   if (
     question.includes("timeline") ||
@@ -109,7 +109,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("delivery time") ||
     question.includes("weeks")
   ) {
-    return "The Start Date is recorded after agreement, payment is cleared, required access and complete assets are available, and an empowered approver is assigned. If the agreed setup is not delivered within 14 business days from that Start Date, 100% of the $13,000 setup fee is refunded. Client-requested changes or holds pause the clock under the written terms."
+    return "The Start Date is recorded after agreement, payment is cleared, required access and complete assets are available, and an empowered approver is assigned. If the agreed setup is not delivered within 14 business days from that Start Date, 100% of the $15,000 setup fee is refunded. Client-requested changes or holds pause the clock under the written terms."
   }
   if (
     question.includes("wise") ||
@@ -121,7 +121,7 @@ function getFallbackAnswerEn(question: string): string {
     return "Payment methods after fit review: Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. The invoice confirms recipient, fees, and—if using USDC—the network and wallet. Do not send funds from public-form fields."
   }
   if (question.includes("refund") || question.includes("guarantee")) {
-    return "The delivery guarantee covers the agreed fixed setup, not sales or revenue. If Paradigm misses 14 business days from the recorded Start Date, 100% of the $13,000 setup fee is refunded. Client-requested changes or holds pause the clock under the written scope."
+    return "The delivery guarantee covers the agreed fixed setup, not sales or revenue. If Paradigm misses 14 business days from the recorded Start Date, 100% of the $15,000 setup fee is refunded. Client-requested changes or holds pause the clock under the written scope."
   }
   if (
     question.includes("include") ||
@@ -173,7 +173,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("book") ||
     question.includes("talk")
   ) {
-    return "Apply for Japan Entry at https://paradigmjp.com/en/contact?intent=japan-entry. The form confirms decision authority, $13,000 approval timing, and launch timing. Email: info@paradigmjp.com"
+    return "Apply for Japan Entry at https://paradigmjp.com/en/contact?intent=japan-entry. The form confirms decision authority, $15,000 approval timing, and launch timing. Email: info@paradigmjp.com"
   }
   if (
     question.includes("company") ||
@@ -183,5 +183,5 @@ function getFallbackAnswerEn(question: string): string {
   ) {
     return "Paradigm LLC is a Tokyo-based Japan market-entry operator for overseas SMBs. We publish only verified company and commercial information; see https://paradigmjp.com/en/about and /en/legal."
   }
-  return "Japan Entry is a fixed $13,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. For selected launch partners, the standard $2,000/month managed-operation layer is included for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
+  return "Japan Entry is a fixed $15,000 setup for fast-decision overseas SMBs: Wise, bank transfer, USDC, or credit card payment after fit review. For selected launch partners, the standard $2,000/month managed-operation layer is included for six months at no additional monthly fee: $2,000/month × 6 months = $12,000 of value. Month 7 onward is $2,000/month under the signed terms. If the agreed setup is not delivered within 14 business days from the recorded Start Date, the full setup fee is refunded under the written terms. Ask about scope, timing, or eligibility at https://paradigmjp.com/en/contact?intent=japan-entry"
 }

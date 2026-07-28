@@ -108,7 +108,7 @@ export function bespokeRewriteMessages(input: {
         country_tone: input.copyPlan.countryTone,
         include_estimate: input.includeEstimate,
         fixed_price_term: input.includePrice
-          ? "$13,000 fixed launch fee; $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners"
+          ? "$15,000 fixed launch fee; $2,000/month × 6 months = $12,000 of managed-operation value included for selected launch partners"
           : null,
         routing_mode: input.founderForwardCta ? "founder_or_international_growth_owner" : "permission_to_send",
         issues_to_fix: input.issues,

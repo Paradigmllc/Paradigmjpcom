@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: "Japan Market Partner | Outsourced Japan Execution Team",
     description:
-      "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with a fixed $13,000 Japan Market Setup.",
+      "Paradigm becomes your outsourced Japan team for localization, sales channels, Japanese customer support, local operations, and market execution. Start with a fixed $15,000 Japan Market Setup.",
     alternates: pageAlternates("en", "/japan-market-partner"),
     openGraph: {
       type: "website",
@@ -99,7 +99,7 @@ export default async function JapanMarketPartnerPage({ params }: Props) {
         desc="Paradigm takes responsibility for the agreed Japan execution layer: localization, sales channels, Japanese customer support, local operations, launch assets, and market delivery. The initial paid engagement is Japan Market Setup."
         asideText="Built for overseas e-commerce, SaaS, Web3, and online businesses that can make decisions quickly and provide launch inputs without a long procurement cycle."
         asideCta={{
-          label: "Apply for a Japan Partnership — $13K",
+          label: "Apply for a Japan Partnership — $15K",
           href: "/contact?intent=japan-entry",
         }}
       />
@@ -141,7 +141,7 @@ export default async function JapanMarketPartnerPage({ params }: Props) {
               <CircleDollarSign size={25} aria-hidden className="text-paradigm-glow" />
             </div>
             <h2 id="setup-heading" className="mt-8 font-display text-[30px] leading-[1.08] md:text-[42px]">Japan Market Setup</h2>
-            <p className="mt-5 font-display text-[42px] leading-none text-paradigm-glow md:text-[58px]">$13,000</p>
+            <p className="mt-5 font-display text-[42px] leading-none text-paradigm-glow md:text-[58px]">$15,000</p>
             <p className="mt-4 text-[13px] leading-[1.8] text-paradigm-paper/72">
               One-time fixed setup. Final inclusions, exclusions, dependencies, required inputs, payment rail, acceptance criteria, and the recorded Start Date are confirmed in writing before kickoff.
             </p>
@@ -189,10 +189,10 @@ export default async function JapanMarketPartnerPage({ params }: Props) {
         title="Apply when your company can decide and launch."
         highlight="decide and launch"
         desc="Share your company, offer, decision authority, target timing, current Japan context, and known dependencies. We will confirm whether the fixed Japan Market Setup is a fit before any contract or payment instruction is issued."
-        buttonLabel="Apply for a Japan Partnership — $13K"
+        buttonLabel="Apply for a Japan Partnership — $15K"
         buttonHref="/contact?intent=japan-entry"
         bullets={[
-          "$13,000 fixed initial setup",
+          "$15,000 fixed initial setup",
           "14-business-day delivery guarantee from the recorded Start Date",
           "Application submission does not itself create a contract",
         ]}

@@ -39,7 +39,7 @@ describe("Japanese public content safety", () => {
         subtitle:
           "The initial paid engagement is Japan Market Setup. Paradigm becomes your outsourced Japan team.",
         primaryCta: {
-          label: "Apply for a Japan Partnership — $13K",
+          label: "Apply for a Japan Partnership — $15K",
           href: "/en/contact?intent=japan-entry",
         },
         secondaryCta: {
@@ -51,7 +51,7 @@ describe("Japanese public content safety", () => {
         blockType: "pricing",
         tiers: [
           {
-            price: "$13,000",
+            price: "$15,000",
             features:
               "Standard managed operation: $2,000/month\nSelected launch partners: $2,000/month × 6 months = $12,000 value included\nMonth 7 onward: $2,000/month under the signed terms; availability and scope are confirmed in writing",
           },

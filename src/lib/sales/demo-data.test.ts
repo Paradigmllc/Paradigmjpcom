@@ -11,7 +11,7 @@ describe("Japan Entry report demo", () => {
     expect(demo.demo_url).toBeNull()
     expect(demo.video_url).toBeNull()
     expect(demo.content_template.offer_code).toBe("global_jaas")
-    expect(copy).toContain("$13,000")
+    expect(copy).toContain("$15,000")
     expect(copy).toContain("continuation pricing is agreed separately")
     expect(copy).toContain("14 business days")
     expect(copy).toContain("not guaranteed")

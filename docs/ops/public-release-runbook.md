@@ -10,7 +10,7 @@ not a successful release.
 
 The production offer and public promise are fixed:
 
-- `USD 13,000` one-time setup.
+- `USD 15,000` one-time setup.
 - Standard monthly service is included for the first six months; month seven is
   continuation pricing is agreed separately after the included period in the signed scope.
 - Payment is collected only from the invoice or payment instruction issued
@@ -21,7 +21,7 @@ The production offer and public promise are fixed:
 - The Start Date is the timestamp recorded after written scope acceptance,
   cleared payment, complete source materials, required access, and one
   empowered approver are present. The agreed fixed setup must be delivered
-  within 14 business days of that date. If it is not, 100% of the USD 13,000
+  within 14 business days of that date. If it is not, 100% of the USD 15,000
   setup fee is refunded. Client-requested scope changes or holds are logged and
   pause the clock. This is a delivery guarantee, not a promise of sales,
   rankings, traffic, conversion, or revenue.
@@ -57,7 +57,7 @@ and engagement record:
    dependency/hold log, and any approved scope changes.
 4. Delivery URL or artifact list, acceptance timestamp, and handover record.
 5. If the guarantee is triggered, the refund decision, amount (100% of
-   USD 13,000), approval, provider receipt, and customer notification.
+   USD 15,000), approval, provider receipt, and customer notification.
 
 The public form records only the preferred rail. It must never collect card
 numbers, bank credentials, wallet addresses, or seed phrases. Credit-card
@@ -109,7 +109,7 @@ names consistently in the engagement record:
 1. **Master service terms (MSA)** for recurring legal, confidentiality,
    security, ownership, reusable tooling, liability, suspension, termination,
    and governing-law provisions.
-2. **Setup SOW (Statement of Work)** for the fixed USD 13,000 setup: pages,
+2. **Setup SOW (Statement of Work)** for the fixed USD 15,000 setup: pages,
    source-word envelope, channels, assets, responsibilities, dependencies,
    acceptance criteria, exclusions, payment conditions, and change control.
 3. **Order Form + service schedule/SLA** for the selected operating period,
@@ -319,7 +319,7 @@ Keystatic/Payload, verify all of the following before publishing:
 1. English and Japanese titles, descriptions, and CTA labels are present.
 2. Every public article has non-empty body content, a locale, and a canonical
    route; no placeholder or internal diagnostic metadata is exposed.
-3. `/en/services`, `/en/pricing`, and `/en/contact` agree on `$13,000`, six
+3. `/en/services`, `/en/pricing`, and `/en/contact` agree on `$15,000`, six
    included months for selected launch partners, and separately agreed continuation terms after the included period.
 4. `/en/pricing`, `/en/contact`, `/en/faq`, and `/en/legal` list Wise, bank
    transfer, USDC, and credit card via Stripe invoice/payment link, and use the

@@ -65,7 +65,7 @@ export function ReportHeader({
                 <a href={calHref} {...(calHref.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})} onClick={() => setActionOpen(false)}
                   data-umami-event="diagnostic-report-apply" data-umami-event-source="header"
                   className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
-                  📅 {lang === "ja" ? "相談を予約" : "Apply — $13K fixed"}
+                  📅 {lang === "ja" ? "相談を予約" : "Apply — $15K fixed"}
                 </a>
                 <a href="https://chatwoot.paradigmjp.com" target="_blank" rel="noopener noreferrer" onClick={() => setActionOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>

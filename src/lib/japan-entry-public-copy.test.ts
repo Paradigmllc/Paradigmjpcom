@@ -33,14 +33,14 @@ describe("public English Japan Entry copy", () => {
 
   it("keeps the fixed commercial terms consistent", () => {
     expect(messages.pricingPage.fixedPlanName).toBe("Japan Entry Package")
-    expect(messages.pricingPage.heroDesc).toContain("$13,000")
+    expect(messages.pricingPage.heroDesc).toContain("$15,000")
     expect(messages.pricingPage.heroDesc).toContain("$2,000/month")
     expect(messages.pricingPage.heroDesc).toContain("$2,000/month × 6 months = $12,000")
     expect(messages.packagePage.campaign.steps[1].price).toBe("$0/mo")
     expect(messages.packagePage.campaign.steps[2].price).toBe("$2,000/mo")
     expect(JSON.stringify(messages)).not.toMatch(/first 10 selected|first-10 launch-partner/i)
-    expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for a Japan Partnership — $13K")
-    expect(messages.cta.primary).toBe("Apply for a Japan Partnership — $13K")
+    expect(messages.homeEn.hero.ctaPrimary).toBe("Apply for a Japan Partnership — $15K")
+    expect(messages.cta.primary).toBe("Apply for a Japan Partnership — $15K")
     expect(messages.lpWeb.plans.map((plan) => plan.name)).toEqual([
       "Japan Entry setup",
       "Months 1–6",
@@ -169,10 +169,10 @@ describe("public English Japan Entry copy", () => {
       "Japan Market Setup",
       "outsourced Japan team",
       "localization, sales channels, Japanese customer support, local operations, and market execution",
-      "Apply for a Japan Partnership — $13K",
+      "Apply for a Japan Partnership — $15K",
       "See the partnership model",
       "Limited founding-partner capacity",
-      "$13,000",
+      "$15,000",
       "$2,000/month",
       "$2,000/month × 6 months = $12,000",
       "standard managed operation from month 7 onward",
@@ -199,7 +199,7 @@ describe("public English Japan Entry copy", () => {
       JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY,
     )
     expect(JAPAN_ENTRY_CTA_EN).toBe(
-      "Apply for a Japan Partnership — $13K",
+      "Apply for a Japan Partnership — $15K",
     )
 
     const sources = [
@@ -241,7 +241,7 @@ describe("public English Japan Entry copy", () => {
     }
 
     for (const source of [homepage, seed, JSON.stringify(messages.homeEn)]) {
-      expect(source).toContain("Apply for a Japan Partnership — $13K")
+      expect(source).toContain("Apply for a Japan Partnership — $15K")
       expect(source).toContain("See the partnership model")
       expect(source).toContain("localization")
       expect(source).toContain("sales channels")
@@ -263,7 +263,7 @@ describe("public English Japan Entry copy", () => {
     const priceToken = /\$(?:\d{1,3}(?:,\d{3})+|\d+)(?:K)?/g
     const prices = new Set(strings.flatMap(({ value }) => value.match(priceToken) ?? []))
 
-    expect([...prices].sort()).toEqual(["$0", "$12,000", "$12K", "$13,000", "$13K", "$2,000"])
+    expect([...prices].sort()).toEqual(["$0", "$12,000", "$12K", "$15,000", "$15K", "$2,000"])
   })
 
   it("contains no accidental Japanese copy outside the locale-switch label", () => {
@@ -299,10 +299,10 @@ describe("public English Japan Entry copy", () => {
   it("publishes the supported payment rails and delivery refund condition", () => {
     const english = JSON.stringify(messages)
     const japanese = JSON.stringify(jaMessages)
-    for (const term of ["Wise", "USDC", "Stripe invoice", "14 business days", "100% of the USD 13,000 setup fee is refunded"]) {
+    for (const term of ["Wise", "USDC", "Stripe invoice", "14 business days", "100% of the USD 15,000 setup fee is refunded"]) {
       expect(english).toContain(term)
     }
-    for (const term of ["Wise", "USDC", "Stripe請求書", "14営業日", "13,000ドルを全額返金"]) {
+    for (const term of ["Wise", "USDC", "Stripe請求書", "14営業日", "15,000ドルを全額返金"]) {
       expect(japanese).toContain(term)
     }
   })
@@ -310,11 +310,11 @@ describe("public English Japan Entry copy", () => {
   it("ships separate locale-specific contract and refund documents", () => {
     expect(messages.termsPage.metaTitle).toBe("Terms of Service | Japan Entry Package")
     expect(messages.termsPage.sections.length).toBeGreaterThanOrEqual(8)
-    expect(JSON.stringify(messages.termsPage)).toContain("USD 13,000")
+    expect(JSON.stringify(messages.termsPage)).toContain("USD 15,000")
     expect(JSON.stringify(messages.refundPage)).toContain("14 business days")
     expect(jaMessages.termsPage.metaTitle).toBe("利用規約")
     expect(jaMessages.refundPage.metaTitle).toBe("返金・キャンセルポリシー")
     expect(JSON.stringify(jaMessages.termsPage)).not.toContain("Japan Entry")
-    expect(JSON.stringify(jaMessages.refundPage)).not.toContain("$13,000")
+    expect(JSON.stringify(jaMessages.refundPage)).not.toContain("$15,000")
   })
 })

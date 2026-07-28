@@ -48,7 +48,7 @@ describe("Japan Entry contact payload", () => {
 
     expect(payload).not.toBeNull()
     expect(payload && validateContactPayload(payload)).toBe(
-      "Confirm the $13,000 setup fee and 14-business-day delivery refund terms before applying.",
+      "Confirm the $15,000 setup fee and 14-business-day delivery refund terms before applying.",
     )
   })
 
@@ -72,7 +72,7 @@ describe("Japan Entry contact payload", () => {
 
     expect(payload).not.toBeNull()
     expect(payload && validateContactPayload(payload)).toBe(
-      "Select the $13,000 approval timeline.",
+      "Select the $15,000 approval timeline.",
     )
   })
 
