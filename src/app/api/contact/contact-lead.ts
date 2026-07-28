@@ -15,7 +15,10 @@ export interface ContactNotificationOutbox {
   title: string
   message: string
   link: string | null
-  type: "japan_entry_application" | "contact_inquiry"
+  type:
+    | "japan_entry_application"
+    | "video_service_application"
+    | "contact_inquiry"
   region: "jp" | "global"
   priority: number
   slack_text: string
@@ -178,24 +181,17 @@ export async function persistContactLead(
         p_lead: input.lead,
         p_notification: input.notification,
       }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(10_000),
     },
   )
   if (!response.ok) {
-    const failure = await responseFailure(response)
-    if (
-      response.status === 409 &&
-      /challenge_hash|contact_challenge_replayed/i.test(failure)
-    ) {
-      throw new ContactChallengeReplayError(failure)
-    }
-    throw new Error(`Atomic contact submission failed: ${failure}`)
+    throw new Error(
+      `Atomic contact lead persistence failed: ${await responseFailure(response)}`,
+    )
   }
-
   return parseSubmissionRepresentation(
-    (await response.json()) as unknown,
-    "Atomic contact submission",
+    await response.json(),
+    "Atomic contact lead persistence",
   )
 }
 
@@ -203,7 +199,7 @@ export async function completeContactNotification(
   input: {
     idempotencyKey: string
     claimToken: string
-    status: "complete" | "degraded"
+    status: Exclude<ContactNotificationStatus, "pending" | "processing">
     slackError?: string
   },
   config: ContactStorageConfig = requireContactStorageConfig(),
@@ -216,11 +212,10 @@ export async function completeContactNotification(
       body: JSON.stringify({
         p_idempotency_key: input.idempotencyKey,
         p_claim_token: input.claimToken,
-        p_status: input.status,
+        p_notification_status: input.status,
         p_slack_error: input.slackError ?? null,
       }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal.timeout(10_000),
     },
   )
   if (!response.ok) {
