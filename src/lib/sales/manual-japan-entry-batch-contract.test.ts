@@ -11,16 +11,27 @@ describe("manual work durable batch contract", () => {
   const migration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260720233215_manual_work_durable_batches.sql"), "utf8")
   const queueMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260721164000_manual_work_multi_batch_queue.sql"), "utf8")
   const scaleMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260721193000_manual_work_report_ownership_and_scale.sql"), "utf8")
-  const fastMigration = fs.readFileSync(path.join(process.cwd(), "supabase/migrations/20260729031500_manual_work_fast_first_drain.sql"), "utf8")
   const batchStore = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-japan-entry-batch-store.ts"), "utf8")
+  const fastService = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-fast-service.ts"), "utf8")
+  const fastEvidence = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-fast-evidence.ts"), "utf8")
 
-  it("supports 500 URLs and eight homepage-only qualifications per server slice", () => {
+  it("supports 500 URLs while keeping each server drain bounded", () => {
     expect(MANUAL_WORK_BATCH_MAX_URLS).toBe(500)
-    expect(MANUAL_WORK_BATCH_DRAIN_SIZE).toBe(8)
+    expect(MANUAL_WORK_BATCH_DRAIN_SIZE).toBe(3)
     expect(migration).toContain("total_count BETWEEN 1 AND 500")
     expect(migration).toContain("FOR UPDATE SKIP LOCKED")
-    expect(fastMigration).toContain("least(coalesce(p_limit, 8), 8)")
-    expect(fastMigration).toContain("full promotions remain one-item retry batches")
+    expect(migration).toContain("least(coalesce(p_limit, 3), 3)")
+  })
+
+  it("keeps new batches homepage-only and defers expensive artifacts", () => {
+    expect(fastEvidence).toContain("ParadigmFastQualification/1.0")
+    expect(fastEvidence).toContain("AbortSignal.timeout(8_000)")
+    expect(fastEvidence).toContain("auditJapanMarketReadinessFromHtml")
+    expect(fastEvidence).not.toContain("fetchPageWithCrawl4Ai")
+    expect(fastService).toContain('analysis_mode: "fast_qualification"')
+    expect(fastService).toContain('twenty_sync_status: "skipped"')
+    expect(fastService).toContain("form_url: null")
+    expect(fastService).toContain("initial_message: null")
   })
 
   it("is service-role-only, RLS protected, resumable, and permanently zero-send", () => {
