@@ -4,16 +4,19 @@ import type { JapanMarketAudit } from "./sources/japan-market-audit"
 
 const GENERIC_PRODUCT_LABEL = /^(?:home|shop|store|official site|online store|software|platform|service|services|product|products)$/i
 const MARKETING_SUFFIX = /\s*[|–—-]\s*(?:official site|online store|shop|home|welcome|pricing|features).*$/i
+const NAVIGATION_OR_CTA = /^(?:home|about|contact|pricing|features|products?|services?|shop|learn more|get started|start (?:a )?(?:free )?trial|book a demo|contact sales|buy now|shop now)$/i
 
 function cleanProductLabel(value: string, companyName: string): string | null {
   const cleaned = value
     .replace(/\s+/g, " ")
     .replace(MARKETING_SUFFIX, "")
+    .replace(/[.!?]+$/, "")
     .trim()
   if (
     cleaned.length < 3
-    || cleaned.length > 80
+    || cleaned.length > 120
     || GENERIC_PRODUCT_LABEL.test(cleaned)
+    || NAVIGATION_OR_CTA.test(cleaned)
     || /^https?:\/\//i.test(cleaned)
     || cleaned.includes("@")
     || cleaned.toLocaleLowerCase("en-US") === companyName.toLocaleLowerCase("en-US")
@@ -24,10 +27,15 @@ function cleanProductLabel(value: string, companyName: string): string | null {
 function selectProductLabel(input: {
   companyName: string
   productNames: string[]
+  productContext?: string | null
   businessModel: BusinessModel
 }): string {
   for (const name of input.productNames) {
     const cleaned = cleanProductLabel(name, input.companyName)
+    if (cleaned) return cleaned
+  }
+  for (const segment of input.productContext?.split(" | ") ?? []) {
+    const cleaned = cleanProductLabel(segment, input.companyName)
     if (cleaned) return cleaned
   }
   if (input.businessModel === "ecommerce") return "the online product range"
@@ -66,6 +74,7 @@ export interface ManualFirstTouchCopy {
 export function buildManualFirstTouchCopy(input: {
   companyName: string
   productNames?: string[]
+  productContext?: string | null
   businessModel: BusinessModel
   audit: JapanMarketAudit
   mode: "fast" | "full"
@@ -74,11 +83,12 @@ export function buildManualFirstTouchCopy(input: {
   const productLabel = selectProductLabel({
     companyName,
     productNames: input.productNames ?? [],
+    productContext: input.productContext,
     businessModel: input.businessModel,
   })
   const gap = gapLabel(input.businessModel, input.audit)
   const body = [
-    `I reviewed the public product pages for ${companyName}, including ${productLabel}.`,
+    `I reviewed ${companyName}'s public pages, including ${productLabel}.`,
     `I could not find ${gap} on the pages available today. That leaves Japan untested rather than disproven.`,
     `Paradigm can act as the local Japan team for localization, launch setup, and the first 90 days of market operations. Would it be useful if I sent a short Japan opportunity note covering positioning, the first channel to test, and a practical launch path?`,
   ]
