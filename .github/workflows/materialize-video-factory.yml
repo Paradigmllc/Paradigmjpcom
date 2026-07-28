@@ -3,7 +3,7 @@ name: Materialize Video Factory Source
 on:
   push:
     branches:
-      - agent/video-factory-foundation
+      - main
     paths:
       - bootstrap/video-factory.tar.gz.b64
       - .github/workflows/materialize-video-factory.yml
@@ -18,11 +18,11 @@ concurrency:
 jobs:
   materialize:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: agent/video-factory-foundation
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Verify and extract staged source
@@ -53,6 +53,27 @@ jobs:
           test -f services/video-factory/src/video_factory/pipeline.py
           test -f .github/workflows/video-factory-ci.yml
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate materialized factory
+        working-directory: services/video-factory
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install -e '.[dev,api,orchestrator]'
+          video-factory export-schemas
+          python -m compileall -q src tests
+          node --check tools/playwright-capture/capture.mjs
+          pytest --cov=video_factory --cov-report=term-missing
+          ruff check src tests
+          mypy src
+          video-factory run examples/briefs/saas-launch.yaml --dry-run --auto-approve
+
       - name: Replace staging artifacts with source tree
         shell: bash
         run: |
@@ -60,9 +81,19 @@ jobs:
           rm -f bootstrap/video-factory.tar.gz.b64
           rmdir bootstrap 2>/dev/null || true
           rm -f .github/workflows/materialize-video-factory.yml
+          rm -rf services/video-factory/workspace
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
           git diff --cached --check
           git commit -m "feat: add Paradigm video factory foundation"
-          git push origin HEAD:agent/video-factory-foundation
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: materialized-video-factory-validation
+          path: services/video-factory/workspace
+          if-no-files-found: warn
+          retention-days: 7
