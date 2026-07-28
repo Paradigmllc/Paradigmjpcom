@@ -30,6 +30,27 @@ function preservedRegenerationFailure(item: ManualJapanEntryWorkRow): boolean {
   )
 }
 
+function fastQualification(item: ManualJapanEntryWorkRow): {
+  score: number | null
+  priority: "promote" | "review" | "low"
+  reasons: string[]
+} | null {
+  if (item.evidence.analysis_mode !== "fast_qualification") return null
+  const value = item.evidence.fastQualification
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { score: null, priority: "review", reasons: [] }
+  }
+  const record = value as Record<string, unknown>
+  const priority = record.priority === "promote" || record.priority === "low" ? record.priority : "review"
+  return {
+    score: typeof record.score === "number" ? record.score : null,
+    priority,
+    reasons: Array.isArray(record.reasons)
+      ? record.reasons.filter((reason): reason is string => typeof reason === "string").slice(0, 8)
+      : [],
+  }
+}
+
 function formReason(item: ManualJapanEntryWorkRow): string | null {
   const form = manualFormDiscoveryPresentation({ formUrl: item.form_url, formDiscovery: item.form_discovery })
   if (form.state === "verified_form") return null
@@ -67,6 +88,29 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       tone: "red",
     }
   }
+
+  const fast = fastQualification(item)
+  if (fast && item.is_japanese_company !== true) {
+    const score = fast.score === null ? "採点要確認" : `${fast.score}/100`
+    const title = fast.priority === "promote"
+      ? `高速一次判定 ${score}・詳細解析推奨`
+      : fast.priority === "review"
+        ? `高速一次判定 ${score}・短い確認が必要`
+        : `高速一次判定 ${score}・優先度低`
+    return {
+      title,
+      detail: "ホームページだけで高速一次判定しました。時間を使うフォーム探索・文面生成・戦略レポート・Twenty同期はまだ実行していません。",
+      reasons: fast.reasons.length > 0
+        ? fast.reasons
+        : reasonsOrFallback(item, "高速一次判定の根拠を履歴から確認してください。"),
+      nextAction: fast.priority === "low"
+        ? "商品・成長性・支払能力に追加の強い根拠がある場合だけ「詳細解析へ昇格」を実行してください。"
+        : "営業候補として残す場合は「詳細解析へ昇格」を実行し、フォーム・企業別文面・レポート・Twenty保存を作成してください。",
+      retryLabel: "詳細解析へ昇格",
+      tone: fast.priority === "low" ? "slate" : "amber",
+    }
+  }
+
   if (item.status === "failed") {
     return {
       title: "解析を完了できませんでした",
@@ -101,12 +145,12 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
     const rejectedReasons = reasonsOrFallback(
       item,
       item.is_japanese_company || item.country_code === "JP"
-        ? "日本企業のため、海外SMB向けJapan Entry Packageの対象外です。"
-        : "企業サイトではない、または海外SMB向けJapan Entry Packageの対象条件を満たしません。",
+        ? "日本企業のため、海外SMB向けJapan Country Partnershipの対象外です。"
+        : "企業サイトではない、または海外SMB向けJapan Country Partnershipの対象条件を満たしません。",
     )
     return {
       title: "対象外として安全に停止しました",
-      detail: "海外SMB向けJapan Entry Packageの対象条件を満たさないため、外部送信とTwenty追加は行っていません。",
+      detail: "海外SMB向けJapan Country Partnershipの対象条件を満たさないため、外部送信とTwenty追加は行っていません。",
       reasons: rejectedReasons,
       nextAction: "対象判定が誤っていると確認できた場合だけ、正しい企業URLで再解析してください。",
       retryLabel: "再解析",
@@ -140,10 +184,10 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
     }
     return {
       title: "対象判定の追加確認が必要です",
-      detail: "文面・フォーム・解析データはTwentyへ保存済みです。海外SMBまたはJapan Entry適合性の公開根拠を人が確認するまで送信不可です。",
+      detail: "文面・フォーム・解析データはTwentyへ保存済みです。海外SMBまたはJapan Country Partnership適合性の公開根拠を人が確認するまで送信不可です。",
       reasons: savedReasons.length > 0
         ? savedReasons
-        : ["海外SMBまたはJapan Entry適合性を確定する公開根拠が不足しています。"],
+        : ["海外SMBまたはJapan Country Partnership適合性を確定する公開根拠が不足しています。"],
       nextAction: "会社概要・顧客地域・価格・チーム規模を確認し、対象条件を満たす場合だけ送信可否を判断してください。",
       retryLabel: "再解析",
       tone: "amber",
