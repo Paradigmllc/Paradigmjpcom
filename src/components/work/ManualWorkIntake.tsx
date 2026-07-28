@@ -15,8 +15,8 @@ export type ManualWorkQueueState = Record<string, "waiting" | "processing" | "do
 
 const workflowSteps = [
   ["01", "高速一次判定", "ホームページだけで商品・業態・日本未整備・優先度を短時間で判定"],
-  ["02", "上位候補を昇格", "選んだ企業だけフォーム・企業別文面・詳細レポート・Twenty保存を実行"],
-  ["03", "手動送信", "根拠と文面を確認し、人がフォーム送信と結果記録を行う"],
+  ["02", "短文と連絡先を確認", "送信候補には短い初回文面と公開連絡先候補を表示"],
+  ["03", "重要候補だけ昇格", "選んだ企業だけフォーム実検証・詳細レポート・Twenty保存を実行"],
 ] as const
 
 export function ManualWorkIntake({
@@ -77,7 +77,7 @@ export function ManualWorkIntake({
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Fast qualification</p>
               <h2 id="intake-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">企業URLをまとめて高速判定</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件。最初はホームページだけを取得し、DeepSeek・フォーム探索・長文レポートを使わずに一次選別します。</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件。ホームページ1回で一次選別し、送信候補には短文と公開連絡先候補を作ります。</p>
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ export function ManualWorkIntake({
           </label>
 
           <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動統合。上位候補だけ後から詳細解析します。</p>
+            <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動統合。重要候補だけ後から詳細解析します。</p>
             <Button onClick={onStart} disabled={submitting || urlCount === 0 || invalidCount} size="lg" className="h-12 w-full rounded-xl bg-slate-950 px-6 text-white shadow-lg shadow-slate-950/10 hover:bg-emerald-700 sm:w-auto">
               {submitting ? <LoaderCircle className="animate-spin" /> : <Play />}
               {submitting ? "キュー登録中" : queueActive ? "次の高速バッチを追加" : "高速判定を開始"}
@@ -163,7 +163,7 @@ export function ManualWorkIntake({
           </ol>
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300"><CheckCircle2 className="size-4" />品質と速度の境界</p>
-            <p className="mt-2 text-xs leading-5 text-slate-300">一次判定では送信文を作りません。時間のかかる処理は、営業価値がある候補へ昇格した後だけ実行します。</p>
+            <p className="mt-2 text-xs leading-5 text-slate-300">一次判定は短文と連絡先候補まで。複数ページ探索・フォーム実検証・レポート・Twenty同期は重要候補だけに限定します。</p>
           </div>
         </aside>
       </div>
