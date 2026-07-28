@@ -293,6 +293,11 @@ const JA_FAQS: readonly VideoServiceFaqCopy[] = [
       "制作速度と表現のためにAI支援ツールを使用する場合があります。機密情報、ブランドルール、利用制限を確認し、AI利用禁止または特定ツール禁止の要件がある場合は契約前に共有してください。",
   },
   {
+    question: "初回にブランド用の動画システムを作れますか？",
+    answer:
+      "はい。色、フォント、ロゴ、字幕、CTA、トランジション、音量、縦横比、HyperFramesテンプレート、ComfyUIワークフローをまとめたBrand Motion Systemを初回に設計できます。標準プラン外の設計範囲は、作業量を確認したうえで一回限り$1,000〜$2,500のSetupとしてService Orderに記載します。",
+  },
+  {
     question: "プラン変更や解約はいつできますか？",
     answer:
       "アップグレードは制作枠が確保できる場合に差額精算で反映できます。ダウングレードと解約は次回更新日から適用します。更新後の期間、未使用枠、クライアント都合の停止に対する日割り返金はありません。",
@@ -354,6 +359,11 @@ const EN_FAQS: readonly VideoServiceFaqCopy[] = [
     question: "Do you use generative AI?",
     answer:
       "We may use AI-assisted tools to improve speed or create approved elements. Share any no-AI, confidentiality, model, or vendor restrictions before contracting so they can be documented in the Service Order.",
+  },
+  {
+    question: "Can you build a reusable brand motion system at kickoff?",
+    answer:
+      "Yes. We can define the colors, fonts, logo treatment, captions, CTA, transitions, audio rules, aspect ratios, HyperFrames templates, and ComfyUI workflows for the brand. Work outside the standard plan is scoped as a one-time $1,000–$2,500 Setup in the Service Order after reviewing the required effort.",
   },
   {
     question: "When can we change plans or cancel?",
