@@ -33,27 +33,24 @@ jobs:
         run: |
           set -euo pipefail
           {
-            test "$(find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 9
+            part_count="$(find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' | wc -l)"
+            echo "archive parts: ${part_count}"
+            test "${part_count}" -eq 9
+            find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' -print | sort
             cat bootstrap/video-factory.parts/part-* > /tmp/video-factory.tar.gz.b64
             echo "5495679899220067d29ff512523565d6c98fea8f23cd5e8ae4f617c10b150ded  /tmp/video-factory.tar.gz.b64" | sha256sum --check --strict
             base64 --decode /tmp/video-factory.tar.gz.b64 > /tmp/video-factory.tar.gz
             echo "c7d20da49cfacb462a36dc4ebfefa9fc1e11064e076625cd20217a475a5bcd97  /tmp/video-factory.tar.gz" | sha256sum --check --strict
-            python - <<'PY'
-          import tarfile
-          from pathlib import PurePosixPath
-
-          archive = "/tmp/video-factory.tar.gz"
-          with tarfile.open(archive, "r:gz") as handle:
-              members = handle.getmembers()
-              if not members:
-                  raise SystemExit("archive is empty")
-              for member in members:
-                  path = PurePosixPath(member.name)
-                  if path.is_absolute() or ".." in path.parts:
-                      raise SystemExit(f"unsafe archive path: {member.name}")
-                  if member.issym() or member.islnk():
-                      raise SystemExit(f"archive links are not allowed: {member.name}")
-          PY
+            tar --list --gzip --file /tmp/video-factory.tar.gz > /tmp/video-factory-archive-list.txt
+            test -s /tmp/video-factory-archive-list.txt
+            if grep -Eq '(^/|(^|/)\.\.(/|$))' /tmp/video-factory-archive-list.txt; then
+              echo "unsafe archive path detected" >&2
+              exit 1
+            fi
+            if tar --list --verbose --gzip --file /tmp/video-factory.tar.gz | awk '$1 ~ /^[lh]/ { found=1 } END { exit found ? 0 : 1 }'; then
+              echo "archive links are not allowed" >&2
+              exit 1
+            fi
             rm -rf services/video-factory
             tar --extract --gzip --file /tmp/video-factory.tar.gz --directory .
             test -f services/video-factory/pyproject.toml
@@ -132,5 +129,6 @@ jobs:
             /tmp/materialize-extract.log
             /tmp/materialize-validation.log
             /tmp/materialize-failure-tail.log
+            /tmp/video-factory-archive-list.txt
           if-no-files-found: warn
           retention-days: 7
