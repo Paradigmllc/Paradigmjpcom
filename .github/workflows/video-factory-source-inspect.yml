@@ -1,50 +1,87 @@
-name: Materialize Video Factory Integration Branch
+name: Materialize and Validate Video Factory
 
 on:
-  push:
-    branches:
-      - agent/video-factory-source-inspect
+  pull_request:
+    branches: [main]
     paths:
+      - bootstrap/video-factory.parts/**
+      - bootstrap/video-factory.patch.parts/**
       - .github/workflows/video-factory-source-inspect.yml
       - docs/ops/.video-factory-source-inspection-trigger
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: video-factory-integration-materialization
+  group: video-factory-final-materialization
   cancel-in-progress: false
 
 jobs:
   materialize:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: agent/video-factory-source-inspect
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
 
-      - name: Verify and extract source archive
+      - name: Verify source archive and integration patch
         shell: bash
         run: |
           set -euo pipefail
-          part_count="$(find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' | wc -l)"
-          test "${part_count}" -eq 9
+          source_count="$(find bootstrap/video-factory.parts -maxdepth 1 -type f -name 'part-*' | wc -l)"
+          patch_count="$(find bootstrap/video-factory.patch.parts -maxdepth 1 -type f -name 'part-*' | wc -l)"
+          test "${source_count}" -eq 9
+          test "${patch_count}" -eq 6
+
           cat bootstrap/video-factory.parts/part-* > /tmp/video-factory.tar.gz.b64
           echo "5495679899220067d29ff512523565d6c98fea8f23cd5e8ae4f617c10b150ded  /tmp/video-factory.tar.gz.b64" | sha256sum --check --strict
           base64 --decode /tmp/video-factory.tar.gz.b64 > /tmp/video-factory.tar.gz
           echo "c7d20da49cfacb462a36dc4ebfefa9fc1e11064e076625cd20217a475a5bcd97  /tmp/video-factory.tar.gz" | sha256sum --check --strict
+
+          cat bootstrap/video-factory.patch.parts/part-* > /tmp/video-factory.patch.gz.b64
+          echo "f6f4309e9203c6fc0f2fd651557dd51fc80a5fe8df3041b380f35721ce4bf60e  /tmp/video-factory.patch.gz.b64" | sha256sum --check --strict
+          base64 --decode /tmp/video-factory.patch.gz.b64 > /tmp/video-factory.patch.gz
+          echo "bdcbb3bd195265bd6dcaae9e35b7d73be7e30c4579e8595bd75244f4748468b8  /tmp/video-factory.patch.gz" | sha256sum --check --strict
+          gzip --decompress --stdout /tmp/video-factory.patch.gz > /tmp/video-factory.patch
+          echo "5997f3247d06d742ae67d34ce13a652600770e90d02dc5c8199768c392717332  /tmp/video-factory.patch" | sha256sum --check --strict
+
+          tar --list --gzip --file /tmp/video-factory.tar.gz > /tmp/video-factory-archive-list.txt
+          test -s /tmp/video-factory-archive-list.txt
+          if grep -Eq '(^/|(^|/)\.\.(/|$))' /tmp/video-factory-archive-list.txt; then
+            echo "unsafe archive path detected" >&2
+            exit 1
+          fi
+          if tar --list --verbose --gzip --file /tmp/video-factory.tar.gz | awk '$1 ~ /^[lh]/ { found=1 } END { exit found ? 0 : 1 }'; then
+            echo "archive links are not allowed" >&2
+            exit 1
+          fi
+
+      - name: Extract and apply reviewed integration patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf services/video-factory
           tar --extract --gzip --file /tmp/video-factory.tar.gz --directory .
+          patch --batch --forward -p1 < /tmp/video-factory.patch
           test -f services/video-factory/pyproject.toml
           test -f services/video-factory/src/video_factory/pipeline.py
+          test -f services/video-factory/src/video_factory/finalization.py
+          test -f services/video-factory/src/video_factory/workflow_registry.py
+          test -f services/video-factory/src/video_factory/model_registry.py
+          test -f services/video-factory/src/video_factory/comfy_proxy.py
+          test -f .agents/skills/paradigm-video-producer/SKILL.md
+          test -f .codex/config.toml
           test -f .github/workflows/video-factory-ci.yml
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Normalize and validate source
+      - name: Install and validate complete factory
         working-directory: services/video-factory
         shell: bash
         run: |
@@ -53,125 +90,26 @@ jobs:
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip
           pip install -e '.[dev,api,orchestrator]'
-
-          python - <<'PY'
-          from pathlib import Path
-
-          media = Path("src/video_factory/media.py")
-          media_lines = media.read_text(encoding="utf-8").splitlines()
-          replacement_line = r'        "".join(f"file {path.as_posix()!r}\n" for path in normalized),'
-          matches = 0
-          for index, line in enumerate(media_lines):
-              if "path.as_posix().replace" in line and "for path in normalized" in line:
-                  media_lines[index] = replacement_line
-                  matches += 1
-          if matches != 1:
-              raise SystemExit(f"expected one ffconcat path expression, found {matches}")
-          media.write_text("\n".join(media_lines) + "\n", encoding="utf-8")
-
-          cli = Path("src/video_factory/cli.py")
-          cli_lines = cli.read_text(encoding="utf-8").splitlines()
-          matches = 0
-          for index, line in enumerate(cli_lines):
-              if line.strip() == "output: Path | None = typer.Option(None),":
-                  cli_lines[index] = f"{line}  # noqa: B008"
-                  matches += 1
-              elif line.strip() == "output: Path | None = typer.Option(None),  # noqa: B008":
-                  matches += 1
-          if matches != 1:
-              raise SystemExit(f"expected one Typer output option signature, found {matches}")
-          cli.write_text("\n".join(cli_lines) + "\n", encoding="utf-8")
-
-          playwright = Path("src/video_factory/adapters/playwright.py")
-          playwright_lines = playwright.read_text(encoding="utf-8").splitlines()
-          matches = 0
-          index = 0
-          while index < len(playwright_lines) - 2:
-              if (
-                  playwright_lines[index].strip()
-                  == "if context.settings.playwright_allowed_hosts:"
-                  and playwright_lines[index + 1].strip().startswith(
-                      'if (parsed.hostname or "").lower() not in '
-                  )
-                  and playwright_lines[index + 2].strip().startswith(
-                      'raise ValueError(f"Playwright host is not allow-listed:'
-                  )
-              ):
-                  indent = playwright_lines[index][
-                      : len(playwright_lines[index]) - len(playwright_lines[index].lstrip())
-                  ]
-                  playwright_lines[index : index + 3] = [
-                      f"{indent}if (",
-                      f"{indent}    context.settings.playwright_allowed_hosts",
-                      f"{indent}    and (parsed.hostname or \"\").lower()",
-                      f"{indent}    not in context.settings.playwright_allowed_hosts",
-                      f"{indent}):",
-                      f"{indent}    raise ValueError(",
-                      f"{indent}        f\"Playwright host is not allow-listed: {{parsed.hostname}}\"",
-                      f"{indent}    )",
-                  ]
-                  matches += 1
-                  index += 8
-              else:
-                  index += 1
-          if matches != 1:
-              raise SystemExit(f"expected one Playwright allow-list guard, found {matches}")
-          playwright.write_text("\n".join(playwright_lines) + "\n", encoding="utf-8")
-
-          validation = Path("src/video_factory/validation.py")
-          validation_lines = validation.read_text(encoding="utf-8").splitlines()
-          guards = {
-              "if ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds:": (
-                  "if brief.rights.likeness_consent is not LikenessConsent.GRANTED:",
-                  "ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds",
-                  "brief.rights.likeness_consent is not LikenessConsent.GRANTED",
-              ),
-              "if ShotKind.LIP_SYNC in brief.requested_shot_kinds:": (
-                  "if brief.rights.voice_consent is not LikenessConsent.GRANTED:",
-                  "ShotKind.LIP_SYNC in brief.requested_shot_kinds",
-                  "brief.rights.voice_consent is not LikenessConsent.GRANTED",
-              ),
-          }
-          matches = 0
-          index = 0
-          while index < len(validation_lines) - 1:
-              first = validation_lines[index].strip()
-              second = validation_lines[index + 1].strip()
-              if first in guards and second == guards[first][0]:
-                  indent = validation_lines[index][
-                      : len(validation_lines[index]) - len(validation_lines[index].lstrip())
-                  ]
-                  condition_one, condition_two = guards[first][1:]
-                  validation_lines[index : index + 2] = [
-                      f"{indent}if (",
-                      f"{indent}    {condition_one}",
-                      f"{indent}    and {condition_two}",
-                      f"{indent}):",
-                  ]
-                  matches += 1
-                  index += 4
-              else:
-                  index += 1
-          if matches != 2:
-              raise SystemExit(f"expected two consent guards, found {matches}")
-          validation.write_text("\n".join(validation_lines) + "\n", encoding="utf-8")
-          PY
-
-          ruff check src tests --fix --unsafe-fixes
           video-factory export-schemas
           python -m compileall -q src tests
           node --check tools/playwright-capture/capture.mjs
-          pytest --cov=video_factory --cov-report=term-missing
           ruff check src tests
           mypy src
+          pytest --cov=video_factory --cov-report=term-missing
+          video-factory workflows list
+          video-factory workflows models
+          video-factory doctor
           video-factory run examples/briefs/saas-launch.yaml --dry-run --auto-approve
 
-      - name: Commit normal source tree
+      - name: Commit normal source tree to integration branch
+        if: success()
         shell: bash
         run: |
           set -euo pipefail
+          cp -R services/video-factory/workspace /tmp/video-factory-workspace 2>/dev/null || true
           rm -rf services/video-factory/workspace
           rm -rf bootstrap/video-factory.parts
+          rm -rf bootstrap/video-factory.patch.parts
           rm -f bootstrap/video-factory.tar.gz.b64
           rmdir bootstrap 2>/dev/null || true
           rm -f .github/workflows/materialize-video-factory.yml
@@ -181,15 +119,17 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
           git diff --cached --check
-          git commit -m "feat: materialize Paradigm video factory source"
-          git push origin HEAD:agent/video-factory-source-inspect
+          git commit -m "feat: complete Paradigm video factory integration"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}"
 
       - name: Upload validation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: video-factory-integration-materialization
+          name: video-factory-final-validation
           path: |
+            /tmp/video-factory-workspace
+            /tmp/video-factory-archive-list.txt
             services/video-factory/workspace
           if-no-files-found: warn
-          retention-days: 1
+          retention-days: 7
