@@ -1,0 +1,69 @@
+name: Inspect Video Factory Coolify Target
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/video-factory-coolify-inspect.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+    steps:
+      - name: Read scoped Coolify deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${COOLIFY_API_TOKEN}"
+          API="${COOLIFY_API_URL%/}/api/v1"
+          get() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "${API}$1"
+          }
+
+          app="$(get "/applications/${PARADIGM_APP_UUID}")"
+          github_apps="$(get "/github-apps")"
+          servers="$(get "/servers")"
+          projects="$(get "/projects")"
+
+          jq -n \
+            --argjson app "${app}" \
+            --argjson github_apps "${github_apps}" \
+            --argjson servers "${servers}" \
+            --argjson projects "${projects}" \
+            '{
+              application: ($app | {
+                id, uuid, name, status, fqdn, source_id, destination_id,
+                environment_id, git_repository, git_branch, base_directory,
+                build_pack,
+                environment: (.environment // null),
+                destination: (.destination // null)
+              }),
+              github_apps: ($github_apps | map({id, uuid, name, organization, type})),
+              servers: ($servers | map({id, uuid, name, proxy_type, wildcard_domain: .settings.wildcard_domain})),
+              projects: ($projects | map({
+                id, uuid, name,
+                environments: ((.environments // []) | map({id, uuid, name}))
+              }))
+            }' > /tmp/video-factory-coolify-target.json
+
+          jq empty /tmp/video-factory-coolify-target.json
+          cat /tmp/video-factory-coolify-target.json
+
+      - name: Upload scoped metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-factory-coolify-target
+          path: /tmp/video-factory-coolify-target.json
+          if-no-files-found: error
+          retention-days: 1
