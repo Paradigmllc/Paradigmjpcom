@@ -1,0 +1,32 @@
+name: Export Video Studio Source Snapshot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/video-studio-source-export.yml
+      - docs/ops/video-studio-gui.md
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: false
+      - name: Create source snapshot
+        run: |
+          set -euo pipefail
+          tar --exclude=.git --exclude=node_modules --exclude=.next -czf /tmp/paradigm-source.tar.gz .
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: paradigm-video-studio-source
+          path: /tmp/paradigm-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
