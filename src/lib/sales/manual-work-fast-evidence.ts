@@ -4,7 +4,11 @@ import { getProxyFetchOptions } from "./proxy-agent"
 import { auditJapanMarketReadinessFromHtml } from "./sources/japan-market-audit"
 import type { BusinessModel } from "./japan-entry-projection"
 
-const MAX_FAST_HOMEPAGE_BYTES = 750_000
+const MAX_FAST_HOMEPAGE_BYTES = 500_000
+const FAST_HOMEPAGE_TIMEOUT_MS = 5_000
+const CONTACT_PATH = /(?:^|\/)(?:contact|contact-us|sales|support|business|partnerships?|partners?|wholesale|distributors?|inquir(?:y|ies)|enquir(?:y|ies))(?:\/|$)/i
+const CONTACT_EMAIL = /^(?:hello|contact|info|sales|business|partnerships?|partners?|wholesale|support|team|office)@/i
+const EXCLUDED_CONTACT_PATH = /(?:privacy|terms|legal|careers?|jobs?|login|sign-in|signin)/i
 
 function publicOrigin(domain: string): string {
   const normalized = normalizeDomain(domain)
@@ -100,12 +104,52 @@ function productNames(html: string): string[] {
   return [...names].filter((value) => value.length >= 2).slice(0, 5)
 }
 
+function fastContactSignals(html: string, baseUrl: string): { contactUrl: string | null; publicEmail: string | null } {
+  const base = new URL(baseUrl)
+  const emails = new Set<string>()
+  const contactUrls: Array<{ url: string; sameHost: boolean }> = []
+
+  for (const tag of html.match(/<a\b[^>]*>/gi) ?? []) {
+    const href = attribute(tag, "href")?.trim()
+    if (!href) continue
+    if (/^mailto:/i.test(href)) {
+      const email = href.replace(/^mailto:/i, "").split(/[?&#]/)[0]?.trim().toLowerCase()
+      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) emails.add(email)
+      continue
+    }
+    try {
+      const resolved = new URL(href, base)
+      if (!/^https?:$/.test(resolved.protocol)) continue
+      const route = `${resolved.hostname}${resolved.pathname}`
+      if (!CONTACT_PATH.test(resolved.pathname) || EXCLUDED_CONTACT_PATH.test(route)) continue
+      contactUrls.push({
+        url: resolved.toString(),
+        sameHost: resolved.hostname.replace(/^www\./, "") === base.hostname.replace(/^www\./, ""),
+      })
+    } catch {
+      // Ignore malformed or non-web links during the fast pass.
+    }
+  }
+
+  for (const match of decodeHtml(html).match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? []) {
+    emails.add(match.toLowerCase())
+  }
+
+  const publicEmail = [...emails]
+    .filter((email) => !/^(?:no-?reply|noreply|privacy|legal|abuse)@/i.test(email))
+    .sort((left, right) => Number(CONTACT_EMAIL.test(right)) - Number(CONTACT_EMAIL.test(left)) || left.localeCompare(right))[0] ?? null
+  const contactUrl = contactUrls
+    .sort((left, right) => Number(right.sameHost) - Number(left.sameHost) || left.url.length - right.url.length)[0]?.url ?? null
+
+  return { contactUrl, publicEmail }
+}
+
 export async function collectFastManualWorkEvidence(domain: string) {
   const origin = publicOrigin(domain)
   const response = await fetch(origin, getProxyFetchOptions({
     redirect: "follow",
-    signal: AbortSignal.timeout(8_000),
-    headers: { "User-Agent": "ParadigmFastQualification/1.0 (+https://paradigmjp.com)" },
+    signal: AbortSignal.timeout(FAST_HOMEPAGE_TIMEOUT_MS),
+    headers: { "User-Agent": "ParadigmFastQualification/2.0 (+https://paradigmjp.com)" },
   }))
   if (!response.ok) throw new Error(`Homepage returned HTTP ${response.status}`)
   const contentType = response.headers.get("content-type") ?? ""
@@ -119,13 +163,14 @@ export async function collectFastManualWorkEvidence(domain: string) {
   const headings = textMatches(html, /<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi, 5)
   const paragraphs = textMatches(html, /<p\b[^>]*>([\s\S]*?)<\/p>/gi, 3)
     .filter((value) => value.length >= 20 && value.length <= 220)
+  const companyName = credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title)
   const names = productNames(html)
-  const productContext = joinEvidence([...names, description, ...headings, ...paragraphs, title])
-  if (productContext.length < 12) throw new Error("Homepage did not provide enough grounded product context for fast qualification")
+  const productContext = joinEvidence([...names, description, ...headings, ...paragraphs, title, companyName, domain])
+  const contact = fastContactSignals(html, response.url)
 
   return {
-    companyName: credibleSiteName(metaContent(html, "og:site_name")) ?? credibleSiteName(title),
-    productContext,
+    companyName,
+    productContext: productContext || domain,
     businessModel: inferBusinessModel(productContext),
     sourceUrl: response.url,
     title,
@@ -134,5 +179,6 @@ export async function collectFastManualWorkEvidence(domain: string) {
     productNames: names,
     evidenceMode: "fast_direct_html" as const,
     audit: auditJapanMarketReadinessFromHtml(response.url, html),
+    contact,
   }
 }
