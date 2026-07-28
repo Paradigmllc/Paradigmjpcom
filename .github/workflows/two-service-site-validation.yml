@@ -62,11 +62,12 @@ jobs:
             next.config.ts \
             'src/app/[locale]/home-v2/page.tsx' \
             'src/app/[locale]/japan-market-partner/page.tsx' \
-            'src/app/[locale]/video-as-a-service/**/*.tsx' \
-            'src/app/[locale]/contact/**/*.tsx' \
-            'src/app/api/contact/**/*.ts' \
+            'src/app/[locale]/video-as-a-service' \
+            'src/app/[locale]/contact' \
+            src/app/api/contact \
             src/app/sitemap.ts \
-            'src/lib/video-service-*.ts' \
+            src/lib/video-service-content.ts \
+            src/lib/video-service-terms.ts \
             src/components/aesop/SiteHeader.tsx \
             src/components/aesop/SiteFooter.tsx \
             --max-warnings=0 \
