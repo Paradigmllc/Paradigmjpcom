@@ -4,8 +4,6 @@ import { motion } from "framer-motion"
 import { ArrowRight, CheckCircle2, CircleAlert, ExternalLink, LoaderCircle, Mail, RefreshCw, Send } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MANUAL_MESSAGE_ANGLE_LABELS } from "@/lib/sales/manual-japan-entry-angle"
-import { MANUAL_MESSAGE_VARIANT_LABELS } from "@/lib/sales/manual-japan-entry-experiment"
 import { MANUAL_OUTREACH_PLAYBOOK_LABELS } from "@/lib/sales/manual-japan-entry-playbook"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
@@ -29,13 +27,22 @@ function firstString(value: unknown): string | null {
   return Array.isArray(value) ? value.find((item): item is string => typeof item === "string" && Boolean(item.trim())) ?? null : null
 }
 
+function hasOutcome(item: ManualJapanEntryWorkRow): boolean {
+  return Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
+}
+
 function isFast(item: ManualJapanEntryWorkRow): boolean {
   return item.evidence.analysis_mode === "fast_qualification"
 }
 
 function isEditorial(item: ManualJapanEntryWorkRow): boolean {
-  return item.evidence.analysis_mode === "gpt56_editorial"
+  const mode = item.evidence.analysis_mode
+  return (typeof mode === "string" && mode.startsWith("gpt56_editorial"))
     || /gpt56|gpt-5\.6/i.test(String(item.message_review.generation_engine ?? item.message_review.generation_status ?? ""))
+}
+
+function isLegacyUnsent(item: ManualJapanEntryWorkRow): boolean {
+  return !isFast(item) && !isEditorial(item) && !hasOutcome(item)
 }
 
 function fastPriority(item: ManualJapanEntryWorkRow): "promote" | "review" | "low" | null {
@@ -44,12 +51,19 @@ function fastPriority(item: ManualJapanEntryWorkRow): "promote" | "review" | "lo
   return null
 }
 
+function generationActionLabel(item: ManualJapanEntryWorkRow): string {
+  if (isFast(item)) return fastPriority(item) === "low" ? "GPT-5.6で再評価" : "GPT-5.6文面を作る"
+  if (isEditorial(item)) return "GPT-5.6で再編集"
+  return "GPT-5.6で作り直す"
+}
+
 function statusLabel(item: ManualJapanEntryWorkRow): string {
   if (item.status === "processing") return item.stage === "copy_generation" ? "GPT-5.6文面生成中" : "解析中"
   if (isFast(item)) {
     if (item.is_japanese_company || fastPriority(item) === "low") return "低優先"
     return fastPriority(item) === "promote" ? "高品質文面候補" : "一次判定完了"
   }
+  if (isLegacyUnsent(item)) return "旧文面・要更新"
   if (item.status === "completed") return isEditorial(item) ? "GPT-5.6文面完成" : "送信準備完了"
   if (item.status === "needs_review") return "要確認"
   if (item.status === "failed") return "失敗"
@@ -58,6 +72,7 @@ function statusLabel(item: ManualJapanEntryWorkRow): string {
 }
 
 function statusClasses(item: ManualJapanEntryWorkRow): string {
+  if (isLegacyUnsent(item)) return "border-amber-200 bg-amber-50 text-amber-800"
   if (isFast(item) && (item.is_japanese_company || fastPriority(item) === "low")) return "border-slate-200 bg-slate-50 text-slate-700"
   if (item.status === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700"
   if (item.status === "failed") return "border-red-200 bg-red-50 text-red-700"
@@ -106,6 +121,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
   const operatorNotice = manualWorkOperatorNotice(item)
   const fast = isFast(item)
   const editorial = isEditorial(item)
+  const legacyUnsent = isLegacyUnsent(item)
   const { contactUrl, publicEmail } = contactDetails(item)
   const outcomes = [
     ["manually_sent", "手動送信済み", Boolean(item.manually_sent_at)],
@@ -123,22 +139,22 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${statusClasses(item)}`}>{statusLabel(item)}</span>
                 {editorial && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">GPT-5.6 editorial</Badge>}
+                {legacyUnsent && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">旧DeepSeek文面は使用しない</Badge>}
                 <span className="text-xs text-slate-600">{formatManualWorkCreatedAt(item.created_at)}</span>
               </div>
               <h3 className="mt-3 truncate font-display text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{item.company_name ?? item.domain}</h3>
               <a href={item.canonical_url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-sm font-medium text-blue-700 hover:underline">{item.domain}<ExternalLink className="size-3.5 shrink-0" /></a>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              {retryable && <Button type="button" variant={fast && fastPriority(item) !== "low" ? "default" : "outline"} size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}の高品質文面を生成`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{operatorNotice?.retryLabel ?? "再実行"}</Button>}
+              {retryable && <Button type="button" variant={(fast && fastPriority(item) !== "low") || legacyUnsent ? "default" : "outline"} size="sm" className="rounded-lg" disabled={retrying} onClick={() => onRetry(item)} aria-label={`${item.domain}のGPT-5.6高品質文面を生成`}>{retrying ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}{generationActionLabel(item)}</Button>}
               {contactUrl && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={contactUrl} target="_blank" rel="noopener noreferrer">連絡先<ExternalLink /></a></Button>}
               {publicEmail && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={`mailto:${publicEmail}`}><Mail />メール</a></Button>}
-              {item.report_url && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
+              {item.report_url && !legacyUnsent && <Button asChild variant="outline" size="sm" className="rounded-lg"><a href={item.report_url} target="_blank" rel="noopener noreferrer">レポート<ExternalLink /></a></Button>}
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-1.5">
             <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">{MANUAL_OUTREACH_PLAYBOOK_LABELS[item.outreach_playbook]}</Badge>
-            {!fast && !editorial && <><Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600">{MANUAL_MESSAGE_VARIANT_LABELS[item.message_variant]}</Badge><Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600">{MANUAL_MESSAGE_ANGLE_LABELS[item.message_angle]}</Badge></>}
             {item.source_attributions.map((source) => <Badge key={source.id} variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">{sourceBySlug.get(source.source_slug)?.name ?? source.source_slug}</Badge>)}
           </div>
 
@@ -161,7 +177,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
         <aside className="border-t border-slate-200 bg-slate-50/80 p-5 lg:border-l lg:border-t-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Outcome tracking</p>
           <div className="mt-4 space-y-2">
-            {outcomes.map(([outcome, label, active], index) => <button key={outcome} type="button" disabled={updatingOutcome !== null || !item.initial_message || (outcome !== "manually_sent" && !item.manually_sent_at)} onClick={() => onUpdateOutcome(item, outcome, !active)} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${active ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
+            {outcomes.map(([outcome, label, active], index) => <button key={outcome} type="button" disabled={updatingOutcome !== null || !item.initial_message || legacyUnsent || (outcome !== "manually_sent" && !item.manually_sent_at)} onClick={() => onUpdateOutcome(item, outcome, !active)} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${active ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
               <span className={`grid size-6 shrink-0 place-items-center rounded-full ${active ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}>{updatingOutcome === `${item.id}:${outcome}` ? <LoaderCircle className="size-3.5 animate-spin" /> : active ? <CheckCircle2 className="size-3.5" /> : <span className="font-mono text-[9px]">{index + 1}</span>}</span>{label}
             </button>)}
           </div>
