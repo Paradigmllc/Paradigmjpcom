@@ -136,6 +136,26 @@ describe("manual work durable batch drain", () => {
     })
   })
 
+  it("routes a failed GPT-5.6 row back through the editorial service", async () => {
+    const workId = "106db008-80af-4c56-93ee-916643d84c1b"
+    mocks.findWork.mockResolvedValue({ evidence: { analysis_mode: "gpt56_editorial_failed" } })
+    mocks.claim.mockResolvedValue([{
+      id: "item-1",
+      canonical_url: "https://one.example/",
+      claim_token: "claim-1",
+      retry_requested: true,
+      expected_work_id: workId,
+    }])
+    const response = await POST(
+      new NextRequest(`https://paradigmjp.com/api/work/batches/${batchId}/drain`, { method: "POST" }),
+      { params: Promise.resolve({ batchId }) },
+    )
+
+    expect(response.status).toBe(200)
+    expect(mocks.processFull).not.toHaveBeenCalled()
+    expect(mocks.processEditorial).toHaveBeenCalledTimes(1)
+  })
+
   it("keeps a non-fast retry on the legacy full-analysis path", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     mocks.claim.mockResolvedValue([{
