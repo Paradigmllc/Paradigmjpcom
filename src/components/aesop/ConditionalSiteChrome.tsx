@@ -36,7 +36,6 @@ import BackToTop from "./BackToTop";
 import PageTransition from "./PageTransition";
 import SiteWrapper from "@/components/SiteWrapper";
 import DifyChatbot from "@/components/DifyChatbot";
-import JapanMarketUrgencyBar, { type JapanMarketUrgencyCopy } from "@/components/japan-entry/JapanMarketUrgencyBar";
 import { localeContentVariant } from "@/lib/locale-map";
 import type { HeaderNav, FooterNav } from "@/lib/navigation";
 import { isStandaloneRoute } from "./standalone-routes";
@@ -84,8 +83,6 @@ interface Props {
   footerNav?: FooterNav | null;
   /** PayloadCMS Settings.announcement 由来の告知バー */
   announcement?: AnnouncementSettings;
-  /** International Japan Entry urgency strip; intentionally absent on /ja. */
-  marketUrgency?: JapanMarketUrgencyCopy;
 }
 
 /**
@@ -104,7 +101,6 @@ export default function ConditionalSiteChrome({
   headerNav,
   footerNav,
   announcement,
-  marketUrgency,
 }: Props) {
   const pathname = usePathname();
 
@@ -124,9 +120,6 @@ export default function ConditionalSiteChrome({
   const announcementActive = Boolean(
     announcement?.enabled && announcement?.message,
   );
-  const urgencyExcluded = /^\/[a-z]{2}\/(?:legal|privacy|terms|refund)(?:\/|$)/.test(pathname);
-  const marketUrgencyActive = Boolean(marketUrgency && !urgencyExcluded);
-
   // 通常 site chrome
   return (
     <>
@@ -142,16 +135,7 @@ export default function ConditionalSiteChrome({
         <ScrollProgress />
         <LuxuryLoader />
         <SiteHeader nav={headerNav} announcementActive={announcementActive} />
-        {marketUrgencyActive && (
-          <>
-            <div
-              aria-hidden="true"
-              className={announcementActive ? "h-24 md:h-28" : "h-16 md:h-20"}
-            />
-            <JapanMarketUrgencyBar copy={marketUrgency!} />
-          </>
-        )}
-        <SiteWrapper marketUrgencyActive={marketUrgencyActive}>
+        <SiteWrapper>
           <PageTransition>{children}</PageTransition>
         </SiteWrapper>
         <SiteFooter settings={footerSettings} nav={footerNav} />

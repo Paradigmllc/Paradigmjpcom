@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
-import { getMessages, getTranslations, setRequestLocale } from "next-intl/server"
+import { getMessages, setRequestLocale } from "next-intl/server"
 import { ThemeProvider } from "@/components/aesop/ThemeProvider"
 import ConditionalSiteChrome from "@/components/aesop/ConditionalSiteChrome"
 import ConsentAwareTracking from "@/components/aesop/ConsentAwareTracking"
@@ -12,7 +12,6 @@ import { getSiteSettings, umamiWebsiteIdFor } from "@/lib/settings"
 import { getHeaderNav, getFooterNav } from "@/lib/navigation"
 import { themeTokensToCss } from "@/lib/theme-tokens"
 import MaintenanceScreen from "@/components/MaintenanceScreen"
-import type { JapanMarketUrgencyCopy } from "@/components/japan-entry/JapanMarketUrgencyBar"
 import { routing } from "@/i18n/routing"
 import { pageAlternates } from "@/lib/page-metadata"
 import { isMarketingLocale } from "@/lib/marketing-routing"
@@ -196,21 +195,6 @@ export default async function LocaleLayout({ children, params }: Props) {
   // admin が編集した color/font/radius tokens を CSS 変数として注入 (空なら ""・globals.css default を使用)
   const themeOverrideCss = themeTokensToCss(settings.theme)
   const tracking = settings.tracking
-  const urgencyTranslations = locale !== "ja"
-    ? await getTranslations({ locale: "en", namespace: "marketUrgency" })
-    : null
-  const marketUrgency: JapanMarketUrgencyCopy | undefined = urgencyTranslations
-    ? {
-        eyebrow: urgencyTranslations("eyebrow"),
-        title: urgencyTranslations("title"),
-        highlight: urgencyTranslations("highlight"),
-        body: urgencyTranslations("body"),
-        ctaLabel: urgencyTranslations("ctaLabel"),
-        ctaHref: urgencyTranslations("ctaHref"),
-        proof: urgencyTranslations("proof"),
-      }
-    : undefined
-
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <head>
@@ -282,7 +266,6 @@ export default async function LocaleLayout({ children, params }: Props) {
                 headerNav={headerNav}
                 footerNav={footerNav}
                 announcement={settings.announcement}
-                marketUrgency={marketUrgency}
               >
                 {children}
               </ConditionalSiteChrome>

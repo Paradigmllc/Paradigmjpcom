@@ -13,15 +13,11 @@ import { usePathname } from "next/navigation"
  */
 export default function SiteWrapper({
   children,
-  marketUrgencyActive = false,
 }: {
   children: React.ReactNode
-  marketUrgencyActive?: boolean
 }) {
   const pathname = usePathname()
   // LP 経路は <main pt-16> を付けない (header skip のため top spacing 不要)
   const isLp = pathname.startsWith("/p/") || /^\/[a-z]{2}\/(?:report|d)\//.test(pathname)
-  // The urgency panel reserves the fixed header's space itself. Keeping the
-  // default header spacer here would create a visible blank band below it.
-  return <main className={isLp || marketUrgencyActive ? "" : "pt-16"}>{children}</main>
+  return <main className={isLp ? "" : "pt-16"}>{children}</main>
 }
