@@ -12,7 +12,7 @@ import { ManualWorkHistoryItem, type ManualWorkOutcome } from "./ManualWorkHisto
 const filters: Array<{ value: ManualWorkHistoryFilter; label: string }> = [
   { value: "all", label: "すべて" },
   { value: "action_required", label: "要確認" },
-  { value: "completed", label: "Twenty保存" },
+  { value: "completed", label: "処理完了" },
   { value: "sent", label: "手動送信済み" },
   { value: "failed", label: "失敗・対象外" },
 ]
@@ -53,7 +53,7 @@ export function ManualWorkHistory({ items, total, hasMore, loading, sources, his
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Persistent workspace</p>
           <h2 id="history-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">解析履歴</h2>
-          <p className="mt-1 text-sm text-slate-600">履歴・根拠・文面・成果イベントは専用DBに残り、リロードしても消えません。</p>
+          <p className="mt-1 text-sm text-slate-600">一次判定、ChatGPT用ブリーフ、取込文面、成果イベントは専用DBに残り、リロードしても消えません。</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">{items.length} / {total}件</span>
