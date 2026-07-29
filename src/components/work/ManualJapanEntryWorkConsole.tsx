@@ -4,8 +4,6 @@ import { motion } from "framer-motion"
 import { CheckCircle2, CircleDot, Database, LockKeyhole, ShieldCheck } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Toaster, toast } from "sonner"
-import type { ManualExperimentMetric } from "@/lib/sales/manual-japan-entry-experiment"
-import type { ManualAngleMetric } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
 import { ManualChatGptHandoff } from "./ManualChatGptHandoff"
@@ -37,8 +35,6 @@ export function ManualJapanEntryWorkConsole({
   initialItems: ManualJapanEntryWorkRow[]
   initialHistoryTotal: number
   initialSummary: ManualWorkDashboardSummary
-  initialMetrics: ManualExperimentMetric[]
-  initialAngleMetrics: ManualAngleMetric[]
   initialSources: ManualLeadSourceCatalogRow[]
   initialHistoryError: string | null
 }) {
