@@ -51,10 +51,17 @@ export function decodeCustomLabels(value) {
   return value
 }
 
-export function enforceRouterPriorities(labels, priority = 100000) {
+function validateProxyNetwork(network) {
+  if (typeof network !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.test(network)) {
+    throw new Error("Proxy network must be a valid Docker network name")
+  }
+}
+
+export function enforceRouterPriorities(labels, priority = 100000, proxyNetwork = "coolify") {
   if (!Number.isSafeInteger(priority) || priority < 1) {
     throw new Error("Router priority must be a positive safe integer")
   }
+  validateProxyNetwork(proxyNetwork)
 
   const normalized = labels.replace(/\r\n/g, "\n").trim()
   const lines = normalized ? normalized.split("\n") : []
@@ -69,21 +76,27 @@ export function enforceRouterPriorities(labels, priority = 100000) {
     throw new Error("No Traefik HTTP routers were found in the Coolify custom labels")
   }
 
-  const priorityKeys = new Set(
-    [...routers].map((router) => `traefik.http.routers.${router}.priority`),
-  )
+  const managedKeys = new Set([
+    "traefik.docker.network",
+    ...[...routers].map((router) => `traefik.http.routers.${router}.priority`),
+  ])
   const retained = lines.filter((line) => {
     const separator = line.indexOf("=")
     const key = separator >= 0 ? line.slice(0, separator) : line
-    return !priorityKeys.has(key)
+    return !managedKeys.has(key)
   })
 
+  // Coolify may attach the application to more than one Docker network during
+  // rolling deployment. Without an explicit provider network, Traefik can pick
+  // an unreachable network nondeterministically and return 502 for a healthy app.
+  retained.push(`traefik.docker.network=${proxyNetwork}`)
   for (const router of [...routers].sort()) {
     retained.push(`traefik.http.routers.${router}.priority=${priority}`)
   }
 
   return {
     labels: `${retained.join("\n")}\n`,
+    proxyNetwork,
     routers: [...routers].sort(),
   }
 }
@@ -124,21 +137,37 @@ async function main() {
   })
 
   const generated = await api(`/applications/${APP_UUID}`)
+  const proxyNetwork = (
+    process.env.PARADIGM_PROXY_NETWORK
+    || generated?.destination?.network
+    || "coolify"
+  ).trim()
+  validateProxyNetwork(proxyNetwork)
   const decoded = decodeCustomLabels(generated?.custom_labels)
-  const { labels, routers } = enforceRouterPriorities(decoded, ROUTER_PRIORITY)
+  const { labels, routers } = enforceRouterPriorities(
+    decoded,
+    ROUTER_PRIORITY,
+    proxyNetwork,
+  )
 
-  console.log(`Applying explicit priority ${ROUTER_PRIORITY} to ${routers.length} Docker-provider routers`)
+  console.log(
+    `Pinning Traefik to ${proxyNetwork} and applying priority ${ROUTER_PRIORITY} to ${routers.length} routers`,
+  )
   await patchApplication({
     custom_labels: Buffer.from(labels, "utf8").toString("base64"),
   })
 
   const finalState = await api(`/applications/${APP_UUID}`)
   const savedLabels = decodeCustomLabels(finalState?.custom_labels)
+  const savedLines = new Set(savedLabels.replace(/\r\n/g, "\n").trim().split("\n"))
   const missing = routers.filter(
-    (router) => !savedLabels.includes(`traefik.http.routers.${router}.priority=${ROUTER_PRIORITY}`),
+    (router) => !savedLines.has(`traefik.http.routers.${router}.priority=${ROUTER_PRIORITY}`),
   )
   if (missing.length > 0) {
     throw new Error(`Coolify did not persist router priority labels: ${missing.join(", ")}`)
+  }
+  if (!savedLines.has(`traefik.docker.network=${proxyNetwork}`)) {
+    throw new Error(`Coolify did not persist Traefik network pin: ${proxyNetwork}`)
   }
 
   const evidence = {
@@ -151,6 +180,7 @@ async function main() {
     health_check_path: finalState?.health_check_path,
     health_check_port: finalState?.health_check_port,
     is_auto_deploy_enabled: finalState?.is_auto_deploy_enabled,
+    proxy_network: proxyNetwork,
     router_priority: ROUTER_PRIORITY,
     routers,
   }
