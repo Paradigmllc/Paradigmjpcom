@@ -33,7 +33,11 @@ def console_index() -> HTMLResponse:
         raise RuntimeError("Video Factory console HTML is missing the body terminator")
     source = source.replace(
         marker,
-        '<script src="/console/console-run-poll.js" defer></script>\n</body>',
+        (
+            '<script src="/console/console-run-poll.js" defer></script>\n'
+            '<script src="/console/console-registry-link.js" defer></script>\n'
+            "</body>"
+        ),
         1,
     )
     return HTMLResponse(source)
