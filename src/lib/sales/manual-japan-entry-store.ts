@@ -77,7 +77,7 @@ export async function listManualJapanEntryWorkPage(input: {
     .order("created_at", { ascending: false })
     .range(from, from + pageSize - 1)
   if (filter === "action_required") query = query.eq("status", "needs_review")
-  if (filter === "completed") query = query.in("twenty_sync_status", ["synced", "duplicate"])
+  if (filter === "completed") query = query.eq("status", "completed")
   if (filter === "sent") query = query.not("manually_sent_at", "is", null)
   if (filter === "failed") query = query.in("status", ["failed", "rejected"])
   if (search) query = query.or(`company_name.ilike.*${search}*,domain.ilike.*${search}*`)
@@ -97,7 +97,7 @@ export async function getManualWorkDashboardSummary(): Promise<ManualWorkDashboa
   const [total, actionRequired, completed, formReady, manuallySent, meetings] = await Promise.all([
     table(),
     table().eq("status", "needs_review"),
-    table().in("twenty_sync_status", ["synced", "duplicate"]),
+    table().eq("status", "completed"),
     table().not("form_url", "is", null),
     table().not("manually_sent_at", "is", null),
     table().not("meeting_converted_at", "is", null),
@@ -262,7 +262,6 @@ export async function createManualWork(input: {
   return row(data)
 }
 
-
 export const MANUAL_WORK_OUTCOMES = ["manually_sent", "reply_received", "founder_forwarded", "meeting_converted"] as const
 export type ManualWorkOutcome = (typeof MANUAL_WORK_OUTCOMES)[number]
 
@@ -288,6 +287,7 @@ export async function recordManualWorkOutcome(input: {
   const field = `${input.outcome}_at`
   return updateManualWork(input.id, { [field]: input.value ? now : null })
 }
+
 export async function updateManualWork(
   id: string,
   patch: Record<string, unknown>,
