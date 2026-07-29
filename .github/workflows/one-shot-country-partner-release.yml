@@ -124,21 +124,33 @@ jobs:
       - name: Verify embedded Video Factory runtime
         run: |
           set -euo pipefail
+          redirect_ok() {
+            case "$1" in
+              301|302|303|307|308) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
           for attempt in $(seq 1 90); do
             ready_code="$(curl --silent --show-error --output /tmp/video-factory-ready.json \
               --write-out '%{http_code}' --max-time 20 \
               https://paradigmjp.com/api/video-factory/ready || true)"
-            console_code="$(curl --silent --show-error --output /dev/null \
+            edge_redirect_code="$(curl --silent --show-error --output /dev/null \
               --write-out '%{http_code}' --max-time 20 \
               --header 'Accept: text/html' \
               https://paradigmjp.com/console/ || true)"
+            auth_redirect_code="$(curl --silent --show-error --output /dev/null \
+              --write-out '%{http_code}' --max-time 20 \
+              --header 'Accept: text/html' \
+              https://www.paradigmjp.com/console/ || true)"
             if [ "${ready_code}" = "200" ] \
               && jq -e '.ready == true and .service == "video-factory"' /tmp/video-factory-ready.json >/dev/null \
-              && { [ "${console_code}" = "307" ] || [ "${console_code}" = "302" ]; }; then
+              && redirect_ok "${edge_redirect_code}" \
+              && redirect_ok "${auth_redirect_code}"; then
               exit 0
             fi
-            printf '[%s/90] video-factory-ready=%s console-auth-redirect=%s\n' \
-              "${attempt}" "${ready_code}" "${console_code}"
+            printf '[%s/90] video-factory-ready=%s edge-redirect=%s auth-redirect=%s\n' \
+              "${attempt}" "${ready_code}" "${edge_redirect_code}" "${auth_redirect_code}"
             sleep 5
           done
           echo "Embedded Video Factory verification failed" >&2
