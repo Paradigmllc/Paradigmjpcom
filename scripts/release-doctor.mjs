@@ -1468,8 +1468,9 @@ function probeDirectOrigin(originAddress, hostname, scheme, { forgedCloudflareHe
   })
   if (result.error?.code === "ENOENT") throw new Error("curl is unavailable")
   const statusCode = String(result.stdout || "").trim()
+  const redirectsToTls = scheme === "http" && /^3\d\d$/.test(statusCode)
   return {
-    blocked: result.status !== 0 || statusCode === "403",
+    blocked: result.status !== 0 || statusCode === "403" || redirectsToTls,
     unavailable: result.status !== 0 || /^[45]\d\d$/.test(statusCode),
   }
 }
@@ -1496,7 +1497,7 @@ async function checkOriginAccessGate() {
       fail("direct origin HTTP remains reachable")
       return
     }
-    pass("direct origin HTTP is blocked")
+    pass("direct origin HTTP serves no application content")
 
     for (let index = 0; index < protectedHosts.length; index += 1) {
       const hostname = protectedHosts[index]

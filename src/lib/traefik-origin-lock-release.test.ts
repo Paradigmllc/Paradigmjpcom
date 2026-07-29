@@ -47,7 +47,8 @@ describe("production origin-lock release wiring", () => {
     expect(doctor).toContain("--resolve")
     expect(doctor).toContain("CF-Connecting-IP: 203.0.113.10")
     expect(doctor).toContain("cf-ray")
-    expect(doctor).toContain("direct origin HTTP is blocked")
+    expect(doctor).toContain('scheme === "http" && /^3\\d\\d$/.test(statusCode)')
+    expect(doctor).toContain("direct origin HTTP serves no application content")
     expect(doctor).toContain("forged Cloudflare headers are blocked")
   })
 
