@@ -8,6 +8,7 @@ import type { ManualExperimentMetric } from "@/lib/sales/manual-japan-entry-expe
 import type { ManualAngleMetric } from "@/lib/sales/manual-japan-entry-angle"
 import type { ManualJapanEntryWorkRow } from "@/lib/sales/manual-japan-entry-types"
 import type { ManualLeadSourceCatalogRow } from "@/lib/sales/manual-japan-entry-source-ledger"
+import { ManualChatGptHandoff } from "./ManualChatGptHandoff"
 import { ManualWorkHistory } from "./ManualWorkHistory"
 import { ManualWorkIntake, type ManualWorkQueueState } from "./ManualWorkIntake"
 import { ManualWorkOverview } from "./ManualWorkOverview"
@@ -58,6 +59,10 @@ export function ManualJapanEntryWorkConsole({
   const urls = useMemo(() => parseManualWorkUrls(input), [input])
   const sourceBySlug = useMemo(() => new Map(sources.map((source) => [source.slug, source])), [sources])
   const selectedSource = sourceBySlug.get(sourceSlug)
+
+  const mergeExternalItems = useCallback((incoming: ManualJapanEntryWorkRow[]) => {
+    setItems((current) => mergeItems(current, incoming))
+  }, [])
 
   const refreshHistory = useCallback(async (quiet = false, options?: {
     page?: number
@@ -223,7 +228,7 @@ export function ManualJapanEntryWorkConsole({
         <div className="mx-auto max-w-[1480px] px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 font-semibold"><span className="grid size-7 place-items-center rounded-lg bg-emerald-400 text-slate-950">P</span><span>Paradigm Revenue Operations</span></div>
-            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${workflowRunning ? "text-blue-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Qualification / editorial running" : "System ready"}</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-slate-400"><span className="inline-flex items-center gap-1.5"><LockKeyhole className="size-3.5" />Admin only</span><span className={`inline-flex items-center gap-1.5 ${workflowRunning ? "text-blue-300" : "text-emerald-300"}`}><CircleDot className="size-3.5" />{workflowRunning ? "Qualification / brief preparation running" : "System ready"}</span></div>
           </div>
         </div>
       </div>
@@ -231,12 +236,13 @@ export function ManualJapanEntryWorkConsole({
       <div className="mx-auto w-full min-w-0 max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Evidence-first Outreach Workbench</span><span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500">No template fallback</span></div>
-            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">大量URLは速く選別し、残す企業だけ高品質に書く</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">一次判定はホームページの公開事実だけで高速処理します。送信文は選択した企業について複数ページを読み、GPT-5.6 Terraで複数案を作り、GPT-5.6 Solで編集・採否判定します。DeepSeekと固定テンプレートは送信文に使用しません。</p>
+            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Evidence-first Outreach Workbench</span><span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700">ChatGPT Pro · APIなし</span></div>
+            <h1 className="mt-4 max-w-4xl font-display text-3xl font-semibold tracking-[-0.035em] text-slate-950 sm:text-4xl lg:text-5xl">大量URLは速く選別し、残す企業だけChatGPTで高品質化</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">一次判定と公式ページ調査は/workで実行します。企業別文面はChatGPT Proへ最大15社ずつコピーし、返却JSONを一括取込します。OpenAI API・OpenRouter・DeepSeek・固定テンプレートは使用しません。</p>
           </div>
           <nav aria-label="ワークベンチ内ナビゲーション" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
             <a href="#intake" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">高速判定</a>
+            <a href="#chatgpt-handoff" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">ChatGPT連携</a>
             <a href="#history" className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">候補履歴</a>
             <Button type="button" variant="ghost" size="sm" aria-label="Twenty成果物の整合性を監査" disabled={reconcilingArtifacts} onClick={() => void reconcileArtifacts()} className="h-auto rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">{reconcilingArtifacts ? "監査中…" : "Twenty整合性"}</Button>
           </nav>
@@ -272,9 +278,13 @@ export function ManualJapanEntryWorkConsole({
 
         <section aria-label="生成ガードレール" className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:grid-cols-3 sm:p-5">
           <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" /><div><p className="text-xs font-semibold text-slate-800">一次判定は非生成</p><p className="mt-1 text-xs leading-5 text-slate-600">ホームページの公開事実だけで選別し、薄い送信文を量産しません。</p></div></div>
-          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">残す企業は複数ページ調査</p><p className="mt-1 text-xs leading-5 text-slate-600">商品、料金、会社、ニュース、連絡先から会社固有の論点を組み立てます。</p></div></div>
-          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">GPT-5.6二段編集</p><p className="mt-1 text-xs leading-5 text-slate-600">Terraの複数案をSolが再編集し、88点未満・テンプレ類似・根拠不足は不採用にします。</p></div></div>
+          <div className="flex gap-3"><Database className="mt-0.5 size-4 shrink-0 text-blue-600" /><div><p className="text-xs font-semibold text-slate-800">公式ページを根拠化</p><p className="mt-1 text-xs leading-5 text-slate-600">商品、料金、会社、ニュース、連絡先から根拠ID付きブリーフを作ります。</p></div></div>
+          <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" /><div><p className="text-xs font-semibold text-slate-800">ChatGPT出力も保存前検査</p><p className="mt-1 text-xs leading-5 text-slate-600">企業ID・根拠・語数・定型句・断定・過去文面との類似を機械検査します。</p></div></div>
         </section>
+
+        <div id="chatgpt-handoff" className="mt-7 scroll-mt-6">
+          <ManualChatGptHandoff items={items} onMergeItems={mergeExternalItems} onRefresh={() => void refreshHistory(true)} />
+        </div>
 
         <div className="mt-12 border-t border-slate-200 pt-10"><ManualWorkHistory items={items} total={historyTotal} hasMore={historyHasMore} loading={historyLoading} sources={sources} historyError={historyError} running={workflowRunning} updatingOutcome={updatingOutcome} onCriteriaChange={changeHistoryCriteria} onLoadMore={loadMoreHistory} onRefresh={() => void refreshHistory()} onRetry={(item) => void retry(item)} onCopy={(value, label) => void copy(value, label)} onUpdateOutcome={(item, outcome, value) => void updateOutcome(item, outcome, value)} /></div>
       </div>
