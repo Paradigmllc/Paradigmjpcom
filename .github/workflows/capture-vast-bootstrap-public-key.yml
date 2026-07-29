@@ -1,0 +1,50 @@
+name: Capture Vast Bootstrap Public Key
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/capture-vast-bootstrap-public-key.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vast-bootstrap-public-key
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for the exact-key bootstrap bridge and capture its public key
+        run: |
+          set -euo pipefail
+          url='https://www.paradigmjp.com/api/video-factory/bootstrap-vast-public?action=public-key'
+          for attempt in $(seq 1 180); do
+            code="$(curl --silent --show-error --output /tmp/vast-bootstrap-public-key.json \
+              --write-out '%{http_code}' --max-time 25 \
+              --header 'Cache-Control: no-cache' \
+              "$url" || true)"
+            if [ "$code" = '200' ] \
+              && jq -e '.ok == true and .algorithm == "RSA-OAEP-SHA256" and (.public_key_pem | startswith("-----BEGIN PUBLIC KEY-----"))' \
+                /tmp/vast-bootstrap-public-key.json >/dev/null; then
+              jq '{ok,algorithm,public_key_pem}' /tmp/vast-bootstrap-public-key.json \
+                > /tmp/vast-bootstrap-public-key.safe.json
+              mv /tmp/vast-bootstrap-public-key.safe.json /tmp/vast-bootstrap-public-key.json
+              exit 0
+            fi
+            printf '[%s/180] bootstrap public-key HTTP %s\n' "$attempt" "$code"
+            sleep 10
+          done
+          echo 'Timed out waiting for the Vast bootstrap public key endpoint' >&2
+          exit 1
+      - name: Upload public encryption key
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-bootstrap-public-key
+          path: /tmp/vast-bootstrap-public-key.json
+          if-no-files-found: error
+          retention-days: 1
