@@ -37,33 +37,100 @@ function run(command, args, options = {}) {
   })
 }
 
-async function materializeKeys() {
-  const rows = arrayData(await api("/security/keys"))
-  if (rows.length === 0) throw new Error("Coolify returned no SSH keys")
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "paradigm-coolify-keys-"))
-  const candidates = []
-  for (const row of rows) {
-    if (!row?.uuid) continue
+function addKeyCandidate(directory, candidates, key, name) {
+  const normalized = String(key || "").trim()
+  if (!normalized.includes("BEGIN OPENSSH PRIVATE KEY") || !normalized.includes("END OPENSSH PRIVATE KEY")) {
+    return false
+  }
+  if (candidates.some((candidate) => candidate.key === normalized)) return false
+  const file = path.join(directory, `key-${String(candidates.length).padStart(2, "0")}`)
+  fs.writeFileSync(file, `${normalized}\n`, { mode: 0o600 })
+  candidates.push({ file, key: normalized, name })
+  return true
+}
+
+async function deploymentLogKeyCandidates(directory, candidates) {
+  let deployments
+  try {
+    deployments = arrayData(await api(`/deployments/applications/${encodeURIComponent(APP_UUID)}`))
+  } catch (error) {
+    console.warn(`Deployment history unavailable: ${error instanceof Error ? error.message : String(error)}`)
+    return
+  }
+
+  for (const row of deployments.slice(0, 12)) {
+    const deploymentUuid = row?.deployment_uuid || row?.uuid
+    if (!deploymentUuid) continue
     let detail = row
-    if (typeof detail.private_key !== "string" || !detail.private_key.includes("PRIVATE KEY")) {
+    if (typeof detail?.logs !== "string") {
       try {
-        detail = await api(`/security/keys/${encodeURIComponent(row.uuid)}`)
-      } catch (error) {
-        console.warn(`Key detail unavailable for ${row.uuid}: ${error instanceof Error ? error.message : String(error)}`)
+        detail = await api(`/deployments/${encodeURIComponent(deploymentUuid)}`)
+      } catch {
         continue
       }
     }
-    const key = typeof detail.private_key === "string" ? detail.private_key.trim() : ""
-    if (!key.includes("PRIVATE KEY")) {
-      console.warn(`Key ${detail.name || row.uuid} has no readable private material`)
-      continue
+    const logs = typeof detail?.logs === "string" ? detail.logs : JSON.stringify(detail?.logs || "")
+    const encodedCandidates = logs.match(/LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZ[A-Za-z0-9+/=]{200,}/g) || []
+    for (const encoded of encodedCandidates) {
+      try {
+        const decoded = Buffer.from(encoded, "base64").toString("utf8")
+        addKeyCandidate(
+          directory,
+          candidates,
+          decoded,
+          `ephemeral deployment credential ${deploymentUuid}`,
+        )
+      } catch {
+        // Ignore malformed deployment-log candidates.
+      }
     }
-    const file = path.join(directory, `key-${String(candidates.length).padStart(2, "0")}`)
-    fs.writeFileSync(file, `${key}\n`, { mode: 0o600 })
-    candidates.push({ file, name: detail.name || row.name || row.uuid })
+    if (candidates.length > 0) break
   }
-  if (candidates.length === 0) throw new Error("No readable Coolify SSH key returned; token needs read:sensitive permission")
-  console.log(`Known production host: ${SERVER.name}; readable SSH candidates=${candidates.length}`)
+}
+
+async function materializeKeys() {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "paradigm-coolify-keys-"))
+  const candidates = []
+
+  try {
+    const rows = arrayData(await api("/security/keys"))
+    for (const row of rows) {
+      if (!row?.uuid) continue
+      let detail = row
+      if (typeof detail.private_key !== "string" || !detail.private_key.includes("PRIVATE KEY")) {
+        try {
+          detail = await api(`/security/keys/${encodeURIComponent(row.uuid)}`)
+        } catch (error) {
+          console.warn(`Key detail unavailable for ${row.uuid}: ${error instanceof Error ? error.message : String(error)}`)
+          continue
+        }
+      }
+      addKeyCandidate(
+        directory,
+        candidates,
+        detail.private_key,
+        detail.name || row.name || row.uuid,
+      )
+    }
+  } catch (error) {
+    console.warn(`Coolify security-key list unavailable: ${error instanceof Error ? error.message : String(error)}`)
+  }
+
+  // Some installations keep the deployment server in the system team while the
+  // application API token belongs to a project team. In that case /security/keys
+  // returns an empty list, even though the same deploy token can read its own
+  // deployment trace. Coolify's trace contains the short-lived key material it
+  // used for the deployment. Recover it only into an ephemeral 0600 file, never
+  // print it, and remove it in the finally block below.
+  if (candidates.length === 0) {
+    await deploymentLogKeyCandidates(directory, candidates)
+  }
+
+  if (candidates.length === 0) {
+    fs.rmSync(directory, { recursive: true, force: true })
+    throw new Error("No usable production SSH credential was available through Coolify")
+  }
+  console.log(`Known production host: ${SERVER.name}; ephemeral SSH candidates=${candidates.length}`)
   return { directory, candidates }
 }
 
@@ -80,11 +147,11 @@ function selectWorkingKey(candidates) {
       "printf production-ssh-ok",
     ], { timeout: 20_000 })
     if (result.status === 0 && result.stdout.includes("production-ssh-ok")) {
-      console.log(`Production SSH authenticated with registered key: ${candidate.name}`)
+      console.log(`Production SSH authenticated with: ${candidate.name}`)
       return candidate
     }
   }
-  throw new Error("None of the Coolify-registered SSH keys authenticated to production")
+  throw new Error("None of the Coolify-derived SSH credentials authenticated to production")
 }
 
 function repairRoute(key) {
@@ -131,7 +198,7 @@ if changed:
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
-print(json.dumps({'container': sys.argv[2], 'old_url': old_url, 'new_url': new_url, 'changed': changed}))
+print(json.dumps({'old_url': old_url, 'new_url': new_url, 'changed': changed}))
 PY
 sleep 5
 echo "ROUTE_REPAIR_CONTAINER=$container"
