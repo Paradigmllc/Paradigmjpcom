@@ -19,6 +19,14 @@ function mode(item: ManualJapanEntryWorkRow): string {
   return typeof item.evidence.analysis_mode === "string" ? item.evidence.analysis_mode : ""
 }
 
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}
+}
+
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim())) : []
+}
+
 function isChatGptMode(item: ManualJapanEntryWorkRow): boolean {
   return mode(item).startsWith("chatgpt_")
     || item.message_review.purpose === "chatgpt_handoff"
@@ -27,6 +35,7 @@ function isChatGptMode(item: ManualJapanEntryWorkRow): boolean {
 
 function isLegacyUnsent(item: ManualJapanEntryWorkRow): boolean {
   return mode(item) !== "fast_qualification"
+    && mode(item) !== "existing_japan_presence"
     && !isChatGptMode(item)
     && item.is_japanese_company !== true
     && item.country_code !== "JP"
@@ -43,13 +52,13 @@ function fastQualification(item: ManualJapanEntryWorkRow): {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { score: null, priority: "review", reasons: [] }
   }
-  const record = value as Record<string, unknown>
-  const priority = record.priority === "promote" || record.priority === "low" ? record.priority : "review"
+  const data = value as Record<string, unknown>
+  const priority = data.priority === "promote" || data.priority === "low" ? data.priority : "review"
   return {
-    score: typeof record.score === "number" ? record.score : null,
+    score: typeof data.score === "number" ? data.score : null,
     priority,
-    reasons: Array.isArray(record.reasons)
-      ? record.reasons.filter((reason): reason is string => typeof reason === "string").slice(0, 8)
+    reasons: Array.isArray(data.reasons)
+      ? data.reasons.filter((reason): reason is string => typeof reason === "string").slice(0, 8)
       : [],
   }
 }
@@ -69,6 +78,25 @@ function reasonsOrFallback(item: ManualJapanEntryWorkRow, fallback: string): str
 }
 
 export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualWorkOperatorNotice | null {
+  if (mode(item) === "existing_japan_presence") {
+    const summary = record(item.evidence.structuredSummary)
+    const presence = record(summary.japanPresence)
+    const level = typeof presence.level === "string" ? presence.level : "language"
+    const reasons = strings(presence.signals)
+    return {
+      title: level === "sales"
+        ? "日本向け販売・小売導線を確認しました"
+        : level === "support"
+          ? "日本向けサポート・現地体制を確認しました"
+          : "日本語の顧客導線を確認しました",
+      detail: "この企業は『日本未進出』ではありません。旧スコアや旧文面は破棄し、新規Japan Country Partner営業の送信対象から外しました。",
+      reasons: reasons.length > 0 ? reasons : ["公式サイト上に日本向けの既存顧客導線があります。"],
+      nextAction: "原則スキップしてください。既存日本事業の再構築・代理店切替など、別の具体的課題が確認できる場合だけ別案件として調査します。",
+      retryLabel: "再評価",
+      tone: "slate",
+    }
+  }
+
   if (isLegacyUnsent(item)) {
     return {
       title: "旧AI文面・旧判定を使用しません",
@@ -116,7 +144,7 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
     }
     return {
       title: "ChatGPT用ブリーフ準備完了",
-      detail: "公式サイトの複数ページから根拠ID付きブリーフを保存しました。文章生成APIは呼び出していません。",
+      detail: "公式サイトの複数ページから、会社・商品・本拠地候補・日本導線・問い合わせ経路を構造化して保存しました。文章生成APIは呼び出していません。",
       reasons: ["上部のChatGPT Pro handoffから、準備済み企業を最大15社まとめてコピーできます。"],
       nextAction: "ChatGPT Proへ貼り付け、返却されたJSONを/workへ一括取込してください。",
       retryLabel: "ブリーフを更新",
