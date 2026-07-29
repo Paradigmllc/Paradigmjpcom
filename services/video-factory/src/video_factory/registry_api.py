@@ -78,9 +78,11 @@ def registry_status() -> dict[str, object]:
         for item in registry.workflows
     ]
     readiness = registry_readiness(registry, settings.comfyui_workflow_root)
+    raw_items = readiness.get("items")
+    readiness_items = raw_items if isinstance(raw_items, list) else []
     readiness_by_id = {
         str(item.get("id")): item
-        for item in readiness.get("items", [])
+        for item in readiness_items
         if isinstance(item, dict)
     }
     for contract in contracts:
