@@ -38,6 +38,58 @@ describe("Video Factory internal proxy redirects", () => {
     expect(response.headers.get("location")).not.toContain("0.0.0.0")
   })
 
+  it("supports a cache-safe alias as the post-login destination", async () => {
+    mockedAuthorize.mockResolvedValue({
+      ok: false,
+      source: "none",
+      userEmail: null,
+    })
+    const request = new NextRequest(
+      "http://0.0.0.0:3000/video-factory-console/",
+      { headers: { accept: "text/html" } },
+    )
+
+    const response = await proxyVideoFactoryRequest(request, "/console/", {
+      loginRedirectPath: "/video-factory-console/",
+    })
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get("location")).toBe(
+      "/admin/login?redirect=%2Fvideo-factory-console%2F",
+    )
+  })
+
+  it("rewrites console asset URLs for a cache-safe public alias", async () => {
+    mockedAuthorize.mockResolvedValue({
+      ok: true,
+      source: "legacy",
+      userEmail: null,
+    })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(
+        '<!doctype html><link href="/console/console.css"><script src="/console/console.js"></script></body>',
+        { status: 200, headers: { "content-type": "text/html; charset=utf-8" } },
+      )),
+    )
+    const request = new NextRequest(
+      "http://0.0.0.0:3000/video-factory-console/",
+      { headers: { accept: "text/html" } },
+    )
+
+    const response = await proxyVideoFactoryRequest(request, "/console/", {
+      consoleEntry: true,
+      consolePublicBase: "/video-factory-console/",
+    })
+    const html = await response.text()
+
+    expect(response.status).toBe(200)
+    expect(html).toContain('/video-factory-console/console.css')
+    expect(html).toContain('/video-factory-console/console.js')
+    expect(html).toContain('/video-factory-console/console-run-poll.js')
+    expect(html).not.toContain('"/console/')
+  })
+
   it("rewrites an internal upstream Location and preserves public forwarded headers", async () => {
     mockedAuthorize.mockResolvedValue({
       ok: true,
