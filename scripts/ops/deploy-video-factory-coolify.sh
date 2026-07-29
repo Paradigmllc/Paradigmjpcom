@@ -36,10 +36,14 @@ request() {
       "${API}${path}" || true)"
   fi
   if [[ ! "${status}" =~ ^2 ]]; then
-    printf 'Coolify %s %s failed with HTTP %s: ' "${method}" "${path}" "${status}" >&2
-    jq -c '{message,errors,warning,conflicts}' "${response_file}" 2>/dev/null >&2 \
-      || head -c 2000 "${response_file}" >&2
-    printf '\n' >&2
+    printf 'Coolify %s %s failed with HTTP %s:\n' "${method}" "${path}" "${status}" >&2
+    if [[ -s "${response_file}" ]]; then
+      head -c 4000 "${response_file}" >&2
+      printf '\n' >&2
+    else
+      printf '<empty response body>\n' >&2
+    fi
+    cp "${response_file}" /tmp/video-factory-coolify-error.json 2>/dev/null || true
     rm -f "${response_file}"
     return 1
   fi
@@ -147,7 +151,7 @@ application_payload="$(jq -cn \
     disable_build_cache: true,
     health_check_enabled: true,
     health_check_path: "/health",
-    health_check_port: "8080",
+    health_check_port: 8080,
     health_check_host: "localhost",
     health_check_method: "GET",
     health_check_return_code: 200,
