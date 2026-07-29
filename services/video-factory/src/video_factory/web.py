@@ -8,9 +8,11 @@ from fastapi.staticfiles import StaticFiles
 from .api import app
 from .console_api import router as console_router
 from .registry_api import router as registry_router
+from .uploads import router as upload_router
 
 app.include_router(console_router)
 app.include_router(registry_router)
+app.include_router(upload_router)
 
 _STATIC_ROOT = Path(__file__).resolve().parent / "static"
 
@@ -36,6 +38,8 @@ def console_index() -> HTMLResponse:
         (
             '<script src="/console/console-run-poll.js" defer></script>\n'
             '<script src="/console/console-registry-link.js" defer></script>\n'
+            '<script src="/console/console-vast-connect.js" defer></script>\n'
+            '<script src="/console/console-upload.js" defer></script>\n'
             "</body>"
         ),
         1,
