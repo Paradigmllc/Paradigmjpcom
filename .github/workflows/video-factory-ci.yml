@@ -87,3 +87,21 @@ jobs:
           path: services/video-factory/workspace
           if-no-files-found: warn
           retention-days: 7
+
+  production-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the exact production container
+        run: docker build --progress=plain --tag paradigm-video-factory-pr .
+      - name: Verify embedded runtime contents
+        run: |
+          docker run --rm --entrypoint /bin/sh paradigm-video-factory-pr -c '
+            test -x /usr/local/bin/paradigm-entrypoint &&
+            test -x /opt/video-factory/.venv/bin/uvicorn &&
+            command -v hyperframes &&
+            command -v ffmpeg &&
+            command -v chromium-browser &&
+            python3 --version
+          '
