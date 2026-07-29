@@ -10,9 +10,12 @@ export type AdminAuthResult = {
 }
 
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
+const ADMIN_API_SESSION_TTL_SECONDS = 60 * 60
 
 function adminSessionSecret(): string | null {
-  const secret = process.env.ADMIN_SESSION_SECRET?.trim() || process.env.ADMIN_PASSWORD?.trim()
+  const secret = process.env.ADMIN_SESSION_SECRET?.trim()
+    || process.env.ADMIN_PASSWORD?.trim()
+    || process.env.PAYLOAD_SECRET?.trim()
   return secret && secret.length >= 16 ? secret : null
 }
 
@@ -20,12 +23,20 @@ function signature(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url")
 }
 
-export function createAdminSessionToken(now = Date.now()): string | null {
+function createSignedAdminSessionToken(ttlSeconds: number, now = Date.now()): string | null {
   const secret = adminSessionSecret()
   if (!secret) return null
-  const expiresAt = Math.floor(now / 1000) + ADMIN_SESSION_TTL_SECONDS
+  const expiresAt = Math.floor(now / 1000) + ttlSeconds
   const payload = `${expiresAt}.${randomBytes(18).toString("base64url")}`
   return `${payload}.${signature(payload, secret)}`
+}
+
+export function createAdminSessionToken(now = Date.now()): string | null {
+  return createSignedAdminSessionToken(ADMIN_SESSION_TTL_SECONDS, now)
+}
+
+export function createAdminApiSessionToken(now = Date.now()): string | null {
+  return createSignedAdminSessionToken(ADMIN_API_SESSION_TTL_SECONDS, now)
 }
 
 export function verifyAdminSessionToken(token: string | null | undefined, now = Date.now()): boolean {
