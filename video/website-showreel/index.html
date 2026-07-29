@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Paradigm Condensed";
+        src: local("Arial Narrow");
+      }
+
+      @font-face {
+        font-family: "Paradigm Mono";
+        src: local("SFMono-Regular");
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #fafaf7;
+        color: #0f1115;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "Paradigm Mono", monospace;
+      }
+
+      #root {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        background: #fafaf7;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #fafaf7;
+        opacity: 0;
+      }
+
+      .scene:first-child {
+        opacity: 1;
+      }
+
+      .scene-image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(0.93) contrast(1.03);
+      }
+
+      .image-scrim {
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(250, 250, 247, 0.97) 0%, rgba(250, 250, 247, 0.84) 42%, rgba(250, 250, 247, 0.04) 72%),
+          linear-gradient(0deg, rgba(15, 17, 21, 0.18), transparent 38%);
+      }
+
+      .grain {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.12;
+        background-image:
+          repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(15, 17, 21, 0.08) 4px),
+          repeating-linear-gradient(90deg, transparent 0, transparent 5px, rgba(15, 17, 21, 0.045) 6px);
+        mix-blend-mode: multiply;
+      }
+
+      .topline {
+        position: absolute;
+        top: 78px;
+        left: 88px;
+        right: 88px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 19px;
+        border-top: 2px solid #0f1115;
+        font-size: 23px;
+        letter-spacing: 0.13em;
+      }
+
+      .scene-index {
+        color: #163f99;
+      }
+
+      .headline {
+        position: absolute;
+        left: 82px;
+        bottom: 164px;
+        max-width: 1250px;
+        font-family: "Paradigm Condensed", "Helvetica Neue", Arial, sans-serif;
+        font-size: 142px;
+        font-stretch: condensed;
+        font-weight: 800;
+        line-height: 0.86;
+        letter-spacing: -0.055em;
+        text-transform: uppercase;
+      }
+
+      .headline.compact {
+        max-width: 980px;
+        font-size: 124px;
+        line-height: 0.9;
+      }
+
+      .accent {
+        color: #163f99;
+      }
+
+      .bottom-label {
+        position: absolute;
+        left: 90px;
+        bottom: 78px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        color: #2f343b;
+        font-size: 22px;
+        letter-spacing: 0.1em;
+      }
+
+      .bottom-label::before {
+        width: 38px;
+        height: 8px;
+        background: #10b981;
+        content: "";
+      }
+
+      .steps {
+        position: absolute;
+        left: 90px;
+        bottom: 78px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        width: 970px;
+        border-top: 1px solid rgba(15, 17, 21, 0.5);
+      }
+
+      .step {
+        padding: 20px 24px 0 0;
+        color: #2f343b;
+        font-size: 21px;
+        letter-spacing: 0.08em;
+      }
+
+      .step strong {
+        display: block;
+        margin-bottom: 8px;
+        color: #0f1115;
+        font-size: 27px;
+      }
+
+      .wipe {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        z-index: 10;
+        width: 100%;
+        height: 5px;
+        background: #2563eb;
+        opacity: 0;
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+
+      .marker {
+        position: absolute;
+        right: 88px;
+        bottom: 78px;
+        width: 152px;
+        height: 152px;
+        display: grid;
+        place-items: center;
+        border: 2px solid rgba(15, 17, 21, 0.55);
+        border-radius: 50%;
+        background: rgba(250, 250, 247, 0.82);
+        font-size: 22px;
+        letter-spacing: 0.08em;
+      }
+
+      .final-panel {
+        position: absolute;
+        left: 82px;
+        bottom: 106px;
+        width: 1200px;
+        padding: 54px 58px 46px;
+        border: 2px solid #0f1115;
+        border-radius: 28px;
+        background: rgba(250, 250, 247, 0.94);
+        box-shadow: 18px 18px 0 #2563eb;
+      }
+
+      .final-title {
+        font-family: "Paradigm Condensed", "Helvetica Neue", Arial, sans-serif;
+        font-size: 154px;
+        font-weight: 800;
+        line-height: 0.82;
+        letter-spacing: -0.06em;
+      }
+
+      .final-subtitle {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(15, 17, 21, 0.4);
+        font-size: 23px;
+        letter-spacing: 0.12em;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="12"
+      data-width="1920"
+      data-height="1080"
+    >
+      <section id="scene-1" class="clip scene" data-start="0" data-duration="3.2" data-track-index="1">
+        <img class="scene-image" src="./assets/execution-studio.webp" alt="" data-layout-allow-overflow />
+        <div class="image-scrim"></div>
+        <div class="topline mono">
+          <span>PARADIGM / EXECUTION STUDIO</span>
+          <span class="scene-index">01 — SYSTEM</span>
+        </div>
+        <h1 class="headline">VIDEO <span class="accent">·</span><br />WEB <span class="accent">·</span> AI</h1>
+        <div class="bottom-label mono">ONE COORDINATED SYSTEM</div>
+        <div class="marker mono">LIVE<br />WORK</div>
+        <div class="grain"></div>
+      </section>
+
+      <section id="scene-2" class="clip scene" data-start="2.8" data-duration="3.4" data-track-index="2">
+        <img class="scene-image" src="./assets/video-production-system.webp" alt="" data-layout-allow-overflow />
+        <div class="image-scrim"></div>
+        <div class="topline mono">
+          <span>RECURRING VIDEO OPERATIONS</span>
+          <span class="scene-index">02 — CREATE</span>
+        </div>
+        <h2 class="headline compact">A REPEATABLE<br /><span class="accent">DELIVERY LOOP</span></h2>
+        <div class="steps mono">
+          <div class="step"><strong>01</strong>PLAN</div>
+          <div class="step"><strong>02</strong>CREATE</div>
+          <div class="step"><strong>03</strong>REVIEW</div>
+          <div class="step"><strong>04</strong>DELIVER</div>
+        </div>
+        <div class="grain"></div>
+      </section>
+
+      <section id="scene-3" class="clip scene" data-start="5.8" data-duration="3.4" data-track-index="3">
+        <img class="scene-image" src="./assets/japan-market-system.webp" alt="" data-layout-allow-overflow />
+        <div class="image-scrim"></div>
+        <div class="topline mono">
+          <span>JAPAN MARKET EXECUTION</span>
+          <span class="scene-index">03 — LOCALIZE</span>
+        </div>
+        <h2 class="headline compact">LOCAL SIGNAL<br /><span class="accent">CLEAR ACTION</span></h2>
+        <div class="bottom-label mono">RESEARCH / LOCALIZE / OPERATE</div>
+        <div class="marker mono">JP<br />READY</div>
+        <div class="grain"></div>
+      </section>
+
+      <section id="scene-4" class="clip scene" data-start="8.8" data-duration="3.2" data-track-index="4">
+        <img class="scene-image" src="./assets/web-ai-system.webp" alt="" data-layout-allow-overflow />
+        <div class="image-scrim"></div>
+        <div class="topline mono">
+          <span>VISIBLE WORK / CLEAR OWNERSHIP</span>
+          <span class="scene-index">04 — DELIVER</span>
+        </div>
+        <div class="final-panel">
+          <div class="final-title">PARADIGM</div>
+          <div class="final-subtitle mono">
+            <span>EXECUTION SYSTEM</span>
+            <span>VIDEO / WEB / AI / JAPAN</span>
+          </div>
+        </div>
+        <div class="grain"></div>
+      </section>
+
+      <div id="wipe" class="wipe"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.from("#scene-1 .scene-image", { scale: 1.08, duration: 3.2, ease: "none" }, 0)
+        .from("#scene-1 .topline", { opacity: 0, y: -28, duration: 0.7, ease: "power3.out" }, 0.1)
+        .from("#scene-1 .headline", { opacity: 0, y: 58, duration: 0.9, ease: "power3.out" }, 0.25)
+        .from("#scene-1 .bottom-label, #scene-1 .marker", { opacity: 0, y: 22, duration: 0.6, stagger: 0.1, ease: "power3.out" }, 0.55)
+
+        .to("#wipe", { opacity: 1, scaleX: 1, duration: 0.24, ease: "power2.inOut" }, 2.74)
+        .to("#scene-1", { opacity: 0, filter: "blur(12px)", duration: 0.4, ease: "power2.inOut" }, 2.8)
+        .fromTo("#scene-2", { opacity: 0, filter: "blur(12px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power2.inOut" }, 2.8)
+        .to("#wipe", { opacity: 0, scaleX: 0, transformOrigin: "right center", duration: 0.22 }, 3.03)
+        .from("#scene-2 .scene-image", { scale: 1.07, duration: 3.4, ease: "none" }, 2.8)
+        .from("#scene-2 .topline", { opacity: 0, y: -26, duration: 0.6, ease: "power3.out" }, 2.92)
+        .from("#scene-2 .headline", { opacity: 0, y: 48, duration: 0.78, ease: "power3.out" }, 3.05)
+        .from("#scene-2 .step", { opacity: 0, y: 22, duration: 0.48, stagger: 0.11, ease: "power3.out" }, 3.42)
+
+        .to("#wipe", { opacity: 1, scaleX: 1, transformOrigin: "left center", duration: 0.24, ease: "power2.inOut" }, 5.74)
+        .to("#scene-2", { opacity: 0, filter: "blur(12px)", duration: 0.4, ease: "power2.inOut" }, 5.8)
+        .fromTo("#scene-3", { opacity: 0, filter: "blur(12px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power2.inOut" }, 5.8)
+        .to("#wipe", { opacity: 0, scaleX: 0, transformOrigin: "right center", duration: 0.22 }, 6.03)
+        .from("#scene-3 .scene-image", { scale: 1.07, duration: 3.4, ease: "none" }, 5.8)
+        .from("#scene-3 .topline", { opacity: 0, y: -26, duration: 0.6, ease: "power3.out" }, 5.92)
+        .from("#scene-3 .headline", { opacity: 0, y: 52, duration: 0.8, ease: "power3.out" }, 6.05)
+        .from("#scene-3 .bottom-label, #scene-3 .marker", { opacity: 0, y: 22, duration: 0.55, stagger: 0.1, ease: "power3.out" }, 6.45)
+
+        .to("#wipe", { opacity: 1, scaleX: 1, transformOrigin: "left center", duration: 0.24, ease: "power2.inOut" }, 8.74)
+        .to("#scene-3", { opacity: 0, filter: "blur(12px)", duration: 0.4, ease: "power2.inOut" }, 8.8)
+        .fromTo("#scene-4", { opacity: 0, filter: "blur(12px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power2.inOut" }, 8.8)
+        .to("#wipe", { opacity: 0, scaleX: 0, transformOrigin: "right center", duration: 0.22 }, 9.03)
+        .from("#scene-4 .scene-image", { scale: 1.06, duration: 3.2, ease: "none" }, 8.8)
+        .from("#scene-4 .topline", { opacity: 0, y: -26, duration: 0.6, ease: "power3.out" }, 8.94)
+        .from("#scene-4 .final-panel", { opacity: 0, y: 54, duration: 0.86, ease: "power3.out" }, 9.12)
+        .from("#scene-4 .final-subtitle span", { opacity: 0, y: 18, duration: 0.5, stagger: 0.12, ease: "power3.out" }, 9.62);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

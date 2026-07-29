@@ -1,0 +1,15 @@
+{
+  "name": "website-showreel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.7.79 preview",
+    "check": "npx --yes hyperframes@0.7.79 check",
+    "render": "npx --yes hyperframes@0.7.79 render",
+    "publish": "npx --yes hyperframes@0.7.79 publish"
+  },
+  "devDependencies": {
+    "@ffprobe-installer/ffprobe": "^2.1.2",
+    "ffmpeg-static": "^5.3.0"
+  }
+}

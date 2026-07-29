@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-07-29 公開HP全体のビジュアル強化（実装・ローカル検証完了 / release準備中）
+
+- 日英の公開マーケティングページへ、ページ文脈に応じたブランド画像スライダー、実行フロー表、短尺ショーリールを共通展開した。動画、Web/AI、日本市場、一般ページで先頭ビジュアルと説明内容を切り替える。
+- 利用規約、プライバシー、返金、法定表示は過度な販促表現を避け、画像1点と「適用範囲・条件・連絡」の控えめな情報図解だけを表示する。管理、Sales OS、`/work`、レポート、デモ、個別Opportunity、Studio系は対象外。
+- ブランド専用の3D画像4点をWebPで追加し、HyperFramesで12秒・無音・4シーンのショーリールを制作した。クライアントロゴ、人物ストック、架空の実績・数値は使用していない。
+- 共有`PageHero`の抽象図をルート別の実画像へ置き換え、すべての該当ページでファーストビューから視覚情報が見えるようにした。
+- HyperFrames check、TypeScript、対象Vitest、変更ファイルESLint、production build、Playwrightのdesktop/mobile代表5ページを通過。`codex/hp-visual-system`からPR・本番releaseへ進む。
+
 ## CURRENT STATUS — 2026-07-29 `/work`高速一次判定＋選抜詳細解析（本番release完了 / 外部送信0）
 
 - 完全新規URLの標準処理を、従来の全社フル解析から**ホームページ1回取得だけの高速一次判定**へ変更した。URL正規化、企業名・商品/サービス・業態、日本語/JPY/日本配送の公開有無、0〜100点と`promote / review / low`を決定論で保存する。
