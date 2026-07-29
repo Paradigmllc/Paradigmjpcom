@@ -39,7 +39,9 @@ request() {
 }
 
 storages="$(request GET "/applications/${PARADIGM_APP_UUID}/storages")"
-existing="$(printf '%s' "${storages}" | jq -r --arg mount "${MOUNT_PATH}" '[.[] | select(.mount_path == $mount)][0].uuid // empty')"
+existing="$(printf '%s' "${storages}" | jq -r --arg mount "${MOUNT_PATH}" '
+  [.. | objects | select(.mount_path? == $mount)][0].uuid // empty
+')"
 if [[ -n "${existing}" ]]; then
   printf 'Video Factory storage already present: %s\n' "${existing}"
   exit 0
