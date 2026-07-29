@@ -1,0 +1,107 @@
+name: Video Factory CI
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - docker-entrypoint.sh
+      - services/video-factory/**
+      - src/app/admin/video-factory/**
+      - src/app/api/video-factory/**
+      - src/app/console/**
+      - src/app/v1/**
+      - src/lib/video-factory-internal-proxy.ts
+      - .agents/skills/paradigm-video-producer/**
+      - .codex/config.toml
+      - .github/workflows/video-factory-ci.yml
+      - .github/workflows/video-factory-deploy.yml
+      - scripts/ops/ensure-video-factory-storage.sh
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - docker-entrypoint.sh
+      - services/video-factory/**
+      - src/app/admin/video-factory/**
+      - src/app/api/video-factory/**
+      - src/app/console/**
+      - src/app/v1/**
+      - src/lib/video-factory-internal-proxy.ts
+      - .agents/skills/paradigm-video-producer/**
+      - .codex/config.toml
+      - .github/workflows/video-factory-ci.yml
+      - .github/workflows/video-factory-deploy.yml
+      - scripts/ops/ensure-video-factory-storage.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: services/video-factory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install package
+        run: python -m pip install --upgrade pip && pip install -e '.[dev,api,orchestrator]'
+      - name: Static, GUI, embedded-runtime, and schema validation
+        run: |
+          video-factory export-schemas
+          python -m compileall -q src tests
+          python -c 'from video_factory.web import app; assert app.title == "Paradigm Video Factory"'
+          node --check tools/playwright-capture/capture.mjs
+          node --check src/video_factory/static/console.js
+          node --check src/video_factory/static/console-run-poll.js
+          grep -q "CLIを使わず" src/video_factory/static/console.html
+          sh -n ../../docker-entrypoint.sh
+          bash -n ../../scripts/ops/ensure-video-factory-storage.sh
+          grep -q 'video_factory.web:app' ../../docker-entrypoint.sh
+          grep -q 'services/video-factory' ../../Dockerfile
+          ruff check src tests
+          mypy src
+      - name: Unit tests
+        run: pytest --cov=video_factory --cov-report=term-missing
+      - name: Compose validation
+        run: cp .env.example .env && docker compose -f compose.yml config --quiet
+      - name: Registry and readiness reports
+        run: |
+          video-factory workflows list
+          video-factory workflows models
+          video-factory doctor
+      - name: Full two-gate dry-run production
+        run: video-factory run examples/briefs/saas-launch.yaml --dry-run --auto-approve
+      - name: Upload dry-run evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-factory-dry-run
+          path: services/video-factory/workspace
+          if-no-files-found: warn
+          retention-days: 7
+
+  production-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the exact production container
+        run: docker build --progress=plain --tag paradigm-video-factory-pr .
+      - name: Verify embedded runtime contents
+        run: |
+          docker run --rm --entrypoint /bin/sh paradigm-video-factory-pr -c '
+            test -x /usr/local/bin/paradigm-entrypoint &&
+            test -x /opt/video-factory/.venv/bin/uvicorn &&
+            command -v hyperframes &&
+            command -v ffmpeg &&
+            command -v chromium-browser &&
+            python3 --version
+          '

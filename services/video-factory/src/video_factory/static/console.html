@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Paradigm Video Factory</title>
+  <link rel="stylesheet" href="/console/console.css">
+</head>
+<body>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#dashboard" aria-label="Paradigm Video Factory ホーム">
+        <span class="brand-mark">P</span>
+        <span><strong>Video Factory</strong><small>Paradigm VaaS Studio</small></span>
+      </a>
+      <nav class="nav" aria-label="管理画面">
+        <button class="nav-item active" data-view="dashboard"><span>01</span>ダッシュボード</button>
+        <button class="nav-item" data-view="create"><span>02</span>新しい動画</button>
+        <button class="nav-item" data-view="projects"><span>03</span>制作案件</button>
+        <button class="nav-item" data-view="gpu"><span>04</span>GPU・接続設定</button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-line"><i id="sidebar-status" class="dot offline"></i><span id="sidebar-status-text">未接続</span></div>
+        <p>CLIを使わず、依頼から承認・納品まで操作できます。</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">HUMAN-DIRECTED · AI-ACCELERATED</p>
+          <h1 id="page-title">ダッシュボード</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="refresh-all" class="button secondary" type="button">更新</button>
+          <button id="open-auth" class="button dark" type="button">API接続</button>
+        </div>
+      </header>
+
+      <section id="auth-panel" class="auth-panel hidden" aria-label="API接続設定">
+        <div>
+          <h2>Video Factoryへ接続</h2>
+          <p>サーバーに設定した <code>VIDEO_FACTORY_API_KEY</code> を入力します。ブラウザのセッション内だけに保持されます。</p>
+        </div>
+        <div class="auth-controls">
+          <input id="factory-api-key" type="password" autocomplete="off" placeholder="API key（未設定環境では空欄）">
+          <button id="connect-factory" class="button primary" type="button">接続する</button>
+        </div>
+      </section>
+
+      <section class="view active" data-view-panel="dashboard">
+        <div id="setup-banner" class="setup-banner hidden">
+          <div><strong>GPU接続が未完了です</strong><p>まず「GPU・接続設定」でVast.ai APIキーとComfyUI接続先を登録してください。プレビュー動画はGPUなしでも作れます。</p></div>
+          <button class="button light" data-go="gpu" type="button">設定へ</button>
+        </div>
+
+        <div class="metrics" aria-label="システム指標">
+          <article class="metric"><span>Factory API</span><strong id="metric-factory">—</strong><small id="metric-factory-note">接続確認前</small></article>
+          <article class="metric"><span>ComfyUI GPU</span><strong id="metric-comfy">—</strong><small id="metric-comfy-note">接続確認前</small></article>
+          <article class="metric"><span>制作案件</span><strong id="metric-projects">0</strong><small>ワークスペース内</small></article>
+          <article class="metric"><span>Vast.ai</span><strong id="metric-vast">—</strong><small id="metric-vast-note">APIキー未確認</small></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel production-map">
+            <div class="panel-heading"><div><p class="eyebrow">PRODUCTION FLOW</p><h2>一気通貫の制作レーン</h2></div><button class="text-button" data-go="create" type="button">新規依頼 →</button></div>
+            <ol class="flow-list">
+              <li><span>1</span><div><strong>依頼・ブリーフ</strong><small>目的、対象、尺、素材、権利を入力</small></div></li>
+              <li><span>2</span><div><strong>企画・ショット設計</strong><small>Plannerが構成と制作エンジンを決定</small></div></li>
+              <li><span>3</span><div><strong>素材生成・画面収録</strong><small>ComfyUI、Playwright、FFmpegを並列実行</small></div></li>
+              <li><span>4</span><div><strong>HyperFrames合成</strong><small>文字、UI、字幕、CTAを正確にレンダリング</small></div></li>
+              <li><span>5</span><div><strong>人間承認・納品</strong><small>ドラフト承認と最終承認を経て納品</small></div></li>
+            </ol>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">SYSTEM HEALTH</p><h2>実行環境</h2></div><button id="refresh-health" class="icon-button" type="button" aria-label="環境を再確認">↻</button></div>
+            <div id="health-list" class="health-list"><div class="empty compact">接続すると環境情報を表示します。</div></div>
+          </article>
+        </div>
+
+        <article class="panel recent-panel">
+          <div class="panel-heading"><div><p class="eyebrow">RECENT PROJECTS</p><h2>最近の制作案件</h2></div><button class="text-button" data-go="projects" type="button">すべて表示 →</button></div>
+          <div id="recent-projects" class="project-table"><div class="empty">まだ制作案件がありません。</div></div>
+        </article>
+      </section>
+
+      <section class="view" data-view-panel="create">
+        <form id="video-form" class="creation-layout">
+          <div class="form-main">
+            <article class="panel form-section">
+              <div class="section-number">01</div><div class="section-copy"><p class="eyebrow">BRIEF</p><h2>何を作りますか？</h2><p>自然な文章で詳しく書くほど、Plannerの初稿精度が上がります。</p></div>
+              <div class="field-grid">
+                <label class="field span-2"><span>案件名 *</span><input id="project-name" required minlength="3" placeholder="例：Paradigm VaaS 20秒広告"></label>
+                <label class="field span-2"><span>目的・訴求 *</span><textarea id="objective" required minlength="10" rows="4" placeholder="誰に何を理解してもらい、最終的に何をしてほしいか"></textarea></label>
+                <label class="field span-2"><span>ターゲット *</span><textarea id="audience" required minlength="10" rows="3" placeholder="業種、役職、抱えている課題、認知段階"></textarea></label>
+                <label class="field"><span>完成尺（秒） *</span><input id="duration" type="number" min="5" max="600" value="30" required></label>
+                <label class="field"><span>掲載媒体 *</span><input id="platforms" value="LinkedIn, YouTube" required placeholder="LinkedIn, YouTube"></label>
+              </div>
+            </article>
+
+            <article class="panel form-section">
+              <div class="section-number">02</div><div class="section-copy"><p class="eyebrow">DELIVERABLES</p><h2>納品形式</h2><p>言語と比率の組合せを自動生成します。</p></div>
+              <div class="field-grid">
+                <label class="field"><span>言語（先頭がマスター） *</span><input id="languages" value="ja, en" required placeholder="ja, en"></label>
+                <label class="field"><span>CTA *</span><input id="cta" value="お問い合わせ" required placeholder="Book a demo"></label>
+                <fieldset class="field span-2"><legend>アスペクト比 *</legend><div class="choice-row" id="ratios"><label class="choice"><input type="checkbox" value="16:9" checked><span>16:9<small>YouTube・Web</small></span></label><label class="choice"><input type="checkbox" value="9:16" checked><span>9:16<small>Shorts・Reels</small></span></label><label class="choice"><input type="checkbox" value="1:1"><span>1:1<small>Feed広告</small></span></label><label class="choice"><input type="checkbox" value="4:5"><span>4:5<small>Mobile Feed</small></span></label></div></fieldset>
+              </div>
+            </article>
+
+            <article class="panel form-section">
+              <div class="section-number">03</div><div class="section-copy"><p class="eyebrow">BRAND & ASSETS</p><h2>ブランドと素材</h2><p>UI、商品名、価格、ロゴは生成AIではなく正確な合成レーンで扱います。</p></div>
+              <div class="field-grid">
+                <label class="field"><span>ブランド名 *</span><input id="brand-name" value="Paradigm" required></label>
+                <label class="field"><span>フォント</span><input id="font-family" value="Inter, Noto Sans JP"></label>
+                <label class="field color-field"><span>メインカラー</span><div><input id="primary-color" type="color" value="#0F172A"><input id="primary-color-text" value="#0F172A" maxlength="7"></div></label>
+                <label class="field color-field"><span>アクセント</span><div><input id="accent-color" type="color" value="#34D399"><input id="accent-color-text" value="#34D399" maxlength="7"></div></label>
+                <label class="field span-2"><span>素材パス・URL（1行1件）</span><textarea id="source-assets" rows="4" placeholder="/data/client/logo.svg&#10;https://signed-url.example/video.mp4"></textarea></label>
+                <label class="field span-2"><span>参考URL（1行1件）</span><textarea id="reference-urls" rows="3" placeholder="https://example.com/product"></textarea></label>
+              </div>
+            </article>
+
+            <article class="panel form-section">
+              <div class="section-number">04</div><div class="section-copy"><p class="eyebrow">PRODUCTION</p><h2>制作方法</h2><p>必要なレーンだけを選びます。未承認Workflowは本番実行されません。</p></div>
+              <fieldset class="field span-2"><legend>使用する表現</legend><div class="choice-row multi" id="shot-kinds"><label class="choice"><input type="checkbox" value="text_motion" checked><span>文字・モーション</span></label><label class="choice"><input type="checkbox" value="ui_capture" checked><span>Web・UI収録</span></label><label class="choice"><input type="checkbox" value="generative" checked><span>生成Bロール</span></label><label class="choice"><input type="checkbox" value="supplied_edit"><span>支給映像編集</span></label><label class="choice"><input type="checkbox" value="chart"><span>図表・データ</span></label><label class="choice"><input type="checkbox" value="technical_diagram"><span>技術図解</span></label><label class="choice"><input type="checkbox" value="portrait_animation"><span>人物アニメ</span></label><label class="choice"><input type="checkbox" value="lip_sync"><span>リップシンク</span></label></div></fieldset>
+              <label class="field span-2"><span>追加指示</span><textarea id="notes" rows="5" placeholder="トーン、構成、避けたい表現、参考動画のどこを参考にするか等"></textarea></label>
+            </article>
+
+            <article class="panel form-section">
+              <div class="section-number">05</div><div class="section-copy"><p class="eyebrow">RIGHTS & APPROVAL</p><h2>権利と承認者</h2><p>商用制作の必須チェックです。</p></div>
+              <div class="field-grid">
+                <label class="field"><span>最終承認者名 *</span><input id="approver-name" required placeholder="氏名"></label>
+                <label class="field"><span>承認者メール *</span><input id="approver-email" type="email" required placeholder="name@company.com"></label>
+                <div class="check-stack span-2"><label><input id="rights-assets" type="checkbox" checked>支給素材の利用権を確認済み</label><label><input id="rights-ai" type="checkbox" checked>AI生成素材の使用を許可</label><label><input id="rights-claims" type="checkbox" checked>価格・製品情報・訴求内容を顧客が承認</label><label><input id="rights-likeness" type="checkbox">人物の肖像利用許諾を取得済み</label><label><input id="rights-voice" type="checkbox">音声・声質の利用許諾を取得済み</label></div>
+              </div>
+            </article>
+          </div>
+
+          <aside class="form-aside">
+            <div class="panel sticky-card">
+              <p class="eyebrow">RUN MODE</p><h2>制作を開始</h2>
+              <label class="mode-option"><input type="radio" name="run-mode" value="preview" checked><span><strong>GPUなしプレビュー</strong><small>プレースホルダー素材で構成・尺・合成を確認</small></span></label>
+              <label class="mode-option"><input type="radio" name="run-mode" value="production"><span><strong>本番制作</strong><small>Vast.ai / ComfyUIを使って実素材を生成</small></span></label>
+              <label class="field compact-field"><span>Planner</span><select id="planner-provider"><option value="deterministic">標準Planner</option><option value="external">Codex / 外部Planner</option></select></label>
+              <div id="deliverable-summary" class="summary-box"></div>
+              <button id="submit-video" class="button primary full" type="submit">制作を開始する</button>
+              <p class="fine-print">ドラフト承認と最終承認は自動化されません。承認前の外部納品も行いません。</p>
+            </div>
+          </aside>
+        </form>
+      </section>
+
+      <section class="view" data-view-panel="projects">
+        <div class="split-layout">
+          <article class="panel project-browser">
+            <div class="panel-heading"><div><p class="eyebrow">PROJECTS</p><h2>制作案件</h2></div><button id="refresh-projects" class="icon-button" type="button" aria-label="案件を更新">↻</button></div>
+            <div id="project-list" class="project-list"><div class="empty">案件を読み込んでいます。</div></div>
+          </article>
+          <article id="project-detail" class="panel project-detail"><div class="empty tall"><strong>案件を選択</strong><p>動画、QA、承認状態、納品物を確認できます。</p></div></article>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="gpu">
+        <div class="gpu-grid">
+          <article class="panel settings-panel">
+            <div class="panel-heading"><div><p class="eyebrow">SECURE RUNTIME</p><h2>API・ComfyUI接続</h2></div><span id="runtime-badge" class="badge neutral">未確認</span></div>
+            <p class="panel-lead">秘密情報はVideo Factoryの永続ボリュームへ権限600で保存し、ブラウザへ再表示しません。</p>
+            <div class="field-grid">
+              <label class="field span-2"><span>Vast.ai API Key</span><input id="vast-api-key" type="password" autocomplete="off" placeholder="設定済みの場合は空欄のまま"></label>
+              <label class="field span-2"><span>標準ComfyUI Template Hash</span><input id="vast-template-hash" placeholder="テンプレート検索から選択できます"></label>
+              <label class="field span-2"><span>ComfyUI API URL</span><input id="comfyui-url" placeholder="https://private-worker.example:8189"></label>
+              <label class="field span-2"><span>ComfyUI Proxy API Key</span><input id="comfyui-api-key" type="password" autocomplete="off" placeholder="設定済みの場合は空欄のまま"></label>
+            </div>
+            <div class="button-row"><button id="save-runtime" class="button primary" type="button">安全に保存</button><button id="test-runtime" class="button secondary" type="button">接続確認</button></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">VAST.AI INSTANCES</p><h2>GPUインスタンス</h2></div><button id="refresh-instances" class="icon-button" type="button" aria-label="インスタンス更新">↻</button></div>
+            <div id="instance-list" class="instance-list"><div class="empty compact">Vast.ai APIキーを設定してください。</div></div>
+          </article>
+        </div>
+
+        <article class="panel gpu-market">
+          <div class="panel-heading"><div><p class="eyebrow">GPU MARKETPLACE</p><h2>GPUを検索して起動</h2></div><span class="badge good">Verified host推奨</span></div>
+          <div class="market-controls">
+            <label class="field"><span>GPU</span><select id="gpu-model"><option>RTX 4090</option><option>RTX 3090</option><option>RTX A6000</option><option>A40</option><option>L40S</option><option>A100 SXM4</option></select></label>
+            <label class="field"><span>最低VRAM</span><select id="gpu-vram"><option value="24">24 GB</option><option value="48">48 GB</option><option value="80">80 GB</option></select></label>
+            <label class="field"><span>上限 $/h</span><input id="gpu-max-price" type="number" min="0.01" step="0.01" value="1.00"></label>
+            <label class="field"><span>信頼性</span><select id="gpu-reliability"><option value="0.99">99%以上</option><option value="0.98">98%以上</option><option value="0.95">95%以上</option></select></label>
+            <button id="search-offers" class="button dark market-button" type="button">空きGPUを検索</button>
+          </div>
+          <div class="template-row"><div><strong>ComfyUIテンプレート</strong><small>Vast.aiの推奨テンプレートを検索し、起動時に使います。</small></div><input id="template-query" value="ComfyUI" aria-label="テンプレート検索語"><button id="search-templates" class="button secondary" type="button">テンプレート検索</button></div>
+          <div id="template-list" class="template-list"></div>
+          <div id="offer-list" class="offer-list"><div class="empty">条件を指定してGPUを検索してください。</div></div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <dialog id="confirm-dialog" class="confirm-dialog">
+    <form method="dialog">
+      <p class="eyebrow">CONFIRM ACTION</p>
+      <h2>操作を確認</h2>
+      <p id="confirm-message"></p>
+      <div class="button-row">
+        <button id="confirm-cancel" class="button secondary" value="cancel">キャンセル</button>
+        <button id="confirm-accept" class="button danger" value="confirm">実行する</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="/console/console.js" defer></script>
+</body>
+</html>

@@ -1,9 +1,6 @@
 # syntax = docker/dockerfile:1
-# ─── Multi-stage Dockerfile with BuildKit cache mounts for fast deploys ───
-# Stage 1 (deps): cached unless package.json/package-lock.json change
-# Stage 2 (build): cached unless source code changes (Next.js cache persisted)
-# Stage 3 (runner): minimal production image
-# ─── Requires next.config.ts: output: "standalone" ───
+# Paradigm public site and the admin-only Video Factory share one Coolify
+# application, but run as isolated processes on ports 3000 and 8080.
 
 FROM node:22.12.0-alpine AS deps
 WORKDIR /app
@@ -34,14 +31,52 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
-RUN apk add --no-cache curl
+ENV VIDEO_FACTORY_INTERNAL_URL=http://127.0.0.1:8080
+ENV VIDEO_FACTORY_ROOT=/opt/video-factory
+ENV VIDEO_FACTORY_WORKSPACE=/data/video-factory
+ENV VIDEO_FACTORY_QUEUE_BACKEND=local
+ENV VIDEO_FACTORY_LOCAL_QUEUE_WORKERS=1
+ENV VIDEO_FACTORY_MASTER_COMPOSITOR=hyperframes
+ENV VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK=false
+ENV HYPERFRAMES_VERSION=0.7.77
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+RUN apk add --no-cache \
+      chromium \
+      curl \
+      ffmpeg \
+      font-noto-cjk \
+      git \
+      libstdc++ \
+      py3-pip \
+      py3-virtualenv \
+      python3 \
+      rclone \
+      su-exec \
+      tini
+
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 COPY --chown=nextjs:nodejs services/openclaw-pipeline ./openclaw-pipeline
-USER nextjs
+
+COPY services/video-factory /opt/video-factory
+RUN python3 -m venv /opt/video-factory/.venv \
+    && /opt/video-factory/.venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && cd /opt/video-factory \
+    && /opt/video-factory/.venv/bin/pip install --no-cache-dir '.[api]' \
+    && npm install --global "hyperframes@${HYPERFRAMES_VERSION}" --no-audit --no-fund \
+    && npm --prefix /opt/video-factory/tools/playwright-capture install --omit=dev --no-audit --no-fund \
+    && mkdir -p /data/video-factory \
+    && chown -R nextjs:nodejs /opt/video-factory /data/video-factory
+
+COPY docker-entrypoint.sh /usr/local/bin/paradigm-entrypoint
+RUN chmod 0755 /usr/local/bin/paradigm-entrypoint
+
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 CMD curl -fsS "http://127.0.0.1:${PORT:-3000}/api/ready" >/dev/null || exit 1
-CMD ["node", "server.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=5 CMD curl -fsS "http://127.0.0.1:${PORT:-3000}/api/ready" >/dev/null || exit 1
+ENTRYPOINT ["/sbin/tini", "-g", "--"]
+CMD ["/usr/local/bin/paradigm-entrypoint"]

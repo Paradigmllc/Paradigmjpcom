@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "DeliveryItem": {
+      "properties": {
+        "local_path": {
+          "title": "Local Path",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "remote_uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remote Uri"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "local_path",
+        "sha256"
+      ],
+      "title": "DeliveryItem",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "delivered_at": {
+      "title": "Delivered At",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/DeliveryItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "reviewer": {
+      "title": "Reviewer",
+      "type": "string"
+    },
+    "target": {
+      "title": "Target",
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_id",
+    "delivered_at",
+    "target",
+    "items",
+    "reviewer"
+  ],
+  "title": "DeliveryRecord",
+  "type": "object"
+}

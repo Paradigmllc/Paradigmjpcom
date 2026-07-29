@@ -1,0 +1,58 @@
+project_name: paradigm-vaas-launch-sample
+objective: Explain the Video as a Service workflow and drive qualified applications.
+audience: Marketing leaders at SaaS and AI companies that need recurring video output.
+platforms: [linkedin, youtube, website]
+duration_seconds: 24
+languages: [en, ja]
+brand:
+  name: Paradigm
+  primary_color: "#0B1020"
+  accent_color: "#7C5CFC"
+  text_color: "#FFFFFF"
+  font_family: Inter
+  logo_path: null
+source_assets: []
+reference_urls:
+  - https://paradigmjp.com/en/video-as-a-service
+rights:
+  source_assets_cleared: true
+  ai_generation_allowed: true
+  likeness_consent: not_applicable
+  voice_consent: not_applicable
+  claims_approved_by_client: true
+approver:
+  name: Paradigm Producer
+  email: contact@paradigmjp.com
+deliverables:
+  - name: master-en-landscape
+    language: en
+    aspect_ratio: "16:9"
+    width: 1920
+    height: 1080
+    fps: 30
+    format: mp4
+  - name: social-en-vertical
+    language: en
+    aspect_ratio: "9:16"
+    width: 1080
+    height: 1920
+    fps: 30
+    format: mp4
+  - name: social-ja-square
+    language: ja
+    aspect_ratio: "1:1"
+    width: 1080
+    height: 1080
+    fps: 30
+    format: mp4
+localizations:
+  ja:
+    objective: 動画制作チームを採用せず、継続的な制作キューを構築できます。
+    cta: 最初の動画依頼から始める。
+    reviewer: Paradigm Japanese QA
+    segment_overrides:
+      Solution:
+        headline: 依頼を追加するだけで制作が進む
+      Proof:
+        headline: 日英・縦横・広告派生まで一つの制作データから展開
+notes: Sample only. No client production or external delivery.

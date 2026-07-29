@@ -1,0 +1,90 @@
+version: 1
+workflows:
+  - id: brand-background
+    version: "1.0"
+    purpose: Generate abstract, brand-safe backgrounds without logos or factual product UI.
+    media_kind: image
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CheckpointLoaderSimple, CLIPTextEncode, KSampler, VAEDecode, SaveImage]
+    required_models: [approved-image-checkpoint]
+    required_rights: []
+    notes: Bind after the exact checkpoint artifact and license are approved.
+
+  - id: product-hero-still
+    version: "1.0"
+    purpose: Generate controlled product-adjacent key visuals while exact product details remain composited in HyperFrames.
+    media_kind: image
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CheckpointLoaderSimple, CLIPTextEncode, KSampler, VAEDecode, SaveImage]
+    required_models: [approved-image-checkpoint]
+    required_rights: [source_assets_cleared]
+
+  - id: social-thumbnail
+    version: "1.0"
+    purpose: Generate a text-free key visual used underneath exact typography in HyperFrames.
+    media_kind: image
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CheckpointLoaderSimple, CLIPTextEncode, KSampler, VAEDecode, SaveImage]
+    required_models: [approved-image-checkpoint]
+    required_rights: []
+
+  - id: abstract-broll-t2v
+    version: "1.0"
+    purpose: Generate short conceptual B-roll from text prompts for non-evidentiary marketing scenes.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [approved-text-to-video-node, SaveVideo]
+    required_models: [approved-video-checkpoint]
+    required_rights: [ai_generation_allowed]
+
+  - id: product-broll-i2v
+    version: "1.0"
+    purpose: Animate a cleared product or campaign image into a short supporting video shot.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [LoadImage, approved-image-to-video-node, SaveVideo]
+    required_models: [approved-video-checkpoint]
+    required_rights: [source_assets_cleared, ai_generation_allowed]
+
+  - id: video-upscale
+    version: "1.0"
+    purpose: Upscale a generated or supplied clip after creative approval without changing claims or composition.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [LoadVideo, approved-video-upscale-node, SaveVideo]
+    required_models: [approved-upscale-model]
+    required_rights: [source_assets_cleared]
+
+  - id: frame-interpolation
+    version: "1.0"
+    purpose: Increase frame rate or create approved slow motion while preserving the source sequence.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [LoadVideo, approved-frame-interpolation-node, SaveVideo]
+    required_models: [approved-interpolation-model]
+    required_rights: [source_assets_cleared]
+
+  - id: background-remove-replace
+    version: "1.0"
+    purpose: Segment a cleared subject and replace the background for a controlled marketing composition.
+    media_kind: image_or_video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [LoadImage, approved-segmentation-node, ImageCompositeMasked, SaveImage]
+    required_models: [approved-segmentation-model]
+    required_rights: [source_assets_cleared]

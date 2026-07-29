@@ -1,0 +1,10 @@
+{
+  "_note": "Replace this example with an API-format workflow exported from ComfyUI.",
+  "_placeholders": {
+    "prompt": "{{prompt}}",
+    "negative_prompt": "{{negative_prompt}}",
+    "seed": "{{seed}}",
+    "width": "{{width}}",
+    "height": "{{height}}"
+  }
+}
