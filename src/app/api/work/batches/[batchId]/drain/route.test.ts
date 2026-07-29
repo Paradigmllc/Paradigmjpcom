@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   notified: vi.fn(),
   promote: vi.fn(),
   releaseDrain: vi.fn(),
-  processEditorial: vi.fn(),
+  processBrief: vi.fn(),
   processFast: vi.fn(),
   notify: vi.fn(),
   schedule: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("@/lib/sales/manual-japan-entry-batch-store", () => ({
   promoteNextManualWorkBatch: mocks.promote,
   releaseManualWorkBatchDrain: mocks.releaseDrain,
 }))
-vi.mock("@/lib/sales/manual-work-editorial-service", () => ({ processManualEditorialMessage: mocks.processEditorial }))
+vi.mock("@/lib/sales/manual-work-editorial-service", () => ({ processManualEditorialMessage: mocks.processBrief }))
 vi.mock("@/lib/sales/manual-work-fast-service", () => ({ processFastManualWorkUrl: mocks.processFast }))
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 vi.mock("@/lib/sales/manual-japan-entry-batch-schedule", () => ({ scheduleManualWorkBatchDrain: mocks.schedule }))
@@ -58,8 +58,8 @@ beforeEach(() => {
     duplicate: false,
     artifactsPreserved: false,
   }))
-  mocks.processEditorial.mockResolvedValue({
-    item: { id: "work-editorial", status: "completed", error_message: null },
+  mocks.processBrief.mockResolvedValue({
+    item: { id: "work-brief", status: "completed", error_message: null },
     duplicate: false,
     artifactsPreserved: false,
   })
@@ -79,7 +79,7 @@ describe("manual work durable batch drain", () => {
     )
     expect(response.status).toBe(200)
     expect(mocks.processFast).toHaveBeenCalledTimes(2)
-    expect(mocks.processEditorial).not.toHaveBeenCalled()
+    expect(mocks.processBrief).not.toHaveBeenCalled()
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-1", claimToken: "claim-1", status: "completed", workId: "work-1" }))
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({ itemId: "item-2", claimToken: "claim-2", status: "rejected", workId: "work-2" }))
     expect(mocks.releaseDrain).toHaveBeenCalledWith(batchId, "drain-claim-1")
@@ -101,7 +101,7 @@ describe("manual work durable batch drain", () => {
     }))
   })
 
-  it("routes every selected row to the GPT-5.6 editorial service", async () => {
+  it("routes every selected row to the API-free ChatGPT brief service", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     mocks.claim.mockResolvedValue([{
       id: "item-1",
@@ -117,7 +117,7 @@ describe("manual work durable batch drain", () => {
 
     expect(response.status).toBe(200)
     expect(mocks.processFast).not.toHaveBeenCalled()
-    expect(mocks.processEditorial).toHaveBeenCalledWith({
+    expect(mocks.processBrief).toHaveBeenCalledWith({
       rawUrl: "https://one.example/",
       expectedWorkId: workId,
     })
@@ -137,7 +137,7 @@ describe("manual work durable batch drain", () => {
       { params: Promise.resolve({ batchId }) },
     )
 
-    expect(mocks.processEditorial).toHaveBeenCalledTimes(1)
+    expect(mocks.processBrief).toHaveBeenCalledTimes(1)
   })
 
   it("persists a missing retry target as a failed batch item", async () => {
@@ -154,6 +154,7 @@ describe("manual work durable batch drain", () => {
     )
 
     expect(response.status).toBe(200)
+    expect(mocks.processBrief).not.toHaveBeenCalled()
     expect(mocks.complete).toHaveBeenCalledWith(expect.objectContaining({
       itemId: "item-1",
       status: "failed",
@@ -186,7 +187,7 @@ describe("manual work durable batch drain", () => {
     expect(body.processing).toBe(true)
     expect(mocks.claim).not.toHaveBeenCalled()
     expect(mocks.processFast).not.toHaveBeenCalled()
-    expect(mocks.processEditorial).not.toHaveBeenCalled()
+    expect(mocks.processBrief).not.toHaveBeenCalled()
   })
 
   it("promotes and dispatches the next queued batch after completion", async () => {
