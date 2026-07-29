@@ -34,7 +34,10 @@ export interface JapanMarketAudit {
     jpy_currency?: string[]
     japan_shipping?: string[]
   }
-  presence: JapanMarketPresence
+  // New audits always populate this. It remains optional at the shared type
+  // boundary so persisted legacy reports and older test fixtures continue to
+  // deserialize without pretending that historical records had this analysis.
+  presence?: JapanMarketPresence
   pages_checked: string[]
   sales_pitch_context: string
   human_review_required: boolean
@@ -97,7 +100,7 @@ const LOCAL_PAYMENT_PATTERNS = [
   /便利店/i,
 ] as const
 
-const JAPANESE_LANGUAGE_PATTERNS = [/[぀-ヿ㐀-鿿]{8,}/] as const
+const JAPANESE_LANGUAGE_PATTERNS = [/[\u3040-\u30ff\u3400-\u9fff]{8,}/] as const
 const JPY_CURRENCY_PATTERNS = [/(?:\bJPY\b|Japanese yen|¥\s?\d|￥\s?\d|\d[\d,]*\s?円)/i] as const
 const JAPAN_SHIPPING_PATTERNS = [
   /ship(?:ping)?\s+to\s+japan/i,
@@ -209,7 +212,7 @@ export function detectJapanPresenceFromHtml(pageUrl: string, html: string): Japa
     promote("sales", "Public page lists a Japan retail or distributor route", pageUrl)
   } else if (/(?:local\s+support|support|service|repair|warranty).{0,120}(?:Japan|日本)|(?:Japan|日本).{0,120}(?:local\s+support|support|service|repair|warranty)/i.test(visible)) {
     promote("support", "Public page lists Japan support or service coverage", pageUrl)
-  } else if (/[぀-ヿ㐀-鿿]{8,}/.test(visible)) {
+  } else if (/[\u3040-\u30ff\u3400-\u9fff]{8,}/.test(visible)) {
     promote("language", "Japanese-language customer content is present", pageUrl)
   }
 
