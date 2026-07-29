@@ -3,6 +3,7 @@ import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
 import { relativeRedirect } from "@/lib/relative-redirect"
 
 const LEGACY_ADMIN_COOKIE = "paradigm_admin_token"
+const CONSOLE_PATH = "/video-factory-console/"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -15,14 +16,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (!auth.ok) {
     return relativeRedirect(
-      "/admin/login?redirect=%2Fadmin%2Fvideo-factory",
+      "/admin/login?redirect=%2Fvideo-factory-console%2F",
     )
   }
 
-  // A raw relative Location header is intentional. Next's server-component
-  // redirect() can resolve a relative path against Coolify's internal listener
-  // (for example 0.0.0.0:3000), which must never be sent to the browser.
-  return relativeRedirect("/console/")
+  // Use a fresh, cache-safe public path rather than the historic /console/
+  // route. Chrome can retain a previously issued permanent redirect even after
+  // the origin is fixed, so this alias lets operators enter immediately.
+  return relativeRedirect(CONSOLE_PATH)
 }
 
 export const HEAD = GET
