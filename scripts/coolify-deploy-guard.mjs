@@ -41,7 +41,10 @@ function assertDockerfileRuntimeGuards() {
   const required = [
     [/ENV\s+HOSTNAME=0\.0\.0\.0/, "Dockerfile runner must set ENV HOSTNAME=0.0.0.0"],
     [/ENV\s+PORT=3000/, "Dockerfile runner must set ENV PORT=3000"],
-    [/apk\s+add\s+--no-cache\s+curl/, "Dockerfile runner must install curl for Coolify healthchecks"],
+    [
+      /RUN\s+apk\s+add\s+--no-cache\b(?:[^\n]*\\\r?\n)*[^\n]*\bcurl\b/,
+      "Dockerfile runner must install curl for Coolify healthchecks",
+    ],
     [/HEALTHCHECK\b[\s\S]*127\.0\.0\.1:\$\{PORT:-3000\}/, "Dockerfile must include a localhost healthcheck"],
   ]
 
