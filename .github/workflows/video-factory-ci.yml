@@ -7,6 +7,8 @@ on:
       - ".agents/skills/paradigm-video-producer/**"
       - ".codex/config.toml"
       - ".github/workflows/video-factory-ci.yml"
+      - ".github/workflows/video-factory-deploy.yml"
+      - "scripts/ops/deploy-video-factory-coolify.sh"
   push:
     branches: [main]
     paths:
@@ -14,6 +16,8 @@ on:
       - ".agents/skills/paradigm-video-producer/**"
       - ".codex/config.toml"
       - ".github/workflows/video-factory-ci.yml"
+      - ".github/workflows/video-factory-deploy.yml"
+      - "scripts/ops/deploy-video-factory-coolify.sh"
   workflow_dispatch:
 
 permissions:
@@ -35,7 +39,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install package
         run: python -m pip install --upgrade pip && pip install -e '.[dev,api,orchestrator]'
-      - name: Static, GUI, and schema validation
+      - name: Static, GUI, deployment, and schema validation
         run: |
           video-factory export-schemas
           python -m compileall -q src tests
@@ -43,6 +47,8 @@ jobs:
           node --check tools/playwright-capture/capture.mjs
           node --check src/video_factory/static/console.js
           grep -q "CLIを使わず" src/video_factory/static/console.html
+          bash -n ../../scripts/ops/deploy-video-factory-coolify.sh
+          grep -q '/applications/dockerfile' ../../scripts/ops/deploy-video-factory-coolify.sh
           ruff check src tests
           mypy src
       - name: Unit tests
