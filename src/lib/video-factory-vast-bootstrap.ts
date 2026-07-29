@@ -33,6 +33,8 @@ export type VastBootstrapState = {
   provision_started_at?: string | null
   comfyui_base_url?: string | null
   workflow_id?: string | null
+  smoke_prompt_id?: string | null
+  smoke_started_at?: string | null
   smoke_output_path?: string | null
   smoke_sha256?: string | null
   smoke_size_bytes?: number | null
