@@ -6,8 +6,6 @@ set -euo pipefail
 : "${PARADIGM_APP_UUID:?PARADIGM_APP_UUID is required}"
 
 API="${COOLIFY_API_URL%/}/api/v1"
-MOUNT_PATH="/data/video-factory"
-VOLUME_NAME="paradigm-video-factory-data"
 
 request() {
   local method="$1" path="$2" body="${3:-}" output status
@@ -39,17 +37,56 @@ request() {
 }
 
 storages="$(request GET "/applications/${PARADIGM_APP_UUID}/storages")"
-existing="$(printf '%s' "${storages}" | jq -r --arg mount "${MOUNT_PATH}" '
-  [.. | objects | select(.mount_path? == $mount)][0].uuid // empty
-')"
-if [[ -n "${existing}" ]]; then
-  printf 'Video Factory storage already present: %s\n' "${existing}"
-  exit 0
-fi
 
-payload="$(jq -cn \
-  --arg name "${VOLUME_NAME}" \
-  --arg mount "${MOUNT_PATH}" \
-  '{type:"persistent",name:$name,mount_path:$mount}')"
-created="$(request POST "/applications/${PARADIGM_APP_UUID}/storages" "${payload}")"
-printf '%s' "${created}" | jq '{uuid,name,mount_path}'
+ensure_persistent_storage() {
+  local name="$1" mount_path="$2" host_path="${3:-}" existing current_host payload created
+  existing="$(printf '%s' "${storages}" | jq -r --arg mount "${mount_path}" '
+    [.. | objects | select(.mount_path? == $mount)][0].uuid // empty
+  ')"
+  if [[ -n "${existing}" ]]; then
+    current_host="$(printf '%s' "${storages}" | jq -r --arg mount "${mount_path}" '
+      [.. | objects | select(.mount_path? == $mount)][0].host_path // empty
+    ')"
+    if [[ -n "${host_path}" && "${current_host}" != "${host_path}" ]]; then
+      payload="$(jq -cn \
+        --arg uuid "${existing}" \
+        --arg mount "${mount_path}" \
+        --arg host "${host_path}" \
+        '{type:"persistent",uuid:$uuid,mount_path:$mount,host_path:$host}')"
+      request PATCH "/applications/${PARADIGM_APP_UUID}/storages" "${payload}" >/dev/null
+      printf 'Updated storage %s: %s -> %s\n' "${existing}" "${mount_path}" "${host_path}"
+    else
+      printf 'Storage already present: %s (%s)\n' "${existing}" "${mount_path}"
+    fi
+    return 0
+  fi
+
+  if [[ -n "${host_path}" ]]; then
+    payload="$(jq -cn \
+      --arg name "${name}" \
+      --arg mount "${mount_path}" \
+      --arg host "${host_path}" \
+      '{type:"persistent",name:$name,mount_path:$mount,host_path:$host}')"
+  else
+    payload="$(jq -cn \
+      --arg name "${name}" \
+      --arg mount "${mount_path}" \
+      '{type:"persistent",name:$name,mount_path:$mount}')"
+  fi
+  created="$(request POST "/applications/${PARADIGM_APP_UUID}/storages" "${payload}")"
+  printf '%s' "${created}" | jq '{uuid,name,mount_path,host_path}'
+}
+
+# Persistent projects, credentials, generated assets, and delivery evidence.
+ensure_persistent_storage \
+  "paradigm-video-factory-data" \
+  "/data/video-factory"
+
+# The legacy file-provider route predates the Coolify-managed Docker routers and
+# points at a timestamped container IP. Mount only the proxy dynamic directory
+# so the new healthy container can atomically refresh its own upstream after a
+# rolling deployment, without broad Docker-socket or host access.
+ensure_persistent_storage \
+  "paradigm-traefik-dynamic" \
+  "/mnt/coolify-proxy-dynamic" \
+  "/data/coolify/proxy/dynamic"
