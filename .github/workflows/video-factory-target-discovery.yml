@@ -1,0 +1,58 @@
+name: Discover Video Factory Coolify Target
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/video-factory-target-discovery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      MAIN_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+    steps:
+      - name: Print non-sensitive target metadata
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          get() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "${API}$1"
+          }
+
+          apps="$(get /applications)"
+          servers="$(get /servers)"
+          printf '%s' "${apps}" | jq --arg uuid "${MAIN_APP_UUID}" '
+            [.[] | select(.uuid == $uuid)][0]
+            | {
+                uuid,
+                name,
+                destination_id,
+                destination_type,
+                destination: (
+                  if .destination then {
+                    uuid: .destination.uuid,
+                    network: .destination.network,
+                    server_uuid: .destination.server.uuid,
+                    server_name: .destination.server.name
+                  } else null end
+                )
+              }
+          '
+          printf '%s' "${servers}" | jq '[.[] | {uuid,name,ip,is_build_server,unreachable,validation_logs}]'
+
+          for server_uuid in $(printf '%s' "${servers}" | jq -r '.[].uuid'); do
+            echo "server=${server_uuid} destinations:"
+            get "/servers/${server_uuid}/destinations" | jq '[.[] | {uuid,name,network,server_id}]'
+          done
