@@ -168,6 +168,7 @@ describe("manual Japan Entry work safety gates", () => {
           score: 40,
           status: { tokushoho_missing: true, appi_missing: true, local_payments_missing: true, japanese_language_missing: true, jpy_currency_missing: true, japan_shipping_missing: true },
           signals: { tokushoho: [], appi: [], local_payments: [], japanese_language: [], jpy_currency: [], japan_shipping: [] },
+          presence: { existing: false, level: "none", signals: [], urls: [] },
           pages_checked: ["https://acme.com/"],
           sales_pitch_context: "Public-page observations",
           human_review_required: true,

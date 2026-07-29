@@ -75,6 +75,27 @@ function scoreFastQualification(input: FastEvidenceInput, japaneseCompany: boole
     }
   }
 
+  if (input.audit.presence?.existing) {
+    const level = input.audit.presence.level
+    const reason = level === "sales"
+      ? "日本向け販売店・小売・購入導線を公開サイトで確認しました。"
+      : level === "support"
+        ? "日本向けサポートまたは現地パートナー導線を公開サイトで確認しました。"
+        : "日本語の顧客導線を公開サイトで確認しました。"
+    return {
+      score: level === "language" ? 25 : 5,
+      priority: "low",
+      promotionRecommended: false,
+      reasons: [
+        reason,
+        "日本未進出企業向けの新規Japan Country Partner営業対象にはしません。既存日本事業の再構築案件として扱う根拠がある場合だけ人が再評価します。",
+        ...input.audit.presence.signals.slice(0, 3),
+      ],
+      analysisMode: "fast_qualification",
+      generatedAt: new Date().toISOString(),
+    }
+  }
+
   if (input.productContext.startsWith(SPARSE_CONTEXT_PREFIX)) {
     return {
       score: 20,
@@ -170,7 +191,7 @@ export function buildFastManualCompanyProfile(input: FastEvidenceInput): {
   const qualification = scoreFastQualification(input, japaneseCompany)
   const isDigital = input.businessModel === "saas"
   const isCommerce = input.businessModel === "ecommerce"
-  const fitStatus = japaneseCompany
+  const fitStatus = japaneseCompany || input.audit.presence?.existing
     ? "rejected"
     : qualification.priority === "low"
       ? "review_required"
