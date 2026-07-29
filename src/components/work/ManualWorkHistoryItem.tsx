@@ -39,6 +39,12 @@ function isFast(item: ManualJapanEntryWorkRow): boolean {
   return analysisMode(item) === "fast_qualification"
 }
 
+function isChatGptMode(item: ManualJapanEntryWorkRow): boolean {
+  return analysisMode(item).startsWith("chatgpt_")
+    || item.message_review.purpose === "chatgpt_handoff"
+    || item.message_review.generation_status === "imported_chatgpt_pro"
+}
+
 function isBriefReady(item: ManualJapanEntryWorkRow): boolean {
   return analysisMode(item) === "chatgpt_brief_ready"
 }
@@ -49,7 +55,7 @@ function isImported(item: ManualJapanEntryWorkRow): boolean {
 }
 
 function isLegacyUnsent(item: ManualJapanEntryWorkRow): boolean {
-  return !isFast(item) && !isBriefReady(item) && !isImported(item) && !hasOutcome(item)
+  return !isFast(item) && !isChatGptMode(item) && !hasOutcome(item)
 }
 
 function fastPriority(item: ManualJapanEntryWorkRow): "promote" | "review" | "low" | null {
@@ -62,6 +68,7 @@ function generationActionLabel(item: ManualJapanEntryWorkRow): string {
   if (isFast(item)) return fastPriority(item) === "low" ? "ブリーフを再評価" : "ChatGPTブリーフを準備"
   if (isBriefReady(item)) return "ブリーフを更新"
   if (isImported(item)) return "ブリーフを再準備"
+  if (isChatGptMode(item)) return "ブリーフを再準備"
   return "APIなしで作り直す"
 }
 
@@ -71,10 +78,11 @@ function statusLabel(item: ManualJapanEntryWorkRow): string {
     if (item.is_japanese_company || fastPriority(item) === "low") return "低優先"
     return fastPriority(item) === "promote" ? "ブリーフ候補" : "一次判定完了"
   }
+  if (isImported(item)) return "ChatGPT文面取込済み"
   if (isBriefReady(item)) {
     return item.message_review.generation_status === "chatgpt_insufficient" ? "ChatGPT根拠不足" : "ChatGPTブリーフ準備完了"
   }
-  if (isImported(item)) return "ChatGPT文面取込済み"
+  if (analysisMode(item) === "chatgpt_brief_failed") return "ブリーフ準備失敗"
   if (isLegacyUnsent(item)) return "旧文面・要更新"
   if (item.status === "completed") return "送信準備完了"
   if (item.status === "needs_review") return "要確認"
@@ -86,6 +94,7 @@ function statusLabel(item: ManualJapanEntryWorkRow): string {
 function statusClasses(item: ManualJapanEntryWorkRow): string {
   if (isImported(item)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
   if (isBriefReady(item)) return "border-violet-200 bg-violet-50 text-violet-800"
+  if (analysisMode(item) === "chatgpt_brief_failed") return "border-red-200 bg-red-50 text-red-700"
   if (isLegacyUnsent(item)) return "border-amber-200 bg-amber-50 text-amber-800"
   if (isFast(item) && (item.is_japanese_company || fastPriority(item) === "low")) return "border-slate-200 bg-slate-50 text-slate-700"
   if (item.status === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -134,7 +143,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
   const retryable = isManualWorkRecoveryAvailable(item)
   const operatorNotice = manualWorkOperatorNotice(item)
   const fast = isFast(item)
-  const briefReady = isBriefReady(item)
+  const chatGptMode = isChatGptMode(item)
   const imported = isImported(item)
   const legacyUnsent = isLegacyUnsent(item)
   const { contactUrl, publicEmail } = contactDetails(item)
@@ -153,7 +162,7 @@ export function ManualWorkHistoryItem({ item, sourceBySlug, updatingOutcome, ret
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${statusClasses(item)}`}>{statusLabel(item)}</span>
-                {(briefReady || imported) && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">ChatGPT Pro · APIなし</Badge>}
+                {chatGptMode && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-violet-700">ChatGPT Pro · APIなし</Badge>}
                 {legacyUnsent && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">旧AI文面は使用しない</Badge>}
                 <span className="text-xs text-slate-600">{formatManualWorkCreatedAt(item.created_at)}</span>
               </div>
