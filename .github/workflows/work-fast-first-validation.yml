@@ -3,6 +3,7 @@ name: Work API-free ChatGPT validation
 on:
   pull_request:
     paths:
+      - "src/app/work/**"
       - "src/app/api/work/**"
       - "src/components/work/**"
       - "src/lib/sales/manual-japan-entry-batch-contract.test.ts"
@@ -66,6 +67,8 @@ jobs:
         run: |
           set -o pipefail
           npm exec -- eslint \
+            src/app/work/page.tsx \
+            'src/app/api/work/route.ts' \
             'src/app/api/work/batches/route.ts' \
             'src/app/api/work/batches/[batchId]/drain/route.ts' \
             'src/app/api/work/chatgpt/briefs/route.ts' \
