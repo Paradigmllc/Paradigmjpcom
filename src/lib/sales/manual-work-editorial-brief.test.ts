@@ -63,7 +63,6 @@ describe("manual work editorial brief", () => {
           <a href="/en/about/">About ible and business contact</a>
           <a href="/en/product/airvida-l1/">Airvida L1 product</a>
           <a href="/en/support/">Local Support</a>
-          <a href="/ja/">日本語</a>
         </body></html>`,
       "https://airvida.example/en/where-to-buy-jp": `
         <html><head><title>Airvida Japan stores</title></head><body>
@@ -83,7 +82,6 @@ describe("manual work editorial brief", () => {
         <html><head><title>Airvida L1</title><script type="application/ld+json">{"@type":"Product","name":"Airvida L1"}</script></head>
         <body><h1>Airvida L1 wearable air purifier</h1><p>A lightweight wearable air purifier designed for everyday mobility.</p></body></html>`,
       "https://airvida.example/en/support": `<html><head><title>Local Support</title></head><body><h1>Local Support</h1><p>Japan local support is available for Airvida customers.</p></body></html>`,
-      "https://airvida.example/ja": `<html><head><title>Airvida 日本語</title></head><body><p>ウェアラブル空気清浄機の日本語ページです。</p></body></html>`,
     }
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const raw = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url
