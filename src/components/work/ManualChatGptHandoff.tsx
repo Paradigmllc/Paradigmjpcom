@@ -25,6 +25,16 @@ function fastPriority(item: ManualJapanEntryWorkRow): string | null {
   return typeof qualification.priority === "string" ? qualification.priority : null
 }
 
+function fitScore(item: ManualJapanEntryWorkRow): number {
+  const qualification = record(item.evidence.fastQualification)
+  if (typeof qualification.score === "number" && Number.isFinite(qualification.score)) return qualification.score
+  return typeof item.japan_entry_fit_confidence === "number" ? item.japan_entry_fit_confidence : 0
+}
+
+function byPriority(left: ManualJapanEntryWorkRow, right: ManualJapanEntryWorkRow): number {
+  return fitScore(right) - fitScore(left) || right.updated_at.localeCompare(left.updated_at)
+}
+
 function canPrepareBrief(item: ManualJapanEntryWorkRow): boolean {
   if (item.is_japanese_company || item.country_code === "JP" || hasOutcome(item) || item.status === "processing") return false
   if (isManualChatGptBriefReady(item)) return false
@@ -51,11 +61,11 @@ export function ManualChatGptHandoff({ items, onMergeItems, onRefresh }: {
   const [lastErrors, setLastErrors] = useState<string[]>([])
 
   const preparationCandidates = useMemo(
-    () => items.filter(canPrepareBrief).slice(0, MANUAL_CHATGPT_BATCH_MAX),
+    () => items.filter(canPrepareBrief).sort(byPriority).slice(0, MANUAL_CHATGPT_BATCH_MAX),
     [items],
   )
   const readyItems = useMemo(
-    () => items.filter(isManualChatGptBriefReady).slice(0, MANUAL_CHATGPT_BATCH_MAX),
+    () => items.filter(isManualChatGptBriefReady).sort(byPriority).slice(0, MANUAL_CHATGPT_BATCH_MAX),
     [items],
   )
 
@@ -146,7 +156,7 @@ export function ManualChatGptHandoff({ items, onMergeItems, onRefresh }: {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 text-center text-xs">
-            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3"><p className="font-semibold text-slate-950">{preparationCandidates.length}</p><p className="mt-1 text-slate-500">準備候補</p></div>
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3"><p className="font-semibold text-slate-950">{preparationCandidates.length}</p><p className="mt-1 text-slate-500">上位の準備候補</p></div>
             <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3"><p className="font-semibold text-violet-950">{readyItems.length}</p><p className="mt-1 text-violet-700">コピー可能</p></div>
           </div>
         </div>
@@ -155,7 +165,7 @@ export function ManualChatGptHandoff({ items, onMergeItems, onRefresh }: {
       <div className="grid gap-0 xl:grid-cols-3">
         <div className="border-b border-slate-200 p-5 sm:p-6 xl:border-b-0 xl:border-r">
           <p className="flex items-center gap-2 text-sm font-semibold text-slate-900"><RefreshCw className="size-4 text-blue-600" />1. 企業ブリーフを準備</p>
-          <p className="mt-2 text-xs leading-5 text-slate-600">表示中の上位候補から最大{MANUAL_CHATGPT_BATCH_MAX}社について、商品・料金・会社・ニュース・連絡先ページを短時間で取得します。</p>
+          <p className="mt-2 text-xs leading-5 text-slate-600">Japan fitの高い順に最大{MANUAL_CHATGPT_BATCH_MAX}社について、商品・料金・会社・ニュース・連絡先ページを短時間で取得します。</p>
           <Button type="button" className="mt-4 w-full rounded-xl" onClick={() => void prepareBriefs()} disabled={preparing || preparationCandidates.length === 0}>
             {preparing ? <LoaderCircle className="animate-spin" /> : <FileInput />}
             {preparing ? "ブリーフ準備中…" : `${preparationCandidates.length}社のブリーフを準備`}
