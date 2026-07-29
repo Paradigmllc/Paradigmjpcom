@@ -18,6 +18,9 @@ describe("manual work durable batch contract", () => {
   const editorialService = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-editorial-service.ts"), "utf8")
   const handoff = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-chatgpt-handoff.ts"), "utf8")
   const importer = fs.readFileSync(path.join(process.cwd(), "src/lib/sales/manual-work-chatgpt-import.ts"), "utf8")
+  const workRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/work/route.ts"), "utf8")
+  const batchRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/work/batches/route.ts"), "utf8")
+  const drainRoute = fs.readFileSync(path.join(process.cwd(), "src/app/api/work/batches/[batchId]/drain/route.ts"), "utf8")
 
   it("supports 500 URLs while keeping each database claim bounded", () => {
     expect(MANUAL_WORK_BATCH_MAX_URLS).toBe(500)
@@ -50,6 +53,19 @@ describe("manual work durable batch contract", () => {
     expect(handoff).toContain("Return STRICT JSON only")
     expect(importer).toContain("score < 88")
     expect(importer).toContain("reviewManualMessageDistinctness")
+  })
+
+  it("keeps every /work entry point API-free", () => {
+    for (const source of [workRoute, batchRoute, drainRoute]) {
+      expect(source).not.toContain("processManualJapanEntryUrl")
+      expect(source).not.toContain("preflightManualWorkBatch")
+      expect(source).not.toContain("OPENAI_API_KEY")
+      expect(source).not.toContain("OPENROUTER_API_KEY")
+      expect(source).not.toContain("DEEPSEEK_API_KEY")
+    }
+    expect(workRoute).toContain("processManualEditorialMessage")
+    expect(batchRoute).toContain("ChatGPTブリーフ準備")
+    expect(drainRoute).toContain("processManualEditorialMessage")
   })
 
   it("is service-role-only, RLS protected, resumable, and permanently zero-send", () => {
