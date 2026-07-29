@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest"
 import { buildFastManualCompanyProfile } from "./manual-work-fast-qualification"
-import type { JapanMarketAudit } from "./sources/japan-market-audit"
+import type { JapanMarketAudit, JapanMarketPresence } from "./sources/japan-market-audit"
 
-function audit(overrides: Partial<JapanMarketAudit["status"]> = {}): JapanMarketAudit {
+function audit(
+  overrides: Partial<JapanMarketAudit["status"]> = {},
+  presence: JapanMarketPresence = { existing: false, level: "none", signals: [], urls: [] },
+): JapanMarketAudit {
   const status = {
     tokushoho_missing: true,
     appi_missing: true,
@@ -18,6 +21,7 @@ function audit(overrides: Partial<JapanMarketAudit["status"]> = {}): JapanMarket
     score: 10,
     status,
     signals: { tokushoho: [], appi: [], local_payments: [], japanese_language: [], jpy_currency: [], japan_shipping: [] },
+    presence,
     pages_checked: ["https://example.com/"],
     sales_pitch_context: "Fast homepage audit",
     human_review_required: true,
@@ -100,6 +104,34 @@ describe("fast manual work qualification", () => {
     expect(result.profile.japanEntryFitStatus).toBe("rejected")
     expect(result.qualification.score).toBe(0)
     expect(result.qualification.priority).toBe("low")
+  })
+
+  it("rejects a foreign brand that already exposes a Japan retail path", () => {
+    const result = buildFastManualCompanyProfile({
+      domain: "airvida.example",
+      companyName: "Airvida",
+      productContext: "Airvida wearable air purifier products",
+      productNames: ["Airvida L1"],
+      businessModel: "ecommerce",
+      title: "Airvida",
+      description: "Wearable air purifier products",
+      headings: ["Japan / 日 本", "Where to Buy"],
+      audit: audit(
+        { japanese_language_missing: false },
+        {
+          existing: true,
+          level: "sales",
+          signals: ["Japan sales link: Japan / 日 本"],
+          urls: ["https://airvida.example/en/where-to-buy-jp/"],
+        },
+      ),
+    })
+
+    expect(result.profile.isJapaneseCompany).toBe(false)
+    expect(result.profile.japanEntryFitStatus).toBe("rejected")
+    expect(result.qualification.priority).toBe("low")
+    expect(result.qualification.score).toBe(5)
+    expect(result.qualification.reasons.join(" ")).toContain("日本向け販売店")
   })
 
   it("never invents commercial signals or a positioning concept", () => {
