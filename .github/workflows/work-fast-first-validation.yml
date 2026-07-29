@@ -52,6 +52,7 @@ jobs:
           src/lib/sales/manual-work-chatgpt-import.test.ts
           src/lib/sales/manual-work-recovery-policy.test.ts
           src/lib/sales/manual-japan-entry-batch-contract.test.ts
+          src/app/api/work/route.test.ts
           src/app/api/work/batches/route.test.ts
           'src/app/api/work/batches/[batchId]/drain/route.test.ts'
           src/app/api/work/chatgpt/briefs/route.test.ts
