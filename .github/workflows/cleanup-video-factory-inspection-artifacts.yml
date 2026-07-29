@@ -1,0 +1,39 @@
+name: Cleanup Video Factory Inspection Artifacts
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cleanup-video-factory-inspection-artifacts.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete temporary Coolify inspection artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          API="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100"
+          artifacts="$(curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "${API}")"
+          mapfile -t ids < <(printf '%s' "${artifacts}" | jq -r '.artifacts[] | select(.name == "video-factory-coolify-target") | .id')
+          for id in "${ids[@]}"; do
+            curl --fail-with-body --silent --show-error \
+              --request DELETE \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "Accept: application/vnd.github+json" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${id}"
+          done
+          echo "Deleted ${#ids[@]} temporary inspection artifact(s)."
