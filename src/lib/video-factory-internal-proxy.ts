@@ -2,6 +2,10 @@ import "server-only"
 
 import { NextRequest, NextResponse } from "next/server"
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
+import {
+  normalizeSameOriginLocation,
+  relativeRedirect,
+} from "@/lib/relative-redirect"
 
 const INTERNAL_ORIGIN = process.env.VIDEO_FACTORY_INTERNAL_URL?.trim() || "http://127.0.0.1:8080"
 const LEGACY_ADMIN_COOKIE = "paradigm_admin_token"
@@ -25,15 +29,19 @@ function internalApiKey(): string | null {
   return value?.trim() || null
 }
 
-function loginRedirect(request: NextRequest): NextResponse {
-  const target = new URL("/admin/login", request.url)
-  target.searchParams.set("redirect", "/admin/video-factory")
-  return NextResponse.redirect(target, 307)
+function loginRedirect(): NextResponse {
+  return relativeRedirect(
+    "/admin/login?redirect=%2Fadmin%2Fvideo-factory",
+  )
 }
 
 function isHtmlNavigation(request: NextRequest): boolean {
   return request.method === "GET"
     && (request.headers.get("accept") || "").includes("text/html")
+}
+
+function firstForwardedValue(value: string | null): string | null {
+  return value?.split(",")[0]?.trim() || null
 }
 
 function cleanRequestHeaders(request: NextRequest): Headers {
@@ -44,8 +52,17 @@ function cleanRequestHeaders(request: NextRequest): Headers {
   }
   const apiKey = internalApiKey()
   if (apiKey) headers.set("x-api-key", apiKey)
-  headers.set("x-forwarded-host", request.headers.get("host") || "paradigmjp.com")
-  headers.set("x-forwarded-proto", request.nextUrl.protocol.replace(":", ""))
+  headers.set(
+    "x-forwarded-host",
+    firstForwardedValue(request.headers.get("x-forwarded-host"))
+      || request.headers.get("host")
+      || "www.paradigmjp.com",
+  )
+  headers.set(
+    "x-forwarded-proto",
+    firstForwardedValue(request.headers.get("x-forwarded-proto"))
+      || request.nextUrl.protocol.replace(":", ""),
+  )
   return headers
 }
 
@@ -55,6 +72,8 @@ function cleanResponseHeaders(source: Headers): Headers {
     if (HOP_BY_HOP_HEADERS.has(name.toLowerCase()) || name.toLowerCase() === "content-encoding") continue
     headers.set(name, value)
   }
+  const normalizedLocation = normalizeSameOriginLocation(headers.get("location"))
+  if (normalizedLocation) headers.set("location", normalizedLocation)
   headers.delete("content-length")
   headers.set("cache-control", "private, no-store")
   headers.set("x-robots-tag", "noindex, nofollow, noarchive")
@@ -79,7 +98,7 @@ export async function proxyVideoFactoryRequest(
     legacyToken: request.cookies.get(LEGACY_ADMIN_COOKIE)?.value,
   })
   if (!auth.ok) {
-    if (isHtmlNavigation(request)) return loginRedirect(request)
+    if (isHtmlNavigation(request)) return loginRedirect()
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
