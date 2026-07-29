@@ -9,6 +9,8 @@ const COOLIFY_URL = (process.env.COOLIFY_API_URL || "https://coolify.paradigmjp.
 const TOKEN = process.env.COOLIFY_API_TOKEN
 const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 const SERVER = { name: "paradigm-prod-01", ip: "178.105.138.55", user: "root", port: 22 }
+const VERIFY_PUBLIC = process.env.PARADIGM_REPAIR_VERIFY !== "0"
+const EVIDENCE_PATH = process.env.TRAEFIK_REPAIR_EVIDENCE_PATH || "/tmp/traefik-route-repair.json"
 
 if (!TOKEN) throw new Error("COOLIFY_API_TOKEN is missing")
 
@@ -90,13 +92,13 @@ function repairRoute(key) {
 app_uuid='${APP_UUID}'
 route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
 test -f "$route_file" || { echo 'Traefik route file missing'; exit 1; }
-container="$(docker ps --filter "name=$app_uuid" --format '{{.Names}}' | head -n1)"
+container="$(docker ps --filter "name=$app_uuid" --filter status=running --format '{{.Names}}' | head -n1)"
 test -n "$container" || { echo 'Live application container missing'; exit 1; }
 new_ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
 test -n "$new_ip" || { echo 'Live application coolify-network IP missing'; exit 1; }
 docker exec "$container" sh -lc 'wget -qO- http://127.0.0.1:3000/api/ready >/dev/null 2>&1 || curl -fsS http://127.0.0.1:3000/api/ready >/dev/null'
 python3 - "$route_file" "$new_ip" <<'PY'
-import os, re, stat, sys, tempfile
+import json, os, re, stat, sys, tempfile
 from pathlib import Path
 route = Path(sys.argv[1])
 new_ip = sys.argv[2]
@@ -108,29 +110,32 @@ prefix, tail = text[:marker], text[marker:]
 match = re.search(r'(?m)^(\s*-\s*url:\s*)https?://[^\s]+:3000\s*$', tail)
 if not match:
     raise SystemExit('paradigmhp-svc upstream not found')
-updated = prefix + tail[:match.start()] + f"{match.group(1)}http://{new_ip}:3000" + tail[match.end():]
-if updated == text:
-    print('Traefik upstream already current')
-    raise SystemExit(0)
-st = route.stat()
-fd, temporary = tempfile.mkstemp(prefix=f'.{route.name}.', dir=route.parent)
-try:
-    with os.fdopen(fd, 'w', encoding='utf-8') as handle:
-        handle.write(updated)
-        handle.flush()
-        os.fsync(handle.fileno())
-    os.chmod(temporary, stat.S_IMODE(st.st_mode))
+old_url = match.group(0).split('url:', 1)[1].strip()
+new_url = f'http://{new_ip}:3000'
+updated = prefix + tail[:match.start()] + f"{match.group(1)}{new_url}" + tail[match.end():]
+changed = updated != text
+if changed:
+    st = route.stat()
+    fd, temporary = tempfile.mkstemp(prefix=f'.{route.name}.', dir=route.parent)
     try:
-        os.chown(temporary, st.st_uid, st.st_gid)
-    except PermissionError:
-        pass
-    os.replace(temporary, route)
-finally:
-    if os.path.exists(temporary):
-        os.unlink(temporary)
-print('Traefik upstream replaced atomically')
+        with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+            handle.write(updated)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, stat.S_IMODE(st.st_mode))
+        try:
+            os.chown(temporary, st.st_uid, st.st_gid)
+        except PermissionError:
+            pass
+        os.replace(temporary, route)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+print(json.dumps({'container': sys.argv[2], 'old_url': old_url, 'new_url': new_url, 'changed': changed}))
 PY
 sleep 5
+echo "ROUTE_REPAIR_CONTAINER=$container"
+echo "ROUTE_REPAIR_IP=$new_ip"
 echo 'Host route repair complete'`
 
   const result = run("ssh", [
@@ -145,6 +150,20 @@ echo 'Host route repair complete'`
   ], { input: remoteScript, timeout: 120_000 })
   if (result.stdout) console.log(result.stdout.trim())
   if (result.status !== 0) throw new Error(`Host route repair failed: ${(result.stderr || result.stdout || "unknown").slice(-1000)}`)
+
+  const container = result.stdout.match(/^ROUTE_REPAIR_CONTAINER=(.+)$/m)?.[1]?.trim() || null
+  const ip = result.stdout.match(/^ROUTE_REPAIR_IP=(.+)$/m)?.[1]?.trim() || null
+  return { container, ip, key_name: key.name }
+}
+
+function compactVisibleText(input) {
+  return String(input)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;|&#xa0;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, "")
 }
 
 async function verifyPublicRoutes() {
@@ -168,8 +187,8 @@ async function verifyPublicRoutes() {
           headers: { "Cache-Control": "no-cache" },
           signal: AbortSignal.timeout(30_000),
         })
-        const body = await response.text()
-        const missing = markers.filter((marker) => !body.includes(marker))
+        const body = compactVisibleText(await response.text())
+        const missing = markers.filter((marker) => !body.includes(compactVisibleText(marker)))
         console.log(`${pathname} ${attempt}/30 -> HTTP ${response.status}; missing=${missing.length}`)
         if (response.ok && missing.length === 0) {
           passed = true
@@ -187,8 +206,14 @@ async function verifyPublicRoutes() {
 const { directory, candidates } = await materializeKeys()
 try {
   const key = selectWorkingKey(candidates)
-  repairRoute(key)
-  await verifyPublicRoutes()
+  const evidence = {
+    checked_at: new Date().toISOString(),
+    app_uuid: APP_UUID,
+    server: SERVER,
+    ...(repairRoute(key)),
+  }
+  fs.writeFileSync(EVIDENCE_PATH, `${JSON.stringify(evidence, null, 2)}\n`)
+  if (VERIFY_PUBLIC) await verifyPublicRoutes()
   console.log("PRODUCTION TRAEFIK REPAIR PASSED")
 } finally {
   fs.rmSync(directory, { recursive: true, force: true })
