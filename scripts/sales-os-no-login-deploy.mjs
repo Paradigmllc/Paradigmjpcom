@@ -1639,9 +1639,10 @@ async function main() {
     {
       url: "https://paradigmjp.com/en",
       markers: [
-        "Launch in Japan without hiring a local team",
+        "Your Japan Country Partner",
         "$15,000",
-        "Apply for Japan Entry",
+        "Apply for a Japan Partnership",
+        "japan-market-system.webp",
         "Wise",
         "14 business days",
       ],
