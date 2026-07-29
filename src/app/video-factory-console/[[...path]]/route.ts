@@ -3,21 +3,17 @@ import {
   proxyVideoFactoryRequest,
   safeVideoFactorySegments,
 } from "@/lib/video-factory-internal-proxy"
-import { relativeRedirect } from "@/lib/relative-redirect"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 export const maxDuration = 300
 
 const PUBLIC_BASE = "/video-factory-console/"
+const LOGIN_RETURN_PATH = "/video-factory-console"
 
 type RouteContext = { params: Promise<{ path?: string[] }> }
 
 async function handler(request: NextRequest, context: RouteContext): Promise<NextResponse> {
-  if (request.nextUrl.pathname === "/video-factory-console") {
-    return relativeRedirect(PUBLIC_BASE, 307)
-  }
-
   let segments: string[]
   try {
     segments = safeVideoFactorySegments((await context.params).path)
@@ -32,7 +28,7 @@ async function handler(request: NextRequest, context: RouteContext): Promise<Nex
     {
       consoleEntry: suffix === "" || suffix === "index.html",
       consolePublicBase: PUBLIC_BASE,
-      loginRedirectPath: PUBLIC_BASE,
+      loginRedirectPath: LOGIN_RETURN_PATH,
     },
   )
 }
