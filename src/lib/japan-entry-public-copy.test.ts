@@ -257,7 +257,7 @@ describe("public English Japan Entry copy", () => {
     for (const source of releaseSources) {
       expect(source).toContain("Your Japan Country Partner")
       expect(source).toContain("Apply for a Japan Partnership")
-      expect(source).toContain("japan-market-system.webp")
+      expect(source).not.toContain("japan-market-system.webp")
       expect(source).not.toContain("Launch in Japan without hiring a local team")
     }
 
