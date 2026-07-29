@@ -1,5 +1,7 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { ManualJapanEntryWorkConsole } from "@/components/work/ManualJapanEntryWorkConsole"
+import { verifyAdminSessionToken } from "@/lib/admin-auth"
 import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
 import {
   getManualWorkDashboardSummary,
@@ -14,6 +16,12 @@ export const dynamic = "force-dynamic"
 
 export default async function ManualJapanEntryWorkPage() {
   if (!(await isCurrentRequestAdmin())) redirect("/admin/login?redirect=%2Fwork")
+
+  const cookieStore = await cookies()
+  if (!verifyAdminSessionToken(cookieStore.get("paradigm_work_api_token")?.value)) {
+    redirect("/work/session?redirect=%2Fwork")
+  }
+
   let items: ManualJapanEntryWorkRow[] = []
   let sources: ManualLeadSourceCatalogRow[] = []
   let historyTotal = 0
