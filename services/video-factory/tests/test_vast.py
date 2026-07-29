@@ -50,6 +50,7 @@ def test_vast_template_and_offer_search_request_shapes() -> None:
             assert body["gpu_name"] == {"in": ["RTX 4090"]}
             assert body["gpu_ram"] == {"gte": 24576}
             assert body["dph_total"] == {"lte": 0.8}
+            assert body["type"] == "ondemand"
             return httpx.Response(
                 200,
                 json={
@@ -93,6 +94,12 @@ def test_vast_instance_lifecycle() -> None:
             body = json.loads(request.content)
             assert body["template_hash_id"] == "template-hash"
             assert body["disk"] == 80
+            assert body["env"] == {
+                "PROVISIONING_SCRIPT": "https://example.test/provision.sh",
+                "-p 18189:18189": "1",
+            }
+            assert body["onstart"] == "echo ready"
+            assert body["runtype"] == "ssh_direct"
             return httpx.Response(200, json={"success": True, "new_contract": 9001})
         if request.method == "GET" and request.url.path.endswith("/v1/instances/"):
             return httpx.Response(
@@ -113,6 +120,12 @@ def test_vast_instance_lifecycle() -> None:
             template_hash_id="template-hash",
             label="paradigm-comfyui",
             disk_gb=80,
+            env={
+                "PROVISIONING_SCRIPT": "https://example.test/provision.sh",
+                "-p 18189:18189": "1",
+            },
+            onstart="echo ready",
+            runtype="ssh_direct",
         )
     )
     instances = asyncio.run(client.list_instances())
