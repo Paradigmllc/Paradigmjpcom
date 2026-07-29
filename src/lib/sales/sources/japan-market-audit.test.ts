@@ -29,6 +29,7 @@ describe("auditJapanMarketReadiness", () => {
 
     expect(audit.pages_checked).toEqual(["https://www.example.com/"])
     expect(audit.status.japanese_language_missing).toBe(true)
+    expect(audit.presence).toMatchObject({ existing: false, level: "none" })
     expect(audit.legal_disclaimer).toContain("not legal advice")
   })
 
@@ -66,5 +67,25 @@ describe("auditJapanMarketReadiness", () => {
     expect(audit.status.local_payments_missing).toBe(false)
     expect(audit.score).toBe(100)
     expect(audit.legal_disclaimer).toContain("not legal advice")
+  })
+
+  it("detects an existing Japanese sales path from locale and where-to-buy links", () => {
+    const audit = auditJapanMarketReadinessFromHtml(
+      "https://brand.example/en/about/",
+      `
+        <html><head><link rel="alternate" hreflang="ja" href="/ja/about/"></head>
+        <body>
+          <a href="/en/where-to-buy-jp/">Japan / 日 本</a>
+          <a href="/en/support/">Local Support</a>
+          <p>Wearable air purifier products for international customers.</p>
+        </body></html>
+      `,
+    )
+
+    expect(audit.presence.existing).toBe(true)
+    expect(audit.presence.level).toBe("sales")
+    expect(audit.presence.urls).toContain("https://brand.example/en/where-to-buy-jp/")
+    expect(audit.status.japanese_language_missing).toBe(false)
+    expect(audit.sales_pitch_context).toContain("新規日本参入案件としては原則対象外")
   })
 })
