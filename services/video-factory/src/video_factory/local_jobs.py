@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from .models import PipelineResult
 from .pipeline import production_flow
 from .settings import Settings
 
@@ -92,7 +93,7 @@ def _run_job(settings: Settings, job: LocalJob) -> None:
     running = replace(job, status="running", updated_at=_now())
     _write_job(settings, running)
     try:
-        pipeline_result = production_flow(
+        pipeline_result: PipelineResult = production_flow(
             brief_path=job.brief_path,
             dry_run=job.dry_run,
             planner_provider=job.planner_provider,
