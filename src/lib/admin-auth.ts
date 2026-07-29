@@ -13,10 +13,13 @@ const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
 const ADMIN_API_SESSION_TTL_SECONDS = 60 * 60
 
 function adminSessionSecret(): string | null {
-  const secret = process.env.ADMIN_SESSION_SECRET?.trim()
-    || process.env.ADMIN_PASSWORD?.trim()
-    || process.env.PAYLOAD_SECRET?.trim()
-  return secret && secret.length >= 16 ? secret : null
+  return [
+    process.env.ADMIN_SESSION_SECRET,
+    process.env.ADMIN_PASSWORD,
+    process.env.PAYLOAD_SECRET,
+  ]
+    .map((value) => value?.trim() ?? "")
+    .find((value) => value.length >= 16) ?? null
 }
 
 function signature(payload: string, secret: string): string {
