@@ -18,7 +18,7 @@ describe("manual work recovery policy", () => {
     })).toBe(false)
   })
 
-  it("allows a non-Japanese fast qualification row to request GPT-5.6 editorial generation", () => {
+  it("allows a non-Japanese fast qualification row to prepare a ChatGPT brief", () => {
     expect(isManualWorkRecoveryAvailable({
       status: "completed",
       twenty_sync_status: "skipped",
@@ -29,7 +29,7 @@ describe("manual work recovery policy", () => {
     })).toBe(true)
   })
 
-  it("allows an unsent legacy review row to be rewritten by GPT-5.6", () => {
+  it("allows an unsent legacy review row to be rebuilt without an API", () => {
     expect(isManualWorkRecoveryAvailable({
       status: "needs_review",
       twenty_sync_status: "synced",
@@ -40,25 +40,25 @@ describe("manual work recovery policy", () => {
     })).toBe(true)
   })
 
-  it("allows an unsent GPT-5.6 quality rejection to be regenerated", () => {
+  it("allows a failed ChatGPT brief to be prepared again", () => {
     expect(isManualWorkRecoveryAvailable({
-      status: "needs_review",
+      status: "failed",
       twenty_sync_status: "skipped",
       is_japanese_company: false,
       country_code: "FI",
-      evidence: { analysis_mode: "gpt56_editorial" },
-      message_review: { purpose: "editorial_generation", generation_status: "failed_quality_gate" },
+      evidence: { analysis_mode: "chatgpt_brief_failed" },
+      message_review: { purpose: "chatgpt_handoff", generation_status: "brief_failed" },
     })).toBe(true)
   })
 
-  it("allows an unsent completed GPT-5.6 draft to be re-edited", () => {
+  it("allows an unsent completed ChatGPT import to refresh its brief", () => {
     expect(isManualWorkRecoveryAvailable({
       status: "completed",
       twenty_sync_status: "skipped",
       is_japanese_company: false,
       country_code: "SG",
-      evidence: { analysis_mode: "gpt56_editorial" },
-      message_review: { generation_status: "passed_gpt56_editorial" },
+      evidence: { analysis_mode: "chatgpt_manual_import" },
+      message_review: { generation_status: "imported_chatgpt_pro" },
     })).toBe(true)
   })
 
@@ -69,8 +69,8 @@ describe("manual work recovery policy", () => {
       is_japanese_company: false,
       country_code: "US",
       manually_sent_at: "2026-07-29T00:00:00.000Z",
-      evidence: { analysis_mode: "gpt56_editorial_failed" },
-      message_review: { generation_status: "failed" },
+      evidence: { analysis_mode: "chatgpt_brief_failed" },
+      message_review: { generation_status: "brief_failed" },
     })).toBe(false)
   })
 
