@@ -250,6 +250,17 @@ describe("public English Japan Entry copy", () => {
       expect(source).toContain("market execution")
     }
 
+    const releaseSources = [
+      readFileSync(join(process.cwd(), "scripts/sales-os-no-login-deploy.mjs"), "utf8"),
+      readFileSync(join(process.cwd(), "scripts/release-doctor.mjs"), "utf8"),
+    ]
+    for (const source of releaseSources) {
+      expect(source).toContain("Your Japan Country Partner")
+      expect(source).toContain("Apply for a Japan Partnership")
+      expect(source).toContain("japan-market-system.webp")
+      expect(source).not.toContain("Launch in Japan without hiring a local team")
+    }
+
     expect(homepage).toContain("JAPAN_ENTRY_FOUNDING_PARTNER_CAPACITY")
     expect(seed).toContain("Limited founding-partner capacity")
     expect(JSON.stringify(messages.homeEn)).toContain("Limited founding-partner capacity")

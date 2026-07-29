@@ -2003,11 +2003,11 @@ async function checkPostDeployUrls() {
   await fetchCheck("English Japan Entry homepage", `${BASE_URL}/en`, {
     timeoutMs: 20_000,
     mustContain: [
-      "Launch in Japan without hiring a local team",
+      "Your Japan Country Partner",
       "$15,000",
-      "Apply for Japan Entry",
+      "Apply for a Japan Partnership",
       "Visual proof",
-      "package-scope.svg",
+      "japan-market-system.webp",
       "japan-entry-score",
       "Wise",
       "14 business days",
