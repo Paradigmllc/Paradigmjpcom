@@ -1,12 +1,11 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-07-29 公開HP全体のビジュアル強化（実装・ローカル検証完了 / release準備中）
+## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
 
-- 日英の公開マーケティングページへ、ページ文脈に応じたブランド画像スライダー、実行フロー表、短尺ショーリールを共通展開した。動画、Web/AI、日本市場、一般ページで先頭ビジュアルと説明内容を切り替える。
-- 利用規約、プライバシー、返金、法定表示は過度な販促表現を避け、画像1点と「適用範囲・条件・連絡」の控えめな情報図解だけを表示する。管理、Sales OS、`/work`、レポート、デモ、個別Opportunity、Studio系は対象外。
-- ブランド専用の3D画像4点をWebPで追加し、HyperFramesで12秒・無音・4シーンのショーリールを制作した。クライアントロゴ、人物ストック、架空の実績・数値は使用していない。
-- 共有`PageHero`の抽象図をルート別の実画像へ置き換え、すべての該当ページでファーストビューから視覚情報が見えるようにした。
-- HyperFrames check、TypeScript、対象Vitest、変更ファイルESLint、production build、Playwrightのdesktop/mobile代表5ページを通過。`codex/hp-visual-system`からPR・本番releaseへ進む。
+- 全ページ末尾へ機械的に挿入していた共通画像カルーセル、工程表、ショーリールを撤去する。同じ生成画像を複数ページで反復せず、ページ本文と既存の専用コンポーネントを主役に戻す。
+- 共通`PageHero`は生成画像ではなく、実績を装わない抽象的なUI図解へ戻す。`/ja/works`では既存の実績カード、制作工程、確認基準を表示し、無関係な生成素材を実績画像として見せない。
+- 追加済みの生成画像4点、ショーリール、専用HyperFrames compositionは公開物とリポジトリから削除する。新しいフリー素材への置換は行わない。
+- TypeScript、変更ファイルESLint、production build、Playwrightのdesktop/mobile計4ケースを通過。`/ja/works`の実画面キャプチャでも、生成画像レールが消え、PageHeroから既存実績カードへ直接つながることを確認した。
 
 ## CURRENT STATUS — 2026-07-29 `/work`高速一次判定＋選抜詳細解析（本番release完了 / 外部送信0）
 

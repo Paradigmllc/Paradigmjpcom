@@ -1,7 +1,6 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import MarketingVisualShowcase from "@/components/marketing-visuals/MarketingVisualShowcase"
 
 /**
  * SiteWrapper — site chrome 配下の <main> をラップし、SiteHeader (fixed top-0 h-16)
@@ -20,10 +19,5 @@ export default function SiteWrapper({
   const pathname = usePathname()
   // LP 経路は <main pt-16> を付けない (header skip のため top spacing 不要)
   const isLp = pathname.startsWith("/p/") || /^\/[a-z]{2}\/(?:report|d)\//.test(pathname)
-  return (
-    <main className={isLp ? "" : "pt-16"}>
-      {children}
-      {!isLp && <MarketingVisualShowcase />}
-    </main>
-  )
+  return <main className={isLp ? "" : "pt-16"}>{children}</main>
 }
