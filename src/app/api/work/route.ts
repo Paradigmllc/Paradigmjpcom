@@ -5,14 +5,13 @@ import {
   getManualWorkDashboardSummary,
   listManualJapanEntryWorkPage,
   listManualLeadSourceCatalog,
-  listManualWorkAngleMetrics,
-  listManualWorkExperimentMetrics,
   MANUAL_WORK_OUTCOMES,
   recordManualWorkOutcome,
 } from "@/lib/sales/manual-japan-entry-store"
 import { MANUAL_MESSAGE_VARIANTS } from "@/lib/sales/manual-japan-entry-experiment"
 import { MANUAL_MESSAGE_ANGLES } from "@/lib/sales/manual-japan-entry-angle"
-import { ManualWorkRetryConflictError, processManualJapanEntryUrl } from "@/lib/sales/manual-japan-entry-service"
+import { processManualEditorialMessage } from "@/lib/sales/manual-work-editorial-service"
+import { processFastManualWorkUrl } from "@/lib/sales/manual-work-fast-service"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -38,10 +37,10 @@ const createSchema = z.object({
   workId: z.string().uuid().optional(),
 }).strict().superRefine((value, context) => {
   if (value.retry && !value.workId) {
-    context.addIssue({ code: "custom", path: ["workId"], message: "再解析には履歴IDが必要です" })
+    context.addIssue({ code: "custom", path: ["workId"], message: "ブリーフ再準備には履歴IDが必要です" })
   }
   if (!value.retry && value.workId) {
-    context.addIssue({ code: "custom", path: ["workId"], message: "履歴IDは再解析時だけ指定できます" })
+    context.addIssue({ code: "custom", path: ["workId"], message: "履歴IDはブリーフ再準備時だけ指定できます" })
   }
 })
 const outcomeSchema = z.object({
@@ -57,7 +56,7 @@ export async function GET(req: NextRequest) {
   try {
     const parsedQuery = historyQuerySchema.safeParse(Object.fromEntries(req.nextUrl.searchParams.entries()))
     if (!parsedQuery.success) return NextResponse.json({ ok: false, error: "履歴の検索条件が不正です" }, { status: 400 })
-    const [history, summary, metrics, angleMetrics, sources] = await Promise.all([
+    const [history, summary, sources] = await Promise.all([
       listManualJapanEntryWorkPage({
         page: parsedQuery.data.page,
         pageSize: parsedQuery.data.pageSize,
@@ -65,11 +64,9 @@ export async function GET(req: NextRequest) {
         query: parsedQuery.data.q,
       }),
       getManualWorkDashboardSummary(),
-      listManualWorkExperimentMetrics(),
-      listManualWorkAngleMetrics(),
       listManualLeadSourceCatalog(),
     ])
-    return NextResponse.json({ ok: true, ...history, summary, metrics, angleMetrics, sources })
+    return NextResponse.json({ ok: true, ...history, summary, sources })
   } catch (error) {
     console.error("[api/work] list failed:", error)
     return NextResponse.json(
@@ -92,27 +89,34 @@ export async function POST(req: NextRequest) {
   }
   const parsed = createSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "有効な企業URLを1件指定してください" }, { status: 400 })
+    return NextResponse.json({ ok: false, error: "有効な企業URLと処理条件を指定してください" }, { status: 400 })
   }
   try {
-    const result = await processManualJapanEntryUrl(
-      parsed.data.url,
-      parsed.data.variant,
-      parsed.data.angle,
-      {
-        sourceSlug: parsed.data.sourceSlug,
-        sourcePageUrl: parsed.data.sourcePageUrl || null,
-        observedOn: parsed.data.observedOn ?? null,
-      },
-      { retryRequested: parsed.data.retry, expectedWorkId: parsed.data.workId ?? null },
-    )
+    const sourceInput = {
+      sourceSlug: parsed.data.sourceSlug,
+      sourcePageUrl: parsed.data.sourcePageUrl || null,
+      observedOn: parsed.data.observedOn ?? null,
+    }
+    const result = parsed.data.retry
+      ? await processManualEditorialMessage({
+          rawUrl: parsed.data.url,
+          expectedWorkId: parsed.data.workId!,
+        })
+      : await processFastManualWorkUrl(
+          parsed.data.url,
+          parsed.data.variant,
+          parsed.data.angle,
+          sourceInput,
+        )
     try {
       const { notifyBothChannels } = await import("@/lib/notify")
       await notifyBothChannels("sales", {
-        title: `Manual Japan Entry: ${result.item.company_name ?? result.item.domain}`,
-        message: `${result.artifactsPreserved ? "再生成失敗・旧成果物保持" : result.item.status} / Twenty ${result.item.twenty_sync_status} / 外部送信0件`,
+        title: parsed.data.retry
+          ? `ChatGPTブリーフ準備: ${result.item.company_name ?? result.item.domain}`
+          : `高速一次判定: ${result.item.company_name ?? result.item.domain}`,
+        message: `${result.item.status} / 外部AI API 0件 / 外部送信0件`,
         link: "/work",
-        type: "manual_japan_entry_work_completed",
+        type: parsed.data.retry ? "manual_chatgpt_brief_completed" : "manual_fast_qualification_completed",
         region: "global",
       })
     } catch (error) {
@@ -121,9 +125,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, ...result }, { status: result.duplicate ? 200 : 201 })
   } catch (error) {
     console.error("[api/work] process failed:", error)
-    if (error instanceof ManualWorkRetryConflictError) {
-      return NextResponse.json({ ok: false, error: error.message }, { status: 409 })
-    }
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "解析を開始できませんでした" },
       { status: 500 },
