@@ -34,14 +34,17 @@ export interface JapanMarketAudit {
     jpy_currency?: string[]
     japan_shipping?: string[]
   }
-  // New audits always populate this. It remains optional at the shared type
-  // boundary so persisted legacy reports and older test fixtures continue to
-  // deserialize without pretending that historical records had this analysis.
+  // New audits populate this, but historical reports created before Japan
+  // presence analysis remain valid without it.
   presence?: JapanMarketPresence
   pages_checked: string[]
   sales_pitch_context: string
   human_review_required: boolean
   legal_disclaimer: string
+}
+
+export type JapanMarketAuditWithPresence = JapanMarketAudit & {
+  presence: JapanMarketPresence
 }
 
 interface AuditPage {
@@ -288,7 +291,7 @@ function buildSalesContext(status: JapanMarketAuditStatus, presence: JapanMarket
   return `公開ページ上では ${gaps.join("、")} が不足している可能性があります。これは法的断定ではなく、日本参入営業の仮説として、人間確認と一次情報確認を挟んで提案文面へ反映します。`
 }
 
-function buildJapanMarketAudit(pages: AuditPage[]): JapanMarketAudit {
+function buildJapanMarketAudit(pages: AuditPage[]): JapanMarketAuditWithPresence {
   const joined = pages.map((page) => page.text).join("\n")
   const presence = strongestPresence(pages.map((page) => detectJapanPresenceFromHtml(page.url, page.html)))
 
@@ -330,12 +333,12 @@ function buildJapanMarketAudit(pages: AuditPage[]): JapanMarketAudit {
   }
 }
 
-export function auditJapanMarketReadinessFromHtml(url: string, html: string): JapanMarketAudit {
+export function auditJapanMarketReadinessFromHtml(url: string, html: string): JapanMarketAuditWithPresence {
   const text = stripHtml(html)
   return buildJapanMarketAudit(text ? [{ url, text: text.slice(0, 80_000), html: html.slice(0, 300_000) }] : [])
 }
 
-export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<JapanMarketAudit> {
+export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<JapanMarketAuditWithPresence> {
   const origin = normalizeOrigin(domainOrUrl)
   const urls = [...new Set(AUDIT_PATHS.map((item) => `${origin}${item}`))]
   const pages = (await Promise.all(urls.map((url) => fetchAuditPage(url)))).filter(
