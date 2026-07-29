@@ -8,7 +8,7 @@ describe("work API session bootstrap", () => {
     vi.unstubAllEnvs()
   })
 
-  it("sets a short-lived HttpOnly API cookie and returns to /work", async () => {
+  it("sets a short-lived HttpOnly API cookie and returns with a relative redirect", async () => {
     vi.stubEnv("ADMIN_SESSION_SECRET", "a".repeat(32))
     const adminToken = createAdminSessionToken()
     const request = new NextRequest("https://paradigmjp.com/work/session?redirect=%2Fwork", {
@@ -18,12 +18,30 @@ describe("work API session bootstrap", () => {
     const response = await GET(request)
 
     expect(response.status).toBe(307)
-    expect(response.headers.get("location")).toBe("https://paradigmjp.com/work")
+    expect(response.headers.get("location")).toBe("/work")
     const cookie = response.headers.get("set-cookie") ?? ""
     expect(cookie).toContain("paradigm_work_api_token=")
     expect(cookie).toContain("HttpOnly")
     expect(cookie).toContain("Path=/")
     expect(cookie).toContain("SameSite=strict")
+  })
+
+  it("never redirects the browser to the internal Coolify listener", async () => {
+    vi.stubEnv("ADMIN_SESSION_SECRET", "a".repeat(32))
+    const adminToken = createAdminSessionToken()
+    const request = new NextRequest("http://0.0.0.0:3000/work/session?redirect=%2Fwork", {
+      headers: {
+        cookie: `paradigm_admin_token=${adminToken}`,
+        "x-forwarded-host": "www.paradigmjp.com",
+        "x-forwarded-proto": "https",
+      },
+    })
+
+    const response = await GET(request)
+
+    expect(response.headers.get("location")).toBe("/work")
+    expect(response.headers.get("location")).not.toContain("0.0.0.0")
+    expect(response.headers.get("set-cookie") ?? "").toContain("Secure")
   })
 
   it("rejects open redirects", async () => {
@@ -34,6 +52,6 @@ describe("work API session bootstrap", () => {
     })
 
     const response = await GET(request)
-    expect(response.headers.get("location")).toBe("https://paradigmjp.com/work")
+    expect(response.headers.get("location")).toBe("/work")
   })
 })
