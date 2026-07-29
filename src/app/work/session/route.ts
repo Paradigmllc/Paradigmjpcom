@@ -13,6 +13,24 @@ function safeWorkRedirect(value: string | null): string {
   return value
 }
 
+function relativeRedirect(location: string): NextResponse {
+  return new NextResponse(null, {
+    status: 307,
+    headers: {
+      "Cache-Control": "no-store",
+      Location: location,
+    },
+  })
+}
+
+function isHttpsRequest(req: NextRequest): boolean {
+  const forwardedProto = req.headers.get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim()
+    .toLowerCase()
+  return forwardedProto === "https" || req.nextUrl.protocol === "https:" || process.env.NODE_ENV === "production"
+}
+
 export async function GET(req: NextRequest) {
   const redirectTarget = safeWorkRedirect(req.nextUrl.searchParams.get("redirect"))
   const auth = await authorizePayloadAdminRequest({
@@ -21,9 +39,8 @@ export async function GET(req: NextRequest) {
   })
 
   if (!auth.ok) {
-    const login = new URL("/admin/login", req.url)
-    login.searchParams.set("redirect", redirectTarget)
-    return NextResponse.redirect(login)
+    const params = new URLSearchParams({ redirect: redirectTarget })
+    return relativeRedirect(`/admin/login?${params.toString()}`)
   }
 
   const token = createAdminApiSessionToken()
@@ -34,11 +51,14 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const response = NextResponse.redirect(new URL(redirectTarget, req.url))
-  response.headers.set("Cache-Control", "no-store")
+  // Never build this redirect from req.url. Behind Coolify/Traefik, req.url can
+  // legitimately contain the internal listener (for example 0.0.0.0:3000).
+  // A relative Location header keeps the browser on the public host that it
+  // actually requested and prevents redirects to an unreachable container URL.
+  const response = relativeRedirect(redirectTarget)
   response.cookies.set("paradigm_work_api_token", token, {
     httpOnly: true,
-    secure: req.nextUrl.protocol === "https:",
+    secure: isHttpsRequest(req),
     sameSite: "strict",
     path: "/",
     maxAge: 60 * 60,
