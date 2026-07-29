@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ffmpeg \
       fonts-noto-cjk \
       git \
+      gosu \
       python3 \
       python3-pip \
       python3-venv \
@@ -40,10 +41,9 @@ COPY . .
 
 RUN useradd --create-home --uid 10001 factory \
     && mkdir -p /data/video-factory \
-    && chown -R factory:factory /app /data/video-factory
-
-USER factory
+    && chown -R factory:factory /app /data/video-factory \
+    && install -m 0755 docker-entrypoint.sh /usr/local/bin/video-factory-entrypoint
 
 EXPOSE 8080
-ENTRYPOINT ["uvicorn", "video_factory.web:app"]
-CMD ["--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["video-factory-entrypoint"]
+CMD ["uvicorn", "video_factory.web:app", "--host", "0.0.0.0", "--port", "8080"]
