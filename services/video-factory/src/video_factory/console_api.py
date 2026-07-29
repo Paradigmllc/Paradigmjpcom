@@ -57,7 +57,7 @@ class VastOfferSearchRequest(BaseModel):
     min_gpu_ram_gb: float = Field(default=24, ge=8, le=192)
     min_reliability: float = Field(default=0.99, ge=0, le=1)
     verified: bool = True
-    instance_type: Literal["on-demand", "bid"] = "on-demand"
+    instance_type: Literal["on-demand", "ondemand", "bid"] = "on-demand"
     max_hourly_price: float | None = Field(default=None, gt=0, le=100)
     limit: int = Field(default=20, ge=1, le=100)
 
@@ -70,6 +70,17 @@ class VastCreateInstanceRequest(BaseModel):
     target_state: Literal["running", "stopped"] = "running"
     volume_id: int | None = Field(default=None, gt=0)
     mount_path: str = Field(default="/workspace", pattern=r"^/[A-Za-z0-9_./-]+$")
+    env: dict[str, str] = Field(default_factory=dict, max_length=100)
+    onstart: str | None = Field(default=None, max_length=20_000)
+    runtype: Literal[
+        "ssh",
+        "jupyter",
+        "args",
+        "ssh_proxy",
+        "ssh_direct",
+        "jupyter_proxy",
+        "jupyter_direct",
+    ] | None = None
 
 
 class VastInstanceStateRequest(BaseModel):
@@ -323,6 +334,9 @@ async def create_vast_instance(request: VastCreateInstanceRequest) -> dict[str, 
             target_state=request.target_state,
             volume_id=request.volume_id,
             mount_path=request.mount_path,
+            env=request.env,
+            onstart=request.onstart,
+            runtype=request.runtype,
         )
     except VastAPIError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
