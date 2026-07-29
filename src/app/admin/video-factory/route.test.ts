@@ -34,7 +34,7 @@ describe("Video Factory admin launcher", () => {
     const response = await GET(request)
 
     expect(response.status).toBe(307)
-    expect(response.headers.get("location")).toBe("/video-factory-console/")
+    expect(response.headers.get("location")).toBe("/video-factory-console")
     expect(response.headers.get("location")).not.toContain("0.0.0.0")
     expect(response.headers.get("cache-control")).toContain("no-store")
   })
@@ -53,7 +53,7 @@ describe("Video Factory admin launcher", () => {
 
     expect(response.status).toBe(307)
     expect(response.headers.get("location")).toBe(
-      "/admin/login?redirect=%2Fvideo-factory-console%2F",
+      "/admin/login?redirect=%2Fvideo-factory-console",
     )
     expect(response.headers.get("location")).not.toContain("0.0.0.0")
   })
