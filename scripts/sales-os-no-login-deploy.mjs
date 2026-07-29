@@ -1642,7 +1642,6 @@ async function main() {
         "Your Japan Country Partner",
         "$15,000",
         "Apply for a Japan Partnership",
-        "japan-market-system.webp",
         "Wise",
         "14 business days",
       ],

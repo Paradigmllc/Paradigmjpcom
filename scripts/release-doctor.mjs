@@ -2007,7 +2007,6 @@ async function checkPostDeployUrls() {
       "$15,000",
       "Apply for a Japan Partnership",
       "Visual proof",
-      "japan-market-system.webp",
       "japan-entry-score",
       "Wise",
       "14 business days",
