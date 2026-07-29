@@ -23,32 +23,35 @@ concurrency:
   group: paradigm-video-factory-production
   cancel-in-progress: false
 
+env:
+  COOLIFY_API_URL: https://coolify.paradigmjp.com
+  COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+  PROJECT_UUID: jm01hum247nj6d8u91llkm4o
+  SERVER_UUID: zexw6p5j1afwbgi95iufypw1
+  DESTINATION_UUID: nhpnldarppf7byz8ix8l2z1z
+  MAIN_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+  VIDEO_FACTORY_APP_NAME: paradigm-video-factory
+  VIDEO_FACTORY_BRANCH: main
+
 jobs:
-  validate-deployment-automation:
+  prepare-application:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Validate Coolify deployment script
+      - name: Validate deployment script
         run: |
           bash -n scripts/ops/deploy-video-factory-coolify.sh
           grep -q '/applications/dockerfile' scripts/ops/deploy-video-factory-coolify.sh
           grep -q 'video-factory-entrypoint' scripts/ops/deploy-video-factory-coolify.sh
+      - name: Prepare the isolated Coolify application without deploying it
+        run: bash scripts/ops/deploy-video-factory-coolify.sh
 
   deploy:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      COOLIFY_API_URL: https://coolify.paradigmjp.com
-      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-      PROJECT_UUID: jm01hum247nj6d8u91llkm4o
-      SERVER_UUID: zexw6p5j1afwbgi95iufypw1
-      DESTINATION_UUID: nhpnldarppf7byz8ix8l2z1z
-      MAIN_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
-      VIDEO_FACTORY_APP_NAME: paradigm-video-factory
-      VIDEO_FACTORY_BRANCH: main
     steps:
       - uses: actions/checkout@v4
         with:
