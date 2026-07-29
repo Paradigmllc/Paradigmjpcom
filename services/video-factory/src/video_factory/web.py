@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .api import app
@@ -24,8 +24,17 @@ def console_path_redirect() -> RedirectResponse:
 
 
 @app.get("/console/", include_in_schema=False)
-def console_index() -> FileResponse:
-    return FileResponse(_STATIC_ROOT / "console.html", media_type="text/html")
+def console_index() -> HTMLResponse:
+    source = (_STATIC_ROOT / "console.html").read_text(encoding="utf-8")
+    marker = "</body>"
+    if marker not in source:
+        raise RuntimeError("Video Factory console HTML is missing the body terminator")
+    source = source.replace(
+        marker,
+        '<script src="/console/console-run-poll.js" defer></script>\n</body>',
+        1,
+    )
+    return HTMLResponse(source)
 
 
 app.mount("/console", StaticFiles(directory=_STATIC_ROOT), name="console")
