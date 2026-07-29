@@ -11,6 +11,7 @@ on:
       - src/app/api/video-factory/**
       - src/app/console/**
       - src/app/v1/**
+      - src/lib/relative-redirect.ts
       - src/lib/video-factory-internal-proxy.ts
       - scripts/ops/ensure-production-routing.mjs
       - scripts/ops/ensure-production-routing.test.mjs
@@ -130,27 +131,51 @@ jobs:
               *) return 1 ;;
             esac
           }
+          header_location() {
+            awk 'BEGIN { IGNORECASE=1 } /^location:/ { sub(/\r$/, ""); sub(/^[^:]+:[[:space:]]*/, ""); value=$0 } END { print value }' "$1"
+          }
+          public_location_ok() {
+            case "$1" in
+              *0.0.0.0*|*127.0.0.1*|*localhost*) return 1 ;;
+              /*|https://www.paradigmjp.com/*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
 
           for attempt in $(seq 1 90); do
             ready_code="$(curl --silent --show-error --output /tmp/video-factory-ready.json \
               --write-out '%{http_code}' --max-time 20 \
               https://paradigmjp.com/api/video-factory/ready || true)"
-            edge_redirect_code="$(curl --silent --show-error --output /dev/null \
+            edge_redirect_code="$(curl --silent --show-error --dump-header /tmp/video-factory-edge.headers --output /dev/null \
               --write-out '%{http_code}' --max-time 20 \
               --header 'Accept: text/html' \
               https://paradigmjp.com/console/ || true)"
-            auth_redirect_code="$(curl --silent --show-error --output /dev/null \
+            auth_redirect_code="$(curl --silent --show-error --dump-header /tmp/video-factory-auth.headers --output /dev/null \
               --write-out '%{http_code}' --max-time 20 \
               --header 'Accept: text/html' \
               https://www.paradigmjp.com/console/ || true)"
+            admin_redirect_code="$(curl --silent --show-error --dump-header /tmp/video-factory-admin.headers --output /dev/null \
+              --write-out '%{http_code}' --max-time 20 \
+              --header 'Accept: text/html' \
+              https://www.paradigmjp.com/admin/video-factory || true)"
+            edge_location="$(header_location /tmp/video-factory-edge.headers)"
+            auth_location="$(header_location /tmp/video-factory-auth.headers)"
+            admin_location="$(header_location /tmp/video-factory-admin.headers)"
             if [ "${ready_code}" = "200" ] \
               && jq -e '.ready == true and .service == "video-factory"' /tmp/video-factory-ready.json >/dev/null \
               && redirect_ok "${edge_redirect_code}" \
-              && redirect_ok "${auth_redirect_code}"; then
+              && redirect_ok "${auth_redirect_code}" \
+              && redirect_ok "${admin_redirect_code}" \
+              && public_location_ok "${edge_location}" \
+              && public_location_ok "${auth_location}" \
+              && public_location_ok "${admin_location}"; then
               exit 0
             fi
-            printf '[%s/90] video-factory-ready=%s edge-redirect=%s auth-redirect=%s\n' \
-              "${attempt}" "${ready_code}" "${edge_redirect_code}" "${auth_redirect_code}"
+            printf '[%s/90] ready=%s edge=%s:%s auth=%s:%s admin=%s:%s\n' \
+              "${attempt}" "${ready_code}" \
+              "${edge_redirect_code}" "${edge_location}" \
+              "${auth_redirect_code}" "${auth_location}" \
+              "${admin_redirect_code}" "${admin_location}"
             sleep 5
           done
           echo "Embedded Video Factory verification failed" >&2
@@ -190,5 +215,8 @@ jobs:
             /tmp/coolify-deployment-latest.json
             /tmp/production-verification.json
             /tmp/video-factory-ready.json
+            /tmp/video-factory-edge.headers
+            /tmp/video-factory-auth.headers
+            /tmp/video-factory-admin.headers
           if-no-files-found: warn
           retention-days: 14
