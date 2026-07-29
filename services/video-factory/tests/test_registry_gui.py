@@ -43,7 +43,7 @@ def test_registry_gui_registers_audited_model(
 
     page = client.get("/console/registry.html")
     assert page.status_code == 200
-    assert "Models &amp; Workflows" in page.text
+    assert "Models & Workflows" in page.text
 
     status = client.get("/v1/registry")
     assert status.status_code == 200
