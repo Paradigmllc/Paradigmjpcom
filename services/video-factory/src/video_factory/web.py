@@ -7,8 +7,10 @@ from fastapi.staticfiles import StaticFiles
 
 from .api import app
 from .console_api import router as console_router
+from .registry_api import router as registry_router
 
 app.include_router(console_router)
+app.include_router(registry_router)
 
 _STATIC_ROOT = Path(__file__).resolve().parent / "static"
 
