@@ -10,7 +10,7 @@ describe("sales API authorization", () => {
 
   it("accepts the short-lived work API session cookie", async () => {
     vi.stubEnv("ADMIN_SESSION_SECRET", "a".repeat(32))
-    const token = createAdminApiSessionToken(1_700_000_000_000)
+    const token = createAdminApiSessionToken()
     const request = new NextRequest("https://paradigmjp.com/api/work/batches", {
       headers: { cookie: `paradigm_work_api_token=${token}` },
     })
