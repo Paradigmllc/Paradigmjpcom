@@ -50,8 +50,18 @@ function base64UrlDecode(value: string): Buffer {
   return Buffer.from(`${normalized}${padding}`, "base64")
 }
 
+function secretEquals(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, "utf8")
+  const rightBuffer = Buffer.from(right, "utf8")
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
+}
+
 export function tokenIsValid(token: string | null): boolean {
   if (!token) return false
+  const internal = process.env.VIDEO_FACTORY_INTERNAL_API_KEY
+    || process.env.ADMIN_SCRIPT_SECRET
+    || process.env.ADMIN_PASSWORD
+  if (internal?.trim() && secretEquals(token, internal.trim())) return true
   const expected = Buffer.from(TOKEN_SHA256, "hex")
   const actual = createHash("sha256").update(token, "utf8").digest()
   return actual.length === expected.length && timingSafeEqual(actual, expected)
