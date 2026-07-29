@@ -36,7 +36,7 @@ const createBatchSchema = z.object({
   retryWorkId: z.string().uuid().optional(),
 }).strict().superRefine((value, context) => {
   if (value.retryWorkId && value.urls.length !== 1) {
-    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "文面生成は履歴1件ずつ永続キューへ登録してください" })
+    context.addIssue({ code: "custom", path: ["retryWorkId"], message: "ブリーフ準備は履歴1件ずつ永続キューへ登録してください" })
   }
 })
 
@@ -47,10 +47,6 @@ async function notify(title: string, message: string, type: string): Promise<voi
   } catch (error) {
     console.error("[api/work/batches] notification failed:", error)
   }
-}
-
-function gpt56WriterConfigured(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY?.trim() || process.env.OPENROUTER_API_KEY?.trim())
 }
 
 function hasRecordedOutcome(work: Awaited<ReturnType<typeof findManualWorkById>>): boolean {
@@ -128,13 +124,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: false, error: "日本企業は海外向け営業文面の対象外です" }, { status: 400 })
       }
       if (hasRecordedOutcome(selectedWork)) {
-        return NextResponse.json({ ok: false, error: "送信・返信・商談の記録がある企業は自動で文面を上書きできません" }, { status: 409 })
-      }
-      if (!gpt56WriterConfigured()) {
-        return NextResponse.json({
-          ok: false,
-          error: "GPT-5.6高品質文面は開始していません。OPENAI_API_KEYまたはOPENROUTER_API_KEYを設定してください。DeepSeekや定型文へのフォールバックは行いません。",
-        }, { status: 503 })
+        return NextResponse.json({ ok: false, error: "送信・返信・商談の記録がある企業は自動で上書きできません" }, { status: 409 })
       }
     }
 
@@ -161,13 +151,13 @@ export async function POST(req: NextRequest) {
     ])
     await notify(
       parsed.data.retryWorkId
-        ? (queuePosition === 0 ? "GPT-5.6文面生成開始" : "GPT-5.6文面生成待機")
+        ? (queuePosition === 0 ? "ChatGPTブリーフ準備開始" : "ChatGPTブリーフ準備待機")
         : (queuePosition === 0 ? "高速リード判定開始" : "高速リード判定待機"),
       parsed.data.retryWorkId
-        ? `選択した1社の公開ページを追加収集し、GPT-5.6 Terra + Solで高品質文面を編集します。前方バッチ${queuePosition}件。DeepSeek不使用・外部送信0件。`
-        : `${batch.batch.total_count}件を高速一次判定キューへ登録しました。前方バッチ${queuePosition}件。送信文は残す企業だけに作成します。外部送信0件。`,
+        ? `選択した1社の公式ページを追加収集し、ChatGPT Proへ渡す企業別ブリーフを準備します。前方バッチ${queuePosition}件。外部AI API・外部送信0件。`
+        : `${batch.batch.total_count}件を高速一次判定キューへ登録しました。前方バッチ${queuePosition}件。送信文は残す企業だけChatGPT Proで作成します。外部AI API・外部送信0件。`,
       parsed.data.retryWorkId
-        ? "manual_gpt56_editorial_queued"
+        ? "manual_chatgpt_brief_queued"
         : (queuePosition === 0 ? "manual_japan_entry_fast_batch_started" : "manual_japan_entry_fast_batch_queued"),
     )
     return NextResponse.json({
