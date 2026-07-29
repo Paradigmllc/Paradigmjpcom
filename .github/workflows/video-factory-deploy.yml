@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/video-factory-deploy.yml"
+      - "scripts/ops/deploy-video-factory-coolify.sh"
   workflow_dispatch:
 
 permissions:
@@ -29,126 +30,14 @@ jobs:
       VIDEO_FACTORY_APP_NAME: paradigm-video-factory
       VIDEO_FACTORY_BRANCH: agent/video-factory-source-inspect
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
       - name: Create or update the isolated Video Factory application
         id: application
         shell: bash
-        run: |
-          set -euo pipefail
-          test -n "${COOLIFY_API_TOKEN}"
-          API="${COOLIFY_API_URL%/}/api/v1"
-
-          api_get() {
-            curl --fail-with-body --silent --show-error \
-              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
-              --header "Accept: application/json" \
-              "${API}$1"
-          }
-          api_json() {
-            local method="$1" path="$2" body="$3"
-            curl --fail-with-body --silent --show-error \
-              --request "${method}" \
-              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
-              --header "Accept: application/json" \
-              --header "Content-Type: application/json" \
-              --data "${body}" \
-              "${API}${path}"
-          }
-
-          apps="$(api_get /applications)"
-          app_uuid="$(printf '%s' "${apps}" | jq -r --arg name "${VIDEO_FACTORY_APP_NAME}" '[.[] | select(.name == $name)][0].uuid // empty')"
-
-          application_payload="$(jq -cn \
-            --arg project_uuid "${PROJECT_UUID}" \
-            --arg server_uuid "${SERVER_UUID}" \
-            --arg destination_uuid "${DESTINATION_UUID}" \
-            --arg git_branch "${VIDEO_FACTORY_BRANCH}" \
-            --arg name "${VIDEO_FACTORY_APP_NAME}" \
-            '{
-              project_uuid: $project_uuid,
-              server_uuid: $server_uuid,
-              destination_uuid: $destination_uuid,
-              environment_name: "production",
-              git_repository: "https://github.com/Paradigmllc/Paradigmjpcom.git",
-              git_branch: $git_branch,
-              build_pack: "dockerfile",
-              ports_exposes: "8080",
-              name: $name,
-              description: "Browser-operated Paradigm VaaS production console",
-              base_directory: "/services/video-factory",
-              dockerfile_location: "/Dockerfile",
-              is_auto_deploy_enabled: false,
-              is_force_https_enabled: true,
-              autogenerate_domain: true,
-              connect_to_docker_network: true,
-              health_check_enabled: true,
-              health_check_path: "/health",
-              health_check_port: "8080",
-              health_check_host: "localhost",
-              health_check_method: "GET",
-              health_check_return_code: 200,
-              health_check_scheme: "http",
-              health_check_interval: 10,
-              health_check_timeout: 5,
-              health_check_retries: 12,
-              health_check_start_period: 60,
-              custom_docker_run_options: "--mount type=volume,source=paradigm-video-factory-data,target=/data/video-factory",
-              force_domain_override: false,
-              instant_deploy: false
-            }')"
-
-          if [ -z "${app_uuid}" ]; then
-            created="$(api_json POST /applications/public "${application_payload}")"
-            app_uuid="$(printf '%s' "${created}" | jq -er '.uuid')"
-          else
-            api_json PATCH "/applications/${app_uuid}" "${application_payload}" >/dev/null
-          fi
-
-          # Reuse the operator's existing Paradigm admin password as the browser
-          # console API credential without exposing it to logs or artifacts.
-          main_envs="$(api_get "/applications/${MAIN_APP_UUID}/envs")"
-          factory_key="$(printf '%s' "${main_envs}" | jq -er '
-            [
-              .[]
-              | select(.is_preview != true)
-              | select(.key == "ADMIN_PASSWORD" or .key == "ADMIN_SCRIPT_SECRET")
-              | {priority: (if .key == "ADMIN_PASSWORD" then 0 else 1 end), value: (.real_value // .value)}
-              | select(.value != null and .value != "")
-            ]
-            | sort_by(.priority)
-            | .[0].value
-          ')"
-          test -n "${factory_key}"
-
-          env_payload="$(jq -cn \
-            --arg factory_key "${factory_key}" \
-            '{data: [
-              {key:"VIDEO_FACTORY_ENVIRONMENT", value:"production", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_API_KEY", value:$factory_key, is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_WORKSPACE", value:"/data/video-factory", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_QUEUE_BACKEND", value:"local", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", value:"1", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_MASTER_COMPOSITOR", value:"hyperframes", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK", value:"false", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"HYPERFRAMES_VERSION", value:"0.7.77", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"HYPERFRAMES_NPX", value:"npx", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"HYPERFRAMES_RENDER_QUALITY", value:"draft", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"COMFYUI_WORKFLOW_ROOT", value:"/app/workflows/comfyui", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"COMFYUI_WORKFLOW_REGISTRY", value:"/app/workflows/comfyui/registry.yaml", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"COMFYUI_ALLOW_UNREGISTERED_WORKFLOWS", value:"false", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_MODEL_REGISTRY", value:"/app/config/model-registry.yaml", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VIDEO_FACTORY_PRODUCTION_REGION", value:"JP", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"PLAYWRIGHT_NODE", value:"node", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"PLAYWRIGHT_CAPTURE_SCRIPT", value:"/app/tools/playwright-capture/capture.mjs", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"PLAYWRIGHT_CHROMIUM_EXECUTABLE", value:"/usr/bin/chromium", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"PLAYWRIGHT_ALLOWED_HOSTS", value:"paradigmjp.com,www.paradigmjp.com", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VAST_API_BASE_URL", value:"https://console.vast.ai/api", is_preview:false, is_literal:true, is_multiline:false},
-              {key:"VAST_MAX_HOURLY_PRICE", value:"1.00", is_preview:false, is_literal:true, is_multiline:false}
-            ]}')"
-          api_json PATCH "/applications/${app_uuid}/envs/bulk" "${env_payload}" >/dev/null
-
-          echo "app_uuid=${app_uuid}" >> "${GITHUB_OUTPUT}"
-          printf '%s' "${factory_key}" > /tmp/video-factory-api-key
-          chmod 600 /tmp/video-factory-api-key
+        run: bash scripts/ops/deploy-video-factory-coolify.sh
 
       - name: Deploy and wait for Coolify
         id: deployment
