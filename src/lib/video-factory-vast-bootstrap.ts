@@ -12,6 +12,7 @@ import fs from "node:fs"
 import path from "node:path"
 
 const TOKEN_SHA256 = "327e902d248afca137dc12f47c6c33c88b8647c609c54c99ae4bb17dabe09e6e"
+const EXPECTED_VAST_KEY_SHA256 = "617ad24a42bf101a2191deab6a8c98c12005855d07f0967f25d70a703b751d02"
 const CONFIG_ROOT = process.env.VIDEO_FACTORY_WORKSPACE?.trim()
   ? path.join(process.env.VIDEO_FACTORY_WORKSPACE.trim(), "config")
   : "/data/video-factory/config"
@@ -49,10 +50,26 @@ function base64UrlDecode(value: string): Buffer {
   return Buffer.from(`${normalized}${padding}`, "base64")
 }
 
+function secretEquals(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, "utf8")
+  const rightBuffer = Buffer.from(right, "utf8")
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer)
+}
+
 export function tokenIsValid(token: string | null): boolean {
   if (!token) return false
+  const internal = process.env.VIDEO_FACTORY_INTERNAL_API_KEY
+    || process.env.ADMIN_SCRIPT_SECRET
+    || process.env.ADMIN_PASSWORD
+  if (internal?.trim() && secretEquals(token, internal.trim())) return true
   const expected = Buffer.from(TOKEN_SHA256, "hex")
   const actual = createHash("sha256").update(token, "utf8").digest()
+  return actual.length === expected.length && timingSafeEqual(actual, expected)
+}
+
+export function vastKeyMatchesExpected(value: string): boolean {
+  const expected = Buffer.from(EXPECTED_VAST_KEY_SHA256, "hex")
+  const actual = createHash("sha256").update(value, "utf8").digest()
   return actual.length === expected.length && timingSafeEqual(actual, expected)
 }
 
@@ -112,6 +129,9 @@ export function decryptVastKey(ciphertext: string): string {
   ).toString("utf8").trim()
   if (!/^[A-Fa-f0-9]{64,128}$/.test(value)) {
     throw new Error("Decrypted Vast.ai key has an unexpected format")
+  }
+  if (!vastKeyMatchesExpected(value)) {
+    throw new Error("The supplied Vast.ai key is not the delegated bootstrap credential")
   }
   return value
 }
