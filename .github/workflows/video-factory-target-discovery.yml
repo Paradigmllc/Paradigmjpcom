@@ -33,24 +33,49 @@ jobs:
 
           apps="$(get /applications)"
           servers="$(get /servers)"
+          team="$(get /teams/current)"
+          projects="$(get /projects)"
+          keys="$(get /security/keys)"
+
+          echo "current-team:"
+          printf '%s' "${team}" | jq '{id,uuid,name,description}'
+          echo "projects:"
+          printf '%s' "${projects}" | jq '[.[] | {uuid,name,description}]'
+          echo "security-keys:"
+          printf '%s' "${keys}" | jq '[.[] | {uuid,name,description,is_git_related}]'
+          echo "main-application-target:"
           printf '%s' "${apps}" | jq --arg uuid "${MAIN_APP_UUID}" '
             [.[] | select(.uuid == $uuid)][0]
             | {
                 uuid,
                 name,
+                environment_id,
                 destination_id,
                 destination_type,
                 destination: (
                   if .destination then {
                     uuid: .destination.uuid,
+                    name: .destination.name,
                     network: .destination.network,
-                    server_uuid: .destination.server.uuid,
-                    server_name: .destination.server.name
+                    server: (
+                      if .destination.server then {
+                        uuid: .destination.server.uuid,
+                        name: .destination.server.name,
+                        ip: .destination.server.ip,
+                        user: .destination.server.user,
+                        port: .destination.server.port,
+                        team_id: .destination.server.team_id,
+                        private_key_id: .destination.server.private_key_id,
+                        is_build_server: .destination.server.is_build_server,
+                        unreachable: .destination.server.unreachable
+                      } else null end
+                    )
                   } else null end
                 )
               }
           '
-          printf '%s' "${servers}" | jq '[.[] | {uuid,name,ip,is_build_server,unreachable,validation_logs}]'
+          echo "team-visible-servers:"
+          printf '%s' "${servers}" | jq '[.[] | {uuid,name,ip,user,port,team_id,private_key_id,is_build_server,unreachable}]'
 
           for server_uuid in $(printf '%s' "${servers}" | jq -r '.[].uuid'); do
             echo "server=${server_uuid} destinations:"
