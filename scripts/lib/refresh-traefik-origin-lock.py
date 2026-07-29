@@ -38,6 +38,7 @@ CF_IPS_URL = "https://api.cloudflare.com/client/v4/ips"
 CACHE_SCHEMA_VERSION = 1
 CACHE_MAX_AGE_SECONDS = 6 * 60 * 60
 MIDDLEWARE_NAME = "paradigm-cloudflare-only"
+PROTECTED_ROUTER_PRIORITY = 200000
 MAIN_HOSTS = {"paradigmjp.com", "www.paradigmjp.com"}
 KEYSTATIC_HOST = "keystatic.paradigmjp.com"
 DEMO_HOST = "demo.paradigmjp.com"
@@ -298,16 +299,16 @@ def apply_cached_origin_lock(
     demo_rule = f"Host({tick}{DEMO_HOST}{tick})"
 
     http_router["rule"] = main_rule
-    http_router["priority"] = 1000
+    http_router["priority"] = PROTECTED_ROUTER_PRIORITY
     http_router["middlewares"] = prepend_once(middleware_list(http_router), MIDDLEWARE_NAME)
     https_router["rule"] = main_rule
-    https_router["priority"] = 1000
+    https_router["priority"] = PROTECTED_ROUTER_PRIORITY
     https_router["middlewares"] = prepend_once(middleware_list(https_router), MIDDLEWARE_NAME)
 
     keystatic_http = copy.deepcopy(routers.get("keystatic-http") or http_router)
     keystatic_http.update({
         "rule": keystatic_rule,
-        "priority": 1000,
+        "priority": PROTECTED_ROUTER_PRIORITY,
         "middlewares": prepend_once(middleware_list(keystatic_http), MIDDLEWARE_NAME),
         "service": "paradigmhp-svc",
     })
@@ -316,7 +317,7 @@ def apply_cached_origin_lock(
     keystatic_https = copy.deepcopy(routers.get("keystatic-https") or https_router)
     keystatic_https.update({
         "rule": keystatic_rule,
-        "priority": 1000,
+        "priority": PROTECTED_ROUTER_PRIORITY,
         "middlewares": prepend_once(middleware_list(keystatic_https), MIDDLEWARE_NAME),
         "service": "paradigmhp-svc",
     })
@@ -325,7 +326,7 @@ def apply_cached_origin_lock(
     demo_http = copy.deepcopy(http_router)
     demo_http.update({
         "rule": demo_rule,
-        "priority": 1000,
+        "priority": PROTECTED_ROUTER_PRIORITY,
         "middlewares": prepend_once(middleware_list(demo_http), MIDDLEWARE_NAME),
         "service": "paradigmhp-svc",
     })
@@ -334,7 +335,7 @@ def apply_cached_origin_lock(
     demo_https = copy.deepcopy(https_router)
     demo_https.update({
         "rule": demo_rule,
-        "priority": 1000,
+        "priority": PROTECTED_ROUTER_PRIORITY,
         "middlewares": prepend_once(middleware_list(demo_https), MIDDLEWARE_NAME),
         "service": "paradigmhp-svc",
     })
@@ -352,14 +353,14 @@ def apply_cached_origin_lock(
         routers["paradigmhp-origin-alias-http"] = {
             "entryPoints": ["http"],
             "middlewares": [MIDDLEWARE_NAME, "redirect-to-https"],
-            "priority": 1000,
+            "priority": PROTECTED_ROUTER_PRIORITY,
             "rule": alias_rule,
             "service": "paradigmhp-svc",
         }
         routers["paradigmhp-origin-alias-https"] = {
             "entryPoints": ["https"],
             "middlewares": [MIDDLEWARE_NAME, "gzip"],
-            "priority": 1000,
+            "priority": PROTECTED_ROUTER_PRIORITY,
             "rule": alias_rule,
             "service": "paradigmhp-svc",
             "tls": {"certResolver": "letsencrypt"},

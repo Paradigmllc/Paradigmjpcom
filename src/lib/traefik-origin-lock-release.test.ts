@@ -34,7 +34,8 @@ describe("production origin-lock release wiring", () => {
     const applyBody = helper.match(/def apply_cached_origin_lock\([\s\S]*?(?:\r?\n){2,}def main\(/)?.[0]
     expect(applyBody).toContain("load_cached_ranges")
     expect(applyBody).toContain("atomic_write(")
-    expect(applyBody).toContain('["priority"] = 1000')
+    expect(helper).toContain("PROTECTED_ROUTER_PRIORITY = 200000")
+    expect(applyBody).toContain('["priority"] = PROTECTED_ROUTER_PRIORITY')
     expect(applyBody).not.toContain("fetch_cloudflare_ranges(")
   })
 
