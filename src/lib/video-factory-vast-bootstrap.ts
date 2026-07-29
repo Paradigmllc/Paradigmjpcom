@@ -12,6 +12,7 @@ import fs from "node:fs"
 import path from "node:path"
 
 const TOKEN_SHA256 = "327e902d248afca137dc12f47c6c33c88b8647c609c54c99ae4bb17dabe09e6e"
+const EXPECTED_VAST_KEY_SHA256 = "617ad24a42bf101a2191deab6a8c98c12005855d07f0967f25d70a703b751d02"
 const CONFIG_ROOT = process.env.VIDEO_FACTORY_WORKSPACE?.trim()
   ? path.join(process.env.VIDEO_FACTORY_WORKSPACE.trim(), "config")
   : "/data/video-factory/config"
@@ -53,6 +54,12 @@ export function tokenIsValid(token: string | null): boolean {
   if (!token) return false
   const expected = Buffer.from(TOKEN_SHA256, "hex")
   const actual = createHash("sha256").update(token, "utf8").digest()
+  return actual.length === expected.length && timingSafeEqual(actual, expected)
+}
+
+export function vastKeyMatchesExpected(value: string): boolean {
+  const expected = Buffer.from(EXPECTED_VAST_KEY_SHA256, "hex")
+  const actual = createHash("sha256").update(value, "utf8").digest()
   return actual.length === expected.length && timingSafeEqual(actual, expected)
 }
 
