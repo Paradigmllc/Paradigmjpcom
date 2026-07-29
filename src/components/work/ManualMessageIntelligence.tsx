@@ -40,6 +40,47 @@ function isImported(item: ManualJapanEntryWorkRow): boolean {
     || item.message_review.generation_status === "imported_chatgpt_pro"
 }
 
+function StructuredBriefFacts({ item }: { item: ManualJapanEntryWorkRow }) {
+  const brief = manualChatGptBrief(item)
+  const summary = record(item.evidence.structuredSummary)
+  const presence = record(summary?.japanPresence)
+  const products = strings(summary?.productNames).length > 0 ? strings(summary?.productNames) : brief?.productNames ?? []
+  const country = text(summary?.countryCode) ?? brief?.countryCode ?? null
+  const countrySignals = strings(summary?.countrySignals)
+  const contactUrl = text(summary?.contactUrl) ?? brief?.contactUrl ?? null
+  const publicEmail = text(summary?.publicEmail) ?? brief?.publicEmail ?? null
+  const presenceSignals = strings(presence?.signals)
+  const presenceLevel = text(presence?.level) ?? "none"
+  const pages = brief?.pages ?? []
+  const evidence = brief?.evidence ?? []
+
+  if (!brief && !summary) return null
+
+  return (
+    <div className="space-y-3 border-t border-violet-100 bg-white/80 p-4">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Company / market</p><p className="mt-1 text-xs font-semibold text-slate-800">{text(summary?.companyName) ?? brief?.companyName ?? item.company_name ?? item.domain}</p><p className="mt-1 text-[11px] text-slate-600">{country ?? (countrySignals.length > 0 ? "国候補の根拠あり・未確定" : "国未確定")}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Business</p><p className="mt-1 text-xs font-semibold text-slate-800">{text(summary?.businessModel) ?? brief?.businessModel ?? item.business_model ?? "未分類"}</p><p className="mt-1 line-clamp-2 text-[11px] text-slate-600">{text(summary?.productContext) ?? brief?.productContext ?? "商品説明未取得"}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Japan presence</p><p className="mt-1 text-xs font-semibold text-slate-800">{presenceLevel === "sales" ? "販売・小売導線あり" : presenceLevel === "support" ? "サポート・現地体制あり" : presenceLevel === "language" ? "日本語導線あり" : "既存導線を確認せず"}</p><p className="mt-1 line-clamp-2 text-[11px] text-slate-600">{presenceSignals[0] ?? "公開ページから判定"}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Contact</p><p className="mt-1 text-xs font-semibold text-slate-800">{summary?.contactFormDetected === true ? "フォーム確認" : publicEmail ? "公開メール確認" : contactUrl ? "連絡ページ確認" : "未確認"}</p><p className="mt-1 truncate text-[11px] text-slate-600">{publicEmail ?? contactUrl ?? "—"}</p></div>
+      </div>
+
+      {products.length > 0 && <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">取得した商品・サービス</p><p className="mt-1 text-xs leading-5 text-slate-700">{products.slice(0, 8).join(" / ")}</p></div>}
+
+      <details className="rounded-lg border border-slate-200 bg-white">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-xs font-semibold text-slate-700 marker:hidden"><ShieldCheck className="size-4 text-emerald-600" />取得ページと公開根拠<span className="ml-auto font-normal text-slate-500">{pages.length}ページ · {evidence.length}件</span></summary>
+        <div className="space-y-3 border-t border-slate-100 p-3">
+          {pages.length > 0 && <div className="flex flex-wrap gap-2">{pages.map((page) => <a key={page.url} href={page.url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] text-blue-700 hover:underline"><span className="truncate">{page.kind}: {page.title ?? page.url}</span><ExternalLink className="size-3 shrink-0" /></a>)}</div>}
+          {countrySignals.length > 0 && <div className="rounded-lg bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Country evidence</p><p className="mt-1 text-xs leading-5 text-slate-700">{countrySignals.join(" / ")}</p></div>}
+          {presenceSignals.length > 0 && <div className="rounded-lg bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Japan evidence</p><p className="mt-1 text-xs leading-5 text-slate-700">{presenceSignals.join(" / ")}</p></div>}
+          <div className="grid gap-2 sm:grid-cols-2">{evidence.slice(0, 12).map((fact) => { const link = sourceLink(fact.sourceUrl); return <div key={fact.id} className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600"><p className="font-mono text-[10px] text-slate-400">{fact.id} · {fact.pageKind}</p><p className="mt-1 text-slate-700">{fact.statement}</p>{link && <a href={link.toString()} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 font-medium text-blue-700 hover:underline">出典を確認<ExternalLink className="size-3" /></a>}</div> })}</div>
+          {evidence.length > 12 && <p className="text-[11px] text-slate-500">先頭12件を表示。ChatGPTへのhandoffには優先度の高い根拠を最大12件含めます。</p>}
+        </div>
+      </details>
+    </div>
+  )
+}
+
 export function ManualMessageIntelligence({ item, onCopy }: {
   item: ManualJapanEntryWorkRow
   onCopy: (value: string, label: string) => void
@@ -52,19 +93,21 @@ export function ManualMessageIntelligence({ item, onCopy }: {
     const notice = manualWorkOperatorNotice(item)
     const insufficient = review.generation_status === "chatgpt_insufficient"
     const briefReady = mode === "chatgpt_brief_ready" && Boolean(brief) && !insufficient
+    const existingJapan = mode === "existing_japan_presence"
     const fastQualification = mode === "fast_qualification"
     return (
-      <section className={`overflow-hidden rounded-xl border ${insufficient ? "border-amber-200 bg-amber-50" : briefReady ? "border-violet-200 bg-violet-50" : "border-slate-200 bg-slate-50"}`} aria-label="フォーム文面の準備状況">
+      <section className={`overflow-hidden rounded-xl border ${insufficient ? "border-amber-200 bg-amber-50" : briefReady ? "border-violet-200 bg-violet-50" : existingJapan ? "border-slate-300 bg-slate-100" : "border-slate-200 bg-slate-50"}`} aria-label="フォーム文面の準備状況">
         <div className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold ${insufficient ? "text-amber-950" : briefReady ? "text-violet-950" : "text-slate-800"}`}>
           {briefReady ? <FileText className="size-4 text-violet-700" /> : <AlertTriangle className="size-4 text-slate-500" />}
-          {insufficient ? "ChatGPTが根拠不足と判断しました" : briefReady ? "ChatGPT用ブリーフ準備済み" : fastQualification ? "送信文はまだ作成していません" : "旧文面は送信対象外です"}
+          {insufficient ? "ChatGPTが根拠不足と判断しました" : briefReady ? "ChatGPT用ブリーフ準備済み" : existingJapan ? "既存の日本導線を確認・送信対象外" : fastQualification ? "送信文はまだ作成していません" : "旧文面は送信対象外です"}
         </div>
         <div className={`border-t px-4 py-3 text-xs leading-5 ${insufficient ? "border-amber-200 text-amber-900" : briefReady ? "border-violet-200 text-violet-900" : "border-slate-200 text-slate-600"}`}>
-          <p>{briefReady ? `公開根拠${brief?.evidence.length ?? 0}件を保存しました。上の「ChatGPT Pro handoff」から最大15社をまとめてコピーできます。` : notice?.detail ?? "送信文はありません。"}</p>
+          <p>{briefReady ? `公開根拠${brief?.evidence.length ?? 0}件を構造化して保存しました。下に取得内容を表示しています。` : notice?.detail ?? "送信文はありません。"}</p>
           {briefReady && <p className="mt-2 font-semibold">文章生成APIは呼び出していません。ChatGPT Proの返却JSONを取り込むまで文面は保存されません。</p>}
           {insufficient && text(review.insufficiency_reason) && <p className="mt-2 rounded-lg border border-amber-200 bg-white p-3">{text(review.insufficiency_reason)}</p>}
           {fastQualification && <p className="mt-2 font-semibold text-slate-700">残す企業だけブリーフ準備へ進めてください。</p>}
         </div>
+        {(briefReady || existingJapan) && <StructuredBriefFacts item={item} />}
       </section>
     )
   }
