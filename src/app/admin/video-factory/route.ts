@@ -3,7 +3,7 @@ import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
 import { relativeRedirect } from "@/lib/relative-redirect"
 
 const LEGACY_ADMIN_COOKIE = "paradigm_admin_token"
-const CONSOLE_PATH = "/video-factory-console/"
+const CONSOLE_PATH = "/video-factory-console"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (!auth.ok) {
     return relativeRedirect(
-      "/admin/login?redirect=%2Fvideo-factory-console%2F",
+      "/admin/login?redirect=%2Fvideo-factory-console",
     )
   }
 
