@@ -1,0 +1,252 @@
+name: Deploy Video Factory GUI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/video-factory-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paradigm-video-factory-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      PROJECT_UUID: jm01hum247nj6d8u91llkm4o
+      SERVER_UUID: zexw6p5j1afwbgi95iufypw1
+      DESTINATION_UUID: nhpnldarppf7byz8ix8l2z1z
+      MAIN_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      VIDEO_FACTORY_APP_NAME: paradigm-video-factory
+      VIDEO_FACTORY_BRANCH: agent/video-factory-source-inspect
+    steps:
+      - name: Create or update the isolated Video Factory application
+        id: application
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${COOLIFY_API_TOKEN}"
+          API="${COOLIFY_API_URL%/}/api/v1"
+
+          api_get() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "${API}$1"
+          }
+          api_json() {
+            local method="$1" path="$2" body="$3"
+            curl --fail-with-body --silent --show-error \
+              --request "${method}" \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              --header "Content-Type: application/json" \
+              --data "${body}" \
+              "${API}${path}"
+          }
+
+          apps="$(api_get /applications)"
+          app_uuid="$(printf '%s' "${apps}" | jq -r --arg name "${VIDEO_FACTORY_APP_NAME}" '[.[] | select(.name == $name)][0].uuid // empty')"
+
+          application_payload="$(jq -cn \
+            --arg project_uuid "${PROJECT_UUID}" \
+            --arg server_uuid "${SERVER_UUID}" \
+            --arg destination_uuid "${DESTINATION_UUID}" \
+            --arg git_branch "${VIDEO_FACTORY_BRANCH}" \
+            --arg name "${VIDEO_FACTORY_APP_NAME}" \
+            '{
+              project_uuid: $project_uuid,
+              server_uuid: $server_uuid,
+              destination_uuid: $destination_uuid,
+              environment_name: "production",
+              git_repository: "https://github.com/Paradigmllc/Paradigmjpcom.git",
+              git_branch: $git_branch,
+              build_pack: "dockerfile",
+              ports_exposes: "8080",
+              name: $name,
+              description: "Browser-operated Paradigm VaaS production console",
+              base_directory: "/services/video-factory",
+              dockerfile_location: "/Dockerfile",
+              is_auto_deploy_enabled: false,
+              is_force_https_enabled: true,
+              autogenerate_domain: true,
+              connect_to_docker_network: true,
+              health_check_enabled: true,
+              health_check_path: "/health",
+              health_check_port: "8080",
+              health_check_host: "localhost",
+              health_check_method: "GET",
+              health_check_return_code: 200,
+              health_check_scheme: "http",
+              health_check_interval: 10,
+              health_check_timeout: 5,
+              health_check_retries: 12,
+              health_check_start_period: 60,
+              custom_docker_run_options: "--mount type=volume,source=paradigm-video-factory-data,target=/data/video-factory",
+              force_domain_override: false,
+              instant_deploy: false
+            }')"
+
+          if [ -z "${app_uuid}" ]; then
+            created="$(api_json POST /applications/public "${application_payload}")"
+            app_uuid="$(printf '%s' "${created}" | jq -er '.uuid')"
+          else
+            api_json PATCH "/applications/${app_uuid}" "${application_payload}" >/dev/null
+          fi
+
+          # Reuse the operator's existing Paradigm admin password as the browser
+          # console API credential without exposing it to logs or artifacts.
+          main_envs="$(api_get "/applications/${MAIN_APP_UUID}/envs")"
+          factory_key="$(printf '%s' "${main_envs}" | jq -er '
+            [
+              .[]
+              | select(.is_preview != true)
+              | select(.key == "ADMIN_PASSWORD" or .key == "ADMIN_SCRIPT_SECRET")
+              | {priority: (if .key == "ADMIN_PASSWORD" then 0 else 1 end), value: (.real_value // .value)}
+              | select(.value != null and .value != "")
+            ]
+            | sort_by(.priority)
+            | .[0].value
+          ')"
+          test -n "${factory_key}"
+
+          env_payload="$(jq -cn \
+            --arg factory_key "${factory_key}" \
+            '{data: [
+              {key:"VIDEO_FACTORY_ENVIRONMENT", value:"production", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_API_KEY", value:$factory_key, is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_WORKSPACE", value:"/data/video-factory", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_QUEUE_BACKEND", value:"local", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", value:"1", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_MASTER_COMPOSITOR", value:"hyperframes", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK", value:"false", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"HYPERFRAMES_VERSION", value:"0.7.77", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"HYPERFRAMES_NPX", value:"npx", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"HYPERFRAMES_RENDER_QUALITY", value:"draft", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"COMFYUI_WORKFLOW_ROOT", value:"/app/workflows/comfyui", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"COMFYUI_WORKFLOW_REGISTRY", value:"/app/workflows/comfyui/registry.yaml", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"COMFYUI_ALLOW_UNREGISTERED_WORKFLOWS", value:"false", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_MODEL_REGISTRY", value:"/app/config/model-registry.yaml", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VIDEO_FACTORY_PRODUCTION_REGION", value:"JP", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"PLAYWRIGHT_NODE", value:"node", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"PLAYWRIGHT_CAPTURE_SCRIPT", value:"/app/tools/playwright-capture/capture.mjs", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"PLAYWRIGHT_CHROMIUM_EXECUTABLE", value:"/usr/bin/chromium", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"PLAYWRIGHT_ALLOWED_HOSTS", value:"paradigmjp.com,www.paradigmjp.com", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VAST_API_BASE_URL", value:"https://console.vast.ai/api", is_preview:false, is_literal:true, is_multiline:false},
+              {key:"VAST_MAX_HOURLY_PRICE", value:"1.00", is_preview:false, is_literal:true, is_multiline:false}
+            ]}')"
+          api_json PATCH "/applications/${app_uuid}/envs/bulk" "${env_payload}" >/dev/null
+
+          echo "app_uuid=${app_uuid}" >> "${GITHUB_OUTPUT}"
+          printf '%s' "${factory_key}" > /tmp/video-factory-api-key
+          chmod 600 /tmp/video-factory-api-key
+
+      - name: Deploy and wait for Coolify
+        id: deployment
+        shell: bash
+        env:
+          APP_UUID: ${{ steps.application.outputs.app_uuid }}
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          get() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "$1"
+          }
+
+          response="$(get "${API}/deploy?uuid=${APP_UUID}&force=true")"
+          deployment_uuid="$(printf '%s' "${response}" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid')"
+
+          for attempt in $(seq 1 210); do
+            detail="$(get "${API}/deployments/${deployment_uuid}")"
+            status="$(printf '%s' "${detail}" | jq -r '.status // "unknown"')"
+            printf '[%s/210] %s\n' "${attempt}" "${status}"
+            case "${status}" in
+              finished|success)
+                printf '%s' "${detail}" > /tmp/video-factory-deployment.json
+                echo "deployment_uuid=${deployment_uuid}" >> "${GITHUB_OUTPUT}"
+                exit 0
+                ;;
+              failed|cancelled|canceled|error)
+                printf '%s\n' "${detail}" | jq '{status, message, deployment_uuid, commit}' >&2
+                exit 1
+                ;;
+            esac
+            sleep 8
+          done
+          echo "Coolify deployment timed out" >&2
+          exit 1
+
+      - name: Verify the browser-only production console
+        id: verify
+        shell: bash
+        env:
+          APP_UUID: ${{ steps.application.outputs.app_uuid }}
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          app="$(curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header "Accept: application/json" \
+            "${API}/applications/${APP_UUID}")"
+          url="$(printf '%s' "${app}" | jq -r '.fqdn | split(",")[0]')"
+          test -n "${url}" && test "${url}" != "null"
+          key="$(cat /tmp/video-factory-api-key)"
+
+          for attempt in $(seq 1 60); do
+            health_code="$(curl --silent --show-error --output /tmp/video-factory-health.json \
+              --write-out '%{http_code}' --max-time 20 "${url}/health" || true)"
+            console_code="$(curl --silent --show-error --output /tmp/video-factory-console.html \
+              --write-out '%{http_code}' --max-time 20 "${url}/console/" || true)"
+            unauthorized_code="$(curl --silent --show-error --output /dev/null \
+              --write-out '%{http_code}' --max-time 20 "${url}/v1/runtime" || true)"
+            authorized_code="$(curl --silent --show-error --output /tmp/video-factory-bootstrap.json \
+              --write-out '%{http_code}' --max-time 20 \
+              --header "X-Api-Key: ${key}" "${url}/v1/console/bootstrap" || true)"
+
+            if [ "${health_code}" = "200" ] \
+              && [ "${console_code}" = "200" ] \
+              && [ "${unauthorized_code}" = "401" ] \
+              && [ "${authorized_code}" = "200" ] \
+              && grep -q "CLIを使わず" /tmp/video-factory-console.html \
+              && jq -e '.status == "ok"' /tmp/video-factory-health.json >/dev/null \
+              && jq -e '.ok == true' /tmp/video-factory-bootstrap.json >/dev/null; then
+              jq -n \
+                --arg checked_at "$(date -u +%FT%TZ)" \
+                --arg app_uuid "${APP_UUID}" \
+                --arg url "${url}" \
+                --arg deployment_uuid "${{ steps.deployment.outputs.deployment_uuid }}" \
+                '{checked_at:$checked_at,app_uuid:$app_uuid,url:$url,deployment_uuid:$deployment_uuid,health:200,console:200,unauthorized_api:401,authorized_api:200}' \
+                > /tmp/video-factory-production-verification.json
+              echo "url=${url}" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            printf '[%s/60] health=%s console=%s unauthorized=%s authorized=%s\n' \
+              "${attempt}" "${health_code}" "${console_code}" "${unauthorized_code}" "${authorized_code}"
+            sleep 5
+          done
+
+          echo "Browser console verification failed" >&2
+          exit 1
+
+      - name: Upload non-sensitive production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-factory-production-verification
+          path: |
+            /tmp/video-factory-production-verification.json
+            /tmp/video-factory-deployment.json
+          if-no-files-found: warn
+          retention-days: 14
