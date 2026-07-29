@@ -34,11 +34,14 @@ jobs:
           apps="$(get /applications)"
           servers="$(get /servers)"
           team="$(get /teams/current)"
+          teams="$(get /teams)"
           projects="$(get /projects)"
           keys="$(get /security/keys)"
 
           echo "current-team:"
           printf '%s' "${team}" | jq '{id,uuid,name,description}'
+          echo "user-teams:"
+          printf '%s' "${teams}" | jq '[.[] | {id,uuid,name,description,personal_team}]'
           echo "projects:"
           printf '%s' "${projects}" | jq '[.[] | {uuid,name,description}]'
           echo "security-keys:"
@@ -76,8 +79,3 @@ jobs:
           '
           echo "team-visible-servers:"
           printf '%s' "${servers}" | jq '[.[] | {uuid,name,ip,user,port,team_id,private_key_id,is_build_server,unreachable}]'
-
-          for server_uuid in $(printf '%s' "${servers}" | jq -r '.[].uuid'); do
-            echo "server=${server_uuid} destinations:"
-            get "/servers/${server_uuid}/destinations" | jq '[.[] | {uuid,name,network,server_id}]'
-          done
