@@ -69,10 +69,6 @@ environment_name="$(printf '%s' "${environments}" | jq -r --arg uuid "${environm
   else ([.environments[] | select(.uuid == $uuid)][0].name // "production") end
 ')"
 
-# Coolify's public-Git creation route is not available on this installation.
-# Create a Dockerfile-only application instead. The Dockerfile clones the
-# selected public branch at build time, and build cache is disabled so every
-# production deployment consumes the current branch contents.
 factory_dockerfile="$(cat <<'DOCKERFILE'
 FROM node:22-bookworm-slim
 
@@ -103,6 +99,9 @@ RUN python3 -m venv "$VIRTUAL_ENV" \
     && pip install --no-cache-dir --upgrade pip setuptools wheel
 
 WORKDIR /app
+# The GitHub API response changes whenever the branch head changes, invalidating
+# this and subsequent Docker layers without relying on a Coolify cache setting.
+ADD https://api.github.com/repos/Paradigmllc/Paradigmjpcom/commits/__VIDEO_FACTORY_BRANCH__ /tmp/video-factory-source.json
 RUN git clone --depth 1 --branch "__VIDEO_FACTORY_BRANCH__" \
       https://github.com/Paradigmllc/Paradigmjpcom.git /tmp/paradigm \
     && cp -a /tmp/paradigm/services/video-factory/. /app/ \
@@ -148,7 +147,6 @@ application_payload="$(jq -cn \
     is_force_https_enabled: true,
     autogenerate_domain: true,
     connect_to_docker_network: true,
-    disable_build_cache: true,
     health_check_enabled: true,
     health_check_path: "/health",
     health_check_port: 8080,
@@ -170,9 +168,6 @@ if [[ -z "${app_uuid}" ]]; then
   app_uuid="$(printf '%s' "${created}" | jq -er '.uuid')"
 fi
 
-# The Dockerfile-only create endpoint in some Coolify versions derives the
-# exposed port from the still-base64 request body and may fall back to port 80.
-# Apply the canonical runtime configuration after both create and update.
 printf 'stage=normalize-application\n'
 update_payload="$(printf '%s' "${application_payload}" | jq 'del(.project_uuid,.server_uuid,.destination_uuid,.environment_uuid,.environment_name,.dockerfile,.autogenerate_domain)')"
 request PATCH "/applications/${app_uuid}" "${update_payload}" >/dev/null
