@@ -22,6 +22,12 @@ const HOP_BY_HOP_HEADERS = new Set([
   "upgrade",
 ])
 
+type VideoFactoryProxyOptions = {
+  consoleEntry?: boolean
+  consolePublicBase?: string
+  loginRedirectPath?: string
+}
+
 function internalApiKey(): string | null {
   const value = process.env.VIDEO_FACTORY_INTERNAL_API_KEY
     || process.env.ADMIN_SCRIPT_SECRET
@@ -29,10 +35,23 @@ function internalApiKey(): string | null {
   return value?.trim() || null
 }
 
-function loginRedirect(): NextResponse {
-  return relativeRedirect(
-    "/admin/login?redirect=%2Fadmin%2Fvideo-factory",
-  )
+function safeLocalPath(value: string, fallback: string): string {
+  const normalized = value.trim()
+  if (
+    !normalized.startsWith("/")
+    || normalized.startsWith("//")
+    || normalized.includes("\\")
+    || normalized.split("/").includes("..")
+  ) {
+    return fallback
+  }
+  return normalized
+}
+
+function loginRedirect(redirectPath = "/admin/video-factory"): NextResponse {
+  const safeRedirect = safeLocalPath(redirectPath, "/admin/video-factory")
+  const params = new URLSearchParams({ redirect: safeRedirect })
+  return relativeRedirect(`/admin/login?${params.toString()}`)
 }
 
 function isHtmlNavigation(request: NextRequest): boolean {
@@ -80,25 +99,43 @@ function cleanResponseHeaders(source: Headers): Headers {
   return headers
 }
 
-function injectConsoleRuntime(html: string): string {
-  if (html.includes("console-run-poll.js")) return html
-  return html.replace(
-    "</body>",
-    '  <script src="/console/console-run-poll.js" defer></script>\n</body>',
-  )
+function normalizeConsolePublicBase(value: string | undefined): string {
+  const fallback = "/console/"
+  if (!value) return fallback
+  const normalized = safeLocalPath(value, fallback)
+  if (!normalized.endsWith("/")) return `${normalized}/`
+  return normalized
+}
+
+function injectConsoleRuntime(html: string, publicBase: string): string {
+  let rendered = html
+  if (!rendered.includes("console-run-poll.js")) {
+    rendered = rendered.replace(
+      "</body>",
+      `  <script src="${publicBase}console-run-poll.js" defer></script>\n</body>`,
+    )
+  }
+  if (publicBase !== "/console/") {
+    rendered = rendered
+      .replaceAll('"/console/', `"${publicBase}`)
+      .replaceAll("'/console/", `'${publicBase}`)
+  }
+  return rendered
 }
 
 export async function proxyVideoFactoryRequest(
   request: NextRequest,
   upstreamPath: string,
-  options: { consoleEntry?: boolean } = {},
+  options: VideoFactoryProxyOptions = {},
 ): Promise<NextResponse> {
   const auth = await authorizePayloadAdminRequest({
     headers: new Headers(request.headers),
     legacyToken: request.cookies.get(LEGACY_ADMIN_COOKIE)?.value,
   })
   if (!auth.ok) {
-    if (isHtmlNavigation(request)) return loginRedirect()
+    if (isHtmlNavigation(request)) {
+      return loginRedirect(options.loginRedirectPath)
+    }
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
@@ -130,7 +167,8 @@ export async function proxyVideoFactoryRequest(
   const responseHeaders = cleanResponseHeaders(upstream.headers)
   const contentType = upstream.headers.get("content-type") || ""
   if (options.consoleEntry && contentType.includes("text/html")) {
-    const html = injectConsoleRuntime(await upstream.text())
+    const publicBase = normalizeConsolePublicBase(options.consolePublicBase)
+    const html = injectConsoleRuntime(await upstream.text(), publicBase)
     responseHeaders.set("content-type", "text/html; charset=utf-8")
     return new NextResponse(html, { status: upstream.status, headers: responseHeaders })
   }
