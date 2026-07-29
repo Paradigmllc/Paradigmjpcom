@@ -16,7 +16,6 @@ on:
       - src/lib/video-factory-internal-proxy.ts
       - scripts/ops/ensure-production-routing.mjs
       - scripts/ops/ensure-production-routing.test.mjs
-      - scripts/ops/repair-production-traefik.mjs
       - scripts/ops/ensure-video-factory-storage.sh
       - scripts/ops/verify-production-pages.mjs
       - scripts/ops/verify-production-pages.test.mjs
@@ -42,13 +41,14 @@ jobs:
       - name: Validate routing, storage, and public verification automation
         run: |
           node --check scripts/ops/ensure-production-routing.mjs
-          node --check scripts/ops/repair-production-traefik.mjs
           node --check scripts/ops/verify-production-pages.mjs
           node scripts/ops/ensure-production-routing.test.mjs
           node scripts/ops/verify-production-pages.test.mjs
           bash -n scripts/ops/ensure-video-factory-storage.sh
           sh -n docker-entrypoint.sh
           grep -q 'video_factory.web:app' docker-entrypoint.sh
+          grep -q 'legacy Traefik route is synchronized' docker-entrypoint.sh
+          grep -q '/mnt/coolify-proxy-dynamic' scripts/ops/ensure-video-factory-storage.sh
           grep -q 'services/video-factory' Dockerfile
 
   deploy:
@@ -79,7 +79,7 @@ jobs:
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             --data "$(jq -cn --arg state pending --arg target_url "${STATUS_TARGET}" --arg description 'Deploying and verifying Paradigm production' --arg context "${STATUS_CONTEXT}" '{state:$state,target_url:$target_url,description:$description,context:$context}')"
 
-      - name: Ensure persistent Video Factory workspace
+      - name: Ensure persistent Video Factory and route storage
         run: bash scripts/ops/ensure-video-factory-storage.sh
 
       - name: Configure durable production routing
@@ -122,18 +122,13 @@ jobs:
           echo "Coolify deployment did not complete in time" >&2
           exit 1
 
-      - name: Repair legacy Traefik host route
-        env:
-          PARADIGM_REPAIR_VERIFY: "0"
-        run: node scripts/ops/repair-production-traefik.mjs 2>&1 | tee /tmp/traefik-host-repair.log
-
       - name: Verify public VaaS funnel
         run: node scripts/ops/verify-production-pages.mjs
 
       - name: Verify embedded Video Factory runtime
         run: |
           set -euo pipefail
-          redirect_ok() {
+          response_ok() {
             case "$1" in
               200|301|302|303|307|308) return 0 ;;
               *) return 1 ;;
@@ -177,10 +172,10 @@ jobs:
             alias_location="$(header_location /tmp/video-factory-alias.headers)"
             if [ "${ready_code}" = "200" ] \
               && jq -e '.ready == true and .service == "video-factory"' /tmp/video-factory-ready.json >/dev/null \
-              && redirect_ok "${edge_redirect_code}" \
-              && redirect_ok "${auth_redirect_code}" \
-              && redirect_ok "${admin_redirect_code}" \
-              && redirect_ok "${alias_code}" \
+              && response_ok "${edge_redirect_code}" \
+              && response_ok "${auth_redirect_code}" \
+              && response_ok "${admin_redirect_code}" \
+              && response_ok "${alias_code}" \
               && public_location_ok "${edge_location}" \
               && public_location_ok "${auth_location}" \
               && public_location_ok "${admin_location}" \
@@ -227,8 +222,6 @@ jobs:
           name: paradigm-production-deployment
           path: |
             /tmp/application-routing-after.json
-            /tmp/traefik-route-repair.json
-            /tmp/traefik-host-repair.log
             /tmp/coolify-deploy-request.json
             /tmp/coolify-deploy.log
             /tmp/coolify-deployment-latest.json
