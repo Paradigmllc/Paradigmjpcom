@@ -1,164 +1,39 @@
-name: Deploy Video Factory GUI
+name: Prepare Embedded Video Factory Storage
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - ".github/workflows/video-factory-deploy.yml"
-      - "scripts/ops/deploy-video-factory-coolify.sh"
-  push:
-    branches: [main]
-    paths:
-      - "services/video-factory/**"
-      - ".agents/skills/paradigm-video-producer/**"
-      - ".codex/config.toml"
-      - ".github/workflows/video-factory-deploy.yml"
-      - "scripts/ops/deploy-video-factory-coolify.sh"
+      - Dockerfile
+      - docker-entrypoint.sh
+      - services/video-factory/**
+      - scripts/ops/ensure-video-factory-storage.sh
+      - .github/workflows/video-factory-deploy.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: paradigm-video-factory-production
+  group: paradigm-video-factory-storage
   cancel-in-progress: false
 
-env:
-  COOLIFY_API_URL: https://coolify.paradigmjp.com
-  COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-  PROJECT_UUID: jm01hum247nj6d8u91llkm4o
-  SERVER_UUID: zexw6p5j1afwbgi95iufypw1
-  DESTINATION_UUID: nhpnldarppf7byz8ix8l2z1z
-  MAIN_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
-  VIDEO_FACTORY_APP_NAME: paradigm-video-factory
-  VIDEO_FACTORY_BRANCH: main
-
 jobs:
-  prepare-application:
-    if: github.event_name == 'pull_request'
+  prepare-storage:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
     steps:
       - uses: actions/checkout@v4
-      - name: Validate deployment script
+      - name: Validate embedded runtime and storage automation
         run: |
-          bash -n scripts/ops/deploy-video-factory-coolify.sh
-          grep -q '/applications/dockerfile' scripts/ops/deploy-video-factory-coolify.sh
-          grep -q 'video-factory-entrypoint' scripts/ops/deploy-video-factory-coolify.sh
-      - name: Prepare the isolated Coolify application without deploying it
-        run: bash scripts/ops/deploy-video-factory-coolify.sh
-
-  deploy:
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Create or update the isolated Video Factory application
-        id: application
-        shell: bash
-        run: bash scripts/ops/deploy-video-factory-coolify.sh
-
-      - name: Deploy and wait for Coolify
-        id: deployment
-        shell: bash
-        env:
-          APP_UUID: ${{ steps.application.outputs.app_uuid }}
-        run: |
-          set -euo pipefail
-          API="${COOLIFY_API_URL%/}/api/v1"
-          get() {
-            curl --fail-with-body --silent --show-error \
-              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
-              --header "Accept: application/json" \
-              "$1"
-          }
-
-          response="$(get "${API}/deploy?uuid=${APP_UUID}&force=true")"
-          deployment_uuid="$(printf '%s' "${response}" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid')"
-
-          for attempt in $(seq 1 360); do
-            detail="$(get "${API}/deployments/${deployment_uuid}")"
-            status="$(printf '%s' "${detail}" | jq -r '.status // "unknown"')"
-            printf '[%s/360] %s\n' "${attempt}" "${status}"
-            case "${status}" in
-              finished|success)
-                printf '%s' "${detail}" > /tmp/video-factory-deployment.json
-                echo "deployment_uuid=${deployment_uuid}" >> "${GITHUB_OUTPUT}"
-                exit 0
-                ;;
-              failed|cancelled|canceled|error)
-                printf '%s\n' "${detail}" | jq '{status, message, deployment_uuid, commit}' >&2
-                exit 1
-                ;;
-            esac
-            sleep 8
-          done
-          echo "Coolify deployment timed out" >&2
-          exit 1
-
-      - name: Verify the browser-only production console
-        id: verify
-        shell: bash
-        env:
-          APP_UUID: ${{ steps.application.outputs.app_uuid }}
-        run: |
-          set -euo pipefail
-          API="${COOLIFY_API_URL%/}/api/v1"
-          app="$(curl --fail-with-body --silent --show-error \
-            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
-            --header "Accept: application/json" \
-            "${API}/applications/${APP_UUID}")"
-          url="$(printf '%s' "${app}" | jq -r '.fqdn | split(",")[0]')"
-          test -n "${url}" && test "${url}" != "null"
-          key="$(cat /tmp/video-factory-api-key)"
-
-          for attempt in $(seq 1 90); do
-            health_code="$(curl --silent --show-error --output /tmp/video-factory-health.json \
-              --write-out '%{http_code}' --max-time 20 "${url}/health" || true)"
-            console_code="$(curl --silent --show-error --output /tmp/video-factory-console.html \
-              --write-out '%{http_code}' --max-time 20 "${url}/console/" || true)"
-            unauthorized_code="$(curl --silent --show-error --output /dev/null \
-              --write-out '%{http_code}' --max-time 20 "${url}/v1/runtime" || true)"
-            authorized_code="$(curl --silent --show-error --output /tmp/video-factory-bootstrap.json \
-              --write-out '%{http_code}' --max-time 20 \
-              --header "X-Api-Key: ${key}" "${url}/v1/console/bootstrap" || true)"
-
-            if [ "${health_code}" = "200" ] \
-              && [ "${console_code}" = "200" ] \
-              && [ "${unauthorized_code}" = "401" ] \
-              && [ "${authorized_code}" = "200" ] \
-              && grep -q "CLIを使わず" /tmp/video-factory-console.html \
-              && jq -e '.status == "ok"' /tmp/video-factory-health.json >/dev/null \
-              && jq -e '.ok == true' /tmp/video-factory-bootstrap.json >/dev/null; then
-              jq -n \
-                --arg checked_at "$(date -u +%FT%TZ)" \
-                --arg app_uuid "${APP_UUID}" \
-                --arg url "${url}" \
-                --arg deployment_uuid "${{ steps.deployment.outputs.deployment_uuid }}" \
-                '{checked_at:$checked_at,app_uuid:$app_uuid,url:$url,deployment_uuid:$deployment_uuid,health:200,console:200,unauthorized_api:401,authorized_api:200}' \
-                > /tmp/video-factory-production-verification.json
-              echo "url=${url}" >> "${GITHUB_OUTPUT}"
-              exit 0
-            fi
-            printf '[%s/90] health=%s console=%s unauthorized=%s authorized=%s\n' \
-              "${attempt}" "${health_code}" "${console_code}" "${unauthorized_code}" "${authorized_code}"
-            sleep 5
-          done
-
-          echo "Browser console verification failed" >&2
-          exit 1
-
-      - name: Upload non-sensitive production evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: video-factory-production-verification
-          path: |
-            /tmp/video-factory-production-verification.json
-            /tmp/video-factory-deployment.json
-          if-no-files-found: warn
-          retention-days: 14
+          bash -n scripts/ops/ensure-video-factory-storage.sh
+          sh -n docker-entrypoint.sh
+          grep -q 'video_factory.web:app' docker-entrypoint.sh
+          grep -q 'services/video-factory' Dockerfile
+      - name: Ensure persistent workspace on the existing Paradigm application
+        run: bash scripts/ops/ensure-video-factory-storage.sh
