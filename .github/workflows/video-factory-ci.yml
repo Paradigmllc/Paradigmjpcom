@@ -61,6 +61,7 @@ jobs:
           node --check tools/playwright-capture/capture.mjs
           node --check src/video_factory/static/console.js
           node --check src/video_factory/static/console-run-poll.js
+          node --check src/video_factory/static/console-upload.js
           grep -q "CLIを使わず" src/video_factory/static/console.html
           sh -n ../../docker-entrypoint.sh
           bash -n ../../scripts/ops/ensure-video-factory-storage.sh
