@@ -12,6 +12,11 @@ set -euo pipefail
 VIDEO_FACTORY_APP_NAME="${VIDEO_FACTORY_APP_NAME:-paradigm-video-factory}"
 API="${COOLIFY_API_URL%/}/api/v1"
 
+if [[ ! "${VIDEO_FACTORY_BRANCH}" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+  echo "VIDEO_FACTORY_BRANCH contains unsupported characters" >&2
+  exit 2
+fi
+
 request() {
   local method="$1" path="$2" body="${3:-}" response_file status
   response_file="$(mktemp)"
@@ -33,7 +38,7 @@ request() {
   if [[ ! "${status}" =~ ^2 ]]; then
     printf 'Coolify %s %s failed with HTTP %s: ' "${method}" "${path}" "${status}" >&2
     jq -c '{message,errors,warning,conflicts}' "${response_file}" 2>/dev/null >&2 \
-      || head -c 1000 "${response_file}" >&2
+      || head -c 2000 "${response_file}" >&2
     printf '\n' >&2
     rm -f "${response_file}"
     return 1
@@ -60,13 +65,69 @@ environment_name="$(printf '%s' "${environments}" | jq -r --arg uuid "${environm
   else ([.environments[] | select(.uuid == $uuid)][0].name // "production") end
 ')"
 
+# Coolify's public-Git creation route is not available on this installation.
+# Create a Dockerfile-only application instead. The Dockerfile clones the
+# selected public branch at build time, and build cache is disabled so every
+# production deployment consumes the current branch contents.
+factory_dockerfile="$(cat <<'DOCKERFILE'
+FROM node:22-bookworm-slim
+
+ARG HYPERFRAMES_VERSION=0.7.77
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/opt/venv \
+    PATH=/opt/venv/bin:$PATH \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      chromium \
+      curl \
+      ffmpeg \
+      fonts-noto-cjk \
+      git \
+      gosu \
+      python3 \
+      python3-pip \
+      python3-venv \
+      rclone \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv "$VIRTUAL_ENV" \
+    && pip install --no-cache-dir --upgrade pip setuptools wheel
+
+WORKDIR /app
+RUN git clone --depth 1 --branch "__VIDEO_FACTORY_BRANCH__" \
+      https://github.com/Paradigmllc/Paradigmjpcom.git /tmp/paradigm \
+    && cp -a /tmp/paradigm/services/video-factory/. /app/ \
+    && rm -rf /tmp/paradigm
+
+RUN pip install --no-cache-dir '.[api,orchestrator]'
+RUN npm install --global "hyperframes@${HYPERFRAMES_VERSION}"
+RUN npm --prefix ./tools/playwright-capture install --omit=dev
+
+RUN useradd --create-home --uid 10001 factory \
+    && mkdir -p /data/video-factory \
+    && chown -R factory:factory /app /data/video-factory \
+    && install -m 0755 docker-entrypoint.sh /usr/local/bin/video-factory-entrypoint
+
+EXPOSE 8080
+ENTRYPOINT ["video-factory-entrypoint"]
+CMD ["uvicorn", "video_factory.web:app", "--host", "0.0.0.0", "--port", "8080"]
+DOCKERFILE
+)"
+factory_dockerfile="${factory_dockerfile//__VIDEO_FACTORY_BRANCH__/${VIDEO_FACTORY_BRANCH}}"
+dockerfile_b64="$(printf '%s' "${factory_dockerfile}" | base64 | tr -d '\n')"
+
 application_payload="$(jq -cn \
   --arg project_uuid "${PROJECT_UUID}" \
   --arg server_uuid "${SERVER_UUID}" \
   --arg destination_uuid "${DESTINATION_UUID}" \
   --arg environment_uuid "${environment_uuid}" \
   --arg environment_name "${environment_name}" \
-  --arg git_branch "${VIDEO_FACTORY_BRANCH}" \
+  --arg dockerfile "${dockerfile_b64}" \
   --arg name "${VIDEO_FACTORY_APP_NAME}" \
   '{
     project_uuid: $project_uuid,
@@ -74,17 +135,16 @@ application_payload="$(jq -cn \
     destination_uuid: $destination_uuid,
     environment_uuid: $environment_uuid,
     environment_name: $environment_name,
-    git_repository: "https://github.com/Paradigmllc/Paradigmjpcom.git",
-    git_branch: $git_branch,
+    dockerfile: $dockerfile,
     build_pack: "dockerfile",
     ports_exposes: "8080",
     name: $name,
     description: "Browser-operated Paradigm VaaS production console",
-    base_directory: "/services/video-factory",
-    dockerfile_location: "/Dockerfile",
     is_auto_deploy_enabled: false,
     is_force_https_enabled: true,
+    autogenerate_domain: true,
     connect_to_docker_network: true,
+    disable_build_cache: true,
     health_check_enabled: true,
     health_check_path: "/health",
     health_check_port: "8080",
@@ -95,19 +155,19 @@ application_payload="$(jq -cn \
     health_check_interval: 10,
     health_check_timeout: 5,
     health_check_retries: 12,
-    health_check_start_period: 60,
+    health_check_start_period: 90,
     force_domain_override: false,
     instant_deploy: false
   }')"
 
 if [[ -z "${app_uuid}" ]]; then
-  printf 'stage=create-application\n'
-  create_payload="$(printf '%s' "${application_payload}" | jq '. + {autogenerate_domain:true}')"
-  created="$(request POST /applications/public "${create_payload}")"
+  printf 'stage=create-dockerfile-application\n'
+  created="$(request POST /applications/dockerfile "${application_payload}")"
   app_uuid="$(printf '%s' "${created}" | jq -er '.uuid')"
 else
   printf 'stage=update-application\n'
-  request PATCH "/applications/${app_uuid}" "${application_payload}" >/dev/null
+  update_payload="$(printf '%s' "${application_payload}" | jq 'del(.project_uuid,.server_uuid,.destination_uuid,.environment_uuid,.environment_name,.dockerfile,.autogenerate_domain)')"
+  request PATCH "/applications/${app_uuid}" "${update_payload}" >/dev/null
 fi
 
 printf 'stage=ensure-persistent-storage\n'
@@ -137,7 +197,7 @@ env_payload="$(jq -cn \
   --arg factory_key "${factory_key}" \
   '{data: [
     {key:"VIDEO_FACTORY_ENVIRONMENT", value:"production", is_preview:false, is_literal:true, is_multiline:false},
-    {key:"VIDEO_FACTORY_API_KEY", value:$factory_key, is_preview:false, is_literal:true, is_multiline:false},
+    {key:"VIDEO_FACTORY_API_KEY", value:$factory_key, is_preview:false, is_literal:true, is_multiline:false, is_shown_once:true},
     {key:"VIDEO_FACTORY_WORKSPACE", value:"/data/video-factory", is_preview:false, is_literal:true, is_multiline:false},
     {key:"VIDEO_FACTORY_QUEUE_BACKEND", value:"local", is_preview:false, is_literal:true, is_multiline:false},
     {key:"VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", value:"1", is_preview:false, is_literal:true, is_multiline:false},
