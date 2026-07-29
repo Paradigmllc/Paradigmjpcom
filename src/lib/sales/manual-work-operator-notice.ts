@@ -15,40 +15,22 @@ function hasRecordedOutcome(item: ManualJapanEntryWorkRow): boolean {
   return Boolean(item.manually_sent_at || item.reply_received_at || item.founder_forwarded_at || item.meeting_converted_at)
 }
 
-function isGpt56Editorial(item: ManualJapanEntryWorkRow): boolean {
-  const mode = item.evidence.analysis_mode
-  const status = item.message_review.generation_status
-  return (typeof mode === "string" && mode.startsWith("gpt56_editorial"))
-    || (typeof status === "string" && status.includes("gpt56_editorial"))
-    || item.message_review.purpose === "editorial_generation"
+function mode(item: ManualJapanEntryWorkRow): string {
+  return typeof item.evidence.analysis_mode === "string" ? item.evidence.analysis_mode : ""
+}
+
+function isChatGptMode(item: ManualJapanEntryWorkRow): boolean {
+  return mode(item).startsWith("chatgpt_")
+    || item.message_review.purpose === "chatgpt_handoff"
+    || item.message_review.generation_status === "imported_chatgpt_pro"
 }
 
 function isLegacyUnsent(item: ManualJapanEntryWorkRow): boolean {
-  return item.evidence.analysis_mode !== "fast_qualification"
-    && !isGpt56Editorial(item)
+  return mode(item) !== "fast_qualification"
+    && !isChatGptMode(item)
     && item.is_japanese_company !== true
     && item.country_code !== "JP"
     && !hasRecordedOutcome(item)
-}
-
-function generationFailed(item: ManualJapanEntryWorkRow): boolean {
-  return ["failed", "failed_quality_gate"].includes(String(item.message_review.generation_status ?? "")) || (
-    item.stage === "complete"
-    && !item.initial_message
-    && Boolean(item.error_message)
-    && item.evidence.analysis_mode !== "fast_qualification"
-  )
-}
-
-function preservedRegenerationFailure(item: ManualJapanEntryWorkRow): boolean {
-  const value = item.message_review.last_regeneration_failure
-  return Boolean(
-    value
-    && typeof value === "object"
-    && !Array.isArray(value)
-    && "artifacts_preserved" in value
-    && value.artifacts_preserved === true,
-  )
 }
 
 function fastQualification(item: ManualJapanEntryWorkRow): {
@@ -56,7 +38,7 @@ function fastQualification(item: ManualJapanEntryWorkRow): {
   priority: "promote" | "review" | "low"
   reasons: string[]
 } | null {
-  if (item.evidence.analysis_mode !== "fast_qualification") return null
+  if (mode(item) !== "fast_qualification") return null
   const value = item.evidence.fastQualification
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { score: null, priority: "review", reasons: [] }
@@ -78,7 +60,7 @@ function formReason(item: ManualJapanEntryWorkRow): string | null {
   if (form.state === "contact_page_only") return "問い合わせページ候補はありますが、入力フォームの実検証は行っていません。"
   if (form.state === "no_public_form") return "サイト内を探索しましたが、使用可能な公開問い合わせフォームは見つかりませんでした。"
   if (form.state === "site_unreachable") return "企業サイトへアクセスできず、問い合わせフォームの有無を確認できませんでした。"
-  return "連絡経路の確度が不足しています。"
+  return null
 }
 
 function reasonsOrFallback(item: ManualJapanEntryWorkRow, fallback: string): string[] {
@@ -86,42 +68,18 @@ function reasonsOrFallback(item: ManualJapanEntryWorkRow, fallback: string): str
   return reasons.length > 0 ? reasons : [fallback]
 }
 
-function reasonsWithForm(item: ManualJapanEntryWorkRow, fallback: string): string[] {
-  const reasons = reasonsOrFallback(item, fallback)
-  const missingFormReason = formReason(item)
-  return [...reasons, ...(missingFormReason ? [missingFormReason] : [])]
-    .filter((reason, index, values) => values.indexOf(reason) === index)
-}
-
 export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualWorkOperatorNotice | null {
   if (isLegacyUnsent(item)) {
     return {
-      title: "旧DeepSeek文面・旧判定を使用しません",
-      detail: "この履歴は以前のDeepSeek中心または固定構造の生成工程で作られたため、表示中の要確認・フォーム警告・旧文面を営業判断に使いません。",
+      title: "旧AI文面・旧判定を使用しません",
+      detail: "この履歴は以前のDeepSeekまたは固定構造の生成工程で作られています。表示中の旧文面や旧レポートは営業送信に使わないでください。",
       reasons: [
-        "企業名や一部の語句だけを差し替えたような薄い文章は採用対象外です。",
-        "再生成では最大5ページの一次情報を読み、GPT-5.6 Terraが異なる論点の案を作り、GPT-5.6 Solが全文を再編集します。",
-        "会社固有性・戦略の中身・自然さ・経営者への関連性が88点未満なら、文面を出さず不採用にします。",
+        "再処理では文章生成APIを呼ばず、公式サイトの複数ページからChatGPT Pro用ブリーフだけを作成します。",
+        "完成文はChatGPT Proで最大15社ずつ作り、返却JSONを/workへ戻して保存前検査します。",
       ],
-      nextAction: "「GPT-5.6で作り直す」を実行してください。旧レポートや旧文面は上書き前提で扱います。",
-      retryLabel: "GPT-5.6で作り直す",
+      nextAction: "「APIなしで作り直す」を押して、まず企業ブリーフを準備してください。",
+      retryLabel: "APIなしで作り直す",
       tone: "amber",
-    }
-  }
-
-  if (item.twenty_sync_status === "failed") {
-    const persistedReasons = manualWorkReasonCopies(item.error_message)
-    const reasons = [
-      "自動再試行後もTwentyへの保存または保存内容の読み戻し確認を完了できませんでした。",
-      ...persistedReasons,
-    ].filter((reason, index, values) => values.indexOf(reason) === index)
-    return {
-      title: "Twentyへの保存を完了できませんでした",
-      detail: "解析結果は/workの履歴に保持され、外部送信は行っていません。",
-      reasons,
-      nextAction: "「保存を復旧」を実行し、Twentyの企業ID・文面・フォームURL・レポートURLの読み戻し完了を確認してください。",
-      retryLabel: "保存を復旧",
-      tone: "red",
     }
   }
 
@@ -129,70 +87,80 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
   if (fast && item.is_japanese_company !== true) {
     const score = fast.score === null ? "採点要確認" : `${fast.score}/100`
     const title = fast.priority === "promote"
-      ? `一次判定 ${score}・高品質文面候補`
+      ? `一次判定 ${score}・ブリーフ候補`
       : fast.priority === "review"
         ? `一次判定 ${score}・候補`
         : `一次判定 ${score}・低優先`
     return {
       title,
-      detail: "ホームページだけで高速選別しました。この段階ではDeepSeekも定型文も使用しておらず、送信文はまだ作っていません。",
-      reasons: fast.reasons.length > 0
-        ? fast.reasons
-        : ["一次判定に使った公開根拠を確認してください。"],
+      detail: "ホームページだけで高速選別しました。文章生成モデルも定型文も使っておらず、送信文はまだありません。",
+      reasons: fast.reasons.length > 0 ? fast.reasons : ["一次判定に使った公開根拠を確認してください。"],
       nextAction: fast.priority === "low"
-        ? "原則スキップです。公開情報にない強い理由がある場合だけ高品質文面へ進めてください。"
-        : "残す企業なら「GPT-5.6文面を作る」を実行します。複数ページを短時間で読み、会社固有の論点から文章を新規作成します。",
-      retryLabel: "GPT-5.6文面を作る",
+        ? "原則スキップです。判定を覆す具体的な商業根拠がある場合だけブリーフ準備へ進めてください。"
+        : "残す企業なら「ChatGPTブリーフを準備」を実行します。文章は上部のChatGPT Pro handoffからまとめて作成します。",
+      retryLabel: "ChatGPTブリーフを準備",
       tone: fast.priority === "low" ? "slate" : "amber",
     }
   }
 
-  if (item.status === "failed") {
-    return {
-      title: "解析を完了できませんでした",
-      detail: "処理を完了できなかったため、安全に停止しました。",
-      reasons: reasonsOrFallback(item, "取得先または生成処理で一時的な問題が発生しました。"),
-      nextAction: "URLと企業サイトの稼働状況を確認し、問題が解消した後に再実行してください。",
-      retryLabel: "GPT-5.6で再生成",
-      tone: "red",
+  if (mode(item) === "chatgpt_brief_ready") {
+    if (item.message_review.generation_status === "chatgpt_insufficient") {
+      return {
+        title: "ChatGPTが根拠不足と判断しました",
+        detail: "無理に薄い文面を保存せず停止しています。外部AI APIと外部送信は使用していません。",
+        reasons: reasonsOrFallback(item, "公開情報だけでは会社固有の強い初回文面を構成できませんでした。"),
+        nextAction: "追加の公式ニュース・商品ページ・資金調達情報などがある場合だけブリーフを更新してください。",
+        retryLabel: "ブリーフを更新",
+        tone: "amber",
+      }
     }
-  }
-  if (generationFailed(item) && item.status !== "rejected") {
     return {
-      title: "高品質文面を採用できませんでした",
-      detail: "GPT-5.6編集工程または決定論的な固有性・根拠・類似度ゲートを通過しませんでした。外部送信は行っていません。",
-      reasons: reasonsWithForm(item, "会社固有の根拠または文章品質が採用基準に届きませんでした。"),
-      nextAction: "公開ページの情報量を確認し、十分な根拠が増えた場合だけ再生成してください。",
-      retryLabel: "GPT-5.6で再生成",
-      tone: "amber",
-    }
-  }
-  if (preservedRegenerationFailure(item) && item.status !== "rejected") {
-    return {
-      title: "最新文面への更新を完了できませんでした",
-      detail: "既存の合格済み文面とレポートは保持し、外部送信は行っていません。",
-      reasons: ["最新の品質基準による文面再生成が、自動修正後も合格しませんでした。"],
-      nextAction: "既存文面をそのまま送信せず、更新後の品質スコアと根拠を確認してください。",
-      retryLabel: "GPT-5.6で再編集",
-      tone: "amber",
-    }
-  }
-  if (item.status === "rejected") {
-    const rejectedReasons = reasonsOrFallback(
-      item,
-      item.is_japanese_company || item.country_code === "JP"
-        ? "日本企業のため、海外SMB向けJapan Country Partnershipの対象外です。"
-        : "現在のJapan Country Partnership営業対象として優先度が低い企業です。",
-    )
-    return {
-      title: item.is_japanese_company || item.country_code === "JP" ? "対象外" : "低優先",
-      detail: "外部送信と自動文面生成は行っていません。",
-      reasons: rejectedReasons,
-      nextAction: "判定を覆す具体的な商業根拠がある場合だけ再評価してください。",
-      retryLabel: "GPT-5.6で再評価",
+      title: "ChatGPT用ブリーフ準備完了",
+      detail: "公式サイトの複数ページから根拠ID付きブリーフを保存しました。文章生成APIは呼び出していません。",
+      reasons: ["上部のChatGPT Pro handoffから、準備済み企業を最大15社まとめてコピーできます。"],
+      nextAction: "ChatGPT Proへ貼り付け、返却されたJSONを/workへ一括取込してください。",
+      retryLabel: "ブリーフを更新",
       tone: "slate",
     }
   }
+
+  if (mode(item) === "chatgpt_manual_import") return null
+
+  if (item.status === "failed") {
+    return {
+      title: mode(item) === "chatgpt_brief_failed" ? "ブリーフを準備できませんでした" : "解析を完了できませんでした",
+      detail: "処理を完了できなかったため、安全に停止しました。外部AI APIと外部送信は使用していません。",
+      reasons: reasonsOrFallback(item, "企業サイトの取得または保存処理で一時的な問題が発生しました。"),
+      nextAction: "URLと企業サイトの稼働状況を確認し、問題が解消した後に再実行してください。",
+      retryLabel: "ブリーフを再準備",
+      tone: "red",
+    }
+  }
+
+  if (item.twenty_sync_status === "failed") {
+    return {
+      title: "Twentyへの保存を完了できませんでした",
+      detail: "解析結果は/workの履歴に保持され、外部送信は行っていません。",
+      reasons: reasonsOrFallback(item, "Twentyへの保存または読み戻し確認を完了できませんでした。"),
+      nextAction: "保存先を確認してください。新しいAPIなしフローではTwenty同期を必須にしていません。",
+      retryLabel: "ブリーフを準備",
+      tone: "red",
+    }
+  }
+
+  if (item.status === "rejected") {
+    return {
+      title: item.is_japanese_company || item.country_code === "JP" ? "対象外" : "低優先",
+      detail: "外部送信と文面生成は行っていません。",
+      reasons: reasonsOrFallback(item, item.is_japanese_company || item.country_code === "JP"
+        ? "日本企業のため、海外企業向けJapan Country Partnershipの対象外です。"
+        : "現在の営業対象として優先度が低い企業です。"),
+      nextAction: "判定を覆す具体的な商業根拠がある場合だけ再評価してください。",
+      retryLabel: "ブリーフを再評価",
+      tone: "slate",
+    }
+  }
+
   if (item.status === "duplicate") {
     return {
       title: "既存企業へ統合しました",
@@ -203,30 +171,20 @@ export function manualWorkOperatorNotice(item: ManualJapanEntryWorkRow): ManualW
       tone: "slate",
     }
   }
+
   if (item.status === "needs_review") {
-    const form = manualFormDiscoveryPresentation({ formUrl: item.form_url, formDiscovery: item.form_discovery })
-    const savedReasons = manualWorkReasonCopies(item.error_message)
-    if (form.state !== "verified_form") {
-      const missingFormReason = formReason(item)
-      return {
-        title: "追加確認が必要です",
-        detail: "文面または連絡経路の採用基準を満たしていません。外部送信は行っていません。",
-        reasons: [...savedReasons, ...(missingFormReason ? [missingFormReason] : [])]
-          .filter((reason, index, reasons) => reasons.indexOf(reason) === index),
-        nextAction: "公式サイトのContact・Salesページと文面根拠を人が確認してください。",
-        retryLabel: "GPT-5.6で再生成",
-        tone: "amber",
-      }
-    }
+    const reason = formReason(item)
     return {
       title: "追加確認が必要です",
-      detail: "文面・フォーム・解析データは保存済みですが、送信前に人の判断が必要です。",
-      reasons: savedReasons.length > 0 ? savedReasons : ["公開根拠が不足しています。"],
-      nextAction: "会社固有の根拠と送信先を確認してください。",
-      retryLabel: "GPT-5.6で再編集",
+      detail: "公開根拠または連絡経路の確度が不足しています。外部送信は行っていません。",
+      reasons: [...reasonsOrFallback(item, "公開根拠が不足しています。"), ...(reason ? [reason] : [])]
+        .filter((value, index, values) => values.indexOf(value) === index),
+      nextAction: "公式サイトのContact・Salesページと企業固有の根拠を確認してください。",
+      retryLabel: "ブリーフを再準備",
       tone: "amber",
     }
   }
+
   return null
 }
 
