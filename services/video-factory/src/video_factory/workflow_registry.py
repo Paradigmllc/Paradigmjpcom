@@ -123,7 +123,11 @@ def _safe_workflow_path(root: Path, value: str) -> Path:
     return candidate
 
 
-def validate_api_workflow_payload(payload: object, *, label: str = "workflow") -> dict[str, Any]:
+def validate_api_workflow_payload(
+    payload: object,
+    *,
+    label: str = "workflow",
+) -> dict[str, Any]:
     if not isinstance(payload, dict) or not payload:
         raise ValueError(f"{label} must be a non-empty API-format object")
     if "nodes" in payload or "version" in payload:
@@ -148,7 +152,10 @@ def workflow_node_types(payload: dict[str, Any]) -> set[str]:
     }
 
 
-def load_api_workflow(contract: WorkflowContract, root: Path) -> tuple[Path, dict[str, Any]]:
+def load_api_workflow(
+    contract: WorkflowContract,
+    root: Path,
+) -> tuple[Path, dict[str, Any]]:
     if not contract.enabled:
         raise ValueError(f"Workflow is not enabled: {contract.id}")
     if contract.approval is not WorkflowApproval.APPROVED_BOUND:
@@ -255,7 +262,9 @@ def bind_workflow_contract(
     )
     if verify_endpoint:
         if not base_url:
-            raise ValueError("COMFYUI_API_URL is required for endpoint-verified binding")
+            raise ValueError(
+                "COMFYUI_API_URL is required for endpoint-verified binding"
+            )
         validate_workflow_against_comfyui(
             payload,
             base_url=base_url,
@@ -291,7 +300,7 @@ def bind_workflow_contract(
             "workflow_file": relative,
             "workflow_sha256": file_sha256(destination),
             "required_nodes": node_types,
-            "required_models": sorted(model_bindings.values()),
+            "required_models": sorted(contract.required_models),
             "model_bindings": dict(sorted(model_bindings.items())),
             "reviewed_by": reviewed_by,
             "reviewed_at": datetime.now(UTC).isoformat(),
@@ -314,7 +323,9 @@ def disable_workflow_contract(
     registry = load_workflow_registry(registry_file)
     contract = registry.get(workflow_id)
     disabled = contract.model_copy(update={"enabled": False})
-    workflows = [disabled if item.id == workflow_id else item for item in registry.workflows]
+    workflows = [
+        disabled if item.id == workflow_id else item for item in registry.workflows
+    ]
     write_workflow_registry(
         registry_file,
         registry.model_copy(update={"workflows": workflows}),
@@ -364,6 +375,7 @@ def registry_readiness(registry: WorkflowRegistry, root: Path) -> dict[str, obje
             for item in items
         ),
         "enabled": len(enabled),
-        "ready": bool(enabled) and all(item["workflow_valid"] for item in enabled),
+        "ready": bool(enabled)
+        and all(item["workflow_valid"] for item in enabled),
         "items": items,
     }
