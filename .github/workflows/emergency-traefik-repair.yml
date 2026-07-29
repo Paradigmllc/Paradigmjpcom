@@ -1,0 +1,42 @@
+name: Emergency Paradigm Traefik Repair
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/emergency-traefik-repair.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paradigmjp-emergency-traefik-repair
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      PARADIGM_REPAIR_VERIFY: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Repair the current production upstream
+        run: node scripts/ops/repair-production-traefik.mjs
+      - name: Confirm the public origin is reachable
+        run: |
+          for attempt in $(seq 1 30); do
+            code="$(curl --silent --show-error --output /tmp/ready.json --write-out '%{http_code}' --max-time 20 https://www.paradigmjp.com/api/ready || true)"
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+            echo "[$attempt/30] public readiness HTTP $code"
+            sleep 5
+          done
+          exit 1
