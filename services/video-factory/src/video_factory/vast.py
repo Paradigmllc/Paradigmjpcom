@@ -151,6 +151,9 @@ class VastClient:
         max_hourly_price: float | None,
         limit: int,
     ) -> list[dict[str, Any]]:
+        vast_instance_type = "ondemand" if instance_type == "on-demand" else instance_type
+        if vast_instance_type not in {"ondemand", "bid"}:
+            raise VastAPIError("Vast.ai instance type must be on-demand/ondemand or bid")
         body: dict[str, Any] = {
             "gpu_name": {"in": gpu_names},
             "num_gpus": {"gte": 1},
@@ -158,7 +161,7 @@ class VastClient:
             "reliability": {"gte": min_reliability},
             "rentable": {"eq": True},
             "rented": {"eq": False},
-            "type": instance_type,
+            "type": vast_instance_type,
             "limit": max(1, min(limit, 100)),
             "order": [["dph_total", "asc"]],
         }
@@ -186,6 +189,9 @@ class VastClient:
         target_state: str = "running",
         volume_id: int | None = None,
         mount_path: str = "/workspace",
+        env: dict[str, str] | None = None,
+        onstart: str | None = None,
+        runtype: str | None = None,
     ) -> dict[str, Any]:
         template = template_hash_id or self.config.default_template_hash
         if not template:
@@ -197,6 +203,12 @@ class VastClient:
             "target_state": target_state,
             "cancel_unavail": True,
         }
+        if env:
+            body["env"] = dict(env)
+        if onstart:
+            body["onstart"] = onstart
+        if runtype:
+            body["runtype"] = runtype
         if volume_id is not None:
             body["volume_info"] = {
                 "create_new": False,
