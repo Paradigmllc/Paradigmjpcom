@@ -2,7 +2,6 @@ import "server-only"
 
 import {
   constants,
-  createDecipheriv,
   createHash,
   generateKeyPairSync,
   privateDecrypt,
@@ -28,7 +27,18 @@ export type VastBootstrapState = {
   instance_id?: number | null
   template_hash?: string | null
   offer_id?: number | null
+  gpu_name?: string | null
+  hourly_price?: number | null
+  proxy_key?: string | null
+  provision_started_at?: string | null
+  comfyui_base_url?: string | null
+  workflow_id?: string | null
+  smoke_output_path?: string | null
+  smoke_sha256?: string | null
+  smoke_size_bytes?: number | null
   completed_at?: string
+  failed_at?: string | null
+  last_error?: string | null
 }
 
 function base64UrlDecode(value: string): Buffer {
@@ -46,6 +56,7 @@ export function tokenIsValid(token: string | null): boolean {
 
 function ensureConfigRoot(): void {
   fs.mkdirSync(CONFIG_ROOT, { recursive: true, mode: 0o700 })
+  fs.chmodSync(CONFIG_ROOT, 0o700)
 }
 
 export function readBootstrapState(): VastBootstrapState {
@@ -110,17 +121,4 @@ export function fingerprintSecret(value: string): string {
 export function removeBootstrapKeyMaterial(): void {
   fs.rmSync(PRIVATE_KEY_PATH, { force: true })
   fs.rmSync(PUBLIC_KEY_PATH, { force: true })
-}
-
-// Kept for backward compatibility with an early encrypted-payload experiment.
-// This helper is intentionally not used by the active RSA-OAEP bootstrap flow.
-export function decryptLegacyEnvelope(
-  ciphertext: Buffer,
-  iv: Buffer,
-  tag: Buffer,
-  key: Buffer,
-): Buffer {
-  const decipher = createDecipheriv("aes-256-gcm", key, iv)
-  decipher.setAuthTag(tag)
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()])
 }
