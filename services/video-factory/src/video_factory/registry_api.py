@@ -159,7 +159,7 @@ def bind_workflow(
             detail="Workflow binding requires the license-review confirmation.",
         )
     settings = Settings.from_env()
-    if settings.environment == "production" and not settings.comfyui_base_url:
+    if not settings.comfyui_base_url:
         raise HTTPException(
             status_code=422,
             detail="Configure the authenticated ComfyUI endpoint before binding.",
