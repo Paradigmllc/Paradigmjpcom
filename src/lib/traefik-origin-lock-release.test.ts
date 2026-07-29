@@ -42,6 +42,8 @@ describe("production origin-lock release wiring", () => {
     const doctor = readRepoFile("scripts/release-doctor.mjs")
 
     expect(doctor).toContain("checkOriginAccessGate")
+    expect(doctor).toContain('fetch("https://www.paradigmjp.com/api/ready"')
+    expect(doctor).not.toContain('fetch("https://paradigmjp.com/api/ready", {\n      redirect: "manual"')
     expect(doctor).toContain("--resolve")
     expect(doctor).toContain("CF-Connecting-IP: 203.0.113.10")
     expect(doctor).toContain("cf-ray")

@@ -1478,7 +1478,7 @@ async function checkOriginAccessGate() {
   if (LOCAL_ONLY || SKIP_REMOTE) return
   section("Cloudflare origin access")
   try {
-    const publicResponse = await fetch("https://paradigmjp.com/api/ready", {
+    const publicResponse = await fetch("https://www.paradigmjp.com/api/ready", {
       redirect: "manual",
       signal: AbortSignal.timeout(15_000),
       headers: { "Cache-Control": "no-cache" },
