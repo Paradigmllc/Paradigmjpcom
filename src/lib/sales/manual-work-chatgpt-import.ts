@@ -14,6 +14,8 @@ const BODY_MIN_WORDS = 60
 const BODY_MAX_WORDS = 135
 
 const BANNED_COPY = [
+  /^\s*(?:hello|hi|dear)\b/im,
+  /\b(?:best|kind|warm) regards\b/i,
   /\bI reviewed your (?:website|site)\b/i,
   /\buntapped opportunity\b/i,
   /\bJapan is (?:a )?(?:large|huge|major) market\b/i,
@@ -73,7 +75,7 @@ function bodyIssues(input: {
   const allowed = new Set(brief.evidence.map((point) => point.id))
   const validIds = [...new Set(input.evidenceIds.filter((id) => allowed.has(id)))]
   if (validIds.length < 2) issues.push("保存済み企業根拠IDを2件以上使用してください")
-  for (const pattern of BANNED_COPY) if (pattern.test(input.body)) issues.push(`定型句を検出しました: ${pattern.source}`)
+  for (const pattern of BANNED_COPY) if (pattern.test(input.body)) issues.push(`定型句または重複する挨拶・署名を検出しました: ${pattern.source}`)
   for (const pattern of UNSUPPORTED_CLAIM_PATTERNS) if (pattern.test(input.body)) issues.push(`未確認の断定表現を検出しました: ${pattern.source}`)
   const anchors = [brief.companyName, ...brief.productNames]
     .map((value) => value.trim().toLowerCase())
