@@ -41,12 +41,12 @@ function isFastQualification(item: RecoveryState): boolean {
     || item.message_review?.purpose === "fast_qualification"
 }
 
-function isGpt56Editorial(item: RecoveryState): boolean {
+function isChatGptHandoff(item: RecoveryState): boolean {
   const mode = item.evidence?.analysis_mode
   const status = item.message_review?.generation_status
-  return (typeof mode === "string" && mode.startsWith("gpt56_editorial"))
-    || (typeof status === "string" && status.includes("gpt56_editorial"))
-    || item.message_review?.purpose === "editorial_generation"
+  return (typeof mode === "string" && mode.startsWith("chatgpt_"))
+    || (typeof status === "string" && (status.startsWith("brief_") || status.startsWith("chatgpt_") || status === "imported_chatgpt_pro"))
+    || item.message_review?.purpose === "chatgpt_handoff"
 }
 
 function isNonJapanese(item: RecoveryState): boolean {
@@ -63,10 +63,10 @@ export function isManualWorkRecoveryAvailable(item: RecoveryState): boolean {
     : ""
   if (item.status === "processing") return generationStatus === "retry_required"
   if (isFastQualification(item)) return isNonJapanese(item)
-  if (isGpt56Editorial(item)) return isNonJapanese(item)
+  if (isChatGptHandoff(item)) return isNonJapanese(item)
   if (isNonJapanese(item) && ["completed", "needs_review", "failed"].includes(item.status)) return true
   if (item.status === "rejected" && item.twenty_sync_status !== "failed") return false
-  const generationFailed = ["failed", "failed_quality_gate", "retry_required"].includes(generationStatus)
+  const generationFailed = ["failed", "brief_failed", "retry_required"].includes(generationStatus)
   return item.status === "failed"
     || item.twenty_sync_status === "failed"
     || generationFailed

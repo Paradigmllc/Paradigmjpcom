@@ -15,8 +15,8 @@ export type ManualWorkQueueState = Record<string, "waiting" | "processing" | "do
 
 const workflowSteps = [
   ["01", "高速一次判定", "ホームページだけで商品・業態・日本向け適性・優先度を短時間で判定"],
-  ["02", "残す企業だけ高品質文面", "最大5ページの公開根拠を読み、GPT-5.6 Terraの複数案をSolが再編集・採否判定"],
-  ["03", "人が確認して送信", "根拠・文面・連絡先を確認し、人がフォームまたはメールで送信"],
+  ["02", "残す企業のブリーフ作成", "最大5ページの公式情報から、根拠ID付きのChatGPT用ブリーフを準備"],
+  ["03", "ChatGPTで作成・取込", "最大15社をChatGPT Proへまとめて渡し、返却JSONを検証して保存"],
 ] as const
 
 export function ManualWorkIntake({
@@ -77,7 +77,7 @@ export function ManualWorkIntake({
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Fast qualification</p>
               <h2 id="intake-heading" className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">企業URLをまとめて高速判定</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件。最初はホームページだけを取得し、送信文・長文レポート・CRM同期を行わずに一次選別します。</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">完全新規URLを最大500件。最初はホームページだけを取得し、送信文・長文レポート・CRM同期・外部AI APIを使わずに一次選別します。</p>
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ export function ManualWorkIntake({
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">Execution policy</p>
           <div className="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Layers3 className="size-4 text-emerald-600" />500件 × 最大20バッチ</div>
           <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><Globe2 className="size-4 text-blue-600" />Homepage-only first pass</div>
-          <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><CircleDot className="size-4 text-amber-500" />GPT-5.6 only after selection</div>
+          <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-700"><CircleDot className="size-4 text-violet-500" />ChatGPT Pro handoff</div>
           {queueSummary.batchCount > 0 && <p className="mt-3 text-xs leading-5 text-slate-600">待機・実行中 {queueSummary.batchCount}バッチ / {queueSummary.companyCount.toLocaleString("ja-JP")}社</p>}
         </div>
       </div>
@@ -124,7 +124,7 @@ export function ManualWorkIntake({
 
           {queueActive && (
             <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-950" aria-live="polite">
-              <p className="font-semibold">{batchStatus === "queued" ? `永続キューで待機中（前方${queuePosition}バッチ）` : "サーバーで高速一次判定を継続中"}</p>
+              <p className="font-semibold">{batchStatus === "queued" ? `永続キューで待機中（前方${queuePosition}バッチ）` : "サーバーで高速一次判定またはブリーフ準備を継続中"}</p>
               <p className="mt-1">画面を閉じても処理は継続します。次の500件も追加でき、完了後に順番に開始します。</p>
             </div>
           )}
@@ -142,7 +142,7 @@ export function ManualWorkIntake({
           </label>
 
           <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動統合。候補カードから残す企業だけGPT-5.6文面へ進めます。</p>
+            <p className="text-xs leading-5 text-slate-600">改行・スペース・カンマ区切りに対応。重複URLは自動統合。候補だけChatGPT用ブリーフへ進めます。</p>
             <Button onClick={onStart} disabled={submitting || urlCount === 0 || invalidCount} size="lg" className="h-12 w-full rounded-xl bg-slate-950 px-6 text-white shadow-lg shadow-slate-950/10 hover:bg-emerald-700 sm:w-auto">
               {submitting ? <LoaderCircle className="animate-spin" /> : <Play />}
               {submitting ? "キュー登録中" : queueActive ? "次の高速バッチを追加" : "高速判定を開始"}
@@ -152,7 +152,7 @@ export function ManualWorkIntake({
         </div>
 
         <aside aria-label="処理フロー" className="border-t border-slate-200 bg-slate-950 p-5 text-white sm:p-7 xl:border-l xl:border-t-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">Evidence-first flow</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-400">API-free flow</p>
           <ol className="mt-5 space-y-5">
             {workflowSteps.map(([number, title, description]) => (
               <li key={number} className="flex gap-3">
@@ -163,7 +163,7 @@ export function ManualWorkIntake({
           </ol>
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300"><CheckCircle2 className="size-4" />品質と速度の境界</p>
-            <p className="mt-2 text-xs leading-5 text-slate-300">一次判定では文章を作りません。高品質文面は会社固有の公開根拠が十分な企業だけに生成し、88点未満は不採用にします。</p>
+            <p className="mt-2 text-xs leading-5 text-slate-300">一次判定では文章を作りません。文章はChatGPT Proで作り、/work側で根拠・語数・定型句・類似度を検査してから保存します。</p>
           </div>
         </aside>
       </div>

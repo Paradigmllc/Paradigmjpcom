@@ -124,8 +124,8 @@ export async function processFastManualWorkUrl(
         fastQualification: qualification,
       },
       form_discovery: {
-        outcome: "deferred_to_editorial_generation",
-        outcomeReason: "高速一次判定ではフォーム探索と送信文生成を実行しません。残す企業だけGPT-5.6高品質文面へ進めます。",
+        outcome: "deferred_to_chatgpt_brief",
+        outcomeReason: "高速一次判定ではフォーム探索と送信文生成を実行しません。残す企業だけChatGPT Pro用ブリーフへ進めます。",
         checkedUrlCount: 0,
         checkedAt: new Date().toISOString(),
       },
@@ -135,6 +135,7 @@ export async function processFastManualWorkUrl(
         purpose: "fast_qualification",
         generation_status: "not_requested",
         automatic_send_allowed: false,
+        api_used: false,
         fast_qualification: qualification,
       },
       qualification_ledger: {},

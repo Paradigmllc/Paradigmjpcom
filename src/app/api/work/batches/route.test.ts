@@ -57,7 +57,8 @@ function unsentWork(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  process.env.OPENROUTER_API_KEY = "test-openrouter-key"
+  delete process.env.OPENROUTER_API_KEY
+  delete process.env.OPENAI_API_KEY
   mocks.authorize.mockResolvedValue(true)
   mocks.active.mockResolvedValue(null)
   mocks.findWork.mockResolvedValue(unsentWork())
@@ -133,10 +134,11 @@ describe("manual work durable batch API", () => {
 
   it.each([
     "fast_qualification",
+    "chatgpt_brief_failed",
     "gpt56_editorial_failed",
     "legacy_full",
     undefined,
-  ])("routes an unsent %s row to GPT-5.6 editorial generation", async (analysisMode) => {
+  ])("queues an unsent %s row for API-free ChatGPT brief preparation", async (analysisMode) => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     mocks.findWork.mockResolvedValue(unsentWork({ evidence: analysisMode ? { analysis_mode: analysisMode } : {} }))
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
@@ -148,24 +150,20 @@ describe("manual work durable batch API", () => {
     expect(response.status).toBe(201)
     expect(mocks.createRetry).toHaveBeenCalledWith(expect.objectContaining({ workId }))
     expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({
-      message: expect.stringContaining("DeepSeek不使用"),
+      message: expect.stringContaining("外部AI API"),
     }))
   })
 
-  it("refuses every regeneration when no high-quality provider is configured", async () => {
+  it("does not require an OpenAI, OpenRouter, or DeepSeek key for brief preparation", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
-    delete process.env.OPENROUTER_API_KEY
-    delete process.env.OPENAI_API_KEY
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ urls: ["example.com"], retryWorkId: workId }),
     }))
-    const body = await response.json()
 
-    expect(response.status).toBe(503)
-    expect(body.error).toContain("DeepSeekや定型文へのフォールバックは行いません")
-    expect(mocks.createRetry).not.toHaveBeenCalled()
+    expect(response.status).toBe(201)
+    expect(mocks.createRetry).toHaveBeenCalledWith(expect.objectContaining({ workId }))
   })
 
   it("does not overwrite a company after an outreach outcome is recorded", async () => {
@@ -181,7 +179,7 @@ describe("manual work durable batch API", () => {
     expect(mocks.createRetry).not.toHaveBeenCalled()
   })
 
-  it("rejects Japanese rows before generation", async () => {
+  it("rejects Japanese rows before brief preparation", async () => {
     const workId = "106db008-80af-4c56-93ee-916643d84c1b"
     mocks.findWork.mockResolvedValue(unsentWork({ country_code: "JP", is_japanese_company: true }))
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
@@ -208,8 +206,6 @@ describe("manual work durable batch API", () => {
   })
 
   it("continues fast qualification without any writing-model key", async () => {
-    delete process.env.OPENROUTER_API_KEY
-    delete process.env.OPENAI_API_KEY
     const response = await POST(new NextRequest("https://paradigmjp.com/api/work/batches", {
       method: "POST",
       headers: { "content-type": "application/json" },

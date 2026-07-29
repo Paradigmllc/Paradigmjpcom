@@ -39,7 +39,7 @@ async function notifyCompleted(batchId: string, total: number, failed: number): 
     const { notifyBothChannels } = await import("@/lib/notify")
     await notifyBothChannels("sales", {
       title: "高速リード判定バッチ完了",
-      message: `${total}件の一次判定を完了（失敗${failed}件）。残す企業だけ/workからGPT-5.6高品質文面を作成できます。DeepSeek不使用・外部送信0件。`,
+      message: `${total}件の一次判定を完了（失敗${failed}件）。残す企業だけ/workでChatGPT用ブリーフを準備できます。外部AI API・外部送信0件。`,
       link: "/work",
       type: "manual_japan_entry_batch_completed",
       region: "global",
@@ -73,7 +73,7 @@ async function processClaimedItem(input: {
   try {
     let result
     if (item.retry_requested) {
-      if (!item.expected_work_id) throw new Error("A selected work record is required for GPT-5.6 message generation")
+      if (!item.expected_work_id) throw new Error("A selected work record is required for ChatGPT brief preparation")
       result = await processManualEditorialMessage({
         rawUrl: item.canonical_url,
         expectedWorkId: item.expected_work_id,
