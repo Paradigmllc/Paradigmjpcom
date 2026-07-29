@@ -1,4 +1,4 @@
-name: Work evidence-first validation
+name: Work API-free ChatGPT validation
 
 on:
   pull_request:
@@ -6,9 +6,10 @@ on:
       - "src/app/api/work/**"
       - "src/components/work/**"
       - "src/lib/sales/manual-japan-entry-batch-contract.test.ts"
+      - "src/lib/sales/manual-japan-entry-store.ts"
       - "src/lib/sales/manual-work-fast-*.ts"
       - "src/lib/sales/manual-work-editorial-*.ts"
-      - "src/lib/sales/manual-work-gpt56-*.ts"
+      - "src/lib/sales/manual-work-chatgpt-*.ts"
       - "src/lib/sales/manual-work-operator-notice.ts"
       - "src/lib/sales/manual-work-recovery-policy*.ts"
       - ".github/workflows/work-fast-first-validation.yml"
@@ -18,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: work-evidence-first-${{ github.event.pull_request.number || github.ref }}
+  group: work-api-free-chatgpt-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -40,17 +41,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Evidence-first unit and API tests
+      - name: API-free workbench unit and API tests
         run: >-
           npm exec -- vitest run
           src/lib/sales/manual-work-fast-evidence.test.ts
           src/lib/sales/manual-work-fast-qualification.test.ts
           src/lib/sales/manual-work-editorial-brief.test.ts
-          src/lib/sales/manual-work-gpt56-writer.test.ts
+          src/lib/sales/manual-work-chatgpt-handoff.test.ts
+          src/lib/sales/manual-work-chatgpt-import.test.ts
           src/lib/sales/manual-work-recovery-policy.test.ts
           src/lib/sales/manual-japan-entry-batch-contract.test.ts
           src/app/api/work/batches/route.test.ts
           'src/app/api/work/batches/[batchId]/drain/route.test.ts'
+          src/app/api/work/chatgpt/briefs/route.test.ts
+          src/app/api/work/chatgpt/import/route.test.ts
           src/components/work/ManualWorkIntake.test.tsx
 
       - name: TypeScript
@@ -64,13 +68,20 @@ jobs:
           npm exec -- eslint \
             'src/app/api/work/batches/route.ts' \
             'src/app/api/work/batches/[batchId]/drain/route.ts' \
+            'src/app/api/work/chatgpt/briefs/route.ts' \
+            'src/app/api/work/chatgpt/import/route.ts' \
+            src/components/work/ManualChatGptHandoff.tsx \
             src/components/work/ManualJapanEntryWorkConsole.tsx \
             src/components/work/ManualMessageIntelligence.tsx \
+            src/components/work/ManualWorkHistory.tsx \
             src/components/work/ManualWorkHistoryItem.tsx \
             src/components/work/ManualWorkIntake.tsx \
+            src/components/work/ManualWorkOverview.tsx \
+            src/lib/sales/manual-japan-entry-store.ts \
+            src/lib/sales/manual-work-chatgpt-handoff.ts \
+            src/lib/sales/manual-work-chatgpt-import.ts \
             src/lib/sales/manual-work-editorial-brief.ts \
             src/lib/sales/manual-work-editorial-service.ts \
-            src/lib/sales/manual-work-gpt56-writer.ts \
             src/lib/sales/manual-work-fast-evidence.ts \
             src/lib/sales/manual-work-fast-qualification.ts \
             src/lib/sales/manual-work-fast-service.ts \
@@ -88,7 +99,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: work-evidence-first-validation-logs
+          name: work-api-free-chatgpt-validation-logs
           path: |
             /tmp/typescript.log
             /tmp/eslint.log
