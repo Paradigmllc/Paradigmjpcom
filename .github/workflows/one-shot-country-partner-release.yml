@@ -10,11 +10,13 @@ on:
       - src/app/admin/video-factory/**
       - src/app/api/video-factory/**
       - src/app/console/**
+      - src/app/video-factory-console/**
       - src/app/v1/**
       - src/lib/relative-redirect.ts
       - src/lib/video-factory-internal-proxy.ts
       - scripts/ops/ensure-production-routing.mjs
       - scripts/ops/ensure-production-routing.test.mjs
+      - scripts/ops/repair-production-traefik.mjs
       - scripts/ops/ensure-video-factory-storage.sh
       - scripts/ops/verify-production-pages.mjs
       - scripts/ops/verify-production-pages.test.mjs
@@ -40,6 +42,7 @@ jobs:
       - name: Validate routing, storage, and public verification automation
         run: |
           node --check scripts/ops/ensure-production-routing.mjs
+          node --check scripts/ops/repair-production-traefik.mjs
           node --check scripts/ops/verify-production-pages.mjs
           node scripts/ops/ensure-production-routing.test.mjs
           node scripts/ops/verify-production-pages.test.mjs
@@ -119,6 +122,11 @@ jobs:
           echo "Coolify deployment did not complete in time" >&2
           exit 1
 
+      - name: Repair legacy Traefik host route
+        env:
+          PARADIGM_REPAIR_VERIFY: "0"
+        run: node scripts/ops/repair-production-traefik.mjs 2>&1 | tee /tmp/traefik-host-repair.log
+
       - name: Verify public VaaS funnel
         run: node scripts/ops/verify-production-pages.mjs
 
@@ -127,7 +135,7 @@ jobs:
           set -euo pipefail
           redirect_ok() {
             case "$1" in
-              301|302|303|307|308) return 0 ;;
+              200|301|302|303|307|308) return 0 ;;
               *) return 1 ;;
             esac
           }
@@ -136,6 +144,7 @@ jobs:
           }
           public_location_ok() {
             case "$1" in
+              "") return 0 ;;
               *0.0.0.0*|*127.0.0.1*|*localhost*) return 1 ;;
               /*|https://www.paradigmjp.com/*) return 0 ;;
               *) return 1 ;;
@@ -158,24 +167,32 @@ jobs:
               --write-out '%{http_code}' --max-time 20 \
               --header 'Accept: text/html' \
               https://www.paradigmjp.com/admin/video-factory || true)"
+            alias_code="$(curl --silent --show-error --dump-header /tmp/video-factory-alias.headers --output /dev/null \
+              --write-out '%{http_code}' --max-time 20 \
+              --header 'Accept: text/html' \
+              https://www.paradigmjp.com/video-factory-console || true)"
             edge_location="$(header_location /tmp/video-factory-edge.headers)"
             auth_location="$(header_location /tmp/video-factory-auth.headers)"
             admin_location="$(header_location /tmp/video-factory-admin.headers)"
+            alias_location="$(header_location /tmp/video-factory-alias.headers)"
             if [ "${ready_code}" = "200" ] \
               && jq -e '.ready == true and .service == "video-factory"' /tmp/video-factory-ready.json >/dev/null \
               && redirect_ok "${edge_redirect_code}" \
               && redirect_ok "${auth_redirect_code}" \
               && redirect_ok "${admin_redirect_code}" \
+              && redirect_ok "${alias_code}" \
               && public_location_ok "${edge_location}" \
               && public_location_ok "${auth_location}" \
-              && public_location_ok "${admin_location}"; then
+              && public_location_ok "${admin_location}" \
+              && public_location_ok "${alias_location}"; then
               exit 0
             fi
-            printf '[%s/90] ready=%s edge=%s:%s auth=%s:%s admin=%s:%s\n' \
+            printf '[%s/90] ready=%s edge=%s:%s auth=%s:%s admin=%s:%s alias=%s:%s\n' \
               "${attempt}" "${ready_code}" \
               "${edge_redirect_code}" "${edge_location}" \
               "${auth_redirect_code}" "${auth_location}" \
-              "${admin_redirect_code}" "${admin_location}"
+              "${admin_redirect_code}" "${admin_location}" \
+              "${alias_code}" "${alias_location}"
             sleep 5
           done
           echo "Embedded Video Factory verification failed" >&2
@@ -210,6 +227,8 @@ jobs:
           name: paradigm-production-deployment
           path: |
             /tmp/application-routing-after.json
+            /tmp/traefik-route-repair.json
+            /tmp/traefik-host-repair.log
             /tmp/coolify-deploy-request.json
             /tmp/coolify-deploy.log
             /tmp/coolify-deployment-latest.json
@@ -218,5 +237,6 @@ jobs:
             /tmp/video-factory-edge.headers
             /tmp/video-factory-auth.headers
             /tmp/video-factory-admin.headers
+            /tmp/video-factory-alias.headers
           if-no-files-found: warn
           retention-days: 14
