@@ -164,11 +164,14 @@ if [[ -z "${app_uuid}" ]]; then
   printf 'stage=create-dockerfile-application\n'
   created="$(request POST /applications/dockerfile "${application_payload}")"
   app_uuid="$(printf '%s' "${created}" | jq -er '.uuid')"
-else
-  printf 'stage=update-application\n'
-  update_payload="$(printf '%s' "${application_payload}" | jq 'del(.project_uuid,.server_uuid,.destination_uuid,.environment_uuid,.environment_name,.dockerfile,.autogenerate_domain)')"
-  request PATCH "/applications/${app_uuid}" "${update_payload}" >/dev/null
 fi
+
+# The Dockerfile-only create endpoint in some Coolify versions derives the
+# exposed port from the still-base64 request body and may fall back to port 80.
+# Apply the canonical runtime configuration after both create and update.
+printf 'stage=normalize-application\n'
+update_payload="$(printf '%s' "${application_payload}" | jq 'del(.project_uuid,.server_uuid,.destination_uuid,.environment_uuid,.environment_name,.dockerfile,.autogenerate_domain)')"
+request PATCH "/applications/${app_uuid}" "${update_payload}" >/dev/null
 
 printf 'stage=ensure-persistent-storage\n'
 storages="$(request GET "/applications/${app_uuid}/storages")"
