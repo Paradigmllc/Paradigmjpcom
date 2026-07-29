@@ -44,7 +44,8 @@ describe("manual work durable batch contract", () => {
   it("uses bounded first-party research and never calls a writing API", () => {
     expect(editorialBrief).toContain("MAX_EXTRA_PAGES = 4")
     expect(editorialBrief).toContain("PAGE_TIMEOUT_MS = 5_000")
-    expect(editorialService).toContain('analysis_mode: "chatgpt_brief_ready"')
+    expect(editorialService).toContain('"chatgpt_brief_ready"')
+    expect(editorialService).toContain('"existing_japan_presence"')
     expect(editorialService).toContain("api_used: false")
     expect(editorialService).not.toContain("generateManualEditorialMessage")
     expect(editorialService).not.toContain("OPENAI_API_KEY")
