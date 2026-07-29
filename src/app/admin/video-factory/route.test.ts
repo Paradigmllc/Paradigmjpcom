@@ -15,7 +15,7 @@ describe("Video Factory admin launcher", () => {
     mockedAuthorize.mockReset()
   })
 
-  it("redirects an authenticated admin with a relative public-origin path", async () => {
+  it("redirects an authenticated admin to the cache-safe public console path", async () => {
     mockedAuthorize.mockResolvedValue({
       ok: true,
       source: "legacy",
@@ -34,7 +34,7 @@ describe("Video Factory admin launcher", () => {
     const response = await GET(request)
 
     expect(response.status).toBe(307)
-    expect(response.headers.get("location")).toBe("/console/")
+    expect(response.headers.get("location")).toBe("/video-factory-console/")
     expect(response.headers.get("location")).not.toContain("0.0.0.0")
     expect(response.headers.get("cache-control")).toContain("no-store")
   })
@@ -53,7 +53,7 @@ describe("Video Factory admin launcher", () => {
 
     expect(response.status).toBe(307)
     expect(response.headers.get("location")).toBe(
-      "/admin/login?redirect=%2Fadmin%2Fvideo-factory",
+      "/admin/login?redirect=%2Fvideo-factory-console%2F",
     )
     expect(response.headers.get("location")).not.toContain("0.0.0.0")
   })
