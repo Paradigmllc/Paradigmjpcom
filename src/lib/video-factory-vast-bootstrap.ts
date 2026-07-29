@@ -120,6 +120,9 @@ export function decryptVastKey(ciphertext: string): string {
   if (!/^[A-Fa-f0-9]{64,128}$/.test(value)) {
     throw new Error("Decrypted Vast.ai key has an unexpected format")
   }
+  if (!vastKeyMatchesExpected(value)) {
+    throw new Error("The supplied Vast.ai key is not the delegated bootstrap credential")
+  }
   return value
 }
 
