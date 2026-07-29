@@ -1,7 +1,7 @@
 import type { ManualJapanEntryWorkRow } from "./manual-japan-entry-types"
 
 export const MANUAL_CHATGPT_BATCH_MAX = 15
-export const MANUAL_CHATGPT_HANDOFF_VERSION = "chatgpt-pro-handoff-v1"
+export const MANUAL_CHATGPT_HANDOFF_VERSION = "chatgpt-pro-handoff-v2"
 
 export interface ManualChatGptEvidencePoint {
   id: string
@@ -16,12 +16,22 @@ export interface ManualChatGptBrief {
   domain: string
   companyName: string
   countryCode: string | null
+  countryConfidence: number
+  countrySignals: string[]
   businessModel: string
   productNames: string[]
   productContext: string
   collectedAt: string
   contactUrl: string | null
   publicEmail: string | null
+  contactFormDetected: boolean
+  contactSignals: string[]
+  japanPresence: {
+    existing: boolean
+    level: string
+    signals: string[]
+    urls: string[]
+  }
   pages: Array<{
     url: string
     kind: string
@@ -38,6 +48,10 @@ function record(value: unknown): Record<string, unknown> | null {
 
 function string(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null
+}
+
+function number(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
 }
 
 function strings(value: unknown): string[] {
@@ -57,6 +71,16 @@ function evidencePoints(value: unknown): ManualChatGptEvidencePoint[] {
     if (!id || !pageKind || !statement || !sourceUrl) return []
     return [{ id, pageKind, statement, sourceUrl }]
   })
+}
+
+function japanPresence(value: unknown): ManualChatGptBrief["japanPresence"] {
+  const source = record(value)
+  return {
+    existing: source?.existing === true,
+    level: string(source?.level) ?? "none",
+    signals: strings(source?.signals),
+    urls: strings(source?.urls),
+  }
 }
 
 export function manualChatGptBrief(item: ManualJapanEntryWorkRow): ManualChatGptBrief | null {
@@ -87,12 +111,17 @@ export function manualChatGptBrief(item: ManualJapanEntryWorkRow): ManualChatGpt
     domain,
     companyName,
     countryCode: string(raw.countryCode) ?? item.country_code,
+    countryConfidence: number(raw.countryConfidence) ?? 0,
+    countrySignals: strings(raw.countrySignals),
     businessModel: string(raw.businessModel) ?? item.business_model ?? "service",
     productNames: strings(raw.productNames).slice(0, 8),
     productContext,
     collectedAt: string(raw.collectedAt) ?? item.updated_at,
     contactUrl: string(raw.contactUrl),
     publicEmail: string(raw.publicEmail),
+    contactFormDetected: raw.contactFormDetected === true,
+    contactSignals: strings(raw.contactSignals),
+    japanPresence: japanPresence(raw.japanPresence),
     pages,
     evidence,
   }
@@ -114,7 +143,7 @@ function evidencePriority(kind: string): number {
   if (kind === "news") return 80
   if (kind === "about") return 70
   if (kind === "home") return 60
-  if (kind === "contact") return 20
+  if (kind === "contact") return 50
   return 10
 }
 
@@ -134,10 +163,20 @@ function compactBrief(brief: ManualChatGptBrief) {
     companyName: brief.companyName,
     domain: brief.domain,
     countryCode: brief.countryCode,
+    countryConfidence: brief.countryConfidence,
+    countrySignals: brief.countrySignals.slice(0, 4),
     businessModel: brief.businessModel,
     productNames: brief.productNames,
     productContext: brief.productContext.slice(0, 1_200),
     contactRoute: brief.contactUrl ?? brief.publicEmail,
+    contactFormDetected: brief.contactFormDetected,
+    contactSignals: brief.contactSignals.slice(0, 4),
+    japanPresence: {
+      existing: brief.japanPresence.existing,
+      level: brief.japanPresence.level,
+      signals: brief.japanPresence.signals.slice(0, 6),
+      urls: brief.japanPresence.urls.slice(0, 4),
+    },
     evidence,
   }
 }
@@ -170,6 +209,7 @@ export function buildManualChatGptHandoffPrompt(items: ManualJapanEntryWorkRow[]
     "",
     "NON-NEGOTIABLE RULES",
     "- Use only the supplied evidence. Never invent Japan traffic, demand, revenue, ROI, customers, competitors, funding, urgency, measured loss, or legal conclusions.",
+    "- A record with japanPresence.existing=true should normally be returned as status='insufficient' for greenfield Japan-entry outreach unless the supplied evidence clearly supports a different, specific operating gap.",
     "- Missing Japanese language alone is not a thesis. Connect the company's actual product, commercial model, or current expansion choices to one practical Japan validation question.",
     "- The body must be 65-120 English words in 2-4 short paragraphs. Exclude greeting and signature; the system adds them later.",
     "- Use at least two valid evidence IDs and include concrete nouns or operating details that could not survive a company-name swap.",
