@@ -50,16 +50,16 @@ export function ManualMessageIntelligence({ item, onCopy }: {
 
   if (!item.initial_message) {
     const notice = manualWorkOperatorNotice(item)
-    const briefReady = mode === "chatgpt_brief_ready" && Boolean(brief)
     const insufficient = review.generation_status === "chatgpt_insufficient"
+    const briefReady = mode === "chatgpt_brief_ready" && Boolean(brief) && !insufficient
     const fastQualification = mode === "fast_qualification"
     return (
-      <section className={`overflow-hidden rounded-xl border ${briefReady ? "border-violet-200 bg-violet-50" : insufficient ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`} aria-label="フォーム文面の準備状況">
-        <div className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold ${briefReady ? "text-violet-950" : insufficient ? "text-amber-950" : "text-slate-800"}`}>
+      <section className={`overflow-hidden rounded-xl border ${insufficient ? "border-amber-200 bg-amber-50" : briefReady ? "border-violet-200 bg-violet-50" : "border-slate-200 bg-slate-50"}`} aria-label="フォーム文面の準備状況">
+        <div className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold ${insufficient ? "text-amber-950" : briefReady ? "text-violet-950" : "text-slate-800"}`}>
           {briefReady ? <FileText className="size-4 text-violet-700" /> : <AlertTriangle className="size-4 text-slate-500" />}
-          {briefReady ? "ChatGPT用ブリーフ準備済み" : insufficient ? "ChatGPTが根拠不足と判断しました" : fastQualification ? "送信文はまだ作成していません" : "旧文面は送信対象外です"}
+          {insufficient ? "ChatGPTが根拠不足と判断しました" : briefReady ? "ChatGPT用ブリーフ準備済み" : fastQualification ? "送信文はまだ作成していません" : "旧文面は送信対象外です"}
         </div>
-        <div className={`border-t px-4 py-3 text-xs leading-5 ${briefReady ? "border-violet-200 text-violet-900" : insufficient ? "border-amber-200 text-amber-900" : "border-slate-200 text-slate-600"}`}>
+        <div className={`border-t px-4 py-3 text-xs leading-5 ${insufficient ? "border-amber-200 text-amber-900" : briefReady ? "border-violet-200 text-violet-900" : "border-slate-200 text-slate-600"}`}>
           <p>{briefReady ? `公開根拠${brief?.evidence.length ?? 0}件を保存しました。上の「ChatGPT Pro handoff」から最大15社をまとめてコピーできます。` : notice?.detail ?? "送信文はありません。"}</p>
           {briefReady && <p className="mt-2 font-semibold">文章生成APIは呼び出していません。ChatGPT Proの返却JSONを取り込むまで文面は保存されません。</p>}
           {insufficient && text(review.insufficiency_reason) && <p className="mt-2 rounded-lg border border-amber-200 bg-white p-3">{text(review.insufficiency_reason)}</p>}
