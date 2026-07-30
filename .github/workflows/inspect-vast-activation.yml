@@ -1,6 +1,6 @@
 name: Inspect Vast Activation
 
-# Snapshot trigger: 3 — include authenticated ComfyUI readiness probe without exposing secrets.
+# Snapshot trigger: 4 — inspect the per-instance API response and probe ComfyUI securely.
 on:
   pull_request:
     paths:
@@ -77,16 +77,18 @@ jobs:
           from pathlib import Path
 
           key = Path('/tmp/vast-key').read_text().strip()
-          request = urllib.request.Request(
-              'https://console.vast.ai/api/v1/instances/',
-              headers={
-                  'Authorization': f'Bearer {key}',
-                  'Accept': 'application/json',
-                  'User-Agent': 'Mozilla/5.0 ParadigmVideoFactory/1.0',
-              },
-          )
-          with urllib.request.urlopen(request, timeout=30) as response:
-              raw = json.load(response)
+          headers = {
+              'Authorization': f'Bearer {key}',
+              'Accept': 'application/json',
+              'User-Agent': 'Mozilla/5.0 ParadigmVideoFactory/1.0',
+          }
+
+          def get_json(url):
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+
+          raw = get_json('https://console.vast.ai/api/v1/instances/')
           rows = raw.get('instances', raw.get('results', raw)) if isinstance(raw, dict) else raw
           rows = rows if isinstance(rows, list) else []
 
@@ -107,12 +109,16 @@ jobs:
                       if found:
                           return found
               elif isinstance(value, str):
-                  match = re.search(r'(?:^|[\s,;"\'])COMFY_PROXY_KEY=([A-Fa-f0-9]{32,128})', value)
-                  if match:
-                      return match.group(1)
+                  for pattern in (
+                      r'COMFY_PROXY_KEY[=:]([A-Fa-f0-9]{32,128})',
+                      r'COMFY_PROXY_KEY["\']?\s*[:=]\s*["\']([A-Fa-f0-9]{32,128})',
+                  ):
+                      match = re.search(pattern, value)
+                      if match:
+                          return match.group(1)
               return None
 
-          def host_port(instance):
+          def mapped_port(instance):
               ports = instance.get('ports')
               if not isinstance(ports, dict):
                   return None
@@ -125,6 +131,7 @@ jobs:
 
           sanitized = []
           probe = {'attempted': False, 'proxy_key_discovered': False, 'ready': False}
+          detail_meta = {'request_succeeded': False, 'top_level_keys': []}
           for item in rows:
               if not isinstance(item, dict):
                   continue
@@ -138,16 +145,26 @@ jobs:
               })
               if 'paradigm-comfyui-wan22' not in str(item.get('label') or ''):
                   continue
-              proxy_key = find_proxy_key(item)
-              port = host_port(item)
+              instance_id = int(item.get('id') or 0)
+              detail = None
+              if instance_id:
+                  try:
+                      detail = get_json(f'https://console.vast.ai/api/v0/instances/{instance_id}/')
+                      detail_meta = {
+                          'request_succeeded': True,
+                          'top_level_keys': sorted(detail.keys()) if isinstance(detail, dict) else [],
+                      }
+                  except Exception as exc:
+                      detail_meta = {'request_succeeded': False, 'error': str(exc)[-300:], 'top_level_keys': []}
+              proxy_key = find_proxy_key(detail) or find_proxy_key(item)
+              port = mapped_port(item)
               host = item.get('public_ipaddr') or item.get('public_ip') or item.get('ssh_host')
               probe['proxy_key_discovered'] = bool(proxy_key)
               if not (proxy_key and port and host):
                   continue
               probe['attempted'] = True
-              url = f'http://{host}:{port}/__video_factory/status'
               status_request = urllib.request.Request(
-                  url,
+                  f'http://{host}:{port}/__video_factory/status',
                   headers={
                       'Authorization': f'Bearer {proxy_key}',
                       'X-API-Key': proxy_key,
@@ -174,6 +191,7 @@ jobs:
           output = {
               'checked_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'instances': sanitized,
+              'instance_detail': detail_meta,
               'comfyui_probe': probe,
           }
           Path('/tmp/vast-activation-status.json').write_text(json.dumps(output, indent=2) + '\n')
