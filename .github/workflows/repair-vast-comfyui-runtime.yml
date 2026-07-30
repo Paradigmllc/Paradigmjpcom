@@ -1,0 +1,216 @@
+name: Repair Vast ComfyUI Runtime
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/repair-vast-comfyui-runtime.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repair-vast-comfyui-runtime
+  cancel-in-progress: true
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      HANDOFF_REF: ops/vast-handoff
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate one-time Vast and SSH keys
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /tmp/vast-repair-private.pem
+          openssl pkey -in /tmp/vast-repair-private.pem -pubout -out /tmp/vast-repair-public.pem
+          ssh-keygen -q -t ed25519 -N '' -C "paradigm-repair-${GITHUB_RUN_ID}" -f /tmp/vast-repair-ssh
+
+      - name: Upload one-time Vast handoff public key
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-repair-public-key-${{ github.run_id }}
+          path: /tmp/vast-repair-public.pem
+          retention-days: 1
+
+      - name: Decrypt run-scoped Vast credential
+        run: |
+          set -euo pipefail
+          path=".ops/vast-repair-${GITHUB_RUN_ID}.ciphertext"
+          ref="$(python3 - <<'PY'
+          import os, urllib.parse
+          print(urllib.parse.quote(os.environ['HANDOFF_REF'], safe=''))
+          PY
+          )"
+          url="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${path}?ref=${ref}"
+          for attempt in $(seq 1 120); do
+            code="$(curl -sS -o /tmp/cipher.json -w '%{http_code}' \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' "$url" || true)"
+            if [ "$code" = 200 ]; then
+              jq -r '.content' /tmp/cipher.json | tr -d '\n' | base64 -d | base64 -d > /tmp/cipher.bin
+              openssl pkeyutl -decrypt -inkey /tmp/vast-repair-private.pem \
+                -in /tmp/cipher.bin -pkeyopt rsa_padding_mode:oaep \
+                -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256 \
+                -out /tmp/vast-key
+              key="$(tr -d '\r\n' < /tmp/vast-key)"
+              echo "::add-mask::$key"
+              printf '%s' "$key" > /tmp/vast-key
+              chmod 600 /tmp/vast-key
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'Timed out waiting for encrypted Vast credential' >&2
+          exit 1
+
+      - name: Attach ephemeral SSH key and discover instance
+        run: |
+          set -euo pipefail
+          key="$(cat /tmp/vast-key)"
+          public_key="$(cat /tmp/vast-repair-ssh.pub)"
+          curl -fsS -A 'Mozilla/5.0 ParadigmVideoFactory/1.0' \
+            -H "Authorization: Bearer ${key}" -H 'Content-Type: application/json' \
+            -X POST https://console.vast.ai/api/v0/ssh/ \
+            --data "$(jq -nc --arg ssh_key "$public_key" '{ssh_key:$ssh_key}')" \
+            > /tmp/ssh-key-create.json
+          ssh_key_id="$(jq -er '.key.id // .id' /tmp/ssh-key-create.json)"
+          echo "SSH_KEY_ID=$ssh_key_id" >> "$GITHUB_ENV"
+
+          curl -fsS -A 'Mozilla/5.0 ParadigmVideoFactory/1.0' \
+            -H "Authorization: Bearer ${key}" -H 'Accept: application/json' \
+            https://console.vast.ai/api/v1/instances/ > /tmp/instances.json
+          instance_id="$(jq -er '[.instances[]? | select((.label // "") | startswith("paradigm-comfyui-wan22-")) | select((.actual_status // "") == "running")][0].id' /tmp/instances.json)"
+          echo "INSTANCE_ID=$instance_id" >> "$GITHUB_ENV"
+
+          curl -fsS -A 'Mozilla/5.0 ParadigmVideoFactory/1.0' \
+            -H "Authorization: Bearer ${key}" -H 'Accept: application/json' \
+            "https://console.vast.ai/api/v0/instances/${instance_id}/" > /tmp/instance-detail.json
+          jq '(.instances // .) | {id,label,actual_status,ssh_host,ssh_port,ssh_user,public_ipaddr,status_msg}' /tmp/instance-detail.json \
+            > /tmp/instance-sanitized.json
+          ssh_host="$(jq -er '(.instances // .) | .ssh_host // .public_ipaddr' /tmp/instance-detail.json)"
+          ssh_port="$(jq -er '(.instances // .) | (.ssh_port // .ports["22/tcp"][0].HostPort)' /tmp/instance-detail.json)"
+          ssh_user="$(jq -r '(.instances // .) | .ssh_user // "root"' /tmp/instance-detail.json)"
+          echo "SSH_HOST=$ssh_host" >> "$GITHUB_ENV"
+          echo "SSH_PORT=$ssh_port" >> "$GITHUB_ENV"
+          echo "SSH_USER=$ssh_user" >> "$GITHUB_ENV"
+
+      - name: Start or repair ComfyUI on the proxy upstream port
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            if ssh -i /tmp/vast-repair-ssh -p "$SSH_PORT" \
+              -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+              -o ConnectTimeout=5 "$SSH_USER@$SSH_HOST" true 2>/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              echo 'SSH access did not become available' >&2
+              exit 1
+            fi
+            sleep 5
+          done
+
+          ssh -i /tmp/vast-repair-ssh -p "$SSH_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SSH_USER@$SSH_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+          BOOTSTRAP_ROOT=/workspace/video-factory-bootstrap
+          mkdir -p "$BOOTSTRAP_ROOT"
+
+          COMFY_ROOT=""
+          for candidate in /workspace/ComfyUI /opt/ComfyUI /root/ComfyUI /ComfyUI; do
+            if [ -f "$candidate/main.py" ]; then COMFY_ROOT="$candidate"; break; fi
+          done
+          if [ -z "$COMFY_ROOT" ]; then
+            main_file="$(find /workspace /opt /root -maxdepth 4 -type f -path '*/ComfyUI/main.py' 2>/dev/null | head -n1 || true)"
+            [ -n "$main_file" ] && COMFY_ROOT="$(dirname "$main_file")"
+          fi
+          [ -n "$COMFY_ROOT" ] || { echo 'ComfyUI root not found' >&2; exit 1; }
+
+          if ! curl -fsS --max-time 5 http://127.0.0.1:18188/system_stats >/dev/null 2>&1; then
+            if [ -f "$BOOTSTRAP_ROOT/comfyui.pid" ]; then
+              old_pid="$(cat "$BOOTSTRAP_ROOT/comfyui.pid" 2>/dev/null || true)"
+              [ -z "$old_pid" ] || kill "$old_pid" 2>/dev/null || true
+            fi
+            PYTHON=""
+            for candidate in "$COMFY_ROOT/venv/bin/python" /venv/main/bin/python /opt/venv/bin/python; do
+              if [ -x "$candidate" ]; then PYTHON="$candidate"; break; fi
+            done
+            [ -n "$PYTHON" ] || PYTHON="$(command -v python3)"
+            cd "$COMFY_ROOT"
+            nohup "$PYTHON" main.py \
+              --disable-auto-launch --listen 127.0.0.1 --port 18188 \
+              > "$BOOTSTRAP_ROOT/comfyui.log" 2>&1 &
+            echo $! > "$BOOTSTRAP_ROOT/comfyui.pid"
+          fi
+
+          for attempt in $(seq 1 120); do
+            if curl -fsS --max-time 10 http://127.0.0.1:18188/system_stats >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$attempt" -eq 120 ]; then
+              tail -n 120 "$BOOTSTRAP_ROOT/comfyui.log" >&2 || true
+              exit 1
+            fi
+            sleep 5
+          done
+
+          proxy_pid="$(cat "$BOOTSTRAP_ROOT/proxy.pid" 2>/dev/null || true)"
+          proxy_key=""
+          if [ -n "$proxy_pid" ] && [ -r "/proc/$proxy_pid/environ" ]; then
+            proxy_key="$(tr '\0' '\n' < "/proc/$proxy_pid/environ" | sed -n 's/^COMFY_PROXY_KEY=//p' | head -n1)"
+          fi
+          [ -n "$proxy_key" ] || { echo 'Proxy key not recoverable from running proxy' >&2; exit 1; }
+
+          for attempt in $(seq 1 60); do
+            status="$(curl -fsS --max-time 15 \
+              -H "Authorization: Bearer $proxy_key" -H "X-API-Key: $proxy_key" \
+              http://127.0.0.1:18189/__video_factory/status || true)"
+            if printf '%s' "$status" | python3 -c 'import json,sys; data=json.load(sys.stdin); raise SystemExit(0 if data.get("ready") is True else 1)' 2>/dev/null; then
+              printf '%s' "$status" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(json.dumps({"ready":d.get("ready"),"phase":d.get("phase"),"missing_nodes":d.get("missing_nodes",[]),"model_count":len(d.get("models",[])),"workflow_ids":sorted((d.get("workflows") or {}).keys())}))' \
+                > "$BOOTSTRAP_ROOT/repair-status.json"
+              exit 0
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              printf '%s\n' "$status" >&2
+              tail -n 120 "$BOOTSTRAP_ROOT/comfyui.log" >&2 || true
+              exit 1
+            fi
+            sleep 5
+          done
+          REMOTE
+
+          scp -i /tmp/vast-repair-ssh -P "$SSH_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "$SSH_USER@$SSH_HOST:/workspace/video-factory-bootstrap/repair-status.json" \
+            /tmp/comfyui-repair-status.json
+          cat /tmp/comfyui-repair-status.json
+
+      - name: Delete ephemeral Vast SSH key
+        if: always()
+        run: |
+          key="$(cat /tmp/vast-key 2>/dev/null || true)"
+          if [ -n "${SSH_KEY_ID:-}" ] && [ -n "$key" ]; then
+            curl -sS -A 'Mozilla/5.0 ParadigmVideoFactory/1.0' \
+              -H "Authorization: Bearer ${key}" \
+              -X DELETE "https://console.vast.ai/api/v0/ssh/${SSH_KEY_ID}/" >/dev/null || true
+          fi
+          shred -u /tmp/vast-key /tmp/vast-repair-private.pem /tmp/vast-repair-ssh 2>/dev/null || true
+          rm -f /tmp/vast-repair-public.pem /tmp/vast-repair-ssh.pub /tmp/cipher.json /tmp/cipher.bin
+
+      - name: Upload sanitized repair evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-comfyui-runtime-repair
+          path: |
+            /tmp/instance-sanitized.json
+            /tmp/comfyui-repair-status.json
+          retention-days: 1
+          if-no-files-found: warn
