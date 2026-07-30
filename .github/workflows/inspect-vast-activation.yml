@@ -1,0 +1,89 @@
+name: Inspect Vast Activation
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/inspect-vast-activation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-vast-activation
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      HANDOFF_REF: ops/vast-handoff
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate one-time handoff key
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /tmp/vast-inspect-private.pem
+          openssl pkey -in /tmp/vast-inspect-private.pem -pubout -out /tmp/vast-inspect-public.pem
+      - name: Upload public key
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-inspect-public-key-${{ github.run_id }}
+          path: /tmp/vast-inspect-public.pem
+          retention-days: 1
+      - name: Decrypt run-scoped credential
+        run: |
+          set -euo pipefail
+          path=".ops/vast-inspect-${GITHUB_RUN_ID}.ciphertext"
+          ref="$(python3 - <<'PY'
+          import os, urllib.parse
+          print(urllib.parse.quote(os.environ['HANDOFF_REF'], safe=''))
+          PY
+          )"
+          url="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${path}?ref=${ref}"
+          for attempt in $(seq 1 120); do
+            code="$(curl -sS -o /tmp/cipher.json -w '%{http_code}' \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' \
+              "$url" || true)"
+            if [ "$code" = 200 ]; then
+              jq -r '.content' /tmp/cipher.json | tr -d '\n' | base64 -d | base64 -d > /tmp/cipher.bin
+              openssl pkeyutl -decrypt -inkey /tmp/vast-inspect-private.pem \
+                -in /tmp/cipher.bin -pkeyopt rsa_padding_mode:oaep \
+                -pkeyopt rsa_oaep_md:sha256 -pkeyopt rsa_mgf1_md:sha256 \
+                -out /tmp/vast-key
+              key="$(tr -d '\r\n' < /tmp/vast-key)"
+              echo "::add-mask::$key"
+              printf '%s' "$key" > /tmp/vast-key
+              chmod 600 /tmp/vast-key
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+      - name: Capture sanitized Vast instance state
+        run: |
+          set -euo pipefail
+          key="$(cat /tmp/vast-key)"
+          curl -fsS --max-time 30 \
+            -A 'Mozilla/5.0 ParadigmVideoFactory/1.0' \
+            -H "Authorization: Bearer ${key}" \
+            -H 'Accept: application/json' \
+            https://console.vast.ai/api/v1/instances/ > /tmp/vast-instances.raw.json
+          jq '{checked_at: now | todateiso8601, instances: [(.instances // .results // . // [])[]? | {id, label, actual_status, intended_status, status, cur_state, status_msg, gpu_name, gpu_ram, dph_total, public_ipaddr, ports, start_date, duration, image_uuid, template_hash_id}]}' \
+            /tmp/vast-instances.raw.json > /tmp/vast-activation-status.json
+          cat /tmp/vast-activation-status.json
+      - name: Remove key material
+        if: always()
+        run: shred -u /tmp/vast-key /tmp/vast-inspect-private.pem 2>/dev/null || true
+      - name: Upload sanitized status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-activation-status
+          path: /tmp/vast-activation-status.json
+          retention-days: 1
+          if-no-files-found: warn
