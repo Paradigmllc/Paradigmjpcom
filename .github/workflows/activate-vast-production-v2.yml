@@ -1,0 +1,143 @@
+name: Activate Vast Production V2
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/activate-vast-production-v2.yml
+      - scripts/ops/activate_vast_runtime_v2.py
+      - scripts/vast/provision-video-factory-wan22.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  COOLIFY_API_URL: https://coolify.paradigmjp.com
+  PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate one-time RSA handoff key
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 \
+            -out /tmp/vast-activation-private.pem >/dev/null 2>&1
+          openssl pkey -in /tmp/vast-activation-private.pem -pubout \
+            -out /tmp/vast-activation-public.pem >/dev/null 2>&1
+          printf '%s\n' "${GITHUB_RUN_ID}" > /tmp/vast-activation-run-id.txt
+
+      - name: Upload one-time public key
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-production-v2-public-key
+          path: |
+            /tmp/vast-activation-public.pem
+            /tmp/vast-activation-run-id.txt
+          retention-days: 1
+
+      - name: Wait for encrypted credential and activate production
+        env:
+          HANDOFF_BRANCH: ops/vast-handoff
+          HANDOFF_PATH: .ops/vast-api-key-${{ github.run_id }}.ciphertext
+          VAST_PROVISION_SCRIPT_URL: https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/agent/harden-vast-comfyui-runtime/scripts/vast/provision-video-factory-wan22.sh
+        run: |
+          set -euo pipefail
+          umask 077
+
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${HANDOFF_PATH}?ref=${HANDOFF_BRANCH}"
+          found=0
+          for attempt in $(seq 1 360); do
+            code="$(curl --silent --show-error --output /tmp/handoff-response.json \
+              --write-out '%{http_code}' \
+              --header "Accept: application/vnd.github+json" \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header "X-GitHub-Api-Version: 2022-11-28" \
+              "${api}" || true)"
+            if [ "${code}" = "200" ]; then
+              jq -r '.content' /tmp/handoff-response.json | tr -d '\n' | base64 -d \
+                > /tmp/vast-activation-ciphertext.b64
+              found=1
+              break
+            fi
+            if [ $((attempt % 12)) -eq 0 ]; then
+              echo "Waiting for encrypted owner credential (${attempt}/360)"
+            fi
+            sleep 5
+          done
+          [ "${found}" = "1" ] || { echo "Encrypted credential handoff timed out" >&2; exit 1; }
+
+          base64 -d /tmp/vast-activation-ciphertext.b64 > /tmp/vast-activation-ciphertext.bin
+          VAST_KEY="$(openssl pkeyutl -decrypt \
+            -inkey /tmp/vast-activation-private.pem \
+            -pkeyopt rsa_padding_mode:oaep \
+            -pkeyopt rsa_oaep_md:sha256 \
+            -in /tmp/vast-activation-ciphertext.bin)"
+          [[ "${VAST_KEY}" =~ ^[A-Fa-f0-9]{64,128}$ ]] \
+            || { echo "Decrypted Vast.ai credential has an unexpected format" >&2; exit 1; }
+          echo "::add-mask::${VAST_KEY}"
+
+          env_response="$(curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "User-Agent: Paradigm-Video-Factory-Activation/2.0" \
+            "${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs")"
+          printf '%s' "${env_response}" > /tmp/coolify-envs.json
+          ADMIN_SECRET="$(printf '%s' "${env_response}" | jq -er '
+            (.environment_variables // .envs // . // [])
+            | map(select((.is_preview // false) == false))
+            | map(select(.key == "VIDEO_FACTORY_INTERNAL_API_KEY" or .key == "ADMIN_SCRIPT_SECRET" or .key == "ADMIN_PASSWORD" or .key == "PAYLOAD_SECRET"))
+            | sort_by(
+                if .key == "VIDEO_FACTORY_INTERNAL_API_KEY" then 0
+                elif .key == "ADMIN_SCRIPT_SECRET" then 1
+                elif .key == "ADMIN_PASSWORD" then 2
+                else 3 end
+              )
+            | .[0]
+            | (.real_value // .value // empty)
+          ')"
+          [ -n "${ADMIN_SECRET}" ] || { echo "Could not read a production admin signing secret" >&2; exit 1; }
+          echo "::add-mask::${ADMIN_SECRET}"
+
+          python3 -m py_compile scripts/ops/activate_vast_runtime_v2.py
+          bash -n scripts/vast/provision-video-factory-wan22.sh
+
+          export VAST_API_KEY="${VAST_KEY}"
+          export PARADIGM_ADMIN_SECRET="${ADMIN_SECRET}"
+          export VAST_PROVISION_SCRIPT_URL
+          export VAST_ACTIVATION_EVIDENCE=/tmp/vast-activation-evidence.json
+          python3 scripts/ops/activate_vast_runtime_v2.py
+
+          rm -f \
+            /tmp/vast-activation-private.pem \
+            /tmp/vast-activation-ciphertext.bin \
+            /tmp/vast-activation-ciphertext.b64 \
+            /tmp/coolify-envs.json
+
+      - name: Upload sanitized activation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-production-v2-evidence
+          path: |
+            /tmp/vast-activation-evidence.json
+            /tmp/vast-comfyui-production-smoke.mp4
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Remove one-time private key
+        if: always()
+        run: |
+          rm -f \
+            /tmp/vast-activation-private.pem \
+            /tmp/vast-activation-public.pem \
+            /tmp/vast-activation-ciphertext.bin \
+            /tmp/vast-activation-ciphertext.b64
