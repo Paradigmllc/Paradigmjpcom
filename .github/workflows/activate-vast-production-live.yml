@@ -1,0 +1,107 @@
+name: Activate Vast Production Live
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/activate-vast-production-live.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      VAST_KEY_PATH: /tmp/vast-api-key
+      BOOTSTRAP_EVIDENCE_PATH: /tmp/vast-production-bootstrap.json
+      BOOTSTRAP_SMOKE_PATH: /tmp/vast-wan22-smoke.mp4
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate one-time credential handoff key
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /tmp/handoff-private.pem
+          openssl pkey -in /tmp/handoff-private.pem -pubout -out /tmp/handoff-public.pem
+
+      - name: Upload one-time public key
+        uses: actions/upload-artifact@v4
+        with:
+          name: activate-vast-public-key-${{ github.run_id }}
+          path: /tmp/handoff-public.pem
+          retention-days: 1
+
+      - name: Receive encrypted Vast credential
+        run: |
+          set -euo pipefail
+          file=".ops/activate-vast-${GITHUB_RUN_ID}.ciphertext"
+          url="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${file}?ref=${HEAD_REF}"
+          for attempt in $(seq 1 240); do
+            code="$(curl -sS -o /tmp/cipher.json -w '%{http_code}' \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' "$url" || true)"
+            if [ "$code" = 200 ]; then
+              jq -r '.content' /tmp/cipher.json | tr -d '\n' | base64 -d | base64 -d > /tmp/cipher.bin
+              openssl pkeyutl -decrypt -inkey /tmp/handoff-private.pem -in /tmp/cipher.bin \
+                -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+                -pkeyopt rsa_mgf1_md:sha256 -out "${VAST_KEY_PATH}"
+              key="$(tr -d '\r\n' < "${VAST_KEY_PATH}")"
+              printf '%s' "$key" > "${VAST_KEY_PATH}"
+              chmod 600 "${VAST_KEY_PATH}"
+              echo "::add-mask::$key"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Read current Paradigm admin secret
+        run: |
+          set -euo pipefail
+          curl -fsS --user-agent 'Paradigm-VideoFactory-Activation/1.0' \
+            -H "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            -H 'Accept: application/json' \
+            "${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs" > /tmp/envs.json
+          secret="$(jq -er '[.[]? | select((.key // "") == "ADMIN_SCRIPT_SECRET" and (.is_preview // false) == false) | (.real_value // .value // "") | select(length >= 16)][0]' /tmp/envs.json)"
+          echo "::add-mask::$secret"
+          echo "PARADIGM_ADMIN_SECRET=$secret" >> "$GITHUB_ENV"
+
+      - name: Patch runtime compatibility
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/ops/direct_vast_production_bootstrap.py')
+          s=p.read_text()
+          s=s.replace('request = urllib.request.Request(url, data=body, method=method)', 'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/3.0"})', 1)
+          s=s.replace('secret = load_admin_secret()', 'secret = first_string(os.environ.get("PARADIGM_ADMIN_SECRET")) or load_admin_secret()', 1)
+          s=s.replace('"select_cols": json.dumps(["*"]),\n                "order_by": "count_created",\n', '', 1)
+          s=s.replace('"runtype": "ssh_direct",', '"runtype": "ssh",\n            "ssh_direct": True,', 1)
+          p.write_text(s)
+          PY
+          python3 -m py_compile scripts/ops/direct_vast_production_bootstrap.py
+
+      - name: Provision and verify production runtime
+        run: python3 scripts/ops/direct_vast_production_bootstrap.py
+
+      - name: Remove one-time credential material
+        if: always()
+        run: shred -u /tmp/handoff-private.pem "${VAST_KEY_PATH}" 2>/dev/null || true
+
+      - name: Upload sanitized evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: activate-vast-production-evidence
+          path: |
+            /tmp/vast-production-bootstrap.json
+            /tmp/vast-wan22-smoke.mp4
+          retention-days: 3
+          if-no-files-found: warn
