@@ -1,0 +1,162 @@
+name: Direct Vast Production Bootstrap V2
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/direct-vast-production-bootstrap-v2.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: direct-vast-production-bootstrap-v2
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      VAST_KEY_PATH: /tmp/vast-api-key
+      BOOTSTRAP_EVIDENCE_PATH: /tmp/vast-production-bootstrap.json
+      BOOTSTRAP_SMOKE_PATH: /tmp/vast-wan22-smoke.mp4
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate one-time RSA handoff key
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /tmp/vast-handoff-private.pem
+          openssl pkey -in /tmp/vast-handoff-private.pem -pubout -out /tmp/vast-handoff-public.pem
+
+      - name: Upload one-time public key
+        uses: actions/upload-artifact@v4
+        with:
+          name: direct-vast-bootstrap-v2-public-key-${{ github.run_id }}
+          path: /tmp/vast-handoff-public.pem
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Wait for encrypted credential and decrypt in memory
+        run: |
+          set -euo pipefail
+          cipher_path=".ops/vast-api-key-v2-${GITHUB_RUN_ID}.ciphertext"
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${cipher_path}?ref=${HEAD_REF}"
+          for attempt in $(seq 1 240); do
+            code="$(curl --silent --show-error --output /tmp/vast-cipher-response.json \
+              --write-out '%{http_code}' --max-time 20 \
+              --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "$api" || true)"
+            if [ "$code" = "200" ] && jq -e '.content and .encoding == "base64"' /tmp/vast-cipher-response.json >/dev/null; then
+              jq -r '.content' /tmp/vast-cipher-response.json | tr -d '\n' | base64 -d > /tmp/vast-ciphertext.b64
+              base64 -d /tmp/vast-ciphertext.b64 > /tmp/vast-ciphertext.bin
+              openssl pkeyutl -decrypt \
+                -inkey /tmp/vast-handoff-private.pem \
+                -in /tmp/vast-ciphertext.bin \
+                -pkeyopt rsa_padding_mode:oaep \
+                -pkeyopt rsa_oaep_md:sha256 \
+                -pkeyopt rsa_mgf1_md:sha256 \
+                -out "${VAST_KEY_PATH}"
+              tr -d '\r\n' < "${VAST_KEY_PATH}" > /tmp/vast-key-clean
+              mv /tmp/vast-key-clean "${VAST_KEY_PATH}"
+              chmod 600 "${VAST_KEY_PATH}"
+              key="$(cat "${VAST_KEY_PATH}")"
+              if ! printf '%s' "$key" | grep -Eq '^[A-Fa-f0-9]{64,128}$'; then
+                echo 'Decrypted Vast.ai credential has an unexpected format' >&2
+                exit 1
+              fi
+              echo "::add-mask::$key"
+              rm -f /tmp/vast-cipher-response.json /tmp/vast-ciphertext.b64 /tmp/vast-ciphertext.bin
+              exit 0
+            fi
+            printf '[%s/240] waiting for encrypted credential (HTTP %s)\n' "$attempt" "$code"
+            sleep 5
+          done
+          echo 'Timed out waiting for the encrypted Vast.ai credential' >&2
+          exit 1
+
+      - name: Read Paradigm admin session secret without exposing it
+        run: |
+          set -euo pipefail
+          api="${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs"
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'Paradigm-VideoFactory-Bootstrap/2.0' \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header 'Accept: application/json' \
+            "$api" > /tmp/coolify-envs.json
+          secret="$(jq -er '
+            def secret_value($name):
+              [ .[]?
+                | select((.key // .name // "") == $name and (.is_preview // false) == false)
+                | (.real_value // .value // "")
+                | select(type == "string" and length >= 16 and . != "********" and . != "***")
+              ][0] // empty;
+            secret_value("ADMIN_SESSION_SECRET")
+              // secret_value("ADMIN_PASSWORD")
+              // secret_value("PAYLOAD_SECRET")
+          ' /tmp/coolify-envs.json)"
+          [ -n "$secret" ] || { echo 'No usable Paradigm admin session secret was returned by Coolify' >&2; exit 1; }
+          echo "::add-mask::$secret"
+          echo "PARADIGM_ADMIN_SECRET=$secret" >> "$GITHUB_ENV"
+          rm -f /tmp/coolify-envs.json
+
+      - name: Patch current Vast API compatibility and validate runner
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/ops/direct_vast_production_bootstrap.py')
+          text = path.read_text(encoding='utf-8')
+          replacements = [
+              (
+                  'request = urllib.request.Request(url, data=body, method=method)',
+                  'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/2.0"})',
+              ),
+              (
+                  'secret = load_admin_secret()',
+                  'secret = first_string(os.environ.get("PARADIGM_ADMIN_SECRET")) or load_admin_secret()',
+              ),
+              (
+                  '''        query = urllib.parse.urlencode(\n            {\n                "select_filters": json.dumps(filters, separators=(",", ":")),\n                "select_cols": json.dumps(["*"]),\n                "order_by": "count_created",\n            }\n        )''',
+                  '''        query = urllib.parse.urlencode(\n            {"select_filters": json.dumps(filters, separators=(",", ":"))}\n        )''',
+              ),
+              (
+                  '            "runtype": "ssh_direct",',
+                  '            "runtype": "ssh",\n            "ssh_direct": True,',
+              ),
+          ]
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f'compatibility patch target not found: {old[:80]}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          python3 -m py_compile scripts/ops/direct_vast_production_bootstrap.py
+
+      - name: Provision and verify production video infrastructure
+        run: python3 scripts/ops/direct_vast_production_bootstrap.py
+
+      - name: Remove one-time key material
+        if: always()
+        run: |
+          shred -u /tmp/vast-handoff-private.pem "${VAST_KEY_PATH}" 2>/dev/null || true
+          rm -f /tmp/vast-handoff-public.pem /tmp/vast-cipher-response.json /tmp/vast-ciphertext.b64 /tmp/vast-ciphertext.bin /tmp/coolify-envs.json
+
+      - name: Upload sanitized production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-production-bootstrap-v2-evidence
+          path: |
+            /tmp/vast-production-bootstrap.json
+            /tmp/vast-wan22-smoke.mp4
+          retention-days: 3
+          if-no-files-found: warn
