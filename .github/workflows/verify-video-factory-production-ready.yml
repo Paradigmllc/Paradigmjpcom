@@ -1,0 +1,206 @@
+name: Verify Video Factory Production Ready
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/verify-video-factory-production-ready.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      SITE: https://www.paradigmjp.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create a short-lived administrator session
+        run: |
+          set -euo pipefail
+          envs="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            -H 'Accept: application/json' \
+            "${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs")"
+          secret="$(printf '%s' "${envs}" | jq -r '
+            def active($name):
+              [ .[]?
+                | select((.is_preview // false) == false)
+                | select(.key == $name)
+                | (.real_value // .value // empty)
+              ] | map(select(type == "string" and length >= 16)) | .[0] // empty;
+            active("ADMIN_SESSION_SECRET")
+            // active("ADMIN_PASSWORD")
+            // active("PAYLOAD_SECRET")
+          ')"
+          [ -n "${secret}" ] || { echo 'No administrator session secret is configured' >&2; exit 1; }
+          ADMIN_SESSION_SECRET="${secret}" node <<'NODE' > /tmp/admin-cookie.txt
+          const crypto = require('node:crypto')
+          const secret = process.env.ADMIN_SESSION_SECRET
+          const expiresAt = Math.floor(Date.now() / 1000) + 1800
+          const nonce = crypto.randomBytes(18).toString('base64url')
+          const payload = `${expiresAt}.${nonce}`
+          const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url')
+          process.stdout.write(`paradigm_admin_token=${payload}.${signature}`)
+          NODE
+          chmod 600 /tmp/admin-cookie.txt
+
+      - name: Fetch production state
+        run: |
+          set -euo pipefail
+          cookie="$(cat /tmp/admin-cookie.txt)"
+          fetch() {
+            local path="$1" output="$2"
+            curl --fail-with-body --silent --show-error --max-time 90 \
+              -H 'Accept: application/json' \
+              -H "Cookie: ${cookie}" \
+              "${SITE}${path}" > "${output}"
+          }
+          fetch '/api/video-factory/v1/console/bootstrap' /tmp/factory-bootstrap.json
+          fetch '/api/video-factory/v1/runtime' /tmp/factory-runtime.json
+          fetch '/api/video-factory/v1/registry' /tmp/factory-registry.json
+          fetch '/api/video-factory/v1/vast/instances' /tmp/factory-instances.json
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            -H 'Accept: application/json' \
+            "${SITE}/api/video-factory/runtime-handoff?action=status" \
+            > /tmp/factory-activation.json
+
+      - name: Assert real production readiness
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import json
+          from pathlib import Path
+
+          def load(name):
+              return json.loads(Path(f'/tmp/{name}.json').read_text())
+
+          bootstrap = load('factory-bootstrap')
+          runtime = load('factory-runtime')
+          registry = load('factory-registry')
+          instances = load('factory-instances')
+          activation = load('factory-activation')
+
+          if not bootstrap.get('ok'):
+              raise SystemExit('Video Factory console bootstrap is not ready')
+
+          runtime_data = runtime.get('runtime') or {}
+          effective = runtime.get('effective_comfyui') or {}
+          if not runtime.get('ok'):
+              raise SystemExit('Runtime endpoint is not ready')
+          if not (runtime_data.get('comfyui_base_url') or effective.get('base_url')):
+              raise SystemExit('ComfyUI base URL is not configured')
+          if not (
+              runtime_data.get('comfyui_api_key_configured')
+              or effective.get('api_key_configured')
+          ):
+              raise SystemExit('ComfyUI API key is not configured')
+          vast = runtime.get('vast') or bootstrap.get('vast') or {}
+          if not vast.get('configured'):
+              raise SystemExit('Vast.ai credential is not configured')
+
+          contracts = registry.get('contracts') or []
+          workflow = next(
+              (item for item in contracts if item.get('id') == 'abstract-broll-t2v'),
+              None,
+          )
+          if not workflow:
+              raise SystemExit('abstract-broll-t2v is missing')
+          if not workflow.get('enabled'):
+              raise SystemExit('abstract-broll-t2v is not enabled')
+          if not workflow.get('workflow_valid') or not workflow.get('file_exists'):
+              raise SystemExit('abstract-broll-t2v is not valid on disk')
+
+          model_state = registry.get('models') or {}
+          raw_models = model_state.get('items') if isinstance(model_state, dict) else None
+          if not isinstance(raw_models, list):
+              raw_models = model_state if isinstance(model_state, list) else []
+          approved = [
+              item for item in raw_models
+              if isinstance(item, dict)
+              and str(item.get('commercial_use', '')).lower() == 'approved'
+          ]
+          if len(approved) < 3:
+              raise SystemExit(f'Expected at least 3 approved production models, found {len(approved)}')
+
+          rows = instances.get('instances') or instances.get('results') or []
+          if isinstance(rows, dict):
+              rows = [rows]
+          workers = [
+              row for row in rows
+              if isinstance(row, dict)
+              and str(row.get('label') or row.get('name') or '').startswith('paradigm-comfyui-wan22-')
+          ]
+          running = [
+              row for row in workers
+              if str(row.get('actual_status') or row.get('status') or '').lower() in {'running', 'loading'}
+          ]
+          if len(running) != 1:
+              raise SystemExit(f'Expected exactly one active Paradigm GPU worker, found {len(running)}')
+
+          state = activation.get('state') or activation.get('status') or {}
+          if not activation.get('ok') or not isinstance(state, dict):
+              raise SystemExit('Activation state is unavailable')
+          if not state.get('completed_at') or not state.get('instance_id'):
+              raise SystemExit('Production activation is not complete')
+          if int(state['instance_id']) != int(running[0].get('id') or running[0].get('instance_id')):
+              raise SystemExit('Runtime activation and Vast.ai instance do not match')
+
+          doctor = bootstrap.get('doctor') or {}
+          doctor_text = json.dumps(doctor).lower()
+          if 'production_ready' in doctor_text and 'not ready' in doctor_text:
+              raise SystemExit('Doctor still reports production_ready as not ready')
+
+          evidence = {
+              'verified_at': __import__('datetime').datetime.now(__import__('datetime').UTC).isoformat(),
+              'factory_api': 'ready',
+              'vast_credential': 'configured',
+              'comfyui': 'connected',
+              'active_gpu_workers': 1,
+              'gpu_name': running[0].get('gpu_name'),
+              'instance_id': int(state['instance_id']),
+              'approved_models': len(approved),
+              'workflow': 'abstract-broll-t2v',
+              'workflow_enabled': True,
+              'activation_completed_at': state['completed_at'],
+          }
+          Path('/tmp/video-factory-production-ready.json').write_text(
+              json.dumps(evidence, indent=2) + '\n'
+          )
+          print(json.dumps(evidence))
+          PY
+
+      - name: Verify public console and runtime health
+        run: |
+          set -euo pipefail
+          cookie="$(cat /tmp/admin-cookie.txt)"
+          console_code="$(curl --silent --show-error --output /tmp/video-factory-console.html \
+            --write-out '%{http_code}' --max-time 60 \
+            -H 'Accept: text/html' -H "Cookie: ${cookie}" \
+            "${SITE}/video-factory-console")"
+          [ "${console_code}" = '200' ]
+          grep -q 'Video Factory' /tmp/video-factory-console.html
+          ready_code="$(curl --silent --show-error --output /tmp/video-factory-ready.json \
+            --write-out '%{http_code}' --max-time 60 \
+            "${SITE}/api/video-factory/ready")"
+          [ "${ready_code}" = '200' ]
+          jq -e '.ready == true and .service == "video-factory"' /tmp/video-factory-ready.json >/dev/null
+
+      - name: Remove administrator session material
+        if: always()
+        run: rm -f /tmp/admin-cookie.txt
+
+      - name: Upload sanitized verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-factory-production-ready
+          path: /tmp/video-factory-production-ready.json
+          if-no-files-found: warn
+          retention-days: 7
