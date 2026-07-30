@@ -1,0 +1,37 @@
+name: Inspect Coolify Env Metadata
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/inspect-coolify-env-metadata.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture env names and value availability only
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            -H 'Accept: application/json' \
+            "${API}/applications/${PARADIGM_APP_UUID}/envs" > /tmp/envs.raw.json
+          jq '[.[]? | {key:(.key // .name), has_value:(((.value // .real_value // "") | tostring | length) > 0), value_length:((.value // .real_value // "") | tostring | length), is_preview:(.is_preview // false), is_build_time:(.is_build_time // false), is_literal:(.is_literal // false)}] | sort_by(.key)' /tmp/envs.raw.json > /tmp/env-metadata.json
+          cat /tmp/env-metadata.json
+      - name: Upload metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: coolify-env-metadata
+          path: /tmp/env-metadata.json
+          retention-days: 1
