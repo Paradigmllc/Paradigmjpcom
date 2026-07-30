@@ -1,6 +1,7 @@
 name: Direct Vast Production Bootstrap
 
 # Run-scoped handoff: every workflow attempt receives a fresh RSA key and ciphertext path.
+# Live activation retry for the production dashboard.
 on:
   pull_request:
     paths:
