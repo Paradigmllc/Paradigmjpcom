@@ -163,7 +163,8 @@ jobs:
           request_deployment() {
             local response
             response="$(coolify_get "${API}/deploy?uuid=${PARADIGM_APP_UUID}&force=true")"
-            printf '%s\n' "$response" | tee /tmp/coolify-deploy-request.json
+            printf '%s\n' "$response" > /tmp/coolify-deploy-request.json
+            printf '%s\n' "$response" >&2
             printf '%s' "$response" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid'
           }
 
