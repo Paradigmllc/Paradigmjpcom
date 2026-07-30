@@ -1,5 +1,6 @@
 name: Inspect Vast Activation
 
+# Snapshot trigger: 2
 on:
   pull_request:
     paths:
