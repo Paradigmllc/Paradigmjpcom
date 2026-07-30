@@ -1,5 +1,6 @@
 name: Direct Vast Production Bootstrap
 
+# Run-scoped handoff: every workflow attempt receives a fresh RSA key and ciphertext path.
 on:
   pull_request:
     paths:
