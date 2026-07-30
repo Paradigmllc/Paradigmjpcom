@@ -1,0 +1,168 @@
+name: Activate Vast Via Production Runtime
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/activate-vast-via-runtime-task.yml
+      - scripts/ops/activate_vast_runtime_v2.py
+      - scripts/ops/activate_vast_from_runtime.py
+      - scripts/vast/provision-video-factory-wan22.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: activate-vast-via-production-runtime
+  cancel-in-progress: true
+
+env:
+  COOLIFY_API_URL: https://coolify.paradigmjp.com
+  PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+  TASK_NAME: Vast Production Activation Runtime V1
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate activation sources
+        run: |
+          python3 -m py_compile \
+            scripts/ops/activate_vast_runtime_v2.py \
+            scripts/ops/activate_vast_from_runtime.py
+          bash -n scripts/vast/provision-video-factory-wan22.sh
+
+      - name: Read production admin signing secret
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "User-Agent: Paradigm-Video-Factory-Runtime-Activation/1.0" \
+            "${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs")"
+          secret="$(printf '%s' "${response}" | jq -er '
+            (.environment_variables // .envs // . // [])
+            | map(select((.is_preview // false) == false))
+            | map(select(.key == "VIDEO_FACTORY_INTERNAL_API_KEY" or .key == "ADMIN_SCRIPT_SECRET" or .key == "ADMIN_PASSWORD" or .key == "PAYLOAD_SECRET"))
+            | sort_by(if .key == "VIDEO_FACTORY_INTERNAL_API_KEY" then 0 elif .key == "ADMIN_SCRIPT_SECRET" then 1 elif .key == "ADMIN_PASSWORD" then 2 else 3 end)
+            | .[0]
+            | (.real_value // .value // empty)
+          ')"
+          [ -n "${secret}" ] || { echo "Production admin secret is unavailable" >&2; exit 1; }
+          echo "::add-mask::${secret}"
+          printf '%s' "${secret}" > /tmp/paradigm-admin-secret
+          chmod 600 /tmp/paradigm-admin-secret
+
+      - name: Create one-shot activation task in the running container
+        id: task
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          get() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" "$1"
+          }
+          delete() {
+            curl --fail-with-body --silent --show-error --request DELETE \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" "$1"
+          }
+          current="$(get "${API}/applications/${PARADIGM_APP_UUID}/scheduled-tasks")"
+          printf '%s' "${current}" | jq -r --arg name "${TASK_NAME}" '.[]? | select(.name == $name) | .uuid' \
+            | while read -r uuid; do
+                [ -n "${uuid}" ] || continue
+                delete "${API}/applications/${PARADIGM_APP_UUID}/scheduled-tasks/${uuid}" >/dev/null || true
+              done
+
+          command="set -eu; root=/data/video-factory/config; lock=\$root/vast-activation.lock; mkdir -p \$root; if ! mkdir \$lock 2>/dev/null; then exit 0; fi; trap 'rmdir \"\$lock\" 2>/dev/null || true' EXIT; if [ -f \$root/vast-activation-evidence.json ] && grep -Eq '\"ok\"[[:space:]]*:[[:space:]]*true' \$root/vast-activation-evidence.json; then exit 0; fi; curl -fsSL --retry 8 --retry-all-errors https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/agent/harden-vast-comfyui-runtime/scripts/ops/activate_vast_runtime_v2.py -o /tmp/activate_vast_runtime_v2.py; curl -fsSL --retry 8 --retry-all-errors https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/agent/harden-vast-comfyui-runtime/scripts/ops/activate_vast_from_runtime.py -o /tmp/activate_vast_from_runtime.py; chmod 700 /tmp/activate_vast_runtime_v2.py /tmp/activate_vast_from_runtime.py; VIDEO_FACTORY_ACTIVATOR_PATH=/tmp/activate_vast_runtime_v2.py VAST_PROVISION_SCRIPT_URL=https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/agent/harden-vast-comfyui-runtime/scripts/vast/provision-video-factory-wan22.sh VAST_ACTIVATION_EVIDENCE=\$root/vast-activation-evidence.json python3 /tmp/activate_vast_from_runtime.py >>\$root/vast-activation.log 2>&1"
+
+          jq -n \
+            --arg name "${TASK_NAME}" \
+            --arg command "${command}" \
+            '{name:$name,command:$command,frequency:"* * * * *",timeout:10800,enabled:true}' \
+            > /tmp/create-task.json
+          created="$(curl --fail-with-body --silent --show-error --request POST \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header "Accept: application/json" \
+            --header "Content-Type: application/json" \
+            "${API}/applications/${PARADIGM_APP_UUID}/scheduled-tasks" \
+            --data-binary @/tmp/create-task.json)"
+          task_uuid="$(printf '%s' "${created}" | jq -er '.uuid')"
+          echo "task_uuid=${task_uuid}" >> "${GITHUB_OUTPUT}"
+          echo "Created activation task ${task_uuid}"
+
+      - name: Wait for production readiness
+        env:
+          TASK_UUID: ${{ steps.task.outputs.task_uuid }}
+        run: |
+          set -euo pipefail
+          ADMIN_SECRET="$(cat /tmp/paradigm-admin-secret)"
+          cookie="$(ADMIN_SECRET="${ADMIN_SECRET}" python3 - <<'PY'
+import base64, hashlib, hmac, os, secrets, time
+secret = os.environ["ADMIN_SECRET"].encode()
+expires = int(time.time()) + 10800
+nonce = base64.urlsafe_b64encode(secrets.token_bytes(18)).rstrip(b"=").decode()
+payload = f"{expires}.{nonce}"
+signature = base64.urlsafe_b64encode(hmac.new(secret, payload.encode(), hashlib.sha256).digest()).rstrip(b"=").decode()
+print(f"paradigm_admin_token={payload}.{signature}")
+PY
+          )"
+          echo "::add-mask::${cookie}"
+
+          success=0
+          for attempt in $(seq 1 300); do
+            bootstrap_code="$(curl --silent --show-error --output /tmp/bootstrap.json \
+              --write-out '%{http_code}' --max-time 30 \
+              --header "Cookie: ${cookie}" \
+              https://www.paradigmjp.com/v1/console/bootstrap || true)"
+            registry_code="$(curl --silent --show-error --output /tmp/registry.json \
+              --write-out '%{http_code}' --max-time 30 \
+              --header "Cookie: ${cookie}" \
+              https://www.paradigmjp.com/v1/registry || true)"
+            if [ "${bootstrap_code}" = "200" ] && [ "${registry_code}" = "200" ] \
+              && jq -e '.runtime.comfyui_base_url != null and .runtime.comfyui_api_key_configured == true' /tmp/bootstrap.json >/dev/null \
+              && jq -e '.contracts[]? | select(.id == "abstract-broll-t2v") | .enabled == true and .workflow_valid == true and .file_exists == true' /tmp/registry.json >/dev/null; then
+              success=1
+              break
+            fi
+            if [ $((attempt % 10)) -eq 0 ]; then
+              phase="$(jq -r '.doctor.comfyui.detail // .doctor.comfyui.status // "waiting"' /tmp/bootstrap.json 2>/dev/null || echo waiting)"
+              echo "[${attempt}/300] Video Factory is still activating: ${phase}"
+            fi
+            sleep 30
+          done
+          [ "${success}" = "1" ] || { echo "Vast/ComfyUI activation did not reach production readiness" >&2; exit 1; }
+
+          jq '{ok:true, runtime:.runtime, doctor:.doctor}' /tmp/bootstrap.json > /tmp/runtime-activation-evidence.json
+          jq '{ok:true, production_region, comfyui_configured, contracts:[.contracts[]? | select(.id == "abstract-broll-t2v")]}' /tmp/registry.json > /tmp/registry-activation-evidence.json
+
+      - name: Delete one-shot task
+        if: always()
+        env:
+          TASK_UUID: ${{ steps.task.outputs.task_uuid }}
+        run: |
+          if [ -n "${TASK_UUID:-}" ]; then
+            curl --silent --show-error --request DELETE \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/scheduled-tasks/${TASK_UUID}" \
+              >/dev/null || true
+          fi
+          rm -f /tmp/paradigm-admin-secret /tmp/create-task.json
+
+      - name: Upload sanitized readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vast-runtime-activation-evidence
+          path: |
+            /tmp/runtime-activation-evidence.json
+            /tmp/registry-activation-evidence.json
+          if-no-files-found: warn
+          retention-days: 14
