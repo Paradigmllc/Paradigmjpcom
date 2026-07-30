@@ -1,5 +1,6 @@
 name: Probe Current ComfyUI Port
 
+# Snapshot 2: compare the authenticated proxy and template ComfyUI ports.
 on:
   pull_request:
     paths:
@@ -14,19 +15,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Probe authenticated proxy without credentials
+      - name: Probe current exposed services
         run: |
           set -u
-          code="$(curl --silent --show-error --connect-timeout 5 --max-time 15 \
-            --output /tmp/body --dump-header /tmp/headers --write-out '%{http_code}' \
-            http://95.86.4.209:40612/__video_factory/status 2>/tmp/curl-error || true)"
-          jq -n \
-            --arg checked_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg code "$code" \
-            --arg error "$(tail -c 300 /tmp/curl-error 2>/dev/null || true)" \
-            --arg body "$(head -c 300 /tmp/body 2>/dev/null || true)" \
-            '{checked_at:$checked_at,http_code:$code,error:$error,body:$body}' \
-            | tee /tmp/comfyui-port-probe.json
+          probe() {
+            name="$1"; url="$2"
+            code="$(curl --silent --show-error --connect-timeout 5 --max-time 15 \
+              --output "/tmp/${name}.body" --dump-header "/tmp/${name}.headers" \
+              --write-out '%{http_code}' "$url" 2>"/tmp/${name}.error" || true)"
+            jq -n \
+              --arg name "$name" \
+              --arg url "$url" \
+              --arg code "$code" \
+              --arg error "$(tail -c 300 "/tmp/${name}.error" 2>/dev/null || true)" \
+              --arg body "$(head -c 300 "/tmp/${name}.body" 2>/dev/null || true)" \
+              '{name:$name,url:$url,http_code:$code,error:$error,body:$body}'
+          }
+          {
+            printf '{"checked_at":"%s","probes":[' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            probe proxy http://95.86.4.209:40612/__video_factory/status
+            printf ','
+            probe comfyui http://95.86.4.209:40556/system_stats
+            printf ']}'
+          } | jq . | tee /tmp/comfyui-port-probe.json
       - uses: actions/upload-artifact@v4
         with:
           name: current-comfyui-port-probe
