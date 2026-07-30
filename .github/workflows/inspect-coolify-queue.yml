@@ -31,8 +31,10 @@ jobs:
           }
           get "${API}/deployments" > /tmp/deployments.raw.json
           get "${API}/applications/${PARADIGM_APP_UUID}" > /tmp/application.raw.json
+          jq '[.[]? | {id,deployment_uuid,status,commit,created_at,updated_at,started_at,finished_at,horizon_job_id,horizon_job_worker,current_process_id,application_id:(.application.id // .application_id // null),application_uuid:(.application.uuid // .application_uuid // .resource_uuid // null),application_name:(.application.name // null)}]' /tmp/deployments.raw.json > /tmp/coolify-all-deployments.json
           jq --arg app "${PARADIGM_APP_UUID}" '[.[]? | select((.application.uuid // .application_uuid // .resource_uuid // "") == $app or ((.application.id // .application_id // 0) == 2)) | {id,deployment_uuid,status,commit,created_at,updated_at,started_at,finished_at,horizon_job_id,horizon_job_worker,current_process_id,application:{id:.application.id,uuid:.application.uuid,name:.application.name,status:.application.status}}]' /tmp/deployments.raw.json > /tmp/coolify-queue.json
           jq '{id,uuid,name,status,git_commit_sha,updated_at,server_status:(.destination.server.status // null),server_usable:(.destination.server.settings.is_usable // null)}' /tmp/application.raw.json > /tmp/coolify-application.json
+          cat /tmp/coolify-all-deployments.json
           cat /tmp/coolify-queue.json
           cat /tmp/coolify-application.json
       - name: Upload sanitized inspection
@@ -40,6 +42,7 @@ jobs:
         with:
           name: coolify-queue-inspection
           path: |
+            /tmp/coolify-all-deployments.json
             /tmp/coolify-queue.json
             /tmp/coolify-application.json
           retention-days: 1
