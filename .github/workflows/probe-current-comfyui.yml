@@ -1,0 +1,34 @@
+name: Probe Current ComfyUI Port
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/probe-current-comfyui.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe authenticated proxy without credentials
+        run: |
+          set -u
+          code="$(curl --silent --show-error --connect-timeout 5 --max-time 15 \
+            --output /tmp/body --dump-header /tmp/headers --write-out '%{http_code}' \
+            http://95.86.4.209:40612/__video_factory/status 2>/tmp/curl-error || true)"
+          jq -n \
+            --arg checked_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg code "$code" \
+            --arg error "$(tail -c 300 /tmp/curl-error 2>/dev/null || true)" \
+            --arg body "$(head -c 300 /tmp/body 2>/dev/null || true)" \
+            '{checked_at:$checked_at,http_code:$code,error:$error,body:$body}' \
+            | tee /tmp/comfyui-port-probe.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: current-comfyui-port-probe
+          path: /tmp/comfyui-port-probe.json
+          retention-days: 1
