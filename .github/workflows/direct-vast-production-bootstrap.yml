@@ -117,40 +117,40 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           path = Path('scripts/ops/direct_vast_production_bootstrap.py')
           text = path.read_text(encoding='utf-8')
 
-          old = 'request = urllib.request.Request(url, data=body, method=method)'
-          new = 'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/1.0"})'
-          if old not in text:
-              raise SystemExit('network compatibility patch target not found')
-          text = text.replace(old, new, 1)
+          old_request = 'request = urllib.request.Request(url, data=body, method=method)'
+          new_request = 'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/1.0"})'
+          if old_request in text:
+              text = text.replace(old_request, new_request, 1)
 
           old_secret = 'secret = load_admin_secret()'
           new_secret = 'secret = first_string(os.environ.get("PARADIGM_ADMIN_SECRET")) or load_admin_secret()'
-          if old_secret not in text:
-              raise SystemExit('admin secret patch target not found')
-          text = text.replace(old_secret, new_secret, 1)
+          if old_secret in text:
+              text = text.replace(old_secret, new_secret, 1)
 
-          old_query = '''        query = urllib.parse.urlencode(
-              {
-                  "select_filters": json.dumps(filters, separators=(",", ":")),
-                  "select_cols": json.dumps(["*"]),
-                  "order_by": "count_created",
-              }
-          )'''
-          new_query = '''        query = urllib.parse.urlencode(
-              {"select_filters": json.dumps(filters, separators=(",", ":"))}
-          )'''
-          if old_query not in text:
-              raise SystemExit('Vast template query patch target not found')
-          text = text.replace(old_query, new_query, 1)
+          text = text.replace(
+              '                "select_cols": json.dumps(["*"]),\n'
+              '                "order_by": "count_created",\n',
+              '',
+          )
 
           old_runtype = '            "runtype": "ssh_direct",'
           new_runtype = '            "runtype": "ssh",\n            "ssh_direct": True,'
-          if old_runtype not in text:
-              raise SystemExit('Vast runtype patch target not found')
-          text = text.replace(old_runtype, new_runtype, 1)
+          if old_runtype in text:
+              text = text.replace(old_runtype, new_runtype, 1)
+
+          required = [
+              'Mozilla/5.0 ParadigmVideoFactory/1.0',
+              'first_string(os.environ.get("PARADIGM_ADMIN_SECRET"))',
+              '"runtype": "ssh",',
+              '"ssh_direct": True,',
+          ]
+          missing = [value for value in required if value not in text]
+          if missing:
+              raise SystemExit(f'compatibility patch incomplete: {missing}')
 
           path.write_text(text, encoding='utf-8')
           PY
