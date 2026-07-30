@@ -1,9 +1,7 @@
 name: Media OS Source Snapshot
 
 on:
-  push:
-    branches:
-      - codex/japan-market-media-os
+  pull_request:
     paths:
       - .github/workflows/media-os-source-snapshot.yml
   workflow_dispatch:
