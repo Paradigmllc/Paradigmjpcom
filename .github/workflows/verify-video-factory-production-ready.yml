@@ -70,10 +70,10 @@ jobs:
               exit 1
             fi
           }
-          fetch '/api/video-factory/v1/console/bootstrap' /tmp/factory-bootstrap.json
-          fetch '/api/video-factory/v1/runtime' /tmp/factory-runtime.json
-          fetch '/api/video-factory/v1/registry' /tmp/factory-registry.json
-          fetch '/api/video-factory/v1/vast/instances' /tmp/factory-instances.json
+          fetch '/v1/console/bootstrap' /tmp/factory-bootstrap.json
+          fetch '/v1/runtime' /tmp/factory-runtime.json
+          fetch '/v1/registry' /tmp/factory-registry.json
+          fetch '/v1/vast/instances' /tmp/factory-instances.json
 
       - name: Assert real production readiness
         run: |
