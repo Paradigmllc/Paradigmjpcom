@@ -1,6 +1,6 @@
 name: Inspect Vast Activation
 
-# Snapshot trigger: 2
+# Snapshot trigger: 3 — include authenticated ComfyUI readiness probe without exposing secrets.
 on:
   pull_request:
     paths:
@@ -65,18 +65,120 @@ jobs:
             sleep 5
           done
           exit 1
-      - name: Capture sanitized Vast instance state
+      - name: Capture sanitized Vast and ComfyUI state
         run: |
           set -euo pipefail
-          key="$(cat /tmp/vast-key)"
-          curl -fsS --max-time 30 \
-            -A 'Mozilla/5.0 ParadigmVideoFactory/1.0' \
-            -H "Authorization: Bearer ${key}" \
-            -H 'Accept: application/json' \
-            https://console.vast.ai/api/v1/instances/ > /tmp/vast-instances.raw.json
-          jq '{checked_at: now | todateiso8601, instances: [(.instances // .results // . // [])[]? | {id, label, actual_status, intended_status, status, cur_state, status_msg, gpu_name, gpu_ram, dph_total, public_ipaddr, ports, start_date, duration, image_uuid, template_hash_id}]}' \
-            /tmp/vast-instances.raw.json > /tmp/vast-activation-status.json
-          cat /tmp/vast-activation-status.json
+          python3 - <<'PY'
+          import json
+          import re
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          key = Path('/tmp/vast-key').read_text().strip()
+          request = urllib.request.Request(
+              'https://console.vast.ai/api/v1/instances/',
+              headers={
+                  'Authorization': f'Bearer {key}',
+                  'Accept': 'application/json',
+                  'User-Agent': 'Mozilla/5.0 ParadigmVideoFactory/1.0',
+              },
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              raw = json.load(response)
+          rows = raw.get('instances', raw.get('results', raw)) if isinstance(raw, dict) else raw
+          rows = rows if isinstance(rows, list) else []
+
+          def find_proxy_key(value):
+              if isinstance(value, dict):
+                  direct = value.get('COMFY_PROXY_KEY')
+                  if isinstance(direct, str) and direct:
+                      return direct
+                  if value.get('key') == 'COMFY_PROXY_KEY' and isinstance(value.get('value'), str):
+                      return value['value']
+                  for child in value.values():
+                      found = find_proxy_key(child)
+                      if found:
+                          return found
+              elif isinstance(value, list):
+                  for child in value:
+                      found = find_proxy_key(child)
+                      if found:
+                          return found
+              elif isinstance(value, str):
+                  match = re.search(r'(?:^|[\s,;"\'])COMFY_PROXY_KEY=([A-Fa-f0-9]{32,128})', value)
+                  if match:
+                      return match.group(1)
+              return None
+
+          def host_port(instance):
+              ports = instance.get('ports')
+              if not isinstance(ports, dict):
+                  return None
+              value = ports.get('18189/tcp') or ports.get('18189') or ports.get('8189/tcp') or ports.get('8189')
+              if isinstance(value, list):
+                  value = value[0] if value else None
+              if isinstance(value, dict):
+                  value = value.get('HostPort') or value.get('host_port') or value.get('port')
+              return str(value) if value else None
+
+          sanitized = []
+          probe = {'attempted': False, 'proxy_key_discovered': False, 'ready': False}
+          for item in rows:
+              if not isinstance(item, dict):
+                  continue
+              sanitized.append({
+                  field: item.get(field)
+                  for field in (
+                      'id', 'label', 'actual_status', 'intended_status', 'status', 'cur_state',
+                      'status_msg', 'gpu_name', 'gpu_ram', 'dph_total', 'public_ipaddr',
+                      'ports', 'start_date', 'duration', 'image_uuid', 'template_hash_id'
+                  )
+              })
+              if 'paradigm-comfyui-wan22' not in str(item.get('label') or ''):
+                  continue
+              proxy_key = find_proxy_key(item)
+              port = host_port(item)
+              host = item.get('public_ipaddr') or item.get('public_ip') or item.get('ssh_host')
+              probe['proxy_key_discovered'] = bool(proxy_key)
+              if not (proxy_key and port and host):
+                  continue
+              probe['attempted'] = True
+              url = f'http://{host}:{port}/__video_factory/status'
+              status_request = urllib.request.Request(
+                  url,
+                  headers={
+                      'Authorization': f'Bearer {proxy_key}',
+                      'X-API-Key': proxy_key,
+                      'Accept': 'application/json',
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(status_request, timeout=20) as response:
+                      status = json.load(response)
+                  probe.update({
+                      'http_status': 200,
+                      'ready': status.get('ready') is True,
+                      'phase': status.get('phase'),
+                      'detail': str(status.get('detail') or '')[-300:],
+                      'missing_nodes': status.get('missing_nodes', []),
+                      'model_count': len(status.get('models', [])) if isinstance(status.get('models'), list) else None,
+                      'workflow_ids': sorted((status.get('workflows') or {}).keys()) if isinstance(status.get('workflows'), dict) else [],
+                  })
+              except urllib.error.HTTPError as exc:
+                  probe.update({'http_status': exc.code, 'error': f'HTTP {exc.code}'})
+              except Exception as exc:
+                  probe.update({'error': str(exc)[-300:]})
+
+          output = {
+              'checked_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+              'instances': sanitized,
+              'comfyui_probe': probe,
+          }
+          Path('/tmp/vast-activation-status.json').write_text(json.dumps(output, indent=2) + '\n')
+          print(json.dumps(output, indent=2))
+          PY
       - name: Remove key material
         if: always()
         run: shred -u /tmp/vast-key /tmp/vast-inspect-private.pem 2>/dev/null || true
