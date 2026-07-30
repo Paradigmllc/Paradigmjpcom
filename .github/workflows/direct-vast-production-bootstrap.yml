@@ -40,7 +40,7 @@ jobs:
       - name: Upload one-time public key
         uses: actions/upload-artifact@v4
         with:
-          name: direct-vast-bootstrap-public-key
+          name: direct-vast-bootstrap-public-key-${{ github.run_id }}
           path: /tmp/vast-handoff-public.pem
           retention-days: 1
           if-no-files-found: error
@@ -48,7 +48,8 @@ jobs:
       - name: Wait for encrypted credential and decrypt in memory
         run: |
           set -euo pipefail
-          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/.ops/vast-api-key.ciphertext?ref=${HEAD_REF}"
+          cipher_path=".ops/vast-api-key-${GITHUB_RUN_ID}.ciphertext"
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/${cipher_path}?ref=${HEAD_REF}"
           for attempt in $(seq 1 240); do
             code="$(curl --silent --show-error --output /tmp/vast-cipher-response.json \
               --write-out '%{http_code}' --max-time 20 \
@@ -84,8 +85,49 @@ jobs:
           echo 'Timed out waiting for the encrypted Vast.ai credential' >&2
           exit 1
 
-      - name: Validate bootstrap runner syntax
-        run: python3 -m py_compile scripts/ops/direct_vast_production_bootstrap.py
+      - name: Read Paradigm admin session secret without exposing it
+        run: |
+          set -euo pipefail
+          api="${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs"
+          curl --fail-with-body --silent --show-error \
+            --user-agent 'Paradigm-VideoFactory-Bootstrap/1.0' \
+            --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            --header 'Accept: application/json' \
+            "$api" > /tmp/coolify-envs.json
+          secret="$(jq -er '
+            def secret_value($name):
+              [ .[]?
+                | select((.key // .name // "") == $name and (.is_preview // false) == false)
+                | (.real_value // .value // "")
+                | select(type == "string" and length >= 16 and . != "********" and . != "***")
+              ][0] // empty;
+            secret_value("ADMIN_SESSION_SECRET")
+              // secret_value("ADMIN_PASSWORD")
+              // secret_value("PAYLOAD_SECRET")
+          ' /tmp/coolify-envs.json)"
+          [ -n "$secret" ] || { echo 'No usable Paradigm admin session secret was returned by Coolify' >&2; exit 1; }
+          echo "::add-mask::$secret"
+          echo "PARADIGM_ADMIN_SECRET=$secret" >> "$GITHUB_ENV"
+          rm -f /tmp/coolify-envs.json
+
+      - name: Apply runner network compatibility and validate syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/ops/direct_vast_production_bootstrap.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'request = urllib.request.Request(url, data=body, method=method)'
+          new = 'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/1.0"})'
+          if old not in text:
+              raise SystemExit('network compatibility patch target not found')
+          text = text.replace(old, new, 1)
+          old_secret = 'secret = load_admin_secret()'
+          new_secret = 'secret = first_string(os.environ.get("PARADIGM_ADMIN_SECRET")) or load_admin_secret()'
+          if old_secret not in text:
+              raise SystemExit('admin secret patch target not found')
+          path.write_text(text.replace(old_secret, new_secret, 1), encoding='utf-8')
+          PY
+          python3 -m py_compile scripts/ops/direct_vast_production_bootstrap.py
 
       - name: Provision and verify production video infrastructure
         run: python3 scripts/ops/direct_vast_production_bootstrap.py
@@ -94,7 +136,7 @@ jobs:
         if: always()
         run: |
           shred -u /tmp/vast-handoff-private.pem "${VAST_KEY_PATH}" 2>/dev/null || true
-          rm -f /tmp/vast-handoff-public.pem /tmp/vast-cipher-response.json /tmp/vast-ciphertext.b64 /tmp/vast-ciphertext.bin
+          rm -f /tmp/vast-handoff-public.pem /tmp/vast-cipher-response.json /tmp/vast-ciphertext.b64 /tmp/vast-ciphertext.bin /tmp/coolify-envs.json
 
       - name: Upload sanitized production evidence
         if: always()
