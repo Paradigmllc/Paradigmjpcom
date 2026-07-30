@@ -89,7 +89,7 @@ jobs:
           set -euo pipefail
           api="${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs"
           curl --fail-with-body --silent --show-error \
-            --user-agent 'Paradigm-VideoFactory-Bootstrap/2.0' \
+            --user-agent 'Paradigm-VideoFactory-Bootstrap/2.1' \
             --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
             --header 'Accept: application/json' \
             "$api" > /tmp/coolify-envs.json
@@ -118,7 +118,11 @@ jobs:
           replacements = [
               (
                   'request = urllib.request.Request(url, data=body, method=method)',
-                  'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/2.0"})',
+                  'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/2.1"})',
+              ),
+              (
+                  '    except urllib.error.URLError as error:\n        raise BootstrapError(f"{method} {url} failed: {error}") from error',
+                  '    except Exception as error:\n        raise BootstrapError(f"{method} {url} failed: {error}") from error',
               ),
               (
                   'secret = load_admin_secret()',
