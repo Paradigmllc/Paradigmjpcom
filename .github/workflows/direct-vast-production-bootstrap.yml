@@ -110,22 +110,46 @@ jobs:
           echo "PARADIGM_ADMIN_SECRET=$secret" >> "$GITHUB_ENV"
           rm -f /tmp/coolify-envs.json
 
-      - name: Apply runner network compatibility and validate syntax
+      - name: Apply current Vast API compatibility and validate syntax
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path('scripts/ops/direct_vast_production_bootstrap.py')
           text = path.read_text(encoding='utf-8')
+
           old = 'request = urllib.request.Request(url, data=body, method=method)'
           new = 'request = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": "Mozilla/5.0 ParadigmVideoFactory/1.0"})'
           if old not in text:
               raise SystemExit('network compatibility patch target not found')
           text = text.replace(old, new, 1)
+
           old_secret = 'secret = load_admin_secret()'
           new_secret = 'secret = first_string(os.environ.get("PARADIGM_ADMIN_SECRET")) or load_admin_secret()'
           if old_secret not in text:
               raise SystemExit('admin secret patch target not found')
-          path.write_text(text.replace(old_secret, new_secret, 1), encoding='utf-8')
+          text = text.replace(old_secret, new_secret, 1)
+
+          old_query = '''        query = urllib.parse.urlencode(
+            {
+                "select_filters": json.dumps(filters, separators=(",", ":")),
+                "select_cols": json.dumps(["*"]),
+                "order_by": "count_created",
+            }
+        )'''
+          new_query = '''        query = urllib.parse.urlencode(
+            {"select_filters": json.dumps(filters, separators=(",", ":"))}
+        )'''
+          if old_query not in text:
+              raise SystemExit('Vast template query patch target not found')
+          text = text.replace(old_query, new_query, 1)
+
+          old_runtype = '            "runtype": "ssh_direct",'
+          new_runtype = '            "runtype": "ssh",\n            "ssh_direct": True,'
+          if old_runtype not in text:
+              raise SystemExit('Vast runtype patch target not found')
+          text = text.replace(old_runtype, new_runtype, 1)
+
+          path.write_text(text, encoding='utf-8')
           PY
           python3 -m py_compile scripts/ops/direct_vast_production_bootstrap.py
 
