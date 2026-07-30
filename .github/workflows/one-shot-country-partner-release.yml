@@ -49,6 +49,7 @@ jobs:
           grep -q 'video_factory.web:app' docker-entrypoint.sh
           grep -q 'legacy Traefik route is synchronized' docker-entrypoint.sh
           grep -q '/mnt/coolify-proxy-dynamic' scripts/ops/ensure-video-factory-storage.sh
+          grep -q 'Cancel stale Paradigm deployments' .github/workflows/one-shot-country-partner-release.yml
           grep -q 'services/video-factory' Dockerfile
 
   deploy:
@@ -85,6 +86,62 @@ jobs:
       - name: Configure durable production routing
         run: node scripts/ops/ensure-production-routing.mjs
 
+      - name: Cancel stale Paradigm deployments
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          coolify_get() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "$1"
+          }
+          coolify_post() {
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "$1"
+          }
+          matching_deployments() {
+            coolify_get "${API}/deployments" | jq -r --arg app "${PARADIGM_APP_UUID}" '
+              .[]?
+              | select((.status // "") == "queued" or (.status // "") == "in_progress")
+              | select(
+                  (.application.uuid // .application_uuid // .resource_uuid // "") == $app
+                  or ((.application.id // .application_id // 0) == 2)
+                )
+              | (.deployment_uuid // .uuid // empty)
+            '
+          }
+
+          mapfile -t stale < <(matching_deployments)
+          if [ "${#stale[@]}" -eq 0 ]; then
+            echo "No stale Paradigm deployment is holding the Coolify queue"
+          else
+            printf 'Cancelling %s stale Paradigm deployment(s)\n' "${#stale[@]}"
+            for deployment in "${stale[@]}"; do
+              [ -n "${deployment}" ] || continue
+              echo "Cancelling ${deployment}"
+              coolify_post "${API}/deployments/${deployment}/cancel" \
+                | tee -a /tmp/coolify-stale-cancel.jsonl || true
+            done
+          fi
+
+          for attempt in $(seq 1 30); do
+            mapfile -t remaining < <(matching_deployments)
+            if [ "${#remaining[@]}" -eq 0 ]; then
+              echo "Coolify deployment queue is clear for ${PARADIGM_APP_UUID}"
+              exit 0
+            fi
+            printf '[%s/30] waiting for stale deployment cancellation: %s\n' \
+              "${attempt}" "${remaining[*]}"
+            sleep 2
+          done
+
+          echo "Stale Paradigm deployments remain after cancellation" >&2
+          exit 1
+
       - name: Deploy latest main through Coolify
         run: |
           set -euo pipefail
@@ -95,17 +152,32 @@ jobs:
               --header "Accept: application/json" \
               "$1"
           }
+          coolify_post() {
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "$1"
+          }
 
-          response="$(coolify_get "${API}/deploy?uuid=${PARADIGM_APP_UUID}&force=true")"
-          printf '%s\n' "$response" | tee /tmp/coolify-deploy-request.json
-          deployment_uuid="$(printf '%s' "$response" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid')"
+          request_deployment() {
+            local response
+            response="$(coolify_get "${API}/deploy?uuid=${PARADIGM_APP_UUID}&force=true")"
+            printf '%s\n' "$response" | tee /tmp/coolify-deploy-request.json
+            printf '%s' "$response" | jq -er '.deployments[0].deployment_uuid // .deployment_uuid'
+          }
+
+          deployment_uuid="$(request_deployment)"
           echo "deployment_uuid=${deployment_uuid}" >> "$GITHUB_ENV"
+          queued_without_worker=0
+          retried=0
 
-          for attempt in $(seq 1 300); do
+          for attempt in $(seq 1 450); do
             detail="$(coolify_get "${API}/deployments/${deployment_uuid}")"
             status="$(printf '%s' "$detail" | jq -r '.status // "unknown"')"
             commit="$(printf '%s' "$detail" | jq -r '.commit // "unknown"')"
-            printf '[%s/300] status=%s commit=%s\n' "$attempt" "$status" "$commit" | tee -a /tmp/coolify-deploy.log
+            worker="$(printf '%s' "$detail" | jq -r '.horizon_job_worker // .horizon_job_id // "none"')"
+            printf '[%s/450] status=%s commit=%s worker=%s\n' "$attempt" "$status" "$commit" "$worker" | tee -a /tmp/coolify-deploy.log
             printf '%s\n' "$detail" > /tmp/coolify-deployment-latest.json
             case "$status" in
               finished|success)
@@ -115,7 +187,28 @@ jobs:
                 printf '%s\n' "$detail" >&2
                 exit 1
                 ;;
+              queued)
+                if [ "$worker" = "none" ]; then
+                  queued_without_worker=$((queued_without_worker + 1))
+                else
+                  queued_without_worker=0
+                fi
+                ;;
+              *)
+                queued_without_worker=0
+                ;;
             esac
+
+            if [ "$queued_without_worker" -ge 45 ] && [ "$retried" -eq 0 ]; then
+              echo "Deployment ${deployment_uuid} remained queued without a Horizon worker; cancelling and retrying once"
+              coolify_post "${API}/deployments/${deployment_uuid}/cancel" \
+                | tee -a /tmp/coolify-stale-cancel.jsonl || true
+              sleep 5
+              deployment_uuid="$(request_deployment)"
+              echo "deployment_uuid=${deployment_uuid}" >> "$GITHUB_ENV"
+              queued_without_worker=0
+              retried=1
+            fi
             sleep 8
           done
 
@@ -222,6 +315,7 @@ jobs:
           name: paradigm-production-deployment
           path: |
             /tmp/application-routing-after.json
+            /tmp/coolify-stale-cancel.jsonl
             /tmp/coolify-deploy-request.json
             /tmp/coolify-deploy.log
             /tmp/coolify-deployment-latest.json
