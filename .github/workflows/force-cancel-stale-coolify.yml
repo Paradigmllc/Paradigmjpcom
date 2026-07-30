@@ -1,0 +1,60 @@
+name: Force Cancel Stale Coolify Deployments
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/force-cancel-stale-coolify.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cancel every queued or in-progress Paradigm deployment
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          auth=(-H "Authorization: Bearer ${COOLIFY_API_TOKEN}" -H 'Accept: application/json')
+          history="$(curl --fail-with-body --silent --show-error "${auth[@]}" \
+            "${API}/deployments/applications/${PARADIGM_APP_UUID}?skip=0&take=100")"
+          printf '%s\n' "$history" > /tmp/history-before.json
+          mapfile -t stale < <(printf '%s' "$history" | jq -r '
+            (.deployments // .data // . // [])[]?
+            | select((.status // "") == "queued" or (.status // "") == "in_progress")
+            | (.deployment_uuid // .uuid // empty)
+          ')
+          printf 'Found %s stale deployment(s)\n' "${#stale[@]}"
+          : > /tmp/cancel-results.jsonl
+          for uuid in "${stale[@]}"; do
+            [ -n "$uuid" ] || continue
+            code="$(curl --silent --show-error --output /tmp/cancel-body.json \
+              --write-out '%{http_code}' --request POST "${auth[@]}" \
+              "${API}/deployments/${uuid}/cancel" || true)"
+            jq -cn --arg uuid "$uuid" --arg code "$code" --rawfile body /tmp/cancel-body.json \
+              '{deployment_uuid:$uuid,http_code:$code,body:$body}' | tee -a /tmp/cancel-results.jsonl
+          done
+          sleep 5
+          curl --fail-with-body --silent --show-error "${auth[@]}" \
+            "${API}/deployments/applications/${PARADIGM_APP_UUID}?skip=0&take=100" \
+            > /tmp/history-after.json
+          jq '{remaining:[(.deployments // .data // . // [])[]? | select((.status // "") == "queued" or (.status // "") == "in_progress") | {deployment_uuid,status,server_id,current_process_id,horizon_job_id,horizon_job_worker}]}' /tmp/history-after.json
+      - name: Upload cancellation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: force-cancel-stale-coolify
+          path: |
+            /tmp/history-before.json
+            /tmp/cancel-results.jsonl
+            /tmp/history-after.json
+          retention-days: 1
+          if-no-files-found: warn
