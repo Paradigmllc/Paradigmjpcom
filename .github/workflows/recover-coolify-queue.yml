@@ -1,0 +1,71 @@
+name: Recover Coolify Deployment Queue
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/recover-coolify-queue.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cancel every stale deployment in application history
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          request() {
+            local method="$1" url="$2" output status
+            output="$(mktemp)"
+            status="$(curl --silent --show-error --output "$output" --write-out '%{http_code}' \
+              --request "$method" \
+              --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "$url" || true)"
+            jq -cn --arg method "$method" --arg url "$url" --arg status "$status" --rawfile body "$output" \
+              '{method:$method,url:$url,status:($status|tonumber? // 0),body:($body|fromjson? // $body)}' \
+              | tee -a /tmp/coolify-recovery.jsonl
+            cat "$output"
+            rm -f "$output"
+            [[ "$status" =~ ^2 ]]
+          }
+
+          request GET "${API}/deployments/applications/${PARADIGM_APP_UUID}?skip=0&take=50" > /tmp/history-before.json
+          mapfile -t stale < <(jq -r '.deployments[]? | select(.status == "queued" or .status == "in_progress") | .deployment_uuid' /tmp/history-before.json)
+          printf 'Found %s stale deployment(s)\n' "${#stale[@]}"
+          for deployment in "${stale[@]}"; do
+            [ -n "$deployment" ] || continue
+            request POST "${API}/deployments/${deployment}/cancel" > "/tmp/cancel-${deployment}.json" || true
+          done
+
+          for attempt in $(seq 1 30); do
+            request GET "${API}/deployments/applications/${PARADIGM_APP_UUID}?skip=0&take=50" > /tmp/history-after.json
+            remaining="$(jq '[.deployments[]? | select(.status == "queued" or .status == "in_progress")] | length' /tmp/history-after.json)"
+            echo "[$attempt/30] remaining stale deployments: $remaining"
+            if [ "$remaining" -eq 0 ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Some deployments could not be cancelled" >&2
+          exit 1
+      - name: Upload recovery evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coolify-queue-recovery
+          path: |
+            /tmp/coolify-recovery.jsonl
+            /tmp/history-before.json
+            /tmp/history-after.json
+            /tmp/cancel-*.json
+          retention-days: 1
