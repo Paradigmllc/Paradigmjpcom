@@ -1,6 +1,7 @@
 name: Direct Vast Production Bootstrap
 
 # Run-scoped handoff: every workflow attempt receives a fresh RSA key and ciphertext path.
+# This retry includes the current Coolify secret handoff and Vast API compatibility fixes.
 on:
   pull_request:
     paths:
@@ -131,15 +132,15 @@ jobs:
           text = text.replace(old_secret, new_secret, 1)
 
           old_query = '''        query = urllib.parse.urlencode(
-            {
-                "select_filters": json.dumps(filters, separators=(",", ":")),
-                "select_cols": json.dumps(["*"]),
-                "order_by": "count_created",
-            }
-        )'''
+              {
+                  "select_filters": json.dumps(filters, separators=(",", ":")),
+                  "select_cols": json.dumps(["*"]),
+                  "order_by": "count_created",
+              }
+          )'''
           new_query = '''        query = urllib.parse.urlencode(
-            {"select_filters": json.dumps(filters, separators=(",", ":"))}
-        )'''
+              {"select_filters": json.dumps(filters, separators=(",", ":"))}
+          )'''
           if old_query not in text:
               raise SystemExit('Vast template query patch target not found')
           text = text.replace(old_query, new_query, 1)
