@@ -2,6 +2,7 @@ name: Direct Vast Production Bootstrap
 
 # Run-scoped handoff: every workflow attempt receives a fresh RSA key and ciphertext path.
 # This retry includes the current Coolify secret handoff and Vast API compatibility fixes.
+# Retry after validating the owner-supplied credential handoff.
 on:
   pull_request:
     paths:
@@ -92,7 +93,7 @@ jobs:
           set -euo pipefail
           api="${COOLIFY_API_URL%/}/api/v1/applications/${PARADIGM_APP_UUID}/envs"
           curl --fail-with-body --silent --show-error \
-            --user-agent 'Paradigm-VideoFactory-Bootstrap/1.0' \
+            --user-agent 'Mozilla/5.0 Paradigm-VideoFactory-Bootstrap/1.0' \
             --header "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
             --header 'Accept: application/json' \
             "$api" > /tmp/coolify-envs.json
