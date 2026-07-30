@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: direct-vast-production-bootstrap-v2
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   bootstrap:
