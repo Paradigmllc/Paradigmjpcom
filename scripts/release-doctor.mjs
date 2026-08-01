@@ -292,11 +292,25 @@ function checkStaticReleaseRules() {
     "revoke all on table public.video_factory_engine_events from anon, authenticated",
     "to service_role",
   ]
+  const ossExecutionMigrationPath = "supabase/migrations/20260801114845_video_factory_oss_execution_targets.sql"
+  const ossExecutionMigration = fs.existsSync(ossExecutionMigrationPath)
+    ? fs.readFileSync(ossExecutionMigrationPath, "utf8")
+    : ""
+  const ossExecutionMarkers = [
+    "execution_target",
+    "resolved_adapter",
+    "revoke all on table public.video_factory_engine_profiles from anon, authenticated",
+    "to service_role",
+  ]
   if (
     engineProfilesMigration &&
     engineProfileSecurityMarkers.every((marker) => engineProfilesMigration.toLowerCase().includes(marker.toLowerCase())) &&
     noLoginDeploy.includes("20260801091559_video_factory_engine_profiles.sql") &&
-    noLoginDeploy.includes("applyVideoFactoryEngineProfilesMigration")
+    noLoginDeploy.includes("applyVideoFactoryEngineProfilesMigration") &&
+    ossExecutionMigration &&
+    ossExecutionMarkers.every((marker) => ossExecutionMigration.toLowerCase().includes(marker.toLowerCase())) &&
+    noLoginDeploy.includes("20260801114845_video_factory_oss_execution_targets.sql") &&
+    noLoginDeploy.includes("applyVideoFactoryOssExecutionTargetsMigration")
   ) {
     pass("Video Factory engine catalog/events have RLS and release migration wiring")
   } else {

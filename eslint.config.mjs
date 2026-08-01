@@ -27,6 +27,8 @@ export default defineConfig([
   globalIgnores([
     ".next/**",
     "node_modules/**",
+    "**/.venv/**",
+    "services/video-factory/workspace/**",
     ".agents/**",
     ".codex/**",
     "test-results/**",

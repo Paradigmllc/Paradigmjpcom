@@ -11,9 +11,11 @@ from urllib.parse import urlparse
 
 @dataclass(frozen=True)
 class RuntimeConfig:
-    schema_version: int = 2
+    schema_version: int = 3
     comfyui_base_url: str | None = None
     comfyui_api_key: str | None = None
+    oss_worker_base_url: str | None = None
+    oss_worker_api_key: str | None = None
     vast_api_key: str | None = None
     vast_template_hash: str | None = None
     vast_instance_id: int | None = None
@@ -25,6 +27,8 @@ class RuntimeConfig:
             "schema_version": self.schema_version,
             "comfyui_base_url": self.comfyui_base_url,
             "comfyui_api_key_configured": bool(self.comfyui_api_key),
+            "oss_worker_base_url": self.oss_worker_base_url,
+            "oss_worker_api_key_configured": bool(self.oss_worker_api_key),
             "vast_api_key_configured": bool(self.vast_api_key),
             "vast_template_hash": self.vast_template_hash,
             "vast_instance_id": self.vast_instance_id,
@@ -37,7 +41,7 @@ def runtime_config_path(workspace: Path) -> Path:
     return workspace / "config" / "runtime.json"
 
 
-def _normalize_url(value: str | None) -> str | None:
+def _normalize_url(value: str | None, *, label: str) -> str | None:
     if value is None:
         return None
     normalized = value.strip().rstrip("/")
@@ -45,9 +49,9 @@ def _normalize_url(value: str | None) -> str | None:
         return None
     parsed = urlparse(normalized)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise ValueError("ComfyUI URL must be an absolute http or https URL")
+        raise ValueError(f"{label} must be an absolute http or https URL")
     if parsed.username or parsed.password:
-        raise ValueError("Credentials must not be embedded in the ComfyUI URL")
+        raise ValueError(f"Credentials must not be embedded in the {label}")
     return normalized
 
 
@@ -63,11 +67,15 @@ def load_runtime_config(workspace: Path) -> RuntimeConfig:
         raise ValueError("Runtime configuration must be a JSON object")
     return RuntimeConfig(
         schema_version=int(payload.get("schema_version", 1)),
-        comfyui_base_url=_normalize_url(payload.get("comfyui_base_url")),
+        comfyui_base_url=_normalize_url(payload.get("comfyui_base_url"), label="ComfyUI URL"),
         comfyui_api_key=(
-            str(payload["comfyui_api_key"])
-            if payload.get("comfyui_api_key")
-            else None
+            str(payload["comfyui_api_key"]) if payload.get("comfyui_api_key") else None
+        ),
+        oss_worker_base_url=_normalize_url(
+            payload.get("oss_worker_base_url"), label="OSS worker URL"
+        ),
+        oss_worker_api_key=(
+            str(payload["oss_worker_api_key"]) if payload.get("oss_worker_api_key") else None
         ),
         vast_api_key=str(payload["vast_api_key"]) if payload.get("vast_api_key") else None,
         vast_template_hash=(
@@ -108,8 +116,19 @@ def update_runtime_config(workspace: Path, updates: dict[str, Any]) -> RuntimeCo
     current = load_runtime_config(workspace)
     values = asdict(current)
     if "comfyui_base_url" in updates:
-        values["comfyui_base_url"] = _normalize_url(updates["comfyui_base_url"])
-    for key in ("comfyui_api_key", "vast_api_key", "vast_template_hash"):
+        values["comfyui_base_url"] = _normalize_url(
+            updates["comfyui_base_url"], label="ComfyUI URL"
+        )
+    if "oss_worker_base_url" in updates:
+        values["oss_worker_base_url"] = _normalize_url(
+            updates["oss_worker_base_url"], label="OSS worker URL"
+        )
+    for key in (
+        "comfyui_api_key",
+        "oss_worker_api_key",
+        "vast_api_key",
+        "vast_template_hash",
+    ):
         if key in updates:
             value = updates[key]
             values[key] = str(value).strip() if value else None
@@ -119,6 +138,6 @@ def update_runtime_config(workspace: Path, updates: dict[str, Any]) -> RuntimeCo
     if "gpu_lifecycle_enabled" in updates:
         value = updates["gpu_lifecycle_enabled"]
         values["gpu_lifecycle_enabled"] = bool(value) if value is not None else None
-    values["schema_version"] = 2
+    values["schema_version"] = 3
     values["updated_at"] = current.updated_at
     return save_runtime_config(workspace, RuntimeConfig(**values))

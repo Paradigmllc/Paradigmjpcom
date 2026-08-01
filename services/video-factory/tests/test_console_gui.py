@@ -37,6 +37,8 @@ def test_console_static_app_and_runtime_secret_masking(
     assert "console-runtime.js" in page.text
     assert "console-engine-catalog.js" in page.text
     assert "console-responsive.css" in page.text
+    assert 'id="oss-worker-url"' in page.text
+    assert 'id="oss-worker-api-key"' in page.text
     lifecycle_script = client.get("/console/console-gpu-lifecycle.js")
     assert lifecycle_script.status_code == 200
     assert "catch {" not in lifecycle_script.text
@@ -83,17 +85,21 @@ def test_console_static_app_and_runtime_secret_masking(
             "vast_template_hash": "template-hash",
             "comfyui_base_url": "https://gpu.example.test:8189",
             "comfyui_api_key": "comfy-secret",
+            "oss_worker_base_url": "https://oss-worker.example.test",
+            "oss_worker_api_key": "worker-secret-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         },
     )
     assert configured.status_code == 200
     serialized = configured.text
     assert "vast-secret" not in serialized
     assert "comfy-secret" not in serialized
+    assert "worker-secret" not in serialized
     assert configured.json()["runtime"]["vast_api_key_configured"] is True
 
     status = client.get("/v1/runtime", headers=_headers())
     assert status.status_code == 200
     assert status.json()["effective_comfyui"]["base_url"] == "https://gpu.example.test:8189"
+    assert status.json()["effective_oss_worker"]["base_url"] == ("https://oss-worker.example.test")
 
     lifecycle = client.get("/v1/gpu-lifecycle", headers=_headers())
     assert lifecycle.status_code == 200
@@ -117,6 +123,15 @@ def test_console_rejects_plain_http_comfyui_in_production(
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Production ComfyUI endpoints must use HTTPS"
+
+    worker_response = client.put(
+        "/v1/runtime",
+        headers=_headers(),
+        json={"oss_worker_base_url": "http://203.0.113.10:8090"},
+    )
+
+    assert worker_response.status_code == 422
+    assert worker_response.json()["detail"] == ("Production OSS worker endpoints must use HTTPS")
 
 
 def test_console_blocks_duplicate_or_destructive_managed_gpu_actions(

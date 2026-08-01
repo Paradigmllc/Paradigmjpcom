@@ -58,6 +58,56 @@ def engine_events(
     return {"ok": True, "events": events}
 
 
+@router.get(
+    "/v1/engine-worker/status",
+    dependencies=[Depends(require_console_api_key)],
+)
+async def engine_worker_status() -> dict[str, object]:
+    settings = Settings.from_env()
+    configured = bool(settings.oss_worker_base_url and settings.oss_worker_api_key)
+    if not configured:
+        return {
+            "ok": True,
+            "configured": False,
+            "reachable": False,
+            "state": "not_configured",
+            "profiles": [],
+        }
+    assert settings.oss_worker_base_url is not None
+    assert settings.oss_worker_api_key is not None
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{settings.oss_worker_base_url}/v1/health",
+                headers={
+                    "Authorization": f"Bearer {settings.oss_worker_api_key}",
+                    "X-API-Key": settings.oss_worker_api_key,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except (httpx.HTTPError, ValueError) as error:
+        logger.warning("Managed OSS worker is not reachable: %s", error)
+        return {
+            "ok": True,
+            "configured": True,
+            "reachable": False,
+            "state": "gpu_stopped_or_worker_unavailable",
+            "profiles": [],
+        }
+    if not isinstance(payload, dict) or payload.get("ok") is not True:
+        raise HTTPException(status_code=502, detail="Managed OSS worker returned invalid health")
+    profiles = payload.get("profiles")
+    return {
+        "ok": True,
+        "configured": True,
+        "reachable": True,
+        "state": "ready",
+        "protocol_version": payload.get("protocol_version"),
+        "profiles": profiles if isinstance(profiles, list) else [],
+    }
+
+
 @router.post(
     "/v1/engine-profiles/sync",
     dependencies=[Depends(require_console_api_key)],

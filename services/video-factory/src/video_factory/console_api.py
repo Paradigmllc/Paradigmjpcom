@@ -72,8 +72,7 @@ def _read_json(path: Path) -> Any | None:
 
 def _project_root(settings: Settings, project_id: str) -> Path:
     if not project_id or any(
-        character not in "abcdefghijklmnopqrstuvwxyz0123456789-"
-        for character in project_id
+        character not in "abcdefghijklmnopqrstuvwxyz0123456789-" for character in project_id
     ):
         raise HTTPException(status_code=422, detail="Invalid project ID")
     root = (settings.workspace / "projects" / project_id).resolve()
@@ -88,10 +87,7 @@ def _project_root(settings: Settings, project_id: str) -> Path:
 def _artifact_rows(root: Path, project_id: str) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for path in sorted(root.rglob("*")):
-        if (
-            not path.is_file()
-            or path.suffix.lower() not in _ALLOWED_ARTIFACT_SUFFIXES
-        ):
+        if not path.is_file() or path.suffix.lower() not in _ALLOWED_ARTIFACT_SUFFIXES:
             continue
         relative = path.relative_to(root).as_posix()
         media_type, _ = mimetypes.guess_type(path.name)
@@ -115,11 +111,7 @@ def _project_summary(path: Path) -> dict[str, object] | None:
     manifest = _read_json(path / "shot-manifest.json")
     manifest_dict = manifest if isinstance(manifest, dict) else {}
     artifacts = _artifact_rows(path, path.name)
-    previews = [
-        item
-        for item in artifacts
-        if str(item.get("media_type", "")).startswith("video/")
-    ]
+    previews = [item for item in artifacts if str(item.get("media_type", "")).startswith("video/")]
     return {
         "project_id": path.name,
         "project_name": manifest_dict.get("project_name") or path.name,
@@ -139,9 +131,7 @@ def console_bootstrap() -> dict[str, object]:
     vast = VastConfig.from_workspace(settings.workspace)
     projects_root = settings.workspace / "projects"
     project_count = (
-        sum(1 for path in projects_root.iterdir() if path.is_dir())
-        if projects_root.exists()
-        else 0
+        sum(1 for path in projects_root.iterdir() if path.is_dir()) if projects_root.exists() else 0
     )
     return {
         "ok": True,
@@ -210,6 +200,10 @@ def runtime_status() -> dict[str, object]:
             "api_key_configured": bool(settings.comfyui_api_key),
             "profile": settings.comfyui_profile,
         },
+        "effective_oss_worker": {
+            "base_url": settings.oss_worker_base_url,
+            "api_key_configured": bool(settings.oss_worker_api_key),
+        },
         "vast": VastConfig.from_workspace(settings.workspace).safe_dict(),
     }
 
@@ -233,17 +227,23 @@ async def reconcile_gpu_lifecycle() -> dict[str, object]:
 @router.put("/v1/runtime", dependencies=[Depends(require_console_api_key)])
 def configure_runtime(request: RuntimeConfigRequest) -> dict[str, object]:
     settings = Settings.from_env()
-    if request.comfyui_base_url and settings.environment == "production":
-        scheme = urlparse(request.comfyui_base_url.strip()).scheme.lower()
-        if scheme != "https":
-            raise HTTPException(
-                status_code=422,
-                detail="Production ComfyUI endpoints must use HTTPS",
-            )
+    if settings.environment == "production":
+        endpoints = (
+            ("ComfyUI", request.comfyui_base_url),
+            ("OSS worker", request.oss_worker_base_url),
+        )
+        for label, endpoint in endpoints:
+            if endpoint and urlparse(endpoint.strip()).scheme.lower() != "https":
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Production {label} endpoints must use HTTPS",
+                )
     updates: dict[str, Any] = {}
     for field in (
         "comfyui_base_url",
         "comfyui_api_key",
+        "oss_worker_base_url",
+        "oss_worker_api_key",
         "vast_api_key",
         "vast_template_hash",
         "gpu_lifecycle_enabled",
@@ -252,6 +252,8 @@ def configure_runtime(request: RuntimeConfigRequest) -> dict[str, object]:
             updates[field] = getattr(request, field)
     if request.clear_comfyui_api_key:
         updates["comfyui_api_key"] = None
+    if request.clear_oss_worker_api_key:
+        updates["oss_worker_api_key"] = None
     if request.clear_vast_api_key:
         updates["vast_api_key"] = None
     try:
@@ -350,9 +352,7 @@ async def adopt_vast_instance(instance_id: int) -> dict[str, object]:
                 "X-API-Key": connection.api_key,
             },
         ) as proxy:
-            response = await proxy.get(
-                f"{connection.base_url}/__video_factory/status"
-            )
+            response = await proxy.get(f"{connection.base_url}/__video_factory/status")
             response.raise_for_status()
             payload = response.json()
         if not isinstance(payload, dict):

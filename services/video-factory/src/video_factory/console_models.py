@@ -8,10 +8,13 @@ from pydantic import BaseModel, Field
 class RuntimeConfigRequest(BaseModel):
     comfyui_base_url: str | None = None
     comfyui_api_key: str | None = None
+    oss_worker_base_url: str | None = None
+    oss_worker_api_key: str | None = None
     vast_api_key: str | None = None
     vast_template_hash: str | None = None
     gpu_lifecycle_enabled: bool | None = None
     clear_comfyui_api_key: bool = False
+    clear_oss_worker_api_key: bool = False
     clear_vast_api_key: bool = False
 
 
@@ -35,15 +38,18 @@ class VastCreateInstanceRequest(BaseModel):
     mount_path: str = Field(default="/workspace", pattern=r"^/[A-Za-z0-9_./-]+$")
     env: dict[str, str] = Field(default_factory=dict, max_length=100)
     onstart: str | None = Field(default=None, max_length=20_000)
-    runtype: Literal[
-        "ssh",
-        "jupyter",
-        "args",
-        "ssh_proxy",
-        "ssh_direct",
-        "jupyter_proxy",
-        "jupyter_direct",
-    ] | None = None
+    runtype: (
+        Literal[
+            "ssh",
+            "jupyter",
+            "args",
+            "ssh_proxy",
+            "ssh_direct",
+            "jupyter_proxy",
+            "jupyter_direct",
+        ]
+        | None
+    ) = None
 
 
 class VastInstanceStateRequest(BaseModel):

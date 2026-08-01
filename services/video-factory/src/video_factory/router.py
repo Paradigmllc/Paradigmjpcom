@@ -6,7 +6,14 @@ from typing import Any
 
 import yaml
 
-from .engine_profiles import assert_profile_routable, load_engine_profile_catalog
+from .engine_profiles import (
+    ExecutionTarget,
+    assert_profile_routable,
+    load_engine_profile_catalog,
+    profile_external_command,
+    resolved_adapter,
+    resolved_execution_target,
+)
 from .models import Engine, ShotManifest
 from .settings import Settings
 from .workflow_registry import load_workflow_registry, registry_readiness
@@ -39,9 +46,11 @@ def engine_availability(settings: Settings, *, dry_run: bool = False) -> dict[En
         Engine.COMFYUI: _comfyui_available(settings),
         Engine.BLENDER: bool(settings.external_commands.get("blender")),
         Engine.MANIM: bool(settings.external_commands.get("manim")),
-        Engine.LIVEPORTRAIT: bool(settings.external_commands.get("liveportrait")),
-        Engine.MUSETALK: bool(settings.external_commands.get("musetalk")),
-        Engine.OSS: True,
+        # GPU-backed people engines may only run through an explicit audited
+        # profile, which resolves to the authenticated managed OSS worker.
+        Engine.LIVEPORTRAIT: False,
+        Engine.MUSETALK: False,
+        Engine.OSS: bool(settings.oss_worker_base_url and settings.oss_worker_api_key),
     }
 
 
@@ -63,9 +72,7 @@ def route_manifest(
     availability = engine_availability(settings, dry_run=dry_run)
     routed = manifest.model_copy(deep=True)
     try:
-        profile_catalog = load_engine_profile_catalog(
-            settings.engine_profile_catalog_path
-        )
+        profile_catalog = load_engine_profile_catalog(settings.engine_profile_catalog_path)
     except (OSError, ValueError) as error:
         raise RoutingError(f"Engine profile catalog is invalid: {error}") from error
 
@@ -89,7 +96,7 @@ def route_manifest(
                     )
                 except (KeyError, ValueError) as error:
                     raise RoutingError(str(error)) from error
-                candidates: list[object] = [profile.adapter.value]
+                candidates: list[object] = [resolved_adapter(profile).value]
                 if profile.workflow_ids:
                     shot.metadata["comfyui_workflow_id"] = profile.workflow_ids[0]
             else:
@@ -104,7 +111,14 @@ def route_manifest(
                 if dry_run and engine is not Engine.MOCK:
                     rejected.append(f"{engine.value}:dry-run")
                     continue
-                if availability.get(engine, False):
+                candidate_available = availability.get(engine, False)
+                if (
+                    profile is not None
+                    and engine is Engine.OSS
+                    and resolved_execution_target(profile) is ExecutionTarget.CONTROL_PLANE
+                ):
+                    candidate_available = bool(profile_external_command(profile))
+                if candidate_available:
                     selected = engine
                     break
                 rejected.append(f"{engine.value}:unavailable")

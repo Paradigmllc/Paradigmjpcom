@@ -7,6 +7,11 @@ from .adapters.base import EngineContext
 from .adapters.registry import AdapterRegistry
 from .compositor import compose_master
 from .delivery import deliver_project
+from .engine_profiles import (
+    load_engine_profile_catalog,
+    manifest_requires_managed_gpu,
+    required_managed_oss_profiles,
+)
 from .finalization import finalize_project
 from .gpu_lifecycle import ensure_gpu_ready, release_gpu_if_idle, run_lifecycle
 from .gpu_lifecycle_state import GpuLease, acquire_gpu_lease
@@ -14,7 +19,6 @@ from .io import load_brief, write_json, write_model
 from .models import (
     ClientBrief,
     DeliverableSpec,
-    Engine,
     PipelineResult,
     ReviewStage,
     ReviewStatus,
@@ -46,9 +50,7 @@ def _resolve_service_root() -> Path:
     for root in (Path(__file__).resolve().parents[2], Path.cwd().resolve()):
         if (root / "config" / "engine-routing.yaml").is_file():
             return root
-    raise FileNotFoundError(
-        "Video Factory service root was not found; set VIDEO_FACTORY_ROOT"
-    )
+    raise FileNotFoundError("Video Factory service root was not found; set VIDEO_FACTORY_ROOT")
 
 
 SERVICE_ROOT = _resolve_service_root()
@@ -58,7 +60,8 @@ def _manifest_profile_ids(manifest: ShotManifest) -> list[str]:
     return sorted(
         {
             profile_id
-            for shot in manifest.shots
+            for shots in [manifest.shots, *manifest.localized_shots.values()]
+            for shot in shots
             if (profile_id := str(shot.metadata.get("engine_profile_id") or "").strip())
         }
     )
@@ -128,9 +131,7 @@ def plan_task(brief: ClientBrief, settings: Settings, provider: str) -> ShotMani
 
 
 @task(retries=0)
-def route_task(
-    manifest: ShotManifest, settings: Settings, dry_run: bool
-) -> ShotManifest:
+def route_task(manifest: ShotManifest, settings: Settings, dry_run: bool) -> ShotManifest:
     return route_manifest(
         manifest,
         settings,
@@ -182,9 +183,7 @@ def _production_flow_impl(
         outputs = []
         for shot in shots:
             if shot.engine is None:
-                raise RuntimeError(
-                    f"Shot was not routed: {deliverable.name}/{shot.id}"
-                )
+                raise RuntimeError(f"Shot was not routed: {deliverable.name}/{shot.id}")
             outputs.append(registry.get(shot.engine).run(shot, context))
         outputs_by_deliverable[deliverable.name] = [
             output.model_dump(mode="json") for output in outputs
@@ -193,8 +192,7 @@ def _production_flow_impl(
         paths = [Path(output.media_path) for output in outputs if output.media_path]
         if len(paths) != len(shots):
             raise RuntimeError(
-                "At least one engine did not return a media path for "
-                f"{deliverable.name}"
+                f"At least one engine did not return a media path for {deliverable.name}"
             )
         is_primary = deliverable.name == manifest.primary_deliverable.name
         master_path = (
@@ -346,9 +344,12 @@ def production_flow(
     manifest = route_task(manifest, settings, dry_run)
     if dry_run:
         manifest = _dry_run_manifest(manifest)
-    requires_managed_gpu = not dry_run and any(
-        shot.engine is Engine.COMFYUI for shot in manifest.shots
+    profile_catalog = load_engine_profile_catalog(settings.engine_profile_catalog_path)
+    requires_managed_gpu = not dry_run and manifest_requires_managed_gpu(
+        manifest,
+        profile_catalog,
     )
+    required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog)
     gpu_lease: GpuLease | None = None
     try:
         if not dry_run:
@@ -364,7 +365,13 @@ def production_flow(
             )
         if requires_managed_gpu:
             gpu_lease = acquire_gpu_lease(settings, lifecycle_run_id)
-            run_lifecycle(ensure_gpu_ready(settings, run_id=lifecycle_run_id))
+            run_lifecycle(
+                ensure_gpu_ready(
+                    settings,
+                    run_id=lifecycle_run_id,
+                    required_oss_profiles=required_oss_profiles,
+                )
+            )
         elif not dry_run:
             run_lifecycle(
                 release_gpu_if_idle(

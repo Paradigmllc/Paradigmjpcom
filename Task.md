@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（実装・release検証中）
+
+- 既存Wanレーンは変更せず、主要OSS 40プロファイルのうち外部GPU実行型をcontrol planeの任意CLIから分離し、認証付き単一プロセスGPU workerへ強制する。CPU型はcontrol plane、ComfyUI型は既存workflow、外部GPU型はmanaged workerという実行境界を台帳・API・DB・GUIへ反映した。
+- workerはprofile IDと固定40桁revision、商用承認、権利宣言、事前導入済みcommand/executableを検証する。1 GPU 1 job、shell不使用、timeout、MP4 probe、出力上限、SHA-256、temporary cleanupを実装し、未審査・非商用・revision不一致・未導入はfail-closedで拒否する。
+- 非ComfyUIの外部GPU profileも本番runで既存managed GPU leaseを取得し、Vast起動後にComfyUI proxyと必要なworker profile revisionをpreflightする。成功・失敗のfinallyでidle判定後に停止し、dry-run、catalog表示、設定、CPU routeではGPUを起動しない。新GPU作成・常駐polling・job中downloadは行わない。
+- runtime schema v3へOSS worker URL/API keyを追加し、mode 0600保存、secret非再表示、production HTTPS強制、Consoleの接続設定・worker状態badgeを実装した。DB migrationはexecution target/resolved adapter、RLS/role grantを追加し、release migration wiringも更新した。
+- GPU worker用CUDA/FFmpeg container、Compose GPU profile、環境変数、operator runbookを追加した。モデル/worker artifactはread-only mount前提で、ネットワーク遮断可能な実行構成とする。
+- Video Factory全75 pytest、Ruff、mypy strict 53 source files、ESLint、TypeScript、Next.js production buildをpass。release-doctorのstatic/security/infra検査はpassし、commit前のdirty/untracked gateだけが想定どおりreleaseを停止している。ブラウザ確認、commit/PR/main/release、本番DB/API/GUI/GPU停止read-backはこれから実施する。
+
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSSエンジン統合（本番release完了）
 
 - Wan既存レーンは維持しつつ、FramePack、SkyReels V2/V3、NVIDIA Cosmos 3、Pyramid Flow、Open-Sora系、VideoCrafter/DynamiCrafterを含む主要な動画生成・人物アニメーション・音声・補正・3D/図解OSS計40プロファイルを、単一の監査可能な台帳へ統合する。モデル重量は常駐・一括取得せず、承認済みプロファイルだけをジョブ単位で遅延ロードする。

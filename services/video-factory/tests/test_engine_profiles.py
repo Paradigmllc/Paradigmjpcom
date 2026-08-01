@@ -10,19 +10,21 @@ from video_factory.engine_profiles import (
     ProfileApproval,
     catalog_status,
     load_engine_profile_catalog,
+    manifest_requires_managed_gpu,
+    required_managed_oss_profiles,
+    resolved_adapter,
+    resolved_execution_target,
 )
 from video_factory.models import ClientBrief, Engine, ShotKind
 from video_factory.planner import deterministic_plan
-from video_factory.router import RoutingError, route_manifest
+from video_factory.router import RoutingError, engine_availability, route_manifest
 from video_factory.settings import Settings
 
 
 def test_major_oss_catalog_is_immutable_and_excludes_new_wan_profiles(
     service_root: Path,
 ) -> None:
-    catalog = load_engine_profile_catalog(
-        service_root / "config" / "engine-profiles.yaml"
-    )
+    catalog = load_engine_profile_catalog(service_root / "config" / "engine-profiles.yaml")
 
     assert len(catalog.profiles) == 40
     assert len({profile.id for profile in catalog.profiles}) == 40
@@ -50,9 +52,7 @@ def test_major_oss_catalog_is_immutable_and_excludes_new_wan_profiles(
 def test_noncommercial_and_oversized_profiles_are_fail_closed(
     service_root: Path,
 ) -> None:
-    catalog = load_engine_profile_catalog(
-        service_root / "config" / "engine-profiles.yaml"
-    )
+    catalog = load_engine_profile_catalog(service_root / "config" / "engine-profiles.yaml")
 
     for profile_id in (
         "wav2lip",
@@ -81,9 +81,7 @@ def test_noncommercial_and_oversized_profiles_are_fail_closed(
 def test_catalog_readiness_requires_runtime_workflow_model_and_worker(
     service_root: Path,
 ) -> None:
-    catalog = load_engine_profile_catalog(
-        service_root / "config" / "engine-profiles.yaml"
-    )
+    catalog = load_engine_profile_catalog(service_root / "config" / "engine-profiles.yaml")
     availability = dict.fromkeys(Engine, True)
     result = catalog_status(
         catalog,
@@ -101,7 +99,9 @@ def test_catalog_readiness_requires_runtime_workflow_model_and_worker(
     assert "workflow is not approved and bound: ltx-video-t2v" in profiles["ltx-video"]["reasons"]
     assert profiles["open-sora"]["ready"] is False
     assert any("below 48.0GB" in str(reason) for reason in profiles["open-sora"]["reasons"])
-    assert any("BLENDER_ADAPTER_COMMAND" in str(reason) for reason in profiles["blender"]["reasons"])
+    assert any(
+        "BLENDER_ADAPTER_COMMAND" in str(reason) for reason in profiles["blender"]["reasons"]
+    )
 
 
 def test_pending_profile_cannot_route_production_but_preview_uses_mock(
@@ -137,11 +137,40 @@ def test_pending_profile_cannot_route_production_but_preview_uses_mock(
 def test_catalog_schema_rejects_approved_noncommercial_profile(
     service_root: Path,
 ) -> None:
-    catalog = load_engine_profile_catalog(
-        service_root / "config" / "engine-profiles.yaml"
-    )
+    catalog = load_engine_profile_catalog(service_root / "config" / "engine-profiles.yaml")
     payload = catalog.model_dump(mode="json")
     payload["profiles"][0]["commercial_policy"] = "noncommercial"
 
     with pytest.raises(ValueError, match="approved profiles must allow commercial use"):
         EngineProfileCatalog.model_validate(payload)
+
+
+def test_external_gpu_profiles_route_to_managed_worker_and_require_gpu(
+    example_brief: ClientBrief,
+    service_root: Path,
+) -> None:
+    catalog = load_engine_profile_catalog(service_root / "config" / "engine-profiles.yaml")
+    framepack = catalog.get("framepack")
+    whisper = catalog.get("whisper")
+    manifest = deterministic_plan(example_brief)
+    manifest.shots[0].metadata["engine_profile_id"] = "framepack"
+
+    assert resolved_execution_target(framepack).value == "managed_gpu"
+    assert resolved_adapter(framepack) is Engine.OSS
+    assert resolved_execution_target(whisper).value == "control_plane"
+    assert manifest_requires_managed_gpu(manifest, catalog) is True
+    assert required_managed_oss_profiles(manifest, catalog) == (("framepack", framepack.revision),)
+
+
+def test_gpu_people_commands_never_execute_on_control_plane(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(tmp_path / "workspace"))
+    monkeypatch.setenv("LIVEPORTRAIT_ADAPTER_COMMAND", "/opt/workers/liveportrait/run")
+    monkeypatch.setenv("MUSETALK_ADAPTER_COMMAND", "/opt/workers/musetalk/run")
+
+    availability = engine_availability(Settings.from_env())
+
+    assert availability[Engine.LIVEPORTRAIT] is False
+    assert availability[Engine.MUSETALK] is False

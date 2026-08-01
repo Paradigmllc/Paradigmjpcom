@@ -34,6 +34,8 @@ const profile = {
   commercial_policy: "allowed",
   approval: "approved",
   install_mode: "bundled",
+  execution_target: "control_plane",
+  resolved_adapter: "hyperframes",
   gpu_required: false,
   min_vram_gb: 0,
   recommended_vram_gb: 0,
@@ -103,7 +105,12 @@ describe("Video Factory engine catalog sync", () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ ok: true, synced: 1 })
     expect(mocks.upsert).toHaveBeenCalledWith(
-      [expect.objectContaining({ id: "hyperframes", catalog_version: 1 })],
+      [expect.objectContaining({
+        id: "hyperframes",
+        catalog_version: 1,
+        execution_target: "control_plane",
+        resolved_adapter: "hyperframes",
+      })],
       { onConflict: "id" },
     )
     expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({

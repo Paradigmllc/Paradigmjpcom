@@ -10,7 +10,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 from .model_registry import ModelCommercialUse, load_model_registry
-from .models import Engine, ShotKind
+from .models import Engine, ShotKind, ShotManifest
 from .workflow_registry import WorkflowApproval, load_workflow_registry
 
 
@@ -47,6 +47,11 @@ class InstallMode(StrEnum):
     ON_DEMAND = "on_demand"
 
 
+class ExecutionTarget(StrEnum):
+    CONTROL_PLANE = "control_plane"
+    MANAGED_GPU = "managed_gpu"
+
+
 class EngineProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -65,6 +70,7 @@ class EngineProfile(BaseModel):
     commercial_policy: CommercialPolicy
     approval: ProfileApproval
     install_mode: InstallMode
+    execution_target: ExecutionTarget | None = None
     gpu_required: bool = False
     min_vram_gb: float = Field(default=0, ge=0, le=192)
     recommended_vram_gb: float = Field(default=0, ge=0, le=192)
@@ -86,6 +92,8 @@ class EngineProfile(BaseModel):
             raise ValueError("ComfyUI profiles must declare workflow_ids")
         if self.runtime is EngineRuntime.EXTERNAL_CLI and not self.command_env:
             raise ValueError("external_cli profiles must declare command_env")
+        if self.execution_target is ExecutionTarget.CONTROL_PLANE and self.gpu_required:
+            raise ValueError("GPU profiles cannot execute on the control plane")
         if self.approval is ProfileApproval.APPROVED:
             if self.commercial_policy is not CommercialPolicy.ALLOWED:
                 raise ValueError("approved profiles must allow commercial use")
@@ -94,6 +102,64 @@ class EngineProfile(BaseModel):
         if self.approval is ProfileApproval.BLOCKED and not self.block_reason:
             raise ValueError("blocked profiles must explain the block")
         return self
+
+
+def resolved_execution_target(profile: EngineProfile) -> ExecutionTarget:
+    if profile.execution_target is not None:
+        return profile.execution_target
+    if profile.runtime is EngineRuntime.COMFYUI or profile.gpu_required:
+        return ExecutionTarget.MANAGED_GPU
+    return ExecutionTarget.CONTROL_PLANE
+
+
+def resolved_adapter(profile: EngineProfile) -> Engine:
+    if (
+        profile.runtime is EngineRuntime.EXTERNAL_CLI
+        and resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU
+    ):
+        return Engine.OSS
+    return profile.adapter
+
+
+def selected_profiles(
+    manifest: ShotManifest,
+    catalog: EngineProfileCatalog,
+) -> list[EngineProfile]:
+    profile_ids = {
+        str(shot.metadata.get("engine_profile_id") or "").strip()
+        for shots in [manifest.shots, *manifest.localized_shots.values()]
+        for shot in shots
+        if str(shot.metadata.get("engine_profile_id") or "").strip()
+    }
+    return [catalog.get(profile_id) for profile_id in sorted(profile_ids)]
+
+
+def manifest_requires_managed_gpu(
+    manifest: ShotManifest,
+    catalog: EngineProfileCatalog,
+) -> bool:
+    if any(
+        shot.engine is Engine.COMFYUI
+        for shots in [manifest.shots, *manifest.localized_shots.values()]
+        for shot in shots
+    ):
+        return True
+    return any(
+        resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU
+        for profile in selected_profiles(manifest, catalog)
+    )
+
+
+def required_managed_oss_profiles(
+    manifest: ShotManifest,
+    catalog: EngineProfileCatalog,
+) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        (profile.id, profile.revision)
+        for profile in selected_profiles(manifest, catalog)
+        if profile.runtime is EngineRuntime.EXTERNAL_CLI
+        and resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU
+    )
 
 
 class EngineProfileCatalog(BaseModel):
@@ -181,29 +247,34 @@ def profile_status(
 ) -> dict[str, object]:
     reasons: list[str] = []
     if profile.approval is not ProfileApproval.APPROVED:
-        reasons.append(
-            profile.block_reason
-            or f"profile approval is {profile.approval.value}"
-        )
+        reasons.append(profile.block_reason or f"profile approval is {profile.approval.value}")
     if profile.commercial_policy is not CommercialPolicy.ALLOWED:
         reasons.append(f"commercial policy is {profile.commercial_policy.value}")
-    if not availability.get(profile.adapter, False):
-        reasons.append(f"runtime adapter is unavailable: {profile.adapter.value}")
+    adapter = resolved_adapter(profile)
+    if adapter is not Engine.OSS and not availability.get(adapter, False):
+        reasons.append(f"runtime adapter is unavailable: {adapter.value}")
     if (
         profile.runtime is EngineRuntime.EXTERNAL_CLI
+        and resolved_execution_target(profile) is ExecutionTarget.CONTROL_PLANE
         and not profile_external_command(profile)
     ):
         reasons.append(f"worker command is not configured: {profile.command_env}")
+    if (
+        profile.runtime is EngineRuntime.EXTERNAL_CLI
+        and resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU
+        and not availability.get(Engine.OSS, False)
+    ):
+        reasons.append("authenticated managed GPU OSS worker is unavailable")
     if available_vram_gb is not None and available_vram_gb < profile.min_vram_gb:
-        reasons.append(
-            f"VRAM {available_vram_gb:.1f}GB is below {profile.min_vram_gb:.1f}GB"
-        )
+        reasons.append(f"VRAM {available_vram_gb:.1f}GB is below {profile.min_vram_gb:.1f}GB")
     reasons.extend(_workflow_reasons(profile, workflow_registry_path))
     reasons.extend(_model_reasons(profile, model_registry_path))
     unique_reasons = list(dict.fromkeys(reasons))
     ready = not unique_reasons
     return {
         **profile.model_dump(mode="json"),
+        "resolved_adapter": adapter.value,
+        "execution_target": resolved_execution_target(profile).value,
         "ready": ready,
         "state": "ready" if ready else "blocked",
         "reasons": unique_reasons,
@@ -248,9 +319,7 @@ def assert_profile_routable(
     model_registry_path: Path,
 ) -> None:
     if shot_kind not in profile.shot_kinds:
-        raise ValueError(
-            f"Engine profile {profile.id} does not support {shot_kind.value}"
-        )
+        raise ValueError(f"Engine profile {profile.id} does not support {shot_kind.value}")
     status = profile_status(
         profile,
         availability=availability,

@@ -73,7 +73,7 @@ video-factory workflows bind WORKFLOW_ID workflow-api.json \
 ## GPU lifecycle operations
 
 - Adopt exactly one `paradigm-comfyui-*` instance in the console. Its ID is persisted with mode `0600` and is never inferred from an arbitrary account instance.
-- A production submission starts the managed instance only after routing selects a ComfyUI shot, then waits up to `VIDEO_FACTORY_GPU_START_TIMEOUT_SECONDS` for the authenticated ComfyUI readiness contract. Dry runs, rejected briefs, and non-ComfyUI routes leave it stopped.
+- A production submission starts the managed instance only after routing selects a ComfyUI or managed external GPU profile. It waits up to `VIDEO_FACTORY_GPU_START_TIMEOUT_SECONDS` for authenticated ComfyUI readiness and, when applicable, the exact OSS worker profile revision and executable. Dry runs, rejected briefs, and CPU-only routes leave it stopped.
 - The final queued/running job stops the managed instance. If another job is queued, the GPU remains available for that job and is stopped after it completes.
 - On application restart, interrupted local jobs are marked failed for operator review before the idle GPU is reconciled. They are not replayed automatically because generation is not assumed idempotent.
 - Use **GPU・接続設定 → GPU空き状態を再判定** for a one-shot reconciliation. Do not add cron polling.

@@ -3,12 +3,14 @@ async function loadRuntimeAndGpu() {
   try {
     const body = await api("/v1/runtime")
     $("#comfyui-url").value = body.effective_comfyui?.base_url || ""
+    $("#oss-worker-url").value = body.effective_oss_worker?.base_url || ""
     $("#vast-template-hash").value = body.runtime?.vast_template_hash
       || body.vast?.default_template_hash
       || state.selectedTemplate
       || ""
     const configured = body.vast?.configured
       || body.effective_comfyui?.api_key_configured
+      || body.effective_oss_worker?.api_key_configured
     $("#runtime-badge").textContent = configured ? "設定済み" : "要設定"
     $("#runtime-badge").className = `badge ${configured ? "good" : "warn"}`
     await loadInstances(true)
@@ -23,10 +25,14 @@ async function saveRuntime() {
   const vastKey = $("#vast-api-key").value.trim()
   const comfyKey = $("#comfyui-api-key").value.trim()
   const comfyUrl = $("#comfyui-url").value.trim()
+  const workerKey = $("#oss-worker-api-key").value.trim()
+  const workerUrl = $("#oss-worker-url").value.trim()
   const templateHash = $("#vast-template-hash").value.trim()
   if (vastKey) body.vast_api_key = vastKey
   if (comfyKey) body.comfyui_api_key = comfyKey
   if (comfyUrl) body.comfyui_base_url = comfyUrl
+  if (workerKey) body.oss_worker_api_key = workerKey
+  if (workerUrl) body.oss_worker_base_url = workerUrl
   if (templateHash) body.vast_template_hash = templateHash
   try {
     await api("/v1/runtime", {
@@ -35,6 +41,7 @@ async function saveRuntime() {
     })
     $("#vast-api-key").value = ""
     $("#comfyui-api-key").value = ""
+    $("#oss-worker-api-key").value = ""
     toast("接続設定を安全に保存しました")
     await loadBootstrap()
     await loadRuntimeAndGpu()
