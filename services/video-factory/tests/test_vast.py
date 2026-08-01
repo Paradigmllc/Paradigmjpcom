@@ -6,7 +6,12 @@ from pathlib import Path
 
 import httpx
 
-from video_factory.vast import VastClient, VastConfig
+from video_factory.vast import (
+    VastClient,
+    VastConfig,
+    safe_vast_instance,
+    vast_instance_connection,
+)
 
 
 def _config() -> VastConfig:
@@ -159,3 +164,75 @@ def test_vast_config_reads_gui_runtime(tmp_path: Path, monkeypatch) -> None:
     assert config.api_key == "runtime-key"
     assert config.default_template_hash == "runtime-template"
     assert "runtime-key" not in str(config.safe_dict())
+
+
+def test_vast_instance_projection_never_exposes_marketplace_secrets() -> None:
+    proxy_key = "proxy-secret-" + "x" * 40
+    raw = {
+        "id": 9001,
+        "label": "paradigm-comfyui-wan22-test",
+        "actual_status": "running",
+        "gpu_name": "RTX 4090",
+        "gpu_ram": 24576,
+        "dph_total": 0.45,
+        "public_ipaddr": "203.0.113.10",
+        "template_hash_id": "template-hash",
+        "jupyter_token": "jupyter-secret",
+        "ssh_key": "ssh-secret",
+        "extra_env": [
+            ["COMFY_PROXY_KEY", proxy_key],
+            ["PROVISIONING_SCRIPT", "https://example.test/provision.sh"],
+        ],
+        "ports": {"18189/tcp": [{"HostPort": "48189"}]},
+    }
+
+    safe = safe_vast_instance(raw)
+    serialized = json.dumps(safe)
+
+    assert safe["id"] == 9001
+    assert safe["comfyui_proxy_port"] == 48189
+    assert safe["managed_proxy_available"] is True
+    assert proxy_key not in serialized
+    assert "jupyter-secret" not in serialized
+    assert "ssh-secret" not in serialized
+    assert "extra_env" not in safe
+    assert safe["ports"] == {"18189/tcp": [{"HostPort": "48189"}]}
+    assert "8188/tcp" not in serialized
+
+
+def test_vast_instance_connection_recovers_only_managed_authenticated_proxy() -> None:
+    proxy_key = "p" * 64
+    raw = {
+        "id": 9001,
+        "label": "paradigm-comfyui-wan22-test",
+        "actual_status": "running",
+        "public_ipaddr": "203.0.113.10",
+        "template_hash_id": "template-hash",
+        "extra_env": [["COMFY_PROXY_KEY", proxy_key]],
+        "ports": {"18189/tcp": [{"HostPort": "48189"}]},
+    }
+
+    connection = vast_instance_connection(raw)
+
+    assert connection.instance_id == 9001
+    assert connection.base_url == "https://203.0.113.10:48189"
+    assert connection.api_key == proxy_key
+    assert proxy_key not in json.dumps(connection.safe_dict())
+
+
+def test_vast_instance_connection_rejects_unmanaged_instance() -> None:
+    raw = {
+        "id": 9001,
+        "label": "personal-notebook",
+        "actual_status": "running",
+        "public_ipaddr": "203.0.113.10",
+        "extra_env": [["COMFY_PROXY_KEY", "p" * 64]],
+        "ports": {"18189/tcp": [{"HostPort": "48189"}]},
+    }
+
+    try:
+        vast_instance_connection(raw)
+    except ValueError as error:
+        assert "Paradigm-managed" in str(error)
+    else:
+        raise AssertionError("unmanaged Vast instance was accepted")

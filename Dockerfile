@@ -40,8 +40,10 @@ ENV VIDEO_FACTORY_MASTER_COMPOSITOR=hyperframes
 ENV VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK=false
 ENV HYPERFRAMES_VERSION=0.7.77
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/vast-ai-jupyter-root.crt
 
 RUN apk add --no-cache \
+      ca-certificates \
       chromium \
       curl \
       ffmpeg \
@@ -54,6 +56,10 @@ RUN apk add --no-cache \
       rclone \
       su-exec \
       tini
+
+COPY services/video-factory/config/vast-ai-jupyter-root.crt \
+  /usr/local/share/ca-certificates/vast-ai-jupyter-root.crt
+RUN update-ca-certificates
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 

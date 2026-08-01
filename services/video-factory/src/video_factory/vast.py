@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -13,6 +15,142 @@ from .runtime_config import load_runtime_config
 
 class VastAPIError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class VastInstanceConnection:
+    instance_id: int
+    base_url: str
+    api_key: str
+    template_hash: str | None
+
+    def safe_dict(self) -> dict[str, object]:
+        return {
+            "instance_id": self.instance_id,
+            "base_url": self.base_url,
+            "api_key_configured": True,
+            "template_hash": self.template_hash,
+        }
+
+
+def _mapped_port(instance: Mapping[str, Any], name: str) -> int | None:
+    ports = instance.get("ports")
+    if not isinstance(ports, Mapping):
+        return None
+    mappings = ports.get(name)
+    mapping = (mappings[0] if mappings else None) if isinstance(mappings, list) else mappings
+    if isinstance(mapping, Mapping):
+        value = mapping.get("HostPort") or mapping.get("host_port")
+    else:
+        value = mapping
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        return None
+    try:
+        port = int(value)
+    except (TypeError, ValueError):
+        return None
+    return port if 1 <= port <= 65535 else None
+
+
+def _instance_environment(instance: Mapping[str, Any]) -> dict[str, str]:
+    raw = instance.get("extra_env")
+    if isinstance(raw, Mapping):
+        return {
+            str(key): str(value)
+            for key, value in raw.items()
+            if value is not None
+        }
+    if not isinstance(raw, list):
+        return {}
+    environment: dict[str, str] = {}
+    for item in raw:
+        if not isinstance(item, (list, tuple)) or len(item) != 2:
+            continue
+        key, value = item
+        if value is not None:
+            environment[str(key)] = str(value)
+    return environment
+
+
+def safe_vast_instance(instance: Mapping[str, Any]) -> dict[str, object]:
+    """Return only fields the operator GUI needs; never forward marketplace secrets."""
+    proxy_port = _mapped_port(instance, "18189/tcp")
+    environment = _instance_environment(instance)
+    allowed_fields = (
+        "id",
+        "instance_id",
+        "label",
+        "actual_status",
+        "status",
+        "cur_state",
+        "intended_status",
+        "gpu_name",
+        "gpu_ram",
+        "num_gpus",
+        "dph_total",
+        "public_ipaddr",
+        "country_code",
+        "geolocation",
+        "reliability2",
+        "template_hash_id",
+        "start_date",
+    )
+    safe = {
+        field: instance[field]
+        for field in allowed_fields
+        if field in instance and instance[field] is not None
+    }
+    safe["comfyui_proxy_port"] = proxy_port
+    safe["ports"] = (
+        {"18189/tcp": [{"HostPort": str(proxy_port)}]}
+        if proxy_port is not None
+        else {}
+    )
+    safe["managed_proxy_available"] = bool(
+        proxy_port and environment.get("COMFY_PROXY_KEY")
+    )
+    return safe
+
+
+def vast_instance_connection(instance: Mapping[str, Any]) -> VastInstanceConnection:
+    label = str(instance.get("label") or "")
+    if not label.startswith("paradigm-comfyui"):
+        raise ValueError("Only Paradigm-managed ComfyUI instances can be adopted")
+    status = str(
+        instance.get("actual_status")
+        or instance.get("status")
+        or instance.get("cur_state")
+        or "unknown"
+    )
+    if status != "running":
+        raise ValueError(f"The Vast.ai instance must be running before adoption: {status}")
+    instance_id_value = instance.get("id") or instance.get("instance_id")
+    if isinstance(instance_id_value, bool) or not isinstance(
+        instance_id_value, (str, int, float)
+    ):
+        raise ValueError("Vast.ai instance ID is invalid")
+    try:
+        instance_id = int(instance_id_value)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Vast.ai instance ID is invalid") from error
+    host = str(instance.get("public_ipaddr") or instance.get("public_ip") or "").strip()
+    parsed_host = urlparse(f"//{host}")
+    if not parsed_host.hostname or parsed_host.username or parsed_host.password:
+        raise ValueError("Vast.ai instance has no safe public host")
+    port = _mapped_port(instance, "18189/tcp")
+    if port is None:
+        raise ValueError("The authenticated ComfyUI proxy port is not available")
+    api_key = _instance_environment(instance).get("COMFY_PROXY_KEY", "").strip()
+    if len(api_key) < 32:
+        raise ValueError("The managed ComfyUI proxy key is unavailable")
+    host_for_url = f"[{parsed_host.hostname}]" if ":" in parsed_host.hostname else parsed_host.hostname
+    template_hash = str(instance.get("template_hash_id") or "").strip() or None
+    return VastInstanceConnection(
+        instance_id=instance_id,
+        base_url=f"https://{host_for_url}:{port}",
+        api_key=api_key,
+        template_hash=template_hash,
+    )
 
 
 @dataclass(frozen=True)

@@ -27,6 +27,21 @@
 
 The factory defaults to a 24 GB minimum (`COMFYUI_MIN_VRAM_GB=24`) for a practical video-generation worker. A lower value may be approved for image-only or lightweight workflows, but the exact workflow/model profile must be tested. Hardware readiness is based on `/system_stats`, not a declared provider label.
 
+The initial production profile requires only `abstract-broll-t2v`. Other registry contracts remain disabled until their exact model artifacts, licenses, workflow JSON, and output quality have been reviewed. Override `COMFYUI_REQUIRED_WORKFLOWS` only when every newly required contract has been bound and verified.
+
+## Vast.ai managed worker recovery
+
+Paradigm-managed workers use an authenticated TLS proxy on container port `18189`. The provisioning script starts a dedicated ComfyUI API process on loopback port `18188`, verifies `/system_stats` and the workflow node inventory, and reuses already downloaded model artifacts after a restart. Production runtime configuration rejects plain-HTTP ComfyUI endpoints.
+
+The control-plane image trusts only the public Vast.ai Jupyter CA copied from <https://console.vast.ai/static/jvastai_root.cer>. The normalized, reviewed PEM in this repository has SHA-256 `5960778b0ce081b391ca640a392259a2d9b3f87625d8d94c8cac04b1277a2afa` and expires in 2051. Any certificate rotation requires a new fingerprint review and a TLS integration test; never disable certificate verification.
+
+The operator console lists only an allowlist of instance metadata. Vast.ai fields such as `extra_env`, notebook tokens, SSH material, and the ComfyUI proxy key must never be returned to the browser. Use **既存GPUを安全に回収** to recover the proxy URL and key server-side, verify the authenticated status endpoint, and save them to the mode-`0600` runtime configuration.
+
+The approved initial model is Wan 2.2 TI2V-5B from the official ComfyUI distribution. Record the downloaded artifact checksums and the upstream Apache-2.0 model license before binding `abstract-broll-t2v`:
+
+- <https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B>
+- <https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged>
+
 ## ComfyUI core installation
 
 ```bash

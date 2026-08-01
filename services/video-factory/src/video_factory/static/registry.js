@@ -15,6 +15,19 @@ function toast(message, kind = "success") {
   setTimeout(() => item.remove(), 5000)
 }
 
+function confirmAction(message) {
+  const dialog = $("#registry-confirm-dialog")
+  $("#registry-confirm-message").textContent = message
+  return new Promise((resolve) => {
+    const close = () => {
+      dialog.removeEventListener("close", close)
+      resolve(dialog.returnValue === "confirm")
+    }
+    dialog.addEventListener("close", close)
+    dialog.showModal()
+  })
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -120,7 +133,7 @@ function renderWorkflows() {
 
   $$('[data-disable-workflow]', target).forEach((button) => {
     button.addEventListener("click", async () => {
-      if (!window.confirm(`${button.dataset.disableWorkflow} を無効化しますか？`)) return
+      if (!await confirmAction(`${button.dataset.disableWorkflow} を無効化しますか？`)) return
       try {
         await api(`/v1/registry/workflows/${encodeURIComponent(button.dataset.disableWorkflow)}/disable`, { method: "POST" })
         toast("Workflowを無効化しました")
@@ -214,8 +227,9 @@ async function submitWorkflow(event) {
     let workflowJson
     try {
       workflowJson = JSON.parse($("#workflow-json").value)
-    } catch {
-      throw new Error("Workflow JSONを解析できません")
+    } catch (error) {
+      console.error("[registry] workflow JSON parse failed", error)
+      throw new Error("Workflow JSONを解析できません", { cause: error })
     }
     const id = $("#workflow-id").value
     const body = {
