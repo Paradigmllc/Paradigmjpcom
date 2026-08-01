@@ -1,7 +1,19 @@
 from pathlib import Path
 
 from video_factory.io import load_data
-from video_factory.pipeline import production_flow
+from video_factory.pipeline import _resolve_service_root, production_flow
+
+
+def test_service_root_uses_explicit_packaged_runtime_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    root = tmp_path / "installed-video-factory"
+    config = root / "config"
+    config.mkdir(parents=True)
+    (config / "engine-routing.yaml").write_text("rules: {}\n", encoding="utf-8")
+    monkeypatch.setenv("VIDEO_FACTORY_ROOT", str(root))
+
+    assert _resolve_service_root() == root.resolve()
 
 
 def test_dry_run_pipeline_stops_for_draft_review(
