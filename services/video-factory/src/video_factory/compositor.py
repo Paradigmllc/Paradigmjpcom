@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoes
 
 from .commands import CommandError, run_command
 from .io import write_json
-from .media import assemble_clips
+from .media import assemble_clips, probe_media
 from .models import DeliverableSpec, ShotManifest
 from .settings import Settings
 from .workspace import ProjectWorkspace
@@ -31,6 +31,7 @@ def _timeline(durations: list[float], clips: list[Path]) -> list[dict[str, Any]]
                 "filename": source.name,
                 "start": round(position, 3),
                 "duration": round(duration, 3),
+                "has_audio": probe_media(source).has_audio,
             }
         )
         position += duration
@@ -130,7 +131,7 @@ def compose_master(
         package = f"hyperframes@{settings.hyperframes_version}"
         try:
             run_command(
-                [settings.hyperframes_npx, "--yes", package, "lint", ".", "--json"],
+                [settings.hyperframes_npx, "--yes", package, "check", ".", "--json"],
                 cwd=project,
                 timeout=settings.external_timeout_seconds,
             )

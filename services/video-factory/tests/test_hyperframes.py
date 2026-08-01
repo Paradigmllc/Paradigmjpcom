@@ -32,3 +32,7 @@ def test_hyperframes_dry_run_generates_project(
     assert html.is_file()
     rendered = html.read_text(encoding="utf-8")
     assert example_brief.brand.name in rendered or shot.headline in rendered
+    assert "data-no-timeline" in rendered
+    assert 'id="scene-root"' in rendered
+    assert "@keyframes card-enter" in rendered
+    assert "@keyframes progress-fill" in rendered

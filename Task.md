@@ -1,6 +1,6 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（基盤release完了 / GPU互換hotfix検証済み）
+## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（HyperFrames契約hotfix検証済み / 再release待ち）
 
 - 本番`/data/video-factory`にはVast.ai資格情報とテンプレートHashが永続保存済み。既存RTX 3090 24GBインスタンスは稼働中だが、ComfyUIプロセスの自己起動と本番ランタイムへの接続、承認済みWorkflow登録が完了していなかった。
 - 既存GPUを追加作成せず回収する。Vast.aiの生レスポンスから`jupyter_token`、`extra_env`、プロキシ鍵などを管理画面へ返さない許可リスト境界と、秘密値をサーバー内だけで復元・検証・権限600のruntimeへ保存するadopt API/UIを実装した。
@@ -13,6 +13,9 @@
 - 互換hotfixは公式テンプレートの配置/venv検出、Vast署名TLS証明書の生成・検証、Python system CA bundle、Dockerfile品質guardのcurl検出を含む。対象Vitest 3件、bash構文検査、品質guard error 0、実GPU provisionを通過。残りはhotfixのPR/main反映後に本番doctor、実生成、ドラフト承認、最終承認、ローカル納品をread-backする。
 - 互換hotfix PR **#629**をmain **22c72a73**へsquash mergeし、deployment **ekntc97otuk7dlcwiv3cz6lv**で本番反映した。本番doctorは`production_ready: true`、RTX 3090 VRAM 23.56GB、認証・到達性・16GB下限をpassし、承認済みモデル3点と`abstract-broll-t2v`のbindingを登録済み。
 - 最初の実生成run **4441072b-7502-40d6-866c-41d2238ff249**は、GPU呼出し前にinstalled Python packageが`config/engine-routing.yaml`のservice rootを誤認してfailedになった。失敗を隠さず、`VIDEO_FACTORY_ROOT`を検証して使用するpackage-runtime修正と独立service imageの同環境変数、回帰testを追加した。Video Factory pytest 49件、Ruff、mypyはpass。再release後に新runで2段階承認と納品を通す。
+- package-runtime修正PR **#630**をmain **b25b7cfc**へsquash mergeし、deployment **gccltdv7atri6f94i1hgmw6d**で本番反映した。新コンテナ`n8i2sjiqvr2d8hrzppop2m2i-021549281532`は同commit imageでhealthy、release doctorと公開smokeを完走し、本番Video Factory doctorも`production_ready: true`、blocking reason 0を再確認した。
+- 再実行run **7ccd26f5-8018-44b8-afac-a51f7fb351b7**はGPU生成後のHyperFrames text-motion検査で、生成HTMLにtimeline非使用宣言とstable clip idがなく安全停止した。テンプレートへ有限・seek可能なCSS motion、`data-no-timeline`、stable idを追加し、master videoの音声有無もprobe結果から明示する。全本番render前ゲートを`lint`からbrowser/runtime/layout/contrastを含む`check`へ強化し、HyperFramesを`0.7.77`から`0.7.87`へ全surfaceで統一した。
+- 修正後はHyperFrames 0.7.87のtext-motion/master `check`がlint/runtime/layout/contrastすべて0 finding、text-motion snapshot 5枚を目視確認済み。Video Factory pytest 49件、Ruff、mypy strict、TypeScript、品質guard error 0、bash構文、差分検査をpass。ローカルにDocker CLIがないためcompose/container buildはPR CIで検証する。
 
 ## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
 
@@ -75,7 +78,7 @@
 
 ## ACTIVE HANDOFF
 
-- Video Factory packaged-runtime hotfix branch: `fix/video-factory-package-root-20260801`
+- Video Factory HyperFrames contract hotfix branch: `fix/video-factory-hyperframes-contract-20260801`
 - 既存Vast.ai GPU **46258780**はComfyUI API / TLS proxy readyで稼働中。追加GPUは作成しない。GPU課金は約`$0.132/h`で継続中のため、実生成と2段階承認のread-back後に稼働状態を明記する。
 - Vast.aiインスタンスAPIの出力に秘密値を含めない。プロキシ鍵はadopt処理と永続runtimeの内部だけで扱う。
 - `/work` fast-firstは本番反映済み。新規Raw URLは高速一次判定、選抜候補のみ「詳細解析へ昇格」でフル解析する。

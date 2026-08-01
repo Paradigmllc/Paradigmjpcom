@@ -86,7 +86,7 @@ class Settings:
             external_timeout_seconds=int(
                 os.getenv("VIDEO_FACTORY_EXTERNAL_TIMEOUT_SECONDS", "1800")
             ),
-            hyperframes_version=os.getenv("HYPERFRAMES_VERSION", "0.7.77"),
+            hyperframes_version=os.getenv("HYPERFRAMES_VERSION", "0.7.87"),
             hyperframes_npx=os.getenv("HYPERFRAMES_NPX", "npx"),
             hyperframes_render_quality=os.getenv("HYPERFRAMES_RENDER_QUALITY", "draft"),
             master_compositor=os.getenv("VIDEO_FACTORY_MASTER_COMPOSITOR", "hyperframes"),
