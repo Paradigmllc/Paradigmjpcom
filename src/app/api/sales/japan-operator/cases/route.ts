@@ -203,15 +203,16 @@ export async function PATCH(req: NextRequest) {
     const nextStage = getNextJapanOperatorStage(current.stage)
     if (!nextStage || parsed.data.stage !== nextStage) return NextResponse.json({ ok: false, error: "Only the next stage entry gate can be edited" }, { status: 409 })
     const definition = getJapanOperatorStageDefinition(nextStage)
-    if (!definition.requiredChecks.some((item) => item.id === parsed.data.checkId)) return NextResponse.json({ ok: false, error: "Unknown gate check" }, { status: 400 })
+    const checkId = parsed.data.checkId
+    if (!definition.requiredChecks.some((item) => item.id === checkId)) return NextResponse.json({ ok: false, error: "Unknown gate check" }, { status: 400 })
     const gateData = asGateData(current.gate_data)
-    gateData[nextStage] = { ...(gateData[nextStage] ?? {}), [parsed.data.checkId]: parsed.data.checked }
+    gateData[nextStage] = { ...(gateData[nextStage] ?? {}), [checkId]: parsed.data.checked }
     mutation = await mutateCase(supabase, {
       p_case_id: current.id,
       p_expected_revision: current.revision,
       p_action: "set_check",
       p_actor: parsed.data.actor,
-      p_note: `${nextStage}.${parsed.data.checkId} = ${parsed.data.checked}`,
+      p_note: `${nextStage}.${checkId} = ${parsed.data.checked}`,
       p_gate_data: gateData,
     })
   } else if (parsed.data.action === "save_next_action") {

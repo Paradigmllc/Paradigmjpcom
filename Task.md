@@ -2,13 +2,13 @@
 
 ## CURRENT STATUS — 2026-08-02 Japan market operator Wave 1
 
-- Read the two shared strategy chats and converted the core model into an executable external Japan market operator offer.
-- Standardized the public package: $5,000 Paid Market Validation (credited), $20,000 total Japan Launch, then $2,500/month + 10% of Net Collected Japan Sales.
-- Revalidated the historic candidate lists against current public sources; rejected brands with existing Japan distribution/export evidence.
-- Added five evidence-backed Wave 1 prospects to production RevenueOS: CHEFCLEAN, Little Archive / DONGJIN BEDDING, B.FTER / Another Day, HOLEN and QURV / F.R.P. Industry.
-- Updated the permission-first outbound draft to ask to send a three-page Japan Opportunity Memo; no external messages have been sent.
-- Added `docs/knowledge/japan-market-operator-playbook.md` with ICP, package, outreach sequence, first-wave list and MSA/SOW/KPI-conditional exclusivity structure.
-- Active handoff: run human review on the five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.
+- External Japan Market Operatorを12段階（証拠確認→人間承認→許可送信→有償検証→Launch/Operator契約→運用中）の案件ワークフローへ具体化した。各段階にentry gate、担当、SLA、next action、期限、revision競合防止、監査eventを持たせる。
+- 標準商品は$5,000 Paid Market Validation（Launchへ充当）、$20,000 total Japan Launch、その後$2,500/月 + Net Collected Japan Salesの10%。既存の$15,000 Country Partner Setupは代理店指名・独占・売上歩合を含まない別レーンとして公開表示も分離した。
+- RLS/権限を最小化した`cases`/`events`、原子的RPC、認証API、DBベル+Slack通知、管理画面のcase boardを追加した。外部自動送信機能は追加せず、送信は必ず`human_approved`後の手動操作とする。
+- 運用マニュアルにICP hard gate、規制レビュー条件、RACI、日次/週次運用、30分商談、検証受入基準、Net Collected精算、KPI条件付き独占、recall/incident、offboardingまで定義した。Opportunity Memo、契約チェック、週次報告のテンプレートも追加した。
+- Wave 1の5社（CHEFCLEAN、Little Archive / DONGJIN BEDDING、B.FTER / Another Day、HOLEN、QURV / F.R.P. Industry）を`evidence_verified`へseedする。初回実行順はCHEFCLEAN→HOLEN、外部送信0件を維持する。
+- 対象unit/API/release wiring test、TypeScript、変更ファイルESLint、Next.js production build、公開導線Playwright 4件をクリーン環境でpassした。
+- Active handoff: release後、CHEFCLEANとHOLENのOpportunity Memoを人間が確認し、全gateを満たした案件だけpermission-first文面を1社ずつ送る。返信後はqualificationを記録し、無償提案へ逸脱せずPaid Market Validation SOWへ進める。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
 
@@ -93,6 +93,7 @@
 
 ## ACTIVE HANDOFF
 
+- Japan operatorは外部送信0件のまま。`/ja/admin/opportunity-briefs`のcase boardでCHEFCLEAN→HOLENの順に証拠・memo・人間承認gateを完了し、送信と返信を必ずaudit eventへ記録する。契約・表示・規制判断は運用マニュアルのreview triggerに従う。
 - Video Factory主要OSS実行基盤はPR **#642** / main **b2163b0a** / deployment **ofw2znwsajogrgadwsz0mkjp**で本番反映済み。40 profileは実行境界・固定revision・license・model/workflow・reviewer gateを保持し、未承認profileを利用可能扱いにしない。
 - 本番OSS worker URL/keyは未設定。これは接続先・事前導入worker artifact・exact weight hash・人間の商用審査がないprofileを暗黙実行しない安全境界であり、Consoleの「worker未設定」と各profileのblocking reasonを解消せずにreadyへ変更してはならない。
 - Video Factoryのevent-driven GPU自動start/stopはPR **#635–#637**、main **b9c596ec**、deployment **d12xwzq945vjqdz1hpxba8d2**で本番反映・実生成proof・最終read-backまで完了。
