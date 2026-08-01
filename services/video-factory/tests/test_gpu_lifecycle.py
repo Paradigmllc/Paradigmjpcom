@@ -109,7 +109,11 @@ def test_gpu_starts_for_run_and_stops_when_idle(
     )
 
     assert started["phase"] == "ready"
+    assert started["detail"] == "ComfyUI ready"
     assert stopped["phase"] == "stopped"
+    assert stopped["detail"] == (
+        "The managed GPU is stopped; active compute billing is paused."
+    )
     assert actions == ["running", "stopped"]
     assert startup_polls == 1
     runtime = load_runtime_config(settings.workspace)
@@ -256,6 +260,9 @@ def test_unreadable_run_record_fails_safe_without_stopping_gpu(
 
     assert state["phase"] == "in_use"
     assert state["error"] == "Unreadable run or lease records prevented automatic GPU stop"
+    assert state["detail"] == (
+        "Unreadable run or lease records require operator review."
+    )
     assert status["unreadable_run_files"]
 
 

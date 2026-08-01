@@ -10,6 +10,10 @@
 - 新規/対象test 28件、Ruff、mypy strict、TypeScript、対象Vitest 5件、ESLint、品質guard error 0、Next.js production buildをpass。ローカル全Video Factory pytestはmacOS側に`ffmpeg`実行ファイルがない既存環境差だけで停止したため、production image CIで全件を再確認する。
 - 作業開始時点でVast.ai GPU **46258780**を停止し、実状態`exited`、active production run 0件をread-back済み。release後は停止→実runによる自動起動→実生成→自動停止→2段階承認→納品を本番で通し、最終実状態を再び非稼働にして完了する。
 - 初回release **vnf5ibia5yw7bgj790uyyzju** / main **c1d98f32**はhealthy・公開readyまでpassしたが、旧bootstrap stateが本番workspaceに残っておらず、停止中Vast APIはproxy key/portも返さないため管理ID migrationがfail-closedになった。既存runtimeのComfyUI host＋template hashと、唯一のmanaged labelを照合して停止状態のままIDを移行するhotfixを追加し、任意GPU選択やGPU起動による回避は行わない。
+- hotfix PR **#636**をmain **1798348f**へmergeし、deployment **fv3zslcnqli7vmsb02d1g3is**で本番反映。停止状態のまま管理ID **46258780**をschema v2 runtimeへ移行し、`stopped / already_stopped`、active run/lease 0、errorなしをread-backした。
+- 実証run **f6136a7e-aa28-413a-946d-68116fd2abbb** / project **gpu-lifecycle-proof-1785565222**は、投入前`exited`→自動start→約30秒で認証済みComfyUI `ready`→Wan 2.2実生成→2分21秒後に`draft_review_required`となり即時自動stop→`exited`へ復帰した。draft承認、finalize、final承認、local納品中もGPUは停止を維持し、最終stateは`delivered`。
+- 生成物はH.264 640×360/24fps＋AAC、8.000秒、230,838 bytes、SHA-256 `bd1d61447d7423a009f3ea6c98e07cedce37e3e8c592c5a93d3e9e0e97d0efbd`。technical QA全項目、2段階approval hash、delivery hashが一致。starting/ready/stoppedのevent journalはすべて`delivered`、DB operator queue 3件を直接read-backし、全行`slack_ok: true`。
+- 制御は正常だったが、`ready`/`stopped` stateに直前の接続待機detailがmerge残存する表示不整合を実証中に検出した。各phaseで説明文を必ず上書きする回帰修正を追加し、再release後のconsole/API read-backで完了する。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（実GPU生成・2段階承認・納品まで完了）
 
