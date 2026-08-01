@@ -279,6 +279,31 @@ function checkStaticReleaseRules() {
     fail("Japan Entry score utility persistence must have RLS and release migration wiring")
   }
 
+  const operatorCasesMigrationPath = "supabase/migrations/20260801224308_sales_japan_operator_cases.sql"
+  const operatorCasesMigration = fs.existsSync(operatorCasesMigrationPath)
+    ? fs.readFileSync(operatorCasesMigrationPath, "utf8")
+    : ""
+  const operatorCaseMarkers = [
+    "sales_japan_operator_cases",
+    "sales_japan_operator_events",
+    "sales_apply_japan_operator_action",
+    "sales_create_japan_operator_case",
+    "ENABLE ROW LEVEL SECURITY",
+    "FORCE ROW LEVEL SECURITY",
+    "FROM PUBLIC, anon, authenticated",
+    "TO service_role",
+    "external_messages_sent",
+  ]
+  if (
+    operatorCaseMarkers.every((marker) => operatorCasesMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801224308_sales_japan_operator_cases.sql") &&
+    noLoginDeploy.includes("applyJapanOperatorCasesMigration")
+  ) {
+    pass("Japan market operator cases have atomic audit actions, RLS and release wiring")
+  } else {
+    fail("Japan market operator cases require atomic audit actions, RLS and release wiring")
+  }
+
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
   const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
     ? fs.readFileSync(engineProfilesMigrationPath, "utf8")

@@ -104,6 +104,8 @@ export const DB_TABLES = {
   SALES_JAPAN_ENTRY_PROJECTIONS: "sales_japan_entry_projections",
   SALES_INITIAL_FORM_DRAFTS: "sales_initial_form_drafts",
   SALES_REPORT_FACTORY_STATE: "sales_report_factory_state",
+  SALES_JAPAN_OPERATOR_CASES: "sales_japan_operator_cases",
+  SALES_JAPAN_OPERATOR_EVENTS: "sales_japan_operator_events",
 
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import {
   CheckCircle2,
   CircleDollarSign,
@@ -180,6 +181,17 @@ export default async function JapanMarketPartnerPage({ params }: Props) {
             <p className="mt-5 text-[14px] leading-[1.9] text-paradigm-ink-soft md:text-[16px]">
               Paradigm does not silently bundle formal legal, tax, banking, licensing, incorporation, logistics, warehousing, full customer-support staffing, paid media budget, guaranteed sales, or unbounded development. Specialist, third-party, and out-of-scope work requires separate written approval.
             </p>
+            <div className="mt-7 border-l-2 border-paradigm-accent pl-5">
+              <p className="text-[13px] leading-[1.85] text-paradigm-ink-soft">
+                This $15,000 fixed setup lane does not appoint Paradigm as a distributor, grant territory or SKU exclusivity, or include a revenue share. Consumer brands seeking paid market validation followed by a $20,000 launch and KPI-linked ongoing Japan operation should use the separate External Japan Market Operator lane.
+              </p>
+              <Link
+                href="/en/japan-opportunities/enter-and-operate-japan"
+                className="mt-4 inline-flex text-[13px] font-semibold text-paradigm-accent underline underline-offset-4"
+              >
+                View the External Japan Market Operator package
+              </Link>
+            </div>
           </FadeIn>
         </div>
       </section>
