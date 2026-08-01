@@ -34,6 +34,10 @@ class Settings:
     comfyui_allow_unregistered_workflows: bool
     model_registry_path: Path
     engine_profile_catalog_path: Path
+    oss_worker_base_url: str | None
+    oss_worker_api_key: str | None
+    oss_worker_timeout_seconds: int
+    oss_worker_max_output_bytes: int
     production_region: str | None
     playwright_node: str
     playwright_capture_script: Path
@@ -61,9 +65,7 @@ class Settings:
             value = os.getenv(name, "").strip()
             return tuple(shlex.split(value)) if value else ()
 
-        workspace = Path(
-            os.getenv("VIDEO_FACTORY_WORKSPACE", "workspace")
-        ).expanduser().resolve()
+        workspace = Path(os.getenv("VIDEO_FACTORY_WORKSPACE", "workspace")).expanduser().resolve()
         runtime = load_runtime_config(workspace)
         environment = os.getenv("VIDEO_FACTORY_ENVIRONMENT", "local").strip().lower()
         api_key = (os.getenv("VIDEO_FACTORY_API_KEY") or "").strip() or None
@@ -83,15 +85,11 @@ class Settings:
             if item.strip()
         )
         environment_comfyui_url = (
-            os.getenv("COMFYUI_API_URL")
-            or os.getenv("COMFYUI_BASE_URL")
-            or ""
+            os.getenv("COMFYUI_API_URL") or os.getenv("COMFYUI_BASE_URL") or ""
         ).rstrip("/") or None
         queue_backend = os.getenv("VIDEO_FACTORY_QUEUE_BACKEND", "auto").strip().lower()
         if queue_backend not in {"auto", "prefect", "local"}:
-            raise ValueError(
-                "VIDEO_FACTORY_QUEUE_BACKEND must be auto, prefect, or local"
-            )
+            raise ValueError("VIDEO_FACTORY_QUEUE_BACKEND must be auto, prefect, or local")
         local_queue_workers = int(os.getenv("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", "1"))
         if not 1 <= local_queue_workers <= 8:
             raise ValueError("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS must be between 1 and 8")
@@ -104,9 +102,11 @@ class Settings:
             if runtime.gpu_lifecycle_enabled is not None
             else lifecycle_default
         )
-        service_root = Path(
-            os.getenv("VIDEO_FACTORY_ROOT", Path(__file__).resolve().parents[2])
-        ).expanduser().resolve()
+        service_root = (
+            Path(os.getenv("VIDEO_FACTORY_ROOT", Path(__file__).resolve().parents[2]))
+            .expanduser()
+            .resolve()
+        )
 
         def service_path(name: str, default: str) -> Path:
             value = Path(os.getenv(name, default)).expanduser()
@@ -130,24 +130,22 @@ class Settings:
             ).lower()
             in {"1", "true", "yes"},
             comfyui_base_url=runtime.comfyui_base_url or environment_comfyui_url,
-            comfyui_api_key=(
-                runtime.comfyui_api_key
-                or os.getenv("COMFYUI_API_KEY")
-                or None
-            ),
+            comfyui_api_key=(runtime.comfyui_api_key or os.getenv("COMFYUI_API_KEY") or None),
             comfyui_profile=os.getenv("COMFYUI_PROFILE", "local").strip().lower(),
             comfyui_timeout_seconds=int(os.getenv("COMFYUI_TIMEOUT_SECONDS", "1800")),
             comfyui_poll_seconds=float(os.getenv("COMFYUI_POLL_SECONDS", "3")),
             comfyui_min_vram_gb=float(os.getenv("COMFYUI_MIN_VRAM_GB", "16")),
-            comfyui_workflow_root=Path(
-                os.getenv("COMFYUI_WORKFLOW_ROOT", "workflows/comfyui")
-            ).expanduser().resolve(),
+            comfyui_workflow_root=Path(os.getenv("COMFYUI_WORKFLOW_ROOT", "workflows/comfyui"))
+            .expanduser()
+            .resolve(),
             comfyui_workflow_registry=Path(
                 os.getenv(
                     "COMFYUI_WORKFLOW_REGISTRY",
                     "workflows/comfyui/registry.yaml",
                 )
-            ).expanduser().resolve(),
+            )
+            .expanduser()
+            .resolve(),
             comfyui_required_workflows=tuple(
                 item.strip()
                 for item in os.getenv(
@@ -162,26 +160,39 @@ class Settings:
             in {"1", "true", "yes"},
             model_registry_path=Path(
                 os.getenv("VIDEO_FACTORY_MODEL_REGISTRY", "config/model-registry.yaml")
-            ).expanduser().resolve(),
+            )
+            .expanduser()
+            .resolve(),
             engine_profile_catalog_path=service_path(
                 "VIDEO_FACTORY_ENGINE_PROFILE_CATALOG",
                 "config/engine-profiles.yaml",
             ),
-            production_region=(
-                os.getenv("VIDEO_FACTORY_PRODUCTION_REGION") or ""
+            oss_worker_base_url=(
+                runtime.oss_worker_base_url or os.getenv("VIDEO_FACTORY_OSS_WORKER_URL") or ""
+            ).rstrip("/")
+            or None,
+            oss_worker_api_key=(
+                runtime.oss_worker_api_key or os.getenv("VIDEO_FACTORY_OSS_WORKER_API_KEY") or ""
             ).strip()
             or None,
+            oss_worker_timeout_seconds=int(
+                os.getenv("VIDEO_FACTORY_OSS_WORKER_TIMEOUT_SECONDS", "3600")
+            ),
+            oss_worker_max_output_bytes=int(
+                os.getenv("VIDEO_FACTORY_OSS_WORKER_MAX_OUTPUT_BYTES", "268435456")
+            ),
+            production_region=(os.getenv("VIDEO_FACTORY_PRODUCTION_REGION") or "").strip() or None,
             playwright_node=os.getenv("PLAYWRIGHT_NODE", "node"),
             playwright_capture_script=Path(
                 os.getenv(
                     "PLAYWRIGHT_CAPTURE_SCRIPT",
                     "tools/playwright-capture/capture.mjs",
                 )
-            ).expanduser().resolve(),
+            )
+            .expanduser()
+            .resolve(),
             playwright_allowed_hosts=allowed_hosts,
-            playwright_chromium_executable=(
-                os.getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or None
-            ),
+            playwright_chromium_executable=(os.getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE") or None),
             external_commands={
                 "blender": command("BLENDER_ADAPTER_COMMAND"),
                 "manim": command("MANIM_ADAPTER_COMMAND"),
@@ -229,9 +240,8 @@ class Settings:
         data = self.__dict__.copy()
         data["api_key"] = "configured" if self.api_key else None
         data["comfyui_api_key"] = "configured" if self.comfyui_api_key else None
-        data["frameio_access_token"] = (
-            "configured" if self.frameio_access_token else None
-        )
+        data["frameio_access_token"] = "configured" if self.frameio_access_token else None
+        data["oss_worker_api_key"] = "configured" if self.oss_worker_api_key else None
         data["workspace"] = str(self.workspace)
         data["comfyui_workflow_root"] = str(self.comfyui_workflow_root)
         data["comfyui_workflow_registry"] = str(self.comfyui_workflow_registry)

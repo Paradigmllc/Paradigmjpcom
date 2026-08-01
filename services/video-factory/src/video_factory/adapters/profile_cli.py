@@ -1,9 +1,15 @@
 from __future__ import annotations
 
-from ..engine_profiles import load_engine_profile_catalog, profile_external_command
+from ..engine_profiles import (
+    ExecutionTarget,
+    load_engine_profile_catalog,
+    profile_external_command,
+    resolved_execution_target,
+)
 from ..models import Engine, EngineOutput, Shot
 from .base import EngineAdapter, EngineContext
 from .external import ExternalCliAdapter
+from .managed_oss import ManagedOssWorkerAdapter
 
 
 class ProfileCliAdapter(EngineAdapter):
@@ -13,15 +19,17 @@ class ProfileCliAdapter(EngineAdapter):
         profile_id = str(shot.metadata.get("engine_profile_id") or "").strip()
         if not profile_id:
             raise RuntimeError("OSS adapter requires engine_profile_id metadata")
-        catalog = load_engine_profile_catalog(
-            context.settings.engine_profile_catalog_path
-        )
+        catalog = load_engine_profile_catalog(context.settings.engine_profile_catalog_path)
         try:
             profile = catalog.get(profile_id)
         except KeyError as error:
             raise RuntimeError(str(error)) from error
-        command = profile_external_command(profile)
-        adapter = ExternalCliAdapter(Engine.OSS, command)
+        adapter: EngineAdapter
+        if resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU:
+            adapter = ManagedOssWorkerAdapter(profile)
+        else:
+            command = profile_external_command(profile)
+            adapter = ExternalCliAdapter(Engine.OSS, command)
         output = adapter.run(shot, context)
         return output.model_copy(
             update={

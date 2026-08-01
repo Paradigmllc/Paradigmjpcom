@@ -1,4 +1,21 @@
-# Optional media-worker contract
+# Managed OSS media-worker contract
+
+All non-Wan major OSS profiles are registered in `config/engine-profiles.yaml`. GPU-bound external profiles execute only through `video_factory.engine_worker_api`, never as a control-plane subprocess. CPU profiles retain the same request/output contract locally.
+
+Run the worker on the managed GPU host:
+
+```bash
+docker build -f Dockerfile.oss-worker -t paradigm-video-factory-oss-worker .
+docker run --rm --gpus all --network none \
+  -e VIDEO_FACTORY_OSS_WORKER_API_KEY='<32+ random characters>' \
+  -v "$PWD/config/engine-profiles.yaml:/app/config/engine-profiles.yaml:ro" \
+  -v /opt/video-factory/workers:/opt/workers:ro \
+  -v /opt/video-factory/models:/opt/models:ro \
+  -p 127.0.0.1:8090:8090 \
+  paradigm-video-factory-oss-worker
+```
+
+Place TLS and private-network authentication in front of port 8090. Production control-plane settings reject plain HTTP. `--network none` is the preferred runtime posture after all artifacts have been built into or mounted into the host.
 
 The factory control plane intentionally does not embed Blender, Manim, LivePortrait, or MuseTalk. Each approved worker is registered through one environment variable:
 
@@ -24,7 +41,7 @@ Noncommercial profiles remain visible in the Console but must never receive a co
 production. Worker images are built ahead of a client job; the command may start only for the
 job and must exit after writing the requested output so no GPU model remains resident.
 
-The factory invokes:
+The authenticated worker invokes:
 
 ```text
 <command...> --request /absolute/request.json --output /absolute/output.mp4
@@ -54,3 +71,5 @@ The request contains the shot, target deliverable, brand tokens, and rights decl
 - [ ] Adapter command added only after approval
 
 Until these checks pass, the router uses another approved engine or rejects the shot.
+
+Worker health reports `command_configured` and `executable_available` for every managed profile. A production run compares both profile ID and pinned 40-character revision before acquiring the execution path. The worker permits one GPU task at a time, streams only a probed MP4, enforces a byte limit, records SHA-256 provenance, removes temporary files, and exits the task without leaving a model process running.

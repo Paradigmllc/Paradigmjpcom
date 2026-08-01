@@ -60,6 +60,49 @@ async def _proxy_status(instance: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+async def _oss_worker_status(settings: Settings) -> dict[str, Any]:
+    if not settings.oss_worker_base_url or not settings.oss_worker_api_key:
+        raise ValueError("Authenticated managed OSS worker is not configured")
+    async with httpx.AsyncClient(
+        timeout=20.0,
+        headers={
+            "Authorization": f"Bearer {settings.oss_worker_api_key}",
+            "X-API-Key": settings.oss_worker_api_key,
+        },
+    ) as client:
+        response = await client.get(f"{settings.oss_worker_base_url}/v1/health")
+        response.raise_for_status()
+        payload: Any = response.json()
+    if not isinstance(payload, dict) or payload.get("ok") is not True:
+        raise ValueError("Managed OSS worker returned an invalid health response")
+    return payload
+
+
+def _assert_worker_profiles(
+    payload: dict[str, Any],
+    required_profiles: tuple[tuple[str, str], ...],
+) -> None:
+    raw_profiles = payload.get("profiles")
+    if not isinstance(raw_profiles, list):
+        raise ValueError("Managed OSS worker omitted its installed profiles")
+    installed = {
+        (str(item.get("id")), str(item.get("revision")))
+        for item in raw_profiles
+        if isinstance(item, dict)
+        and item.get("command_configured") is True
+        and item.get("executable_available") is True
+    }
+    missing = [
+        profile_id
+        for profile_id, revision in required_profiles
+        if (profile_id, revision) not in installed
+    ]
+    if missing:
+        raise ValueError(
+            "Managed OSS worker is missing exact approved installations: " + ", ".join(missing)
+        )
+
+
 def _adopt_connection(settings: Settings, instance: dict[str, Any]) -> None:
     connection = vast_instance_connection(instance)
     update_runtime_config(
@@ -73,7 +116,12 @@ def _adopt_connection(settings: Settings, instance: dict[str, Any]) -> None:
     )
 
 
-async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[str, object]:
+async def ensure_gpu_ready(
+    settings: Settings,
+    *,
+    run_id: str | None,
+    required_oss_profiles: tuple[tuple[str, str], ...] = (),
+) -> dict[str, object]:
     if not settings.gpu_lifecycle_enabled:
         return write_lifecycle_state(
             settings,
@@ -100,9 +148,9 @@ async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[st
                     hourly_price=price,
                     error=None,
                 )
-                await VastClient(
-                    VastConfig.from_workspace(settings.workspace)
-                ).set_instance_state(managed_id, "running")
+                await VastClient(VastConfig.from_workspace(settings.workspace)).set_instance_state(
+                    managed_id, "running"
+                )
                 await emit_operator_event(
                     settings,
                     event_type="gpu_starting",
@@ -130,7 +178,16 @@ async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[st
                         last_detail = f"ComfyUI proxy is starting: {error}"
                     else:
                         last_detail = str(proxy.get("detail") or proxy.get("phase") or "starting")
-                        if proxy.get("ready") is True:
+                        worker: dict[str, Any] | None = None
+                        if proxy.get("ready") is True and required_oss_profiles:
+                            try:
+                                worker = await _oss_worker_status(settings)
+                                _assert_worker_profiles(worker, required_oss_profiles)
+                            except (httpx.HTTPError, ValueError) as error:
+                                last_detail = f"Managed OSS worker is starting: {error}"
+                        if proxy.get("ready") is True and (
+                            not required_oss_profiles or worker is not None
+                        ):
                             state = write_lifecycle_state(
                                 settings,
                                 phase="ready",
@@ -142,10 +199,10 @@ async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[st
                                     "ready": True,
                                     "phase": proxy.get("phase"),
                                     "detail": proxy.get("detail"),
+                                    "oss_worker_ready": worker is not None,
                                 },
                                 detail=str(
-                                    proxy.get("detail")
-                                    or "Authenticated ComfyUI proxy is ready."
+                                    proxy.get("detail") or "Authenticated ComfyUI proxy is ready."
                                 ),
                                 hourly_price=hourly_price(instance),
                                 error=None,
@@ -178,7 +235,14 @@ async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[st
                 f"Managed GPU did not become ready within {settings.gpu_start_timeout_seconds}s: "
                 f"{last_detail}"
             )
-    except (VastAPIError, httpx.HTTPError, OSError, RuntimeError, TimeoutError, ValueError) as error:
+    except (
+        VastAPIError,
+        httpx.HTTPError,
+        OSError,
+        RuntimeError,
+        TimeoutError,
+        ValueError,
+    ) as error:
         write_lifecycle_state(
             settings,
             phase="error",
@@ -259,9 +323,9 @@ async def release_gpu_if_idle(
                     error=None,
                 )
             if intended_status(instance) != "stopped":
-                await VastClient(
-                    VastConfig.from_workspace(settings.workspace)
-                ).set_instance_state(managed_id, "stopped")
+                await VastClient(VastConfig.from_workspace(settings.workspace)).set_instance_state(
+                    managed_id, "stopped"
+                )
             write_lifecycle_state(
                 settings,
                 phase="stopping",
@@ -303,9 +367,7 @@ async def release_gpu_if_idle(
                     )
                     return state
                 await asyncio.sleep(settings.gpu_poll_seconds)
-            raise TimeoutError(
-                f"Managed GPU {managed_id} remained running after the stop request"
-            )
+            raise TimeoutError(f"Managed GPU {managed_id} remained running after the stop request")
     except (VastAPIError, OSError, RuntimeError, TimeoutError, ValueError) as error:
         state = write_lifecycle_state(
             settings,
@@ -338,8 +400,7 @@ async def gpu_lifecycle_status(settings: Settings) -> dict[str, object]:
     return {
         **state,
         "enabled": settings.gpu_lifecycle_enabled,
-        "managed_instance_id": runtime.vast_instance_id
-        or bootstrap_instance_id(settings),
+        "managed_instance_id": runtime.vast_instance_id or bootstrap_instance_id(settings),
         "active_runs": active,
         "active_gpu_leases": active_leases,
         "unreadable_run_files": unreadable,

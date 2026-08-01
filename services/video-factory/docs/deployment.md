@@ -5,23 +5,25 @@
 1. **Codex workstation** — repository, official HyperFrames skills, Paradigm producer skill, and trusted-admin ComfyUI MCP.
 2. **Video Factory control plane** — FastAPI, Prefect, PostgreSQL, workspace, approvals, QA, and delivery.
 3. **ComfyUI auth proxy** — API-key boundary and route allow-list.
-4. **GPU worker** — private ComfyUI instance, pinned core version, exact models/custom nodes, no public unauthenticated port.
+4. **GPU worker** — private ComfyUI plus authenticated OSS worker, pinned revisions, exact models/custom nodes, no public unauthenticated port.
 5. **Delivery systems** — Frame.io or rclone target with least-privilege credentials.
 
 ## Required deployment order
 
-1. Generate random `VIDEO_FACTORY_API_KEY` and `COMFYUI_PROXY_API_KEY` values of at least 32 characters.
+1. Generate random `VIDEO_FACTORY_API_KEY`, `COMFYUI_PROXY_API_KEY`, and `VIDEO_FACTORY_OSS_WORKER_API_KEY` values of at least 32 characters.
 2. Deploy PostgreSQL, Prefect, Factory API, and worker.
 3. Deploy ComfyUI v0.28.0 on the approved GPU host.
 4. Keep ComfyUI port 8188 private; expose it only to the proxy or trusted admin tunnel.
 5. Set `COMFYUI_UPSTREAM_URL` on the proxy.
 6. Set `COMFYUI_API_URL` to the proxy URL and the matching `COMFYUI_API_KEY` on API/worker.
-7. Run `video-factory doctor`; endpoint and VRAM must pass.
-8. Review exact models, hashes, licenses, regions, and custom nodes.
-9. Export workflows in ComfyUI API format and bind them with `video-factory workflows bind`.
-10. Run `video-factory doctor` again; required workflow readiness must pass.
-11. Run the synthetic end-to-end fixture and verify both review gates.
-12. Enable client production only after the evidence is recorded.
+7. Set the TLS `VIDEO_FACTORY_OSS_WORKER_URL` and matching worker key when an external GPU profile is enabled.
+8. Run `video-factory doctor`; endpoint and VRAM must pass.
+9. Review exact models, hashes, licenses, regions, and custom nodes.
+10. Export workflows in ComfyUI API format and bind them with `video-factory workflows bind`.
+11. Build external commands ahead of the job and verify the worker health reports the exact catalog revision.
+12. Run `video-factory doctor` again; required workflow readiness must pass.
+13. Run the synthetic end-to-end fixture and verify both review gates.
+14. Enable client production only after the evidence is recorded.
 
 ## GPU baseline
 
@@ -37,7 +39,7 @@ The control-plane image trusts only the public Vast.ai Jupyter CA copied from <h
 
 The operator console lists only an allowlist of instance metadata. Vast.ai fields such as `extra_env`, notebook tokens, SSH material, and the ComfyUI proxy key must never be returned to the browser. Use **既存GPUを安全に回収** to recover the proxy URL and key server-side, verify the authenticated status endpoint, and save them to the mode-`0600` runtime configuration.
 
-Adoption also records the managed instance ID and enables event-driven lifecycle control. Non-dry-run jobs start that exact instance only when the routed manifest contains a ComfyUI shot, wait for authenticated readiness, and stop it when no queued/running job remains. Dry runs and non-ComfyUI routes do not start it. The controller never searches the marketplace or creates a replacement. Set `VIDEO_FACTORY_GPU_LIFECYCLE_ENABLED=false` only during an operator-controlled incident; disabling it restores manual responsibility for compute charges.
+Adoption also records the managed instance ID and enables event-driven lifecycle control. Non-dry-run jobs start that exact instance only when the routed manifest contains a ComfyUI or managed external GPU shot, wait for authenticated readiness and the selected exact worker revisions, and stop it when no queued/running job remains. Dry runs and CPU-only routes do not start it. The controller never searches the marketplace or creates a replacement. Set `VIDEO_FACTORY_GPU_LIFECYCLE_ENABLED=false` only during an operator-controlled incident; disabling it restores manual responsibility for compute charges.
 
 Vast.ai bills stopped instances for storage even though active GPU compute billing is paused. Restart can remain in `scheduling` when the original GPU has been reassigned. Treat a start timeout as a visible capacity incident rather than silently provisioning a second GPU.
 
@@ -73,7 +75,7 @@ cp .env.example .env
 docker compose --profile gpu up --build -d
 ```
 
-The `gpu` profile starts the auth proxy; it does not install or pay for a GPU. The worker may run on a separate host or provider.
+The `gpu` profile defines the auth proxy and authenticated OSS worker; it does not install models, create a marketplace instance, or start a paid GPU by itself. On a provider host, run it only for an acquired job and stop it with the lifecycle-managed instance.
 
 ## Readiness command
 

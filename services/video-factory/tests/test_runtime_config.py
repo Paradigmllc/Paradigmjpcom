@@ -20,6 +20,8 @@ def test_runtime_config_round_trip_and_masking(tmp_path: Path) -> None:
         {
             "comfyui_base_url": "https://gpu.example.test:8189/",
             "comfyui_api_key": "comfy-secret",
+            "oss_worker_base_url": "https://gpu.example.test/oss/",
+            "oss_worker_api_key": "worker-secret",
             "vast_api_key": "vast-secret",
             "vast_template_hash": "template-hash",
             "vast_instance_id": 46258780,
@@ -30,12 +32,16 @@ def test_runtime_config_round_trip_and_masking(tmp_path: Path) -> None:
     assert saved.comfyui_base_url == "https://gpu.example.test:8189"
     loaded = load_runtime_config(workspace)
     assert loaded.comfyui_api_key == "comfy-secret"
+    assert loaded.oss_worker_base_url == "https://gpu.example.test/oss"
+    assert loaded.oss_worker_api_key == "worker-secret"
     assert loaded.vast_api_key == "vast-secret"
     assert loaded.vast_instance_id == 46258780
     assert loaded.gpu_lifecycle_enabled is True
     assert loaded.safe_dict()["comfyui_api_key_configured"] is True
+    assert loaded.safe_dict()["oss_worker_api_key_configured"] is True
     assert "comfy-secret" not in str(loaded.safe_dict())
     assert "vast-secret" not in str(loaded.safe_dict())
+    assert "worker-secret" not in str(loaded.safe_dict())
 
     mode = stat.S_IMODE(runtime_config_path(workspace).stat().st_mode)
     assert mode == 0o600
@@ -51,16 +57,24 @@ def test_settings_use_gui_runtime_overrides(
         {
             "comfyui_base_url": "https://gui-worker.example.test",
             "comfyui_api_key": "gui-key",
+            "oss_worker_base_url": "https://gui-oss-worker.example.test",
+            "oss_worker_api_key": "gui-worker-key",
         },
     )
     monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
     monkeypatch.setenv("COMFYUI_API_URL", "https://environment-worker.example.test")
     monkeypatch.setenv("COMFYUI_API_KEY", "environment-key")
+    monkeypatch.setenv(
+        "VIDEO_FACTORY_OSS_WORKER_URL", "https://environment-oss-worker.example.test"
+    )
+    monkeypatch.setenv("VIDEO_FACTORY_OSS_WORKER_API_KEY", "environment-worker-key")
 
     settings = Settings.from_env()
 
     assert settings.comfyui_base_url == "https://gui-worker.example.test"
     assert settings.comfyui_api_key == "gui-key"
+    assert settings.oss_worker_base_url == "https://gui-oss-worker.example.test"
+    assert settings.oss_worker_api_key == "gui-worker-key"
 
 
 def test_runtime_config_rejects_credential_bearing_url(tmp_path: Path) -> None:
@@ -68,6 +82,11 @@ def test_runtime_config_rejects_credential_bearing_url(tmp_path: Path) -> None:
         update_runtime_config(
             tmp_path / "workspace",
             {"comfyui_base_url": "https://user:password@gpu.example.test"},
+        )
+    with pytest.raises(ValueError, match="Credentials"):
+        update_runtime_config(
+            tmp_path / "workspace",
+            {"oss_worker_base_url": "https://user:password@worker.example.test"},
         )
 
 

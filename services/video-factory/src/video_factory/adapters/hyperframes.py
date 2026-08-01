@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
+from typing import Literal
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
@@ -23,6 +24,7 @@ class HyperFramesAdapter(EngineAdapter):
 
     def run(self, shot: Shot, context: EngineContext) -> EngineOutput:
         started = time.monotonic()
+        status: Literal["completed", "dry_run", "failed"]
         project = context.workspace.hyperframes / context.namespace / shot.id
         project.mkdir(parents=True, exist_ok=True)
         template = self.environment.get_template("basic-launch/index.html.j2")
@@ -69,8 +71,7 @@ class HyperFramesAdapter(EngineAdapter):
             )
             status = "dry_run"
             warnings = [
-                "HyperFrames project generated; render replaced with mock media "
-                "in dry-run mode."
+                "HyperFrames project generated; render replaced with mock media in dry-run mode."
             ]
         else:
             package = f"hyperframes@{context.settings.hyperframes_version}"

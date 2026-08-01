@@ -3,6 +3,7 @@ const engineCatalogState = {
   loading: false,
   error: null,
   events: [],
+  worker: null,
 }
 
 function renderEngineEvents() {
@@ -76,6 +77,9 @@ function renderEngineProfile(profile) {
     ? `${Number(profile.min_vram_gb).toFixed(0)}GB以上（推奨 ${Number(profile.recommended_vram_gb).toFixed(0)}GB）`
     : "GPU不要"
   const stateLabel = profile.ready ? "本番利用可" : "利用不可"
+  const executionTarget = profile.execution_target === "managed_gpu"
+    ? "管理GPU（ジョブ中だけ起動）"
+    : "制御プレーン（GPU不要）"
   const capabilities = (profile.capabilities || [])
     .map((item) => `<span>${escapeHtml(item)}</span>`).join("")
   return `
@@ -88,6 +92,8 @@ function renderEngineProfile(profile) {
       <div class="engine-capabilities">${capabilities}</div>
       <dl class="engine-facts">
         <div><dt>実行</dt><dd>${escapeHtml(profile.runtime)} / ${escapeHtml(profile.install_mode)}</dd></div>
+        <div><dt>実行場所</dt><dd>${escapeHtml(executionTarget)}</dd></div>
+        <div><dt>adapter</dt><dd>${escapeHtml(profile.resolved_adapter || profile.adapter)}</dd></div>
         <div><dt>VRAM</dt><dd>${escapeHtml(vram)}</dd></div>
         <div><dt>コード</dt><dd>${escapeHtml(profile.code_license)}</dd></div>
         <div><dt>モデル</dt><dd>${escapeHtml(profile.model_license)}</dd></div>
@@ -97,6 +103,41 @@ function renderEngineProfile(profile) {
       ${engineReasonList(profile)}
       <a class="text-button engine-source" href="${escapeHtml(profile.source_url)}" target="_blank" rel="noopener noreferrer">公式sourceを確認 →</a>
     </article>`
+}
+
+function renderEngineWorkerStatus() {
+  const target = $("#engine-worker-status")
+  if (!target) return
+  const worker = engineCatalogState.worker
+  if (!worker) {
+    target.className = "badge neutral"
+    target.textContent = "worker未確認"
+    return
+  }
+  if (!worker.configured) {
+    target.className = "badge warn"
+    target.textContent = "worker未設定"
+    return
+  }
+  if (!worker.reachable) {
+    target.className = "badge neutral"
+    target.textContent = "GPU停止中"
+    return
+  }
+  const installed = (worker.profiles || [])
+    .filter((profile) => profile.executable_available).length
+  target.className = "badge good"
+  target.textContent = `worker稼働 · ${installed}件導入済み`
+}
+
+async function loadEngineWorkerStatus() {
+  try {
+    engineCatalogState.worker = await api("/v1/engine-worker/status")
+  } catch (error) {
+    console.error("[video-factory-engine-catalog] worker status failed", error)
+    engineCatalogState.worker = { configured: true, reachable: false, profiles: [] }
+  }
+  renderEngineWorkerStatus()
 }
 
 function populateEngineProfileSelectors() {
@@ -181,7 +222,7 @@ window.loadEngineCatalog = async () => {
   try {
     const payload = await api("/v1/engine-profiles")
     window.renderEngineCatalogFromBootstrap(payload)
-    await loadEngineEvents()
+    await Promise.all([loadEngineEvents(), loadEngineWorkerStatus()])
   } catch (error) {
     console.error("[video-factory-engine-catalog] load failed", error)
     engineCatalogState.loading = false

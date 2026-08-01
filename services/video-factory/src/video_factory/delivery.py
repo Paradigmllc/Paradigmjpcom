@@ -24,9 +24,7 @@ def build_variants(
     sources = master_paths or {}
     for spec in manifest.deliverables:
         language = spec.language.split("-")[0]
-        source = Path(
-            sources.get(spec.name) or sources.get(language) or str(master_path)
-        )
+        source = Path(sources.get(spec.name) or sources.get(language) or str(master_path))
         output = workspace.deliverables / f"{spec.name}.{spec.format}"
         create_variant(source, output, spec)
         items.append(
@@ -45,9 +43,7 @@ def deliver_project(
     review_path = workspace.review / "final-review.json"
     review = require_approved_review(review_path, ReviewStage.FINAL)
     master_path = Path(review.master_path)
-    items = build_variants(
-        manifest, master_path, workspace, master_paths=review.master_paths
-    )
+    items = build_variants(manifest, master_path, workspace, master_paths=review.master_paths)
 
     if target == "frameio":
         if not settings.frameio_access_token or not settings.frameio_create_file_url:
@@ -69,9 +65,7 @@ def deliver_project(
     elif target == "rclone":
         if not settings.rclone_remote:
             raise ValueError("RCLONE_REMOTE is not configured")
-        destination = (
-            f"{settings.rclone_remote}:{settings.rclone_base_path}/{manifest.project_id}"
-        )
+        destination = f"{settings.rclone_remote}:{settings.rclone_base_path}/{manifest.project_id}"
         run_command(
             ["rclone", "copy", str(workspace.deliverables), destination, "--checksum"],
             timeout=settings.external_timeout_seconds,
@@ -83,6 +77,8 @@ def deliver_project(
     elif target != "local":
         raise ValueError(f"Unsupported delivery target: {target}")
 
+    if not review.reviewer:
+        raise ValueError("Final approval reviewer is missing")
     record = DeliveryRecord(
         project_id=manifest.project_id,
         delivered_at=datetime.now(UTC).isoformat(),

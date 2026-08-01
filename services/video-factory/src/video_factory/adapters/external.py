@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Literal
 
 from ..commands import run_command
 from ..io import write_json
@@ -17,6 +18,7 @@ class ExternalCliAdapter(EngineAdapter):
 
     def run(self, shot: Shot, context: EngineContext) -> EngineOutput:
         started = time.monotonic()
+        status: Literal["completed", "dry_run", "failed"]
         output = self.output_path(shot, context)
         generated = context.workspace.assets_generated / context.namespace
         generated.mkdir(parents=True, exist_ok=True)

@@ -151,17 +151,17 @@ COMFYUI_API_KEY=<same shared key>
 VIDEO_FACTORY_ENVIRONMENT=production
 ```
 
-Start the optional proxy profile:
+Start the optional GPU services:
 
 ```bash
 docker compose --profile gpu up --build
 ```
 
-The proxy exposes only the ComfyUI routes required for health, node discovery, queueing, history, output retrieval, interrupt, and queue control. Manager/install routes are blocked.
+The proxy exposes only the ComfyUI routes required for health, node discovery, queueing, history, output retrieval, interrupt, and queue control. Manager/install routes are blocked. The same profile also defines a single-process authenticated OSS worker on port 8090. It accepts only exact catalog profile IDs and revisions, commercially approved profiles, cleared rights, and preinstalled commands; it never downloads code or weights during a client job.
 
 ### Automatic GPU lifecycle
 
-In production, the adopted Vast.ai instance is the only GPU managed by the factory. A non-dry-run submission starts that instance only when routing selected at least one ComfyUI shot, waits for both Vast.ai `running` state and the authenticated ComfyUI readiness endpoint, and then begins generation. Dry runs, validation failures, and non-ComfyUI routes never start it. When the last queued/running local job ends, the instance is stopped immediately. Concurrent jobs keep it running until the queue is empty.
+In production, the adopted Vast.ai instance is the only GPU managed by the factory. A non-dry-run submission starts that instance only when routing selected ComfyUI or an external GPU profile. Before generation it verifies Vast.ai state, authenticated ComfyUI readiness, and—when selected—the exact OSS worker profile revision and executable. Dry runs, validation failures, and CPU-only routes never start it. When the last queued/running local job ends, the instance is stopped immediately, including error paths. Concurrent jobs keep it running only until the queue is empty.
 
 The lifecycle is event-driven: run submission, run completion, and process startup reconciliation are the only triggers. There is no cron or resident status poller. The console shows the managed instance, active runs, last transition, cost, and any stop/start error. Lifecycle events are persisted under the workspace and delivered through the shared DB bell + Slack notifier.
 

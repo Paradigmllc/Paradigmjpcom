@@ -171,7 +171,7 @@
         <article class="panel engine-catalog-panel">
           <div class="panel-heading">
             <div><p class="eyebrow">AUDITED OSS ENGINE CATALOG</p><h2>主要OSSエンジン</h2></div>
-            <div class="engine-heading-actions"><span id="engine-catalog-count" class="badge neutral">未読込</span><button id="sync-engines" class="button secondary" type="button">DBへ同期</button><button id="refresh-engines" class="icon-button" type="button" aria-label="OSSエンジンを更新">↻</button></div>
+            <div class="engine-heading-actions"><span id="engine-worker-status" class="badge neutral">worker未確認</span><span id="engine-catalog-count" class="badge neutral">未読込</span><button id="sync-engines" class="button secondary" type="button">DBへ同期</button><button id="refresh-engines" class="icon-button" type="button" aria-label="OSSエンジンを更新">↻</button></div>
           </div>
           <p class="panel-lead">モデルは常駐・一括取得しません。公式source、revision、ライセンス、VRAM、workflow、weight hash、人間審査が揃ったプロファイルだけを、制作ジョブ中に限り起動します。</p>
           <div class="engine-toolbar">
@@ -197,13 +197,15 @@
         </article>
         <div class="gpu-grid">
           <article class="panel settings-panel">
-            <div class="panel-heading"><div><p class="eyebrow">SECURE RUNTIME</p><h2>API・ComfyUI接続</h2></div><span id="runtime-badge" class="badge neutral">未確認</span></div>
+            <div class="panel-heading"><div><p class="eyebrow">SECURE RUNTIME</p><h2>API・GPUワーカー接続</h2></div><span id="runtime-badge" class="badge neutral">未確認</span></div>
             <p class="panel-lead">秘密情報はVideo Factoryの永続ボリュームへ権限600で保存し、ブラウザへ再表示しません。</p>
             <div class="field-grid">
               <label class="field span-2"><span>Vast.ai API Key</span><input id="vast-api-key" type="password" autocomplete="off" placeholder="設定済みの場合は空欄のまま"></label>
               <label class="field span-2"><span>標準ComfyUI Template Hash</span><input id="vast-template-hash" placeholder="テンプレート検索から選択できます"></label>
               <label class="field span-2"><span>ComfyUI API URL</span><input id="comfyui-url" placeholder="https://private-worker.example:8189"></label>
               <label class="field span-2"><span>ComfyUI Proxy API Key</span><input id="comfyui-api-key" type="password" autocomplete="off" placeholder="設定済みの場合は空欄のまま"></label>
+              <label class="field span-2"><span>主要OSS GPU Worker URL</span><input id="oss-worker-url" inputmode="url" placeholder="https://private-worker.example/oss"></label>
+              <label class="field span-2"><span>主要OSS GPU Worker API Key</span><input id="oss-worker-api-key" type="password" autocomplete="new-password" placeholder="32文字以上・設定済みの場合は空欄のまま"></label>
             </div>
             <div class="button-row"><button id="save-runtime" class="button primary" type="button">安全に保存</button><button id="test-runtime" class="button secondary" type="button">接続確認</button></div>
           </article>

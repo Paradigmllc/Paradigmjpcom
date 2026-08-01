@@ -70,6 +70,29 @@ services:
     expose:
       - "8189"
 
+  oss-gpu-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.oss-worker
+    profiles: ["gpu"]
+    restart: "no"
+    env_file: .env
+    environment:
+      VIDEO_FACTORY_ENGINE_PROFILE_CATALOG: /app/config/engine-profiles.yaml
+    volumes:
+      - ./config/engine-profiles.yaml:/app/config/engine-profiles.yaml:ro
+      - ${VIDEO_FACTORY_OSS_WORKER_BIN_DIR:-./workers/bin}:/opt/workers:ro
+      - ${VIDEO_FACTORY_OSS_MODEL_DIR:-./workers/models}:/opt/models:ro
+    expose:
+      - "8090"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+
   factory-api:
     build:
       context: .
