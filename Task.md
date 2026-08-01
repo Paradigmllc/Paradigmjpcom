@@ -23,6 +23,7 @@
 - canonical `npm run release:prod`をdeployment **nahfyfola6j0gnqozcl7j7wa**で完走した。新コンテナ`n8i2sjiqvr2d8hrzppop2m2i-033416492325`はmain **40ddab1e**のimageでhealthy、93/93 DB table、Traefik origin lock、公開smoke、post-deploy doctorをpass。本番Video Factory doctorは`production_ready: true`、blocking reason 0、HyperFrames 0.7.87、ComfyUI認証・到達性・23.56GB VRAM、必須workflow/model readyを確認した。
 - 実GPU run **2c9248b4-7758-4002-b6e9-fecb5470686a** / project **production-readiness-1785555821**で、Wan 2.2 TI2V-5B生成を含む8秒動画を完走した。`draft_review_required`で停止→明示draft承認→finalize→`final_review_required`で停止→明示final承認→local deliverをread-backし、最終stateは`delivered`。`production-readiness-master.mp4`はH.264 640×360/24fps＋AAC、8.000秒、230,838 bytes、SHA-256 `bd1d61447d7423a009f3ea6c98e07cedce37e3e8c592c5a93d3e9e0e97d0efbd`で、4時点フレームも目視確認した。
 - 公開`/api/video-factory/ready`は`ready: true`。`/video-factory-console#dashboard`はブラウザで管理者ログインへ正しくリダイレクトし、認証フォーム描画、error overlayなし、console error 0を確認した。既存Vast.ai GPU **46258780**のみを使用し、新規GPUは作成していない。同GPUはRTX 3090 / managed proxy有効 / `running`で、継続課金は`$0.1317222222/h`。
+- 完了済みのCountry Partner one-shot workflow 2本と、V2へ置換済みの旧Vast bootstrap workflow 1本がmain pushごとにjob 0件の偽failure runを作っていたため削除した。現行の`direct-vast-production-bootstrap-v2.yml`と通常のproduction deployは維持する。
 
 ## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
 
