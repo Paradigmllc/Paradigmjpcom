@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-02 Pet Life Movie OSS wrapper SaaS MVP
+
+- Implemented the shared-chat MVP as a production-facing vertical slice: 5-20 private pet photos, factual-only storyboard, no-login free preview, unlisted sharing, family contribution links, one-time Stripe checkout contract, and paid GPU render dispatch/callback.
+- Added service-role-only Supabase tables for projects, assets, contributors, jobs, and funnel events; all tables have RLS, explicit grants, hashed project/invite tokens, expiry, and upload limits.
+- Added private R2 signed uploads/downloads and an identity-protection pipeline manifest for Real-ESRGAN, rembg, SAM 2, Wan 2.2 TI2V-5B, Chatterbox, ACE-Step, and FFmpeg. Paid checkout remains visibly disabled until renderer URL plus all three Stripe price IDs are configured, so production cannot accept an undeliverable order. The current OpenClaw-era app can dispatch directly to that renderer and does not restore the removed Trigger.dev SDK.
+- Added Japanese/English/Spanish/Portuguese landing/wizard UI, animated private preview, share page, loading/error/empty states, upload progress, DB+Slack milestone notifications, and per-IP anonymous project rate limiting.
+- Verification on current `main` passed: `npm run typecheck:pet-life-movie`; 3 Vitest files / 6 tests; deploy script syntax and diff checks. The local Next.js 16.2.6 webpack build remained in optimized compilation for 20 minutes under concurrent Windows builds without emitting a code error, so Linux CI/release is the canonical build gate.
+- Local browser blocker: Playwright cannot reach the route because existing global instrumentation bundles a missing optional `@browserbasehq/stagehand` under Turbopack and an existing `node:child_process` scheme failure under Webpack.
+- Active handoff: open/merge the rebased PR, apply `supabase/migrations/20260801213954_pet_life_movie_mvp.sql` through the canonical release, then verify `/ja/pet-life-movie`, RLS/schema access, and the no-login preview flow. Keep paid render disabled until a GPU renderer endpoint is live.
+
 ## CURRENT STATUS — 2026-08-02 Japan market operator Wave 1
 
 - External Japan Market Operatorを12段階（証拠確認→人間承認→許可送信→有償検証→Launch/Operator契約→運用中）の案件ワークフローへ具体化した。各段階にentry gate、担当、SLA、next action、期限、revision競合防止、監査eventを持たせる。
