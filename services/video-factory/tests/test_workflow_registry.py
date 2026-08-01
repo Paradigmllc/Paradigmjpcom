@@ -12,7 +12,9 @@ from video_factory.workflow_registry import (
     bind_workflow_contract,
     load_api_workflow,
     load_workflow_registry,
+    merge_workflow_registry_defaults,
     registry_readiness,
+    write_workflow_registry,
 )
 
 
@@ -159,3 +161,31 @@ def test_offline_binding_requires_explicit_model_artifact_and_records_review(
     assert bound.workflow_sha256
     assert bound.reviewed_by == "Human Reviewer"
     assert load_api_workflow(bound, root)[0].is_file()
+
+
+def test_default_merge_preserves_existing_reviews_and_only_appends_missing(
+    tmp_path: Path,
+) -> None:
+    defaults_path = Path(__file__).parents[1] / "workflows" / "comfyui" / "registry.yaml"
+    defaults = load_workflow_registry(defaults_path)
+    target_path = tmp_path / "registry.yaml"
+    retained = defaults.workflows[:8]
+    write_workflow_registry(
+        target_path,
+        defaults.model_copy(update={"workflows": retained}),
+    )
+    before = load_workflow_registry(target_path)
+
+    added = merge_workflow_registry_defaults(
+        target_path=target_path,
+        defaults_path=defaults_path,
+    )
+    merged = load_workflow_registry(target_path)
+
+    assert len(added) == 10
+    assert len(merged.workflows) == 18
+    assert merged.workflows[:8] == before.workflows
+    assert merge_workflow_registry_defaults(
+        target_path=target_path,
+        defaults_path=defaults_path,
+    ) == []
