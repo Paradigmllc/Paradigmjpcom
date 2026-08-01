@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
+from urllib.parse import urlparse
 
 from .runtime_config import load_runtime_config, update_runtime_config
 from .settings import Settings
@@ -229,12 +230,26 @@ def find_managed_instance(
         return match
 
     candidates: list[dict[str, Any]] = []
+    runtime_host = (
+        urlparse(runtime.comfyui_base_url).hostname
+        if runtime.comfyui_base_url
+        else None
+    )
     for instance in instances:
         if not str(instance.get("label") or "").startswith(MANAGED_LABEL_PREFIX):
             continue
         try:
             connection = vast_instance_connection(instance)
         except ValueError:
+            instance_host = str(
+                instance.get("public_ipaddr") or instance.get("public_ip") or ""
+            ).strip()
+            instance_template = str(instance.get("template_hash_id") or "").strip()
+            template_matches = not runtime.vast_template_hash or (
+                instance_template == runtime.vast_template_hash
+            )
+            if runtime_host and instance_host == runtime_host and template_matches:
+                candidates.append(instance)
             continue
         if runtime.comfyui_api_key and connection.api_key == runtime.comfyui_api_key:
             candidates.append(instance)
