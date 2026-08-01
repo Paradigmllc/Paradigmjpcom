@@ -8,6 +8,14 @@ alter table public.video_factory_engine_profiles
 create index if not exists video_factory_engine_profiles_execution_ready_idx
   on public.video_factory_engine_profiles (execution_target, ready, display_name);
 
+-- migration_071 intentionally applies a broad service-role policy to every
+-- public table. These private operator tables have narrower explicit policies,
+-- so remove the broad duplicate every time the release migrations are replayed.
+drop policy if exists paradigm_service_role_all
+  on public.video_factory_engine_profiles;
+drop policy if exists paradigm_service_role_all
+  on public.video_factory_engine_events;
+
 drop policy if exists video_factory_engine_profiles_service_role_select
   on public.video_factory_engine_profiles;
 create policy video_factory_engine_profiles_service_role_select

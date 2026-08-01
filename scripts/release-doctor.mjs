@@ -299,9 +299,13 @@ function checkStaticReleaseRules() {
   const ossExecutionMarkers = [
     "execution_target",
     "resolved_adapter",
+    "drop policy if exists paradigm_service_role_all",
     "revoke all on table public.video_factory_engine_profiles from anon, authenticated",
     "to service_role",
   ]
+  const removedBroadVideoFactoryPolicies = (
+    ossExecutionMigration.match(/drop policy if exists paradigm_service_role_all/gi) ?? []
+  ).length >= 2
   if (
     engineProfilesMigration &&
     engineProfileSecurityMarkers.every((marker) => engineProfilesMigration.toLowerCase().includes(marker.toLowerCase())) &&
@@ -309,6 +313,7 @@ function checkStaticReleaseRules() {
     noLoginDeploy.includes("applyVideoFactoryEngineProfilesMigration") &&
     ossExecutionMigration &&
     ossExecutionMarkers.every((marker) => ossExecutionMigration.toLowerCase().includes(marker.toLowerCase())) &&
+    removedBroadVideoFactoryPolicies &&
     noLoginDeploy.includes("20260801114845_video_factory_oss_execution_targets.sql") &&
     noLoginDeploy.includes("applyVideoFactoryOssExecutionTargetsMigration")
   ) {
