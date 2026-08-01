@@ -36,9 +36,12 @@ def test_dry_run_pipeline_stops_for_draft_review(
     assert load_data(workspace / "state.json")["status"] == "draft_review_required"
     assert (workspace / "hyperframes/master-en-landscape/master/index.html").is_file()
     assert (workspace / "hyperframes/social-ja-square/master/index.html").is_file()
-    assert 'data-start="0.0"' in (
+    master_html = (
         workspace / "hyperframes/master-en-landscape/master/index.html"
     ).read_text(encoding="utf-8")
+    assert 'data-start="0.0"' in master_html
+    assert "data-no-timeline" in master_html
+    assert 'data-has-audio="true"' in master_html
 
 
 def test_auto_approved_dry_run_builds_variants_after_two_reviews(

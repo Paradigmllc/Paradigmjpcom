@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${HYPERFRAMES_VERSION:-0.7.77}"
+version="${HYPERFRAMES_VERSION:-0.7.87}"
 
 command -v node >/dev/null || { echo "Node.js 22+ is required" >&2; exit 1; }
 command -v npx >/dev/null || { echo "npx is required" >&2; exit 1; }

@@ -34,7 +34,7 @@ services:
     build:
       context: .
       args:
-        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.77}
+        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.87}
     restart: "no"
     entrypoint: ["/bin/sh", "-ec"]
     command: >-
@@ -61,7 +61,7 @@ services:
     build:
       context: .
       args:
-        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.77}
+        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.87}
     profiles: ["gpu"]
     restart: unless-stopped
     entrypoint: ["video-factory"]
@@ -74,7 +74,7 @@ services:
     build:
       context: .
       args:
-        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.77}
+        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.87}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -96,7 +96,7 @@ services:
     build:
       context: .
       args:
-        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.77}
+        HYPERFRAMES_VERSION: ${HYPERFRAMES_VERSION:-0.7.87}
     restart: unless-stopped
     entrypoint: ["prefect"]
     command:

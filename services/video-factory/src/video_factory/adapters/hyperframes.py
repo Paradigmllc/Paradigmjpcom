@@ -75,7 +75,7 @@ class HyperFramesAdapter(EngineAdapter):
         else:
             package = f"hyperframes@{context.settings.hyperframes_version}"
             run_command(
-                [context.settings.hyperframes_npx, "--yes", package, "lint", ".", "--json"],
+                [context.settings.hyperframes_npx, "--yes", package, "check", ".", "--json"],
                 cwd=project,
                 timeout=context.settings.external_timeout_seconds,
             )

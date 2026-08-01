@@ -15,6 +15,7 @@
   <div
     id="stage"
     data-composition-id="master-{{ language }}"
+    data-no-timeline
     data-start="0"
     data-duration="{{ total_duration }}"
     data-width="{{ width }}"
@@ -29,6 +30,7 @@
       data-duration="{{ clip.duration }}"
       data-track-index="0"
       src="assets/{{ clip.filename }}"
+      {% if clip.has_audio %}data-has-audio="true"{% else %}muted{% endif %}
       playsinline
       preload="auto"
     ></video>
