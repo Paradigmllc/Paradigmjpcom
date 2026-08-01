@@ -1,13 +1,16 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（ローカル実装・検証完了 / release待ち）
+## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（基盤release完了 / GPU互換hotfix検証済み）
 
 - 本番`/data/video-factory`にはVast.ai資格情報とテンプレートHashが永続保存済み。既存RTX 3090 24GBインスタンスは稼働中だが、ComfyUIプロセスの自己起動と本番ランタイムへの接続、承認済みWorkflow登録が完了していなかった。
 - 既存GPUを追加作成せず回収する。Vast.aiの生レスポンスから`jupyter_token`、`extra_env`、プロキシ鍵などを管理画面へ返さない許可リスト境界と、秘密値をサーバー内だけで復元・検証・権限600のruntimeへ保存するadopt API/UIを実装した。
 - GPU起動スクリプトは、既存モデルを再利用して専用ComfyUI APIを明示起動し、`system_stats`、必須ノード、TLSプロキシ自身の応答を確認できるまで待つ。ComfyUI本体に対する`git reset --hard`は廃止した。
 - 現在の商用生成レーンは公式Wan 2.2 TI2V-5Bによる`abstract-broll-t2v`。未導入の7契約を本番必須扱いにせず、追加導入時に個別のモデル・ライセンス・Workflow審査を行う。
 - Video Factoryは`pytest` 48件、Ruff、mypy、対象Vitest 3件、TypeScript、ESLint、Next.js production build、bash構文検査を通過。CLI dry-runは3形式を書き出して`draft_review_required`で停止した。全体Vitestは今回の変更外である既存`/work`系3ファイルの13件のみ不一致（1335件pass）のため、Video Factory CIと差分CIで判定する。
-- 完了条件はPR/CI/mainマージ、`release:prod`、既存GPU再起動、本番doctor ready、実生成、ドラフト承認、最終承認、ローカル納品のread-backまで。
+- 基盤復旧PR **#628**をmain **5d258362**へsquash mergeし、deployment **yz5h21ipqr566gt7dy9e2qa1**で本番反映した。公開`/api/video-factory/ready`は`ready: true`、アプリコンテナは同commitのimageでhealthy。本番APIのVast一覧は秘密値を返さない許可リスト出力を確認済み。
+- 既存GPU **46258780**を追加作成せずstop/startし、公式APIで既存インスタンスへSSH公開鍵を付与して直接診断した。モデル3点は取得・checksum生成済みだったが、公式テンプレートのComfyUI配置が`/opt/workspace-internal/ComfyUI`、Pythonが`/venv/comfyui/bin/python`である差分と、`ENABLE_HTTPS`未指定による証明書未生成が起動を阻害していた。
+- Vast公式TLS hookで同インスタンス用証明書を生成し、テンプレートと一致するComfyUI commitへ復旧後、専用API `18188`、認証付きHTTPS proxy `18189`、必須ノード検査を通過した。Python制御面はsystem CA bundleを明示的に使う必要があることも実接続で確認した。
+- 互換hotfixは公式テンプレートの配置/venv検出、Vast署名TLS証明書の生成・検証、Python system CA bundle、Dockerfile品質guardのcurl検出を含む。対象Vitest 3件、bash構文検査、品質guard error 0、実GPU provisionを通過。残りはhotfixのPR/main反映後に本番doctor、実生成、ドラフト承認、最終承認、ローカル納品をread-backする。
 
 ## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
 
@@ -70,8 +73,8 @@
 
 ## ACTIVE HANDOFF
 
-- Video Factory production readiness branch: `fix/video-factory-production-readiness-20260801`
-- 既存Vast.ai GPUを破棄・追加作成せず、mainの自己起動スクリプトへ更新後にstop/startして復旧する。GPU課金は約`$0.132/h`で継続中のため、復旧確認後は運用方針に従い停止する。
+- Video Factory GPU template compatibility hotfix branch: `fix/dockerfile-curl-release-guard-20260801`
+- 既存Vast.ai GPU **46258780**はComfyUI API / TLS proxy readyで稼働中。追加GPUは作成しない。GPU課金は約`$0.132/h`で継続中のため、実生成と2段階承認のread-back後に稼働状態を明記する。
 - Vast.aiインスタンスAPIの出力に秘密値を含めない。プロキシ鍵はadopt処理と永続runtimeの内部だけで扱う。
 - `/work` fast-firstは本番反映済み。新規Raw URLは高速一次判定、選抜候補のみ「詳細解析へ昇格」でフル解析する。
 - VaaS Branch: `feat/video-as-a-service-commercial-launch`

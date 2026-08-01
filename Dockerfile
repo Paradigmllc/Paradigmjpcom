@@ -41,11 +41,11 @@ ENV VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK=false
 ENV HYPERFRAMES_VERSION=0.7.77
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/vast-ai-jupyter-root.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 
-RUN apk add --no-cache \
+RUN apk add --no-cache curl \
       ca-certificates \
       chromium \
-      curl \
       ffmpeg \
       font-noto-cjk \
       git \

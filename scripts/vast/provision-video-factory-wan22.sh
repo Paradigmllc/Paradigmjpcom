@@ -11,7 +11,12 @@ BOOTSTRAP_ROOT="${VIDEO_FACTORY_BOOTSTRAP_ROOT:-/workspace/video-factory-bootstr
 MODEL_ROOT=""
 COMFY_ROOT=""
 
-for candidate in /workspace/ComfyUI /opt/ComfyUI /root/ComfyUI /ComfyUI; do
+for candidate in \
+  /workspace/ComfyUI \
+  /opt/workspace-internal/ComfyUI \
+  /opt/ComfyUI \
+  /root/ComfyUI \
+  /ComfyUI; do
   if [ -f "$candidate/main.py" ]; then
     COMFY_ROOT="$candidate"
     break
@@ -372,6 +377,19 @@ if [ -f "$BOOTSTRAP_ROOT/proxy.pid" ]; then
 fi
 
 log "Starting authenticated ComfyUI proxy on $COMFY_PROXY_PORT"
+if [ ! -s /etc/instance.crt ] || [ ! -s /etc/instance.key ]; then
+  if [ -r /etc/vast_boot.d/55-tls-cert-gen.sh ]; then
+    log "Generating the Vast.ai signed TLS certificate"
+    generate_tls_cert=true
+    # Vast's official base image hook signs the certificate for this instance.
+    # shellcheck source=/dev/null
+    source /etc/vast_boot.d/55-tls-cert-gen.sh
+  fi
+fi
+if ! openssl x509 -in /etc/instance.crt -noout >/dev/null 2>&1 \
+  || ! openssl pkey -in /etc/instance.key -noout >/dev/null 2>&1; then
+  fail "A valid Vast.ai TLS certificate and private key are required"
+fi
 nohup env \
   COMFY_PROXY_KEY="$COMFY_PROXY_KEY" \
   COMFY_INTERNAL_PORT="$COMFY_INTERNAL_PORT" \
@@ -416,6 +434,7 @@ choose_comfy_python() {
   done < <(pgrep -f '[p]ython.*ComfyUI.*/main.py' || true)
   for candidate in \
     "$COMFY_ROOT/.venv/bin/python" \
+    /venv/comfyui/bin/python \
     /venv/main/bin/python \
     /workspace/venv/bin/python \
     /opt/venv/bin/python \
