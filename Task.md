@@ -10,6 +10,15 @@
 - 対象unit/API/release wiring test、TypeScript、変更ファイルESLint、Next.js production build、公開導線Playwright 4件をクリーン環境でpassした。
 - Active handoff: release後、CHEFCLEANとHOLENのOpportunity Memoを人間が確認し、全gateを満たした案件だけpermission-first文面を1社ずつ送る。返信後はqualificationを記録し、無償提案へ逸脱せずPaid Market Validation SOWへ進める。
 
+## CURRENT STATUS — 2026-08-02 Tiny Shops of Japan Shopify Operations OS（実装・本番DB適用済み / release準備中）
+
+- 共有戦略の「Tiny Shops of Japan」を運用可能な管理OSへ変換した。Payload管理者専用の`/{locale}/admin/shopify`で、全体KPI、12商品、短尺コンテンツ制作、日次ファネルを一元管理する。
+- 商品はHero 6点＋補助商品6点を初期登録し、$120送料無料、25,000 sessions、2.5M video views、500 orders、利益500万円を運用目標として固定した。商品別の調達・国内配送・国際配送・決済・返品/破損・関税reserveから想定利益率を算出する。
+- DBは`shopify_ops_products`、`shopify_ops_content_items`、`shopify_ops_daily_metrics`を追加し、RLS有効・anon/authenticated権限なし・service_role限定policyを設定。本番Supabaseへ適用し、商品12件とRLS有効をread-backした。
+- 管理ページ、server actions、認証付きJSON API、Zod入力検証、DBベル＋Slack通知、loading/empty/error、レスポンシブ表示、Shopify接続状態を実装した。現行PayloadダッシュボードからTiny Shopsへ遷移できる。
+- Shopify Admin APIのstore domain/token/versionはapproved secret storeに未登録のため、接続済みとは表示しない。資格情報が設定されるまで、商品ID/handleと運営データは内部SSOTで安全に管理する。
+- 対象Vitest 6件、Shopify範囲TypeScript、対象ESLint、deploy script構文、差分検査をpass。Next.js 16 Turbopackはcompileと468/468 static page生成をpassし、Windowsのstandalone最終copyだけ`EBUSY`で停止したため、Linux canonical releaseで最終判定する。
+
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
 
 - 既存Wanレーンは変更せず、主要OSS 40プロファイルのうち外部GPU実行型をcontrol planeの任意CLIから分離し、認証付き単一プロセスGPU workerへ強制する。CPU型はcontrol plane、ComfyUI型は既存workflow、外部GPU型はmanaged workerという実行境界を台帳・API・DB・GUIへ反映した。
@@ -75,25 +84,10 @@
 - 公開`/api/video-factory/ready`は`ready: true`。`/video-factory-console#dashboard`はブラウザで管理者ログインへ正しくリダイレクトし、認証フォーム描画、error overlayなし、console error 0を確認した。既存Vast.ai GPU **46258780**のみを使用し、新規GPUは作成していない。同GPUはRTX 3090 / managed proxy有効 / `running`で、継続課金は`$0.1317222222/h`。
 - 完了済みのCountry Partner one-shot workflow 2本と、V2へ置換済みの旧Vast bootstrap workflow 1本がmain pushごとにjob 0件の偽failure runを作っていたため削除した。現行の`direct-vast-production-bootstrap-v2.yml`と通常のproduction deployは維持する。
 
-## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
-
-- 全ページ末尾へ機械的に挿入していた共通画像カルーセル、工程表、ショーリールを撤去する。同じ生成画像を複数ページで反復せず、ページ本文と既存の専用コンポーネントを主役に戻す。
-- 共通`PageHero`は生成画像ではなく、実績を装わない抽象的なUI図解へ戻す。`/ja/works`では既存の実績カード、制作工程、確認基準を表示し、無関係な生成素材を実績画像として見せない。
-- 追加済みの生成画像4点、ショーリール、専用HyperFrames compositionは公開物とリポジトリから削除する。新しいフリー素材への置換は行わない。
-- TypeScript、変更ファイルESLint、production build、Playwrightのdesktop/mobile計4ケースを通過。`/ja/works`の実画面キャプチャでも、生成画像レールが消え、PageHeroから既存実績カードへ直接つながることを確認した。
-
-## CURRENT STATUS — 2026-07-29 `/work`高速一次判定＋選抜詳細解析（本番release完了 / 外部送信0）
-
-- 完全新規URLの標準処理を、従来の全社フル解析から**ホームページ1回取得だけの高速一次判定**へ変更した。URL正規化、企業名・商品/サービス・業態、日本語/JPY/日本配送の公開有無、0〜100点と`promote / review / low`を決定論で保存する。
-- Raw候補ではDeepSeek、Crawl4AI、複数ページ探索、問い合わせフォーム探索、PV/ROI試算、初回文面、10章レポート、Twenty同期を実行しない。DeepSeek残高がなくても500 URLバッチを開始できる。
-- 営業候補として残す企業だけ、履歴の**「詳細解析へ昇格」**から既存の厳格なフル解析へ進める。昇格後は公開根拠収集、フォーム検証、企業別文面、品質・類似度・安全性gate、顧客向けレポート、Twenty read-backを従来どおり実行する。
-- 永続キュー、最大500 URL、最大20バッチ、3件ずつのDB claim、再開、重複統合、RLS、外部自動送信0件の境界は維持した。新しいDB migrationは追加せず、既存スキーマで実装した。
-- PR **#586**をmain **aa8af979**へsquash mergeした。PR validation **30394597067**で対象Vitest、TypeScript、変更実装ESLint warning 0、production buildがpassした。
-- Production release **30394964339**はrouting validation、Coolify deploy、公開URL検証を完走した。deployment **j3srqefjxcuopbvjgr5mmrcc**はcommit **aa8af979**を`finished`で反映し、`/ja`、`/en`、VaaS日英ページ・規約・申込導線、`/api/ready`はHTTP 200 / missing 0。`/work`は管理者専用、外部自動送信0件を維持する。
-
 ## ACTIVE HANDOFF
 
 - Japan operatorは外部送信0件のまま。`/ja/admin/opportunity-briefs`のcase boardでCHEFCLEAN→HOLENの順に証拠・memo・人間承認gateを完了し、送信と返信を必ずaudit eventへ記録する。契約・表示・規制判断は運用マニュアルのreview triggerに従う。
+- Tiny Shops Shopify Operations OSはDB適用・ローカル品質gateまで完了。canonical release後に`/ja/admin/shopify`、認証gate、API 401、商品12件、RLS、DBベル＋Slackを本番read-backする。
 - Video Factory主要OSS実行基盤はPR **#642** / main **b2163b0a** / deployment **ofw2znwsajogrgadwsz0mkjp**で本番反映済み。40 profileは実行境界・固定revision・license・model/workflow・reviewer gateを保持し、未承認profileを利用可能扱いにしない。
 - 本番OSS worker URL/keyは未設定。これは接続先・事前導入worker artifact・exact weight hash・人間の商用審査がないprofileを暗黙実行しない安全境界であり、Consoleの「worker未設定」と各profileのblocking reasonを解消せずにreadyへ変更してはならない。
 - Video Factoryのevent-driven GPU自動start/stopはPR **#635–#637**、main **b9c596ec**、deployment **d12xwzq945vjqdz1hpxba8d2**で本番反映・実生成proof・最終read-backまで完了。

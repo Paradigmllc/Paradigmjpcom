@@ -35,6 +35,7 @@ const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 let preferDbSshChannel = false
 const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
+const APPLY_SHOPIFY_ONLY = process.argv.includes("--apply-shopify-only")
 
 const PRODUCTS = [
   {
@@ -649,6 +650,10 @@ async function applySalesProductsSchemaMigration(envs) {
   return applySqlMigration(envs, "migration_052_sales_products_bootstrap.sql", "Sales products bootstrap migration")
 }
 
+async function applyShopifyOpsMigration(envs) {
+  return applySqlMigration(envs, "20260801212630_shopify_ops.sql", "Tiny Shops Shopify operations migration")
+}
+
 async function applyReleaseTableParityMigration(envs) {
   return applySqlMigration(envs, "migration_061_release_table_parity.sql", "Release table parity migration")
 }
@@ -978,7 +983,6 @@ async function applyDemoCompanyTriggerGuardMigration(envs) {
     "SMB demo company trigger guard migration",
   )
 }
-
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1521,6 +1525,11 @@ async function main() {
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 
+  if (APPLY_SHOPIFY_ONLY) {
+    console.log(await applyShopifyOpsMigration(envs))
+    return
+  }
+
   // Auto-ensure non-secret defaults are set in Coolify.
   // Secret values must already exist in the approved runtime secret store.
   const { ensureCoolifyEnvs, updateCoolifyEnvs } = await import("./lib/coolify-env.mjs")
@@ -1550,6 +1559,7 @@ async function main() {
   }
 
   if (!DRY) {
+    console.log(await applyShopifyOpsMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))
@@ -1660,6 +1670,7 @@ async function main() {
 
   const smokeTargets = [
     { url: "https://paradigmjp.com/api/ready" },
+    { url: "https://paradigmjp.com/ja/admin/shopify" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
     { url: "https://paradigmjp.com/ja/blog", markers: ["GEO対策とは？AI検索時代のSEO戦略を解説", "MEO対策の基本と成功のポイント"] },
