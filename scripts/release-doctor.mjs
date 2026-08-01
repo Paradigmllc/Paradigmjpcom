@@ -283,6 +283,10 @@ function checkStaticReleaseRules() {
   const operatorCasesMigration = fs.existsSync(operatorCasesMigrationPath)
     ? fs.readFileSync(operatorCasesMigrationPath, "utf8")
     : ""
+  const operatorHardeningMigrationPath = "supabase/migrations/20260801235327_sales_japan_operator_case_hardening.sql"
+  const operatorHardeningMigration = fs.existsSync(operatorHardeningMigrationPath)
+    ? fs.readFileSync(operatorHardeningMigrationPath, "utf8")
+    : ""
   const operatorCaseMarkers = [
     "sales_japan_operator_cases",
     "sales_japan_operator_events",
@@ -294,10 +298,20 @@ function checkStaticReleaseRules() {
     "TO service_role",
     "external_messages_sent",
   ]
+  const operatorHardeningMarkers = [
+    "REVOKE ALL ON TABLE public.sales_japan_operator_cases FROM service_role",
+    "REVOKE ALL ON TABLE public.sales_japan_operator_events FROM service_role",
+    "GRANT SELECT, INSERT ON TABLE public.sales_japan_operator_events TO service_role",
+    "DONGJIN BEDDING Co., Ltd. / Little Archive",
+    "external_messages_sent', 0",
+  ]
   if (
     operatorCaseMarkers.every((marker) => operatorCasesMigration.includes(marker)) &&
+    operatorHardeningMarkers.every((marker) => operatorHardeningMigration.includes(marker)) &&
     noLoginDeploy.includes("20260801224308_sales_japan_operator_cases.sql") &&
-    noLoginDeploy.includes("applyJapanOperatorCasesMigration")
+    noLoginDeploy.includes("applyJapanOperatorCasesMigration") &&
+    noLoginDeploy.includes("20260801235327_sales_japan_operator_case_hardening.sql") &&
+    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration")
   ) {
     pass("Japan market operator cases have atomic audit actions, RLS and release wiring")
   } else {
