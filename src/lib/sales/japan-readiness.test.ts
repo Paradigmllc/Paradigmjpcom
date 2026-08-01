@@ -73,7 +73,10 @@ describe("japan readiness scoring", () => {
     expect(insight.estimates.lossMinUsd).toBeNull()
     expect(insight.manualReviewFlags).toContain("legal_payment_claim_requires_review")
     expect(insight.manualReviewFlags).toContain("revenue_and_loss_not_publicly_observable")
+    expect(insight.subject).toContain("Japan opportunity memo")
     expect(insight.body).toContain("review hypothesis")
+    expect(insight.body).toContain("three-page Japan Opportunity Memo")
+    expect(insight.body).toContain("May I send the memo")
   })
 
   it("keeps missing traffic as explicit evidence instead of inventing numbers", () => {
