@@ -1,13 +1,17 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（実装・release検証中）
+## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
 
 - 既存Wanレーンは変更せず、主要OSS 40プロファイルのうち外部GPU実行型をcontrol planeの任意CLIから分離し、認証付き単一プロセスGPU workerへ強制する。CPU型はcontrol plane、ComfyUI型は既存workflow、外部GPU型はmanaged workerという実行境界を台帳・API・DB・GUIへ反映した。
 - workerはprofile IDと固定40桁revision、商用承認、権利宣言、事前導入済みcommand/executableを検証する。1 GPU 1 job、shell不使用、timeout、MP4 probe、出力上限、SHA-256、temporary cleanupを実装し、未審査・非商用・revision不一致・未導入はfail-closedで拒否する。
 - 非ComfyUIの外部GPU profileも本番runで既存managed GPU leaseを取得し、Vast起動後にComfyUI proxyと必要なworker profile revisionをpreflightする。成功・失敗のfinallyでidle判定後に停止し、dry-run、catalog表示、設定、CPU routeではGPUを起動しない。新GPU作成・常駐polling・job中downloadは行わない。
 - runtime schema v3へOSS worker URL/API keyを追加し、mode 0600保存、secret非再表示、production HTTPS強制、Consoleの接続設定・worker状態badgeを実装した。DB migrationはexecution target/resolved adapter、RLS/role grantを追加し、release migration wiringも更新した。
 - GPU worker用CUDA/FFmpeg container、Compose GPU profile、環境変数、operator runbookを追加した。モデル/worker artifactはread-only mount前提で、ネットワーク遮断可能な実行構成とする。
-- Video Factory全75 pytest、Ruff、mypy strict 53 source files、ESLint、TypeScript、Next.js production buildをpass。release-doctorのstatic/security/infra検査はpassし、commit前のdirty/untracked gateだけが想定どおりreleaseを停止している。ブラウザ確認、commit/PR/main/release、本番DB/API/GUI/GPU停止read-backはこれから実施する。
+- Video Factory全76 pytest、Ruff、mypy strict 53 source files、ESLint、TypeScript、対象Vitest、Next.js production build、release-doctor、PR CIのtest/production-container/routing-storageをpass。desktop/mobile実ブラウザは40 card、worker設定、loading/error、横overflowなし、console error 0を確認した。
+- PR **#642**をmain **b2163b0a**へsquash mergeし、canonical deployment **ofw2znwsajogrgadwsz0mkjp**を完走。新containerは同commit imageでhealthy、公開`/api/ready`は`ok: true / ready`、DB migrationと95/95 table検査、Traefik origin lock、公開smoke、post-deploy doctorをpassした。
+- 本番runtimeをschema v3へ安全に移行し、secretを再表示せずmode 600を確認。40 profileを再同期し、ready 3 / blocked 37、managed GPU 31 / control plane 9、`catalog_synced` completed 100%、DBベルopen、Slack `slack_ok: true`をread-backした。未設定worker、未審査weight、非商用、24GB超過は理由付きで選択不能のまま維持する。
+- RLSはprofile/event両tableで有効、anon/authenticated grant 0。共通migrationが再作成する重複service-role policyも最終hardeningで毎release削除し、明示した最小権限policyだけを残す。
+- 管理GPU **46258780**はVast実状態`exited / stopped`、active run 0、GPU lease 0、errorなし。catalog閲覧・設定・DB同期・CPU routeでは起動せず、生成jobが必要とする場合だけ起動し、完了・失敗時にidleなら即停止する。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSSエンジン統合（本番release完了）
 
@@ -122,6 +126,8 @@
 
 ## ACTIVE HANDOFF
 
+- Video Factory主要OSS実行基盤はPR **#642** / main **b2163b0a** / deployment **ofw2znwsajogrgadwsz0mkjp**で本番反映済み。40 profileは実行境界・固定revision・license・model/workflow・reviewer gateを保持し、未承認profileを利用可能扱いにしない。
+- 本番OSS worker URL/keyは未設定。これは接続先・事前導入worker artifact・exact weight hash・人間の商用審査がないprofileを暗黙実行しない安全境界であり、Consoleの「worker未設定」と各profileのblocking reasonを解消せずにreadyへ変更してはならない。
 - Video Factoryのevent-driven GPU自動start/stopはPR **#635–#637**、main **b9c596ec**、deployment **d12xwzq945vjqdz1hpxba8d2**で本番反映・実生成proof・最終read-backまで完了。
 - 管理対象のVast.ai GPUは既存instance **46258780**のみ。追加GPUは作成しておらず、最終実状態は`exited`、active production run/lease 0件。ComfyUIを必要とする本番生成中だけ起動する。
 - Vast.aiインスタンスAPIの出力に秘密値を含めない。プロキシ鍵はadopt処理と永続runtimeの内部だけで扱う。
