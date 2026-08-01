@@ -10,6 +10,15 @@
 - Added `docs/knowledge/japan-market-operator-playbook.md` with ICP, package, outreach sequence, first-wave list and MSA/SOW/KPI-conditional exclusivity structure.
 - Active handoff: run human review on the five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.
 
+## CURRENT STATUS — 2026-08-02 Tiny Shops of Japan Shopify Operations OS（実装・本番DB適用済み / release準備中）
+
+- 共有戦略の「Tiny Shops of Japan」を運用可能な管理OSへ変換した。Payload管理者専用の`/{locale}/admin/shopify`で、全体KPI、12商品、短尺コンテンツ制作、日次ファネルを一元管理する。
+- 商品はHero 6点＋補助商品6点を初期登録し、$120送料無料、25,000 sessions、2.5M video views、500 orders、利益500万円を運用目標として固定した。商品別の調達・国内配送・国際配送・決済・返品/破損・関税reserveから想定利益率を算出する。
+- DBは`shopify_ops_products`、`shopify_ops_content_items`、`shopify_ops_daily_metrics`を追加し、RLS有効・anon/authenticated権限なし・service_role限定policyを設定。本番Supabaseへ適用し、商品12件とRLS有効をread-backした。
+- 管理ページ、server actions、認証付きJSON API、Zod入力検証、DBベル＋Slack通知、loading/empty/error、レスポンシブ表示、Shopify接続状態を実装した。現行PayloadダッシュボードからTiny Shopsへ遷移できる。
+- Shopify Admin APIのstore domain/token/versionはapproved secret storeに未登録のため、接続済みとは表示しない。資格情報が設定されるまで、商品ID/handleと運営データは内部SSOTで安全に管理する。
+- 対象Vitest 6件、Shopify範囲TypeScript、対象ESLint、deploy script構文、差分検査をpass。Next.js 16 Turbopackはcompileと468/468 static page生成をpassし、Windowsのstandalone最終copyだけ`EBUSY`で停止したため、Linux canonical releaseで最終判定する。
+
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
 
 - 既存Wanレーンは変更せず、主要OSS 40プロファイルのうち外部GPU実行型をcontrol planeの任意CLIから分離し、認証付き単一プロセスGPU workerへ強制する。CPU型はcontrol plane、ComfyUI型は既存workflow、外部GPU型はmanaged workerという実行境界を台帳・API・DB・GUIへ反映した。
@@ -93,6 +102,7 @@
 
 ## ACTIVE HANDOFF
 
+- Tiny Shops Shopify Operations OSはDB適用・ローカル品質gateまで完了。canonical release後に`/ja/admin/shopify`、認証gate、API 401、商品12件、RLS、DBベル＋Slackを本番read-backする。
 - Video Factory主要OSS実行基盤はPR **#642** / main **b2163b0a** / deployment **ofw2znwsajogrgadwsz0mkjp**で本番反映済み。40 profileは実行境界・固定revision・license・model/workflow・reviewer gateを保持し、未承認profileを利用可能扱いにしない。
 - 本番OSS worker URL/keyは未設定。これは接続先・事前導入worker artifact・exact weight hash・人間の商用審査がないprofileを暗黙実行しない安全境界であり、Consoleの「worker未設定」と各profileのblocking reasonを解消せずにreadyへ変更してはならない。
 - Video Factoryのevent-driven GPU自動start/stopはPR **#635–#637**、main **b9c596ec**、deployment **d12xwzq945vjqdz1hpxba8d2**で本番反映・実生成proof・最終read-backまで完了。
