@@ -1,4 +1,14 @@
-﻿## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
+﻿## CURRENT STATUS - 2026-08-02 Pet Life Movie OSS wrapper SaaS MVP
+
+- Implemented the shared-chat MVP as a production-facing vertical slice: 5-20 private pet photos, factual-only storyboard, no-login free preview, unlisted sharing, family contribution links, one-time Stripe checkout contract, and paid GPU render dispatch/callback.
+- Added service-role-only Supabase tables for projects, assets, contributors, jobs, and funnel events; all tables have RLS, explicit grants, hashed project/invite tokens, expiry, and upload limits.
+- Added private R2 signed uploads/downloads and an identity-protection pipeline manifest for Real-ESRGAN, rembg, SAM 2, Wan 2.2 TI2V-5B, Chatterbox, ACE-Step, and FFmpeg. Paid checkout remains visibly disabled until renderer URL plus all three Stripe price IDs are configured, so production cannot accept an undeliverable order.
+- Added Japanese/English/Spanish/Portuguese landing/wizard UI, animated private preview, share page, loading/error/empty states, upload progress, DB+Slack milestone notifications, and per-IP anonymous project rate limiting.
+- Verification passed: `npm run typecheck:pet-life-movie`; 3 Vitest files / 6 tests; Turbopack compiled and generated all 335 static pages twice.
+- Local environment blockers: Playwright cannot reach the route because existing global instrumentation bundles a missing optional `@browserbasehq/stagehand` under Turbopack and an existing `node:child_process` scheme failure under Webpack. Final standalone copy also hits Windows `EBUSY` after successful page generation; validate on the Linux production builder.
+- Active handoff: apply `supabase/migrations/20260801213954_pet_life_movie_mvp.sql`, commit/push `codex/pet-life-movie`, deploy through `npm run deploy:prod`, then verify `/ja/pet-life-movie`, RLS/schema access, and the no-login preview flow. Keep paid render disabled until a GPU renderer endpoint is live.
+
+## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
 
 - Replaced the generated demo renderer for `/{slug}` and `/demo/{slug}/{section}` with a delivery-quality full-site renderer instead of redirecting to broken static-looking lower pages.
 - Added full-site data generation for home, services, pricing, cases, FAQ, about, blog, contact, privacy, terms, and tokushoho pages.

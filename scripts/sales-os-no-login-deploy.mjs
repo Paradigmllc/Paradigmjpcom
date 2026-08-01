@@ -378,6 +378,23 @@ async function applyContentTemplateMigration(envs) {
   return applySqlMigration(envs, "migration_022_sales_content_templates.sql", "Content template migration")
 }
 
+async function applyPetLifeMovieMigration(envs) {
+  return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
+}
+
+async function verifyPetLifeMovieSchema(envs) {
+  const { url, key } = salesSupabase(envs)
+  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Pet Life Movie schema verification failed: HTTP ${response.status} ${detail.slice(0, 180)}`)
+  }
+  return "Pet Life Movie schema: verified through service role"
+}
+
 async function applyAgentTeamMigration(envs) {
   return applySqlMigration(envs, "migration_023_sales_agent_team.sql", "Agent team migration")
 }
@@ -662,6 +679,8 @@ async function main() {
   }
 
   if (!DRY) {
+    console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
@@ -707,7 +726,7 @@ async function main() {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
 
-  for (const url of ["https://paradigmjp.com/ja/admin/sales", "https://paradigmjp.com/ja", "https://twenty.paradigmjp.com"]) {
+  for (const url of ["https://paradigmjp.com/ja/pet-life-movie", "https://paradigmjp.com/ja/admin/sales", "https://paradigmjp.com/ja", "https://twenty.paradigmjp.com"]) {
     const status = await smoke(url)
     console.log(`Smoke OK: ${url} HTTP ${status}`)
   }

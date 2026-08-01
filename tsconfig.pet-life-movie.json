@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "allowJs": false,
+    "plugins": []
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/lib/pet-life-movie/**/*.ts",
+    "src/components/pet-life-movie/**/*.tsx",
+    "src/app/api/pet-life-movie/**/*.ts",
+    "src/app/[locale]/pet-life-movie/**/*.tsx",
+    "src/app/api/stripe/webhook/route.ts",
+    "src/lib/sales/r2-storage.ts",
+    "trigger/pet-life-movie.ts"
+  ],
+  "exclude": ["node_modules", "astro-demo", ".next"]
+}
