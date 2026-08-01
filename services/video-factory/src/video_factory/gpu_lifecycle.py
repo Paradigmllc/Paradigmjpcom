@@ -75,7 +75,13 @@ def _adopt_connection(settings: Settings, instance: dict[str, Any]) -> None:
 
 async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[str, object]:
     if not settings.gpu_lifecycle_enabled:
-        return write_lifecycle_state(settings, phase="disabled", run_id=run_id, error=None)
+        return write_lifecycle_state(
+            settings,
+            phase="disabled",
+            run_id=run_id,
+            detail="Automatic GPU lifecycle is disabled.",
+            error=None,
+        )
     try:
         with lifecycle_lock(settings):
             instances = await _instances(settings)
@@ -137,6 +143,10 @@ async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[st
                                     "phase": proxy.get("phase"),
                                     "detail": proxy.get("detail"),
                                 },
+                                detail=str(
+                                    proxy.get("detail")
+                                    or "Authenticated ComfyUI proxy is ready."
+                                ),
                                 hourly_price=hourly_price(instance),
                                 error=None,
                             )
@@ -174,6 +184,7 @@ async def ensure_gpu_ready(settings: Settings, *, run_id: str | None) -> dict[st
             phase="error",
             action="start_failed",
             run_id=run_id,
+            detail="The managed GPU could not be prepared for production.",
             error=str(error),
         )
         await emit_operator_event(
@@ -198,6 +209,7 @@ async def release_gpu_if_idle(
             settings,
             phase="disabled",
             run_id=completed_run_id,
+            detail="Automatic GPU lifecycle is disabled.",
             error=None,
         )
     try:
@@ -217,6 +229,11 @@ async def release_gpu_if_idle(
                     active_gpu_leases=active_leases,
                     unreadable_run_files=unreadable,
                     unreadable_gpu_leases=unreadable_leases,
+                    detail=(
+                        "Unreadable run or lease records require operator review."
+                        if unreadable or unreadable_leases
+                        else "Active production work still requires the managed GPU."
+                    ),
                     error=(
                         "Unreadable run or lease records prevented automatic GPU stop"
                         if unreadable or unreadable_leases
@@ -238,6 +255,7 @@ async def release_gpu_if_idle(
                     instance=safe_vast_instance(instance),
                     active_runs=[],
                     hourly_price=price,
+                    detail="The managed GPU is stopped; active compute billing is paused.",
                     error=None,
                 )
             if intended_status(instance) != "stopped":
@@ -253,6 +271,7 @@ async def release_gpu_if_idle(
                 instance=safe_vast_instance(instance),
                 active_runs=[],
                 hourly_price=price,
+                detail="Waiting for Vast.ai to stop the managed GPU.",
                 error=None,
             )
 
@@ -270,6 +289,7 @@ async def release_gpu_if_idle(
                         instance=safe_vast_instance(instance),
                         active_runs=[],
                         hourly_price=hourly_price(instance),
+                        detail="The managed GPU is stopped; active compute billing is paused.",
                         error=None,
                     )
                     await emit_operator_event(
@@ -292,6 +312,7 @@ async def release_gpu_if_idle(
             phase="error",
             action="stop_failed",
             run_id=completed_run_id,
+            detail="The managed GPU stop request requires operator attention.",
             error=str(error),
         )
         await emit_operator_event(
