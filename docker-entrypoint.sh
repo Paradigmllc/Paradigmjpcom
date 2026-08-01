@@ -18,10 +18,9 @@ if [ ! -f "${PERSISTENT_CONFIG_ROOT}/model-registry.yaml" ]; then
   cp "${VIDEO_FACTORY_ROOT}/config/model-registry.yaml" \
     "${PERSISTENT_CONFIG_ROOT}/model-registry.yaml"
 fi
-if [ ! -f "${PERSISTENT_WORKFLOW_ROOT}/registry.yaml" ]; then
-  cp "${VIDEO_FACTORY_ROOT}/workflows/comfyui/registry.yaml" \
-    "${PERSISTENT_WORKFLOW_ROOT}/registry.yaml"
-fi
+"${VIDEO_FACTORY_ROOT}/.venv/bin/python" -m video_factory.workspace_bootstrap \
+  --workflow-defaults "${VIDEO_FACTORY_ROOT}/workflows/comfyui/registry.yaml" \
+  --workflow-target "${PERSISTENT_WORKFLOW_ROOT}/registry.yaml"
 for readme in api/README.md ui/README.md README.md workflow-template.example.json; do
   if [ -f "${VIDEO_FACTORY_ROOT}/workflows/comfyui/${readme}" ] \
     && [ ! -f "${PERSISTENT_WORKFLOW_ROOT}/${readme}" ]; then

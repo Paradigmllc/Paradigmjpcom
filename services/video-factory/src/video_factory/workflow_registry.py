@@ -115,6 +115,36 @@ def write_workflow_registry(path: str | Path, registry: WorkflowRegistry) -> Pat
     return target
 
 
+def merge_workflow_registry_defaults(
+    *,
+    target_path: str | Path,
+    defaults_path: str | Path,
+) -> list[str]:
+    """Append missing bundled contracts without changing operator-reviewed records."""
+    defaults = load_workflow_registry(defaults_path)
+    target = Path(target_path)
+    if not target.is_file():
+        write_workflow_registry(target, defaults)
+        return [workflow.id for workflow in defaults.workflows]
+
+    current = load_workflow_registry(target)
+    current_ids = {workflow.id for workflow in current.workflows}
+    additions = [
+        workflow for workflow in defaults.workflows if workflow.id not in current_ids
+    ]
+    if not additions:
+        return []
+
+    merged = current.model_copy(
+        update={
+            "version": max(current.version, defaults.version),
+            "workflows": [*current.workflows, *additions],
+        }
+    )
+    write_workflow_registry(target, merged)
+    return [workflow.id for workflow in additions]
+
+
 def _safe_workflow_path(root: Path, value: str) -> Path:
     candidate = (root / value).resolve()
     resolved_root = root.resolve()

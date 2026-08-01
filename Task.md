@@ -8,6 +8,8 @@
 - Vast.ai GPUは既存のjob-scoped lifecycleだけを使い、preview・catalog閲覧・審査・設定変更では起動しない。新規GPU作成、常駐polling、暗黙fallback、未承認weight downloadは行わない。
 - arm64ネイティブFFmpeg/ffprobeを用いたVideo Factory全71テスト、Ruff、mypy strict（50 source files）、TypeScript、対象Vitest 9件、ESLint、quality guard error 0、release-doctorの新規RLS/release wiring検査、Next.js production buildをpass。全体Vitestは今回変更外の既存`/work`系3 files / 13 testsのみ不一致（1344 pass）。
 - 実ブラウザでdesktop/mobileの40 cards、10 shot-kind selector、loading/error、絞り込みを確認し、390px viewportで`scrollWidth == clientWidth == 390`、console error 0。検証中もGPUは起動していない。
+- PR **#639**をmain **ca3e3bbe**へsquash mergeし、canonical deployment **wuobqot0ksrotfbckomjhtb1**を完走。新containerは同commit imageでhealthy、公開ready、DB migration、95/95 table、40 profile同期、DBベル+Slackをread-backした。GPU **46258780**は`exited / stopped`、active run/lease 0を維持した。
+- 本番read-backで永続workspaceの旧8 workflow契約が、image内18契約より優先される更新漏れを検出した。既存のWan承認済みbindingを一切上書きせず、欠けているbundled契約だけを原子的・冪等に追加するstartup mergeをhotfixし、18件を本番で再確認して完了とする。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory GPUオンデマンド化（本番release完了）
 
