@@ -25,7 +25,7 @@ ENV NEXT_BUILD_BUNDLER=webpack
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN --mount=type=cache,target=/app/.next/cache,id=paradigm-next-cache-webpack-v1 npm run build -- --webpack
 
-FROM node:22.23.1-alpine3.24 AS runner
+FROM python:3.13.14-alpine3.24 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -53,12 +53,17 @@ RUN apk add --no-cache curl \
       font-noto-cjk \
       git \
       libstdc++ \
-      py3-pip \
-      py3-virtualenv \
-      python3 \
       rclone \
       su-exec \
       tini
+
+COPY --from=deps /usr/local/bin/node /usr/local/bin/node
+COPY --from=deps /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && ln -s node /usr/local/bin/nodejs \
+    && test "$(node --version)" = "v22.23.1" \
+    && test "$(python3 --version)" = "Python 3.13.14"
 
 COPY services/video-factory/config/vast-ai-jupyter-root.crt \
   /usr/local/share/ca-certificates/vast-ai-jupyter-root.crt

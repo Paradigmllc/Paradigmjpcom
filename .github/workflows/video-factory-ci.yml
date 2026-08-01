@@ -106,6 +106,7 @@ jobs:
             command -v ffmpeg &&
             command -v chromium-browser &&
             test "$(node --version)" = "v22.23.1" &&
+            test "$(python3 --version)" = "Python 3.13.14" &&
             chromium-browser --version &&
             cp -R /opt/video-factory/examples/hyperframes-smoke /tmp/hyperframes-smoke &&
             chown -R nextjs:nodejs /tmp/hyperframes-smoke &&

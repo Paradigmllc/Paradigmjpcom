@@ -18,6 +18,7 @@
 - 修正後はHyperFrames 0.7.87のtext-motion/master `check`がlint/runtime/layout/contrastすべて0 finding、text-motion snapshot 5枚を目視確認済み。Video Factory pytest 49件、Ruff、mypy strict、TypeScript、品質guard error 0、bash構文、差分検査をpass。ローカルにDocker CLIがないためcompose/container buildはPR CIで検証する。
 - HyperFrames契約修正PR **#631**をmain **f08dc939**へsquash mergeし、deployment **qss4jbj0kgd32h6aolbykw1o**で本番反映した。新コンテナ`n8i2sjiqvr2d8hrzppop2m2i-024628201239`は同commit imageでhealthy、HyperFrames 0.7.87、doctor `production_ready: true`、blocking 0を確認した。
 - 3回目の実生成run **3323059b-e491-4264-ae20-066bfb2c6095**は、GPU生成後のbrowser checkでsystem ChromiumのCDP `Network.enable`がtimeoutして安全停止した。Node 22.12 Alpine imageのChromium 136とHyperFrames 0.7.87の固定ブラウザ152に世代差があり、公式chrome-headless-shellはglibc配布のためAlpineでは実行不可。Node全stageを公式`22.23.1-alpine3.24`へ固定して同世代Chromiumへ更新し、software GPUと900秒protocol timeoutを明示する。CI production image内で実HyperFrames check＋1秒MP4 render＋ffprobeを必須化する。
+- PR #632の初回container CIでAlpine 3.24標準Python 3.14.5がVideo Factoryの安全な対応範囲`>=3.11,<3.14`を外れることを検出した。制約は緩めず、runnerを公式`python:3.13.14-alpine3.24`へ固定し、公式Node stageからNode 22.23.1 runtimeのみを移植して、Python 3.13・Node 22・新世代Chromiumを同居させる。
 
 ## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
 
