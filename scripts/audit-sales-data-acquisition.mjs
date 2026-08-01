@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createHmac } from "node:crypto"
+import { spawnSync } from "node:child_process"
 import { HeadBucketCommand, S3Client } from "@aws-sdk/client-s3"
 import { createClient } from "@supabase/supabase-js"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
@@ -18,11 +19,10 @@ const CATEGORY_LABELS = {
 
 const SOURCES = [
   source("deepseek", "DeepSeek V4 API", "orchestration", ["DEEPSEEK_API_KEY"]),
-  source("trigger_dev", "Trigger.dev", "orchestration", ["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"], [
-    "TRIGGER_API_URL",
-    "TRIGGER_DASHBOARD_URL",
-    "TRIGGER_SALES_OS_PIPELINE_TASK_ID",
-    "TRIGGER_SALES_ENRICHMENT_TASK_ID",
+  source("openclaw", "OpenClaw", "orchestration", ["OPENCLAW_API_KEY"], [
+    "OPENCLAW_API_URL",
+    "OPENCLAW_PIPELINE_TASK_ID",
+    "OPENCLAW_ENRICHMENT_TASK_ID",
   ]),
   source("dify_cloud", "Dify Cloud", "orchestration", [
     "DIFY_API_KEY",
@@ -38,7 +38,6 @@ const SOURCES = [
     "DIFY_VIDEO_API_KEY",
   ]),
   source("hermes_slack", "Hermes Agent / Slack", "orchestration", ["HERMES_AGENT_WEBHOOK_URL", "SLACK_WEBHOOK_URL", "SLACK_BOT_TOKEN"]),
-  source("notion_mcp", "Notion MCP", "orchestration", ["NOTION_API_KEY", "NOTION_MCP_TOKEN"]),
   source("supabase_mcp", "Supabase MCP / NocoDB", "orchestration", ["SUPABASE_ACCESS_TOKEN", "NOCODB_BASE_URL"]),
   source("listmonk_mautic", "Listmonk / Mautic", "orchestration", ["LISTMONK_BASE_URL", "MAUTIC_BASE_URL"]),
   source("chrome_mcp", "Chrome MCP", "orchestration", ["CHROME_MCP_URL"]),
@@ -130,8 +129,8 @@ const SOURCES = [
     "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
   ]),
 
-  sourceAll("chatwoot", "Chatwoot OSS", "outreach", ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"], ["CHATWOOT_WEBHOOK_URL", "TRIGGER_CHATWOOT_REPLY_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID"], checkChatwoot),
-  sourceAll("livekit", "LiveKit OSS", "outreach", ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"], ["LIVEKIT_WEBHOOK_URL", "TRIGGER_LIVEKIT_DISCOVERY_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID"], checkLivekit),
+  sourceAll("chatwoot", "Chatwoot OSS", "outreach", ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"], ["CHATWOOT_WEBHOOK_URL"], checkChatwoot),
+  sourceAll("livekit", "LiveKit OSS", "outreach", ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"], ["LIVEKIT_WEBHOOK_URL"], checkLivekit),
   source("smartlead", "Smartlead.ai", "outreach", ["SMARTLEAD_API_KEY"]),
   source("resend", "Resend API", "outreach", ["RESEND_API_KEY"]),
   source("docsend", "DocSend", "outreach", ["DOCSEND_API_KEY"]),
@@ -151,6 +150,84 @@ function sourceAll(slug, label, category, requiredAllEnv = [], optionalEnv = [],
 function envValue(envs, name) {
   const value = envs[name] ?? process.env[name]
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
+}
+
+function isInternalDataApiUrl(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return host === "supabase-rest-1" || host === "kong" || host === "rest" || host.endsWith(".internal") || (!host.includes(".") && host !== "localhost")
+  } catch (error) {
+    console.warn(`[audit-sales-data-acquisition] invalid Supabase URL: ${error instanceof Error ? error.message : String(error)}`)
+    return false
+  }
+}
+
+function resolveSshTarget(envs) {
+  return envValue(envs, "PARADIGM_SUPABASE_SSH_TARGET") ?? process.env.PARADIGM_SUPABASE_SSH_TARGET ?? "root@178.105.138.55"
+}
+
+function resolveSupabaseDbContainer(sshTarget, envs) {
+  const explicit = envValue(envs, "PARADIGM_SUPABASE_DB_CONTAINER") ?? process.env.PARADIGM_SUPABASE_DB_CONTAINER
+  if (explicit) return explicit
+  const result = spawnSync(
+    "ssh",
+    [
+      "-o", "BatchMode=yes",
+      "-o", "StrictHostKeyChecking=accept-new",
+      sshTarget,
+      "docker ps --format '{{.Names}}\\t{{.Image}}'",
+    ],
+    { encoding: "utf8", timeout: 15_000, maxBuffer: 1024 * 1024 },
+  )
+  if (result.error) throw result.error
+  if (result.status !== 0) {
+    const detail = `${result.stderr || result.stdout || ""}`.trim()
+    throw new Error(`could not list remote containers: ${detail.slice(0, 240)}`)
+  }
+  const rows = String(result.stdout || "")
+    .split("\n")
+    .map((line) => {
+      const [name, image] = line.split("\t")
+      return { name: name?.trim() || "", image: image?.trim() || "" }
+    })
+    .filter((row) => row.name.length > 0)
+  const exact = rows.find((row) => row.name === "paradigm-supabase-db" || row.name === "supabase-db-1")
+  if (exact) return exact.name
+  const candidate = rows.find((row) => /supabase.*db|db.*supabase/i.test(row.name) && /postgres/i.test(row.image))
+  if (candidate) return candidate.name
+  throw new Error("could not resolve remote Supabase Postgres container")
+}
+
+function readSnapshotThroughRemotePostgres(envs) {
+  const sshTarget = resolveSshTarget(envs)
+  const container = resolveSupabaseDbContainer(sshTarget, envs)
+  const sql = `
+select json_build_object(
+  'companies', coalesce((select json_agg(row_to_json(c)) from (select id, company_name, domain, pagespeed_mobile, pagespeed_desktop, meta from public.sales_companies order by id limit 5000) c), '[]'::json),
+  'sourceRuns', coalesce((select json_agg(row_to_json(r)) from (select company_id, source_slug, category, status, measured_at from public.sales_source_runs order by measured_at desc nulls last limit 10000) r), '[]'::json),
+  'sourceCount', (select count(*) from public.sales_source_runs),
+  'techCount', (select count(*) from public.sales_tech_stack_detections)
+)::text;
+`
+  const result = spawnSync(
+    "ssh",
+    [
+      "-o", "BatchMode=yes",
+      "-o", "StrictHostKeyChecking=accept-new",
+      sshTarget,
+      "docker", "exec", "-i", container,
+      "psql", "-U", "postgres", "-d", "postgres", "-At",
+    ],
+    { input: sql, encoding: "utf8", timeout: 60_000, maxBuffer: 32 * 1024 * 1024 },
+  )
+  if (result.error) throw result.error
+  if (result.status !== 0) {
+    const detail = `${result.stderr || result.stdout || ""}`.trim()
+    throw new Error(`remote Postgres snapshot failed: ${detail.slice(0, 240)}`)
+  }
+  const raw = String(result.stdout || "").trim()
+  if (!raw) throw new Error("remote Postgres snapshot returned no data")
+  return JSON.parse(raw)
 }
 
 function configuredNames(envs, names) {
@@ -177,7 +254,9 @@ async function fetchJson(url, options = {}) {
   try {
     body = text ? JSON.parse(text) : null
   } catch (error) {
-    console.error("[audit-sales-data-acquisition] failed to parse JSON response:", error)
+    console.warn(
+      `[audit-sales-data-acquisition] non-JSON response from ${url} (HTTP ${res.status}): ${error instanceof Error ? error.message : String(error)}`,
+    )
     body = text.slice(0, 200)
   }
   return { ok: res.ok, status: res.status, body }
@@ -501,10 +580,29 @@ async function getSupabase(envs) {
   const url = envValue(envs, "SALES_SUPABASE_URL") ?? envValue(envs, "NEXT_PUBLIC_SUPABASE_URL")
   const key = envValue(envs, "SALES_SUPABASE_SERVICE_ROLE_KEY") ?? envValue(envs, "SUPABASE_SERVICE_ROLE_KEY")
   if (!url || !key) return { sb: null, error: "SALES_SUPABASE_URL or service role key not configured" }
-  return { sb: createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }), error: null }
+  return {
+    sb: isInternalDataApiUrl(url) ? null : createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }),
+    remote: isInternalDataApiUrl(url),
+    envs,
+    error: null,
+  }
 }
 
-async function readDbSnapshot(sb) {
+async function readDbSnapshot(sb, remote, envs) {
+  if (remote) {
+    const remoteSnapshot = readSnapshotThroughRemotePostgres(envs)
+    const companiesRows = Array.isArray(remoteSnapshot.companies) ? remoteSnapshot.companies : []
+    const sourceRows = Array.isArray(remoteSnapshot.sourceRuns) ? remoteSnapshot.sourceRuns : []
+    return {
+      companies: companiesRows.length,
+      sourceRuns: Number(remoteSnapshot.sourceCount ?? sourceRows.length),
+      sourceTypes: new Set(sourceRows.map((row) => row.source_slug)).size,
+      techDetections: Number(remoteSnapshot.techCount ?? 0),
+      sourceRows,
+      companiesRows,
+      errors: [],
+    }
+  }
   const snapshot = {
     companies: 0,
     sourceRuns: 0,
@@ -600,8 +698,8 @@ async function main() {
   const args = new Set(process.argv.slice(2))
   const write = args.has("--write-source-runs")
   const envs = await readCoolifyApplicationEnvs()
-  const { sb, error } = await getSupabase(envs)
-  if (!sb) throw new Error(error)
+  const { sb, remote, error } = await getSupabase(envs)
+  if (!sb && !remote) throw new Error(error)
 
   const checks = []
   for (const def of SOURCES) {
@@ -624,10 +722,13 @@ async function main() {
     checks.push({ source: def, configured: isConfigured(envs, def.requiredAnyEnv, def.requiredAllEnv), configuredEnv, missingEnv, liveStatus, liveLabel })
   }
 
-  const before = await readDbSnapshot(sb)
+  if (write && remote) {
+    throw new Error("--write-source-runs cannot use the Docker-internal Supabase URL; run writes through the release/SSH database path")
+  }
+  const before = await readDbSnapshot(sb, remote, envs)
   let writtenRows = 0
   if (write) writtenRows = await writeSourceRuns(sb, envs, checks, before.companiesRows)
-  const after = write ? await readDbSnapshot(sb) : before
+  const after = write ? await readDbSnapshot(sb, remote, envs) : before
   const summary = summarizeRows(after.sourceRows)
 
   const configuredCount = checks.filter((check) => check.configured).length

@@ -9,25 +9,69 @@ interface HotLeadPayload {
   video_url?: string | null
 }
 
-interface SlackPostResult {
+export interface SlackPostResult {
   ok: boolean
   error?: string
 }
 
-interface NotifyBothOptions {
+export interface SlackPostOptions {
+  blocks?: unknown[]
+  clientMessageId?: string
+}
+
+export interface NotifyBothOptions {
   title: string
   message: string
   link?: string
   type?: string
   region?: "jp" | "global"
   priority?: number
+  leadId?: string
+  idempotencyKey?: string
+  existingQueueItemId?: string
+  clientMessageId?: string
+  blocks?: unknown[]
 }
 
-async function slackPost(method: string, body: Record<string, unknown>): Promise<SlackPostResult> {
+export interface NotifyChannelResult {
+  ok: boolean
+  error?: string
+}
+
+export interface NotifyBothResult {
+  ok: boolean
+  slack: NotifyChannelResult
+  database: NotifyChannelResult
+}
+
+async function slackPost(
+  method: string,
+  body: Record<string, unknown>,
+): Promise<SlackPostResult> {
   const token = process.env.SLACK_BOT_TOKEN
   if (!token || token.trim().length === 0) {
-    console.warn("[notify] SLACK_BOT_TOKEN not set; Slack notification skipped")
-    return { ok: false, error: "SLACK_BOT_TOKEN not configured" }
+    const webhook = process.env.SLACK_WEBHOOK_URL?.trim()
+    if (!webhook) {
+      console.warn("[notify] Slack credentials not set; Slack notification skipped")
+      return { ok: false, error: "SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL not configured" }
+    }
+    try {
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ text: body.text, ...(body.blocks ? { blocks: body.blocks } : {}) }),
+        signal: AbortSignal.timeout(5_000),
+      })
+      if (!res.ok) {
+        const error = `Slack webhook HTTP ${res.status}`
+        console.error("[notify] Slack webhook request failed:", error)
+        return { ok: false, error }
+      }
+      return { ok: true }
+    } catch (error) {
+      console.error("[notify] Slack webhook failed:", error)
+      return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    }
   }
 
   try {
@@ -40,12 +84,22 @@ async function slackPost(method: string, body: Record<string, unknown>): Promise
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(5_000),
     })
+    if (!res.ok) {
+      const bodyText = await res.text()
+      const error = `Slack HTTP ${res.status}${bodyText.trim() ? `: ${bodyText.trim().slice(0, 300)}` : ""}`
+      console.error("[notify] Slack HTTP request failed:", error)
+      return { ok: false, error }
+    }
     const data = (await res.json()) as SlackPostResult
-    if (!data.ok) console.error("[notify] Slack API error:", data.error ?? "unknown error")
+    if (!data.ok)
+      console.error("[notify] Slack API error:", data.error ?? "unknown error")
     return data
   } catch (error) {
     console.error("[notify] Slack post failed:", error)
-    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    }
   }
 }
 
@@ -90,52 +144,110 @@ export async function notifyHotLead(payload: HotLeadPayload): Promise<void> {
   })
 }
 
-export async function notifySlack(text: string, blocks?: unknown[]): Promise<void> {
+export async function notifySlack(
+  text: string,
+  blocks?: unknown[],
+): Promise<void> {
+  await notifySlackResult(text, { blocks })
+}
+
+export async function notifySlackResult(
+  text: string,
+  options: SlackPostOptions = {},
+): Promise<SlackPostResult> {
   const channel = process.env.SLACK_CHANNEL_ID ?? "#all-paradigm"
-  await slackPost("chat.postMessage", {
+  return slackPost("chat.postMessage", {
     channel,
     text,
-    ...(blocks ? { blocks } : {}),
+    ...(options.blocks ? { blocks: options.blocks } : {}),
+    ...(options.clientMessageId
+      ? { client_msg_id: options.clientMessageId }
+      : {}),
   })
 }
 
-export async function notifyBothChannels(text: string, options: NotifyBothOptions): Promise<void> {
+export async function notifyBothChannels(
+  text: string,
+  options: NotifyBothOptions,
+): Promise<NotifyBothResult> {
   const slackResult = await slackPost("chat.postMessage", {
     channel: process.env.SLACK_CHANNEL_ID ?? "#all-paradigm",
     text,
+    ...(options.blocks ? { blocks: options.blocks } : {}),
+    ...(options.clientMessageId
+      ? { client_msg_id: options.clientMessageId }
+      : {}),
   })
 
   if (!slackResult.ok) {
-    console.error("[notify] Slack notification failed:", slackResult.error ?? "unknown error")
+    console.error(
+      "[notify] Slack notification failed:",
+      slackResult.error ?? "unknown error",
+    )
   }
 
+  if (options.existingQueueItemId) {
+    const databaseResult = { ok: true }
+    return {
+      ok: slackResult.ok,
+      slack: slackResult,
+      database: databaseResult,
+    }
+  }
+
+  let databaseResult: NotifyChannelResult
   try {
     const { getServiceSalesSupabase } = await import("@/lib/supabase")
     const sb = getServiceSalesSupabase()
     if (!sb) {
-      console.warn("[notify] Supabase client not available for DB notification")
-      return
+      const error = "Supabase client not available for DB notification"
+      console.warn(`[notify] ${error}`)
+      databaseResult = { ok: false, error }
+      return { ok: false, slack: slackResult, database: databaseResult }
     }
 
-    const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
-      region: options.region ?? "jp",
-      queue_type: "analysis",
-      priority: options.priority ?? 80,
-      status: "open",
-      source_tool: "trigger_dev",
-      target_tool: "appsmith",
-      meta: {
-        type: options.type ?? "system_alert",
+    const { error } = await sb
+      .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
+      .insert({
+        region: options.region ?? "jp",
+        queue_type: "analysis",
         title: options.title,
-        message: options.message,
-        link: options.link ?? null,
-        created_by: "notify_both_channels",
-        slack_ok: slackResult.ok,
-        slack_error: slackResult.error ?? null,
-      },
-    })
-    if (error) console.error("[notify] DB queue notification insert failed:", error.message)
+        priority: options.priority ?? 80,
+        status: "open",
+        source_tool: "supabase",
+        target_tool: null,
+        meta: {
+          type: options.type ?? "system_alert",
+          title: options.title,
+          message: options.message,
+          link: options.link ?? null,
+          created_by: "notify_both_channels",
+          lead_id: options.leadId ?? null,
+          idempotency_key: options.idempotencyKey ?? null,
+          slack_ok: slackResult.ok,
+          slack_error: slackResult.error ?? null,
+        },
+      })
+    if (error) {
+      console.error(
+        "[notify] DB queue notification insert failed:",
+        error.message,
+      )
+      databaseResult = { ok: false, error: error.message }
+    } else {
+      databaseResult = { ok: true }
+    }
   } catch (error) {
     console.error("[notify] DB notification failed:", error)
+    databaseResult = {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+
+  return {
+    ok: slackResult.ok && databaseResult.ok,
+    slack: slackResult,
+    database: databaseResult,
   }
 }

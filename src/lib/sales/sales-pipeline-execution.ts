@@ -7,15 +7,16 @@
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte } from "./company-karte"
-import { enqueueCompanyEnrichment, runEnrichmentJobs, triggerEnrichmentRunner } from "./enrichment-jobs"
+import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { startLeadCandidateEnrichmentFallback } from "./lead-candidate-enrichment-fallback"
 import { syncCompanyAcrossSalesTools } from "./external-studio-sync"
 import { runOutreachBatch } from "./outreach/orchestrator"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+import { generateFullStackDemo } from "./demo-generator"
 import { generateSalesAsset } from "./sales-assets"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
-import { createVideoJob, runVideoJobAction } from "./video-pipeline"
 import { ensureCompanyVisualEvidence } from "./visual-evidence"
+import { executeDataCollectionStep } from "./sales-pipeline-data-collection"
 
 import type {
   JsonRecord,
@@ -101,7 +102,7 @@ async function completeR2ManifestStep(sb: ServiceSupabase, run: SalesPipelineRun
   return { prefix, r2_bucket: r2.bucket, r2_ready: r2.ready, public_base_url: r2.publicBaseUrl }
 }
 
-async function enqueuePipelineReviewTask(
+export async function enqueuePipelineReviewTask(
   sb: ServiceSupabase,
   run: SalesPipelineRun,
   input: { reason: string; queueType?: string; priority?: number; meta?: JsonRecord },
@@ -123,7 +124,7 @@ async function enqueuePipelineReviewTask(
     pipeline_run_id: run.id,
     priority: input.priority ?? 90,
     status: "open",
-    source_tool: "trigger_dev",
+    source_tool: "openclaw",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,
@@ -200,6 +201,11 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
     return
   }
 
+  if (step.step_key === "data_collection") {
+    await executeDataCollectionStep(sb, run, step)
+    return
+  }
+
   if (step.step_key === "karte_generate") {
     const existingKarte = await fetchCompanyKarte(sb, run.company_id)
     if (existingKarte.ok && existingKarte.karte.reportUrl) {
@@ -230,10 +236,12 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       console.error("[sales-pipeline-execution] karte_generate enqueue failed:", enqueue.error)
       throw new Error(enqueue.error ?? "enrichment enqueue failed")
     }
-    const isTriggerDev = run.trigger_provider === "trigger.dev"
-    const trigger = isTriggerDev ? await triggerEnrichmentRunner(1) : { ok: false, error: "local_run_forced_inline" }
+    // WW-EVENT / Phase 1-3: do NOT run enrichment inline here (long HTTP occupation).
+    // triggerEnrichmentRunner dispatches the Trigger.dev runner when configured, and
+    // self-falls-back to a single bounded one-shot drain when it is not. On job
+    // completion, completeJob() auto-resumes this pipeline run (enrichment-jobs-runner.ts).
+    const trigger = await triggerEnrichmentRunner(1)
     startLeadCandidateEnrichmentFallback(1)
-    const inlineRun = await runEnrichmentJobs(1)
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
     const companyRes = await sb
       .from(DB_TABLES.SALES_COMPANIES)
@@ -253,9 +261,8 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       output_payload: {
         enrichment_job_id: enqueue.job?.id ?? null,
         runner_triggered: trigger.ok,
+        runner_dispatched: trigger.dispatched,
         runner_error: trigger.error ?? null,
-        inline_runner_completed: inlineRun?.completed ?? null,
-        inline_runner_failed: inlineRun?.failed ?? null,
         report_ready: reportReady,
         report_url: karteResult.ok ? karteResult.karte.reportUrl : companyRes.data?.report_url ?? null,
         source_score: karteResult.ok ? karteResult.karte.sourceScore : null,
@@ -296,36 +303,43 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
         visual_evidence_variant_target: visualEvidence.variantTarget,
       },
     })
+    // Fire-and-forget: generate full-stack demo site if WEB制作 is recommended
+    void (async () => {
+      try {
+        const karteResult = await fetchCompanyKarte(sb, run.company_id)
+        if (!karteResult.ok) return
+        const hasWebProduction = karteResult.karte.recommendedProducts.some(
+          (p) =>
+            p.code === "jp_web_production" ||
+            p.displayName.includes("WEB制作") ||
+            p.displayName.includes("Web制作"),
+        )
+        if (!hasWebProduction) return
+        const demoResult = await generateFullStackDemo(run.company_id, karteResult.karte.reportLocale)
+        if (demoResult.ok) {
+          console.warn(`[sales-pipeline-execution] demo site generated for ${run.company_id}: ${demoResult.demoUrl}`)
+        } else {
+          console.error(
+            `[sales-pipeline-execution] demo site generation failed for ${run.company_id}: ${demoResult.error}`,
+          )
+        }
+      } catch (err) {
+        console.error(
+          "[sales-pipeline-execution] demo generation check failed:",
+          err instanceof Error ? err.message : String(err),
+        )
+      }
+    })()
     return
   }
 
   if (step.step_key === "video_generate") {
-    if (!run.require_video) {
-      await updateStep(sb, step, { status: "skipped", output_payload: { reason: "video not required" } })
-      return
-    }
-    const video = await createVideoJob({
-      companyIdOrSlugOrDomain: run.company_id,
-      jobType: "sales_video",
-      targetPlatform: "report_page",
-      renderEngine: "hyperframes",
-      pipelineRunId: run.id,
-      priority: 75,
-      requestedBy: run.requested_by,
-    })
-    if (!video.ok || !video.job) {
-      console.error("[sales-pipeline-execution] video_generate failed:", video.error)
-      throw new Error(video.error ?? "video job creation failed")
-    }
-    const dispatched = await runVideoJobAction({ jobId: video.job.id, action: "dispatch" })
+    // Video production is deliberately outside the public-site runtime. Keep the
+    // legacy step key for old pipeline rows, but complete it as an explicit no-op
+    // so Twenty intake cannot fail on a retired video dependency.
     await updateStep(sb, step, {
-      status: dispatched.job?.status === "review_required" ? "needs_review" : "waiting_external",
-      error_message: dispatched.error ?? null,
-      output_payload: {
-        video_job_id: video.job.id,
-        video_status: dispatched.job?.status ?? video.job.status,
-        message: dispatched.message ?? null,
-      },
+      status: "skipped",
+      output_payload: { reason: run.require_video ? "video production is retired from this runtime" : "video not required" },
     })
     return
   }
@@ -439,56 +453,4 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
   }
 }
 
-export async function runSalesPipelineLocally(runId: string): Promise<{ ok: boolean; run?: SalesPipelineRun; error?: string }> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return { ok: false, error: "Supabase service_role is not configured" }
-
-  try {
-    let run = await fetchRunWithSteps(sb, runId)
-    const steps = [...(run.steps ?? [])].sort((a, b) => a.position - b.position)
-    for (const step of steps) {
-      try {
-        await executeStep(sb, run, step)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown pipeline step error"
-        console.error(`[sales-pipeline] ${step.step_key} failed:`, error)
-        await updateStep(sb, step, { status: step.required ? "failed" : "needs_review", error_message: message })
-        if (step.required) break
-      }
-      run = await fetchRunWithSteps(sb, run.id)
-      if (summarizeSalesPipelineStatus(run.steps ?? []) === "waiting_external") break
-    }
-
-    const refreshed = await fetchRunWithSteps(sb, run.id)
-    const status = summarizeSalesPipelineStatus(refreshed.steps ?? [])
-    await updateRun(sb, refreshed.id, {
-      status,
-      current_step: refreshed.steps?.find((step) => step.status === "queued" || step.status === "running" || step.status === "waiting_external" || step.status === "needs_review")?.step_key ?? null,
-      completed_at: status === "completed" || status === "failed" || status === "cancelled" ? new Date().toISOString() : null,
-      error_message: refreshed.steps?.find((step) => step.status === "failed")?.error_message ?? null,
-      result_payload: {
-        step_statuses: Object.fromEntries((refreshed.steps ?? []).map((step) => [step.step_key, step.status])),
-      },
-    })
-    
-    if (status === "completed" || status === "failed" || status === "needs_review") {
-      const { notifySlack } = await import("@/lib/notify")
-      const icon = status === "completed" ? "[OK]" : status === "failed" ? "[FAILED]" : "[REVIEW]"
-      await notifySlack(`*Sales Pipeline [${status.toUpperCase()}]* ${icon}\nCompany: ${refreshed.sales_companies?.company_name ?? refreshed.company_id}\nRun ID: ${refreshed.id}`)
-      
-      if (status === "needs_review" || status === "failed") {
-        await enqueuePipelineReviewTask(sb, refreshed, {
-          reason: `Pipeline finished with status: ${status}`,
-          queueType: "analysis",
-          priority: status === "failed" ? 100 : 80,
-          meta: { review_reason: status === "failed" ? "error_recovery" : "pipeline_review" },
-        })
-      }
-    }
-
-    return { ok: status !== "failed", run: await fetchRunWithSteps(sb, refreshed.id) }
-  } catch (error) {
-    console.error("[sales-pipeline] local run failed:", error)
-    return { ok: false, error: error instanceof Error ? error.message : "Unknown sales pipeline error" }
-  }
-}
+export { runSalesPipelineLocally } from "./sales-pipeline-local-run"

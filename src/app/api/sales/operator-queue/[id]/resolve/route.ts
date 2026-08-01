@@ -48,9 +48,10 @@ export async function POST(
       );
     }
 
-    // if this queue item was tied to a company and it was a manual review for outreach,
-    // we might want to automatically change the pipeline_status if approved.
-    if (action === "approve" && item.company_id && item.queue_type === "outreach_review") {
+    // Approval only re-opens the candidate for an explicit send call; it never
+    // submits a form implicitly. `form_send` is the canonical queue type used
+    // by the outreach orchestrator (older rows may still say outreach_review).
+    if (action === "approve" && item.company_id && ["form_send", "outreach_review"].includes(item.queue_type)) {
       await supabase
         .from(DB_TABLES.SALES_COMPANIES)
         .update({ pipeline_status: "report_ready" })
@@ -58,7 +59,13 @@ export async function POST(
         .eq("pipeline_status", "manual_queue"); // only if it was manual_queue
     }
 
-    return NextResponse.json({ ok: true, item });
+    return NextResponse.json({
+      ok: true,
+      item,
+      next_action: action === "approve"
+        ? "Run a dry-run for this company, then explicitly call /api/sales/outreach/run with dryRun:false after operator approval."
+        : null,
+    });
   } catch (error) {
     console.error("[sales-operator-queue-resolve] Error:", error);
     return NextResponse.json({ ok: false, error: "Internal Server Error" }, { status: 500 });

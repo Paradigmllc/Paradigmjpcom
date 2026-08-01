@@ -1,0 +1,32 @@
+---
+export interface Props { items: { quote: string; author: string; role?: string }[]; colors?: { primary?: string } }
+const { items, colors = {} } = Astro.props
+---
+<section class="tmon">
+  <style is:inline set:html={`
+    .tmon{padding:clamp(4rem,8vw,6rem) clamp(1.5rem,5vw,3rem);background:linear-gradient(to bottom,transparent,rgba(0,0,0,.02))}
+    .tmon__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(1.2rem,2vw,1.8rem);max-width:1000px;margin:0 auto}
+    .tmon__card{position:relative;padding:clamp(2rem,3vw,2.5rem);border-radius:20px;background:#fff;border:1px solid rgba(0,0,0,.05);transition:transform .3s ease}
+    .tmon__card:hover{transform:translateY(-3px)}
+    .tmon__card::before{content:'\201C';position:absolute;top:1rem;left:1.5rem;font-size:4rem;line-height:1;opacity:0.06;font-family:Georgia,serif}
+    .tmon blockquote{font-size:1rem;line-height:1.8;margin:0 0 1.5rem;position:relative;z-index:1}
+    .tmon__author{display:flex;align-items:center;gap:0.5rem}
+    .tmon__avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);display:grid;place-items:center;font-weight:700;font-size:0.9rem;color:#6366f1}
+    .tmon__name{font-size:0.9rem;font-weight:600}
+    .tmon__role{font-size:0.78rem;opacity:0.4}
+  `}></style>
+  <div class="tmon__grid">
+    {items.map(item => (
+      <div class="tmon__card">
+        <blockquote>{item.quote}</blockquote>
+        <div class="tmon__author">
+          <div class="tmon__avatar">{item.author.slice(0,2)}</div>
+          <div>
+            <div class="tmon__name">{item.author}</div>
+            {item.role && <div class="tmon__role">{item.role}</div>}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>

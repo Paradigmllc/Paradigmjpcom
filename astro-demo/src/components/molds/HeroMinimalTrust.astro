@@ -1,0 +1,170 @@
+---
+export interface Props {
+  headline: string
+  subheadline?: string
+  image?: string
+  primaryCta: { label: string; href: string }
+  secondaryCta?: { label: string; href: string }
+  theme?: "light" | "dark" | "gradient"
+  accentColor?: string
+}
+
+const {
+  headline,
+  subheadline,
+  image,
+  primaryCta,
+  secondaryCta,
+  theme = "light",
+  accentColor = "#1e3a5f",
+} = Astro.props
+
+const themeClasses: Record<string, string> = {
+  light: "bg-white text-gray-900",
+  dark: "bg-gray-900 text-gray-100",
+  gradient: `bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900`,
+}
+
+const overlayBg = theme === "dark" ? "bg-black/50" : "bg-black/20"
+const ctaBase = "inline-block px-8 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2"
+---
+
+<section
+  class={`relative min-h-[80vh] flex items-center justify-center overflow-hidden ${themeClasses[theme]}`}
+  style={theme === "gradient" ? { "--accent": accentColor } as Record<string, string> : {}}
+>
+  <!-- Background Image with Overlay -->
+  {
+    image && (
+      <div class="absolute inset-0 z-0">
+        <img
+          src={image}
+          alt=""
+          class="w-full h-full object-cover animate-fade-in"
+          loading="eager"
+        />
+        <div class={`absolute inset-0 ${overlayBg}`} />
+      </div>
+    )
+  }
+
+  <!-- Decorative Pattern (only if no image) -->
+  {
+    !image && (
+      <div class="absolute inset-0 z-0 opacity-[0.03]">
+        <div class="w-full h-full" style={`background-image: radial-gradient(circle at 25% 25%, ${accentColor} 1px, transparent 1px); background-size: 40px 40px;`} />
+      </div>
+    )
+  }
+
+  <!-- Content -->
+  <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <!-- Accent Line Animation -->
+    <div class="flex justify-center mb-6 sm:mb-8">
+      <div
+        class="h-1 w-16 rounded-full animate-slide-in"
+        style={`background-color: ${accentColor}`}
+      />
+    </div>
+
+    <!-- Headline -->
+    <h1
+      class="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight animate-fade-in-up"
+      style={`color: ${accentColor}`}
+    >
+      {headline}
+    </h1>
+
+    <!-- Subheadline -->
+    {
+      subheadline && (
+        <p
+          class="mt-4 sm:mt-6 text-lg sm:text-xl md:text-2xl font-serif leading-relaxed max-w-2xl mx-auto animate-fade-in-up opacity-0"
+          style={`animation-delay: 0.2s; animation-fill-mode: forwards; color: ${theme === "dark" ? "#d1d5db" : "#4b5563"}`}
+        >
+          {subheadline}
+        </p>
+      )
+    }
+
+    <!-- CTAs -->
+    <div class="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up opacity-0"
+         style="animation-delay: 0.4s; animation-fill-mode: forwards;">
+      <!-- Primary CTA -->
+      <a
+        href={primaryCta.href}
+        class={`${ctaBase} text-white shadow-lg hover:shadow-xl`}
+        style={`background-color: ${accentColor}; focus:ring-${accentColor}`}
+      >
+        {primaryCta.label}
+      </a>
+
+      <!-- Secondary CTA -->
+      {
+        secondaryCta && (
+          <a
+            href={secondaryCta.href}
+            class={`${ctaBase} border-2 hover:bg-opacity-10`}
+            style={`border-color: ${accentColor}; color: ${accentColor}; focus:ring-${accentColor}`}
+          >
+            {secondaryCta.label}
+          </a>
+        )
+      }
+    </div>
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
+    <svg
+      class="w-6 h-6"
+      style={`color: ${theme === "dark" ? "#9ca3af" : accentColor}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+    </svg>
+  </div>
+</section>
+
+<style is:global>
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      width: 0;
+      opacity: 0;
+    }
+    to {
+      width: 4rem;
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 1s ease-out;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.8s ease-out forwards;
+  }
+</style>

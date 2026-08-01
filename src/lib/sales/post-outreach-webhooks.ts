@@ -160,7 +160,7 @@ async function notifyOperator(input: {
     await notifyBothChannels("sales", {
       title: `📬 返信あり: ${input.intent} (${input.address})`,
       message: input.subject || input.summary,
-      link: input.pipelineRunId ? `/ja/admin/sales/pipeline/${input.pipelineRunId}` : undefined,
+      link: "https://twenty.paradigmjp.com",
       type: "post_outreach_reply",
     })
   } catch (e) {

@@ -1,0 +1,39 @@
+---
+export interface Props {
+  items: {
+    title: string;
+    body: string;
+    icon: string;
+  }[];
+  theme?: 'light' | 'dark';
+}
+
+const { items, theme = 'light' } = Astro.props;
+---
+
+<div
+  class:list={[
+    'grid gap-8 md:grid-cols-2 lg:grid-cols-3',
+    theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900',
+  ]}
+>
+  {
+    items.map((item) => (
+      <div
+        class:list={[
+          'rounded-xl p-6 shadow-lg transition-shadow duration-300 hover:shadow-xl',
+          theme === 'dark' ? 'bg-gray-800' : 'bg-gray-50',
+        ]}
+      >
+        <div class="mb-4 text-4xl">{item.icon}</div>
+        <h3 class="mb-2 text-xl font-bold">{item.title}</h3>
+        <p class:list={[
+          'leading-relaxed',
+          theme === 'dark' ? 'text-gray-300' : 'text-gray-600',
+        ]}>
+          {item.body}
+        </p>
+      </div>
+    ))
+  }
+</div>

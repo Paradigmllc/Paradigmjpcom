@@ -1,0 +1,29 @@
+---
+interface Props {
+  avatars: { url: string; name: string }[];
+  max?: number;
+}
+
+const { avatars, max = 5 } = Astro.props;
+const displayAvatars = avatars.slice(0, max);
+const remaining = avatars.length - max;
+---
+
+<div class="flex -space-x-2 overflow-hidden">
+  {
+    displayAvatars.map((avatar) => (
+      <img
+        class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+        src={avatar.url}
+        alt={avatar.name}
+        title={avatar.name}
+      />
+    ))
+  }
+
+  {remaining > 0 && (
+    <div class="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-white bg-gray-200 text-xs font-medium text-gray-500">
+      +{remaining}
+    </div>
+  )}
+</div>

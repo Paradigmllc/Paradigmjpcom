@@ -1,0 +1,35 @@
+---
+// 取引先ロゴクラウドコンポーネント
+// Props: logos: { name: string; url: string }[]
+
+export interface Props {
+  logos: { name: string; url: string }[];
+}
+
+const { logos } = Astro.props;
+---
+
+<div class="w-full max-w-6xl mx-auto px-4 py-16">
+  <h2 class="text-2xl font-bold text-center mb-12 text-gray-800">
+    お取引先様
+  </h2>
+  
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 items-center justify-items-center">
+    {
+      logos.map((logo) => (
+        <div class="group relative w-32 h-16 flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-300">
+          <img
+            src={logo.url}
+            alt={logo.name}
+            class="max-w-full max-h-full object-contain opacity-70 group-hover:opacity-100 transition-opacity duration-300"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="absolute -bottom-6 text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+            {logo.name}
+          </span>
+        </div>
+      ))
+    }
+  </div>
+</div>

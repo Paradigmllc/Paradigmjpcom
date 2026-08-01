@@ -8,6 +8,12 @@ export type DemoArchetype =
   | "commerce"
   | "advisory"
   | "localService"
+  // Japan Entry Package archetypes
+  | "jpSaaS"
+  | "jpD2C"
+  | "jpB2B"
+  | "jpHealthtech"
+  | "jpEdtech"
 
 export interface PremiumDemoProfile {
   slug: string
@@ -70,6 +76,26 @@ const archetypeByIndustry: Record<string, DemoArchetype> = {
   consulting: "advisory",
   advisory: "advisory",
   professional_service: "advisory",
+  // Japan Entry Package
+  saas: "jpSaaS",
+  software: "jpSaaS",
+  platform: "jpSaaS",
+  d2c: "jpD2C",
+  d2c_brand: "jpD2C",
+  ecommerce_brand: "jpD2C",
+  consumer_goods: "jpD2C",
+  b2b: "jpB2B",
+  b2b_service: "jpB2B",
+  professional: "jpB2B",
+  cybersecurity: "jpB2B",
+  healthtech: "jpHealthtech",
+  "health-tech": "jpHealthtech",
+  medtech: "jpHealthtech",
+  wellness: "jpHealthtech",
+  edtech: "jpEdtech",
+  "ed-tech": "jpEdtech",
+  education: "jpEdtech",
+  online_learning: "jpEdtech",
 }
 
 const imageByArchetype: Record<DemoArchetype, string> = {
@@ -80,6 +106,12 @@ const imageByArchetype: Record<DemoArchetype, string> = {
   commerce: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1800&q=84",
   advisory: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=84",
   localService: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1800&q=84",
+  // Japan Entry Package
+  jpSaaS: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1800&q=84",
+  jpD2C: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1800&q=84",
+  jpB2B: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1800&q=84",
+  jpHealthtech: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1800&q=84",
+  jpEdtech: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?auto=format&fit=crop&w=1800&q=84",
 }
 
 const industryLabelJa: Record<DemoArchetype, string> = {
@@ -90,6 +122,12 @@ const industryLabelJa: Record<DemoArchetype, string> = {
   commerce: "小売・商品訴求",
   advisory: "士業・専門性訴求",
   localService: "地域サービス・即時相談",
+  // Japan Entry Package
+  jpSaaS: "SaaS・日本市場参入",
+  jpD2C: "D2C・越境EC",
+  jpB2B: "B2B・企業向けサービス",
+  jpHealthtech: "ヘルステック・医療機器",
+  jpEdtech: "EdTech・教育プラットフォーム",
 }
 
 const industryLabelEn: Record<DemoArchetype, string> = {
@@ -100,6 +138,12 @@ const industryLabelEn: Record<DemoArchetype, string> = {
   commerce: "Retail catalog",
   advisory: "Expert advisory",
   localService: "Local service",
+  // Japan Entry Package
+  jpSaaS: "SaaS — Japan market entry",
+  jpD2C: "D2C — Cross-border eCommerce",
+  jpB2B: "B2B — Enterprise services",
+  jpHealthtech: "Healthtech — Med devices & digital health",
+  jpEdtech: "EdTech — Online learning platforms",
 }
 
 function asText(value: unknown, fallback: string): string {
@@ -134,6 +178,12 @@ function localizedCopy(archetype: DemoArchetype, locale: DemoLocale) {
     commerce: "商品を探し、比べ、買いたくなるストアサイト。",
     advisory: "専門性が信頼に変わる、士業・相談型サイト。",
     localService: "すぐ相談できる、地域サービスサイト。",
+    // Japan Entry
+    jpSaaS: "日本市場に最適化された、SaaSランディングサイト。",
+    jpD2C: "越境ECに強い、D2Cブランド日本版サイト。",
+    jpB2B: "日本企業の信頼を勝ち取る、B2Bコーポレートサイト。",
+    jpHealthtech: "薬機法・規制対応、ヘルステック日本参入サイト。",
+    jpEdtech: "日本の学習者に届く、EdTechランディングサイト。",
   }
   const titleEn: Record<DemoArchetype, string> = {
     culinary: "A restaurant site built for reservations.",
@@ -143,6 +193,12 @@ function localizedCopy(archetype: DemoArchetype, locale: DemoLocale) {
     commerce: "A store site that makes products easy to choose.",
     advisory: "An advisory site that turns expertise into trust.",
     localService: "A local service site built for fast inquiries.",
+    // Japan Entry
+    jpSaaS: "A Japan-optimized SaaS landing site built to convert.",
+    jpD2C: "A cross-border D2C brand site for the Japanese market.",
+    jpB2B: "A B2B corporate site that earns trust in Japan.",
+    jpHealthtech: "A healthtech site compliant with Japanese regulations.",
+    jpEdtech: "An EdTech site that reaches Japanese learners.",
   }
   const leadJa: Record<DemoArchetype, string> = {
     culinary: "料理、空間、口コミ、予約導線をひとつの体験として設計。来店前に期待が高まる構成です。",
@@ -152,6 +208,12 @@ function localizedCopy(archetype: DemoArchetype, locale: DemoLocale) {
     commerce: "商品カテゴリ、選び方、レビュー、購入導線を近くに置き、迷わず選べる購買体験を作ります。",
     advisory: "実績、専門領域、相談範囲、費用感を明確化し、問い合わせ前の心理的ハードルを下げます。",
     localService: "対応エリア、料金目安、作業事例、当日相談導線を即座に見せ、緊急性の高い問い合わせを逃しません。",
+    // Japan Entry
+    jpSaaS: "現地法人不要。機能ローカライズ、日本語UI/UX、決済・法令対応まで含めて日本参入の最短経路を設計します。",
+    jpD2C: "ブランド世界観を保ったまま、日本特有の商習慣（配送、返品、支払い方法）に対応した購買体験を構築します。",
+    jpB2B: "日本企業が取引判断に求める「信頼シグナル」（実績、認証、日本語サポート、拠点情報）を先回りして提示します。",
+    jpHealthtech: "薬機法、個人情報保護法、医療広告ガイドラインに準拠しつつ、導入メリットを明確に伝える設計です。",
+    jpEdtech: "日本の学習習慣（検定対応、進路接続、学習管理）に合わせた導線で、保護者と学習者の両方に響くサイトです。",
   }
   const leadEn: Record<DemoArchetype, string> = {
     culinary: "Menu, ambience, reviews, and booking are composed as one conversion journey.",
@@ -161,6 +223,12 @@ function localizedCopy(archetype: DemoArchetype, locale: DemoLocale) {
     commerce: "Catalog discovery, product proof, and purchase intent are kept close together.",
     advisory: "Insight, credibility, and qualification cues build a high-trust inquiry path.",
     localService: "Service areas, pricing clarity, proof, and response expectations are visible upfront.",
+    // Japan Entry
+    jpSaaS: "No legal entity needed upfront. We handle localization (UI/UX, payments, compliance) so you launch faster in Japan.",
+    jpD2C: "Your brand world intact, adapted to Japanese commerce conventions — shipping, returns, and payment methods.",
+    jpB2B: "Japanese buyers need trust signals — case studies, certifications, Japanese support, and a local presence — before they engage.",
+    jpHealthtech: "Compliant with PMD Act, APPI, and medical advertising guidelines while clearly communicating your product's value.",
+    jpEdtech: "Designed for Japan's learning culture — certification alignment, progress tracking, and communication that resonates with both learners and parents.",
   }
   const signatureJa: Record<DemoArchetype, string[]> = {
     culinary: ["季節メニュー", "貸切・記念日", "口コミ・予約"],
@@ -170,6 +238,12 @@ function localizedCopy(archetype: DemoArchetype, locale: DemoLocale) {
     commerce: ["カテゴリ編集", "商品比較", "リピート導線"],
     advisory: ["専門領域", "事例・実績", "相談前チェック"],
     localService: ["対応エリア", "作業事例", "即時問い合わせ"],
+    // Japan Entry
+    jpSaaS: ["日本語UIデモ", "料金ローカライズ", "法令・決済対応"],
+    jpD2C: ["越境配送導線", "日本決済対応", "ブランド一貫性"],
+    jpB2B: ["実績・認証", "日本語サポート", "拠点・連絡先"],
+    jpHealthtech: ["薬機法対応", "臨床エビデンス", "導入フロー"],
+    jpEdtech: ["カリキュラム対応", "学習管理導線", "保護者向けFAQ"],
   }
   const signatureEn: Record<DemoArchetype, string[]> = {
     culinary: ["Seasonal menu", "Private booking", "Review proof"],
@@ -179,6 +253,12 @@ function localizedCopy(archetype: DemoArchetype, locale: DemoLocale) {
     commerce: ["Category edit", "Product comparison", "Repeat offer"],
     advisory: ["Expertise index", "Proof library", "Consultation brief"],
     localService: ["Service area", "Before/after", "Same-day inquiry"],
+    // Japan Entry
+    jpSaaS: ["Japanese UI demo", "Pricing localization", "Compliance & payments"],
+    jpD2C: ["Cross-border shipping", "JP payment methods", "Brand consistency"],
+    jpB2B: ["Case studies & certs", "Japanese support", "Local presence"],
+    jpHealthtech: ["PMD Act compliance", "Clinical evidence", "Onboarding flow"],
+    jpEdtech: ["Curriculum alignment", "Progress tracking", "Parent communication"],
   }
 
   return {

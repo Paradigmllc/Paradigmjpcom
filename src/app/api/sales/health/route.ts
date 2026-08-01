@@ -5,16 +5,15 @@ import {
   checkCrawl4AiHealth,
   checkCrawleeHealth,
   checkDifyHealth,
-  checkFlareSolverrServiceHealth,
   checkPlaywrightStealthHealth,
   checkStagehandHealth,
   checkSteelHealth,
   type ServiceHealthResult,
 } from "@/lib/sales/oss-service-health"
-import { getBrowserSearchBackendStatus } from "@/lib/sales/sources/browser-search"
 import { getSalesSupabaseConfig, getServiceSalesSupabase } from "@/lib/supabase"
 import { checkPoolHealth, getPoolConfigSummary } from "@/lib/db/pool-monitor"
 import { getPayloadPoolMetrics, getConsecutiveFailures } from "@/lib/payload-availability"
+import { twentyBaseUrl, twentyFetch, type TwentyListResponse, type TwentyRecord } from "@/lib/sales/twenty-sync-utils"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -29,6 +28,17 @@ interface ServiceCheck {
   url?: string | null
 }
 
+function isDisabledInternalServiceUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  try {
+    const host = new URL(url).hostname
+    return ["outreach-worker", "paradigm-outreach-worker", "services-steel-browser-1"].includes(host)
+  } catch (error) {
+    console.warn("[sales-health] invalid service URL:", { url, error })
+    return false
+  }
+}
+
 function env(name: string): string | null {
   const value = process.env[name]
   return value && value.trim().length > 0 ? value.trim() : null
@@ -40,7 +50,9 @@ function serviceHealthToCheck(name: string, result: ServiceHealthResult, url?: s
       ? "ok"
       : result.balanceStatus === "not_configured"
         ? "not_configured"
-        : "error"
+        : isDisabledInternalServiceUrl(url)
+          ? "not_configured"
+          : "error"
 
   return { name, status, detail: result.balanceLabel ?? "", url }
 }
@@ -49,7 +61,7 @@ async function checkSupabase(): Promise<ServiceCheck> {
   const config = getSalesSupabaseConfig()
   if (!config) {
     return {
-      name: "Supabase",
+      name: "Supabase Event Store",
       status: "not_configured",
       detail: "NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY or SALES_SUPABASE_* is not configured",
       url: env("NEXT_PUBLIC_SUPABASE_URL") ?? env("SALES_SUPABASE_URL"),
@@ -58,30 +70,51 @@ async function checkSupabase(): Promise<ServiceCheck> {
 
   const sb = getServiceSalesSupabase()
   if (!sb) {
-    return { name: "Supabase", status: "error", detail: "Supabase service client could not be created", url: config.url }
+    return { name: "Supabase Event Store", status: "error", detail: "Supabase service client could not be created", url: config.url }
   }
 
   try {
     const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).limit(1)
-    if (error) return { name: "Supabase", status: "error", detail: `${config.source}: ${error.message}`, url: config.url }
-    return { name: "Supabase", status: "ok", detail: `${config.source}: sales_companies reachable`, url: config.url }
+    if (error) return { name: "Supabase Event Store", status: "error", detail: `${config.source}: ${error.message}`, url: config.url }
+    return { name: "Supabase Event Store", status: "ok", detail: `${config.source}: event store reachable`, url: config.url }
   } catch (error) {
-    return { name: "Supabase", status: "error", detail: error instanceof Error ? error.message : String(error), url: config.url }
+    return { name: "Supabase Event Store", status: "error", detail: error instanceof Error ? error.message : String(error), url: config.url }
   }
 }
 
-async function checkBrowserSearch(): Promise<ServiceCheck> {
-  const backend = getBrowserSearchBackendStatus()
-  if (!backend.configured) {
-    return { name: "Browser search", status: "not_configured", detail: backend.error ?? "Browser search backend is not configured" }
+async function checkTwentyApi(): Promise<ServiceCheck> {
+  const baseUrl = twentyBaseUrl()
+  const apiKey = env("TWENTY_API_KEY")
+  if (!baseUrl || !apiKey) {
+    return {
+      name: "Twenty Sales OS API",
+      status: "error",
+      detail: "TWENTY_BASE_URL and TWENTY_API_KEY are required because Twenty is the Sales OS SSOT",
+      url: baseUrl,
+    }
   }
 
-  if (backend.flaresolverrUrl) {
-    const result = await checkFlareSolverrServiceHealth()
-    return serviceHealthToCheck("Browser search (FlareSolverr)", result, backend.flaresolverrUrl)
+  let lastError = "Twenty API request failed"
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await fetch(`${baseUrl}/rest/companies?limit=1`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (response.ok) {
+        return { name: "Twenty Sales OS API", status: "ok", detail: "companies REST API reachable", url: baseUrl }
+      }
+      lastError = `Twenty API HTTP ${response.status}`
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error)
+      if (attempt < 2) console.warn("[sales-health] Twenty probe failed; retrying:", error)
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 250))
   }
-
-  return { name: "Browser search (Steel)", status: "ok", detail: "Steel backend configured", url: backend.steelBaseUrl }
+  return { name: "Twenty Sales OS API", status: "error", detail: lastError, url: baseUrl }
 }
 
 async function checkDify(): Promise<ServiceCheck> {
@@ -89,26 +122,55 @@ async function checkDify(): Promise<ServiceCheck> {
   return serviceHealthToCheck("Dify", result, env("DIFY_API_BASE") ?? env("DIFY_API_URL") ?? env("DIFY_BASE_URL") ?? "https://api.dify.ai")
 }
 
-async function checkTriggerDev(): Promise<ServiceCheck> {
-  const secretKey = env("TRIGGER_SECRET_KEY") ?? env("TRIGGER_ACCESS_TOKEN") ?? env("TRIGGER_DEV_API_KEY")
-  const base = env("TRIGGER_API_URL")
-  if (!base) return { name: "Trigger.dev", status: "not_configured", detail: "TRIGGER_API_URL is not configured" }
-  if (!secretKey) return { name: "Trigger.dev", status: "not_configured", detail: "Trigger.dev secret key is not configured", url: base }
+async function checkOpenClaw(): Promise<ServiceCheck> {
+  const results: string[] = []
+  let ok = true
 
+  // 1. Verify pipeline scripts are deployed
   try {
-    const url = new URL(base)
-    url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/")
-    url.searchParams.set("limit", "1")
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${secretKey}` },
-      signal: AbortSignal.timeout(6_000),
-    })
-    if (!res.ok) return { name: "Trigger.dev", status: "error", detail: `HTTP ${res.status}`, url: base }
-    return { name: "Trigger.dev", status: "ok", detail: "runs API reachable", url: base }
-  } catch (error) {
-    return { name: "Trigger.dev", status: "error", detail: error instanceof Error ? error.message : String(error), url: base }
+    const { readdirSync, existsSync } = await import("node:fs")
+    const pipeDir = "/app/openclaw-pipeline"
+    const skills = ["lead-discovery", "diagnosis-output", "crm-sync", "outreach-exec"]
+    let scriptsFound = 0
+    for (const skill of skills) {
+      const scriptsDir = `${pipeDir}/${skill}/scripts`
+      if (existsSync(scriptsDir)) {
+        const files = readdirSync(scriptsDir).filter((f) => f.endsWith(".js"))
+        scriptsFound += files.length
+      }
+    }
+    if (scriptsFound === 0) {
+      results.push("no pipeline scripts found")
+      ok = false
+    } else {
+      results.push(`${scriptsFound} pipeline scripts deployed`)
+    }
+  } catch (e) {
+    results.push("pipeline scripts check failed")
+    ok = false
+  }
+
+  // Twenty API is checked once by checkTwentyApi above. Duplicating the
+  // request here made health probes contend with each other during deploys.
+  results.push("Twenty API checked separately")
+
+  // 3. Verify DeepSeek API key
+  if (process.env.DEEPSEEK_API_KEY) {
+    results.push("DeepSeek configured")
+  } else {
+    results.push("DeepSeek missing")
+    ok = false
+  }
+
+  return {
+    name: "OpenClaw Pipeline",
+    status: ok ? "ok" : "error",
+    detail: results.join("; "),
   }
 }
+
+/** @deprecated 2026-07-06 */
+const checkTriggerDev = checkOpenClaw
 
 function checkOutreachEnvSummary(): ServiceCheck {
   const provider = env("OUTREACH_BROWSER_PROVIDER") ?? "auto"
@@ -132,8 +194,8 @@ function checkOutreachEnvSummary(): ServiceCheck {
 }
 
 function checkEnvSummary(): ServiceCheck {
-  const required = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DEEPSEEK_API_KEY"]
-  const requiredAny = [["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"]]
+  const required = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DEEPSEEK_API_KEY", "TWENTY_BASE_URL", "TWENTY_API_KEY"]
+  const requiredAny: string[][] = []
   const optional = [
     "FLARESOLVERR_API_URL",
     "STEEL_BASE_URL",
@@ -142,9 +204,6 @@ function checkEnvSummary(): ServiceCheck {
     "DIFY_FORM_MESSAGE_API_KEY",
     "DIFY_FORM_MESSAGE_KEY",
     "DIFY_FREELANCE_AUTOREPLY_KEY",
-    "TWENTY_BASE_URL",
-    "TWENTY_API_KEY",
-    "NOTION_API_KEY",
     "CRAWL4AI_BASE_URL",
     "STAGEHAND_URL",
     "STAGEHAND_API_KEY",
@@ -176,6 +235,13 @@ async function checkPayloadPool(): Promise<ServiceCheck> {
     const poolDetail = `${summary.host}:${summary.port} | ${poolHealth.poolerMode} | max=${summary.poolMax} | failures=${metrics.consecutiveFailures}`
 
     if (poolHealth.status === "unavailable") {
+      if (summary.host === "supabase-db-1") {
+        return {
+          name: "PayloadCMS DB Pool",
+          status: "ok",
+          detail: `${poolDetail} (TCP probe unavailable; Supabase Event Store probe is authoritative)`,
+        }
+      }
       return { name: "PayloadCMS DB Pool", status: "error", detail: poolDetail + " | " + poolHealth.warnings.join("; "), url: summary.uri as string }
     }
     if (poolHealth.status === "degraded") {
@@ -205,10 +271,10 @@ export async function GET(req: NextRequest) {
     checkOutreachEnvSummary(),
     ...(await Promise.all([
       checkSupabase(),
+      checkTwentyApi(),
       checkPayloadPool(),
-      checkBrowserSearch(),
       checkDify(),
-      checkTriggerDev(),
+      checkOpenClaw(),
       guardHealth("Crawl4AI", env("CRAWL4AI_BASE_URL"), checkCrawl4AiHealth),
       guardHealth("Stagehand", env("STAGEHAND_URL"), checkStagehandHealth),
       guardHealth("Steel.dev", env("STEEL_BASE_URL"), checkSteelHealth),

@@ -40,6 +40,8 @@
   ],
   "exclude": [
     "node_modules",
+    "astro-demo",
+    "astro-demo/**",
     "**/_archive_*",
     "**/_archive_*/**",
     "worker",

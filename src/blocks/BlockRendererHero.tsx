@@ -1,54 +1,111 @@
+"use client"
+
+import { motion } from "framer-motion"
+import { ArrowRight } from "lucide-react"
+import { Sparkles } from "@/components/magicui/sparkles"
+import { Meteors } from "@/components/magicui/meteors"
+import PageHeroVisual from "@/components/PageHeroVisual"
+
+const EASE = [0.22, 1, 0.36, 1] as const
+
 interface AnyBlock {
   blockType: string
   id?: string
   [key: string]: unknown
 }
 
-export default function BlockRendererHero(b: AnyBlock) {
-  const variant = (b.variant as string) ?? "centered"
+export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
   const stats = (b.stats as Array<{ value?: string; label?: string }>) ?? []
   const primary = b.primaryCta as { label?: string; href?: string } | undefined
   const secondary = b.secondaryCta as { label?: string; href?: string } | undefined
+  const variant = typeof b.variant === "string" ? b.variant : "centered"
+  const image = b.image && typeof b.image === "object"
+    ? b.image as { url?: string; alt?: string }
+    : undefined
+  const isJapanEntryHero = String(b.badge ?? "").toLowerCase().includes("fast-decision")
+  const heroImage = image ?? (isJapanEntryHero
+    ? {
+        url: "/japan-entry/tokyo-sakura-panorama.svg",
+        alt: "Tokyo skyline and cherry blossom atmosphere representing a Japan Entry launch path",
+      }
+    : undefined)
+  const hasImage = Boolean(heroImage?.url) && (variant === "split-image" || isJapanEntryHero)
+
   return (
-    <section className={`relative bg-paradigm-paper paradigm-section pt-36 ${variant === "centered" ? "text-center" : ""}`}>
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
-        {!!b.badge && <p className="paradigm-eyebrow mb-6">{String(b.badge)}</p>}
-        <h1 className="font-display text-[40px] md:text-[72px] leading-[1.08] tracking-[-0.015em] text-paradigm-ink mb-6">
-          {String(b.title ?? "")}
-        </h1>
-        {!!b.subtitle && (
-          <p className="text-[15px] md:text-[17px] text-paradigm-ink-soft max-w-2xl mx-auto leading-[1.85] mb-10">
-            {String(b.subtitle)}
-          </p>
-        )}
-        <div className={`flex flex-wrap gap-3 ${variant === "centered" ? "justify-center" : ""}`}>
-          {primary?.href && (
-            <a
-              href={primary.href}
-              className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-accent transition-colors"
-            >
-              {primary.label ?? "Learn more"}
-            </a>
+    <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center bg-paradigm-ink overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 paradigm-mesh-vivid opacity-90" />
+        <div className="absolute top-[15%] left-[10%] w-[50vw] h-[50vw] max-w-[800px] max-h-[800px] rounded-full bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-transparent blur-[100px] animate-[blobFloat_18s_ease-in-out_infinite]" />
+        <div className="absolute top-[50%] right-[5%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] rounded-full bg-gradient-to-bl from-amber-500/15 via-paradigm-glow/20 to-transparent blur-[100px] animate-[blobFloat2_22s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[10%] left-[30%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full bg-gradient-to-tr from-paradigm-accent/20 via-fuchsia-400/15 to-transparent blur-[80px] animate-[blobFloat3_14s_ease-in-out_infinite]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-paradigm-ink/75 via-paradigm-ink/60 to-transparent" />
+      </div>
+      <div className="absolute inset-0 section-dots opacity-[0.04] pointer-events-none" />
+      <Meteors number={10} color="rgba(167, 139, 250, 0.4)" />
+      <Sparkles count={18} color="rgba(244, 114, 182, 0.4)" duration={4} />
+      <div className={`relative z-10 w-full mx-auto px-6 md:px-12 pt-32 pb-20 ${hasImage ? "max-w-7xl" : "max-w-5xl text-center"}`}>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE }}>
+          <div className={hasImage ? "grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]" : undefined}>
+          <div className={hasImage ? "text-left" : undefined}>
+          {!!b.badge && (
+            <div className="inline-flex items-center gap-2.5 bg-paradigm-surface/10 backdrop-blur-sm border border-paradigm-line/20 rounded-full px-4 py-2 mb-8">
+              <span className="w-2 h-2 rounded-full bg-gradient-to-r from-paradigm-accent to-paradigm-glow animate-pulse" />
+              <span className="paradigm-eyebrow text-paradigm-paper/80 text-[10px]">{String(b.badge)}</span>
+            </div>
           )}
-          {secondary?.href && (
-            <a
-              href={secondary.href}
-              className="inline-flex items-center gap-2 border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors"
-            >
-              {secondary.label ?? "More"}
-            </a>
+          <h1 style={{ fontSize: "clamp(2.2rem, 6.5vw, 4.5rem)" }} className="font-display leading-[1.1] tracking-[-0.04em] text-paradigm-paper mb-6">
+            <span className="bg-gradient-to-r from-paradigm-paper via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent bg-[length:200%_100%] animate-[gradientShift_5s_ease_infinite]">
+              {String(b.title ?? "")}
+            </span>
+          </h1>
+          {!!b.subtitle && (
+            <p className="text-[15px] md:text-[17px] text-paradigm-paper/70 max-w-2xl mx-auto mb-10 leading-[1.85] font-light">{String(b.subtitle)}</p>
           )}
-        </div>
-        {stats.length > 0 && (
-          <div className={`mt-20 grid grid-cols-2 md:grid-cols-4 border-t border-paradigm-line ${variant === "centered" ? "max-w-3xl mx-auto" : ""}`}>
-            {stats.map((s, i) => (
-              <div key={i} className={`px-4 py-6 text-center ${i > 0 ? "md:border-l border-paradigm-line" : ""} ${i === 1 || i === 3 ? "border-l border-paradigm-line" : ""} ${i >= 2 ? "border-t md:border-t-0 border-paradigm-line" : ""}`}>
-                <div className="font-display text-[28px] md:text-[36px] text-paradigm-ink">{s.value ?? ""}</div>
-                <div className="paradigm-eyebrow mt-2">{s.label ?? ""}</div>
-              </div>
-            ))}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            {primary?.href && (
+              <a href={primary.href} className="inline-flex items-center gap-2 bg-paradigm-glow/20 backdrop-blur-sm border border-paradigm-glow/40 text-paradigm-paper hover:bg-paradigm-glow/30 px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-all paradigm-glow-sm rounded-xl">
+                {primary.label ?? "Get started"} <ArrowRight size={16} />
+              </a>
+            )}
+            {secondary?.href && (
+              <a href={secondary.href} className="inline-flex items-center gap-2 border border-paradigm-paper/15 text-paradigm-paper/70 hover:bg-paradigm-paper/8 px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors rounded-xl">
+                {secondary.label ?? "Learn more"}
+              </a>
+            )}
           </div>
-        )}
+          {stats.length > 0 && (
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl ${hasImage ? "mr-auto" : "mx-auto"}`}>
+              {stats.map((s, i) => (
+                <motion.div key={i} whileHover={{ y: -3, scale: 1.02 }} transition={{ duration: 0.3, ease: EASE }}
+                  className="paradigm-glass rounded-xl px-3 py-4 text-center cursor-default paradigm-glow-sm">
+                  <div className="font-display text-[22px] md:text-[28px] leading-none">
+                    <span className="bg-gradient-to-br from-paradigm-glow via-paradigm-tech to-paradigm-accent bg-clip-text text-transparent">
+                      {s.value ?? ""}
+                    </span>
+                  </div>
+                  <div className="paradigm-eyebrow text-paradigm-paper/50 mt-1 text-[9px]">{s.label ?? ""}</div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+          </div>
+          {hasImage ? (
+            <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/95 p-2 shadow-2xl shadow-blue-950/30">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-blue-200/10" />
+              <img
+                src={heroImage?.url}
+                alt={heroImage?.alt ?? "Japan Entry package visual"}
+                className="relative z-10 h-auto w-full rounded-2xl object-cover"
+                loading="eager"
+              />
+            </div>
+          ) : (
+            <div className="mx-auto mt-10 hidden max-w-[300px] lg:block">
+              <PageHeroVisual />
+            </div>
+          )}
+          </div>
+        </motion.div>
       </div>
     </section>
   )

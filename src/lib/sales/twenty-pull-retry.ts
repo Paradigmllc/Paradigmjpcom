@@ -12,7 +12,7 @@ function validHttpUrl(value: string | null): URL | null {
     const url = new URL(value)
     return url.protocol === "http:" || url.protocol === "https:" ? url : null
   } catch (error) {
-    console.warn("[twenty-pull] invalid URL:", { value, error })
+    console.error("[twenty-pull] invalid URL:", { value, error })
     return null
   }
 }

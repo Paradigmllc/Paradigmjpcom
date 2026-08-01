@@ -7,6 +7,7 @@
  */
 import type { DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 type DemoTheme = "astrowind" | "screwfast" | "astroship"
 
@@ -200,7 +201,7 @@ function buildRulesBasedBlueprint(
             : "A diagnostic-led demo that improves trust proof, comparison clarity, and the path to inquiry.",
           tagline: isJa ? `${cfg.labelJa}向け改善デモ` : `${cfg.labelEn} improvement demo`,
           actions: [
-            { variant: "primary", text: isJa ? "無料相談を予約" : "Book a free consultation", href: ctaUrl },
+            { variant: "primary", text: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN, href: "https://paradigmjp.com/en/contact?intent=japan-entry" },
             { variant: "secondary", text: isJa ? "改善ポイントを見る" : "See improvements", href: "#features" },
           ],
         },
@@ -254,7 +255,7 @@ function buildRulesBasedBlueprint(
           subtitle: isJa
             ? "15分で、優先順位、制作範囲、最短で問い合わせ改善につなげる実装順を整理します。"
             : "In 15 minutes we clarify priorities, scope, and the fastest implementation sequence.",
-          callToAction: { variant: "primary", text: isJa ? "15分無料相談を予約" : "Book a free 15-min call", href: ctaUrl },
+            callToAction: { variant: "primary", text: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN, href: "https://paradigmjp.com/en/contact?intent=japan-entry" },
         },
       },
     ],

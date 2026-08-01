@@ -100,12 +100,17 @@ const FALLBACK_PRODUCTS: Record<SalesProductCode, Omit<SalesProduct, "id">> = {
     display_name: "Japan Entry Package (JaaS)",
     market_scope: "global",
     template_variant: "japan_entry",
-    default_currency: "JPY",
-    default_amount_yen: 300000,
+    default_currency: "USD",
+    default_amount_yen: 15000,
     is_subscription: false,
     description: "海外SMB向けの日本市場参入パッケージ。",
     sort_order: 30,
-    meta: {},
+    meta: {
+      pricing_model: "fixed_setup",
+      setup_amount_usd: 15000,
+      monthly_free_months: 3,
+      continuation_pricing: "agreed_separately_after_included_period",
+    },
   },
   global_video_subscription: {
     code: "global_video_subscription",
@@ -158,7 +163,7 @@ export function inferCompanyProductRecommendations(input: ProductRecommendationI
       ]
 }
 
-function productFromFallback(code: SalesProductCode): SalesProduct {
+export function productFromFallback(code: SalesProductCode): SalesProduct {
   return { id: code, ...FALLBACK_PRODUCTS[code] }
 }
 

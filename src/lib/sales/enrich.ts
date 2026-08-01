@@ -31,7 +31,6 @@ import { queryCommonCrawl } from "./sources/commoncrawl"
 import { enrichDomainWithSpiderFoot } from "./sources/spiderfoot-source"
 import { crawlWithKatana } from "./sources/katana-source"
 import { searchMaigretForDomain } from "./sources/maigret-source"
-import { extractSiteData, discoverForms } from "./sources/stagehand-enrich-source"
 import { scrapeWithSteel } from "./sources/steel-source"
 import { scrapeWithCrawlee } from "./sources/crawlee-source"
 import { extractSchemaOrg } from "./sources/schema-org"
@@ -47,6 +46,8 @@ import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
+import { queryWhoxy } from "./sources/whoxy"
+import { queryMultiCountryNic } from "./sources/country-nic"
 import type { Industry, SalesCompany } from "./types"
 
 function envFlag(name: string): boolean {
@@ -168,11 +169,21 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   }
 
   // Step 2: enrich with concurrency limit (6 at a time)
-  // Stagehand (in-process Chromium) is heavy — only enable via STAGEHAND_ENABLED=true
   const url = domain.startsWith("http") ? domain : `https://${domain}`
   const metrics: Record<string, SourceMetrics> = {}
-  const stagehandEnabled = envFlag("STAGEHAND_ENABLED")
   const DEFAULT_TIMEOUT = 25_000
+
+  function sourceSkipped(name: string, reason: string): null {
+    if (!metrics[name]) metrics[name] = { success: 0, failed: 0, timeout: 0, skipped: 0 }
+    metrics[name].skipped++
+    metrics[name].lastError = `skipped: ${reason}`
+    return null
+  }
+
+  function envSet(key: string): boolean {
+    const v = process.env[key]
+    return typeof v === "string" && v.trim().length > 0
+  }
 
   type TaskEntry = { name: string; fn: () => Promise<unknown> }
   const taskDefs: TaskEntry[] = [
@@ -196,24 +207,27 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     { name: "spiderfoot", fn: () => enrichDomainWithSpiderFoot(domain) },
     { name: "katana", fn: () => crawlWithKatana(url) },
     { name: "maigret", fn: () => searchMaigretForDomain(domain) },
-    ...(stagehandEnabled ? [
-      { name: "stagehand_extract", fn: () => extractSiteData(url) },
-      { name: "stagehand_forms", fn: () => discoverForms(url) },
+    ...(envSet("STEEL_BASE_URL") ? [
+      { name: "steel", fn: () => scrapeWithSteel(url) },
     ] : [
-      { name: "stagehand_extract", fn: () => Promise.resolve(null) },
-      { name: "stagehand_forms", fn: () => Promise.resolve(null) },
+      { name: "steel", fn: () => Promise.resolve(sourceSkipped("steel", "STEEL_BASE_URL not configured")) },
     ]),
-    { name: "steel", fn: () => scrapeWithSteel(url) },
-    { name: "crawlee", fn: () => scrapeWithCrawlee(url) },
+    ...(envSet("CRAWLEE_WORKER_URL") || envSet("OUTREACH_WORKER_URL") ? [
+      { name: "crawlee", fn: () => scrapeWithCrawlee(url) },
+    ] : [
+      { name: "crawlee", fn: () => Promise.resolve(sourceSkipped("crawlee", "CRAWLEE_WORKER_URL not configured")) },
+    ]),
     { name: "schema_org", fn: () => extractSchemaOrg(url) },
     { name: "sitemap", fn: () => analyzeSitemap(domain) },
     { name: "safe_browsing", fn: () => checkSafeBrowsing(domain) },
     { name: "green_web", fn: () => checkGreenHosting(domain) },
     { name: "builtwith", fn: () => lookupBuiltWithFree(domain) },
     { name: "jina_reader", fn: () => readWithJina(url) },
-    { name: "clearbit_logo", fn: () => Promise.resolve(`https://logo.clearbit.com/${domain}`) },
+    { name: "clearbit_logo", fn: () => fetch(`https://logo.clearbit.com/${domain}`, { signal: AbortSignal.timeout(5_000), method: "HEAD" }).then(r => r.ok ? `https://logo.clearbit.com/${domain}` : sourceSkipped("clearbit_logo", "logo not available")).catch(() => sourceSkipped("clearbit_logo", "unreachable")) },
     { name: "subfinder", fn: () => discoverSubdomains(domain) },
     { name: "trufflehog", fn: () => scanPublicRepos(domain) },
+    { name: "whoxy", fn: () => queryWhoxy(domain) },
+    { name: "country_nic", fn: () => queryMultiCountryNic(domain) },
   ]
 
   const sources = await batchAll(
@@ -223,7 +237,6 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   )
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sourceMap: Record<string, any> = Object.fromEntries(taskDefs.map((def, i) => [def.name, sources[i]]))
-  const skippedStagehand = !stagehandEnabled
 
   // Safety: ensure source array length matches task definitions to prevent silent misalignment
   const sourceNames = taskDefs.map((def) => def.name)
@@ -252,8 +265,6 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const spiderfoot = sourceMap.spiderfoot
   const katana = sourceMap.katana
   const maigret = sourceMap.maigret
-  const stagehandSite = sourceMap.stagehand_extract
-  const stagehandForms = sourceMap.stagehand_forms
   const steel = sourceMap.steel
   const crawlee = sourceMap.crawlee
   const schemaOrg = sourceMap.schema_org
@@ -265,21 +276,20 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const clearbitLogo = sourceMap.clearbit_logo
   const subfinder = sourceMap.subfinder
   const trufflehog = sourceMap.trufflehog
+  const whoxy = sourceMap.whoxy
+  const countryNic = sourceMap.country_nic
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
   const techResult = tech ? (tech as { tech: Array<{ name: string; category: string }> }) : null
   const enterpriseCheck = techResult?.tech ? isEnterpriseTechStack(techResult.tech.map(t => t.name)) : { isEnterprise: false, matched: [] }
-  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, whoxy, countryNic]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
       enriched_via: input.source ?? "contact_form",
       sources_collected: allSourceResults.filter(s => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
-      source_quality: {
-        ...metrics,
-        stagehand_skipped: skippedStagehand,
-      },
+      source_quality: { ...metrics },
     },
     contact: { original_email: input.email, services: input.services ?? [], received_at: new Date().toISOString() },
     scan: (() => {
@@ -311,25 +321,59 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     spiderfoot: Array.isArray(spiderfoot) ? spiderfoot.filter(r => r?.ok).map(r => ({ source: r.source, data: r.data })) : null,
     katana: katana?.ok ? { crawled: katana.data?.crawled, urls: katana.data?.urls?.slice(0, 20) } : null,
     maigret: maigret?.ok ? { profiles: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
-    stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
     steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length, screenshot: steel.data?.screenshot } : null,
     crawlee: crawlee?.ok ? { title: crawlee.data?.title, bodyText: crawlee.data?.bodyText?.slice(0, 2000), links_count: crawlee.data?.links?.length, forms_count: crawlee.data?.formsCount } : null,
     schema_org: schemaOrg?.ok && schemaOrg.data ? schemaOrg.data : null,
     sitemap: sitemap?.ok && sitemap.data ? sitemap.data : null,
     safe_browsing: safeBrowsing?.configured ? { safe: safeBrowsing.safe, threats: safeBrowsing.threats } : null,
+    source_skipped: (() => {
+      const skipped: string[] = []
+      for (const [name, m] of Object.entries(metrics)) {
+        if (m.skipped > 0) skipped.push(`${name}: ${m.lastError ?? "no reason"}`)
+      }
+      if (!safeBrowsing?.configured) {
+        if (!metrics.safe_browsing) metrics.safe_browsing = { success: 0, failed: 0, timeout: 0, skipped: 0 }
+        metrics.safe_browsing.skipped++
+        metrics.safe_browsing.lastError = "skipped: GOOGLE_SAFE_BROWSING_API_KEY not configured"
+      }
+      return skipped.length > 0 ? skipped : null
+    })(),
     green_web: greenWeb?.ok ? { is_green: greenWeb.isGreen, provider: greenWeb.provider } : null,
     builtwith: builtwith?.ok ? { technologies: builtwith.technologies, traffic_tier: builtwith.trafficTier } : null,
     jina_reader: jinaReader?.ok && jinaReader.data ? { title: jinaReader.data.title, markdown: jinaReader.data.markdown?.slice(0, 2000), tokens: jinaReader.data.usage?.tokens } : null,
     clearbit_logo_url: typeof clearbitLogo === "string" ? clearbitLogo : null,
     subfinder: subfinder?.ok ? { subdomains: subfinder.subdomains, total: subfinder.total, sources: subfinder.sources } : null,
     trufflehog: trufflehog?.ok ? { findings: trufflehog.findings, total: trufflehog.total } : null,
+    whoxy: whoxy?.ok ? { companyName: whoxy.companyName, countryCode: whoxy.countryCode, registrar: whoxy.registrar, yearsOld: whoxy.yearsOld } : null,
+    country_nic: Array.isArray(countryNic) ? countryNic.filter(r => r?.ok).map(r => ({ countryCode: r.countryCode, registrar: r.registrar, yearsOld: r.yearsOld, organizationName: r.organizationName })) : null,
     enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
-    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as { tech: Array<{ name: string }> }).tech).map((t: { name: string }) => t.name), (dns as { mxRecords: { exchange: string }[] }).mxRecords).catch(() => null) : null,
+    smb_signals: await collectSmbSignals(
+      domain,
+      tech && Array.isArray((tech as { tech?: unknown }).tech)
+        ? ((tech as { tech: Array<{ name: string }> }).tech).map((t: { name: string }) => t.name)
+        : [],
+      dns?.ok && Array.isArray((dns as { mxRecords?: unknown }).mxRecords)
+        ? (dns as { mxRecords: { exchange: string }[] }).mxRecords
+        : [],
+      {
+        targetCountry: input.targetCountry,
+        tranco,
+        cloudflareRadar: radar,
+        commonCrawl: commoncrawl,
+        schemaOrg,
+        sitemap,
+        countryNic,
+      },
+    ).catch((error) => {
+      console.error("[enrich] public market visibility signals failed:", error)
+      return null
+    }),
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
-  const pipelineStatus = scan ? (enterpriseCheck.isEnterprise ? "pending" : "report_ready") : "pending"
+  // Report may not be generated yet — use "scanning" until report pipeline confirms
+  const pipelineStatus = scan ? (enterpriseCheck.isEnterprise ? "pending" : "scanning") : "pending"
 
   const result = await upsertCompanyByDomain({
     domain, company_name: gbizFirst?.name ?? scan?.html.title ?? companyName,

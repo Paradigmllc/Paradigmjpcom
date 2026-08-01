@@ -9,14 +9,16 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
   const meta = (data.meta ?? {}) as Record<string, unknown>
   const radar = (meta.cloudflare_radar ?? {}) as Record<string, unknown>
   const tranco = (meta.tranco ?? {}) as Record<string, unknown>
-  const simweb = (meta.similarweb_free ?? {}) as Record<string, unknown>
+  const smbSignals = (meta.smb_signals ?? {}) as Record<string, unknown>
+  const marketVisibility = (smbSignals.marketVisibility ?? meta.market_visibility ?? {}) as Record<string, unknown>
   const commoncrawl = (meta.commoncrawl ?? {}) as Record<string, unknown>
   const github = (meta.github ?? {}) as Record<string, unknown>
   const builtwith = (meta.builtwith ?? {}) as Record<string, unknown>
   const dns = (meta.dns ?? {}) as Record<string, unknown>
   const wayback = (meta.wayback_machine ?? {}) as Record<string, unknown>
 
-  const hasAnyMarketData = meta.cloudflare_radar || meta.tranco || meta.similarweb_free || meta.commoncrawl || meta.github || meta.builtwith
+  const hasVisibilityEvidence = Array.isArray(marketVisibility.evidence) && marketVisibility.evidence.length > 0
+  const hasAnyMarketData = meta.cloudflare_radar || meta.tranco || meta.commoncrawl || meta.github || meta.builtwith || hasVisibilityEvidence
   if (!hasAnyMarketData) return null
 
   return (
@@ -30,20 +32,20 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Traffic rank */}
+          {/* Public visibility */}
           <MarketCard
             icon={<TrendingUp className="h-4 w-4" />}
-            label={lang === "ja" ? "推定トラフィック" : "Est. Traffic"}
+            label={lang === "ja" ? "公開可視性" : "Public Visibility"}
             value={
-              simweb?.visits
-                ? `${(simweb.visits as number).toLocaleString()} PV/月`
-                : radar?.rank_bucket
-                  ? (radar.rank_bucket as string)
+              typeof marketVisibility.index === "number"
+                ? `${marketVisibility.index}/100`
+                : typeof marketVisibility.band === "string"
+                  ? marketVisibility.band
                   : tranco?.rank
                     ? `${lang === "ja" ? "Tranco " : "Rank "}${(tranco.rank as number).toLocaleString()}`
                     : lang === "ja" ? "データ収集中" : "Collecting"
             }
-            detail={simweb?.rank ? `${lang === "ja" ? "グローバル " : "Global #"}${(simweb.rank as number).toLocaleString()}` : undefined}
+            detail={typeof marketVisibility.bestRank === "number" ? `${lang === "ja" ? "公開順位 " : "Public rank #"}${marketVisibility.bestRank.toLocaleString()}` : undefined}
             tone="indigo"
           />
 
@@ -84,13 +86,19 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
             icon={<Users className="h-4 w-4" />}
             label={lang === "ja" ? "リーチ" : "Reach"}
             value={
-              simweb?.countries
-                ? `${(simweb.countries as string[]).length + (lang === "ja" ? "カ国から流入" : " countries")}`
+              Array.isArray(marketVisibility.countrySignals) && marketVisibility.countrySignals.length > 0
+                ? `${marketVisibility.countrySignals.length}${lang === "ja" ? "市場シグナル" : " market signals"}`
                 : radar?.categories
                   ? `${(radar.categories as string[]).slice(0, 2).join("/")}`
                   : lang === "ja" ? "データ収集中" : "Collecting"
             }
-            detail={simweb?.countries ? (simweb.countries as string[]).slice(0, 3).join(", ") : undefined}
+            detail={Array.isArray(marketVisibility.countrySignals)
+              ? marketVisibility.countrySignals
+                .map((signal) => (signal as Record<string, unknown>).countryCode)
+                .filter((code): code is string => typeof code === "string")
+                .slice(0, 3)
+                .join(", ")
+              : undefined}
             tone="emerald"
           />
         </div>

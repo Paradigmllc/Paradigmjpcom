@@ -1,0 +1,63 @@
+name: Inspect Coolify Application Storage API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/one-shot-storage-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Inspect storage and app metadata
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE' > /tmp/storage-diagnostic.txt
+          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
+          const token = process.env.COOLIFY_API_TOKEN
+          const app = process.env.PARADIGM_APP_UUID
+          async function inspect(pathname) {
+            const response = await fetch(`${base}/api/v1${pathname}`, {
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+              signal: AbortSignal.timeout(30_000),
+            })
+            const text = await response.text()
+            let data = null
+            try { data = text ? JSON.parse(text) : null } catch {}
+            console.log(`${pathname}: HTTP ${response.status}`)
+            if (Array.isArray(data)) {
+              console.log(JSON.stringify(data.map((row) => ({
+                uuid: row?.uuid,
+                name: row?.name,
+                mount_path: row?.mount_path,
+                host_path: row?.host_path,
+                fs_path: row?.fs_path,
+                type: row?.type,
+                content: typeof row?.content === 'string' ? '[present]' : undefined,
+              })), null, 2))
+            } else if (data && typeof data === 'object') {
+              const safe = { ...data }
+              for (const key of Object.keys(safe)) {
+                if (/token|secret|password|key/i.test(key)) safe[key] = '[redacted]'
+              }
+              console.log(JSON.stringify(safe, null, 2).slice(0, 12000))
+            } else {
+              console.log(text.slice(0, 2000))
+            }
+          }
+          await inspect(`/applications/${app}/storages`)
+          await inspect(`/applications/${app}`)
+          NODE
+          BODY="$(cat /tmp/storage-diagnostic.txt)"
+          printf -v COMMENT 'Coolify application-storage diagnostic:\n\n```text\n%s\n```' "$BODY"
+          gh issue comment 571 --repo "$GITHUB_REPOSITORY" --body "$COMMENT"

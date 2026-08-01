@@ -1,16 +1,19 @@
 /**
- * Private diagnostic report page — React.cache() deduplicates the fetch
- * between generateMetadata and the page component.
+ * Private diagnostic report page — fully null-safe against hydration crashes.
  */
-
 import type { Metadata } from "next"
-import { notFound } from "next/navigation"
 import { cache } from "react"
 import DiagnosticReport from "@/components/diagnostic/DiagnosticReport"
+import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
+import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
 import { getReportOfferCopy } from "@/components/diagnostic/report-offer-copy"
-import { REPORT_COPY, normalizeReportLang } from "@/components/diagnostic/report-copy"
+import { REPORT_COPY, normalizeReportLang, type ReportCopy } from "@/components/diagnostic/report-copy"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
+import { ensureSafeDiagnosticReport } from "@/lib/sales/diagnostic/safe-report"
 import { localeToRegion } from "@/lib/sales/types"
+import { getApprovedReportBlogLinks } from "@/components/diagnostic/report-blog-links"
+import { permanentRedirect } from "next/navigation"
+import { findManualWorkLegacyReportAlias } from "@/lib/sales/manual-work-artifact-authority"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 60
@@ -19,22 +22,74 @@ interface Props {
   params: Promise<{ locale: string; slug: string }>
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
+}
+
+function reviewScore(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function generatedMessageReview(meta: Record<string, unknown> | undefined) {
+  const message = typeof meta?.japan_entry_initial_message === "string" ? meta.japan_entry_initial_message : null
+  const review = asRecord(meta?.japan_entry_message_review)
+  const editorial = asRecord(review?.editorialScores)
+  if (!message) return null
+  return {
+    message,
+    model: typeof review?.model === "string" ? review.model : "unknown",
+    qualityScore: typeof review?.qualityScore === "number" ? review.qualityScore : null,
+    wordCount: typeof review?.wordCount === "number" ? review.wordCount : null,
+    attempts: typeof review?.attempts === "number" ? review.attempts : null,
+    editorialScores: {
+      specificity: reviewScore(editorial?.specificity),
+      naturalness: reviewScore(editorial?.naturalness),
+      credibility: reviewScore(editorial?.credibility),
+      executiveRelevance: reviewScore(editorial?.executiveRelevance),
+    },
+    rationale: typeof review?.rationale === "string" ? review.rationale : null,
+    riskFlags: Array.isArray(review?.riskFlags)
+      ? review.riskFlags.filter((flag): flag is string => typeof flag === "string")
+      : [],
+  }
+}
+
 const getCachedReport = cache(
   async (slug: string, region: ReturnType<typeof localeToRegion>, locale: string) =>
     fetchDiagnosticReport({ slug, region, reportLocale: locale }),
 )
 
+const getManualAlias = cache(async (slug: string) => findManualWorkLegacyReportAlias(slug))
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params
+  try {
+    const alias = await getManualAlias(slug)
+    if (alias) {
+      return {
+        title: `${alias.companyName} | Japan Entry Strategy Report`,
+        robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+        alternates: { canonical: `/en/work-report/${alias.token}` },
+      }
+    }
+  } catch (error) {
+    console.error("[report-page] manual report alias metadata lookup failed:", error)
+  }
   const region = localeToRegion(locale)
   const lang = normalizeReportLang(locale)
-  const copy = REPORT_COPY[lang]
-  const data = await getCachedReport(slug, region, locale)
-  const offerCopy = data ? getReportOfferCopy(lang, data.template_variant) : null
+  const copy: ReportCopy = (REPORT_COPY as Record<string, ReportCopy>)[lang] ?? REPORT_COPY.ja
+  let data = null
+  try {
+    data = await getCachedReport(slug, region, locale)
+  } catch (error) {
+    console.error("[report-page] metadata report fetch failed:", error)
+  }
+  const safeData = ensureSafeDiagnosticReport(data, slug, locale)
+  const offerCopy = getReportOfferCopy(lang, safeData.template_variant)
   const reportLabel = offerCopy?.reportLabel ?? copy.privateReport
   return {
     title: `Paradigm ${reportLabel}`,
-    description: data?.content_template.purpose ?? offerCopy?.heroLead ?? copy.heroLead,
+    description: safeData.content_template?.purpose ?? offerCopy?.heroLead ?? copy.heroLead,
     robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
     alternates: { canonical: `/${locale}/report/${slug}` },
   }
@@ -42,8 +97,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ReportPage({ params }: Props) {
   const { locale, slug } = await params
+  let manualAlias = null
+  try {
+    manualAlias = await getManualAlias(slug)
+  } catch (error) {
+    console.error("[report-page] manual report alias lookup failed:", error)
+  }
+  if (manualAlias) permanentRedirect(`/en/work-report/${manualAlias.token}`)
   const region = localeToRegion(locale)
-  const data = await getCachedReport(slug, region, locale)
-  if (!data) notFound()
-  return <DiagnosticReport data={data} trackingSlug={slug} locale={locale} />
+  let data = null
+  try {
+    data = await getCachedReport(slug, region, locale)
+  } catch (error) {
+    console.error("[report-page] report fetch failed:", error)
+  }
+  const safeData = ensureSafeDiagnosticReport(data, slug, locale)
+  const [isAdmin, approvedBlogLinks] = await Promise.all([
+    isCurrentRequestAdmin(),
+    getApprovedReportBlogLinks(locale),
+  ])
+
+  return (
+    <>
+      <DiagnosticReport
+        data={safeData}
+        trackingSlug={slug}
+        locale={locale}
+        approvedBlogLinks={approvedBlogLinks}
+      />
+      {isAdmin && (
+        <ArtifactInlineEditor
+          kind="report"
+          slug={slug}
+          locale={locale}
+          title={safeData.company_name}
+          salesOsHref="https://twenty.paradigmjp.com"
+          generatedMessageReview={generatedMessageReview(safeData.meta)}
+          initialFields={{
+            hook: safeData.hook,
+            pain: safeData.acts[0]?.body ?? "",
+            fear: safeData.acts[1]?.body ?? "",
+            loss: safeData.acts[2]?.body ?? "",
+            cta: safeData.cta_text,
+          }}
+        />
+      )}
+    </>
+  )
 }

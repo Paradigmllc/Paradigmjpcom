@@ -25,6 +25,13 @@ const VISIBLE_FIELD_NAMES = [
   "siteName", "tagline", "ctaLabel", "caption", "readTime",
 ]
 
+// Lead and user records are identity data, not translated content. Their
+// display names must remain one canonical value across the admin surface.
+const NON_LOCALIZED_COLLECTIONS = new Set([
+  "src/collections/Leads.ts",
+  "src/collections/Users.ts",
+])
+
 function shouldBeLocalized(name) {
   return VISIBLE_FIELD_NAMES.includes(name)
 }
@@ -32,6 +39,7 @@ function shouldBeLocalized(name) {
 const issues = []
 
 for (const file of cols) {
+  if (NON_LOCALIZED_COLLECTIONS.has(file)) continue
   const src = readFileSync(file, "utf8")
   const lines = src.split("\n")
   // simple field block detection: `{ name: "...", type: "text|textarea|richText|email", ... }`

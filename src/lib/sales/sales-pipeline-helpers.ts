@@ -59,21 +59,30 @@ export function summarizeSalesPipelineStatus(steps: Array<{ status: string; requ
   return "queued"
 }
 
-export function getSalesPipelineTriggerConfig() {
-  const taskId =
-    optionalEnv("TRIGGER_SALES_OS_PIPELINE_TASK_ID") ??
-    optionalEnv("TRIGGER_DEV_SALES_OS_PIPELINE_TASK_ID") ??
-    "sales-os-pipeline"
-  const secretKey = optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
-  const apiUrlRaw = optionalEnv("TRIGGER_API_URL")
-  if (!apiUrlRaw) {
-    console.error("[sales-pipeline-helpers] TRIGGER_API_URL is not configured")
-  }
-  const apiUrl = (apiUrlRaw ?? "").replace(/\/+$/, "")
-  const dashboardUrl = optionalEnv("TRIGGER_DASHBOARD_URL") ?? optionalEnv("NEXT_PUBLIC_TRIGGER_DASHBOARD_URL")
-  const endpoint = taskId ? `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger` : null
-  return { taskId, secretKey, apiUrl, dashboardUrl, endpoint }
+export interface PipelineOrchestratorConfig {
+  provider: "openclaw"
+  taskId: string
+  ready: boolean
+  endpoint: null
+  secretKey: null
+  apiUrl: string
+  dashboardUrl: null
 }
+
+export function getPipelineOrchestratorConfig(): PipelineOrchestratorConfig {
+  return {
+    provider: "openclaw",
+    taskId: "openclaw-pipeline",
+    ready: true,
+    endpoint: null,
+    secretKey: null,
+    apiUrl: "",
+    dashboardUrl: null,
+  }
+}
+
+/** @deprecated 2026-07-06 — Trigger.dev decommissioned. Use getPipelineOrchestratorConfig() instead. */
+export const getSalesPipelineTriggerConfig = getPipelineOrchestratorConfig
 
 export async function updateRun(sb: ServiceSupabase, runId: string, patch: JsonRecord): Promise<void> {
   const { error } = await sb.from(DB_TABLES.SALES_PIPELINE_RUNS).update(patch).eq("id", runId)

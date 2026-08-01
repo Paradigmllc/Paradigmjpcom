@@ -21,6 +21,17 @@ export interface TechItem {
   evidence?: EvidenceSource[]
 }
 
+function visibleEvidenceText(html: string): string {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&(?:nbsp|amp|quot|#39);/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 50_000)
+}
+
 // ─── 258 technology signatures ───
 // Categories: CMS, EC, Framework, Analytics, Marketing, Payment, Chat/CRM, CDN/Hosting,
 //             Bot Protection, Email, Booking, Form, Cookie Consent, A/B Testing, SEO,
@@ -48,7 +59,6 @@ const SIGNATURES: Signature[] = [
   { name: "Concrete5", category: "CMS", confidence: 78, patterns: [/concrete5|CCM_DISPATCHER_FILENAME/i] },
   { name: "Movable Type", category: "CMS", confidence: 78, patterns: [/movabletype|mt\.js|MT-Version/i] },
   { name: "HubSpot CMS", category: "CMS", confidence: 82, patterns: [/hs-scripts\.com|hbspt\.forms|hs-cms/i] },
-  { name: "Notion", category: "CMS", confidence: 76, patterns: [/notion\.so|notion-static/i] },
 
   // ─── Japanese CMS/EC ───
   { name: "EC-CUBE", category: "EC", confidence: 88, patterns: [/ec-cube|ECCUBE|eccube/i], cookiePatterns: [/eccube/i] },
@@ -57,7 +67,17 @@ const SIGNATURES: Signature[] = [
   { name: "ColorMe", category: "EC", confidence: 86, patterns: [/colorme\.shop|colorme-ec|shop-pro\.jp/i] },
   { name: "BASE (EC)", category: "EC", confidence: 86, patterns: [/binc\.jp|thebase\.in|baseec-img/i] },
   { name: "STORES.jp", category: "EC", confidence: 86, patterns: [/stores\.jp|stores\.dev/i] },
-  { name: "Shopify (JP detection)", category: "EC", confidence: 84, patterns: [/shopify-buy|shopify-payment-button/i] },
+  {
+    name: "Shopify",
+    category: "EC",
+    confidence: 92,
+    patterns: [
+      /cdn\.shopify\.com\/s\//i,
+      /\.myshopify\.com/i,
+      /Shopify\.(?:theme|shop|routes|currency)/i,
+      /shopify-section|shopify-buy|shopify-payment-button/i,
+    ],
+  },
   { name: "WooCommerce", category: "EC", confidence: 90, patterns: [/woocommerce|wc-cart-fragments|wc-blocks|\/wp-content\/plugins\/woocommerce\//i], cookiePatterns: [/woocommerce|wp_woocommerce_session/i] },
   { name: "Welcart", category: "EC", confidence: 80, patterns: [/welcart|usces_item|usces_cart/i] },
   { name: "CartWeb", category: "EC", confidence: 78, patterns: [/cartweb|cart\.cgi|shop\.cgi/i] },
@@ -298,7 +318,7 @@ export function detectTechFromEvidence(input: {
     .filter((item): item is TechItem => item !== null)
 }
 
-export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; server: string | null }> {
+export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; server: string | null; evidenceText: string | null }> {
   try {
     const res = await fetch(
       url,
@@ -313,9 +333,9 @@ export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; 
     const cookies = cookieText(res.headers)
     const server = res.headers.get("server")
     const tech = detectTechFromEvidence({ html, headers, cookies })
-    return { tech, server }
+    return { tech, server, evidenceText: visibleEvidenceText(html) }
   } catch (error) {
     console.warn("[wappalyzer] technology detection failed:", error)
-    return { tech: [], server: null }
+    return { tech: [], server: null, evidenceText: null }
   }
 }

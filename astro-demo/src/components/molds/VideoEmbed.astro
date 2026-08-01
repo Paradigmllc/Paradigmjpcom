@@ -1,0 +1,34 @@
+---
+export interface Props {
+  videoUrl: string;
+  title: string;
+  posterImage?: string;
+}
+
+const { videoUrl, title, posterImage } = Astro.props;
+---
+
+<div class="relative w-full aspect-video overflow-hidden rounded-lg bg-black">
+  {posterImage ? (
+    <video
+      class="absolute inset-0 w-full h-full object-cover"
+      controls
+      preload="metadata"
+      poster={posterImage}
+      title={title}
+    >
+      <source src={videoUrl} type="video/mp4" />
+      <p>お使いのブラウザは動画の再生に対応していません。</p>
+    </video>
+  ) : (
+    <video
+      class="absolute inset-0 w-full h-full object-cover"
+      controls
+      preload="metadata"
+      title={title}
+    >
+      <source src={videoUrl} type="video/mp4" />
+      <p>お使いのブラウザは動画の再生に対応していません。</p>
+    </video>
+  )}
+</div>

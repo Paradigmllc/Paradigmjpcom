@@ -23,6 +23,11 @@ export type BlogPost = {
   category: string
   tags: string[]
   readTime: string
+  heroImage?: {
+    src: string
+    alt: string
+    caption: string
+  }
 }
 
 /** @deprecated Use lib/blog-cms.ts. Remaining only as Payload-empty fallback. */
@@ -63,7 +68,7 @@ GEO（Generative Engine Optimization）とは、ChatGPT・Gemini・Perplexityな
 
 GEO対策は、今後のデジタルマーケティングにおいて避けて通れない施策です。SEOとGEOを組み合わせた**二刀流の検索対策**が、これからの集客の鍵になるでしょう。
 
-Paradigm合同会社では、SEO+GEO対策をセットで提供しています。まずは無料診断からお試しください。
+Paradigmでは、SEO+GEOをJapan Entryの固定スコープに組み込みます。セットアップ費用と依存条件は適合審査で確認します。
     `.trim(),
     date: "2025-03-15",
     category: "SEO/GEO",
@@ -116,7 +121,7 @@ MEO（Map Engine Optimization）とは、**Googleマップでの検索結果で�
 
 MEO対策は、来店型ビジネスにとって最もコストパフォーマンスの高い集客施策の一つです。まずはGBPの最適化から始めてみましょう。
 
-専門家によるMEO対策をご検討の方は、Paradigm合同会社の無料診断をご利用ください。
+日本市場向けのMEO導線が必要な企業は、Japan Entryの適合審査で対象範囲と運用条件をご確認ください。
     `.trim(),
     date: "2025-02-20",
     category: "MEO",
@@ -126,7 +131,7 @@ MEO対策は、来店型ビジネスにとって最もコストパフォーマ�
   {
     slug: "ai-business-automation",
     title: "中小企業のためのAI業務自動化ガイド",
-    excerpt: "ChatGPTやTrigger.devを活用した業務自動化の実践ガイド。カスタマー対応、レポート作成、コンテンツ制作の自動化事例と導入ステップを紹介します。",
+    excerpt: "ChatGPTやOpenClawを活用した業務自動化の実践ガイド。カスタマー対応、レポート作成、コンテンツ制作の自動化事例と導入ステップを紹介します。",
     content: `
 ## AI業務自動化とは
 
@@ -144,7 +149,7 @@ FAQをAIに学習させることで、24時間365日の自動応答が可能に�
 
 ### 2. レポート作成の自動化
 - **導入効果**: 月次レポート作成時間を1/5に短縮
-- **ツール**: Trigger.dev + Google Sheets + AI
+- **ツール**: OpenClaw + Google Sheets + AI
 - **構築期間**: 約1週間
 
 データ収集→分析→グラフ作成→レポート生成までを自動化。人間は内容の確認と意思決定に集中できます。
@@ -218,7 +223,7 @@ Paradigm合同会社では、御社に最適なAI導入プランを無料でご�
 
 ## Paradigmのアプローチ
 
-当社では、お客様の要件に応じて最適な技術を選定します。「速度とセキュリティ重視ならNext.js」「更新頻度重視ならWordPress」——この判断を、無料相談でご一緒に行います。
+当社では、お客様の要件に応じて最適な技術を選定します。「速度とセキュリティ重視ならNext.js」「更新頻度重視ならWordPress」——Japan Entryの適合審査で、固定スコープと引き継ぎ条件に沿って判断します。
 
 どちらの技術でも、SEO最適化・レスポンシブ対応・Core Web Vitals対策は標準で含まれます。
     `.trim(),

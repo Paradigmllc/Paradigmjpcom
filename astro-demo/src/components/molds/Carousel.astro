@@ -1,0 +1,147 @@
+---
+export interface Props {
+  images: { url: string; alt: string }[];
+}
+
+const { images } = Astro.props;
+---
+
+<div class="carousel">
+  <div class="carousel-track">
+    {images.map((image) => (
+      <div class="carousel-slide">
+        <img src={image.url} alt={image.alt} loading="lazy" />
+      </div>
+    ))}
+  </div>
+
+  <div class="carousel-nav">
+    {images.map((_, index) => (
+      <a href={`#slide-${index}`} class="carousel-dot" aria-label={`Go to slide ${index + 1}`}></a>
+    ))}
+  </div>
+
+  {images.map((image, index) => (
+    <a
+      id={`slide-${index}`}
+      class="carousel-arrow carousel-arrow-prev"
+      href={`#slide-${index === 0 ? images.length - 1 : index - 1}`}
+      aria-label="Previous slide"
+    >
+      ‹
+    </a>
+  ))}
+  {images.map((image, index) => (
+    <a
+      class="carousel-arrow carousel-arrow-next"
+      href={`#slide-${index === images.length - 1 ? 0 : index + 1}`}
+      aria-label="Next slide"
+    >
+      ›
+    </a>
+  ))}
+</div>
+
+<style>
+  .carousel {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .carousel-track {
+    display: flex;
+    transition: transform 0.3s ease;
+  }
+
+  .carousel-slide {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+
+  .carousel-slide img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+  }
+
+  .carousel-nav {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .carousel-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    transition: background-color 0.2s;
+    display: block;
+  }
+
+  .carousel-dot:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .carousel-dot:target {
+    background-color: white;
+  }
+
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    color: #333;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 10;
+    transition: background-color 0.2s;
+  }
+
+  .carousel-arrow:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+  .carousel-arrow-prev {
+    left: 8px;
+  }
+
+  .carousel-arrow-next {
+    right: 8px;
+  }
+
+  /* Scroll-based navigation fallback */
+  .carousel:not(:target) .carousel-slide:first-child {
+    scroll-snap-align: start;
+  }
+
+  /* Hide arrows when no slide is targeted (initial state) */
+  .carousel:not(:target) .carousel-arrow {
+    display: none;
+  }
+
+  /* Show arrows when a slide is targeted */
+  .carousel:target .carousel-arrow {
+    display: flex;
+  }
+</style>

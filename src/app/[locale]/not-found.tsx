@@ -17,6 +17,7 @@ import { getLocale, getTranslations } from "next-intl/server"
 export default async function NotFound() {
   const locale = await getLocale()
   const t = await getTranslations({ locale, namespace: "notFoundPage" })
+  const isEnglish = locale === "en"
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-paradigm-paper paradigm-section overflow-hidden relative">
@@ -40,13 +41,13 @@ export default async function NotFound() {
             {t("home")}
           </Link>
           <Link
-            href={`/${locale}/services`}
+            href={isEnglish ? "/en/pricing" : `/${locale}/services`}
             className="paradigm-glass rounded-xl px-6 py-3 paradigm-glow-sm hover:paradigm-glow-md transition-all text-[13px] tracking-[0.06em] uppercase font-semibold text-paradigm-ink"
           >
-            {t("services")}
+            {isEnglish ? "Fixed offer" : t("services")}
           </Link>
           <Link
-            href={`/${locale}/contact`}
+            href={isEnglish ? "/en/contact?intent=japan-entry" : `/${locale}/contact`}
             className="paradigm-glass rounded-xl px-6 py-3 paradigm-glow-sm hover:paradigm-glow-md transition-all text-[13px] tracking-[0.06em] uppercase font-semibold text-paradigm-ink"
           >
             {t("contact")}

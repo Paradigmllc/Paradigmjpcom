@@ -139,7 +139,7 @@ function sampleCopy(locale, industry, asset, angle) {
     .replace("{asset}", ASSET_LABELS[asset][l])
 }
 
-function templates() {
+export function templates() {
   return LOCALES.flatMap((locale) =>
     INDUSTRIES.flatMap((industry) =>
       ANGLES[locale].flatMap((angle) =>
@@ -209,7 +209,9 @@ async function main() {
   console.log(`Seeded sales_content_templates: ${saved.length}`)
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exit(1)
-})
+if (import.meta.url === new URL(process.argv[1], "file:").href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exit(1)
+  })
+}

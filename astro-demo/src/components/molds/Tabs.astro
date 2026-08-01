@@ -1,0 +1,45 @@
+---
+export interface Props {
+  tabs: { label: string; content: string }[];
+}
+
+const { tabs } = Astro.props;
+---
+
+<div class="tabs-container" x-data="{ activeTab: 0 }">
+  <!-- タブヘッダー -->
+  <div class="flex border-b border-gray-200 mb-4" role="tablist">
+    {tabs.map((tab, index) => (
+      <button
+        class={`px-4 py-2 text-sm font-medium transition-colors duration-200 focus:outline-none ${
+          index === 0
+            ? 'border-b-2 border-blue-500 text-blue-600'
+            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        }`}
+        :class="{ 'border-b-2 border-blue-500 text-blue-600': activeTab === ${index}, 'text-gray-500 hover:text-gray-700': activeTab !== ${index} }"
+        @click="activeTab = ${index}"
+        :aria-selected="activeTab === ${index} ? 'true' : 'false'"
+        role="tab"
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+
+  <!-- タブコンテンツ -->
+  {tabs.map((tab, index) => (
+    <div
+      x-show="activeTab === ${index}"
+      x-transition:enter="transition ease-out duration-300"
+      x-transition:enter-start="opacity-0 transform scale-95"
+      x-transition:enter-end="opacity-100 transform scale-100"
+      x-transition:leave="transition ease-in duration-200"
+      x-transition:leave-start="opacity-100 transform scale-100"
+      x-transition:leave-end="opacity-0 transform scale-95"
+      class="p-4 bg-white rounded-lg shadow-sm"
+      role="tabpanel"
+    >
+      {tab.content}
+    </div>
+  ))}
+</div>

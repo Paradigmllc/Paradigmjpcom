@@ -1,0 +1,33 @@
+---
+export interface Props {
+  title: string;
+  body: string;
+  placeholder: string;
+  buttonLabel: string;
+}
+
+const { title, body, placeholder, buttonLabel } = Astro.props;
+---
+
+<div class="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-800">
+  <h2 class="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+    {title}
+  </h2>
+  <p class="mb-6 text-gray-600 dark:text-gray-300">
+    {body}
+  </p>
+  <form class="flex flex-col gap-4 sm:flex-row" onsubmit="return false;">
+    <input
+      type="email"
+      required
+      placeholder={placeholder}
+      class="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+    />
+    <button
+      type="submit"
+      class="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+    >
+      {buttonLabel}
+    </button>
+  </form>
+</div>

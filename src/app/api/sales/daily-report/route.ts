@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       .limit(5)
 
     const reportLines = [
-      `*📊 Revenue OS 日次レポート — ${now.toLocaleDateString("ja-JP")}*`,
+      `*📊 Twenty Sales OS 日次レポート — ${now.toLocaleDateString("ja-JP")}*`,
       ``,
       `*サマリー*`,
       `🆕 新規リード (24h): ${newToday ?? 0}件`,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    reportLines.push(``, `🔗 https://paradigmjp.com/ja/admin/sales`)
+    reportLines.push(``, `🔗 https://twenty.paradigmjp.com`)
 
     await notifySlack(reportLines.join("\n"))
 

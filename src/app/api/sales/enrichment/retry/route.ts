@@ -13,18 +13,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
+  const sb = getServiceSalesSupabase()
+  if (!sb) {
+    return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
+  }
+
   try {
-    const { jobId } = await req.json() as { jobId: string }
+    const body = await req.json() as { jobId?: string; retry_all?: boolean; limit?: number }
+
+    if (body.retry_all) {
+      const batchLimit = Math.max(1, Math.min(body.limit ?? 50, 200))
+      const now = new Date().toISOString()
+
+      const { error, count } = await sb
+        .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+        .update({
+          status: "queued",
+          attempts: 0,
+          error_message: null,
+          next_run_at: now,
+        })
+        .in("status", ["failed"])
+        .order("created_at", { ascending: true })
+        .limit(batchLimit)
+
+      if (error) {
+        console.error("[enrichment-retry] batch update failed:", error.message)
+        return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+      }
+
+      if (!count || count === 0) {
+        return NextResponse.json({ ok: true, recovered: 0, message: "no failed jobs found" })
+      }
+
+      const trigger = await triggerEnrichmentRunner(Math.min(count, 3))
+      return NextResponse.json({ ok: true, recovered: count, runnerTriggered: trigger.ok })
+    }
+
+    const { jobId } = body
     if (!jobId || typeof jobId !== "string") {
-      return NextResponse.json({ ok: false, error: "jobId is required" }, { status: 400 })
+      return NextResponse.json({ ok: false, error: "jobId is required (or set retry_all: true)" }, { status: 400 })
     }
 
-    const sb = getServiceSalesSupabase()
-    if (!sb) {
-      return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
-    }
-
-    // Reset job to queued status
     const { error } = await sb
       .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
       .update({
@@ -40,7 +70,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
     }
 
-    // Trigger immediate processing
     const trigger = await triggerEnrichmentRunner(3)
 
     return NextResponse.json({ ok: true, jobId, runnerTriggered: trigger.ok })

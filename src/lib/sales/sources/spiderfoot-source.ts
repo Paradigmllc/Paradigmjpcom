@@ -35,74 +35,85 @@ export async function checkSpiderFootHealth(): Promise<{ ok: boolean; detail: st
   }
 }
 
-/** Try self-hosted SpiderFoot, fall back to public APIs */
+async function collectPublicFallbacks(target: string): Promise<Record<string, unknown>> {
+  const results: Record<string, unknown> = {}
+  const tasks: Promise<void>[] = []
+
+  tasks.push((async () => {
+    try {
+      const crtRes = await fetch(
+        `https://crt.sh/?q=${encodeURIComponent(target)}&output=json`,
+        { signal: AbortSignal.timeout(12_000) },
+      )
+      if (crtRes.ok) {
+        const crtData = await crtRes.json() as Array<Record<string, unknown>>
+        results.crtsh = { total_certs: crtData.length, latest: crtData[0] }
+      }
+    } catch (e) {
+      console.warn("[spiderfoot] crt.sh fallback failed:", e instanceof Error ? e.message : String(e))
+    }
+  })())
+
+  tasks.push((async () => {
+    try {
+      const dnsRes = await fetch(
+        `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(target)}&type=A`,
+        { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(10_000) },
+      )
+      if (dnsRes.ok) {
+        const dnsData = await dnsRes.json() as { Answer?: Array<{ name: string; data: string }> }
+        if (dnsData.Answer?.length) results.dns = dnsData.Answer.map(a => a.data)
+      }
+    } catch (e) {
+      console.warn("[spiderfoot] DNS fallback failed:", e instanceof Error ? e.message : String(e))
+    }
+  })())
+
+  tasks.push((async () => {
+    try {
+      const rdapRes = await fetch(
+        `https://rdap.org/domain/${encodeURIComponent(target)}`,
+        { signal: AbortSignal.timeout(10_000) },
+      )
+      if (rdapRes.ok) {
+        const rdapData = await rdapRes.json() as RdapDomainResponse
+        results.rdap = {
+          registrar: rdapData.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
+          created: rdapData.events?.find?.((e) => e.eventAction === "registration")?.eventDate,
+        }
+      }
+    } catch (e) {
+      console.warn("[spiderfoot] RDAP fallback failed:", e instanceof Error ? e.message : String(e))
+    }
+  })())
+
+  await Promise.allSettled(tasks)
+  return results
+}
+
+/** Try self-hosted SpiderFoot, fall back to public APIs. All paths fit within 20s total. */
 async function runSpiderFootScan(target: string, modules: string[]): Promise<SfResult> {
   if (!target?.includes(".")) return { source: "spiderfoot", ok: false, error: "invalid target" }
 
-  // Try self-hosted HTTP API first
-  try {
-    const res = await fetch(`${spiderfootUrl()}/scan`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target, modules }),
-      signal: AbortSignal.timeout(130_000),
-    })
-    if (res.ok) {
-      const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
-      if (data.ok) return { source: "spiderfoot", ok: true, data: data.data }
-    }
-    console.warn("[spiderfoot] self-hosted API unavailable, using public fallbacks")
-  } catch (e) {
-    console.warn("[spiderfoot] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
-  }
-
-  // Fallback: collect data from public APIs
-  const results: Record<string, unknown> = {}
-  try {
-    // crt.sh certificate transparency
-    const crtRes = await fetch(
-      `https://crt.sh/?q=${encodeURIComponent(target)}&output=json`,
-      { signal: AbortSignal.timeout(30_000) }
-    )
-    if (crtRes.ok) {
-      const crtData = await crtRes.json() as Array<Record<string, unknown>>
-      results.crtsh = { total_certs: crtData.length, latest: crtData[0] }
-    }
-  } catch (e) {
-    console.warn("[spiderfoot] crt.sh fallback fetch failed:", e instanceof Error ? e.message : String(e))
-  }
-
-  try {
-    // DNS-over-HTTPS
-    const dnsRes = await fetch(
-      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(target)}&type=A`,
-      { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(15_000) }
-    )
-    if (dnsRes.ok) {
-      const dnsData = await dnsRes.json() as { Answer?: Array<{ name: string; data: string }> }
-      if (dnsData.Answer?.length) results.dns = dnsData.Answer.map(a => a.data)
-    }
-  } catch (e) {
-    console.warn("[spiderfoot] DNS-over-HTTPS fallback fetch failed:", e instanceof Error ? e.message : String(e))
-  }
-
-  try {
-    // WHOIS via RDAP
-    const rdapRes = await fetch(
-      `https://rdap.org/domain/${encodeURIComponent(target)}`,
-      { signal: AbortSignal.timeout(15_000) }
-    )
-    if (rdapRes.ok) {
-      const rdapData = await rdapRes.json() as RdapDomainResponse
-      results.rdap = {
-        registrar: rdapData.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
-        created: rdapData.events?.find?.((e) => e.eventAction === "registration")?.eventDate,
+  const sfUrl = envValue("SPIDERFOOT_API_URL")
+  if (sfUrl) {
+    try {
+      const res = await fetch(`${sfUrl}/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, modules }),
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (res.ok) {
+        const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
+        if (data.ok) return { source: "spiderfoot", ok: true, data: data.data }
       }
+    } catch (e) {
+      console.warn("[spiderfoot] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
     }
-  } catch (e) {
-    console.warn("[spiderfoot] RDAP WHOIS fallback fetch failed:", e instanceof Error ? e.message : String(e))
   }
 
+  const results = await collectPublicFallbacks(target)
   return {
     source: "spiderfoot",
     ok: Object.keys(results).length > 0,

@@ -8,6 +8,7 @@
     "services": "Layanan",
     "works": "Portofolio",
     "pricing": "Harga",
+    "package": "Paket",
     "faq": "FAQ",
     "blog": "Blog",
     "contact": "Kontak",
@@ -260,7 +261,8 @@
     "bodyBeforeLink": "Kami menggunakan cookie seminimal mungkin untuk performa dan analitik penggunaan. Selengkapnya lihat",
     "privacyLink": "kebijakan privasi",
     "accept": "Setuju",
-    "decline": "Tolak"
+    "decline": "Tolak",
+    "settings": "Pengaturan cookie"
   },
   "servicesPage": {
     "metaTitle": "Services",

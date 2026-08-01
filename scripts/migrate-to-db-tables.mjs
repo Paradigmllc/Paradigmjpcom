@@ -54,8 +54,6 @@ const TABLE_TO_CONSTANT = {
   "sales_artifact_manifest": "DB_TABLES.SALES_ARTIFACT_MANIFEST",
   "sales_crm_view_fields": "DB_TABLES.SALES_CRM_VIEW_FIELDS",
   "sales_crm_select_options": "DB_TABLES.SALES_CRM_SELECT_OPTIONS",
-  "sales_searxng_search_runs": "DB_TABLES.SALES_SEARXNG_SEARCH_RUNS",
-  "sales_searxng_search_results": "DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS",
   "sales_japan_readiness_insights": "DB_TABLES.SALES_JAPAN_READINESS_INSIGHTS",
   "sales_video_jobs": "DB_TABLES.SALES_VIDEO_JOBS",
   "sales_platform_health_snapshots": "DB_TABLES.SALES_PLATFORM_HEALTH_SNAPSHOTS",

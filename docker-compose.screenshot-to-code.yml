@@ -1,0 +1,46 @@
+# Private screenshot-to-code runtime.
+#
+# The image clones abi/screenshot-to-code at the pinned commit in its Dockerfile
+# and exposes only the authenticated gateway on the shared Coolify network.
+services:
+  screenshot-to-code:
+    build:
+      context: ./services/screenshot-to-code-gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_API_BASE: ${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-pro}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_VISION_MODEL: ${GEMINI_VISION_MODEL:-gemini-2.0-flash}
+      VISION_API_KEY: ${VISION_API_KEY:-}
+      VISION_API_BASE: ${VISION_API_BASE:-}
+      VISION_MODEL: ${VISION_MODEL:-}
+      SCREENSHOT_TO_CODE_SHARED_SECRET: ${SCREENSHOT_TO_CODE_SHARED_SECRET}
+      SCREENSHOT_TO_CODE_VISUAL_MODE: ${SCREENSHOT_TO_CODE_VISUAL_MODE:-vision-text}
+      SCREENSHOT_TO_CODE_REQUIRE_VISION: ${SCREENSHOT_TO_CODE_REQUIRE_VISION:-false}
+      SCREENSHOT_TO_CODE_GENERATED_CODE_CONFIG: ${SCREENSHOT_TO_CODE_GENERATED_CODE_CONFIG:-html_tailwind}
+      SCREENSHOT_TO_CODE_PORT: "7002"
+      SCREENSHOT_TO_CODE_UPSTREAM_PORT: "7001"
+    expose:
+      - "7002"
+    networks:
+      coolify:
+        aliases:
+          - screenshot-to-code
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+          cpus: "2.0"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  coolify:
+    external: true

@@ -34,6 +34,7 @@ export const TEMPLATE_VARIANTS = [
 export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number]
 
 const DEFAULT_SITE_URL = "https://paradigmjp.com"
+const DEFAULT_DEMO_SITE_URL = "https://demo.paradigmjp.com"
 
 const LOCALE_COUNTRY: Record<ReportLocale, string> = {
   ja: "JP",
@@ -132,7 +133,7 @@ export function inferTargetCountryFromDomain(value: unknown): string | null {
   try {
     host = new URL(raw.startsWith("http") ? raw : `https://${raw}`).hostname.toLowerCase()
   } catch (error) {
-    console.warn("[sales-routing] invalid domain while inferring country:", { value, error })
+    console.error("[sales-routing] invalid domain while inferring country:", { value, error })
     host = raw
   }
   const domain = host.replace(/^www\./, "").replace(/\.$/, "")
@@ -154,6 +155,14 @@ export function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL).replace(/\/$/, "")
 }
 
+export function demoSiteUrl(): string {
+  return (process.env.NEXT_PUBLIC_DEMO_SITE_URL ?? DEFAULT_DEMO_SITE_URL).replace(/\/$/, "")
+}
+
+export function buildDemoUrl(_locale: "ja" | "en", slug: string): string {
+  return `${demoSiteUrl()}/${encodeURIComponent(slug)}`
+}
+
 function stableHash(input: string): string {
   let hash = 5381
   for (let i = 0; i < input.length; i++) {
@@ -170,16 +179,22 @@ export function slugifyCompanyName(name: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 72)
+    .slice(0, 50)
   return slug || "company"
 }
 
-export function buildCompanySlug(companyName: string, domain: string): string {
-  return `${slugifyCompanyName(companyName)}-${stableHash(domain.toLowerCase())}`
+export function buildCompanySlug(companyName: string, _domain: string): string {
+  // Use company name only (clean, human-readable). Hash removed per user request.
+  // Uniqueness is enforced at the DB level with ON CONFLICT handling.
+  return slugifyCompanyName(companyName)
 }
 
 export function buildReportUrl(locale: ReportLocale, slug: string): string {
   return `${siteUrl()}/${locale}/report/${slug}`
+}
+
+export function buildOpportunityBriefUrl(locale: ReportLocale, slug: string): string {
+  return `${siteUrl()}/${locale}/opportunity/${encodeURIComponent(slug)}`
 }
 
 export function inferVariant(input: {

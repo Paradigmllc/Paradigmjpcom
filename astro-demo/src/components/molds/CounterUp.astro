@@ -1,0 +1,90 @@
+---
+// 数字カウントアップアニメーションコンポーネント
+interface CountItem {
+  value: number;
+  label: string;
+  suffix?: string;
+}
+
+interface Props {
+  items: CountItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 p-8">
+  {
+    items.map((item, index) => (
+      <div class="text-center">
+        <div 
+          class="text-4xl font-bold text-blue-600 mb-2"
+          id={`count-${index}`}
+          data-target={item.value}
+          data-suffix={item.suffix || ''}
+        >
+          0
+        </div>
+        <div class="text-gray-600 text-lg">{item.label}</div>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  // IntersectionObserverを使用したカウントアップアニメーション
+  const animateCounters = () => {
+    const counters = document.querySelectorAll('[id^="count-"]');
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const counter = entry.target as HTMLElement;
+          const target = parseInt(counter.dataset.target || '0');
+          const suffix = counter.dataset.suffix || '';
+          const duration = 2000; // アニメーション時間（ミリ秒）
+          const steps = 60; // アニメーションのステップ数
+          const stepTime = duration / steps;
+          let currentStep = 0;
+          
+          const updateCounter = () => {
+            currentStep++;
+            const progress = currentStep / steps;
+            const easedProgress = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            const currentValue = Math.round(target * easedProgress);
+            
+            counter.textContent = currentValue.toLocaleString() + suffix;
+            
+            if (currentStep < steps) {
+              setTimeout(updateCounter, stepTime);
+            } else {
+              counter.textContent = target.toLocaleString() + suffix;
+            }
+          };
+          
+          updateCounter();
+          observer.unobserve(counter);
+        }
+      });
+    }, {
+      threshold: 0.5
+    });
+    
+    counters.forEach(counter => observer.observe(counter));
+  };
+  
+  // DOMContentLoaded後に実行
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', animateCounters);
+  } else {
+    animateCounters();
+  }
+</script>
+
+<style>
+  /* スムーズな数字の変化のためのトランジション */
+  [id^="count-"] {
+    transition: all 0.1s ease-out;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

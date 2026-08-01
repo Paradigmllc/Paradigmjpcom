@@ -107,5 +107,5 @@ CREATE POLICY "Enable ALL for service_role on videos" ON public.agency_videos FO
 CREATE POLICY "Enable ALL for service_role on demo_sites" ON public.agency_demo_sites FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Enable ALL for service_role on reports" ON public.agency_reports FOR ALL USING (auth.role() = 'service_role');
 
--- クライアントへの公開（レポート等）は匿名でも SELECT を許可
-CREATE POLICY "Enable SELECT for anonymous on reports" ON public.agency_reports FOR SELECT USING (status = 'active');
+-- Reports are served through authenticated server APIs. Direct anon table access is forbidden.
+REVOKE ALL ON public.agency_reports FROM PUBLIC, anon, authenticated;

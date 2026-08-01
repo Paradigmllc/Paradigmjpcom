@@ -1,0 +1,59 @@
+---
+export interface Props {
+  message?: string;
+  acceptLabel?: string;
+  declineLabel?: string;
+}
+
+const {
+  message = 'このサイトでは、より良いエクスペリエンスを提供するためにクッキーを使用しています。',
+  acceptLabel = '同意する',
+  declineLabel = '拒否する',
+} = Astro.props;
+---
+
+<div
+  id="cookie-consent-banner"
+  class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg p-4 md:p-6"
+>
+  <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+    <p class="text-sm text-gray-700 leading-relaxed text-center sm:text-left">
+      {message}
+    </p>
+    <div class="flex gap-3 shrink-0">
+      <button
+        id="cookie-decline"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+      >
+        {declineLabel}
+      </button>
+      <button
+        id="cookie-accept"
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer"
+      >
+        {acceptLabel}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const banner = document.getElementById('cookie-consent-banner');
+  const acceptBtn = document.getElementById('cookie-accept');
+  const declineBtn = document.getElementById('cookie-decline');
+
+  // 既に同意/拒否の選択がされている場合はバナーを非表示
+  if (localStorage.getItem('cookie-consent') !== null) {
+    banner.style.display = 'none';
+  }
+
+  acceptBtn.addEventListener('click', () => {
+    localStorage.setItem('cookie-consent', 'accepted');
+    banner.style.display = 'none';
+  });
+
+  declineBtn.addEventListener('click', () => {
+    localStorage.setItem('cookie-consent', 'declined');
+    banner.style.display = 'none';
+  });
+</script>

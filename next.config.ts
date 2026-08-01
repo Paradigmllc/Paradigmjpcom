@@ -3,12 +3,14 @@ import createNextIntlPlugin from "next-intl/plugin"
 import type { NextConfig } from "next"
 import path from "node:path"
 import fs from "node:fs"
+import { buildSecurityHeaders } from "./src/lib/security-headers"
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 const isWebpackBuild = process.env.NEXT_BUILD_BUNDLER === "webpack"
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   staticPageGenerationTimeout: 180,
   // Pin Turbopack workspace root to this directory so worktree node_modules
   // resolves correctly. Without this, Next.js auto-detects the parent
@@ -33,6 +35,23 @@ const nextConfig: NextConfig = {
     ],
   },
   /**
+   * Public root URLs stay stable while the two audience-specific homepages are
+   * implemented as code-owned routes. Rewrites avoid exposing /home-v2 and
+   * prevent stale Payload homepage records from overriding the new structure.
+   */
+  async rewrites() {
+    return [
+      {
+        source: "/ja",
+        destination: "/ja/home-v2",
+      },
+      {
+        source: "/en",
+        destination: "/en/home-v2",
+      },
+    ]
+  },
+  /**
    * 顧客向け公開 URL は /report/[slug] に統一 (CLAUDE.md s10-5 永久ルール)。
    * /p/[slug] は廃止 — Next.js redirects() で 308 (permanent) を framework level
    * で返し、page.tsx は不要 (zero render cost)。
@@ -42,6 +61,11 @@ const nextConfig: NextConfig = {
    */
   async redirects() {
     return [
+      {
+        source: "/en/japan-entry-package",
+        destination: "/en/japan-market-partner",
+        permanent: true,
+      },
       // /[locale]/p/[slug] → /[locale]/report/[slug]
       {
         source: "/:locale(ja|en|ko|zh|de|fr|es|pt|ru|ar|vi|id)/p/:slug",
@@ -56,6 +80,15 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: buildSecurityHeaders(process.env.NODE_ENV === "production"),
+      },
+    ]
+  },
 }
 
 export default withPayload(withNextIntl(nextConfig))
+// force rebuild Mon Jun 22 13:02:26 JST 2026

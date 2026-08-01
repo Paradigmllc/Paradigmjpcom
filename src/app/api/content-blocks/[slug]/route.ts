@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { sanitizePublicJson } from "@/lib/public-surface"
 
 export const dynamic = "force-dynamic"
 
@@ -33,10 +34,10 @@ export async function GET(
   const { slug } = await params
   try {
     const sb = getServiceSupabase()
-    if (!sb) return NextResponse.json({ error: "supabase service role key not configured" }, { status: 500 })
+    if (!sb) return NextResponse.json({ error: "content unavailable" }, { status: 503 })
     const { data, error } = await sb
       .from(DB_TABLES.CMS_CONTENT_BLOCKS)
-      .select("*")
+      .select("slug,page_type,region,title,blocks,meta,is_published,is_active")
       .eq("slug", slug)
       .eq("is_active", true)
       .eq("is_published", true)
@@ -44,51 +45,29 @@ export async function GET(
       .maybeSingle()
     if (error) {
       console.warn(`[content-blocks/${slug}] fetch failed:`, error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "content unavailable" }, { status: 503 })
     }
-    // Batch 16 fuzzy lookup: slug にマッチしない場合 (legacy URL report-{runId} など)
-    // diagnostic_runs から該当 run を探して最小限の fallback ページを返す
+    // Never resolve arbitrary diagnostic_runs by a public slug prefix. A report
+    // identifier is not an authorization token and must not expose company or
+    // financial data through a public fallback route.
     if (!data) {
-      const possibleRunIdMatch = slug.match(/([0-9a-f]{8})(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?/)
-      if (possibleRunIdMatch) {
-        const idPrefix = possibleRunIdMatch[1]
-        const { data: run } = await sb
-          .from(DB_TABLES.DIAGNOSTIC_RUNS)
-          .select('id,company_name,target_url,overall_score,total_annual_loss_jpy,started_at,status')
-          .like('id', `${slug}%`)
-          .limit(1)
-          .maybeSingle()
-        if (run) {
-          return NextResponse.json({
-            slug, page_type: 'report', region: 'ja',
-            title: `${run.company_name ?? 'お客様'} 様 — 診断レポート (準備中)`,
-            blocks: [
-              { id: 'fallback-hero', type: 'hero', props: {
-                title: `${run.company_name ?? 'お客様'} 様の診断レポートを準備しています`,
-                subtitle: '詳細レポートは engine v2 パイプラインで再生成中です。完了次第こちらに表示されます。',
-                ctaLabel: 'Cal.com で 30 分相談予約', ctaUrl: 'https://cal.com/paradigm/japan-entry-30min',
-                variant: 'centered',
-              }},
-              { id: 'fallback-cta', type: 'cta', props: {
-                heading: '詳細レポートは準備中です',
-                description: 'engine v2 パイプラインで再生成中。完了次第こちらに公開されます。',
-                buttonLabel: 'Paradigm に問い合わせ',
-                buttonUrl: 'mailto:checkup@paradigmjp.com',
-              }},
-            ],
-            meta: { fallback: true, run_id: run.id, status: run.status },
-            is_published: true, is_active: true,
-          }, { headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60' } })
-        }
-      }
       return NextResponse.json({ error: 'not found' }, { status: 404 })
     }
-    return NextResponse.json(data, {
+    return NextResponse.json({
+      slug: data.slug,
+      page_type: data.page_type,
+      region: data.region,
+      title: data.title,
+      blocks: sanitizePublicJson(data.blocks),
+      meta: sanitizePublicJson(data.meta),
+      is_published: data.is_published,
+      is_active: data.is_active,
+    }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     })
   } catch (e) {
     console.error(`[content-blocks/${slug}] unexpected:`, e)
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: "content unavailable" }, { status: 503 })
   }
 }
 
@@ -108,7 +87,7 @@ export async function PATCH(
 
   try {
     const sb = getServiceSupabase()
-    if (!sb) return NextResponse.json({ error: "supabase service role key not configured" }, { status: 500 })
+    if (!sb) return NextResponse.json({ error: "content unavailable" }, { status: 503 })
     const updates: Record<string, unknown> = {}
     if (body.title !== undefined) updates.title = body.title
     if (body.blocks !== undefined) updates.blocks = body.blocks

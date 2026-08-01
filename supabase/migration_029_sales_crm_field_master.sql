@@ -57,15 +57,16 @@ values
   ('name', 'name', 'Name', 0, true, 'text', '企業名'),
   ('domain', 'domainName', 'Domain Name', 1, true, 'text', 'Webサイトドメイン'),
   ('sales_status', 'paradigmSalesStatus', '営業ステータス', 2, true, 'select', '営業の現在地'),
-  ('country', 'paradigmCountryName', '国名', 3, true, 'select', '対象国'),
+  ('country', 'paradigmCountryName', '国名', 3, true, 'text', '対象国。Twenty再起動で選択肢が失われない自由入力表示'),
   ('region', 'paradigmRegionName', '地域名', 4, true, 'text', '国別の地域候補はSales OSの選択肢マスタで管理し、Twentyには確定した地域名だけを表示'),
   ('industry', 'paradigmIndustryName', '業種名', 5, true, 'select', '営業テンプレ選定に使う業種'),
   ('source', 'paradigmSourceName', 'ソース元', 6, true, 'select', 'Apollo、Fumadataなどの取得元'),
   ('form_url', 'paradigmFormUrl', 'フォームURL', 7, true, 'url', 'フォーム営業対象URL'),
-  ('report_url', 'paradigmReportUrl', '診断レポートURL', 8, true, 'url', '顧客向け診断ページ'),
-  ('sales_material_url', 'paradigmSalesMaterialUrl', '営業資料URL', 9, true, 'url', 'Slidev/Gotenberg資料'),
-  ('demo_url', 'paradigmDemoUrl', 'デモURL', 10, true, 'url', 'Astroデモサイト'),
-  ('customer_portal_url', 'paradigmCustomerPortalUrl', '顧客用Notion URL', 11, true, 'url', '成約後の顧客ポータル')
+  ('outreach_target_url', 'paradigmOutreachTargetUrl', '営業先URL', 8, true, 'url', '実際に開いて提案する掲載ページまたは確認済みフォーム'),
+  ('report_url', 'paradigmReportUrl', '診断レポートURL', 9, true, 'url', '顧客向け診断ページ'),
+  ('sales_material_url', 'paradigmSalesMaterialUrl', '営業資料URL', 10, true, 'url', 'Slidev/Gotenberg資料'),
+  ('demo_url', 'paradigmDemoUrl', 'デモURL', 11, true, 'url', 'Astroデモサイト'),
+  ('customer_portal_url', 'paradigmCustomerPortalUrl', '顧客用Notion URL', 12, true, 'url', '成約後の顧客ポータル')
 on conflict (field_key) do update set
   twenty_field_name = excluded.twenty_field_name,
   label = excluded.label,

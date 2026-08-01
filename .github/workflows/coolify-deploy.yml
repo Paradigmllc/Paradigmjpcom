@@ -1,0 +1,17 @@
+name: Coolify Deploy (release gate required)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blocked-direct-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Block deploys that bypass the production release gate
+        run: |
+          echo "::error::Direct Coolify deployment is disabled for Paradigmjpcom."
+          echo "Run 'npm run release:prod' from the approved release environment so migration, CMS publish, origin-lock refresh, and post-deploy verification all execute."
+          exit 1

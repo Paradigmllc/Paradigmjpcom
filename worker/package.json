@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@browserbasehq/stagehand": "^3.5.0",
+    "@browserbasehq/stagehand": "^3.6.0",
     "crawlee": "^3.10.1",
     "playwright": "^1.60.0",
     "playwright-extra": "^4.3.6",

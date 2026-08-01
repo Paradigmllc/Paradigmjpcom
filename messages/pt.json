@@ -8,6 +8,7 @@
     "services": "Serviços",
     "works": "Trabalhos",
     "pricing": "Preços",
+    "package": "Pacote",
     "faq": "FAQ",
     "blog": "Blog",
     "contact": "Contato",
@@ -260,7 +261,8 @@
     "bodyBeforeLink": "Usamos um mínimo de cookies para desempenho e análise de uso. Para mais detalhes, consulte nossa",
     "privacyLink": "política de privacidade",
     "accept": "Aceitar",
-    "decline": "Recusar"
+    "decline": "Recusar",
+    "settings": "Definições de cookies"
   },
   "servicesPage": {
     "metaTitle": "Services",

@@ -30,6 +30,6 @@ GRANT authenticated TO authenticator;
 GRANT service_role TO authenticator;
 `;
 fs.writeFileSync('roles.sql', sql);
-execSync('scp roles.sql root@139.59.250.5:/root/supabase-oss/roles.sql');
-const out = execSync('ssh root@139.59.250.5 "docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/roles.sql"');
+execSync('scp roles.sql root@178.105.138.55:/root/supabase-oss/roles.sql');
+const out = execSync('ssh root@178.105.138.55 "docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/roles.sql"');
 console.log('Roles created: ' + out.toString());

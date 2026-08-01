@@ -56,7 +56,7 @@ export async function scrapeWithCrawlee(url: string, region?: string): Promise<C
       method: "POST",
       headers,
       body: JSON.stringify({ url, region, task: "page_extraction" }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) {
       return { ok: false, error: `Crawlee HTTP ${res.status}` }

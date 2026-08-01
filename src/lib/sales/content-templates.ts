@@ -200,47 +200,47 @@ function isTemplateVariant(value: unknown): value is TemplateVariant {
 }
 
 function titleFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  return `${INDUSTRY_LABELS[industry][locale]} | ${CONTENT_APPEAL_LABELS[angle][locale]} | ${CONTENT_ASSET_LABELS[assetType][locale]}`
+  return `${INDUSTRY_LABELS[industry]?.[locale] ?? industry} | ${CONTENT_APPEAL_LABELS[angle]?.[locale] ?? angle} | ${CONTENT_ASSET_LABELS[assetType]?.[locale] ?? assetType}`
 }
 
 function purposeFor(locale: ReportLocale, assetType: ContentAssetType, angle: ContentAppealAngle): string {
   if (assetType === "sales_video" && angle === "video_retention") {
-    return CONTENT_TEMPLATE_LOCALES.purpose.sales_video_retention[locale]
+    return CONTENT_TEMPLATE_LOCALES.purpose.sales_video_retention?.[locale] ?? ""
   }
-  return CONTENT_TEMPLATE_LOCALES.purpose[assetType][locale]
+  return CONTENT_TEMPLATE_LOCALES.purpose[assetType]?.[locale] ?? ""
 }
 
 function qualityBarFor(locale: ReportLocale, assetType: ContentAssetType): string {
-  return CONTENT_TEMPLATE_LOCALES.quality[assetType][locale]
+  return CONTENT_TEMPLATE_LOCALES.quality[assetType]?.[locale] ?? ""
 }
 
 function selectionRuleFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
   const selection = CONTENT_TEMPLATE_LOCALES.selection
   return [
-    `${selection.language[locale]}=${locale}`,
-    `${selection.country[locale]}=${countryForLocale(locale)}`,
-    `${selection.industry[locale]}=${INDUSTRY_LABELS[industry][locale]}`,
-    `${selection.asset[locale]}=${CONTENT_ASSET_LABELS[assetType][locale]}`,
-    `${selection.appeal[locale]}=${CONTENT_APPEAL_LABELS[angle][locale]}`,
-    selection.priority[locale],
-    selection.guard[locale],
+    `${selection.language?.[locale] ?? ""}=${locale}`,
+    `${selection.country?.[locale] ?? ""}=${countryForLocale(locale)}`,
+    `${selection.industry?.[locale] ?? ""}=${INDUSTRY_LABELS[industry]?.[locale] ?? industry}`,
+    `${selection.asset?.[locale] ?? ""}=${CONTENT_ASSET_LABELS[assetType]?.[locale] ?? assetType}`,
+    `${selection.appeal?.[locale] ?? ""}=${CONTENT_APPEAL_LABELS[angle]?.[locale] ?? angle}`,
+    selection.priority?.[locale] ?? "",
+    selection.guard?.[locale] ?? "",
   ].join(" / ")
 }
 
 function promptFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
   const prompt = CONTENT_TEMPLATE_LOCALES.prompt
-  const industryName = INDUSTRY_LABELS[industry][locale]
+  const industryName = INDUSTRY_LABELS[industry]?.[locale] ?? industry
   const base = [
-    prompt.intro[locale].replace("{industry}", industryName),
-    prompt.evidence[locale],
-    prompt.tone[locale],
-    prompt.claimGuard[locale],
+    (prompt.intro?.[locale] ?? "").replace("{industry}", industryName),
+    prompt.evidence?.[locale] ?? "",
+    prompt.tone?.[locale] ?? "",
+    prompt.claimGuard?.[locale] ?? "",
   ]
   return [
     ...base,
-    `${prompt.appealPrefix[locale]}: ${CONTENT_APPEAL_LABELS[angle][locale]}`,
-    prompt.assetInstruction[assetType][locale],
-    prompt.urlGuard[locale],
+    `${prompt.appealPrefix?.[locale] ?? ""}: ${CONTENT_APPEAL_LABELS[angle]?.[locale] ?? angle}`,
+    prompt.assetInstruction[assetType]?.[locale] ?? "",
+    prompt.urlGuard?.[locale] ?? "",
   ].join("\n")
 }
 
@@ -253,10 +253,10 @@ function structureFor(assetType: ContentAssetType, angle: ContentAppealAngle): R
 }
 
 function sampleCopyFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  return CONTENT_TEMPLATE_LOCALES.sample[locale]
-    .replace("{industry}", INDUSTRY_LABELS[industry][locale])
-    .replace("{appeal}", CONTENT_APPEAL_LABELS[angle][locale])
-    .replace("{asset}", CONTENT_ASSET_LABELS[assetType][locale])
+  return (CONTENT_TEMPLATE_LOCALES.sample?.[locale] ?? "")
+    .replace("{industry}", INDUSTRY_LABELS[industry]?.[locale] ?? industry)
+    .replace("{appeal}", CONTENT_APPEAL_LABELS[angle]?.[locale] ?? angle)
+    .replace("{asset}", CONTENT_ASSET_LABELS[assetType]?.[locale] ?? assetType)
 }
 
 export function buildInitialContentTemplates(): SalesContentTemplate[] {

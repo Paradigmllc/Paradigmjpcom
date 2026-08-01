@@ -41,7 +41,8 @@ describe("detectTechStack", () => {
       vi.fn(async () =>
         new Response(
           [
-            '<div class="shopify-buy"></div>',
+            '<link rel="preconnect" href="https://cdn.shopify.com/s/files/1/0000/0001">',
+            '<div class="shopify-section">Visit our New York store. Prices are shown in USD.</div>',
             '<script src="https://analytics.tiktok.com/i18n/pixel/events.js"></script>',
             "<script>ttq.load('PIXEL_ID'); window._learnq = window._learnq || [];</script>",
             '<script src="https://static.klaviyo.com/onsite/js/klaviyo.js"></script>',
@@ -53,8 +54,10 @@ describe("detectTechStack", () => {
 
     const result = await detectTechStack("https://shop.example")
     const names = result.tech.map((item) => item.name)
-    expect(names).toContain("Shopify (JP detection)")
+    expect(names).toContain("Shopify")
     expect(names).toContain("TikTok Pixel")
     expect(names).toContain("Klaviyo")
+    expect(result.evidenceText).toContain("New York store")
+    expect(result.evidenceText).not.toContain("ttq.load")
   })
 })

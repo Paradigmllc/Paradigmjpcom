@@ -1,10 +1,19 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { buildCompanyIntelligence, type CompanyIntelligence } from "@/lib/sales/company-intelligence"
-import { buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/routing"
+import { buildOpportunityBriefUrl, buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/routing"
 import { computeSourceCoverage, type SourceCoverageItem } from "@/lib/sales/source-coverage"
 import type { CompanyProductRecommendation } from "@/lib/sales/products"
 import type { SalesCompany } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import {
+  companyContactFormUrl,
+  companyDemoSite,
+  companyDifyResult,
+  companyPainDiagnosis,
+  companyTechStack,
+  mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
+import type { VerifiedOutreachContext } from "@/lib/sales/outreach/verified-metrics"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -30,6 +39,30 @@ export interface CompanyKarteLink {
   url: string
 }
 
+export interface CompanyKarteJapanEntryHorizon {
+  month: 6 | 12 | 24
+  roiPercent: number
+  cumulativeNetBenefitUsd: number
+}
+
+export interface CompanyKarteJapanEntryDraft {
+  state: string
+  message: string
+  classification: string
+  estimatedJapanMonthlyVisits: number | null
+  monthlyOpportunityGapUsd: number | null
+  qualityScore: number | null
+  safetyScore: number | null
+  model: string | null
+  promptTokens: number | null
+  completionTokens: number | null
+  cacheHitTokens: number | null
+  cacheMissTokens: number | null
+  cacheHitRatio: number | null
+  generatedAt: string | null
+  horizons: CompanyKarteJapanEntryHorizon[]
+}
+
 export interface CompanyKarteSnapshot {
   companyId: string
   companyName: string
@@ -44,6 +77,7 @@ export interface CompanyKarteSnapshot {
   targetCountry: string
   templateVariant: string
   reportUrl: string | null
+  opportunityBriefUrl: string | null
   formUrl: string | null
   demoUrl: string | null
   salesMaterialUrl: string | null
@@ -62,6 +96,11 @@ export interface CompanyKarteSnapshot {
   recommendedOffer: string | null
   personalizedHook: string | null
   personalizedCTA: string | null
+  // Phase 6-2: generation trace so operators can see which engine produced the copy.
+  reportEngine?: string | null
+  diagnosisEngine?: string | null
+  formMessageEvidence?: VerifiedOutreachContext | null
+  japanEntry?: CompanyKarteJapanEntryDraft | null
   generatedAt: string
 }
 
@@ -85,6 +124,61 @@ function firstString(meta: JsonRecord, paths: string[][]): string | null {
     if (value) return value
   }
   return null
+}
+
+function finiteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function japanEntryDraftFromMeta(meta: JsonRecord): CompanyKarteJapanEntryDraft | null {
+  const message = typeof meta.japan_entry_initial_message === "string"
+    ? meta.japan_entry_initial_message.trim()
+    : ""
+  const projection = asRecord(meta.japan_entry_projection)
+  if (!message || !projection) return null
+
+  const messageGeneration = asRecord(meta.japan_entry_message_review) ?? asRecord(projection.messageGeneration)
+  const markets = Array.isArray(projection.markets) ? projection.markets : []
+  const japanMarket = markets
+    .map(asRecord)
+    .find((market) => market?.code === "JP")
+  const scenarios = Array.isArray(projection.scenarios) ? projection.scenarios : []
+  const baseScenario = scenarios
+    .map(asRecord)
+    .find((scenario) => scenario?.scenario === "base")
+  const horizons = Array.isArray(baseScenario?.horizons) ? baseScenario.horizons : []
+  const parsedHorizons = horizons.flatMap((value): CompanyKarteJapanEntryHorizon[] => {
+    const horizon = asRecord(value)
+    const month = finiteNumber(horizon?.horizon)
+    const roiPercent = finiteNumber(horizon?.roiPercent)
+    const cumulativeNetBenefitUsd = finiteNumber(horizon?.cumulativeNetBenefitUsd)
+    if ((month !== 6 && month !== 12 && month !== 24) || roiPercent === null || cumulativeNetBenefitUsd === null) {
+      return []
+    }
+    return [{ month, roiPercent, cumulativeNetBenefitUsd }]
+  })
+
+  return {
+    state: typeof meta.japan_entry_outreach_state === "string" ? meta.japan_entry_outreach_state : "needs_review",
+    message,
+    classification: typeof projection.classification === "string" ? projection.classification : "modeled-estimate",
+    estimatedJapanMonthlyVisits: finiteNumber(japanMarket?.estimatedMonthlyVisits),
+    monthlyOpportunityGapUsd: finiteNumber(projection.monthlyOpportunityGapUsd),
+    qualityScore: finiteNumber(messageGeneration?.qualityScore),
+    safetyScore: finiteNumber(messageGeneration?.safetyScore),
+    model: typeof messageGeneration?.model === "string" ? messageGeneration.model : null,
+    promptTokens: finiteNumber(messageGeneration?.promptTokens),
+    completionTokens: finiteNumber(messageGeneration?.completionTokens),
+    cacheHitTokens: finiteNumber(messageGeneration?.cacheHitTokens),
+    cacheMissTokens: finiteNumber(messageGeneration?.cacheMissTokens),
+    cacheHitRatio: finiteNumber(messageGeneration?.cacheHitRatio),
+    generatedAt: typeof messageGeneration?.generatedAt === "string"
+      ? messageGeneration.generatedAt
+      : typeof projection.generatedAt === "string"
+        ? projection.generatedAt
+        : null,
+    horizons: parsedHorizons,
+  }
 }
 
 function numberEvidence(label: string, value: number | null, source: string): CompanyKarteEvidence | null {
@@ -147,19 +241,19 @@ function localizedReportUrls(company: SalesCompany, reportLocale: ReportLocale):
 }
 
 function evidenceFromCompany(company: SalesCompany): CompanyKarteEvidence[] {
-  const meta = (company.meta ?? {}) as JsonRecord
-  const diagnosis = asRecord(meta.pain_diagnosis)
-  const dify = asRecord(meta.dify_diagnosis)
-  const tech = asRecord(meta.tech)
+  const meta = mergedCompanyMeta(company)
+  const diagnosis = companyPainDiagnosis(company)
+  const dify = companyDifyResult(company)
+  const tech = companyTechStack(company)
   const place = asRecord(meta.place)
-  const demo = asRecord(meta.demo_site)
+  const demo = companyDemoSite(company)
 
   return [
     numberEvidence("PageSpeed Mobile", company.pagespeed_mobile, "PageSpeed Insights"),
     numberEvidence("PageSpeed Desktop", company.pagespeed_desktop, "PageSpeed Insights"),
     textEvidence(
       "フォームURL",
-      firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]]),
+      companyContactFormUrl(company),
       "Crawlee / Crawl4AI",
       "good",
     ),
@@ -190,7 +284,7 @@ export function buildCompanyKarte(
   sourceRows: SourceRunRow[] = [],
   recommendedProducts: CompanyProductRecommendation[] = [],
 ): CompanyKarteSnapshot {
-  const meta = (company.meta ?? {}) as JsonRecord
+  const meta = mergedCompanyMeta(company)
   const routing = asRecord(meta.routing)
   const reportLocale = (company.report_locale ?? routing?.report_locale ?? "ja") as ReportLocale
   const targetCountry =
@@ -200,9 +294,13 @@ export function buildCompanyKarte(
     (typeof routing?.template_variant === "string" ? routing.template_variant : "website_diagnostic")
   const sourceItems = sourceItemsFromRows(company, sourceRows)
   const counts = coverageCounts(sourceItems)
-  const formUrl = firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]])
-  const diagnosis = asRecord(meta.pain_diagnosis)
+  const formUrl = companyContactFormUrl(company)
+  const diagnosis = companyPainDiagnosis(company)
   const personalizedCopy = asRecord(meta.personalized_copy)
+  const formMessageEvidence = asRecord(meta.form_message_evidence) as VerifiedOutreachContext | null
+  const japanEntry = japanEntryDraftFromMeta(meta)
+  const opportunityBriefUrl = firstString(meta, [["japan_entry_opportunity_url"]]) ??
+    (japanEntry && company.slug ? buildOpportunityBriefUrl(reportLocale, company.slug) : null)
 
   return {
     companyId: company.id,
@@ -222,6 +320,7 @@ export function buildCompanyKarte(
     targetCountry,
     templateVariant,
     reportUrl: company.report_url ?? (company.slug ? buildReportUrl(reportLocale, company.slug) : null),
+    opportunityBriefUrl,
     formUrl,
     demoUrl: stringAt(meta, ["demo_site", "url"]),
     salesMaterialUrl: firstString(meta, [
@@ -234,9 +333,6 @@ export function buildCompanyKarte(
     ]),
     customerPortalUrl: firstString(meta, [
       ["customer_portal_url"],
-      ["notion_page_url"],
-      ["customer_success", "notion_page_url"],
-      ["customer_success", "notion_url"],
     ]),
     localizedReportUrls: localizedReportUrls(company, reportLocale),
     sourceItems,
@@ -247,6 +343,15 @@ export function buildCompanyKarte(
     recommendedOffer: typeof diagnosis?.recommendedOffer === "string" ? diagnosis.recommendedOffer : null,
     personalizedHook: typeof personalizedCopy?.personalized_hook === "string" ? personalizedCopy.personalized_hook : null,
     personalizedCTA: typeof personalizedCopy?.personalized_cta === "string" ? personalizedCopy.personalized_cta : null,
+    reportEngine:
+      typeof personalizedCopy?.model === "string"
+        ? personalizedCopy.model
+        : personalizedCopy && Object.keys(personalizedCopy).length > 0
+          ? "personalized"
+          : "template",
+    diagnosisEngine: typeof diagnosis?.engine === "string" ? diagnosis.engine : null,
+    formMessageEvidence,
+    japanEntry,
     generatedAt: new Date().toISOString(),
     ...counts,
   }
@@ -301,6 +406,7 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
     "## 営業URL",
     `- フォームURL: ${karte.formUrl ?? "未検出"}`,
     `- 診断レポートURL: ${karte.reportUrl ?? "未生成"}`,
+    `- Japan Entry Opportunity Brief: ${karte.opportunityBriefUrl ?? "未生成"}`,
     `- AstroデモURL: ${karte.demoUrl ?? "未生成"}`,
     "",
     "## 言語別レポートURL",

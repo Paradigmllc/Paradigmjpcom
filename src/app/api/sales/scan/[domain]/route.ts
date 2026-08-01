@@ -67,7 +67,7 @@ export async function POST(
       pagespeed_mobile: scan.mobile.performance,
       pagespeed_desktop: scan.desktop.performance,
       detected_issues: scan.issues,
-      pipeline_status: "report_ready",
+      pipeline_status: existing?.pipeline_status === "report_ready" ? "report_ready" : "scanning",
       meta: {
         scan: {
           ran_at: new Date().toISOString(),

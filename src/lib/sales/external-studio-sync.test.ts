@@ -18,6 +18,7 @@ describe("buildExternalStudioPayload", () => {
       targetCountry: "JP",
       templateVariant: "japan_entry",
       reportUrl: "https://paradigmjp.com/ja/report/example",
+      opportunityBriefUrl: "https://paradigmjp.com/ja/opportunity/example",
       formUrl: "https://example.com/contact",
       demoUrl: "https://demo.example.com",
       salesMaterialUrl: "https://r2.example.com/deck.pdf",
@@ -38,8 +39,8 @@ describe("buildExternalStudioPayload", () => {
           code: "global_jaas",
           displayName: "Japan Entry Package",
           marketScope: "global",
-          defaultCurrency: "JPY",
-          defaultAmountYen: 300000,
+          defaultCurrency: "USD",
+          defaultAmountYen: 12000,
           isSubscription: false,
           priority: 100,
           fitScore: 91,
@@ -59,6 +60,7 @@ describe("buildExternalStudioPayload", () => {
 
     expect(payload.company_id).toBe(karte.companyId)
     expect(payload.report_url).toBe("https://paradigmjp.com/ja/report/example")
+    expect(payload.opportunity_brief_url).toBe("https://paradigmjp.com/ja/opportunity/example")
     expect(payload.template_variant).toBe("japan_entry")
     expect(payload.sales_material_url).toBe("https://r2.example.com/deck.pdf")
     expect(payload.recommended_products).toEqual([
@@ -66,7 +68,8 @@ describe("buildExternalStudioPayload", () => {
         code: "global_jaas",
         display_name: "Japan Entry Package",
         fit_score: 91,
-        default_amount_yen: 300000,
+        default_currency: "USD",
+        default_amount_yen: 12000,
         is_subscription: false,
         twenty_opportunity_id: "opp_1",
       },

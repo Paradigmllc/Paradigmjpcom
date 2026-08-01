@@ -1,6 +1,7 @@
 export type RevenueSourceLane =
   | "tech_footprint"
   | "no_website_local_smb"
+  | "dns_freshness"
   | "enrichment"
   | "outreach"
   | "orchestration"

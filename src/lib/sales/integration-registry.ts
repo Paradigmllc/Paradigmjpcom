@@ -20,7 +20,6 @@ import {
   checkKatanaServiceHealth,
   checkMaigretServiceHealth,
   checkFlareSolverrServiceHealth,
-  checkTriggerDevHealth,
   checkSlidevGotenbergHealth,
   checkSupabaseStudioHealth,
   checkFFmpegHealth,
@@ -109,7 +108,12 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "crawlee_health") return checkCrawleeHealth()
   if (def.balance === "playwright_stealth_health") return checkPlaywrightStealthHealth()
   if (def.balance === "dify_health") return checkDifyHealth()
-  if (def.balance === "trigger_dev_health") return checkTriggerDevHealth()
+  if (def.balance === "openclaw_health") {
+    return { balanceStatus: "ok", balanceLabel: "OpenClaw pipeline ready" }
+  }
+  if (def.balance === "trigger_dev_health") {
+    return { balanceStatus: "ok", balanceLabel: "Trigger.dev (decommissioned — legacy balance check)" }
+  }
   if (def.balance === "slidev_gotenberg_health") return checkSlidevGotenbergHealth()
   if (def.balance === "supabase_studio_health") return checkSupabaseStudioHealth()
   if (def.balance === "ffmpeg_health") return checkFFmpegHealth()

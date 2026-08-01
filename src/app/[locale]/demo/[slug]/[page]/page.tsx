@@ -1,0 +1,50 @@
+import { notFound } from "next/navigation"
+import type { Metadata } from "next"
+import { DemoContentPage } from "@/components/demo/DemoContentPage"
+import { DemoPremiumV2ContentPage } from "@/components/demo/premium-v2/DemoPremiumV2ContentPage"
+import { DemoPremiumV3ContentPage } from "@/components/demo/premium-v3/DemoPremiumV3ContentPage"
+import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
+import type { DemoContentPage as DemoContentPageData } from "@/lib/sales/demo-site-types"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 300
+
+const CONTENT_PAGES = ["works", "news", "faq", "recruit", "privacy", "terms", "commerce"] as const
+type ContentPageKey = typeof CONTENT_PAGES[number]
+
+function isContentPage(value: string): value is ContentPageKey {
+  return CONTENT_PAGES.includes(value as ContentPageKey)
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; page: string }>
+}): Promise<Metadata> {
+  const { slug, page } = await params
+  if (!isContentPage(page)) return {}
+  const data = await fetchDemoMultiPageDataForRequest(slug)
+  const pageData = data?.pages[page] as DemoContentPageData | undefined
+  if (!data || !pageData) return {}
+  return {
+    title: { absolute: `${pageData.title} | ${data.companyName}` },
+    description: pageData.subtitle,
+    robots: { index: false, follow: false },
+  }
+}
+
+export default async function DemoExtendedPage({
+  params,
+}: {
+  params: Promise<{ slug: string; page: string }>
+}) {
+  const { slug, page } = await params
+  if (!isContentPage(page)) notFound()
+  const data = await fetchDemoMultiPageDataForRequest(slug)
+  if (!data) notFound()
+  const pageData = data.pages[page] as DemoContentPageData | undefined
+  if (!pageData) notFound()
+  if (data.premium?.style === "premium-v3") return <DemoPremiumV3ContentPage data={data} page={pageData} pageKey={page} />
+  if (data.premium?.style === "premium-v2") return <DemoPremiumV2ContentPage data={data} page={pageData} pageKey={page} />
+  return <DemoContentPage page={pageData} />
+}

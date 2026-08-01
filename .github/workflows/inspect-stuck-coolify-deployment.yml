@@ -1,0 +1,37 @@
+name: Inspect Stuck Coolify Deployment
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/inspect-stuck-coolify-deployment.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      STUCK_DEPLOYMENT_UUID: rpmrm7gz4d7tg82ovmcmlwf0
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture sanitized stuck deployment detail
+        run: |
+          set -euo pipefail
+          API="${COOLIFY_API_URL%/}/api/v1"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: Bearer ${COOLIFY_API_TOKEN}" \
+            -H 'Accept: application/json' \
+            "${API}/deployments/${STUCK_DEPLOYMENT_UUID}" > /tmp/stuck.raw.json
+          jq '{id,deployment_uuid,status,commit,created_at,updated_at,started_at,finished_at,current_process_id,horizon_job_id,horizon_job_worker,server_id,build_server_id,logs:(.logs // "" | tostring | gsub("(?i)(token|password|secret|authorization|api[_-]?key)[=: ]+[^ \\n]+"; "REDACTED") | .[-30000:])}' /tmp/stuck.raw.json > /tmp/stuck.sanitized.json
+          cat /tmp/stuck.sanitized.json
+      - name: Upload inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: stuck-coolify-deployment
+          path: /tmp/stuck.sanitized.json
+          retention-days: 1

@@ -1,0 +1,402 @@
+{
+  "$defs": {
+    "Approver": {
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "title": "Email",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ],
+      "title": "Approver",
+      "type": "object"
+    },
+    "BrandSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "accent_color": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Accent Color",
+          "type": "string"
+        },
+        "font_family": {
+          "default": "Inter",
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Font Family",
+          "type": "string"
+        },
+        "logo_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logo Path"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "primary_color": {
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Primary Color",
+          "type": "string"
+        },
+        "text_color": {
+          "default": "#FFFFFF",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Text Color",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "primary_color",
+        "accent_color"
+      ],
+      "title": "BrandSpec",
+      "type": "object"
+    },
+    "DeliverableSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "enum": [
+            "16:9",
+            "9:16",
+            "1:1",
+            "4:5"
+          ],
+          "title": "Aspect Ratio",
+          "type": "string"
+        },
+        "format": {
+          "default": "mp4",
+          "enum": [
+            "mp4",
+            "mov",
+            "webm"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "fps": {
+          "default": 30,
+          "maximum": 120,
+          "minimum": 15,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "height": {
+          "maximum": 7680,
+          "minimum": 320,
+          "title": "Height",
+          "type": "integer"
+        },
+        "language": {
+          "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$",
+          "title": "Language",
+          "type": "string"
+        },
+        "name": {
+          "pattern": "^[a-z0-9][a-z0-9-]{1,79}$",
+          "title": "Name",
+          "type": "string"
+        },
+        "width": {
+          "maximum": 7680,
+          "minimum": 320,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "language",
+        "aspect_ratio",
+        "width",
+        "height"
+      ],
+      "title": "DeliverableSpec",
+      "type": "object"
+    },
+    "Engine": {
+      "enum": [
+        "hyperframes",
+        "playwright",
+        "comfyui",
+        "ffmpeg",
+        "blender",
+        "manim",
+        "liveportrait",
+        "musetalk",
+        "oss",
+        "mock"
+      ],
+      "title": "Engine",
+      "type": "string"
+    },
+    "LikenessConsent": {
+      "enum": [
+        "granted",
+        "not_granted",
+        "not_applicable"
+      ],
+      "title": "LikenessConsent",
+      "type": "string"
+    },
+    "RightsDeclaration": {
+      "additionalProperties": false,
+      "properties": {
+        "ai_generation_allowed": {
+          "title": "Ai Generation Allowed",
+          "type": "boolean"
+        },
+        "claims_approved_by_client": {
+          "title": "Claims Approved By Client",
+          "type": "boolean"
+        },
+        "likeness_consent": {
+          "$ref": "#/$defs/LikenessConsent"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "source_assets_cleared": {
+          "title": "Source Assets Cleared",
+          "type": "boolean"
+        },
+        "voice_consent": {
+          "$ref": "#/$defs/LikenessConsent"
+        }
+      },
+      "required": [
+        "source_assets_cleared",
+        "ai_generation_allowed",
+        "likeness_consent",
+        "voice_consent",
+        "claims_approved_by_client"
+      ],
+      "title": "RightsDeclaration",
+      "type": "object"
+    },
+    "Shot": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "default": "",
+          "title": "Body",
+          "type": "string"
+        },
+        "duration_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 120,
+          "title": "Duration Seconds",
+          "type": "number"
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Engine"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "headline": {
+          "default": "",
+          "title": "Headline",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^shot-[0-9]{3}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ShotKind"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        },
+        "order": {
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "purpose": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "routing_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Routing Reason"
+        },
+        "source_assets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Assets",
+          "type": "array"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "order",
+        "title",
+        "purpose",
+        "kind",
+        "duration_seconds",
+        "language"
+      ],
+      "title": "Shot",
+      "type": "object"
+    },
+    "ShotKind": {
+      "enum": [
+        "text_motion",
+        "ui_capture",
+        "chart",
+        "generative",
+        "supplied_edit",
+        "three_d",
+        "technical_diagram",
+        "portrait_animation",
+        "lip_sync",
+        "transition"
+      ],
+      "title": "ShotKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "approver": {
+      "$ref": "#/$defs/Approver"
+    },
+    "brand": {
+      "$ref": "#/$defs/BrandSpec"
+    },
+    "brief_sha256": {
+      "title": "Brief Sha256",
+      "type": "string"
+    },
+    "deliverables": {
+      "items": {
+        "$ref": "#/$defs/DeliverableSpec"
+      },
+      "title": "Deliverables",
+      "type": "array"
+    },
+    "duration_seconds": {
+      "title": "Duration Seconds",
+      "type": "number"
+    },
+    "localized_shots": {
+      "additionalProperties": {
+        "items": {
+          "$ref": "#/$defs/Shot"
+        },
+        "type": "array"
+      },
+      "title": "Localized Shots",
+      "type": "object"
+    },
+    "manifest_version": {
+      "default": "1.0",
+      "title": "Manifest Version",
+      "type": "string"
+    },
+    "primary_deliverable": {
+      "$ref": "#/$defs/DeliverableSpec"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "project_name": {
+      "title": "Project Name",
+      "type": "string"
+    },
+    "requires_human_review": {
+      "default": true,
+      "title": "Requires Human Review",
+      "type": "boolean"
+    },
+    "rights": {
+      "$ref": "#/$defs/RightsDeclaration"
+    },
+    "shots": {
+      "items": {
+        "$ref": "#/$defs/Shot"
+      },
+      "title": "Shots",
+      "type": "array"
+    }
+  },
+  "required": [
+    "project_id",
+    "project_name",
+    "brief_sha256",
+    "duration_seconds",
+    "primary_deliverable",
+    "deliverables",
+    "brand",
+    "rights",
+    "approver",
+    "shots"
+  ],
+  "title": "ShotManifest",
+  "type": "object"
+}

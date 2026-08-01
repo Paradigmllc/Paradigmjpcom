@@ -8,6 +8,7 @@
     "services": "서비스",
     "works": "작업",
     "pricing": "가격",
+    "package": "패키지",
     "faq": "FAQ",
     "blog": "블로그",
     "contact": "문의",
@@ -260,7 +261,8 @@
     "bodyBeforeLink": "성능 및 이용 분석을 위해 최소한의 쿠키를 사용합니다. 자세한 내용은",
     "privacyLink": "개인정보 처리방침",
     "accept": "동의",
-    "decline": "거절"
+    "decline": "거절",
+    "settings": "쿠키 설정"
   },
   "servicesPage": {
     "metaTitle": "Services",

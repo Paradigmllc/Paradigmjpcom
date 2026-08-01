@@ -1,40 +1,22 @@
 "use client"
 
-/**
- * SiteFooter — four-band Aesop-tier footer.
- *
- *   Band 1 — Editorial heading + studio body
- *   Band 2 — Three-column link grid (Services / Company / Contact)
- *   Band 3 — Studio location + social row
- *   Band 4 — Legal micro-row (copyright + locale label)
- *
- * Why simpler than Sericia: paradigm has no email-list yet (Sericia's
- * Band 1 carries a subscribe form), no CMS-controlled footerCopy, and no
- * shipping/tokushoho legal columns specific to D2C. A 4-link Services
- * column + 4-link Company column + contact row covers the IA cleanly.
- *
- * All visible strings resolve through `useTranslations("footer")` and
- * `useTranslations("nav")` (AE-PHP-2). Locale label uses next-intl
- * `useLocale` against the `locale.name` key in messages/{locale}.json.
- *
- * AE-PHP-1: 165 lines (under 200 / 500). AE-PHP-2: zero hardcoded strings.
- */
-
 import { Link } from "@/i18n/routing"
 import { useLocale, useTranslations } from "next-intl"
+import { motion } from "framer-motion"
 import type { FooterNav } from "@/lib/navigation"
+import { CONSENT_SETTINGS_EVENT } from "@/lib/cookie-consent"
 
-const SERVICE_LINKS = [
-  { href: "/services/web", labelKey: "web" },
-  { href: "/services/meo", labelKey: "meo" },
-  { href: "/services/seo", labelKey: "seo" },
-  { href: "/services/ai", labelKey: "ai" },
-] as const
+const EASE = [0.22, 1, 0.36, 1] as const
 
 interface FooterProps {
-  /** PayloadCMS Settings global から渡される編集可能な値 (admin で編集可能) */
   settings?: {
     contactEmail?: string | null
+    company?: {
+      legalName?: string | null
+      representativeName?: string | null
+      registrationNumber?: string | null
+      address?: string | null
+    }
     social?: {
       twitter?: string | null
       instagram?: string | null
@@ -43,11 +25,9 @@ interface FooterProps {
       line?: string | null
     }
   }
-  /** PayloadCMS Footer global 由来のナビ。null のとき従来の i18n 既定フッターを使用 (非破壊)。 */
   nav?: FooterNav | null
 }
 
-/** SNS プラットフォーム → アイコン SVG。未知のものは汎用リンクアイコン。 */
 function SocialIcon({ platform }: { platform: string }) {
   const cls = "h-4 w-4"
   switch (platform) {
@@ -66,149 +46,148 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
   const t = useTranslations("footer")
   const tNav = useTranslations("nav")
   const tLocale = useTranslations("locale")
+  const tCookie = useTranslations("cookieConsent")
   const locale = useLocale()
-  const contactEmail = settings?.contactEmail ?? "info@paradigmjp.com"
+  const isJa = locale === "ja"
+
+  const contactHref = isJa ? "/contact" : "/contact?intent=japan-entry"
+  const japanEntryAnalytics = !isJa ? {
+    "data-umami-event": "japan-entry-apply",
+    "data-umami-event-source": "footer",
+  } : {}
+  const contactEmail = settings?.contactEmail ?? "contact@paradigmjp.com"
   const social = settings?.social ?? {}
-  // CMS Footer global 由来の SNS。無ければ Settings.social から組み立てる (後方互換)。
+  const legalName = settings?.company?.legalName || t("company")
+  const companyDetails = [
+    settings?.company?.address,
+    settings?.company?.registrationNumber
+      ? `${t("registrationLabel")}: ${settings.company.registrationNumber}`
+      : null,
+  ].filter((value): value is string => Boolean(value))
+
   const cmsSocials = nav?.socialLinks ?? []
+  const settingsSocials = Object.entries(social)
+    .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0)
+    .map(([platform, url]) => ({ platform, url }))
+  const visibleSocials = cmsSocials.length > 0 ? cmsSocials : settingsSocials
+
+  const serviceLinks = isJa
+    ? [
+        { href: "/video-as-a-service", label: "Video as a Service" },
+        { href: "/services/web", label: "Web制作" },
+        { href: "/services/ai", label: "AI制作・導入支援" },
+      ]
+    : [
+        { href: "/japan-market-partner", label: "Japan Market Partner" },
+        { href: "/video-as-a-service", label: "Video as a Service" },
+      ]
+
+  const headline = isJa
+    ? "動画・Web・AIで、事業を動かす制作体制を。"
+    : "A Japan-based execution partner for market entry and recurring video production."
+  const tagline = isJa
+    ? "Video as a Serviceを主力に、Web制作とAI制作・導入支援を提供します。必要な制作力と実装力を、外部チームとして継続的に支えます。"
+    : "Paradigm LLC provides two focused services for global companies: Japan Market Partner and Video as a Service."
 
   return (
-    <footer className="bg-paradigm-paper-deep text-paradigm-ink mt-32">
+    <footer className="bg-paradigm-paper-deep text-paradigm-ink mt-32 relative">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-paradigm-accent/40 to-transparent" />
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-        {/* Band 1 — Editorial */}
-        <section className="py-20 md:py-28 border-b border-paradigm-line">
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: EASE }}
+          className="py-20 md:py-28 border-b border-paradigm-line"
+        >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             <div className="lg:col-span-7">
-              <p className="paradigm-eyebrow mb-6">{t("company")}</p>
-              {/* 編集見出し (companyHeadline) と説明文 (companyTagline) は別キー。
-                  旧実装は両方 companyTagline で同一文が二重表示されていた。 */}
-              <h2 className="font-display text-[28px] md:text-[40px] leading-[1.18] font-normal tracking-tight max-w-[560px] text-paradigm-ink">
-                {t("companyHeadline")}
+              <p className="paradigm-eyebrow mb-6">{legalName}</p>
+              <h2 className="font-display text-[28px] md:text-[40px] leading-[1.18] font-normal tracking-tight max-w-[640px] text-paradigm-ink">
+                {headline}
               </h2>
             </div>
             <div className="lg:col-span-5 flex flex-col gap-6">
               <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] max-w-md">
-                {nav?.tagline || t("companyTagline")}
+                {tagline}
               </p>
               <Link
-                href="/contact"
+                href={contactHref}
+                {...japanEntryAnalytics}
                 className="self-start text-[11px] tracking-[0.18em] uppercase border border-paradigm-ink px-6 py-3 text-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors"
               >
                 {tNav("contact")}
               </Link>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Band 2 — Link columns. CMS Footer.columns があればそれを、無ければ既定 3 列。 */}
-        <section className="py-16 md:py-20 border-b border-paradigm-line">
-          {nav?.columns?.length ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 md:gap-12">
-              {nav.columns.map((col) => (
-                <div key={col.heading}>
-                  <p className="paradigm-eyebrow mb-5">{col.heading}</p>
-                  <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                    {col.links.map((l) => (
-                      <li key={`${col.heading}-${l.href}`}>
-                        {l.openInNewTab ? (
-                          <a href={l.href} target="_blank" rel="noopener noreferrer" className="hover:text-paradigm-ink transition-colors">
-                            {l.label}
-                          </a>
-                        ) : (
-                          <Link href={l.href} className="hover:text-paradigm-ink transition-colors">
-                            {l.label}
-                          </Link>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-10 md:gap-12">
-              <div>
-                <p className="paradigm-eyebrow mb-5">{t("servicesHeading")}</p>
-                <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                  {SERVICE_LINKS.map((l) => (
-                    <li key={l.href}>
-                      <Link href={l.href} className="hover:text-paradigm-ink transition-colors">
-                        {t(`services.${l.labelKey}`)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="paradigm-eyebrow mb-5">{t("companyHeading")}</p>
-                <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                  <li><Link href="/about" className="hover:text-paradigm-ink transition-colors">{tNav("about")}</Link></li>
-                  <li><Link href="/works" className="hover:text-paradigm-ink transition-colors">{tNav("works")}</Link></li>
-                  <li><Link href="/pricing" className="hover:text-paradigm-ink transition-colors">{tNav("pricing")}</Link></li>
-                  <li><Link href="/faq" className="hover:text-paradigm-ink transition-colors">{tNav("faq")}</Link></li>
-                </ul>
-              </div>
-              <div className="col-span-2 md:col-span-1">
-                <p className="paradigm-eyebrow mb-5">{t("contactHeading")}</p>
-                <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                  <li><Link href="/contact" className="hover:text-paradigm-ink transition-colors">{tNav("contact")}</Link></li>
-                  <li><Link href="/blog" className="hover:text-paradigm-ink transition-colors">{tNav("blog")}</Link></li>
-                  <li>
-                    <a href="https://github.com/Paradigmllc" target="_blank" rel="noopener noreferrer" className="hover:text-paradigm-ink transition-colors">
-                      GitHub
-                    </a>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+          className="py-16 md:py-20 border-b border-paradigm-line"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-10 md:gap-12">
+            <div>
+              <p className="paradigm-eyebrow mb-5">{t("servicesHeading")}</p>
+              <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
+                {serviceLinks.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="hover:text-paradigm-ink transition-colors">
+                      {link.label}
+                    </Link>
                   </li>
-                </ul>
-              </div>
+                ))}
+              </ul>
             </div>
-          )}
-        </section>
+            <div>
+              <p className="paradigm-eyebrow mb-5">{t("companyHeading")}</p>
+              <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
+                <li><Link href="/about" className="hover:text-paradigm-ink transition-colors">{tNav("about")}</Link></li>
+                <li><Link href="/works" className="hover:text-paradigm-ink transition-colors">{tNav("works")}</Link></li>
+                <li><Link href="/blog" className="hover:text-paradigm-ink transition-colors">{tNav("blog")}</Link></li>
+                <li><Link href="/faq" className="hover:text-paradigm-ink transition-colors">{tNav("faq")}</Link></li>
+              </ul>
+            </div>
+            <div className="col-span-2 md:col-span-1">
+              <p className="paradigm-eyebrow mb-5">{t("contactHeading")}</p>
+              <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
+                <li><Link href={contactHref} {...japanEntryAnalytics} className="hover:text-paradigm-ink transition-colors">{tNav("contact")}</Link></li>
+                {!isJa && <li><Link href="/tools/japan-entry-score" className="hover:text-paradigm-ink transition-colors">{tNav("japanEntryScore")}</Link></li>}
+                <li><a href={`mailto:${contactEmail}`} className="hover:text-paradigm-ink transition-colors">{contactEmail}</a></li>
+              </ul>
+            </div>
+          </div>
+        </motion.section>
 
-        {/* Band 3 — Studio + social */}
-        <section className="py-12 border-b border-paradigm-line">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
+          className="py-12 border-b border-paradigm-line"
+        >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <p className="text-[13px] text-paradigm-ink-soft leading-[1.8] max-w-xl">
-              {nav?.studioLocation || t("studioLocation")}
+              {companyDetails.length > 0
+                ? companyDetails.join(" · ")
+                : nav?.studioLocation || t("studioLocation")}
             </p>
             <div className="flex items-center gap-4">
-              {cmsSocials.length > 0 ? (
-                // CMS Footer.socialLinks があればそれを描画
-                cmsSocials.map((s) => (
-                  <a
-                    key={s.platform + s.url}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.platform}
-                    className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft"
-                  >
-                    <SocialIcon platform={s.platform} />
-                  </a>
-                ))
-              ) : (
-                // 既定: GitHub 常時 + Settings.social の twitter/linkedin
-                <>
-                  <a
-                    href="https://github.com/Paradigmllc"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t("socialGithub")}
-                    className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft"
-                  >
-                    <SocialIcon platform="github" />
-                  </a>
-                  {social.twitter && (
-                    <a href={social.twitter} target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft">
-                      <SocialIcon platform="twitter" />
-                    </a>
-                  )}
-                  {social.linkedin && (
-                    <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft">
-                      <SocialIcon platform="linkedin" />
-                    </a>
-                  )}
-                </>
-              )}
+              {visibleSocials.map((item) => (
+                <a
+                  key={item.platform + item.url}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={item.platform}
+                  className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft"
+                >
+                  <SocialIcon platform={item.platform} />
+                </a>
+              ))}
               <a
                 href={`mailto:${contactEmail}`}
                 aria-label={t("socialEmail")}
@@ -221,43 +200,46 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               </a>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Band 4 — Legal micro-row */}
-        <section className="py-7 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[11px] tracking-wider text-paradigm-ink-mute">
-          <p>
-            © {new Date().getFullYear()}{" "}
-            {nav?.copyright || `${t("company")} · ${t("rights")}`}
-          </p>
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
+          className="py-7 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[11px] tracking-wider text-paradigm-ink-mute"
+        >
+          <p>© {new Date().getFullYear()} {nav?.copyright || `${legalName} · ${t("rights")}`}</p>
           <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {nav?.legalLinks?.length ? (
-              nav.legalLinks.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="hover:text-paradigm-ink-soft transition-colors">
-                    {l.label}
-                  </Link>
+              nav.legalLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="hover:text-paradigm-ink-soft transition-colors">{link.label}</Link>
                 </li>
               ))
             ) : (
               <>
-                <li>
-                  <Link href="/privacy" className="hover:text-paradigm-ink-soft transition-colors">
-                    {t("privacy")}
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/legal" className="hover:text-paradigm-ink-soft transition-colors">
-                    {t("legal")}
-                  </Link>
-                </li>
+                <li><Link href="/privacy" className="hover:text-paradigm-ink-soft transition-colors">{t("privacy")}</Link></li>
+                <li><Link href="/legal" className="hover:text-paradigm-ink-soft transition-colors">{t("legal")}</Link></li>
+                <li><Link href="/terms" className="hover:text-paradigm-ink-soft transition-colors">{t("terms")}</Link></li>
+                <li><Link href="/refund" className="hover:text-paradigm-ink-soft transition-colors">{t("refund")}</Link></li>
               </>
             )}
+            <li>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event(CONSENT_SETTINGS_EVENT))}
+                className="hover:text-paradigm-ink-soft transition-colors"
+              >
+                {tCookie("settings")}
+              </button>
+            </li>
           </ul>
           <p>
             <span className="text-paradigm-ink-mute/60 mr-2">{locale.toUpperCase()}</span>
             <span className="text-paradigm-ink-soft">{tLocale("name")}</span>
           </p>
-        </section>
+        </motion.section>
       </div>
     </footer>
   )

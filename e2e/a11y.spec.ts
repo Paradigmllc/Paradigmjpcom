@@ -13,24 +13,53 @@
 import { test, expect } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 
+test.describe.configure({ timeout: 90_000 })
+
 const ROUTES = [
   "/ja",
   "/ja/about",
   "/ja/services",
+  "/ja/services/web",
+  "/ja/services/meo",
+  "/ja/services/seo",
+  "/ja/services/ai",
+  "/ja/lp/web",
+  "/ja/lp/meo",
+  "/ja/lp/seo",
+  "/ja/lp/ai",
+  "/ja/video",
+  "/ja/agency",
   "/ja/contact",
   "/ja/faq",
   "/ja/pricing",
+  "/ja/works",
   "/ja/blog",
+  "/ja/privacy",
   "/ja/legal",
   "/en",
+  "/en/about",
+  "/en/pricing",
+  "/en/faq",
   "/en/contact",
+  "/en/works",
+  "/en/blog",
+  "/en/privacy",
+  "/en/legal",
+  "/en/report/demo/japan_entry",
 ]
 
 for (const route of ROUTES) {
   test(`${route} has no critical/serious WCAG 2.2 AA violations`, async ({ page }) => {
-    await page.goto(route)
-    // Wait for fonts + JS hydration to settle so contrast checks reflect final paint.
-    await page.waitForLoadState("networkidle")
+    // The production UI honors this preference by removing reveal motion. Axe
+    // should inspect the stable, fully rendered state instead of an animation
+    // frame where text is intentionally mid-fade.
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto(route, { waitUntil: "domcontentloaded" })
+    // Analytics, chat, and challenge widgets may keep the network active. Wait
+    // for the paint inputs axe depends on without treating background traffic
+    // as a page-readiness signal.
+    await page.evaluate(() => document.fonts.ready)
+    await page.waitForTimeout(1000)
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

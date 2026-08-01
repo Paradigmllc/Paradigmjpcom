@@ -1,0 +1,125 @@
+name: Diagnose Paradigm Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/paradigm-production-diagnostics.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Collect application state and logs
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const base = process.env.COOLIFY_API_URL.replace(/\/+$/, '')
+          const token = process.env.COOLIFY_API_TOKEN
+          const appUuid = process.env.PARADIGM_APP_UUID
+
+          async function api(pathname) {
+            const response = await fetch(`${base}/api/v1${pathname}`, {
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+              signal: AbortSignal.timeout(30_000),
+            })
+            const text = await response.text()
+            let data = null
+            try { data = text ? JSON.parse(text) : null } catch {}
+            return { status: response.status, ok: response.ok, text, data }
+          }
+
+          function redact(value) {
+            return String(value ?? '')
+              .replace(/(token|secret|password|key|authorization)(\s*[=:]\s*)[^\s,;]+/gi, '$1$2[REDACTED]')
+              .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, 'Bearer [REDACTED]')
+          }
+
+          const [appResult, logResult, deploymentsResult] = await Promise.all([
+            api(`/applications/${appUuid}`),
+            api(`/applications/${appUuid}/logs?lines=300`),
+            api(`/deployments/applications/${appUuid}?take=8&skip=0`),
+          ])
+
+          const app = appResult.data || {}
+          const deployments = Array.isArray(deploymentsResult.data)
+            ? deploymentsResult.data
+            : Array.isArray(deploymentsResult.data?.deployments)
+              ? deploymentsResult.data.deployments
+              : []
+          const rawLogs = logResult.data?.logs || logResult.text || ''
+          const logLines = redact(rawLogs).split('\n').slice(-140).join('\n').slice(-12000)
+
+          const summary = {
+            application_api_status: appResult.status,
+            name: app.name,
+            uuid: app.uuid,
+            status: app.status,
+            fqdn: app.fqdn || app.domains,
+            git_branch: app.git_branch,
+            git_commit_sha: app.git_commit_sha,
+            build_pack: app.build_pack,
+            start_command: app.start_command,
+            ports_exposes: app.ports_exposes,
+            ports_mappings: app.ports_mappings,
+            health_check_enabled: app.health_check_enabled,
+            health_check_path: app.health_check_path,
+            health_check_port: app.health_check_port,
+            health_check_host: app.health_check_host,
+            health_check_scheme: app.health_check_scheme,
+            health_check_return_code: app.health_check_return_code,
+            destination_type: app.destination_type,
+            destination_id: app.destination_id,
+            updated_at: app.updated_at,
+            deployments_api_status: deploymentsResult.status,
+            deployments: deployments.slice(0, 8).map((d) => ({
+              deployment_uuid: d.deployment_uuid,
+              status: d.status,
+              commit: d.commit,
+              restart_only: d.restart_only,
+              created_at: d.created_at,
+              updated_at: d.updated_at,
+              deployment_url: d.deployment_url,
+            })),
+            logs_api_status: logResult.status,
+          }
+
+          fs.writeFileSync('/tmp/paradigm-diagnostic-summary.json', JSON.stringify(summary, null, 2))
+          fs.writeFileSync('/tmp/paradigm-application.log', `${logLines}\n`)
+
+          const compact = [
+            `Application status: ${summary.status ?? 'unknown'}`,
+            `Configured commit: ${summary.git_commit_sha ?? 'unknown'}`,
+            `Start command: ${summary.start_command || '(default)'}`,
+            `Exposed ports: ${summary.ports_exposes || '(unset)'}`,
+            `Health check: ${summary.health_check_enabled ? `${summary.health_check_scheme || 'http'}://${summary.health_check_host || 'localhost'}:${summary.health_check_port || summary.ports_exposes || '?'}${summary.health_check_path || '/'}` : 'disabled'}`,
+            `Latest deployments: ${summary.deployments.map((d) => `${d.deployment_uuid}:${d.status}:${d.commit || 'no-commit'}${d.restart_only ? ':restart' : ''}`).join(', ') || 'none'}`,
+          ].join('\n')
+          fs.writeFileSync('/tmp/paradigm-diagnostic-comment.md', `${compact}\n\nLast application logs:\n\n\`\`\`text\n${logLines.slice(-6500)}\n\`\`\`\n`)
+          NODE
+
+      - name: Post diagnostic result
+        run: |
+          BODY="$(cat /tmp/paradigm-diagnostic-comment.md)"
+          gh issue comment 572 --repo "$GITHUB_REPOSITORY" --body "🔎 **Production application diagnostic**\n\n${BODY}"
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: paradigm-production-diagnostics
+          path: |
+            /tmp/paradigm-diagnostic-summary.json
+            /tmp/paradigm-application.log
+          if-no-files-found: warn
+          retention-days: 7

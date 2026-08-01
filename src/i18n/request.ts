@@ -19,15 +19,44 @@ function mergeMessages(base: JsonObject, override: JsonObject): JsonObject {
   return merged
 }
 
+// The international marketing pages intentionally share the English Japan
+// Entry offer as their commercial source of truth.  Older locale files still
+// contain the retired $1,500/$2,500 offers, so merging them wholesale would
+// reintroduce contradictory pricing and CTAs.  Keep the translated shell
+// labels, while page content comes from messages/en.json until a reviewed
+// translation replaces an entire namespace.
+const INTERNATIONAL_SHELL_NAMESPACES = [
+  "locale",
+  "nav",
+  "cta",
+  "footer",
+  "cookieConsent",
+  "contactForm",
+  "errorPage",
+  "notFoundPage",
+  "loadingPage",
+] as const
+
+function pickNamespaces(source: JsonObject, namespaces: readonly string[]): JsonObject {
+  return Object.fromEntries(
+    namespaces
+      .filter((namespace) => namespace in source)
+      .map((namespace) => [namespace, source[namespace]]),
+  )
+}
+
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale
   const locale = hasLocale(routing.locales, requested)
     ? requested
     : routing.defaultLocale
   const localeMessages = (await import(`../../messages/${locale}.json`)).default as JsonObject
-  const messages = locale === "en"
+  const englishMessages = (await import("../../messages/en.json")).default as JsonObject
+  const messages = locale === "ja"
     ? localeMessages
-    : mergeMessages((await import("../../messages/en.json")).default as JsonObject, localeMessages)
+    : locale === "en"
+      ? englishMessages
+      : mergeMessages(englishMessages, pickNamespaces(localeMessages, INTERNATIONAL_SHELL_NAMESPACES))
 
   return {
     locale,

@@ -16,6 +16,7 @@ const binExt = process.platform === "win32" ? ".cmd" : ""
 process.env.PAYLOAD_READS_DISABLED_DURING_BUILD ||= "1"
 process.env.PAYLOAD_DISABLE_DATABASE_DURING_BUILD ||= "1"
 process.env.DATABASE_URI ||= "postgresql://payload:payload@127.0.0.1:1/payload"
+process.env.PAYLOAD_SECRET ||= "build-time-placeholder-secret-not-used-at-runtime"
 
 function localBin(name) {
   return path.join(process.cwd(), "node_modules", ".bin", `${name}${binExt}`)
@@ -110,10 +111,12 @@ if (!process.env.PAYLOAD_READS_DISABLED_DURING_BUILD && !process.env.PAYLOAD_DIS
   run(localBin("payload"), ["generate:importmap"])
 }
 const buildArgs = ["build"]
-if (process.argv.includes("--webpack") || process.env.NEXT_BUILD_BUNDLER === "webpack") {
-  buildArgs.push("--webpack")
-} else if (process.argv.includes("--turbo")) {
+if (process.argv.includes("--turbo") || process.env.NEXT_BUILD_BUNDLER === "turbo") {
   buildArgs.push("--turbo")
+} else {
+  // Production deploys default to webpack because Turbopack still traces Payload
+  // and generated package sources too broadly in this app.
+  buildArgs.push("--webpack")
 }
 if (!buildArgs.includes("--webpack")) {
   ensureTurbopackExternalShims()
@@ -123,6 +126,7 @@ const nextStatus = await runWithHeartbeat(localBin("next"), buildArgs, {
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",
     PAYLOAD_DISABLE_DATABASE_DURING_BUILD: "1",
     DATABASE_URI: process.env.DATABASE_URI || "postgresql://payload:payload@127.0.0.1:1/payload",
+    PAYLOAD_SECRET: process.env.PAYLOAD_SECRET,
   },
 })
 if (nextStatus !== 0) process.exit(nextStatus)

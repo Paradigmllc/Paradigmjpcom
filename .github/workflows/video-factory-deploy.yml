@@ -1,0 +1,39 @@
+name: Prepare Embedded Video Factory Storage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - docker-entrypoint.sh
+      - services/video-factory/**
+      - scripts/ops/ensure-video-factory-storage.sh
+      - .github/workflows/video-factory-deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paradigm-video-factory-storage
+  cancel-in-progress: false
+
+jobs:
+  prepare-storage:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      COOLIFY_API_URL: https://coolify.paradigmjp.com
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      PARADIGM_APP_UUID: n8i2sjiqvr2d8hrzppop2m2i
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate embedded runtime and storage automation
+        run: |
+          bash -n scripts/ops/ensure-video-factory-storage.sh
+          sh -n docker-entrypoint.sh
+          grep -q 'video_factory.web:app' docker-entrypoint.sh
+          grep -q 'services/video-factory' Dockerfile
+      - name: Ensure persistent workspace on the existing Paradigm application
+        run: bash scripts/ops/ensure-video-factory-storage.sh

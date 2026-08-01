@@ -9,8 +9,13 @@
  */
 
 import { cache } from "react"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
+import { withPayloadReadFallback } from "./payload-availability"
 import type { ThemeTokens } from "./theme-tokens"
+
+function configuredEnv(name: string): string | null {
+  const value = process.env[name]
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
+}
 
 export interface SiteSettings {
   siteName: string
@@ -89,9 +94,16 @@ const DEFAULTS: SiteSettings = {
   siteName: "Paradigm合同会社",
   tagline: "デジタルで事業を加速する",
   description: "",
-  contact: { email: "info@paradigmjp.com", phone: null, address: null, businessHours: null },
+  contact: {
+    email: "info@paradigmjp.com",
+    phone: configuredEnv("PARADIGM_LEGAL_PHONE"),
+    // Public registered address supplied by the legal owner. Keep it in
+    // English so the same legal identity is readable on every locale page.
+    address: configuredEnv("PARADIGM_LEGAL_ADDRESS") ?? "2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan",
+    businessHours: null,
+  },
   social: {
-    twitter: "https://twitter.com/paradigm_jp",
+    twitter: null,
     instagram: null,
     facebook: null,
     linkedin: null,
@@ -118,11 +130,11 @@ const DEFAULTS: SiteSettings = {
   announcement: { enabled: false, message: null, linkLabel: null, linkHref: null, variant: "ink" },
   company: {
     legalName: "Paradigm合同会社",
-    representativeName: null,
-    registrationNumber: null,
+    representativeName: configuredEnv("PARADIGM_LEGAL_REPRESENTATIVE_NAME"),
+    registrationNumber: configuredEnv("PARADIGM_LEGAL_REGISTRATION_NUMBER") ?? "5010403026363",
     foundedYear: null,
-    postalCode: null,
-    address: null,
+    postalCode: configuredEnv("PARADIGM_LEGAL_POSTAL_CODE"),
+    address: configuredEnv("PARADIGM_LEGAL_ADDRESS") ?? "2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan",
   },
 }
 
@@ -140,11 +152,7 @@ function mediaUrl(v: unknown): string | null {
  * React cache() でリクエスト中の重複呼び出しを排除。
  */
 export const getSiteSettings = cache(async (locale: string = "ja"): Promise<SiteSettings> => {
-  if (shouldSkipPayloadReads()) {
-    return DEFAULTS
-  }
-
-  try {
+  return withPayloadReadFallback("settings.findGlobal", async () => {
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
@@ -182,7 +190,12 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       siteName: s.siteName ?? DEFAULTS.siteName,
       tagline: s.tagline ?? DEFAULTS.tagline,
       description: s.description ?? DEFAULTS.description,
-      contact: { ...DEFAULTS.contact, ...(s.contact ?? {}) },
+      contact: {
+        ...DEFAULTS.contact,
+        ...(s.contact ?? {}),
+        phone: s.contact?.phone ?? DEFAULTS.contact.phone,
+        address: s.contact?.address ?? DEFAULTS.contact.address,
+      },
       social: { ...DEFAULTS.social, ...(s.social ?? {}) },
       maintenance: { ...DEFAULTS.maintenance, ...(s.maintenance ?? {}) },
       analytics: { ...DEFAULTS.analytics, ...(s.analytics ?? {}) },
@@ -201,13 +214,20 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       },
       tracking: { ...DEFAULTS.tracking, ...(s.tracking ?? {}) },
       announcement: { ...DEFAULTS.announcement, ...(s.announcement ?? {}) },
-      company: { ...DEFAULTS.company, ...(s.company ?? {}) },
+      company: {
+        ...DEFAULTS.company,
+        ...(s.company ?? {}),
+        // The public site does not publish an individual's name. Legal identity
+        // remains available through the configured disclosure channel instead.
+        representativeName: null,
+        registrationNumber: s.company?.registrationNumber ?? DEFAULTS.company.registrationNumber,
+        postalCode: s.company?.postalCode ?? DEFAULTS.company.postalCode,
+        // A verified environment value is the public address source of truth;
+        // this prevents a stale localized CMS value from leaking into English.
+        address: DEFAULTS.company.address ?? s.company?.address ?? null,
+      },
     }
-  } catch (e) {
-    markPayloadInitFailure(e)
-    console.error("[settings] payload.findGlobal failed, using defaults:", e)
-    return DEFAULTS
-  }
+  }, DEFAULTS)
 })
 
 /**

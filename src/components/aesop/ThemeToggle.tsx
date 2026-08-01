@@ -55,7 +55,10 @@ function SystemIcon({ className = "" }: { className?: string }) {
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
 
   const intent = (mounted ? theme : "system") as "system" | "light" | "dark"
   const next = NEXT_INTENT[intent] ?? "light"

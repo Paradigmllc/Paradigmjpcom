@@ -11,8 +11,35 @@
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { sanitizePublicRecord, sanitizePublicJson } from "@/lib/public-surface"
 
 export const dynamic = "force-dynamic"
+
+const PUBLIC_META_KEYS = new Set([
+  "title",
+  "description",
+  "locale",
+  "industry",
+  "company_name",
+  "companyName",
+  "accentColor",
+  "accentColorDark",
+  "generated_at",
+  "generatedAt",
+  "templateId",
+])
+
+function publicMeta(value: unknown): Record<string, unknown> {
+  const sanitized = sanitizePublicRecord(value)
+  return Object.fromEntries(
+    Object.entries(sanitized).filter(([key]) => PUBLIC_META_KEYS.has(key)),
+  )
+}
+
+function publicBlocks(value: unknown): unknown[] {
+  const sanitized = sanitizePublicJson(value)
+  return Array.isArray(sanitized) ? sanitized : []
+}
 
 export async function GET(
   _req: NextRequest,
@@ -21,29 +48,38 @@ export async function GET(
   const { slug } = await params
   try {
     const sb = getServiceSalesSupabase()
-    if (!sb) return NextResponse.json({ error: "supabase not configured" }, { status: 500 })
+    if (!sb) return NextResponse.json({ error: "demo unavailable" }, { status: 503 })
 
     const { data, error } = await sb
       .from("theme_demo_pages")
-      .select("*")
+      .select("slug,theme,title,blocks,meta,is_published,publication_status,quality_score")
       .eq("slug", slug)
       .eq("is_published", true)
+      .in("publication_status", ["published", "legacy_published"])
       .maybeSingle()
 
     if (error) {
       console.error(`[demo-pages/${slug}] fetch error:`, error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "demo unavailable" }, { status: 503 })
     }
     if (!data) {
       return NextResponse.json({ error: "not found" }, { status: 404 })
     }
 
-    return NextResponse.json(data, {
+    return NextResponse.json({
+      slug: data.slug,
+      theme: data.theme,
+      title: data.title,
+      blocks: publicBlocks(data.blocks),
+      meta: publicMeta(data.meta),
+      is_published: data.is_published,
+      quality_score: data.quality_score,
+    }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     })
   } catch (e) {
     console.error(`[demo-pages/${slug}] unexpected:`, e)
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: "demo unavailable" }, { status: 503 })
   }
 }
 
@@ -66,7 +102,7 @@ export async function POST(
   }
 
   // Validate theme
-  const validThemes = ["astrowind", "screwfast", "astroship"]
+  const validThemes = ["astrowind", "screwfast", "astroship", "zenith", "aether", "prism", "terra", "flux", "vertex", "nomad", "apex", "hyper-personalized"]
   if (!validThemes.includes(theme)) {
     return NextResponse.json({ error: `theme must be one of: ${validThemes.join(", ")}` }, { status: 400 })
   }
@@ -80,7 +116,8 @@ export async function POST(
       theme,
       blocks: blocks || [],
       meta: meta || {},
-      is_published: body.is_published !== false,
+      is_published: false,
+      publication_status: "draft",
     }
     if (title !== undefined) row.title = title
     if (company_id !== undefined) row.company_id = company_id
@@ -118,7 +155,7 @@ export async function PATCH(
   const updates: Record<string, unknown> = {}
 
   if (body.theme !== undefined) {
-    const validThemes = ["astrowind", "screwfast", "astroship"]
+    const validThemes = ["astrowind", "screwfast", "astroship", "zenith", "aether", "prism", "terra", "flux", "vertex", "nomad", "apex", "hyper-personalized"]
     if (!validThemes.includes(body.theme)) {
       return NextResponse.json({ error: `theme must be one of: ${validThemes.join(", ")}` }, { status: 400 })
     }
@@ -127,7 +164,13 @@ export async function PATCH(
   if (body.title !== undefined) updates.title = body.title
   if (body.blocks !== undefined) updates.blocks = body.blocks
   if (body.meta !== undefined) updates.meta = body.meta
-  if (body.is_published !== undefined) updates.is_published = body.is_published
+  if (body.is_published === true) {
+    return NextResponse.json({ error: "Publish through the quality-gated generator" }, { status: 422 })
+  }
+  if (body.is_published === false) {
+    updates.is_published = false
+    updates.publication_status = "draft"
+  }
   if (body.company_id !== undefined) updates.company_id = body.company_id
 
   if (Object.keys(updates).length === 0) {

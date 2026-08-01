@@ -28,7 +28,6 @@ yarn-error.log*
 .env*.local
 .env
 .env.supabase
-.env.trigger-oss
 .supabase.keys
 reset_auth.sh
 reset.php
@@ -37,7 +36,6 @@ supabase-secrets.json
 
 # vercel
 .vercel
-.trigger/
 
 # typescript
 *.tsbuildinfo
@@ -45,7 +43,10 @@ next-env.d.ts
 
 # claude code worktrees (local only)
 .claude/worktrees/
+opencode.json
 
 # Sprint 8 temp files (Notion fetch result decoding)
 .notion-mvp-*.md
 .next*.log
+docker-compose.sales-pipeline.yml
+2026-*-openclaw-backup.tar.gz

@@ -1,0 +1,137 @@
+---
+import { tokensToCSS, type DemoDesignSpec, type PageSpec } from "../../lib/design-spec"
+import BlockRenderer from "./BlockRenderer.astro"
+
+interface Props {
+  spec: DemoDesignSpec
+  section: string
+}
+
+const { spec, section } = Astro.props
+const page = spec.pages[section] as PageSpec | undefined
+const tokens = spec.design_tokens
+const philosophy = spec.design_philosophy
+const isJa = spec.locale === "ja"
+const homeHref = `/demo/${spec.slug}`
+
+const pageTitle = page?.title
+  ? `${page.title} | ${spec.company.name}`
+  : spec.company.name
+
+const styleRoots = [
+  `vh-visual-${philosophy.visual_language}`,
+  `vh-layout-${philosophy.layout_rhythm}`,
+].join(" ")
+---
+
+<!doctype html>
+<html lang={spec.locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content={page?.description ?? ""} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={page?.description ?? ""} />
+    <meta property="og:type" content="website" />
+    <title>{pageTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family={tokens.typography.headingFont.replace(/ /g, "+")}&family={tokens.typography.bodyFont.replace(/ /g, "+")}&display=swap" rel="stylesheet" />
+    <style is:inline set:html={tokensToCSS(tokens, philosophy)}></style>
+    <style is:inline set:html={`
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:var(--font-body),system-ui,sans-serif;background:var(--c-bg);color:var(--c-text);line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+      h1,h2,h3,h4{font-family:var(--font-heading),var(--font-body),system-ui,sans-serif;font-weight:800;line-height:1.15;letter-spacing:-0.02em}
+      h1{font-size:var(--font-scale-h1)}
+      h2{font-size:var(--font-scale-h2)}
+      h3{font-size:var(--font-scale-h3)}
+      a{color:inherit;text-decoration:none}
+      img{max-width:100%;height:auto;display:block}
+      .page-wrap{max-width:1100px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+      .section-py{padding-top:var(--space-section);padding-bottom:var(--space-section)}
+      /* nav */
+      .nav-root{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--c-bg) 92%,transparent);backdrop-filter:blur(18px);border-bottom:1px solid var(--c-border);height:64px;display:flex;align-items:center;padding:0 clamp(16px,4vw,40px)}
+      .nav-brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:1.05rem}
+      .nav-logo{width:32px;height:32px;border-radius:var(--radius);background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));display:grid;place-items:center;color:#fff;font-size:14px;font-weight:900;flex-shrink:0}
+      .nav-links{display:flex;align-items:center;gap:6px;margin-left:auto}
+      .nav-links a{padding:6px 12px;border-radius:var(--radius);font-size:0.88rem;font-weight:600;color:var(--c-text-muted);transition:color var(--transition)}
+      .nav-links a:hover,.nav-links a[aria-current]{color:var(--c-text)}
+      .nav-cta{padding:8px 18px!important;background:var(--c-primary);color:#fff!important;font-weight:700}
+      @media(max-width:640px){.nav-links a:not(.nav-cta){display:none}}
+      /* page */
+      .page-head{text-align:center;padding:clamp(2.5rem,7vw,5rem) clamp(16px,4vw,40px) clamp(1rem,3vw,2rem)}
+      .page-head h1{margin-bottom:0.5rem}
+      .page-head p{color:var(--c-text-muted);max-width:600px;margin:0 auto;font-size:var(--font-scale-body)}
+      .blocks{display:flex;flex-direction:column}
+      .blocks > * { padding: 0 clamp(16px,4vw,40px) }
+      /* footer */
+      .footer-root{border-top:1px solid var(--c-border);padding:clamp(2rem,5vw,4rem) clamp(16px,4vw,40px);background:var(--c-surface)}
+      .footer-inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:2rem;justify-content:space-between;align-items:flex-start}
+      .footer-tagline{font-weight:600;margin-bottom:0.4rem}
+      .footer-info{font-size:0.82rem;color:var(--c-text-muted);line-height:1.8}
+      .footer-links{display:flex;flex-wrap:wrap;gap:1.5rem}
+      .footer-links a{font-size:0.85rem;color:var(--c-text-muted);transition:color var(--transition)}
+      .footer-links a:hover{color:var(--c-text)}
+      .footer-copy{padding-top:2rem;margin-top:2rem;border-top:1px solid var(--c-border);text-align:center;font-size:0.78rem;color:var(--c-text-muted)}
+    `}></style>
+  </head>
+  <body class={styleRoots}>
+    <nav class="nav-root">
+      <a href={homeHref} class="nav-brand" aria-label={spec.company.name}>
+        <span class="nav-logo">{spec.company.name.slice(0, 2)}</span>
+        <span>{spec.company.name}</span>
+      </a>
+      <div class="nav-links">
+        {spec.site.nav.map((item) => (
+          <a href={item.href} aria-current={item.section === section ? "page" : undefined}>
+            {item.label}
+          </a>
+        ))}
+        <a href={`/demo/${spec.slug}/contact`} class="nav-cta">
+          {isJa ? "相談する" : "Contact"}
+        </a>
+      </div>
+    </nav>
+
+    <main class="page-root">
+      {section !== "home" && page && (
+        <div class="page-head">
+          <h1>{page.title}</h1>
+          {page.description && <p>{page.description}</p>}
+        </div>
+      )}
+      <div class="blocks">
+        {page?.hero && section === "home" && (
+          <BlockRenderer block={page.hero} spec={spec} />
+        )}
+        {page?.blocks.map((block) => (
+          <BlockRenderer block={block} spec={spec} />
+        ))}
+      </div>
+    </main>
+
+    <footer class="footer-root">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-tagline">
+            {spec.site.footer.tagline || spec.company.name}
+          </div>
+          <div class="footer-info">
+            {spec.site.footer.address && <div>{spec.site.footer.address}</div>}
+            {spec.site.footer.phone && <div>{spec.site.footer.phone}</div>}
+            {spec.site.footer.email && <div>{spec.site.footer.email}</div>}
+          </div>
+        </div>
+        <div class="footer-links">
+          {spec.site.nav.map((item) => (
+            <a href={item.href}>{item.label}</a>
+          ))}
+        </div>
+      </div>
+      <div class="footer-copy">
+        &copy; {new Date().getFullYear()} {spec.company.name}
+      </div>
+    </footer>
+  </body>
+</html>

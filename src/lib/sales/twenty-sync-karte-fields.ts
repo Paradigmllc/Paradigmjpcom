@@ -37,10 +37,41 @@ export function sourceDataStatus(karte: CompanyKarteSnapshot): string {
 
 export function sourceDataCounts(karte: CompanyKarteSnapshot): string {
   const total = karte.sourceItems.length || karte.collectedCount + karte.configuredCount + karte.missingCount + karte.errorCount
-  return `collected ${karte.collectedCount}/${total} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
+  const collectedLabels = karte.sourceItems
+    .filter((source) => source.status === "collected")
+    .slice(0, 5)
+    .map((source) => source.label)
+    .join(", ")
+  const prefix = `${total}+ API/OSS catalog`
+  const counts = `collected ${karte.collectedCount}/${total} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
+  return collectedLabels ? `${prefix}: ${counts}; evidence: ${collectedLabels}` : `${prefix}: ${counts}`
 }
 
 export function firstSourceError(karte: CompanyKarteSnapshot): string | null {
   const item = karte.sourceItems.find((source) => source.status === "error")
   return item ? `${item.label}: ${item.detail}`.slice(0, 500) : null
+}
+
+// Phase 7-1: per-category breakdown so the 50+ API/OSS catalog is visible in Twenty,
+// not just an aggregate count. Shows collected/total (+errors) for each source category.
+export function sourceCategoryBreakdown(karte: CompanyKarteSnapshot): string {
+  const categories = ["analysis", "list", "outreach", "orchestration", "demo", "video", "post_outreach", "asset"] as const
+  const items = karte.sourceItems
+  const parts = categories
+    .map((cat) => {
+      const inCat = items.filter((s) => s.category === cat)
+      if (inCat.length === 0) return null
+      const collected = inCat.filter((s) => s.status === "collected").length
+      const error = inCat.filter((s) => s.status === "error").length
+      return `${cat} ${collected}/${inCat.length}${error > 0 ? ` (err ${error})` : ""}`
+    })
+    .filter((part): part is string => part !== null)
+  return parts.length > 0 ? parts.join(" / ") : "no source data"
+}
+
+// Phase 7-2: deep link to the Twenty CRM for per-source detail.
+// The full source catalog remains in the company HOME summary and Supabase.
+export function sourceCoveragePanelLink(karte: CompanyKarteSnapshot): string {
+  const base = (process.env.TWENTY_BASE_URL || "https://twenty.paradigmjp.com").replace(/\/+$/, "")
+  return `${base}/companies`
 }

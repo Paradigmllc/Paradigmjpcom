@@ -36,7 +36,8 @@ export const DB_TABLES = {
   SALES_CONTRACTS: "sales_contracts",
   SALES_KPI: "sales_kpi",
   SALES_PRODUCTS: "sales_products",
-  SALES_COMPANY_PRODUCT_RECOMMENDATIONS: "sales_company_product_recommendations",
+  SALES_COMPANY_PRODUCT_RECOMMENDATIONS:
+    "sales_company_product_recommendations",
 
   // ── Activity & Sync (migration_017, 019) ──
   SALES_ACTIVITY_LOG: "sales_activity_log",
@@ -44,6 +45,7 @@ export const DB_TABLES = {
 
   // ── Operator Queue (migration_023) ──
   SALES_OPERATOR_QUEUE_ITEMS: "sales_operator_queue_items",
+  SALES_CONTACT_SUBMISSIONS: "sales_contact_submissions",
 
   // ── Tool Connections (migration_024) ──
   SALES_TOOL_CONNECTIONS: "sales_tool_connections",
@@ -80,6 +82,10 @@ export const DB_TABLES = {
   SALES_LEAD_CANDIDATE_SCORES: "sales_lead_candidate_scores",
   SALES_LEAD_CANDIDATE_RUNS: "sales_lead_candidate_runs",
   SALES_LEAD_CANDIDATE_RUN_ITEMS: "sales_lead_candidate_run_items",
+  SALES_LEAD_SOURCE_CONFIGS: "sales_lead_source_configs",
+  SALES_LEAD_SOURCE_RECORDS: "sales_lead_source_records",
+  SALES_LEAD_INVENTORY_RUNS: "sales_lead_inventory_runs",
+  SALES_LEAD_OPERATOR_EVENTS: "sales_lead_operator_events",
   SALES_PASSIVE_INVENTORY_RUNS: "sales_passive_inventory_runs",
   SALES_PASSIVE_INVENTORY_DOMAINS: "sales_passive_inventory_domains",
   SALES_PASSIVE_INVENTORY_SEGMENTS: "sales_passive_inventory_segments",
@@ -93,15 +99,21 @@ export const DB_TABLES = {
   SALES_CRM_VIEW_FIELDS: "sales_crm_view_fields",
   SALES_CRM_SELECT_OPTIONS: "sales_crm_select_options",
 
-  // ── Browser Search (migration_032) ──
-  SALES_BROWSER_SEARCH_RUNS: "sales_searxng_search_runs",
-  SALES_BROWSER_SEARCH_RESULTS: "sales_searxng_search_results",
-
   // ── Japan Readiness (migration_033) ──
   SALES_JAPAN_READINESS_INSIGHTS: "sales_japan_readiness_insights",
+  SALES_JAPAN_ENTRY_PROJECTIONS: "sales_japan_entry_projections",
+  SALES_INITIAL_FORM_DRAFTS: "sales_initial_form_drafts",
+  SALES_REPORT_FACTORY_STATE: "sales_report_factory_state",
 
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",
+
+  // ── Video Factory audited OSS engine catalog ──
+  VIDEO_FACTORY_ENGINE_PROFILES: "video_factory_engine_profiles",
+  VIDEO_FACTORY_ENGINE_EVENTS: "video_factory_engine_events",
+
+  // ── Pipeline Metrics (migration_066) ──
+  SALES_PIPELINE_METRICS: "sales_pipeline_metrics",
 
   // ── Platform Health (migration_025) ──
   SALES_PLATFORM_HEALTH_SNAPSHOTS: "sales_platform_health_snapshots",
@@ -114,6 +126,19 @@ export const DB_TABLES = {
 
   // ── Theme Demo Pages (migration_058) ──
   THEME_DEMO_PAGES: "theme_demo_pages",
+
+  // ── Demo Contact Submissions ──
+  DEMO_CONTACT_SUBMISSIONS: "demo_contact_submissions",
+
+  // Public utility runs (migration_072)
+  PUBLIC_JAPAN_ENTRY_CHECKS: "public_japan_entry_checks",
+
+  // Dedicated manual Japan Entry workbench (never part of Sales OS automation)
+  MANUAL_JAPAN_ENTRY_WORK: "manual_japan_entry_work",
+  MANUAL_JAPAN_ENTRY_BATCHES: "manual_japan_entry_batches",
+  MANUAL_JAPAN_ENTRY_BATCH_ITEMS: "manual_japan_entry_batch_items",
+  MANUAL_JAPAN_ENTRY_SOURCE_CATALOG: "manual_japan_entry_source_catalog",
+  MANUAL_JAPAN_ENTRY_WORK_SOURCES: "manual_japan_entry_work_sources",
 
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",

@@ -9,6 +9,23 @@ export const INDUSTRY_HOOK_JA: Record<Industry, string> = {
   retail: "商品の魅力が検索、SNS、スマホ画面で十分に伝わらないと、購入前の離脱が増えます。購買導線の摩擦を見ます。",
   cleaning: "急ぎの見込み客ほど、見積もりまでが簡単な事業者を選びます。問い合わせ導線の短さが受注率に影響します。",
   consulting: "専門性の証拠と初回相談への導線が整理されていないと、比較検討中の企業に選ばれにくくなります。",
+  // Generic hooks for additional industries
+  "Hospitality / Food": "集客と予約導線の摩擦が収益機会を逃していないか、公開データから改善余地を探ります。",
+  "E-Commerce / Retail": "商品訴求と購買導線の摩擦がコンバージョンを損なっていないか、データに基づいて診断します。",
+  "Technology / IT": "技術力の見せ方と問い合わせ導線の短さが商談獲得に影響していないか、証拠に基づいて確認します。",
+  "Healthcare / Medical": "予約・相談導線のわかりやすさと信頼材料の充実度を公開データから評価します。",
+  "Manufacturing / Industrial": "製品・技術の訴求力と問い合わせ導線の短さが引き合い獲得に影響していないか診断します。",
+  "Real Estate / Property": "物件訴求と問い合わせ導線の摩擦が反響率を損なっていないか、データから改善点を見つけます。",
+  "Education / Training": "講座・プログラムの魅力が検索・SNSで十分伝わっているか、導線の摩擦を診断します。",
+  "Legal / Professional Services": "専門性の見せ方と初回相談への導線がクライアント獲得に影響していないか確認します。",
+  "Finance / Insurance": "信頼形成と問い合わせ導線の短さが引合獲得に影響していないか、公開データから診断します。",
+  "Transport / Logistics": "サービス訴求と見積り導線の摩擦が引き合いを逃していないか、データに基づいて評価します。",
+  "Media / Entertainment": "コンテンツの魅力と収益化導線の摩擦が機会損失につながっていないか診断します。",
+  "Nonprofit / Government": "情報発信と参加導線のわかりやすさが支援・協力の獲得に影響していないか評価します。",
+  "Energy / Utilities": "サービス訴求と問い合わせ導線の短さが引き合い獲得に影響していないか診断します。",
+  "Agriculture / Farming": "産品・サービスの魅力が検索で十分伝わっているか、導線の摩擦を評価します。",
+  "Fashion / Apparel": "ブランド訴求と購買導線の摩擦がコンバージョンを損なっていないか診断します。",
+  Other: "公開データに基づき、売上機会・信頼形成・問い合わせ導線の改善余地を診断します。",
 }
 
 export const INDUSTRY_HOOK_EN: Record<Industry, string> = {
@@ -20,6 +37,22 @@ export const INDUSTRY_HOOK_EN: Record<Industry, string> = {
   retail: "When product appeal is not clear across search, social, and mobile, buyers leave before purchase intent matures.",
   cleaning: "Urgent prospects often choose the easiest quote path, so even a slightly long inquiry flow can lose demand.",
   consulting: "Clear proof of expertise and a low-friction first consultation path are essential to be shortlisted.",
+  "Hospitality / Food": "We evaluate whether booking friction and trust gaps are quietly leaking high-intent customers.",
+  "E-Commerce / Retail": "We check if product presentation and purchase path friction are hurting conversion using public evidence.",
+  "Technology / IT": "We assess whether technical proof and inquiry friction are limiting your sales pipeline.",
+  "Healthcare / Medical": "We review clarity of appointment paths and trust signals using publicly available health service data.",
+  "Manufacturing / Industrial": "We examine if product presentation and inquiry friction are costing you competitive leads.",
+  "Real Estate / Property": "We check if listing appeal and inquiry friction are affecting your response rates.",
+  "Education / Training": "We evaluate if program appeal across search and social is reaching potential students effectively.",
+  "Legal / Professional Services": "We assess whether expertise proof and consultation paths are impacting client acquisition.",
+  "Finance / Insurance": "We review if trust formation and inquiry friction are limiting prospect engagement.",
+  "Transport / Logistics": "We evaluate if service presentation and quote path friction are costing you inquiries.",
+  "Media / Entertainment": "We check if content appeal and monetization paths are leaking engagement opportunities.",
+  "Nonprofit / Government": "We assess if information clarity and participation paths are impacting support acquisition.",
+  "Energy / Utilities": "We evaluate if service presentation and inquiry friction are affecting lead generation.",
+  "Agriculture / Farming": "We check if product appeal is reaching buyers effectively through search channels.",
+  "Fashion / Apparel": "We consider if brand presentation and purchase path friction are hurting conversion.",
+  Other: "We use public evidence to identify the highest-impact improvements across revenue, trust, and inquiry flow.",
 }
 
 export const ISSUE_ICON: Partial<Record<string, string>> = {

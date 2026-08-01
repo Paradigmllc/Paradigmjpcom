@@ -21,7 +21,8 @@ export class PageSpeedClient extends BaseApiClient {
   public async run(url: string, strategy: "mobile" | "desktop" = "mobile"): Promise<ApiClientResponse<PsiResultData>> {
     const runFetch = async (useKey: boolean): Promise<ApiClientResponse<PsiResultData>> => {
       const params = new URLSearchParams({ url, strategy, category: "performance" });
-      const key = (process.env.GOOGLE_PSI_API_KEY ?? "").replace(/^'|'$/g, "").trim();
+      const rawKey = process.env.GOOGLE_PSI_API_KEY?.trim()
+      const key = rawKey ? rawKey.replace(/^'|'$/g, "").trim() : null
       if (useKey && key) {
         params.set("key", key);
       }
@@ -69,4 +70,3 @@ export class PageSpeedClient extends BaseApiClient {
 }
 
 export const pageSpeedApi = new PageSpeedClient();
-

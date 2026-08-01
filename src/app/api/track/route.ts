@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -25,6 +26,18 @@ export async function GET(req: NextRequest) {
 
   if (!slug) {
     return NextResponse.json({ error: "slug required" }, { status: 400 })
+  }
+  if (slug.length > 200 || !["view", "cta_click"].includes(event)) {
+    return NextResponse.json({ error: "invalid tracking event" }, { status: 400 })
+  }
+  const rateLimit = checkRateLimit({
+    ip: getClientIp(req),
+    key: "api:track",
+    max: 120,
+    windowMs: 60_000,
+  })
+  if (!rateLimit.ok) {
+    return new Response("rate limited", { status: 429, headers: { "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)) } })
   }
 
   const visit = {
@@ -46,9 +59,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Find company by demo slug (stored in theme_demo_pages)
-    const { data: demoPage } = await sb
-      .from(DB_TABLES.THEME_DEMO_PAGES)
-      .select("company_id, slug")
+      const { data: demoPage } = await sb
+        .from(DB_TABLES.THEME_DEMO_PAGES)
+        .select("company_id, slug, meta")
       .eq("slug", slug)
       .maybeSingle()
 
@@ -63,7 +76,9 @@ export async function GET(req: NextRequest) {
 
       if (error) {
         // Fallback: store in theme_demo_pages meta
-        const existingMeta = (demoPage as any)?.meta || {}
+        const existingMeta = demoPage.meta && typeof demoPage.meta === "object" && !Array.isArray(demoPage.meta)
+          ? demoPage.meta as Record<string, unknown>
+          : {}
         const visits = Array.isArray(existingMeta.visits) ? existingMeta.visits : []
         visits.push(visit)
         await sb

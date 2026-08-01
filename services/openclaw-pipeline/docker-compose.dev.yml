@@ -1,0 +1,23 @@
+# OpenClaw Pipeline — Development Compose Override
+# 2026-07-06: OpenClaw replaces Trigger.dev as the pipeline orchestrator.
+# The pipeline runs INSIDE the app container (not a separate service).
+# This compose file is for local development/testing only.
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - TWENTY_API_KEY=${TWENTY_API_KEY}
+      - TWENTY_BASE_URL=${TWENTY_BASE_URL:-https://twenty.paradigmjp.com}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_API_BASE=${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL:-deepseek-v4-pro}
+      - SALES_SUPABASE_URL=${SALES_SUPABASE_URL}
+      - SALES_SUPABASE_SERVICE_ROLE_KEY=${SALES_SUPABASE_SERVICE_ROLE_KEY}
+      - CRAWL4AI_BASE_URL=${CRAWL4AI_BASE_URL}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../services/openclaw-pipeline:/app/openclaw-pipeline:ro

@@ -1,0 +1,66 @@
+version: 1
+updated_at: 2026-08-01
+entries:
+  - id: hyperframes
+    component: code
+    source: https://github.com/heygen-com/hyperframes
+    pinned_version: 0.7.87
+    license: Apache-2.0
+    production_status: approved
+    notes: Media bundled with examples has separate rights and must not be reused automatically.
+  - id: comfyui
+    component: code
+    source: https://github.com/Comfy-Org/ComfyUI
+    pinned_version: v0.28.0
+    license: GPL-3.0
+    production_status: approved_as_separate_service
+    notes: Every model, custom node, LoRA, font, voice, and output API has its own terms.
+  - id: prefect
+    component: code
+    source: https://github.com/PrefectHQ/prefect
+    pinned_version: "3.x"
+    license: Apache-2.0
+    production_status: approved
+  - id: playwright
+    component: code
+    source: https://github.com/microsoft/playwright
+    pinned_version: 1.59.1
+    license: Apache-2.0
+    production_status: approved
+  - id: ffmpeg
+    component: binary
+    source: https://ffmpeg.org
+    pinned_version: system
+    license: BUILD_DEPENDENT
+    production_status: approved_with_build_review
+  - id: blender-adapter
+    component: external_engine
+    source: https://github.com/blender/blender
+    pinned_version: 085eebde0d27bdd56760abfb763b741ae1148a8e
+    license: GPL-3.0-or-later
+    production_status: approved_worker_required
+  - id: manim-adapter
+    component: external_engine
+    source: https://github.com/ManimCommunity/manim
+    pinned_version: 6f20425eef98cd3513df857507fdc3126c6e9950
+    license: MIT
+    production_status: approved_worker_required
+  - id: liveportrait-adapter
+    component: external_engine
+    source: https://github.com/KlingAIResearch/LivePortrait
+    pinned_version: 9b294b3d0536135442ea73cb01e6cb3ca7029dd3
+    license: REVIEW_CODE_AND_MODEL
+    production_status: disabled
+  - id: musetalk-adapter
+    component: external_engine
+    source: https://github.com/TMElyralab/MuseTalk
+    pinned_version: 0a89dec45a0192b824e3cf4daf96c239440c5ed8
+    license: REVIEW_CODE_AND_MODEL
+    production_status: disabled
+  - id: major-oss-engine-profile-catalog
+    component: policy_manifest
+    source: config/engine-profiles.yaml
+    pinned_version: 1
+    license: MIXED_PER_PROFILE
+    production_status: fail_closed_per_profile
+    notes: Forty non-Wan profiles record exact upstream revision, code/model license, VRAM, workflow, weight, and reviewer gates; noncommercial or oversized profiles remain blocked.

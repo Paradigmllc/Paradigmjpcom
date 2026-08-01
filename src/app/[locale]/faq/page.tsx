@@ -8,8 +8,6 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
-import { getPayload } from "payload"
-import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { Link } from "@/i18n/routing"
@@ -18,9 +16,10 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
+import { FAQS_EN } from "@/lib/data"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -36,6 +35,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 type FaqDoc = { id: string | number; question?: string; answer?: unknown }
 type LexicalNode = { type?: string; text?: string; children?: LexicalNode[] }
+
+const JAPANESE_GENERAL_FAQS = [
+  { q: "どのようなサービスに対応していますか？", a: "Web制作、MEO、SEO/GEO、AI導入支援を、目的と運用体制に合わせて設計・実装します。" },
+  { q: "相談から公開までの流れを教えてください。", a: "お問い合わせの内容を確認し、現状と目的を整理したうえで、実装範囲、スケジュール、費用を提案します。合意後に制作・検証・公開へ進みます。" },
+  { q: "既存サイトのリニューアルは可能ですか？", a: "可能です。既存URL、コンテンツ、計測、CMS、リダイレクトを確認し、公開後の運用まで含めて移行計画を作成します。" },
+  { q: "公開後の保守・運用も依頼できますか？", a: "対応可能です。更新範囲、対応時間、月額費用、第三者サービス費用を見積書と契約書に明記します。" },
+  { q: "AIの導入で成果は保証されますか？", a: "特定の売上や順位は保証しません。対象業務、基準値、人の確認工程、評価期間を決め、実測結果で改善を判断します。" },
+  { q: "相談だけでも大丈夫ですか？", a: "はい。現在の課題と目標をお聞かせください。必要な情報と次の選択肢を整理してご連絡します。" },
+] as const
 
 function lexicalToPlainText(node: unknown): string {
   if (!node || typeof node !== "object") return ""
@@ -54,10 +62,15 @@ export default async function FaqPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "faqPage" })
+  const translatedPublicFaqs = locale === "ja"
+    ? [...JAPANESE_GENERAL_FAQS]
+    : (t.raw("items") as Array<{ q: string; a: string }>)
 
-  let faqs: FaqDoc[] = []
-  if (!shouldSkipPayloadReads()) {
-    try {
+  const faqs = translatedPublicFaqs ? [] : await withPayloadReadFallback<FaqDoc[]>("faq.payload.find", async () => {
+      const [{ getPayload }, { default: config }] = await Promise.all([
+        import("payload"),
+        import("@payload-config"),
+      ])
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "faqs",
@@ -67,14 +80,13 @@ export default async function FaqPage({ params }: Props) {
         depth: 0,
         ...localeFindOptions(locale),
       })
-      faqs = (res.docs as unknown as FaqDoc[]) ?? []
-    } catch (e) {
-      markPayloadInitFailure(e)
-      console.error("[faq] payload.find failed:", e)
-    }
-  }
+      return (res.docs as unknown as FaqDoc[]) ?? []
+  }, FAQS_EN.map((f, i) => ({ id: i, question: f.q, answer: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: f.a }] }], direction: "ltr", format: "", indent: 0, version: 1 } } })))
 
-  const faqPairs = faqs.map((f) => ({ q: f.question ?? "", a: lexicalToPlainText(f.answer) }))
+  const cmsFaqPairs = faqs
+    .map((f) => ({ q: f.question?.trim() ?? "", a: lexicalToPlainText(f.answer).trim() }))
+    .filter((faq) => faq.q.length > 0 && faq.a.length > 0)
+  const faqPairs = translatedPublicFaqs ?? cmsFaqPairs
 
   return (
     <>
@@ -89,25 +101,28 @@ export default async function FaqPage({ params }: Props) {
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
           {faqPairs.length === 0 ? (
-            <FadeIn className="text-center paradigm-glass rounded-2xl p-8 paradigm-glow-md">
+            <FadeIn className="text-center paradigm-glass rounded-lg p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link
+                href={locale !== "ja" ? "/contact?intent=japan-entry" : "/contact"}
+                {...(locale !== "ja" ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "faq-empty" } : {})}
+                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+              >
                 {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
             <ul className="space-y-3">
               {faqPairs.map((faq, i) => (
-                <FadeIn key={i} delay={i * 0.04}>
-                  <li className="paradigm-glass rounded-2xl paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
+                <FadeIn key={faq.q} delay={i * 0.04} as="li" className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
                     <details className="group">
                       <summary className="cursor-pointer flex items-start gap-4 p-5 list-none [&::-webkit-details-marker]:hidden">
-                        <span className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
+                        <span aria-hidden className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
                           Q.
                         </span>
-                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4 tracking-[-0.005em]">
+                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4">
                           {faq.q}
                         </span>
                         <span aria-hidden className="shrink-0 text-paradigm-ink-mute mt-1 group-open:rotate-45 transition-transform text-[20px] leading-none">+</span>
@@ -116,7 +131,6 @@ export default async function FaqPage({ params }: Props) {
                         <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.85] whitespace-pre-line">{faq.a}</p>
                       </div>
                     </details>
-                  </li>
                 </FadeIn>
               ))}
             </ul>
@@ -134,6 +148,8 @@ export default async function FaqPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+        buttonHref={locale !== "ja" ? "/contact?intent=japan-entry" : "/contact"}
+        analyticsSource="faq-final-cta"
       />
     </>
   )

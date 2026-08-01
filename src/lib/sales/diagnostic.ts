@@ -1,9 +1,9 @@
 /**
  * Diagnostic report data builder.
  *
- * Builds the public/private report payload from the Supabase Sales OS SSOT:
- * company facts, collected OSS/API evidence, business impact hypotheses, and
- * selected content templates for `/[locale]/report/[slug]`.
+ * Builds the public/private report payload from the sales event store:
+ * company facts mirrored from Twenty, collected OSS/API evidence, business
+ * impact hypotheses, and selected content templates for `/[locale]/report/[slug]`.
  */
 
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
@@ -15,6 +15,8 @@ import {
   normalizeReportLocale,
   normalizeTargetCountry,
   normalizeTemplateVariant,
+  REPORT_LOCALES,
+  buildReportUrl,
   type ReportLocale,
   type TemplateVariant,
 } from "./routing"
@@ -40,12 +42,19 @@ import { buildVisualEvidenceStory } from "./diagnostic/visual-story"
 import type { DiagnosticReportData } from "./diagnostic/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { sanitizeBlocks } from "@/lib/mvp/hallucination-guard"
+import {
+  companyContactFormUrl,
+  companyDemoSite,
+  companyVisualEvidence,
+  mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
 
 export type {
   DiagnosticAct,
   DiagnosticReportData,
   CompanyMeta,
   ImprovementPreview,
+  LocalizedReportLink,
   PersonalizedCopy,
   VisitorJourneyStep,
   VisualEvidenceAnnotation,
@@ -77,20 +86,10 @@ export async function fetchDiagnosticReport(opts: {
         : null
   if (!company) return null
 
-  // Skip regeneration if report is fresh (within REPORT_REGENERATE_MAX_AGE_DAYS, default 7)
-  // NOTE: fresh reports still return data — the freshness check only gates costly regeneration,
-  // not the report display. Returning null here caused 404s for valid recently-generated reports.
-  const regenerate =
-    opts.forceRegenerate ||
-    !company.report_generated_at ||
-    (() => {
-      const maxAgeDays = parseInt(process.env.REPORT_REGENERATE_MAX_AGE_DAYS ?? "7", 10) || 7
-      const reportAge = Date.now() - new Date(company.report_generated_at).getTime()
-      return reportAge >= maxAgeDays * 24 * 60 * 60 * 1000
-    })()
-  if (!regenerate) {
-    // report is fresh, using cached data
-  }
+  // Report freshness/regeneration is handled out-of-band (markReportGenerated +
+  // webhook/admin-triggered event drains). This fetch always returns the latest persisted data so that
+  // recently-generated reports never 404. REPORT_REGENERATE_MAX_AGE_DAYS and
+  // opts.forceRegenerate are consumed by the regeneration job, not the display path.
 
   const routing = getRoutingMeta(company.meta)
   const reportLocale = normalizeReportLocale(opts.reportLocale ?? company.report_locale ?? routing.report_locale, region)
@@ -131,9 +130,10 @@ export async function fetchDiagnosticReport(opts: {
   if (personalizedCopy?.personalized_loss && acts[2]) acts[2] = { ...acts[2], body: personalizedCopy.personalized_loss }
 
   const totalLossYen = templates.reduce((sum, template) => sum + parseLossYen(template.loss), 0)
-  const demoSite = asRecord(company.meta.demo_site)
+  const unifiedMeta = mergedCompanyMeta(company)
+  const demoSite = companyDemoSite(company)
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url : null
-  const visualEvidence = asRecord(company.meta.visual_evidence)
+  const visualEvidence = companyVisualEvidence(company)
   const visualScreenshots = asRecord(visualEvidence?.screenshots)
   const desktopScreenshot = asRecord(visualScreenshots?.desktop)
   const mobileScreenshot = asRecord(visualScreenshots?.mobile)
@@ -144,8 +144,8 @@ export async function fetchDiagnosticReport(opts: {
   const screenshotUrl =
     typeof desktopScreenshot?.url === "string"
       ? desktopScreenshot.url
-      : typeof company.meta?.screenshot_url === "string"
-        ? company.meta.screenshot_url
+      : typeof unifiedMeta.screenshot_url === "string"
+        ? unifiedMeta.screenshot_url
         : null
   const screenshotMobileUrl = typeof mobileScreenshot?.url === "string" ? mobileScreenshot.url : null
   const evidenceShotCandidates = [
@@ -162,14 +162,14 @@ export async function fetchDiagnosticReport(opts: {
   const evidenceScreenshotKind =
     typeof evidenceScreenshot?.viewport === "string" ? evidenceScreenshot.viewport : evidenceScreenshotUrl ? "desktop" : null
   const visualStory = buildVisualEvidenceStory({
-    meta: (company.meta ?? {}) as Record<string, unknown>,
+    meta: unifiedMeta,
     acts,
     sourceCoverage,
     templateVariant,
     reportLocale,
   })
 
-  const rawMeta = (company.meta ?? {}) as Record<string, unknown>
+  const rawMeta = unifiedMeta
   const metaUnifiedProfile = rawMeta.unified_profile as Record<string, unknown> | undefined
   const metaBlocks = rawMeta.blocks
   const sanitized = sanitizeBlocks(metaBlocks, metaUnifiedProfile)
@@ -178,7 +178,9 @@ export async function fetchDiagnosticReport(opts: {
   }
   const safeMeta = metaBlocks != null ? { ...rawMeta, blocks: sanitized.blocks } : rawMeta
 
-  return {
+  const intelligence = buildCompanyIntelligence(company, sourceCoverage?.items ?? [])
+
+  const reportResult: DiagnosticReportData = {
     company_name: company.company_name,
     report_locale: reportLocale,
     target_country: targetCountry,
@@ -199,22 +201,49 @@ export async function fetchDiagnosticReport(opts: {
     visual_annotations: visualStory.visualAnnotations,
     improvement_preview: visualStory.improvementPreview,
     visitor_journey: visualStory.visitorJourney,
-    source_coverage: sourceCoverage,
-    intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
+    source_coverage: sourceCoverage ?? { score: 0, collected: 0, configured: 0, missing: 0, items: [] },
+    intelligence: intelligence ?? { signals: [], painPoints: [], nextActions: [] },
     meta: safeMeta,
-    contactFormUrl: (company.meta?.contact_form_url as string) ?? null,
-    content_template: {
-      title: contentTemplate.title,
-      purpose: contentTemplate.purpose,
-      quality_bar: contentTemplate.quality_bar,
-      dify_selection_rule: contentTemplate.dify_selection_rule,
-      prompt_template: contentTemplate.prompt_template,
-      offer_code: contentTemplate.offer_code,
-      appeal_angle: contentTemplate.appeal_angle,
-    },
+    contactFormUrl: companyContactFormUrl(company),
+    content_template: contentTemplate
+      ? {
+          title: contentTemplate.title ?? "",
+          purpose: contentTemplate.purpose ?? "",
+          quality_bar: contentTemplate.quality_bar ?? "",
+          dify_selection_rule: contentTemplate.dify_selection_rule ?? "",
+          prompt_template: contentTemplate.prompt_template ?? "",
+          offer_code: contentTemplate.offer_code ?? "",
+          appeal_angle: contentTemplate.appeal_angle ?? "",
+        }
+      : {
+          title: "",
+          purpose: "",
+          quality_bar: "",
+          dify_selection_rule: "",
+          prompt_template: "",
+          offer_code: "",
+          appeal_angle: "speed_conversion" as const,
+        },
     report_url: reportUrlFor(company, reportLocale),
-    video_url: typeof company.meta?.video_url === "string" ? company.meta.video_url : null,
+    video_url: typeof unifiedMeta.video_url === "string" ? unifiedMeta.video_url : null,
+    localized_report_urls: company.slug
+      ? REPORT_LOCALES.map((locale) => ({
+          label: locale === reportLocale ? `${locale.toUpperCase()} (active)` : locale.toUpperCase(),
+          url: buildReportUrl(locale, company.slug!),
+        }))
+      : [],
   }
+
+  // Safe wrapper: guarantee all fields accessed by the DiagnosticReport
+  // client component are non-null with sensible defaults.
+  const safeReport: DiagnosticReportData = {
+    ...reportResult,
+    acts: reportResult.acts ?? [],
+    localized_report_urls: reportResult.localized_report_urls ?? [],
+    total_loss: reportResult.total_loss ?? "0",
+  }
+
+  return safeReport
 }
 
 /** Mark report as freshly generated so auto-regeneration can skip until data changes. */

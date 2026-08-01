@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { motion } from "framer-motion"
 
@@ -72,16 +72,16 @@ export function PerformanceGauge({
           transition={{ duration: 1.2, ease: "easeOut" }}
           transform="rotate(-90 90 90)"
         />
-        <text x="90" y="82" textAnchor="middle" className="fill-slate-800" fontSize="28" fontWeight="bold">
+        <text x="90" y="82" textAnchor="middle" className="fill-slate-100" fontSize="28" fontWeight="bold">
           {score}
         </text>
-        <text x="90" y="105" textAnchor="middle" className="fill-slate-400" fontSize="12">
+        <text x="90" y="105" textAnchor="middle" className="fill-slate-300" fontSize="12">
           / {maxScore}
         </text>
       </svg>
-      <p className="text-sm font-semibold text-slate-700 mt-1">{label}</p>
+      <p className="text-sm font-semibold text-slate-100 mt-1">{label}</p>
       {industryAvg != null && (
-        <p className="text-xs text-slate-400">{lang === "ja" ? `業界平均 ${industryAvg} 点` : `Industry avg ${industryAvg}`}</p>
+        <p className="text-xs text-slate-300">{lang === "ja" ? `業界平均 ${industryAvg} 点` : `Industry avg ${industryAvg}`}</p>
       )}
     </motion.div>
   )
@@ -95,7 +95,9 @@ export function LossImpactBar({ items, lang = "ja" }: { items: LossImpactItem[];
   const gap = 8
   const h = items.length * (barH + gap) + 20
   const w = 500
-  const fmtAmount = (n: number) => lang === "ja" ? `¥${(n / 10000).toFixed(1)}万` : `$${Math.round(n / 110).toLocaleString()}`
+  const fmtAmount = (n: number) => lang === "ja"
+    ? `¥${(n / 10000).toFixed(1)}万`
+    : `$${Math.round(n).toLocaleString("en-US")}`
 
   return (
     <motion.div className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>

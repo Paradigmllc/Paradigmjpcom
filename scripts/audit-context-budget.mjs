@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const HOME = process.env.USERPROFILE || process.env.HOME || "";
+const HOME = process.env.USERPROFILE || process.env.HOME;
 
 const SKIP_DIRS = new Set([
   ".git",

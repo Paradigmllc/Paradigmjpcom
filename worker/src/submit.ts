@@ -40,6 +40,9 @@ function roleOf(name: string): Role {
 const SUCCESS_RE =
   /ありがとうございます|送信(が)?(完了しました|されました|を受け付け)|受け付けました|受付しました|thank you|successfully sent|message sent|mail_sent/i
 
+const THANK_YOU_URL_RE =
+  /thank(?:s|.?you)|complete|confirm|success|sent|thanks|done|finish|完了|送信完了|確認|サンクス/i
+
 async function fillFields(page: Page, input: SubmitInput): Promise<number> {
   const controls = await page.$$("input, textarea")
   let filled = 0
@@ -105,9 +108,17 @@ export async function submitForm(input: SubmitInput): Promise<SubmitResult> {
         console.warn("[worker/submit] networkidle wait failed:", error)
       })
 
+      const currentUrl = page.url()
+      if (currentUrl !== input.formUrl && THANK_YOU_URL_RE.test(currentUrl)) {
+        return { ok: true, outcome: "submitted", detail: "Submit completed; redirected to thank-you page." }
+      }
+
       const body = await page.content()
       if (SUCCESS_RE.test(body)) {
         return { ok: true, outcome: "submitted", detail: "Submit completed; success text detected." }
+      }
+      if (currentUrl !== input.formUrl) {
+        return { ok: true, outcome: "submitted", detail: "Submit completed; page URL changed after submission." }
       }
       return { ok: true, outcome: "uncertain", detail: "Submitted, but success text was not detected." }
     })

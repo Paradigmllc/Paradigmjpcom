@@ -1,0 +1,439 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from .adapters.base import EngineContext
+from .adapters.registry import AdapterRegistry
+from .compositor import compose_master
+from .delivery import deliver_project
+from .engine_profiles import (
+    load_engine_profile_catalog,
+    manifest_requires_managed_gpu,
+    required_managed_oss_profiles,
+)
+from .finalization import finalize_project
+from .gpu_lifecycle import ensure_gpu_ready, release_gpu_if_idle, run_lifecycle
+from .gpu_lifecycle_state import GpuLease, acquire_gpu_lease
+from .io import load_brief, write_json, write_model
+from .models import (
+    ClientBrief,
+    DeliverableSpec,
+    PipelineResult,
+    ReviewStage,
+    ReviewStatus,
+    ShotManifest,
+    ValidationReport,
+)
+from .operator_events import emit_operator_event
+from .orchestration import flow, task
+from .planner import plan_brief
+from .qa import run_technical_qa
+from .review import approve_review, create_pending_review
+from .router import route_manifest
+from .settings import Settings
+from .state import initialize_project_state, transition_project_state
+from .validation import validate_brief
+from .workspace import ProjectWorkspace
+
+
+def _resolve_service_root() -> Path:
+    configured = os.getenv("VIDEO_FACTORY_ROOT", "").strip()
+    if configured:
+        root = Path(configured).expanduser().resolve()
+        if not (root / "config" / "engine-routing.yaml").is_file():
+            raise FileNotFoundError(
+                f"VIDEO_FACTORY_ROOT does not contain config/engine-routing.yaml: {root}"
+            )
+        return root
+
+    for root in (Path(__file__).resolve().parents[2], Path.cwd().resolve()):
+        if (root / "config" / "engine-routing.yaml").is_file():
+            return root
+    raise FileNotFoundError("Video Factory service root was not found; set VIDEO_FACTORY_ROOT")
+
+
+SERVICE_ROOT = _resolve_service_root()
+
+
+def _manifest_profile_ids(manifest: ShotManifest) -> list[str]:
+    return sorted(
+        {
+            profile_id
+            for shots in [manifest.shots, *manifest.localized_shots.values()]
+            for shot in shots
+            if (profile_id := str(shot.metadata.get("engine_profile_id") or "").strip())
+        }
+    )
+
+
+def _emit_profile_events(
+    settings: Settings,
+    manifest: ShotManifest,
+    *,
+    event_type: str,
+    title: str,
+    message: str,
+    state: str,
+    progress: int,
+    run_id: str | None,
+    error_message: str | None = None,
+) -> None:
+    for profile_id in _manifest_profile_ids(manifest):
+        run_lifecycle(
+            emit_operator_event(
+                settings,
+                event_type=event_type,
+                title=title,
+                message=message,
+                run_id=run_id,
+                profile_id=profile_id,
+                project_id=manifest.project_id,
+                state=state,
+                progress=progress,
+                error_message=error_message,
+            )
+        )
+
+
+def _dry_run_spec(spec: DeliverableSpec, *, max_dimension: int = 640) -> DeliverableSpec:
+    largest = max(spec.width, spec.height)
+    if largest <= max_dimension and spec.fps <= 15:
+        return spec
+    scale = min(1.0, max_dimension / largest)
+    width = max(320, int(round(spec.width * scale / 2) * 2))
+    height = max(320, int(round(spec.height * scale / 2) * 2))
+    return spec.model_copy(update={"width": width, "height": height, "fps": 15})
+
+
+def _dry_run_manifest(manifest: ShotManifest) -> ShotManifest:
+    deliverables = [_dry_run_spec(item) for item in manifest.deliverables]
+    primary_name = manifest.primary_deliverable.name
+    primary = next(item for item in deliverables if item.name == primary_name)
+    return manifest.model_copy(
+        update={"primary_deliverable": primary, "deliverables": deliverables}
+    )
+
+
+@task(retries=0)
+def validate_task(brief_path: str) -> tuple[ClientBrief, ValidationReport]:
+    brief = load_brief(brief_path)
+    report = validate_brief(brief)
+    if not report.valid:
+        messages = "; ".join(item.message for item in report.findings)
+        raise ValueError(f"Brief validation failed: {messages}")
+    return brief, report
+
+
+@task(retries=0)
+def plan_task(brief: ClientBrief, settings: Settings, provider: str) -> ShotManifest:
+    return plan_brief(brief, settings, provider=provider)
+
+
+@task(retries=0)
+def route_task(manifest: ShotManifest, settings: Settings, dry_run: bool) -> ShotManifest:
+    return route_manifest(
+        manifest,
+        settings,
+        SERVICE_ROOT / "config" / "engine-routing.yaml",
+        dry_run=dry_run,
+    )
+
+
+def _production_flow_impl(
+    *,
+    settings: Settings,
+    brief: ClientBrief,
+    validation_report: ValidationReport,
+    manifest: ShotManifest,
+    dry_run: bool,
+    auto_approve: bool = False,
+    reviewer: str = "Automated test fixture",
+    delivery_target: str = "local",
+) -> PipelineResult:
+    workspace = ProjectWorkspace.create(settings.workspace, manifest.project_id)
+
+    write_model(workspace.root / "brief.json", brief)
+    write_model(workspace.root / "validation.json", validation_report)
+    manifest_path = write_model(workspace.root / "shot-manifest.json", manifest)
+    state_path = workspace.root / "state.json"
+    initialize_project_state(
+        state_path,
+        manifest.project_id,
+        dry_run=dry_run,
+    )
+
+    registry = AdapterRegistry(settings, SERVICE_ROOT)
+    outputs_by_deliverable: dict[str, list[dict[str, object]]] = {}
+    master_paths: dict[str, str] = {}
+    qa_paths: dict[str, str] = {}
+    all_qa_passed = True
+
+    for deliverable in manifest.deliverables:
+        language = deliverable.language.split("-")[0]
+        shots = manifest.shots_for_language(language)
+        context = EngineContext(
+            settings=settings,
+            workspace=workspace,
+            manifest=manifest,
+            deliverable=deliverable,
+            dry_run=dry_run,
+            namespace=deliverable.name,
+        )
+        outputs = []
+        for shot in shots:
+            if shot.engine is None:
+                raise RuntimeError(f"Shot was not routed: {deliverable.name}/{shot.id}")
+            outputs.append(registry.get(shot.engine).run(shot, context))
+        outputs_by_deliverable[deliverable.name] = [
+            output.model_dump(mode="json") for output in outputs
+        ]
+
+        paths = [Path(output.media_path) for output in outputs if output.media_path]
+        if len(paths) != len(shots):
+            raise RuntimeError(
+                f"At least one engine did not return a media path for {deliverable.name}"
+            )
+        is_primary = deliverable.name == manifest.primary_deliverable.name
+        master_path = (
+            workspace.master / "master.mp4"
+            if is_primary
+            else workspace.master / f"{deliverable.name}.mp4"
+        )
+        compose_master(
+            clips=paths,
+            durations=[shot.duration_seconds for shot in shots],
+            output=master_path,
+            manifest=manifest,
+            deliverable=deliverable,
+            workspace=workspace,
+            namespace=deliverable.name,
+            settings=settings,
+            service_root=SERVICE_ROOT,
+            dry_run=dry_run,
+        )
+        qa = run_technical_qa(master_path, deliverable, manifest.duration_seconds)
+        qa_path = (
+            workspace.qa / "technical-qa.json"
+            if is_primary
+            else workspace.qa / f"technical-qa-{deliverable.name}.json"
+        )
+        write_model(qa_path, qa)
+        master_paths[deliverable.name] = str(master_path)
+        qa_paths[deliverable.name] = str(qa_path)
+        all_qa_passed = all_qa_passed and qa.passed
+
+    write_json(workspace.root / "engine-outputs.json", outputs_by_deliverable)
+    write_json(workspace.qa / "index.json", qa_paths)
+
+    primary_name = manifest.primary_deliverable.name
+    primary_master_path = Path(master_paths[primary_name])
+    primary_qa_path = Path(qa_paths[primary_name])
+    if not all_qa_passed:
+        transition_project_state(
+            state_path,
+            "qa_failed",
+            expected="production",
+            master_paths=master_paths,
+            qa_paths=qa_paths,
+        )
+        return PipelineResult(
+            project_id=manifest.project_id,
+            status="failed",
+            workspace=str(workspace.root),
+            manifest_path=str(manifest_path),
+            master_path=str(primary_master_path),
+            master_paths=master_paths,
+            qa_path=str(primary_qa_path),
+        )
+
+    draft_review_path = workspace.review / "draft-review.json"
+    create_pending_review(
+        manifest.project_id,
+        primary_master_path,
+        all_qa_passed,
+        draft_review_path,
+        stage=ReviewStage.DRAFT,
+        master_paths=master_paths,
+    )
+    transition_project_state(
+        state_path,
+        "draft_review_required",
+        expected="production",
+        draft_review_path=str(draft_review_path),
+        master_paths=master_paths,
+        qa_paths=qa_paths,
+    )
+    if not auto_approve:
+        return PipelineResult(
+            project_id=manifest.project_id,
+            status="draft_review_required",
+            workspace=str(workspace.root),
+            manifest_path=str(manifest_path),
+            master_path=str(primary_master_path),
+            master_paths=master_paths,
+            qa_path=str(primary_qa_path),
+            review_path=str(draft_review_path),
+            draft_review_path=str(draft_review_path),
+            warnings=[
+                "Draft approval is required before finalization; final approval is required before delivery."
+            ],
+        )
+
+    if not dry_run:
+        raise ValueError("auto_approve is restricted to dry-run/test executions")
+    draft_approved = approve_review(
+        draft_review_path,
+        reviewer,
+        "Dry-run fixture draft approval",
+        expected_stage=ReviewStage.DRAFT,
+    )
+    if draft_approved.status is not ReviewStatus.APPROVED:
+        raise RuntimeError("Draft approval failed")
+    transition_project_state(
+        state_path,
+        "draft_approved",
+        expected="draft_review_required",
+    )
+    final_review = finalize_project(manifest, workspace, settings)
+    final_review_path = workspace.review / "final-review.json"
+    final_approved = approve_review(
+        final_review_path,
+        reviewer,
+        "Dry-run fixture final approval",
+        expected_stage=ReviewStage.FINAL,
+    )
+    if final_approved.status is not ReviewStatus.APPROVED:
+        raise RuntimeError("Final approval failed")
+    transition_project_state(
+        state_path,
+        "final_approved",
+        expected="final_review_required",
+    )
+    delivery = deliver_project(manifest, workspace, settings, target=delivery_target)
+    delivery_path = workspace.deliverables / "delivery.json"
+    return PipelineResult(
+        project_id=manifest.project_id,
+        status="delivered",
+        workspace=str(workspace.root),
+        manifest_path=str(manifest_path),
+        master_path=final_review.master_path,
+        master_paths=final_review.master_paths,
+        qa_path=str(primary_qa_path),
+        review_path=str(final_review_path),
+        draft_review_path=str(draft_review_path),
+        final_review_path=str(final_review_path),
+        delivery_path=str(delivery_path),
+        warnings=[f"Delivered {len(delivery.items)} dry-run variants after two approvals."],
+    )
+
+
+@flow(name="paradigm-video-production", log_prints=True)
+def production_flow(
+    brief_path: str,
+    dry_run: bool = False,
+    planner_provider: str = "deterministic",
+    auto_approve: bool = False,
+    reviewer: str = "Automated test fixture",
+    delivery_target: str = "local",
+    lifecycle_run_id: str | None = None,
+) -> PipelineResult:
+    settings = Settings.from_env()
+    brief, validation_report = validate_task(brief_path)
+    manifest = plan_task(brief, settings, planner_provider)
+    manifest = route_task(manifest, settings, dry_run)
+    if dry_run:
+        manifest = _dry_run_manifest(manifest)
+    profile_catalog = load_engine_profile_catalog(settings.engine_profile_catalog_path)
+    requires_managed_gpu = not dry_run and manifest_requires_managed_gpu(
+        manifest,
+        profile_catalog,
+    )
+    required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog)
+    gpu_lease: GpuLease | None = None
+    try:
+        if not dry_run:
+            _emit_profile_events(
+                settings,
+                manifest,
+                event_type="profile_selected",
+                title="OSSエンジンを選択",
+                message="監査済みプロファイルを制作runへ固定しました。",
+                state="selected",
+                progress=0,
+                run_id=lifecycle_run_id,
+            )
+        if requires_managed_gpu:
+            gpu_lease = acquire_gpu_lease(settings, lifecycle_run_id)
+            run_lifecycle(
+                ensure_gpu_ready(
+                    settings,
+                    run_id=lifecycle_run_id,
+                    required_oss_profiles=required_oss_profiles,
+                )
+            )
+        elif not dry_run:
+            run_lifecycle(
+                release_gpu_if_idle(
+                    settings,
+                    completed_run_id=lifecycle_run_id,
+                    completed_lease=gpu_lease,
+                )
+            )
+        if not dry_run:
+            _emit_profile_events(
+                settings,
+                manifest,
+                event_type="profile_started",
+                title="OSSエンジン処理を開始",
+                message="必要なworkerまたはComfyUI workflowの実行を開始しました。",
+                state="running",
+                progress=10,
+                run_id=lifecycle_run_id,
+            )
+        try:
+            result = _production_flow_impl(
+                settings=Settings.from_env(),
+                brief=brief,
+                validation_report=validation_report,
+                manifest=manifest,
+                dry_run=dry_run,
+                auto_approve=auto_approve,
+                reviewer=reviewer,
+                delivery_target=delivery_target,
+            )
+        except Exception as error:
+            if not dry_run:
+                _emit_profile_events(
+                    settings,
+                    manifest,
+                    event_type="profile_failed",
+                    title="OSSエンジン処理に失敗",
+                    message="制作runを安全停止しました。Consoleで失敗理由を確認してください。",
+                    state="failed",
+                    progress=100,
+                    run_id=lifecycle_run_id,
+                    error_message=str(error)[:2000],
+                )
+            raise
+        if not dry_run:
+            _emit_profile_events(
+                settings,
+                manifest,
+                event_type="profile_completed",
+                title="OSSエンジン処理が完了",
+                message="生成素材の処理が完了し、QA・承認工程へ進みました。",
+                state="completed",
+                progress=100,
+                run_id=lifecycle_run_id,
+            )
+        return result
+    finally:
+        if requires_managed_gpu:
+            run_lifecycle(
+                release_gpu_if_idle(
+                    settings,
+                    completed_run_id=lifecycle_run_id,
+                    completed_lease=gpu_lease,
+                )
+            )

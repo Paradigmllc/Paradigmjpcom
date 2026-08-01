@@ -13,7 +13,7 @@ export function ReportScoreOverview({
 }: {
   data: DiagnosticReportData
   lang: ReportLang
-  confidence: number
+  confidence: number | null
   sourceScore: number
 }) {
   return (
@@ -22,32 +22,28 @@ export function ReportScoreOverview({
         <h3 className="text-lg font-semibold text-slate-800 mb-5">
           {lang === "ja" ? "スコア概要" : "Score Overview"}
         </h3>
-        <ScoreCardGrid columns={3}>
+        <ScoreCardGrid columns={confidence === null ? 2 : 3}>
           <ReportScoreCard
             score={data.source_coverage.score}
             maxScore={100}
             label={lang === "ja" ? "情報ソース網羅率" : "Source Coverage"}
             severity={data.source_coverage.score >= 70 ? "good" : data.source_coverage.score >= 40 ? "warning" : "critical"}
-            benchmark={60}
-            benchmarkLabel={lang === "ja" ? "業界平均" : "Industry Avg"}
             detail={sourceCoverageDetail(data.source_coverage.configured, data.source_coverage.missing, lang)}
           />
-          <ReportScoreCard
-            score={confidence}
-            maxScore={100}
-            label={lang === "ja" ? "診断確度" : "Confidence"}
-            severity={confidence >= 70 ? "good" : confidence >= 40 ? "warning" : "critical"}
-            benchmark={65}
-            benchmarkLabel={lang === "ja" ? "標準診断" : "Standard"}
-            detail={lang === "ja" ? `${data.source_coverage.configured}件のソースから算出` : `Calculated from ${data.source_coverage.configured} sources`}
-          />
+          {confidence !== null && (
+            <ReportScoreCard
+              score={confidence}
+              maxScore={100}
+              label={lang === "ja" ? "診断確度" : "Confidence"}
+              severity={confidence >= 70 ? "good" : confidence >= 40 ? "warning" : "critical"}
+              detail={lang === "ja" ? `${data.intelligence.signals.length}件の診断シグナルから算出` : `Calculated from ${data.intelligence.signals.length} diagnostic signals`}
+            />
+          )}
           <ReportScoreCard
             score={sourceScore}
             maxScore={100}
             label={lang === "ja" ? "シグナル品質" : "Signal Quality"}
             severity={sourceScore >= 70 ? "good" : sourceScore >= 40 ? "warning" : "critical"}
-            benchmark={50}
-            benchmarkLabel={lang === "ja" ? "平均" : "Avg"}
             detail={lang === "ja" ? `${data.source_coverage.collected}件のシグナルを検出` : `${data.source_coverage.collected} signals detected`}
           />
         </ScoreCardGrid>

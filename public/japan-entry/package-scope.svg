@@ -1,0 +1,19 @@
+<svg width="900" height="560" viewBox="0 0 900 560" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="560" rx="28" fill="#F8FAFC"/>
+  <rect x="34" y="34" width="832" height="492" rx="22" fill="white" stroke="#E2E8F0"/>
+  <text x="72" y="84" fill="#1D4ED8" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2">JAPAN ENTRY / FIXED SCOPE</text>
+  <text x="72" y="128" fill="#0F172A" font-family="Arial, sans-serif" font-size="32" font-weight="700">One launch system, five connected parts.</text>
+  <text x="72" y="160" fill="#64748B" font-family="Arial, sans-serif" font-size="16">The public package shows what is included before an application.</text>
+  <rect x="72" y="198" width="250" height="104" rx="16" fill="#0F172A"/>
+  <text x="98" y="236" fill="#A7F3D0" font-family="Arial, sans-serif" font-size="13" font-weight="700">FIXED SETUP</text>
+  <text x="98" y="278" fill="white" font-family="Arial, sans-serif" font-size="36" font-weight="700">$15,000</text>
+  <text x="98" y="292" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="12">90 days included · then $2,000/mo</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="356" y="198" width="220" height="74" rx="14" fill="#EFF6FF"/><text x="380" y="228" fill="#1E3A8A" font-size="14" font-weight="700">01  BUYER PATH</text><text x="380" y="250" fill="#475569" font-size="12">Offer, trust, next action</text>
+    <rect x="604" y="198" width="220" height="74" rx="14" fill="#ECFDF5"/><text x="628" y="228" fill="#065F46" font-size="14" font-weight="700">02  TRUST</text><text x="628" y="250" fill="#475569" font-size="12">Terms, privacy, ownership</text>
+    <rect x="356" y="292" width="220" height="74" rx="14" fill="#F5F3FF"/><text x="380" y="322" fill="#5B21B6" font-size="14" font-weight="700">03  DISCOVERY</text><text x="380" y="344" fill="#475569" font-size="12">Search and local baseline</text>
+    <rect x="604" y="292" width="220" height="74" rx="14" fill="#FFFBEB"/><text x="628" y="322" fill="#92400E" font-size="14" font-weight="700">04  SUPPORT</text><text x="628" y="344" fill="#475569" font-size="12">Bilingual route and escalation</text>
+    <rect x="356" y="386" width="468" height="74" rx="14" fill="#F1F5F9"/><text x="380" y="416" fill="#0F172A" font-size="14" font-weight="700">05  LAUNCH OPERATIONS</text><text x="380" y="438" fill="#475569" font-size="12">Inputs, approvals, checks, and handover</text>
+  </g>
+  <text x="72" y="486" fill="#64748B" font-family="Arial, sans-serif" font-size="13">Scope boundaries and external costs remain explicit.</text>
+</svg>

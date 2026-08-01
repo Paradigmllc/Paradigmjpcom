@@ -125,7 +125,6 @@ export async function POST(req: NextRequest) {
       contractStatus: "active",
       docusealSubmissionId: externalId,
       docusealUrl: row.pdf_r2_url,
-      notionPageUrl: text(metadata, ["notionPageUrl", "notion_page_url"]),
       calComUrl: text(metadata, ["calComUrl", "cal_com_url"]),
       meta: { docuseal_status: rawStatus },
     })

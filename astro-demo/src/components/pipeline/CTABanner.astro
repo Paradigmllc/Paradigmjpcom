@@ -1,0 +1,29 @@
+---
+export interface Props { title: string; subtitle?: string; ctas: { label: string; href: string }[]; colors?: { primary?: string } }
+const { title, subtitle, ctas, colors = {} } = Astro.props
+const p = colors.primary || "#2563eb"
+---
+<section class="cta">
+  <style is:inline set:html={`
+    .cta{position:relative;overflow:hidden;text-align:center;padding:clamp(4rem,10vw,7rem) clamp(1.5rem,5vw,3rem);background:linear-gradient(160deg,var(--cp,${p}) 0%,color-mix(in srgb,var(--cp,${p}) 30%,#0a0a0a) 60%,#0a0a0a 100%);color:#fff}
+    .cta::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 50%,rgba(255,255,255,.06) 0%,transparent 60%);animation:ctaFloat 20s linear infinite}
+    @keyframes ctaFloat{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    .cta>*{position:relative;z-index:1}
+    .cta__label{display:inline-block;font-size:0.72rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;opacity:0.6;margin-bottom:1rem}
+    .cta h2{font-size:clamp(1.8rem,5vw,3rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:0.8rem}
+    .cta p{opacity:0.75;margin-bottom:2.5rem;max-width:480px;margin-left:auto;margin-right:auto;font-size:1.05rem;line-height:1.7}
+    .cta__actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+    .cta__btn{display:inline-flex;align-items:center;padding:16px 36px;border-radius:16px;font-weight:600;font-size:1rem;text-decoration:none;transition:transform .25s ease,box-shadow .25s ease}
+    .cta__btn:hover{transform:translateY(-2px)}
+    .cta__btn--pri{background:#fff;color:var(--cp,${p});box-shadow:0 4px 24px rgba(0,0,0,.15)}
+    .cta__btn--pri:hover{box-shadow:0 8px 36px rgba(0,0,0,.22)}
+    .cta__btn--sec{border:1.5px solid rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(8px)}
+    .cta__btn--sec:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.4)}
+  `}></style>
+  <div class="cta__label">{title}</div>
+  <h2>{title}</h2>
+  {subtitle && <p>{subtitle}</p>}
+  <div class="cta__actions">
+    {ctas.map((cta, i) => <a href={cta.href} class={`cta__btn ${i === 0 ? "cta__btn--pri" : "cta__btn--sec"}`}>{cta.label}</a>)}
+  </div>
+</section>

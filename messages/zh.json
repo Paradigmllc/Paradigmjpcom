@@ -8,6 +8,7 @@
     "services": "服务",
     "works": "案例",
     "pricing": "定价",
+    "package": "套餐",
     "faq": "常见问题",
     "blog": "博客",
     "contact": "联系我们",
@@ -260,7 +261,8 @@
     "bodyBeforeLink": "我们使用最少的 cookie 用于性能和使用分析。详情请参阅我们的",
     "privacyLink": "隐私政策",
     "accept": "接受",
-    "decline": "拒绝"
+    "decline": "拒绝",
+    "settings": "Cookie 设置"
   },
   "servicesPage": {
     "metaTitle": "Services",

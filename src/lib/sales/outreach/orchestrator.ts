@@ -1,26 +1,32 @@
-import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl, fillDemoUrl } from "../form-message"
+import { requiresVerifiedOutreachMetrics } from "./evidence-mode"
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import type { Region, SalesCompany } from "../types"
-import { classifyForm } from "./form-classifier"
+import { classifyForm, detectFormFields } from "./form-classifier"
 import { preflight } from "./preflight"
 import { getBrowserProvider } from "./browser-provider"
 import { recentlyContacted, type ActivityResult } from "./activity"
 import { getProxyFetchOptions } from "../proxy-agent"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome } from "./side-effects"
+import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome, saveFormStructureCache } from "./side-effects"
 import { evaluateOutreachReadiness } from "./readiness"
+import { detectCmsType } from "./cms-form-templates"
+import { fetchCandidates } from "./candidate-selection"
+import { syncOutreachDraftToTwenty } from "./draft-sync"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
   OutreachStage,
   SubmitOutcome,
+  CachedFormStructure,
 } from "./types"
 export interface RunOutreachOptions {
   region?: Region
   companyId?: string
+  /** Twenty の選択行を指定する。指定時はこの順序で処理する。 */
+  companyIds?: string[]
   pipelineRunId?: string | null
   limit?: number
   dryRun?: boolean
@@ -28,9 +34,44 @@ export interface RunOutreachOptions {
   enableLlm?: boolean
   checkRobots?: boolean
   dedupDays?: number
+  itemTimeoutMs?: number
 }
 const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
 const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM"
+const DEFAULT_ITEM_TIMEOUT_MS = 120_000
+const FORM_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000
+
+function readCachedForm(company: SalesCompany, formUrl: string): CachedFormStructure | null {
+  const meta = (company.meta ?? {}) as Record<string, unknown>
+  const cache = meta.parsed_form as Record<string, unknown> | undefined
+  if (!cache || typeof cache.form_url !== "string" || cache.form_url !== formUrl) return null
+  const cachedAt = typeof cache.cached_at === "string" ? new Date(cache.cached_at).getTime() : 0
+  if (Date.now() - cachedAt > FORM_CACHE_MAX_AGE_MS) return null
+  return {
+    action: typeof cache.action === "string" ? cache.action : "",
+    method: typeof cache.method === "string" ? cache.method : "POST",
+    enctype: typeof cache.enctype === "string" ? cache.enctype : "application/x-www-form-urlencoded",
+    inputNames: Array.isArray(cache.inputNames) ? cache.inputNames as string[] : [],
+    cmsType: typeof cache.cmsType === "string" ? cache.cmsType : "generic",
+    cachedAt: cache.cached_at as string,
+  }
+}
+
+async function withTimeout<T extends OutreachItemResult>(
+  promise: Promise<T>,
+  companyId: string,
+  timeoutMs: number = DEFAULT_ITEM_TIMEOUT_MS,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`item timeout after ${timeoutMs}ms`)), timeoutMs)
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
 function buildFields(message: string): Record<string, string> {
   return { name: FROM_NAME, company: FROM_NAME, email: FROM_EMAIL, message }
 }
@@ -57,36 +98,28 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
     return null
   }
 }
-async function fetchCandidates(region: Region, limit: number, companyId?: string): Promise<SalesCompany[]> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return []
-  if (companyId) {
-    const { data, error } = await sb
-      .from(DB_TABLES.SALES_COMPANIES)
-      .select("*")
-      .eq("id", companyId)
-      .maybeSingle()
-    if (error) {
-      console.error("[sales-outreach] fetch pipeline company failed:", error.message)
-      return []
-    }
-    return data ? [data as SalesCompany] : []
+async function processOne(
+  company: SalesCompany,
+  opts: Required<RunOutreachOptions>,
+  index: number,
+): Promise<OutreachItemResult> {
+  const base = (stage: OutreachStage, reason: string): OutreachItemResult => ({
+    companyId: company.id,
+    domain: company.domain,
+    finalStage: stage,
+    reason,
+    dryRun: opts.dryRun,
+  })
+
+  try {
+    return await processOneInner(company, opts, index)
+  } catch (error) {
+    console.error(`[sales-outreach] unhandled error for company ${company.id} (${company.domain}):`, error)
+    return base("submit_failed", `unhandled: ${error instanceof Error ? error.message : String(error)}`)
   }
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("*")
-    .eq("region", region)
-    .eq("pipeline_status", "report_ready")
-    .order("updated_at", { ascending: true })
-    .limit(limit)
-  if (error) {
-    console.error("[sales-outreach] fetch candidates failed:", error.message)
-    return []
-  }
-  return (data as SalesCompany[]) ?? []
 }
 
-async function processOne(
+async function processOneInner(
   company: SalesCompany,
   opts: Required<RunOutreachOptions>,
   index: number,
@@ -118,20 +151,29 @@ async function processOne(
   }
 
   const reportUrl = readiness.reportUrl
-  const generated = await generateFormMessage(company.id)
+  const generated = await generateFormMessage(company.id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
   if (!generated.ok || !generated.message) {
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
   const message = fillReportUrl(generated.message, reportUrl)
-  // Inject demo URL if company has one (WEB制作診断レポ�EチEvariant only)
+  // Inject demo URL if company has one for the website diagnostic variant.
   const companyMeta = (company.meta ?? {}) as Record<string, unknown>
   const demoSite = companyMeta.demo_site as Record<string, unknown> | undefined
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url as string : null
   const finalMessage = demoUrl ? fillDemoUrl(message, demoUrl) : message
 
+  const draftSync = await syncOutreachDraftToTwenty(company.id)
+  if (!draftSync.ok) {
+    const reason = `Twenty draft sync failed: ${draftSync.error}`
+    await persistOutcome(company, "manual_queue", "follow_up", reason, { message: finalMessage }, opts.dryRun, opts.pipelineRunId)
+    return { ...base("manual_queue", reason), message: finalMessage }
+  }
+
   const msg = finalMessage // alias for readability in closures below
 
-  if (!opts.dryRun && (generated.fallbacks?.issueCode || readiness.status !== "send_ready")) {
+  // Companies in report_ready state are pre-vetted — bypass per-company gate
+  const isReportReady = company.pipeline_status === "report_ready"
+  if (!opts.dryRun && !isReportReady && (generated.fallbacks?.issueCode || readiness.status !== "send_ready")) {
     await persistOutcome(
       company,
       "manual_queue",
@@ -216,15 +258,15 @@ async function processOne(
     )
     if (!opts.dryRun) {
       const { notifyBothChannels } = await import("@/lib/notify")
-      const title = `🤁ECAPTCHA手動対忁E ${company.company_name}`
-      const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�にてロボット防御�E�EAPTCHA�E�を検�Eしたため、手動キューに送信しました、Eppsmithで送信承認また�E手動送信を行ってください、En送信允ERL: ${formUrl ?? "不�E"}`
+      const title = `CAPTCHA手動対応: ${company.company_name}`
+      const notificationMessage = `会社「${company.company_name}」（${company.domain}）でCAPTCHAまたはロボット防御を検出したため、手動キューに送信しました。Twenty CRMで送信可否を確認してください。\n送信先URL: ${formUrl ?? "不明"}`
 
       await notifyBothChannels(
-        `🚨 *CAPTCHA手動対応が忁E��E 🚨\n*会社吁E: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不�E"}\n*対忁E: 営業ダチE��ュボ�Eド等で手動対応を行ってください。`,
+        `*CAPTCHA手動対応が必要です*\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: Twenty CRMで手動確認してください。`,
         {
           title,
           message: notificationMessage,
-          link: "/ja/admin/sales",
+          link: "https://twenty.paradigmjp.com",
           type: "manual_handling"
         }
       ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
@@ -270,26 +312,30 @@ async function processOne(
       opts.pipelineRunId,
     )
     const { notifyBothChannels } = await import("@/lib/notify")
-    const title = `⏳ 送信承認征E��: ${company.company_name}`
-    const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�への初回のフォーム送信�E�Eirst-5ゲート）前に、人間による承認が忁E��です。営業ダチE��ュボ�Eドで承認してください、En送信允ERL: ${formUrl ?? "不�E"}\n診断レポ�EチE ${reportUrl}`
+    const title = `送信承認待ち: ${company.company_name}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回フォーム送信は、first-5ゲートにより人間の承認が必要です。Twenty CRMで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
 
     await notifyBothChannels(
-      `⏳ *送信承認征E��* (初回送信ゲーチE\n*会社吁E: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不�E"}\n*診断*: ${reportUrl}\n営業ダチE��ュボ�Eドで確認してください。`,
+        `*送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\nTwenty CRMで確認してください。`,
       {
         title,
         message: notificationMessage,
-        link: "/ja/admin/sales",
+        link: process.env.TWENTY_BASE_URL || "https://twenty.paradigmjp.com",
         type: "approval_required"
       }
     ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
     return { ...base("manual_queue", "approval required before live form submit"), formUrl, message: msg, classification: classification.classification }
   }
 
+  const cmsType = detectCmsType(html)
+  const cachedParsed = readCachedForm(company, formUrl)
+
   const submit = await provider.submitForm({
     formUrl,
     fields: buildFields(msg),
     message: msg,
     dryRun: opts.dryRun,
+    cachedParsed,
   })
   const stage: OutreachStage =
     submit.outcome === "submitted"
@@ -320,11 +366,11 @@ async function processOne(
 
   if (!opts.dryRun && opts.first5Approval && index < 5 && stage === "submitted") {
     const { notifyBothChannels } = await import("@/lib/notify")
-    const title = `✁E送信完亁E ${company.company_name}`
-    const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�へのフォーム送信が完亁E��ました、E(送信件数: #${index + 1})\n診断レポ�EチE ${reportUrl}`
+    const title = `送信完了: ${company.company_name}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）へのフォーム送信が完了しました。(送信件数: #${index + 1})\n診断レポート: ${reportUrl}`
 
     await notifyBothChannels(
-      `✁E*フォーム送信完亁E (#${index + 1})\n*会社吁E: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
+      `*フォーム送信完了* (#${index + 1})\n*会社名*: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
       {
         title,
         message: notificationMessage,
@@ -332,6 +378,17 @@ async function processOne(
         type: "form_submitted"
       }
     ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
+  }
+
+  if (!opts.dryRun && stage === "submitted" && !cachedParsed) {
+    const fields = detectFormFields(html)
+    saveFormStructureCache(company, formUrl, {
+      action: "", // action URL is resolved by provider
+      method: "POST",
+      enctype: "application/x-www-form-urlencoded",
+      inputNames: fields,
+      cmsType,
+    }).catch((e) => console.error("[sales-outreach] form cache save failed:", e))
   }
 
   return {
@@ -347,6 +404,7 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
   const opts: Required<RunOutreachOptions> = {
     region: options.region ?? "jp",
     companyId: options.companyId ?? "",
+    companyIds: options.companyIds ?? [],
     pipelineRunId: options.pipelineRunId ?? null,
     limit: options.limit ?? 5,
     dryRun: options.dryRun ?? true,
@@ -354,30 +412,57 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     enableLlm: options.enableLlm ?? false,
     checkRobots: options.checkRobots ?? true,
     dedupDays: options.dedupDays ?? 30,
+    itemTimeoutMs: options.itemTimeoutMs ?? DEFAULT_ITEM_TIMEOUT_MS,
   }
 
-  const candidates = await fetchCandidates(opts.region, opts.limit, opts.companyId || undefined)
+  const selection = await fetchCandidates(
+    opts.region,
+    opts.limit,
+    opts.companyId || undefined,
+    opts.companyIds,
+  )
+  const candidates = selection.companies
   const items: OutreachItemResult[] = []
 
   // Per-domain rate limiting: prevent rapid repeated submissions to same domain
   const domainLastSend = new Map<string, number>()
   const DOMAIN_RATE_LIMIT_MS = parseInt(process.env.OUTREACH_DOMAIN_RATE_LIMIT_MS ?? "30000", 10) || 30000
+  // Circuit breaker: skip domain after N consecutive failures
+  const domainFailures = new Map<string, number>()
+  const MAX_DOMAIN_FAILURES = 3
 
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i]
     const candidateDomain = (candidate as { domain?: string }).domain
+    if (candidateDomain && (domainFailures.get(candidateDomain) ?? 0) >= MAX_DOMAIN_FAILURES) {
+      items.push({
+        companyId: candidate.id,
+        domain: candidateDomain,
+        finalStage: "classified_skip",
+        reason: `circuit open: ${MAX_DOMAIN_FAILURES}+ consecutive failures for this domain`,
+        dryRun: opts.dryRun,
+      })
+      continue
+    }
     if (candidateDomain && !opts.dryRun) {
       const last = domainLastSend.get(candidateDomain)
       if (last && Date.now() - last < DOMAIN_RATE_LIMIT_MS) {
-        const result = await processOne(candidate, { ...opts, dryRun: true }, i)
+        const result = await withTimeout(processOne(candidate, { ...opts, dryRun: true }, i), candidate.id)
         if (result.finalStage !== "submitted") items.push(result)
         continue
       }
     }
-    const result = await processOne(candidate, opts, i)
+    const result = await withTimeout(processOne(candidate, opts, i), candidate.id)
     items.push(result)
     if (result.finalStage === "submitted" && candidateDomain) {
       domainLastSend.set(candidateDomain, Date.now())
+      domainFailures.set(candidateDomain, 0)
+    } else if (candidateDomain && ["submit_failed", "preflight_failed", "discovery_failed"].includes(result.finalStage)) {
+      const current = domainFailures.get(candidateDomain) ?? 0
+      domainFailures.set(candidateDomain, current + 1)
+      if (current + 1 >= MAX_DOMAIN_FAILURES) {
+        console.warn(`[sales-outreach] circuit breaker opened for domain ${candidateDomain} after ${current + 1} failures`)
+      }
     }
     if (!opts.dryRun && i < candidates.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 1_500))
@@ -393,6 +478,16 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
       ["discovery_failed", "preflight_failed", "submit_failed"].includes(item.finalStage),
     ).length,
     dryRun: opts.dryRun,
+    selection: {
+      requestedCompanyIds: opts.companyIds.length > 0
+        ? opts.companyIds
+        : opts.companyId
+          ? [opts.companyId]
+          : [],
+      acceptedCompanyIds: candidates.map((candidate) => candidate.id),
+      missingCompanyIds: selection.missingCompanyIds,
+      notReadyCompanyIds: selection.notReadyCompanyIds,
+    },
     items,
   }
 }

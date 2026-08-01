@@ -5,15 +5,13 @@ import { normalizeDomain, normalizeCompanyName } from "./dedup"
 import { upsertCompanyByDomain } from "./companies"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { salesScopeFromCountry } from "./locale-scope"
-import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
-import { detectTechStack, type TechItem } from "./sources/wappalyzer"
+import type { TechItem } from "./sources/wappalyzer"
 import type { SalesCompany } from "./types"
 import {
   clampScore,
   inferCountrySignals,
   scoreCandidate,
   technologySlug,
-  tldPatternsForCountry,
   type CandidateCountrySignal,
   type CandidateLane,
   type CandidateScore,
@@ -24,15 +22,6 @@ import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-lis
 export { listLeadCandidates } from "./lead-candidate-list"
 export type { CandidateListFilters, CandidateListItem } from "./lead-candidate-list"
 
-export interface CommonCrawlCandidateInput {
-  countryCode: string
-  technology?: string | null
-  limit?: number
-  verifyLimit?: number
-  promote?: boolean
-  minOpportunityScore?: number
-}
-
 export interface LocalSmbInputRow {
   businessName: string
   countryCode: string
@@ -42,6 +31,8 @@ export interface LocalSmbInputRow {
   phone?: string | null
   socialLinks?: string[]
   websiteUrl?: string | null
+  sourceSlug?: string | null
+  isEnterpriseLike?: boolean
   raw?: Record<string, unknown>
 }
 
@@ -59,7 +50,7 @@ export interface CandidateAcquisitionSummary {
   candidates: CandidateListItem[]
 }
 
-interface CandidateRow {
+export interface CandidateRow {
   id: string
   domain: string
   root_url: string | null
@@ -75,7 +66,7 @@ function identityHash(value: string): string {
   return createHash("sha1").update(value).digest("hex").slice(0, 12)
 }
 
-function guessedCompanyName(domain: string): string {
+export function guessedCompanyName(domain: string): string {
   const normalized = normalizeDomain(domain) ?? domain
   const label = normalized.split(".")[0] ?? normalized
   return label
@@ -91,7 +82,7 @@ function localSmbIdentity(row: LocalSmbInputRow): string {
   return `local-${identityHash(seed)}.no-website.local`
 }
 
-async function upsertCandidateDomain(input: {
+export async function upsertCandidateDomain(input: {
   domain: string
   rootUrl: string | null
   lane: CandidateLane
@@ -101,7 +92,7 @@ async function upsertCandidateDomain(input: {
 }): Promise<CandidateRow> {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role not configured")
-  const normalized = input.lane === "tech_footprint" ? normalizeDomain(input.domain) : input.domain.trim().toLowerCase()
+  const normalized = input.lane === "no_website_local_smb" ? input.domain.trim().toLowerCase() : normalizeDomain(input.domain)
   if (!normalized) throw new Error(`invalid candidate domain: ${input.domain}`)
 
   const { data, error } = await sb
@@ -124,7 +115,7 @@ async function upsertCandidateDomain(input: {
   return data as CandidateRow
 }
 
-async function saveCandidateEvidence(input: {
+export async function saveCandidateEvidence(input: {
   candidate: CandidateRow
   sourceSlug: string
   observedUrl: string | null
@@ -210,7 +201,7 @@ async function saveCandidateEvidence(input: {
   if (updateError) throw new Error(updateError.message)
 }
 
-async function promoteCandidate(input: {
+export async function promoteCandidate(input: {
   candidate: CandidateRow
   countryCode: string
   sourceSlug: string
@@ -270,103 +261,9 @@ async function promoteCandidate(input: {
   return { ok: true, company: saved.company, jobQueued: queued.ok, error: queued.error }
 }
 
-export async function ingestCommonCrawlCandidates(input: CommonCrawlCandidateInput): Promise<CandidateAcquisitionSummary> {
-  const countryCode = input.countryCode.trim().toUpperCase()
-  const source = "common_crawl_domains"
-  const limit = Math.min(Math.max(input.limit ?? 100, 1), 1000)
-  const verifyLimit = Math.min(Math.max(input.verifyLimit ?? Math.min(limit, 30), 0), Math.min(limit, 120))
-  const minOpportunityScore = clampScore(input.minOpportunityScore ?? 68)
-  const patterns = tldPatternsForCountry(countryCode)
-  const failures: Array<{ key: string; reason: string }> = []
-  const domains = new Set<string>()
-
-  for (const pattern of patterns) {
-    const result = await fetchCommonCrawlDomains(pattern, Math.ceil(limit / patterns.length))
-    if (!result.ok) failures.push({ key: pattern, reason: result.error ?? "Common Crawl returned no domains" })
-    for (const domain of result.domains) domains.add(domain)
-  }
-
-  let upserted = 0
-  let verified = 0
-  let matchedTechnology = 0
-  let scored = 0
-  let promoted = 0
-  let jobsEnqueued = 0
-  const output: CandidateListItem[] = []
-
-  for (const domain of [...domains].slice(0, limit)) {
-    try {
-      const rootUrl = `https://${domain}`
-      const candidate = await upsertCandidateDomain({
-        domain,
-        rootUrl,
-        lane: "tech_footprint",
-        sourceSlug: source,
-        meta: { country_code: countryCode, requested_technology: input.technology ?? null },
-      })
-      upserted++
-
-      if (verified >= verifyLimit) continue
-      verified++
-      const detection = await detectTechStack(rootUrl)
-      const detections = detection.tech
-      const countrySignals = inferCountrySignals({ domain, targetCountry: countryCode })
-      const requestedSlug = input.technology ? technologySlug(input.technology) : null
-      const isStackMatch = requestedSlug ? detections.some((tech) => technologySlug(tech.name) === requestedSlug) : detections.length > 0
-      if (isStackMatch) matchedTechnology++
-      const score = scoreCandidate({
-        requestedTechnology: input.technology,
-        detections,
-        countrySignals,
-        lane: "tech_footprint",
-        hasWebsite: true,
-        hasContactSignal: false,
-        source,
-      })
-      await saveCandidateEvidence({
-        candidate,
-        sourceSlug: source,
-        observedUrl: rootUrl,
-        rawEvidence: { server: detection.server, country_code: countryCode, requested_technology: input.technology ?? null },
-        signatureHits: detections,
-        countrySignals,
-        score,
-      })
-      scored++
-
-      if (input.promote && score.opportunityScore >= minOpportunityScore && isStackMatch) {
-        const promotion = await promoteCandidate({
-          candidate,
-          countryCode,
-          sourceSlug: source,
-          companyName: guessedCompanyName(domain),
-          score,
-          detections,
-        })
-        if (promotion.ok) {
-          promoted++
-          if (promotion.jobQueued) jobsEnqueued++
-        } else {
-          failures.push({ key: domain, reason: promotion.error ?? "promotion failed" })
-        }
-      }
-    } catch (error) {
-      console.error("[lead-candidates] Common Crawl ingestion failed:", domain, error)
-      failures.push({ key: domain, reason: error instanceof Error ? error.message : "ingestion failed" })
-    }
-  }
-
-  if (jobsEnqueued > 0) {
-    const trigger = await triggerEnrichmentRunner(Math.min(jobsEnqueued, 3))
-    if (!trigger.ok) failures.push({ key: "trigger_enrichment_runner", reason: trigger.error ?? "trigger failed" })
-  }
-
-  output.push(...await listLeadCandidates({ countryCode, technology: input.technology, limit: 30 }))
-  return { ok: failures.length === 0 || upserted > 0, source, fetched: domains.size, upserted, verified, matchedTechnology, scored, promoted, jobsEnqueued, failures: failures.slice(0, 30), candidates: output }
-}
-
 export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote = false): Promise<CandidateAcquisitionSummary> {
-  const source = "local_smb_directory"
+  const sourceSlugs = [...new Set(rows.map((row) => row.sourceSlug?.trim()).filter((value): value is string => Boolean(value)))]
+  const source = sourceSlugs.length === 1 ? sourceSlugs[0] : "local_smb_directory"
   const failures: Array<{ key: string; reason: string }> = []
   let upserted = 0
   let scored = 0
@@ -375,6 +272,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
 
   for (const row of rows.slice(0, 500)) {
     try {
+      const sourceSlug = row.sourceSlug?.trim() || "local_smb_directory"
       const countryCode = row.countryCode.trim().toUpperCase()
       const hasWebsite = Boolean(row.websiteUrl?.trim())
       const identity = hasWebsite ? normalizeDomain(row.websiteUrl) ?? localSmbIdentity(row) : localSmbIdentity(row)
@@ -385,7 +283,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         domain: identity,
         rootUrl: hasWebsite ? row.websiteUrl?.trim() ?? null : null,
         lane: "no_website_local_smb",
-        sourceSlug: source,
+        sourceSlug,
         meta: {
           business_name: row.businessName,
           category: row.category ?? null,
@@ -405,11 +303,12 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         lane: "no_website_local_smb",
         hasWebsite,
         hasContactSignal: Boolean(row.phone || row.listingUrl || (row.socialLinks?.length ?? 0) > 0),
-        source,
+        source: sourceSlug,
+        isEnterpriseLike: row.isEnterpriseLike,
       })
       await saveCandidateEvidence({
         candidate,
-        sourceSlug: source,
+        sourceSlug,
         observedUrl: row.listingUrl ?? row.websiteUrl ?? null,
         rawEvidence: { ...row, identity, country_code: countryCode },
         signatureHits: [],
@@ -422,7 +321,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         const promotion = await promoteCandidate({
           candidate,
           countryCode,
-          sourceSlug: source,
+          sourceSlug,
           companyName: row.businessName,
           score,
           detections: [],
@@ -446,6 +345,11 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
   }
 
   const countryCode = rows[0]?.countryCode ?? null
-  const candidates = await listLeadCandidates({ countryCode, lane: "no_website_local_smb", limit: 30 })
+  const candidates = await listLeadCandidates({
+    countryCode,
+    lane: "no_website_local_smb",
+    sourceSlug: sourceSlugs.length === 1 ? sourceSlugs[0] : null,
+    limit: 100,
+  })
   return { ok: failures.length === 0 || upserted > 0, source, fetched: rows.length, upserted, verified: rows.length, matchedTechnology: 0, scored, promoted, jobsEnqueued, failures: failures.slice(0, 30), candidates }
 }

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 import { getReportOfferCopy } from "./report-offer-copy"
 import { localizeReportIntelligence, reportEvidenceText, severityLabel, sourceCoverageDetail } from "./report-intelligence-copy"
 import { REPORT_COPY, normalizeReportLang } from "./report-copy"
+import { SOLUTION_COSTS } from "./report-constants"
+import { formatMoney, reportCurrencySymbol } from "./report-utils"
 
 const mojibakePattern = /縺|繝|譁|險|謾|蛻|邨|雋|蠖|荳|鬆|譛|蜿|髱|邵ｺ|郢掟隴－髫ｪ|隰ｾ|陋ｻ|驍ｨ|髮弓陟翻闕ｳ|鬯・隴斈陷ｿ|鬮ｱ|・・・ｽ|�/
 
@@ -25,6 +27,14 @@ describe("diagnostic report customer-facing copy", () => {
     expect(getReportOfferCopy("ja", "video_subscription").primaryCta).toContain("動画")
     expect(getReportOfferCopy("ja", "website_diagnostic").badge).toBe("Web制作診断")
     expect(getReportOfferCopy("en", "website_diagnostic").primaryCta).toContain("demo")
+  })
+
+  it("keeps Japan Entry report pricing and international losses in USD", () => {
+    expect(SOLUTION_COSTS.japan_entry).toBe(15_000)
+    expect(formatMoney(SOLUTION_COSTS.japan_entry, "en")).toBe("$15,000")
+    expect(formatMoney(450_000, "ja")).toMatch(/^[¥￥]450,000$/)
+    expect(reportCurrencySymbol("en")).toBe("$")
+    expect(reportCurrencySymbol("ja")).toBe("¥")
   })
 
   it("turns default intelligence logs into Japanese report copy", () => {

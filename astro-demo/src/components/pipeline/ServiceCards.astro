@@ -1,0 +1,31 @@
+---
+export interface Props { title: string; items: { title: string; body: string; icon?: string }[]; layout?: "3-col" | "2-col" }
+const { title, items, layout = "3-col" } = Astro.props
+---
+<section class="svc">
+  <style is:inline set:html={`
+    .svc{padding:clamp(4rem,8vw,6rem) clamp(1.5rem,5vw,3rem)}
+    .svc__label{text-align:center;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:0.4;margin-bottom:0.8rem}
+    .svc h2{text-align:center;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;letter-spacing:-0.02em;margin-bottom:clamp(2rem,4vw,3rem)}
+    .svc__grid{display:grid;gap:clamp(1.2rem,2vw,1.8rem);max-width:1100px;margin:0 auto}
+    .svc__grid--3-col{grid-template-columns:repeat(3,1fr)}
+    .svc__grid--2-col{grid-template-columns:repeat(2,1fr)}
+    .svc__card{position:relative;padding:clamp(2rem,4vw,2.8rem);border-radius:20px;background:#fff;border:1px solid rgba(0,0,0,.06);transition:transform .3s ease,box-shadow .3s ease}
+    .svc__card:hover{transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.08)}
+    .svc__icon{font-size:2.2rem;margin-bottom:1.2rem}
+    .svc__card h3{font-size:1.15rem;font-weight:700;margin-bottom:0.6rem;letter-spacing:-0.01em}
+    .svc__card p{font-size:0.92rem;line-height:1.75;opacity:0.6}
+    @media(max-width:900px){.svc__grid--3-col{grid-template-columns:1fr}.svc__grid--2-col{grid-template-columns:1fr}}
+  `}></style>
+  <div class="svc__label">{title}</div>
+  <h2>{title}</h2>
+  <div class={`svc__grid svc__grid--${layout}`}>
+    {items.map(item => (
+      <div class="svc__card">
+        {item.icon && <div class="svc__icon">{item.icon}</div>}
+        <h3>{item.title}</h3>
+        <p>{item.body}</p>
+      </div>
+    ))}
+  </div>
+</section>

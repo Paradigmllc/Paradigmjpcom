@@ -1,8 +1,6 @@
-import { tldPatternsForCountry } from "./lead-candidate-scoring"
-import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
-import { fetchCrtshDomains } from "./sources/crtsh-bulk"
-import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
-import { fetchPassiveInventoryDomains } from "./passive-inventory"
+import { fetchBulkDomainCorpus } from "./sources/bulk-domain-corpus"
+import { fetchPassiveInventoryDomains, passivePatterns } from "./passive-inventory"
+import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -28,10 +26,6 @@ interface FetchLeadCandidateDomainsOptions {
   skipPassiveInventory?: boolean
 }
 
-function toCrtshPattern(pattern: string): string {
-  return pattern.replace(/^\*\./, "%.").replace(/^\*/, "%")
-}
-
 function addDomains(input: {
   sourceByDomain: Map<string, Set<string>>
   source: string
@@ -39,10 +33,26 @@ function addDomains(input: {
   limit: number
 }) {
   for (const domain of input.domains) {
+    if (!isCustomerFacingBusinessDomain(domain)) continue
     if (input.sourceByDomain.size >= input.limit && !input.sourceByDomain.has(domain)) break
     const sources = input.sourceByDomain.get(domain) ?? new Set<string>()
     sources.add(input.source)
     input.sourceByDomain.set(domain, sources)
+  }
+}
+
+function addCorpusDomains(input: {
+  destination: Map<string, Set<string>>
+  domains: string[]
+  corpusSources: Record<string, string[]>
+  limit: number
+}) {
+  for (const domain of input.domains) {
+    if (!isCustomerFacingBusinessDomain(domain)) continue
+    if (input.destination.size >= input.limit && !input.destination.has(domain)) break
+    const sources = input.destination.get(domain) ?? new Set<string>()
+    for (const source of input.corpusSources[domain] ?? ["bulk_domain_corpus"]) sources.add(source)
+    input.destination.set(domain, sources)
   }
 }
 
@@ -58,7 +68,9 @@ function buildResult(input: {
   limit: number
 }): CandidateDomainFetchResult {
   return {
-    domains: [...input.sourceByDomain.keys()].sort().slice(0, input.limit),
+    // Preserve source priority: verified technology-footprint candidates must be
+    // processed before generic TLD fallbacks.
+    domains: [...input.sourceByDomain.keys()].slice(0, input.limit),
     failures: input.failures.slice(0, MAX_FAILURES),
     sourceStats: input.sourceStats,
     sourceByDomain: serializeSourceByDomain(input.sourceByDomain),
@@ -79,7 +91,7 @@ async function emitProgress(input: {
 }
 
 export async function fetchLeadCandidateDomains(countryCode: string, limit: number, options?: FetchLeadCandidateDomainsOptions & { technology?: string | null }): Promise<CandidateDomainFetchResult> {
-  const patterns = tldPatternsForCountry(countryCode)
+  const patterns = passivePatterns(countryCode, options?.technology ?? null)
   const sourceByDomain = new Map<string, Set<string>>()
   const evidenceByDomain = new Map<string, Record<string, unknown>>()
   const failures: Array<{ key: string; reason: string }> = []
@@ -108,43 +120,24 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
       addDomains({ sourceByDomain, source: "passive_inventory", domains: passive.domains, limit })
       for (const [domain, evidence] of Object.entries(passive.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
     } catch (e) {
+      console.error("[lead-candidate-domain-sources] passive_inventory failed:", e instanceof Error ? e.message : String(e))
       failures.push({ key: "passive_inventory", reason: e instanceof Error ? e.message : "passive inventory failed with retries" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
   }
 
+  // Bulk acquisition must remain independent from search engines, proxies,
+  // per-domain certificate queries, and Common Crawl's rate-limited CDX API.
   for (const pattern of patterns) {
     try {
-      const cc = await withRetry(`cc_${pattern}`, () => fetchCommonCrawlDomains(pattern, perPatternLimit))
-      sourceStats.push({ source: "common_crawl_domains", pattern, fetched: cc.domains.length, total: cc.total, ok: cc.ok, error: cc.error })
-      if (!cc.ok) failures.push({ key: `common_crawl_domains:${pattern}`, reason: cc.error ?? "Common Crawl returned no domains" })
-      addDomains({ sourceByDomain, source: "common_crawl_domains", domains: cc.domains, limit })
+      const corpus = await withRetry(`bulk_corpus_${pattern}`, () => fetchBulkDomainCorpus(pattern, perPatternLimit))
+      sourceStats.push(...corpus.sourceStats)
+      failures.push(...corpus.failures)
+      addCorpusDomains({ destination: sourceByDomain, domains: corpus.domains, corpusSources: corpus.sourceByDomain, limit })
     } catch (e) {
-      failures.push({ key: `common_crawl_domains:${pattern}`, reason: e instanceof Error ? e.message : "Common Crawl failed with retries" })
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) break
-
-    try {
-      const tranco = await withRetry(`tranco_${pattern}`, () => fetchTrancoTopDomains(pattern, perPatternLimit))
-      sourceStats.push({ source: "tranco_top_domains", pattern, fetched: tranco.domains.length, total: tranco.total, ok: tranco.ok, error: tranco.error })
-      if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco top list returned no domains" })
-      addDomains({ sourceByDomain, source: "tranco_top_domains", domains: tranco.domains, limit })
-    } catch (e) {
-      failures.push({ key: `tranco_top_domains:${pattern}`, reason: e instanceof Error ? e.message : "Tranco failed with retries" })
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) break
-
-    try {
-      const crtPattern = toCrtshPattern(pattern)
-      const crt = await withRetry(`crt_${pattern}`, () => fetchCrtshDomains(crtPattern, perPatternLimit))
-      sourceStats.push({ source: "crtsh_bulk", pattern: crtPattern, fetched: crt.domains.length, total: crt.total, ok: crt.ok, error: crt.error })
-      if (!crt.ok) failures.push({ key: `crtsh_bulk:${crtPattern}`, reason: crt.error ?? "crt.sh returned no domains" })
-      addDomains({ sourceByDomain, source: "crtsh_bulk", domains: crt.domains, limit })
-    } catch (e) {
-      failures.push({ key: `crtsh_bulk:${pattern}`, reason: e instanceof Error ? e.message : "crt.sh failed with retries" })
+      console.error("[lead-candidate-domain-sources] bulk_domain_corpus failed:", pattern, e instanceof Error ? e.message : String(e))
+      failures.push({ key: `bulk_domain_corpus:${pattern}`, reason: e instanceof Error ? e.message : "Bulk domain corpus failed with retries" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) break

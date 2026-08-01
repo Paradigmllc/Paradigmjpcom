@@ -28,7 +28,6 @@ const baseCompany: SalesCompany = {
   follow_up_date: null,
   memo: null,
   assigned_to: null,
-  notion_page_id: null,
   source: "test",
   tech_stack: null,
   pain_diagnosis: null,
@@ -45,11 +44,15 @@ const baseCompany: SalesCompany = {
 describe("runDifyDiagnosis", () => {
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
   it("returns local fallback when Dify is not configured", async () => {
     for (const envName of DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES) vi.stubEnv(envName, "")
+    vi.stubEnv("DEEPSEEK_API_KEY", "")
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock)
 
     const result = await runDifyDiagnosis(baseCompany)
 
@@ -57,6 +60,7 @@ describe("runDifyDiagnosis", () => {
     expect(result.configured).toBe(false)
     expect(result.summary.primaryPain).toContain("表示速度")
     expect(result.summary.evidence.join(" ")).toContain("38/100")
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it("normalizes workflow outputs when Dify responds", async () => {

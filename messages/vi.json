@@ -8,6 +8,7 @@
     "services": "Dịch vụ",
     "works": "Dự án",
     "pricing": "Bảng giá",
+    "package": "Gói",
     "faq": "FAQ",
     "blog": "Blog",
     "contact": "Liên hệ",
@@ -260,7 +261,8 @@
     "bodyBeforeLink": "Chúng tôi sử dụng tối thiểu cookie cho hiệu suất và phân tích sử dụng. Chi tiết xem tại",
     "privacyLink": "chính sách bảo mật",
     "accept": "Đồng ý",
-    "decline": "Từ chối"
+    "decline": "Từ chối",
+    "settings": "Cài đặt cookie"
   },
   "servicesPage": {
     "metaTitle": "Services",

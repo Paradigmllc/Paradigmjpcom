@@ -5,8 +5,8 @@ This file intentionally contains no secret values. Put real values only in Cooli
 ## Coolify target
 
 - App: `paradigm-hp`
-- App UUID: `i12am4vvcbggefnqdizhnv9a`
-- Env screen: `https://coolify.appexx.me` -> `My first project` -> `production` -> `paradigm-hp` -> `Configuration` -> `Environment Variables`
+- App UUID: `n8i2sjiqvr2d8hrzppop2m2i`
+- Env screen: `https://coolify.paradigmjp.com` -> `My first project` -> `production` -> `paradigm-hp` -> `Configuration` -> `Environment Variables`
 - After changing any value, redeploy `paradigm-hp` and run the Revenue OS integration live audit.
 
 ## Required services

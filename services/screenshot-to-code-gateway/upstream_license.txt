@@ -1,0 +1,3 @@
+This service executes abi/screenshot-to-code at the pinned commit declared in
+Dockerfile. The upstream project is distributed under the MIT License. Its
+license text is copied into the image at build time from the upstream checkout.

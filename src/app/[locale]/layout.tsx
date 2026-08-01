@@ -1,22 +1,23 @@
 import type { Metadata, Viewport } from "next"
 import { notFound } from "next/navigation"
+import { headers } from "next/headers"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getMessages, setRequestLocale } from "next-intl/server"
 import { ThemeProvider } from "@/components/aesop/ThemeProvider"
 import ConditionalSiteChrome from "@/components/aesop/ConditionalSiteChrome"
+import ConsentAwareTracking from "@/components/aesop/ConsentAwareTracking"
 import { getOrganizationJsonLd, getServicesJsonLd } from "@/lib/jsonld"
+import { buildWebSiteSchema } from "@/lib/seo/schemas"
 import { getSiteSettings, umamiWebsiteIdFor } from "@/lib/settings"
 import { getHeaderNav, getFooterNav } from "@/lib/navigation"
 import { themeTokensToCss } from "@/lib/theme-tokens"
 import MaintenanceScreen from "@/components/MaintenanceScreen"
 import { routing } from "@/i18n/routing"
+import { pageAlternates } from "@/lib/page-metadata"
+import { isMarketingLocale } from "@/lib/marketing-routing"
 import {
   isRtlLocale,
   localeDirection,
-  LOCALE_HREFLANG,
-  LOCALE_ORG_NAME,
-  LOCALE_ORG_ALTERNATE_NAMES,
-  localeContentVariant,
   type Locale,
 } from "@/lib/locale-map"
 
@@ -30,19 +31,19 @@ type Props = {
 }
 
 // 12-locale 対応 metadata（P17 2026-04-27）
-// ja=独自設計・他11ロケールは "Japan Entry Package" を母版とする
+// ja は国内向け一般サイト、他11ロケールは英語 Japan Entry 母版を使う
 const LOCALE_TITLES: Record<Locale, { default: string; template: string; description: string; ogSiteName: string; ogLocale: string }> = {
   ja: {
     default: "Paradigm合同会社 | デジタルで事業を加速する",
     template: "%s | Paradigm合同会社",
-    description: "Web制作・MEO対策・SEO/GEO・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社の公式サイトです。",
+    description: "Paradigm合同会社は、Web制作、MEO、SEO/GEO、AI導入を設計から公開後の運用まで支援します。",
     ogSiteName: "Paradigm合同会社",
     ogLocale: "ja_JP",
   },
   en: {
-    default: "Paradigm LLC | Productized Services for Foreign SMBs Entering Japan",
+    default: "Japan Entry Package for Fast-Decision SMBs | Paradigm",
     template: "%s | Paradigm LLC",
-    description: "Translation-free onboarding, local compliance, and AI-powered automation for foreign SMBs entering Japan. Built by operators in Tokyo.",
+    description: "$15,000 fixed Japan entry setup. Selected launch partners receive $2,000/month × 3 months = $6,000 of managed-operation value included; month 4 onward is $2,000/month under the signed terms.",
     ogSiteName: "Paradigm LLC",
     ogLocale: "en_US",
   },
@@ -130,22 +131,22 @@ export const viewport: Viewport = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const meta = LOCALE_TITLES[locale as Locale] ?? LOCALE_TITLES.en
-
-  // hreflang を全 locale 分生成
-  const languages: Record<string, string> = { "x-default": "https://paradigmjp.com/ja" }
-  for (const l of routing.locales) {
-    languages[LOCALE_HREFLANG[l]] = `https://paradigmjp.com/${l}`
-  }
+  const localizedMeta = LOCALE_TITLES[locale as Locale] ?? LOCALE_TITLES.en
+  const meta = locale === "ja"
+    ? localizedMeta
+    : locale === "en"
+      ? LOCALE_TITLES.en
+      : {
+          ...LOCALE_TITLES.en,
+          ogLocale: localizedMeta.ogLocale,
+          ogSiteName: localizedMeta.ogSiteName,
+        }
 
   return {
     title: { default: meta.default, template: meta.template },
     description: meta.description,
     metadataBase: new URL("https://paradigmjp.com"),
-    alternates: {
-      canonical: `https://paradigmjp.com/${locale}`,
-      languages,
-    },
+    alternates: pageAlternates(locale),
     openGraph: {
       type: "website",
       locale: meta.ogLocale,
@@ -165,7 +166,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: meta.description,
       images: [`/${locale}/opengraph-image`],
     },
-    robots: { index: true, follow: true },
+    robots: isMarketingLocale(locale)
+      ? { index: true, follow: true }
+      : { index: false, follow: false, noarchive: true },
   }
 }
 
@@ -186,11 +189,12 @@ export default async function LocaleLayout({ children, params }: Props) {
     getHeaderNav(locale),
     getFooterNav(locale),
   ])
+  const requestHost = (await headers()).get("host")?.split(":")[0]
+  const forceStandalone = requestHost === "demo.paradigmjp.com"
   const umamiId = umamiWebsiteIdFor(settings, locale) ?? process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? null
   // admin が編集した color/font/radius tokens を CSS 変数として注入 (空なら ""・globals.css default を使用)
   const themeOverrideCss = themeTokensToCss(settings.theme)
   const tracking = settings.tracking
-
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <head>
@@ -201,7 +205,7 @@ export default async function LocaleLayout({ children, params }: Props) {
              to Outfit — modern geometric sans for bold, distinctive headings.
              Body remains Noto Sans for readability across 12 locales. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Shippori+Mincho:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         {isRtl && (
@@ -213,48 +217,6 @@ export default async function LocaleLayout({ children, params }: Props) {
         {/* Favicon — admin が Settings.seo.favicon を設定していればそれを優先、無ければ既定 SVG */}
         <link rel="icon" type="image/svg+xml" href={settings.seo.faviconUrl ?? "/favicon.svg"} />
         <link rel="apple-touch-icon" href={settings.seo.faviconUrl ?? "/favicon.svg"} />
-        {/* 解析タグ (CMS Settings.tracking)。空 ID なら出力しない (V ルール: 未設定=無効)。 */}
-        {tracking.gtmId && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${tracking.gtmId}');`,
-            }}
-          />
-        )}
-        {tracking.ga4Id && (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${tracking.ga4Id}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${tracking.ga4Id}');`,
-              }}
-            />
-          </>
-        )}
-        {tracking.metaPixelId && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${tracking.metaPixelId}');fbq('track','PageView');`,
-            }}
-          />
-        )}
-        {/* admin (管理者のみ編集可) のカスタム <head> スクリプト */}
-        {tracking.headScripts && (
-          <script dangerouslySetInnerHTML={{ __html: tracking.headScripts }} />
-        )}
-        {umamiId && (
-          // H-2 (2026-05-01): "appexx.me 顧客表示禁止" 対応
-          // NEXT_PUBLIC_UMAMI_HOST 未設定時は analytics 無効化 (cal.appexx.me 直接表示を回避)
-          // Coolify env に NEXT_PUBLIC_UMAMI_HOST=https://analytics.paradigmjp.com 設定推奨
-          // (CNAME alias で analytics.appexx.me に解決)
-          process.env.NEXT_PUBLIC_UMAMI_HOST && (
-            <script
-              defer
-              src={`${process.env.NEXT_PUBLIC_UMAMI_HOST}/script.js`}
-              data-website-id={umamiId}
-            />
-          )
-        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd(locale)) }}
@@ -263,60 +225,9 @@ export default async function LocaleLayout({ children, params }: Props) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(getServicesJsonLd(locale)) }}
         />
-        {/* 2026-04-30 SEO/GEO 強化: LocalBusiness + WebSite (SearchAction 付) を全ページに注入 */}
-        {/* 2026-05-12 12-locale 拡張: LOCALE_ORG_NAME / LOCALE_ORG_ALTERNATE_NAMES /
-            localeContentVariant 経由で全 12 locale 対応の structured data を生成。
-            seed text (description) は ja/en 2 variant 母版 (Plan B). */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ProfessionalService",
-              "@id": "https://paradigmjp.com#organization",
-              name: (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC",
-              alternateName:
-                (LOCALE_ORG_ALTERNATE_NAMES as Record<string, string[]>)[locale] ??
-                LOCALE_ORG_ALTERNATE_NAMES.en,
-              url: "https://paradigmjp.com",
-              logo: "https://paradigmjp.com/logo.png",
-              image: "https://paradigmjp.com/og-image.png",
-              description:
-                localeContentVariant(locale) === "ja"
-                  ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
-                  : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC.",
-              address: { "@type": "PostalAddress", addressCountry: "JP", addressRegion: "Tokyo" },
-              sameAs: ["https://github.com/Paradigmllc"],
-              priceRange: "¥¥¥",
-              areaServed: ["JP", "US", "EU", "Worldwide"],
-            }),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "@id": "https://paradigmjp.com#website",
-              url: "https://paradigmjp.com",
-              name: (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC",
-              inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"],
-              publisher: {
-                "@type": "Organization",
-                "@id": "https://paradigmjp.com#organization",
-                name: (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC",
-              },
-              potentialAction: {
-                "@type": "SearchAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate: `https://paradigmjp.com/${locale}/blog?q={search_term_string}`,
-                },
-                "query-input": "required name=search_term_string",
-              },
-            }),
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebSiteSchema(locale)) }}
         />
         {/* admin が PayloadCMS Settings.theme で編集した色/フォント/角丸を CSS 変数として注入。
             globals.css の default を override する。settings.theme が null なら何も出力しない。 */}
@@ -325,18 +236,11 @@ export default async function LocaleLayout({ children, params }: Props) {
         )}
       </head>
       <body className="min-h-dvh bg-paradigm-paper text-paradigm-ink antialiased">
-        {/* GTM noscript fallback (JS 無効環境用)。gtmId 未設定なら出力しない。 */}
-        {tracking.gtmId && (
-          <noscript>
-            <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${tracking.gtmId}`}
-              height="0"
-              width="0"
-              style={{ display: "none", visibility: "hidden" }}
-              title="gtm"
-            />
-          </noscript>
-        )}
+        <ConsentAwareTracking
+          tracking={tracking}
+          umamiHost={process.env.NEXT_PUBLIC_UMAMI_HOST}
+          umamiWebsiteId={umamiId}
+        />
         <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             {settings.maintenance.maintenanceMode ? (
@@ -348,9 +252,16 @@ export default async function LocaleLayout({ children, params }: Props) {
               // 2026-05-21: header/footer ナビ + 告知バーを CMS global から渡す。
               <ConditionalSiteChrome
                 locale={locale}
+                forceStandalone={forceStandalone}
                 footerSettings={{
                   contactEmail: settings.contact.email,
                   social: settings.social,
+                  company: {
+                    legalName: settings.company.legalName,
+                    representativeName: settings.company.representativeName,
+                    registrationNumber: settings.company.registrationNumber,
+                    address: settings.company.address ?? settings.contact.address,
+                  },
                 }}
                 headerNav={headerNav}
                 footerNav={footerNav}
@@ -361,10 +272,6 @@ export default async function LocaleLayout({ children, params }: Props) {
             )}
           </NextIntlClientProvider>
         </ThemeProvider>
-        {/* admin (管理者のみ編集可) のカスタム <body> 末尾スクリプト */}
-        {tracking.bodyScripts && (
-          <script dangerouslySetInnerHTML={{ __html: tracking.bodyScripts }} />
-        )}
       </body>
     </html>
   )

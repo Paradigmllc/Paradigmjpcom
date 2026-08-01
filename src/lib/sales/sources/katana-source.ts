@@ -25,66 +25,68 @@ export async function checkKatanaHealth(): Promise<{ ok: boolean; detail: string
 export async function crawlWithKatana(url: string): Promise<KatanaResult> {
   if (!url?.startsWith("http")) return { source: "katana", ok: false, error: "invalid url" }
 
-  // Try self-hosted HTTP API first
-  try {
-    const res = await fetch(`${katanaUrl()}/crawl`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-      signal: AbortSignal.timeout(100_000),
-    })
-    if (res.ok) {
-      const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
-      if (data.ok) return { source: "katana", ok: true, data: data.data }
+  const kUrl = envValue("KATANA_API_URL")
+  if (kUrl) {
+    try {
+      const res = await fetch(`${kUrl}/crawl`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (res.ok) {
+        const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
+        if (data.ok) return { source: "katana", ok: true, data: data.data }
+      }
+    } catch (e) {
+      console.warn("[katana] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
     }
-    console.warn("[katana] self-hosted API unavailable, using public fallbacks")
-  } catch (e) {
-    console.warn("[katana] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
   }
 
-  // Fallback: collect URLs from public sources
   const urls: string[] = [url]
-  try {
-    // URLscan.io (public API, no auth for basic queries)
-    const domain = new URL(url).hostname
-    const uscanRes = await fetch(
-      `https://urlscan.io/api/v1/search/?q=domain:${encodeURIComponent(domain)}`,
-      { signal: AbortSignal.timeout(20_000) }
-    )
-    if (uscanRes.ok) {
-      const uscanData = await uscanRes.json() as { results?: Array<{ page?: { url?: string } }> }
-      if (uscanData.results) {
-        for (const r of uscanData.results.slice(0, 20)) {
+  const domain = new URL(url).hostname
+  const tasks: Promise<void>[] = []
+
+  tasks.push((async () => {
+    try {
+      const uscanRes = await fetch(
+        `https://urlscan.io/api/v1/search/?q=domain:${encodeURIComponent(domain)}`,
+        { signal: AbortSignal.timeout(12_000) },
+      )
+      if (uscanRes.ok) {
+        const uscanData = await uscanRes.json() as { results?: Array<{ page?: { url?: string } }> }
+        for (const r of (uscanData.results ?? []).slice(0, 20)) {
           if (r.page?.url) urls.push(r.page.url)
         }
       }
+    } catch (e) {
+      console.warn("[katana] URLscan.io fallback failed:", e instanceof Error ? e.message : String(e))
     }
-  } catch (e) {
-    console.warn("[katana] URLscan.io fallback failed:", e instanceof Error ? e.message : String(e))
-  }
+  })())
 
-  try {
-    // CommonCrawl index
-    const domain = new URL(url).hostname
-    const ccRes = await fetch(
-      `https://index.commoncrawl.org/CC-MAIN-2024-10-index?url=*.${encodeURIComponent(domain)}&output=json&limit=20`,
-      { signal: AbortSignal.timeout(20_000) }
-    )
-    if (ccRes.ok) {
-      const ccText = await ccRes.text()
-      const lines = ccText.trim().split("\n").filter(Boolean)
-      for (const line of lines) {
-        try {
-          const entry = JSON.parse(line)
-          if (entry.url && !urls.includes(entry.url)) urls.push(entry.url)
-        } catch (e) {
-          console.warn("[katana] CommonCrawl JSON parse failed:", e instanceof Error ? e.message : String(e))
+  tasks.push((async () => {
+    try {
+      const ccRes = await fetch(
+        `https://index.commoncrawl.org/CC-MAIN-2024-10-index?url=*.${encodeURIComponent(domain)}&output=json&limit=20`,
+        { signal: AbortSignal.timeout(12_000) },
+      )
+      if (ccRes.ok) {
+        const ccText = await ccRes.text()
+        for (const line of ccText.trim().split("\n").filter(Boolean)) {
+          try {
+            const entry = JSON.parse(line)
+            if (entry.url && !urls.includes(entry.url)) urls.push(entry.url)
+          } catch (e) {
+            console.warn("[katana] CommonCrawl JSON parse failed:", e instanceof Error ? e.message : String(e))
+          }
         }
       }
+    } catch (e) {
+      console.warn("[katana] CommonCrawl fetch failed:", e instanceof Error ? e.message : String(e))
     }
-  } catch (e) {
-    console.warn("[katana] CommonCrawl fetch failed:", e instanceof Error ? e.message : String(e))
-  }
+  })())
+
+  await Promise.allSettled(tasks)
 
   return {
     source: "katana",

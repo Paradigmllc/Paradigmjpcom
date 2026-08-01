@@ -1,0 +1,32 @@
+version: 1
+rules:
+  text_motion:
+    primary: hyperframes
+    fallbacks: [ffmpeg, mock]
+  ui_capture:
+    primary: playwright
+    fallbacks: [hyperframes, ffmpeg, mock]
+  chart:
+    primary: hyperframes
+    fallbacks: [manim, ffmpeg, mock]
+  generative:
+    primary: comfyui
+    fallbacks: [hyperframes, ffmpeg, mock]
+  supplied_edit:
+    primary: ffmpeg
+    fallbacks: [mock]
+  three_d:
+    primary: blender
+    fallbacks: [comfyui, hyperframes, mock]
+  technical_diagram:
+    primary: manim
+    fallbacks: [hyperframes, mock]
+  portrait_animation:
+    primary: liveportrait
+    fallbacks: [comfyui, mock]
+  lip_sync:
+    primary: musetalk
+    fallbacks: [liveportrait, comfyui, mock]
+  transition:
+    primary: hyperframes
+    fallbacks: [ffmpeg, mock]

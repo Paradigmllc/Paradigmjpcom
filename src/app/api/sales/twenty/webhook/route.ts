@@ -8,7 +8,6 @@ export const maxDuration = 120;
 interface Body {
   limit?: number;
   dry_run?: boolean;
-  dispatch_pipeline?: boolean;
 }
 
 /**
@@ -35,9 +34,6 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await pullTwentyCompaniesToSupabase(body.limit ?? 500, {
-      autoRunPipeline: true,
-      dispatchPipeline: body.dispatch_pipeline !== false,
-      requestedBy: "twenty_webhook",
       dryRun: body.dry_run === true,
     });
     if (!result.ok) {

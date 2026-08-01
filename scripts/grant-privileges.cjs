@@ -11,6 +11,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authen
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
 `;
 fs.writeFileSync('grants.sql', sql);
-execSync('scp grants.sql root@139.59.250.5:/root/supabase-oss/grants.sql');
-const out = execSync('ssh root@139.59.250.5 "docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/grants.sql"');
+execSync('scp grants.sql root@178.105.138.55:/root/supabase-oss/grants.sql');
+const out = execSync('ssh root@178.105.138.55 "docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/grants.sql"');
 console.log('Grants executed: ' + out.toString());

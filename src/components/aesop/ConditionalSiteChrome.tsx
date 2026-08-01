@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 /**
  * ConditionalSiteChrome — single source of truth for "should this page render
@@ -11,6 +11,8 @@
  *
  * 適用範囲:
  *   - LP-only (chrome 全消し): /{locale}/report/* — 顧客向け診断レポート (B36 MVP)
+ *   - LP-only (chrome 全消し): /{locale}/work-report/* — Manual Japan Entry証拠ブリーフ
+ *   - LP-only (chrome 全消し): /{locale}/demo/* — 独立した顧客向けフルサイトデモ
  *   - LP-only (chrome 全消し): /p/* — レガシー営業提案ページ (旧 ProposalRenderer)
  *   - 通常 site chrome: それ以外の全ページ
  *
@@ -22,20 +24,21 @@
  * component のまま、props で server-side fetched settings を渡す.
  */
 
-import { usePathname } from "next/navigation"
-import type { ReactNode } from "react"
-import ScrollProgress from "./ScrollProgress"
-import LuxuryLoader from "./LuxuryLoader"
-import SiteHeader from "./SiteHeader"
-import SiteFooter from "./SiteFooter"
-import AnnouncementBar from "./AnnouncementBar"
-import CookieConsent from "./CookieConsent"
-import BackToTop from "./BackToTop"
-import PageTransition from "./PageTransition"
-import SiteWrapper from "@/components/SiteWrapper"
-import DifyChatbot from "@/components/DifyChatbot"
-import { localeContentVariant } from "@/lib/locale-map"
-import type { HeaderNav, FooterNav } from "@/lib/navigation"
+import { usePathname } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
+import ScrollProgress from "./ScrollProgress";
+import LuxuryLoader from "./LuxuryLoader";
+import SiteHeader from "./SiteHeader";
+import SiteFooter from "./SiteFooter";
+import AnnouncementBar from "./AnnouncementBar";
+import CookieConsent from "./CookieConsent";
+import BackToTop from "./BackToTop";
+import PageTransition from "./PageTransition";
+import SiteWrapper from "@/components/SiteWrapper";
+import DifyChatbot from "@/components/DifyChatbot";
+import { localeContentVariant } from "@/lib/locale-map";
+import type { HeaderNav, FooterNav } from "@/lib/navigation";
+import { isStandaloneRoute } from "./standalone-routes";
 
 /**
  * SiteFooter prop shape を最小限ミラー (PayloadCMS Settings global から渡される
@@ -44,35 +47,42 @@ import type { HeaderNav, FooterNav } from "@/lib/navigation"
  * shape は SiteFooter 側に追従させる.
  */
 type SiteFooterSettings = {
-  contactEmail?: string | null
+  contactEmail?: string | null;
+  company?: {
+    legalName?: string | null;
+    representativeName?: string | null;
+    registrationNumber?: string | null;
+    address?: string | null;
+  };
   social?: {
-    twitter?: string | null
-    instagram?: string | null
-    facebook?: string | null
-    linkedin?: string | null
-    line?: string | null
-  }
-}
+    twitter?: string | null;
+    instagram?: string | null;
+    facebook?: string | null;
+    linkedin?: string | null;
+    line?: string | null;
+  };
+};
 
 /** CMS Settings.announcement 由来の告知バー設定 */
 type AnnouncementSettings = {
-  enabled: boolean
-  message?: string | null
-  linkLabel?: string | null
-  linkHref?: string | null
-  variant?: "ink" | "accent" | "tech"
-}
+  enabled: boolean;
+  message?: string | null;
+  linkLabel?: string | null;
+  linkHref?: string | null;
+  variant?: "ink" | "accent" | "tech";
+};
 
 interface Props {
-  children: ReactNode
-  locale: string
-  footerSettings: SiteFooterSettings
+  children: ReactNode;
+  locale: string;
+  forceStandalone?: boolean;
+  footerSettings: SiteFooterSettings;
   /** PayloadCMS Header global 由来ナビ (null=既定ナビ) */
-  headerNav?: HeaderNav | null
+  headerNav?: HeaderNav | null;
   /** PayloadCMS Footer global 由来ナビ (null=既定フッター) */
-  footerNav?: FooterNav | null
+  footerNav?: FooterNav | null;
   /** PayloadCMS Settings.announcement 由来の告知バー */
-  announcement?: AnnouncementSettings
+  announcement?: AnnouncementSettings;
 }
 
 /**
@@ -83,34 +93,33 @@ interface Props {
  * 判定は `pathname.includes()` ではなく `match()` で precision を上げ、
  * 例えば将来 `/about/report-format` のような同名 segment が混入しても誤爆しない.
  */
-function isLpRoute(pathname: string): boolean {
-  // /{2-letter-locale}/report/{anything} に厳密一致
-  if (/^\/[a-z]{2}\/report\//.test(pathname)) return true
-  if (/^\/[a-z]{2}\/d\//.test(pathname)) return true
-  if (/^\/[a-z]{2}\/admin(\/|$)/.test(pathname)) return true
-  // /p/{anything} (legacy proposal pages)
-  if (/^\/p\//.test(pathname)) return true
-  return false
-}
-
 export default function ConditionalSiteChrome({
   children,
   locale,
+  forceStandalone = false,
   footerSettings,
   headerNav,
   footerNav,
   announcement,
 }: Props) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
-  if (isLpRoute(pathname)) {
+  // Public demo URLs are shortened to /{locale}/{slug} on demo.paradigmjp.com,
+  // so the hostname is the only reliable signal after the reverse proxy.
+  const [isDemoHostname, setIsDemoHostname] = useState(forceStandalone);
+  useEffect(() => {
+    setIsDemoHostname(window.location.hostname === "demo.paradigmjp.com");
+  }, []);
+
+  if (isStandaloneRoute(pathname) || isDemoHostname) {
     // LP モード: chrome 一切なし・i18n / theme provider は親 layout に残るので
     // ここでは children のみ返す. report page 側で独自 LP UI を組む.
-    return <>{children}</>
+    return <>{children}</>;
   }
 
-  const announcementActive = Boolean(announcement?.enabled && announcement?.message)
-
+  const announcementActive = Boolean(
+    announcement?.enabled && announcement?.message,
+  );
   // 通常 site chrome
   return (
     <>
@@ -138,5 +147,5 @@ export default function ConditionalSiteChrome({
           2-variant 制約と一致させ、将来 Dify が他 locale bot を持った時はマップ拡張で対応. */}
       <DifyChatbot locale={localeContentVariant(locale)} />
     </>
-  )
+  );
 }

@@ -25,10 +25,10 @@ function useIsMobile() {
 const EASE = [0.22, 1, 0.36, 1] as const
 
 const STAT_DEFS = [
-  { key: "support", to: 200, gradient: "from-fuchsia-400 via-paradigm-glow to-paradigm-tech" },
-  { key: "retention", to: 98, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400" },
-  { key: "growth", to: 3, gradient: "from-paradigm-glow via-violet-400 to-fuchsia-400" },
-  { key: "consult", to: 15, gradient: "from-violet-400 via-fuchsia-400 to-paradigm-tech" },
+  { key: "support", to: 4, gradient: "from-fuchsia-400 via-paradigm-glow to-paradigm-tech" },
+  { key: "retention", to: 4, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400" },
+  { key: "growth", to: 1, gradient: "from-paradigm-glow via-violet-400 to-fuchsia-400" },
+  { key: "consult", to: 0, gradient: "from-violet-400 via-fuchsia-400 to-paradigm-tech" },
 ] as const
 
 export default function HeroSection() {

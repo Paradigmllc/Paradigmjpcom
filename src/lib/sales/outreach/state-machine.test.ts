@@ -40,7 +40,7 @@ describe("outreach state-machine", () => {
     expect(stageToPipelineStatus("submitted")).toBe("sent")
     expect(stageToPipelineStatus("manual_queue")).toBe("manual_queue")
     expect(stageToPipelineStatus("classified_risky")).toBe("manual_queue")
-    expect(stageToPipelineStatus("submit_uncertain")).toBe("manual_queue")
+    expect(stageToPipelineStatus("submit_uncertain")).toBe("report_ready")
     expect(stageToPipelineStatus("submit_failed")).toBe("report_ready")
     expect(stageToPipelineStatus("classified_skip")).toBe("report_ready")
   })

@@ -22,7 +22,7 @@ export async function findEmailsByDomain(
   domain: string,
   limit: number = 5,
 ): Promise<{ ok: boolean; emails: HunterEmail[]; error?: string }> {
-  const key = process.env.HUNTER_API_KEY ?? ""
+  const key = process.env.HUNTER_API_KEY?.trim()
   if (!key) {
     return { ok: false, emails: [], error: "HUNTER_API_KEY not configured" }
   }

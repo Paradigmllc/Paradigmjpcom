@@ -1,0 +1,29 @@
+@media (max-width: 760px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .app-shell,
+  .sidebar,
+  .nav,
+  .main,
+  .view,
+  .creation-layout,
+  .form-main,
+  .form-aside,
+  .panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .nav {
+    overscroll-behavior-x: contain;
+  }
+
+  .topbar,
+  .topbar-actions {
+    flex-wrap: wrap;
+  }
+}

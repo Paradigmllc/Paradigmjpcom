@@ -1,228 +1,362 @@
 /**
- * /api/contact — お問い合わせ受信エンドポイント
+ * /api/contact — secure public contact and application endpoint.
  *
- * 役割:
- *   1. ContactForm の POST を受け、必須バリデーション
- *   2. Cloudflare Turnstile CAPTCHA 検証 (TURNSTILE_SECRET_KEY 設定時のみ)
- *   3. IP 単位で rate-limit (5 req / 60s)
- *   4. Slack 通知 (appexx.me API 経由)
- *   5. Supabase leads テーブルに保存
- *
- * 入力: POST JSON { name, company?, email, phone?, services?[], message, budget?, locale?, turnstileToken? }
- * 出力: { success, message } | { error }
- *
- * 永久ルール (BB / E): catch{} 握りつぶし禁止 — エラーは console.error で可視化。
+ * Validates the public form, atomically persists lead + DB outbox, and sends
+ * an idempotent Slack alert under a DB-backed notification lease.
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit, getClientIp, verifyTurnstile } from "@/lib/rate-limit"
 import { captureException } from "@/lib/error-monitor"
 import { LOCALE_COUNTRY, localeContentVariant } from "@/lib/locale-map"
-import { enrichFromContact } from "@/lib/sales/enrich"
-import { buildReportUrl, normalizeReportLocale } from "@/lib/sales/routing"
-import { notifySlack } from "@/lib/notify"
+import { normalizeReportLocale } from "@/lib/sales/routing"
+import { notifyBothChannels } from "@/lib/notify"
+import {
+  JAPAN_ENTRY_INTENT,
+  VIDEO_SERVICE_INTENT,
+  normalizeCompanyCountry,
+  parseContactPayload,
+  scoreContactQualification,
+  validateContactPayload,
+  type ContactIntent,
+} from "./contact-payload"
+import {
+  ContactChallengeReplayError,
+  completeContactNotification,
+  persistContactLead,
+  type ContactNotificationOutbox,
+} from "./contact-lead"
+import { startContactEnrichment } from "./contact-enrichment"
+import { verifyContactChallenge } from "./contact-challenge"
+import {
+  buildContactLeadMeta,
+  buildContactSlackText,
+  contactChallengeHash,
+  contactIdempotencyKey,
+  contactNotificationTitle,
+  leadRegionForLocale,
+  localized,
+  requestLanguage,
+  slackInline,
+} from "./contact-route-helpers"
+
+export { GET } from "./contact-challenge-route"
+
+function notificationType(
+  intent: ContactIntent,
+): ContactNotificationOutbox["type"] {
+  if (intent === JAPAN_ENTRY_INTENT) return "japan_entry_application"
+  if (intent === VIDEO_SERVICE_INTENT) return "video_service_application"
+  return "contact_inquiry"
+}
+
+function notificationSummary(intent: ContactIntent): string {
+  if (intent === JAPAN_ENTRY_INTENT) return "a Japan Entry application"
+  if (intent === VIDEO_SERVICE_INTENT) return "a Video as a Service application"
+  return "an inquiry"
+}
 
 export async function POST(req: NextRequest) {
+  let responseLanguage = requestLanguage(req)
   try {
     const ip = getClientIp(req)
-
-    // 1. Rate limit (5 / 60s per IP)
-    const rl = checkRateLimit({ ip, key: "contact-post", max: 5, windowMs: 60_000 })
-    if (!rl.ok) {
+    const rateLimit = checkRateLimit({
+      ip,
+      key: "contact-post",
+      max: 5,
+      windowMs: 60_000,
+    })
+    if (!rateLimit.ok) {
       return NextResponse.json(
-        { error: "リクエストが多すぎます。しばらくしてから再度お試しください。" },
+        {
+          error: localized(responseLanguage, {
+            en: "Too many requests. Please wait a moment and try again.",
+            ja: "リクエストが多すぎます。しばらくしてから再度お試しください。",
+          }),
+        },
         {
           status: 429,
           headers: {
-            "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
-            "X-RateLimit-Remaining": String(rl.remaining),
-            "X-RateLimit-Reset": String(Math.ceil(rl.resetAt / 1000)),
+            "Retry-After": String(
+              Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+            ),
+            "X-RateLimit-Remaining": String(rateLimit.remaining),
+            "X-RateLimit-Reset": String(Math.ceil(rateLimit.resetAt / 1000)),
           },
         },
       )
     }
 
-    const body = await req.json()
-    const { name, company, email, phone, services, message, budget, locale, turnstileToken } = body
-
-    // 2. Required field validation
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: "必須項目が入力されていません" }, { status: 400 })
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch (error) {
+      console.error("[contact] Invalid JSON request body:", error)
+      return NextResponse.json(
+        {
+          error: localized(responseLanguage, {
+            en: "The request body is invalid.",
+            ja: "リクエストの形式が正しくありません。",
+          }),
+        },
+        { status: 400 },
+      )
     }
 
-    // 3. Turnstile CAPTCHA (no-op if TURNSTILE_SECRET_KEY unset)
+    const payload = parseContactPayload(body)
+    if (!payload) {
+      return NextResponse.json(
+        {
+          error: localized(responseLanguage, {
+            en: "The request payload is invalid.",
+            ja: "リクエスト内容が正しくありません。",
+          }),
+        },
+        { status: 400 },
+      )
+    }
+    responseLanguage = requestLanguage(req, payload.locale)
+
+    const validationError = validateContactPayload(payload)
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 })
+    }
+
+    if (payload.honeypot) {
+      console.warn("[contact] Honeypot rejected a form submission")
+      return NextResponse.json(
+        {
+          error: localized(responseLanguage, {
+            en: "Form verification failed.",
+            ja: "フォーム認証に失敗しました。",
+          }),
+          code: "honeypot_rejected",
+        },
+        { status: 400 },
+      )
+    }
+
+    const headerSubmissionIdentity =
+      req.headers.get("x-contact-submission-id")?.trim() ?? ""
+    if (
+      headerSubmissionIdentity &&
+      headerSubmissionIdentity !== payload.idempotencyKey
+    ) {
+      return NextResponse.json(
+        {
+          error: localized(responseLanguage, {
+            en: "Form verification identity does not match. Reload the page and try again.",
+            ja: "フォーム認証情報が一致しません。ページを再読み込みしてお試しください。",
+          }),
+          code: "challenge_identity_mismatch",
+        },
+        { status: 400 },
+      )
+    }
+
+    const challengeResult = verifyContactChallenge(payload.formChallenge, {
+      clientIp: ip,
+      submissionIdentity: payload.idempotencyKey,
+    })
+    if (!challengeResult.ok) {
+      const status = challengeResult.reason === "not_configured" ? 503 : 400
+      const error =
+        challengeResult.reason === "too_fast"
+          ? localized(responseLanguage, {
+              en: "Please take a moment to complete the form before submitting.",
+              ja: "内容をご確認のうえ、少し時間を置いてから送信してください。",
+            })
+          : challengeResult.reason === "not_configured"
+            ? localized(responseLanguage, {
+                en: "Form verification is temporarily unavailable.",
+                ja: "フォーム認証を一時的に利用できません。",
+              })
+            : localized(responseLanguage, {
+                en: "Form verification expired. Reload the page and try again.",
+                ja: "フォーム認証の有効期限が切れました。ページを再読み込みしてお試しください。",
+              })
+      console.warn(
+        `[contact] Form challenge rejected: ${challengeResult.reason}`,
+      )
+      return NextResponse.json(
+        { error, code: `challenge_${challengeResult.reason}` },
+        { status },
+      )
+    }
+
+    const {
+      name,
+      company,
+      email,
+      phone,
+      services,
+      message,
+      locale,
+      turnstileToken,
+      intent,
+      companyCountry,
+      idempotencyKey: clientIdempotencyKey,
+    } = payload
+
     const captchaOk = await verifyTurnstile(turnstileToken)
     if (!captchaOk) {
       return NextResponse.json(
-        { error: "ボット検証に失敗しました。ページを再読み込みしてもう一度お試しください。" },
+        {
+          error: localized(responseLanguage, {
+            en: "Bot verification failed. Reload the page and try again.",
+            ja: "ボット検証に失敗しました。ページを再読み込みしてもう一度お試しください。",
+          }),
+        },
         { status: 403 },
       )
     }
 
     const reportLocale = normalizeReportLocale(locale, "jp")
     const variant = localeContentVariant(reportLocale)
-    const country = (LOCALE_COUNTRY as Record<string, string>)[reportLocale] ?? "US"
+    const localeCountry =
+      (LOCALE_COUNTRY as Record<string, string>)[reportLocale] ?? "US"
+    const targetCountry = normalizeCompanyCountry(companyCountry, localeCountry)
+    const qualification = scoreContactQualification(payload)
+    const idempotencyKey = contactIdempotencyKey({
+      clientKey: clientIdempotencyKey,
+      email,
+      company,
+      message,
+    })
+    const challengeHash = contactChallengeHash(challengeResult)
+    const submittedAt = new Date().toISOString()
+    const leadMeta = buildContactLeadMeta({
+      payload,
+      qualification,
+      reportLocale,
+      targetCountry,
+      idempotencyKey,
+      clientBinding: challengeResult.clientBinding,
+      submittedAt,
+    })
+    const slackTextBase = buildContactSlackText({
+      payload,
+      reportLocale,
+      qualification,
+    })
+    const title = contactNotificationTitle(intent, qualification)
+    const safeDisplayName = slackInline(company || name)
+    const summary = notificationSummary(intent)
+    const type = notificationType(intent)
 
-    // 4. Slack notification (best-effort)
-    const slackText = [
-      "📩 *paradigmjp.com お問い合わせ*",
-      `*locale:* ${reportLocale}`,
-      `*お名前:* ${name}`,
-      company ? `*会社名:* ${company}` : null,
-      `*メール:* ${email}`,
-      phone ? `*電話:* ${phone}` : null,
-      services?.length ? `*興味のあるサービス:* ${services.join(", ")}` : null,
-      budget ? `*ご予算:* ${budget}` : null,
-      `*ご相談内容:*\n${message}`,
-    ]
-      .filter(Boolean)
-      .join("\n")
+    const persistedLead = await persistContactLead({
+      idempotencyKey,
+      challengeHash,
+      lead: {
+        business_name: company || name,
+        email,
+        phone: phone || null,
+        country: targetCountry,
+        industry: services[0] || "問い合わせ",
+        pipeline_stage: "new",
+        region: leadRegionForLocale(reportLocale),
+        meta: leadMeta,
+      },
+      notification: {
+        title,
+        message: `${safeDisplayName} submitted ${summary}.`,
+        link: "https://twenty.paradigmjp.com",
+        type,
+        region: "global",
+        priority: qualification.priority,
+        slack_text: slackTextBase,
+      },
+    })
 
-    // 2026-05-13 appexx.me 連携一時断絶: SLACK_WEBHOOK_URL env から
-    // Slack Incoming Webhook を直接呼ぶ。env 未設定なら no-op + warn (fail-soft)。
-    const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL
-    if (slackWebhookUrl) {
-      try {
-        await fetch(slackWebhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: slackText }),
-          signal: AbortSignal.timeout(5_000),
-        })
-      } catch (e) {
-        console.error("[contact] Slack notify failed (best-effort):", e)
+    let notificationStatus = persistedLead.notificationStatus
+    if (persistedLead.notificationClaimed) {
+      if (!persistedLead.notificationClaimToken) {
+        throw new Error(
+          "Atomic contact submission returned a claim without a token",
+        )
       }
-    } else {
-      console.warn(
-        "[contact] SLACK_WEBHOOK_URL not set — skipping Slack notify (appexx.me archive 2026-05-13)",
-      )
+      const slackText = slackTextBase.replace("{{lead_id}}", persistedLead.id)
+      const notifyResult = await notifyBothChannels(slackText, {
+        title,
+        message: `${safeDisplayName} submitted ${summary}. Lead ${persistedLead.id}.`,
+        link: "https://twenty.paradigmjp.com",
+        type,
+        region: "global",
+        priority: qualification.priority,
+        leadId: persistedLead.id,
+        idempotencyKey,
+        existingQueueItemId: persistedLead.outboxId,
+        clientMessageId: persistedLead.outboxId,
+      })
+      notificationStatus = notifyResult.ok ? "complete" : "degraded"
+      try {
+        await completeContactNotification({
+          idempotencyKey,
+          claimToken: persistedLead.notificationClaimToken,
+          status: notificationStatus,
+          slackError: notifyResult.slack.error,
+        })
+      } catch (error) {
+        notificationStatus = "degraded"
+        console.error(
+          `[contact] Lead ${persistedLead.id} and DB outbox were saved, but Slack completion persistence failed:`,
+          error,
+        )
+      }
     }
 
-    // 5. Supabase leads insert (best-effort)
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (supabaseUrl && supabaseKey) {
-      try {
-        await fetch(`${supabaseUrl}/rest/v1/leads`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            Prefer: "return=minimal",
-          },
-          body: JSON.stringify({
-            business_name: company || name,
-            email,
-            phone: phone || null,
-            country,
-            industry: services?.[0] || "問い合わせ",
-            pipeline_stage: "inbound",
-            source: "paradigmjp.com",
-            meta: {
-              contact_form: {
-                name,
-                company,
-                services,
-                message,
-                budget,
-                locale,
-                report_locale: reportLocale,
-                ip,
-                submitted_at: new Date().toISOString(),
-              },
-            },
-          }),
-          signal: AbortSignal.timeout(8_000),
-        })
-      } catch (e) {
-        console.error("[contact] Supabase insert failed (best-effort):", e)
-      }
+    if (persistedLead.created) {
+      await startContactEnrichment({
+        leadId: persistedLead.id,
+        email,
+        company: company || null,
+        message,
+        services,
+        reportLocale,
+        targetCountry,
+      })
     }
 
-    // 6. sales_companies auto-enrich (fire-and-forget・client への応答は遅延させない)
-    //    corporate domain なら PSI + gBizInfo + scanDomain で 1 行作成
-    //    自由メール (gmail 等) は skip
-    void (async () => {
-      try {
-        const enrich = await enrichFromContact({
-          email,
-          company: company ?? null,
-          message,
-          services,
-          reportLocale,
-          targetCountry: country,
-          source: "paradigmjp.com/contact",
-        })
-        if (enrich.ok && enrich.company) {
-          const c = enrich.company
-          const blocks = [
-            {
-              type: "header",
-              text: { type: "plain_text", text: `🌱 新規リード: ${c.company_name}` },
-            },
-            {
-              type: "section",
-              fields: [
-                { type: "mrkdwn", text: `*ドメイン*\n${c.domain}` },
-                { type: "mrkdwn", text: `*業種*\n${c.industry ?? "未推定"}` },
-                {
-                  type: "mrkdwn",
-                  text: `*PSI モバイル*\n${c.pagespeed_mobile ?? "?"} / 100`,
-                },
-                {
-                  type: "mrkdwn",
-                  text: `*検出課題*\n${(c.detected_issues ?? []).join(", ") || "なし"}`,
-                },
-              ],
-            },
-            {
-              type: "actions",
-              elements: [
-                // Sprint 13: 営業データは Notion ⇔ Supabase MCP に集約 (admin dashboard 撤廃)
-                // 診断レポート URL は slug 設定後のみ active (未設定なら domain 直リンク)
-                ...(c.slug
-                  ? [
-                      {
-                        type: "button",
-                        text: { type: "plain_text", text: "診断レポート" },
-                        url: c.report_url ?? buildReportUrl(normalizeReportLocale(c.report_locale, c.region), c.slug),
-                        style: "primary",
-                      },
-                    ]
-                  : []),
-                {
-                  type: "button",
-                  text: { type: "plain_text", text: "Notion で開く" },
-                  url: `https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`,
-                },
-              ],
-            },
-          ]
-          await notifySlack(
-            `🌱 新規リード: ${c.company_name} (${c.domain})`,
-            blocks,
-          )
-        } else if (enrich.skipped === "personal_domain") {
-          console.warn("[contact] enrich skipped (personal_domain):", email)
-        } else if (enrich.error) {
-          console.error("[contact] enrich failed:", enrich.error)
-        }
-      } catch (e) {
-        console.error("[contact] enrich pipeline error:", e)
-      }
-    })()
+    const successMessage =
+      intent === VIDEO_SERVICE_INTENT
+        ? localized(responseLanguage, {
+            en: "Application received. We normally reply with fit and next steps within one business day.",
+            ja: "申請を受け付けました。原則1営業日以内に適合可否と次の手順をご連絡します。",
+          })
+        : variant === "ja"
+          ? "お問い合わせを受け付けました。1営業日以内にご連絡いたします。"
+          : "Thank you. We'll reply within one business day."
 
     return NextResponse.json({
       success: true,
-      message: variant === "ja"
-        ? "お問い合わせを受け付けました。1営業日以内にご連絡いたします。"
-        : "Thank you. We'll reply within one business day.",
+      message: successMessage,
+      deduplicated: !persistedLead.created,
+      notificationStatus,
     })
-  } catch (e) {
-    await captureException(e, { source: "/api/contact", severity: "error" })
+  } catch (error) {
+    if (error instanceof ContactChallengeReplayError) {
+      return NextResponse.json(
+        {
+          error: localized(responseLanguage, {
+            en: "This form verification has already been used. Reload the page and try again.",
+            ja: "このフォーム認証は使用済みです。ページを再読み込みしてお試しください。",
+          }),
+          code: "challenge_replayed",
+        },
+        { status: 409 },
+      )
+    }
+    await captureException(error, {
+      source: "/api/contact",
+      severity: "error",
+    })
     return NextResponse.json(
-      { error: "送信に失敗しました。しばらく後にお試しください。" },
+      {
+        error: localized(responseLanguage, {
+          en: "Submission failed. Please try again in a moment.",
+          ja: "送信に失敗しました。しばらく後にお試しください。",
+        }),
+      },
       { status: 500 },
     )
   }

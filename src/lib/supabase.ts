@@ -21,6 +21,12 @@ function flagEnabled(name: string): boolean {
   return value ? /^(1|true|yes)$/i.test(value) : false
 }
 
+function salesSupabaseFetchTimeoutMs(): number {
+  const raw = readOptionalEnv("SALES_SUPABASE_FETCH_TIMEOUT_MS")
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN
+  return Number.isFinite(parsed) && parsed >= 1_000 ? parsed : 12_000
+}
+
 export function getSalesSupabaseConfig(): { url: string; serviceKey: string; source: "cloud" | "dedicated" } | null {
   const cloudUrl = readOptionalEnv("NEXT_PUBLIC_SUPABASE_URL")
   const cloudServiceKey = readOptionalEnv("SUPABASE_SERVICE_ROLE_KEY")
@@ -82,7 +88,15 @@ function shouldRewriteDirectPostgrest(url: string): boolean {
   return /supabase-rest-1(?::3000)?$/i.test(new URL(url).host) || flagEnabled("SALES_SUPABASE_DIRECT_POSTGREST")
 }
 
-function createDirectPostgrestFetch(baseUrl: string): typeof fetch {
+function withSalesSupabaseTimeout(baseFetch: typeof fetch): typeof fetch {
+  return (input, init) =>
+    baseFetch(input, {
+      ...init,
+      signal: init?.signal ?? AbortSignal.timeout(salesSupabaseFetchTimeoutMs()),
+    })
+}
+
+function createDirectPostgrestFetch(baseUrl: string, baseFetch: typeof fetch): typeof fetch {
   const normalizedBase = baseUrl.replace(/\/+$/, "")
   const restPrefix = `${normalizedBase}/rest/v1`
 
@@ -90,25 +104,28 @@ function createDirectPostgrestFetch(baseUrl: string): typeof fetch {
     if (typeof input === "string" || input instanceof URL) {
       const raw = input.toString()
       if (raw.startsWith(restPrefix)) {
-        return fetch(`${normalizedBase}${raw.slice(restPrefix.length)}`, init)
+        return baseFetch(`${normalizedBase}${raw.slice(restPrefix.length)}`, init)
       }
-      return fetch(input, init)
+      return baseFetch(input, init)
     }
 
     const raw = input.url
-    if (!raw.startsWith(restPrefix)) return fetch(input, init)
+    if (!raw.startsWith(restPrefix)) return baseFetch(input, init)
     const rewritten = `${normalizedBase}${raw.slice(restPrefix.length)}`
-    return fetch(new Request(rewritten, input), init)
+    return baseFetch(new Request(rewritten, input), init)
   }
 }
 
 export function getServiceSalesSupabase() {
   const config = getSalesSupabaseConfig()
   if (!config) return null
+  const timedFetch = withSalesSupabaseTimeout(fetch)
   return createClient(config.url, config.serviceKey, {
     auth: { persistSession: false },
-    global: shouldRewriteDirectPostgrest(config.url)
-      ? { fetch: createDirectPostgrestFetch(config.url) }
-      : undefined,
+    global: {
+      fetch: shouldRewriteDirectPostgrest(config.url)
+        ? createDirectPostgrestFetch(config.url, timedFetch)
+        : timedFetch,
+    },
   })
 }

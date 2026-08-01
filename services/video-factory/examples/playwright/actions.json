@@ -1,0 +1,5 @@
+[
+  {"type": "wait", "milliseconds": 1000},
+  {"type": "scroll", "y": 700},
+  {"type": "wait", "milliseconds": 1000}
+]

@@ -10,6 +10,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
@@ -17,6 +18,8 @@ import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import FadeIn from "@/components/aesop/FadeIn"
 import { getServiceByKey, getPricingFor } from "@/lib/data"
 import { buildServiceSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
+
+export const dynamic = "force-dynamic"
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -41,22 +44,20 @@ async function ProcessBand({ locale }: { locale: string }) {
       <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-8">
         <FadeIn className="mb-8 max-w-2xl">
           <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("meo.processEyebrow")}</p>
-          <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
-            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
+          <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15]  text-paradigm-ink">
+            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-ink to-paradigm-accent bg-clip-text text-transparent">
               {t("meo.processTitle")}
             </span>
           </h2>
         </FadeIn>
         <ol className="space-y-3">
           {STEPS.map((s, i) => (
-            <FadeIn key={s.step} delay={i * 0.08}>
-              <li className="paradigm-glass rounded-xl p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-0.5 transition-all duration-500">
-                <span className="font-display text-[24px] md:text-[28px] leading-none bg-gradient-to-br from-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">{s.step}</span>
+            <FadeIn key={s.step} delay={i * 0.08} as="li" className="paradigm-glass rounded-lg p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
+                <span className="font-display text-[24px] md:text-[28px] leading-none bg-gradient-to-br from-paradigm-accent to-paradigm-ink bg-clip-text text-transparent">{s.step}</span>
                 <div>
-                  <h3 className="font-display text-[16px] md:text-[18px] leading-[1.2] text-paradigm-ink mb-1 tracking-[-0.01em]">{s.title}</h3>
+                  <h3 className="font-display text-[16px] md:text-[18px] leading-[1.2] text-paradigm-ink mb-1 ">{s.title}</h3>
                   <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.7]">{s.desc}</p>
                 </div>
-              </li>
             </FadeIn>
           ))}
         </ol>
@@ -67,6 +68,7 @@ async function ProcessBand({ locale }: { locale: string }) {
 
 export default async function MeoServicePage({ params }: Props) {
   const { locale } = await params
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "meo")
   const pricing = getPricingFor(locale, "meo")
@@ -94,7 +96,12 @@ export default async function MeoServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
-        iconBg="from-paradigm-tech via-paradigm-glow to-violet-400"
+        statsEyebrow={t("meo.statsEyebrow")}
+        statsTitle={t("meo.statsTitle")}
+        stats={t.raw("meo.stats") as Array<{ value: string; label: string }>}
+        faqTitle={t("meo.faqTitle")}
+        faqs={t.raw("meo.faqs") as Array<{ question: string; answer: string }>}
+        iconBg="from-zinc-900 via-blue-800 to-emerald-700"
         beamFrom="rgb(14 165 233)"
         beamTo="rgb(165 180 252)"
         middleBand={<ProcessBand locale={locale} />}

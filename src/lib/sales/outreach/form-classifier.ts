@@ -26,7 +26,7 @@ const REGEX_HINTS: Array<{ classification: FormClassification; pattern: RegExp; 
     reason: "captcha / bot-protection detected; switch to human-led queue",
   },
   { classification: "risky_login", pattern: /<input[^>]+type=["']password["']/i, conf: 0.9 },
-  { classification: "skip_payment", pattern: /stripe|paypal|braintree|square|checkout\.js|card-number/i, conf: 0.75 },
+  { classification: "skip_payment", pattern: /\bstripe\.com\b|\bpaypal\.com\b|\bbraintree\b|\bsquareup\.com\b|\bsquare\s+(?:payments?|checkout|register)\b|\bcheckout\s*(?:\.js|\.com|now)\b|\bcard\.number\b/i, conf: 0.85 },
   { classification: "risky_iframe", pattern: /<iframe[^>]+(form|contact|hsforms|typeform)/i, conf: 0.8 },
   { classification: "safe_cf7", pattern: /wpcf7|contact-form-7/i, conf: 0.85 },
   { classification: "safe_wpforms", pattern: /wpforms|gform_|gravity-?form|ninja-?forms/i, conf: 0.85 },
@@ -60,9 +60,22 @@ function hasUsableFields(fields: string[]): boolean {
 }
 
 function regexClassify(html: string): ClassifyFormResult {
-  const fields = detectFormFields(html)
+  // Extract just the form content to avoid footer/nav noise
+  const formMatch = html.match(/<form\b[^>]*>[\s\S]*?<\/form>/i)
+  const isSPA = !formMatch
+  const targetHtml = formMatch ? formMatch[0] : html
+  const fields = detectFormFields(targetHtml)
+
   for (const h of REGEX_HINTS) {
-    if (h.pattern.test(html)) {
+    const matchTarget = h.classification === "risky_captcha" ? html : targetHtml
+    if (h.pattern.test(matchTarget)) {
+      // For SPA pages, skip_payment should only trigger if there are actual
+      // payment-related input fields (card-number, etc.), not just brand
+      // mentions in footer/client-logos
+      if (isSPA && h.classification === "skip_payment") {
+        const hasPaymentFields = /name=["'](?:card|cc-?number|cc-?cvv|cc-?exp|credit|payment)/i.test(targetHtml)
+        if (!hasPaymentFields) continue
+      }
       return {
         classification: h.classification,
         confidence: h.conf,
@@ -72,7 +85,9 @@ function regexClassify(html: string): ClassifyFormResult {
       }
     }
   }
-  if (/<form\b/i.test(html) && hasUsableFields(fields)) {
+
+  // Traditional forms with usable fields
+  if (/<form\b/i.test(targetHtml) && hasUsableFields(fields)) {
     return {
       classification: "safe_generic",
       confidence: 0.6,
@@ -81,6 +96,18 @@ function regexClassify(html: string): ClassifyFormResult {
       source: "regex",
     }
   }
+
+  // SPA (no form tag) but has usable fields → treat as safe
+  if (isSPA && hasUsableFields(fields)) {
+    return {
+      classification: "safe_generic",
+      confidence: 0.5,
+      reason: "SPA with usable fields (email/message)",
+      detectedFields: fields,
+      source: "regex",
+    }
+  }
+
   return {
     classification: "skip_unknown",
     confidence: 0.3,
@@ -90,8 +117,8 @@ function regexClassify(html: string): ClassifyFormResult {
   }
 }
 
-const LLM_SYSTEM = `You are a web contact-form safety classifier. Analyze HTML and return JSON only:
-{"classification":"safe_cf7|safe_wpforms|safe_generic|risky_captcha|risky_login|risky_iframe|skip_payment|skip_unknown","confidence":0.0-1.0,"reason":"..."}
+const LLM_SYSTEM = `You are a web contact-form safety classifier. Analyze HTML and return only JSON:
+{\"classification\":\"safe_cf7|safe_wpforms|safe_generic|risky_captcha|risky_login|risky_iframe|skip_payment|skip_unknown\",\"confidence\":0.0-1.0,\"reason\":\"...\"}
 safe_* means the form can proceed to preflight. risky_captcha means CAPTCHA/bot protection is present and must go to a human queue. skip_* means do not submit.`
 
 /**

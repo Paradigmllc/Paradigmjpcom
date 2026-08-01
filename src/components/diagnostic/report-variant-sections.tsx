@@ -1,23 +1,76 @@
-﻿"use client"
+"use client"
 
 import { motion } from "framer-motion"
-import { CheckCircle2, MapPin, MessageSquare, Shield, Star, TrendingUp } from "lucide-react"
+import { CheckCircle2, MapPin, MessageSquare, Shield, TrendingUp } from "lucide-react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
-import type { ReportCopy } from "./report-copy"
 import { AnnotatedScreenshot, BeforeAfterComparison, MobileComparison } from "./report-website-sections"
 import { CompetitorComparison, FiveSecondAudit, SaviorPositioning } from "./report-pain-sections"
 import { MarketPresenceSummary } from "./report-market-sections"
 import { ProposalSection } from "./report-proposal-section"
 import { VideoSampleSection, VideoFlowSection, SubsidyTableSection, OutreachFunnelSection, OutreachTestSection } from "./report-missing-sections"
+import {
+  buildJapanMarketMetrics,
+  buildJapanRequirementChecks,
+  buildSecurityChecks,
+  type EvidenceCheck,
+  type EvidenceStatus,
+} from "./report-evidence"
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
+
+function finiteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+const CHECK_STYLE: Record<EvidenceStatus, { card: string; icon: string; text: string }> = {
+  pass: { card: "border-emerald-200 bg-emerald-50", icon: "text-emerald-600", text: "text-emerald-700" },
+  fail: { card: "border-rose-200 bg-rose-50", icon: "text-rose-600", text: "text-rose-700" },
+  unknown: { card: "border-zinc-200 bg-zinc-50", icon: "text-zinc-400", text: "text-zinc-500" },
+}
 
 // ─── MEO: Map Section ──────────────────────────────────────
 export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
   const meta = data.meta
-  const place = meta?.place as Record<string, unknown> | undefined
-  const hasPlace = place?.name
-  const rating = place?.rating as number | undefined
-  const reviewCount = place?.reviewCount as number | undefined
-  const address = place?.address as string | undefined
+  const place = asRecord(meta?.place)
+  const placeName = typeof place?.name === "string" && place.name.trim() ? place.name : null
+  const hasPlace = placeName !== null
+  const rating = finiteNumber(place?.rating)
+  const reviewCount = finiteNumber(place?.reviewCount)
+  const address = typeof place?.address === "string" && place.address.trim() ? place.address : null
+  const improvementChecks: Array<EvidenceCheck> = [
+    {
+      labelJa: "Googleビジネスプロフィールを検出",
+      labelEn: "Google Business Profile detected",
+      status: hasPlace ? "pass" : "unknown",
+      detailJa: hasPlace ? "公開データで確認" : "未測定",
+      detailEn: hasPlace ? "Observed in public data" : "Not measured",
+    },
+    {
+      labelJa: "事業所住所を検出",
+      labelEn: "Business address detected",
+      status: address ? "pass" : "unknown",
+      detailJa: address ? "公開データで確認" : "未測定",
+      detailEn: address ? "Observed in public data" : "Not measured",
+    },
+    {
+      labelJa: "口コミ評価 3.5以上",
+      labelEn: "Review rating 3.5+",
+      status: rating === null ? "unknown" : rating >= 3.5 ? "pass" : "fail",
+      detailJa: rating === null ? "未測定" : `実測 ${rating}`,
+      detailEn: rating === null ? "Not measured" : `Measured ${rating}`,
+    },
+    {
+      labelJa: "口コミ数 10件以上",
+      labelEn: "10+ reviews",
+      status: reviewCount === null ? "unknown" : reviewCount >= 10 ? "pass" : "fail",
+      detailJa: reviewCount === null ? "未測定" : `実測 ${reviewCount}件`,
+      detailEn: reviewCount === null ? "Not measured" : `Measured ${reviewCount}`,
+    },
+  ]
 
   return (
     <section className="px-5 py-14" style={{ background: "linear-gradient(135deg, #f0fdf4, #dcfce7)" }}>
@@ -32,15 +85,15 @@ export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang
             </div>
             {hasPlace ? (
               <div className="rounded-xl border border-emerald-200 bg-white p-6 shadow-sm">
-                <div className="text-lg font-bold text-zinc-900">{place.name as string}</div>
+                <div className="text-lg font-bold text-zinc-900">{placeName}</div>
                 {address && <div className="mt-1 text-sm text-zinc-500">{address}</div>}
-                {rating && (
+                {rating !== null && (
                   <div className="mt-3 flex items-center gap-2">
                     <span className="text-2xl font-bold text-amber-500">{rating}</span>
                     <div className="flex">{"★★★★★".split("").map((s, i) => (
                       <span key={i} className={i < Math.round(rating) ? "text-amber-400" : "text-zinc-200"}>{s}</span>
                     ))}</div>
-                    {reviewCount && <span className="text-sm text-zinc-500">({reviewCount} reviews)</span>}
+                    {reviewCount !== null && <span className="text-sm text-zinc-500">({reviewCount} reviews)</span>}
                   </div>
                 )}
               </div>
@@ -61,17 +114,18 @@ export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang
               </h2>
             </div>
             <div className="space-y-3">
-              {[
-                { check: !!place?.name, labelJa: "Googleビジネスプロフィール登録", labelEn: "Google Business Profile claimed" },
-                { check: !!place?.address, labelJa: "住所・営業時間の正確性", labelEn: "Accurate address & hours" },
-                { check: (rating ?? 0) >= 3.5, labelJa: "口コミ評価 3.5以上", labelEn: "Review rating 3.5+" },
-                { check: (reviewCount ?? 0) >= 10, labelJa: "口コミ数 10件以上", labelEn: "10+ reviews" },
-              ].map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 rounded-lg border p-3 ${item.check ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-                  {item.check ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Shield className="h-4 w-4 text-amber-600" />}
-                  <span className="text-sm text-zinc-700">{lang === "ja" ? item.labelJa : item.labelEn}</span>
+              {improvementChecks.map((item) => {
+                const style = CHECK_STYLE[item.status]
+                return (
+                <div key={item.labelEn} className={`flex items-center gap-3 rounded-lg border p-3 ${style.card}`}>
+                  {item.status === "pass" ? <CheckCircle2 className={`h-4 w-4 ${style.icon}`} /> : <Shield className={`h-4 w-4 ${style.icon}`} />}
+                  <div>
+                    <div className="text-sm text-zinc-700">{lang === "ja" ? item.labelJa : item.labelEn}</div>
+                    <div className={`text-[10px] font-semibold ${style.text}`}>{lang === "ja" ? item.detailJa : item.detailEn}</div>
+                  </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -112,18 +166,7 @@ export function MeoReviewsSection({ data, lang }: { data: DiagnosticReportData; 
 
 // ─── Security: Scorecard Section ────────────────────────────
 export function SecurityScorecardSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
-  const meta = data.meta ?? {}
-  const ssl = meta.ssl as Record<string, unknown> | undefined
-  const obs = meta.mozilla_observatory as Record<string, unknown> | undefined
-  const dns = meta.dns as Record<string, unknown> | undefined
-
-  const checks = [
-    { labelJa: "SSL証明書", labelEn: "SSL Certificate", status: ssl?.grade ? "pass" : "fail", detail: (ssl?.grade as string) ?? "未確認" },
-    { labelJa: "HSTS Preload", labelEn: "HSTS Preload", status: dns ? "pass" : "warn", detail: dns ? "有効" : "未確認" },
-    { labelJa: "DNSSEC", labelEn: "DNSSEC", status: dns?.dnssec ? "pass" : "warn", detail: dns?.dnssec ? "有効" : "無効" },
-    { labelJa: "Observatory Score", labelEn: "Observatory Score", status: (obs?.score as number) >= 80 ? "pass" : "fail", detail: obs?.score ? `${obs.score}/100` : "未測定" },
-    { labelJa: "CSP Header", labelEn: "CSP Header", status: ((data.meta?.security_headers as Record<string, unknown>)?.hasCsp) ? "pass" : "fail", detail: "—" },
-  ]
+  const checks = buildSecurityChecks(data)
 
   return (
     <section className="px-5 py-14" style={{ background: "linear-gradient(135deg, #fef2f2, #fee2e2)" }}>
@@ -134,14 +177,18 @@ export function SecurityScorecardSection({ data, lang }: { data: DiagnosticRepor
         </div>
         <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {checks.map((check, i) => {
-            const color = check.status === "pass" ? "emerald" : check.status === "warn" ? "amber" : "rose"
+            const style = CHECK_STYLE[check.status]
             return (
               <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }}
-                className={`rounded-xl border p-5 shadow-sm ${check.status === "pass" ? "border-emerald-200 bg-emerald-50" : check.status === "warn" ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}>
+                className={`rounded-xl border p-5 shadow-sm ${style.card}`}>
                 <div className="text-[10px] font-semibold uppercase text-zinc-500">{lang === "ja" ? check.labelJa : check.labelEn}</div>
-                <div className={`mt-2 text-2xl font-bold text-${color}-700`}>{check.detail}</div>
-                <div className={`mt-1 text-[10px] font-bold text-${color}-600`}>
-                  {check.status === "pass" ? (lang === "ja" ? "問題なし" : "OK") : check.status === "warn" ? (lang === "ja" ? "注意" : "Warning") : (lang === "ja" ? "要対応" : "Action needed")}
+                <div className={`mt-2 text-2xl font-bold ${style.text}`}>{lang === "ja" ? check.detailJa : check.detailEn}</div>
+                <div className={`mt-1 text-[10px] font-bold ${style.text}`}>
+                  {check.status === "pass"
+                    ? (lang === "ja" ? "実測で確認" : "Measured")
+                    : check.status === "fail"
+                      ? (lang === "ja" ? "要対応" : "Action needed")
+                      : (lang === "ja" ? "判定保留" : "Unknown")}
                 </div>
               </motion.div>
             )
@@ -235,23 +282,15 @@ export function SecurityVulnMatrix({ data, lang }: { data: DiagnosticReportData;
   )
 }
 
+function localizedUnknown(lang: string): string {
+  return lang === "ja" ? "未測定" : "Not measured"
+}
+
 // ─── Japan Entry: Market Section ────────────────────────────
 export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
-  const japanAudit = data.meta?.japan_market_audit as Record<string, unknown> | undefined
-  const simweb = data.meta?.similarweb_free as Record<string, unknown> | undefined
-  const radar = data.meta?.cloudflare_radar as Record<string, unknown> | undefined
-  const marketData = data.meta?.market_data as Record<string, string> | undefined
-  const smb = data.meta?.smb_signals as Record<string, unknown> | undefined
-
-  const hasJapanTraffic = simweb?.countries && Array.isArray(simweb.countries) && (simweb.countries as string[]).includes("JP")
-  const totalVisits = simweb?.visits as number | undefined
-  const estimatedJapanVisitors = hasJapanTraffic && totalVisits ? Math.round(totalVisits * 0.08) : null
-  const estimatedLostRevenue = estimatedJapanVisitors ? Math.round(estimatedJapanVisitors * 0.02 * 15000) : null
-
-  const businessMaturity = smb?.businessMaturity as string | undefined
-  const maturityLabel = businessMaturity === "established" ? (lang === "ja" ? "成熟企業" : "Established")
-    : businessMaturity === "growing" ? (lang === "ja" ? "成長企業" : "Growing")
-    : (lang === "ja" ? "初期段階" : "Early Stage")
+  const marketData = asRecord(data.meta?.market_data)
+  const metrics = buildJapanMarketMetrics(data, lang)
+  const requirements = buildJapanRequirementChecks(data)
 
   return (
     <section className="px-5 py-16" style={{ background: "linear-gradient(160deg, #0a1628 0%, #172554 40%, #1e3a5f 70%, #0a1628 100%)" }}>
@@ -269,34 +308,16 @@ export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData;
 
         {/* 4 key metrics */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-          <MetricCard
-            icon="🌏"
-            label={lang === "ja" ? "グローバル規模" : "Global Scale"}
-            value={radar?.rank_bucket ? (radar.rank_bucket as string) : (lang === "ja" ? "データ中" : "Collecting")}
-            sub={lang === "ja" ? "Cloudflare Radar" : "Cloudflare Radar"}
-            tone="blue"
-          />
-          <MetricCard
-            icon="🇯🇵"
-            label={lang === "ja" ? "日本流入推定" : "Est. Japan Traffic"}
-            value={hasJapanTraffic && estimatedJapanVisitors ? `${estimatedJapanVisitors.toLocaleString()} PV` : (lang === "ja" ? "分析中" : "Analyzing")}
-            sub={hasJapanTraffic ? `Similarweb ${totalVisits?.toLocaleString()} total` : (lang === "ja" ? "データ収集中" : "Collecting")}
-            tone={hasJapanTraffic ? "emerald" : "zinc"}
-          />
-          <MetricCard
-            icon="📊"
-            label={lang === "ja" ? "事業成熟度" : "Maturity"}
-            value={maturityLabel}
-            sub={smb?.emailProvider ? `${smb.emailProvider}` : ""}
-            tone={businessMaturity === "established" ? "emerald" : "amber"}
-          />
-          <MetricCard
-            icon="💰"
-            label={lang === "ja" ? "推定機会損失" : "Est. Lost Revenue"}
-            value={estimatedLostRevenue ? `¥${estimatedLostRevenue.toLocaleString()}` : (lang === "ja" ? "算出中" : "Calc...")}
-            sub={lang === "ja" ? "月間・2%CVR想定" : "Monthly・2% CVR est."}
-            tone={estimatedLostRevenue ? "rose" : "zinc"}
-          />
+          {metrics.map((metric) => (
+            <MetricCard
+              key={metric.label}
+              icon={metric.icon}
+              label={metric.label}
+              value={metric.value}
+              sub={metric.source}
+              tone={metric.tone}
+            />
+          ))}
         </div>
 
         {/* Market context */}
@@ -306,20 +327,20 @@ export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData;
               <span className="text-lg">🏛️</span>
               <div>
                 <div className="text-sm font-bold">{lang === "ja" ? "日本市場データ" : "Japan Market Data"}</div>
-                <div className="text-xs text-blue-300">{marketData.source}</div>
+                <div className="text-xs text-blue-300">{typeof marketData.source === "string" ? marketData.source : localizedUnknown(lang)}</div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">{marketData.size}</div>
+                <div className="text-2xl font-bold text-white">{typeof marketData.size === "string" ? marketData.size : localizedUnknown(lang)}</div>
                 <div className="text-xs text-blue-300 mt-1">{lang === "ja" ? "市場規模" : "Market Size"}</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-400">{marketData.growth}</div>
+                <div className="text-2xl font-bold text-emerald-400">{typeof marketData.growth === "string" ? marketData.growth : localizedUnknown(lang)}</div>
                 <div className="text-xs text-blue-300 mt-1">{lang === "ja" ? "年率成長" : "Annual Growth"}</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">{marketData.players}</div>
+                <div className="text-2xl font-bold text-white">{typeof marketData.players === "string" ? marketData.players : localizedUnknown(lang)}</div>
                 <div className="text-xs text-blue-300 mt-1">{lang === "ja" ? "事業者数" : "Players"}</div>
               </div>
             </div>
@@ -329,20 +350,20 @@ export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData;
         {/* Regulatory checklist */}
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
           <div className="text-sm font-bold mb-4">{lang === "ja" ? "日本市場参入要件" : "Japan Entry Requirements"}</div>
+          <p className="mb-4 text-xs leading-5 text-blue-200/80">
+            {lang === "ja"
+              ? "公開ページの自動確認結果であり、法令適合の認定や法的助言ではありません。"
+              : "Public-page heuristic only; this is not legal advice or a compliance certification."}
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              { labelJa: "特定商取引法に基づく表記", labelEn: "Commercial Law Disclosure", ok: !japanAudit?.tokushoho_missing, critical: true },
-              { labelJa: "個人情報保護法(APPI)対応", labelEn: "Privacy Law (APPI)", ok: !japanAudit?.appi_missing, critical: true },
-              { labelJa: "国内決済手段の導入", labelEn: "Local Payment Methods", ok: !japanAudit?.local_payments_missing, critical: true },
-              { labelJa: "日本語コンテンツ・サポート", labelEn: "Japanese Content & Support", ok: !!japanAudit, critical: false },
-            ].map((item, i) => (
-              <div key={i} className={`flex items-center gap-3 rounded-xl p-4 ${item.ok ? "bg-emerald-500/10 border border-emerald-500/20" : item.critical ? "bg-rose-500/10 border border-rose-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm ${item.ok ? "bg-emerald-500/20 text-emerald-300" : item.critical ? "bg-rose-500/20 text-rose-300" : "bg-amber-500/20 text-amber-300"}`}>
-                  {item.ok ? "✓" : "!"}
+            {requirements.map((item) => (
+              <div key={item.labelEn} className={`flex items-center gap-3 rounded-xl border p-4 ${item.status === "pass" ? "border-emerald-500/20 bg-emerald-500/10" : item.status === "fail" ? "border-rose-500/20 bg-rose-500/10" : "border-white/10 bg-white/5"}`}>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm ${item.status === "pass" ? "bg-emerald-500/20 text-emerald-300" : item.status === "fail" ? "bg-rose-500/20 text-rose-300" : "bg-white/10 text-blue-200"}`}>
+                  {item.status === "pass" ? "✓" : item.status === "fail" ? "!" : "?"}
                 </span>
                 <div>
                   <div className="text-sm font-medium text-white">{lang === "ja" ? item.labelJa : item.labelEn}</div>
-                  <div className="text-xs text-blue-300">{item.ok ? (lang === "ja" ? "対応済み" : "Ready") : item.critical ? (lang === "ja" ? "要対応・必須" : "Required") : (lang === "ja" ? "推奨" : "Recommended")}</div>
+                  <div className="text-xs text-blue-300">{lang === "ja" ? item.detailJa : item.detailEn}</div>
                 </div>
               </div>
             ))}
@@ -374,13 +395,18 @@ function MetricCard({ icon, label, value, sub, tone }: { icon: string; label: st
 
 // ─── Japan Entry: Checklist ─────────────────────────────────
 export function JapanChecklistSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
+  const requirements = buildJapanRequirementChecks(data)
   const items = [
-    { ja: "特定商取引法に基づく表記", en: "Commercial Transaction Law disclosure", done: false },
-    { ja: "個人情報保護方針（日本語）", en: "Privacy policy in Japanese", done: false },
-    { ja: "日本語の問い合わせフォーム", en: "Japanese contact form", done: !!data.contactFormUrl },
-    { ja: "国内決済手段（クレカ/コンビニ/銀行振込）", en: "Local payment methods", done: false },
-    { ja: "日本語FAQ/サポートページ", en: "Japanese FAQ/support page", done: false },
-    { ja: "会社概要（日本語）", en: "Company profile in Japanese", done: false },
+    { ja: requirements[0].labelJa, en: requirements[0].labelEn, status: requirements[0].status },
+    { ja: requirements[1].labelJa, en: requirements[1].labelEn, status: requirements[1].status },
+    {
+      ja: "日本語の問い合わせフォーム",
+      en: "Japanese contact form",
+      status: data.contactFormUrl ? "pass" as const : "unknown" as const,
+    },
+    { ja: requirements[2].labelJa, en: requirements[2].labelEn, status: requirements[2].status },
+    { ja: "日本語FAQ/サポートページ", en: "Japanese FAQ/support page", status: "unknown" as const },
+    { ja: "会社概要（日本語）", en: "Company profile in Japanese", status: "unknown" as const },
   ]
 
   return (
@@ -392,7 +418,16 @@ export function JapanChecklistSection({ data, lang }: { data: DiagnosticReportDa
             <div key={i} className="flex items-center gap-3 rounded-lg border border-zinc-200 p-4">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-500">{i + 1}</span>
               <span className="flex-1 text-sm text-zinc-700">{lang === "ja" ? item.ja : item.en}</span>
-              {item.done ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <span className="text-xs text-amber-600 font-bold">{lang === "ja" ? "未対応" : "Pending"}</span>}
+              {item.status === "pass" ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {lang === "ja" ? "公開データで確認" : "Observed"}
+                </span>
+              ) : item.status === "fail" ? (
+                <span className="text-xs font-bold text-rose-600">{lang === "ja" ? "不足を検出" : "Gap detected"}</span>
+              ) : (
+                <span className="text-xs font-bold text-zinc-500">{lang === "ja" ? "未測定" : "Not measured"}</span>
+              )}
             </div>
           ))}
         </div>

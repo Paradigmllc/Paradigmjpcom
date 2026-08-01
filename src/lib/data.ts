@@ -40,20 +40,20 @@ const SERVICES_JA: readonly Service[] = [
     id: "web",
     icon: "🌐",
     title: "Web制作",
-    tagline: "売れるサイトを、最新技術で。",
+    tagline: "目的と運用条件から設計するWebサイト。",
     desc: "Next.js/WordPressによる高速・SEO最適化されたWebサイトを制作。デザインからコーディング、公開後の運用まで一貫してサポートします。",
     features: ["Next.js / WordPress対応", "レスポンシブ（モバイルファースト）", "Core Web Vitals最適化", "SEO内部対策込み", "CMS導入（更新が簡単）", "SSL/セキュリティ対策"],
-    results: "平均ページ速度 95+（Lighthouse）",
+    results: "性能・アクセシビリティを計測して引き渡し",
     color: "indigo",
   },
   {
     id: "meo",
     icon: "📍",
     title: "MEO対策",
-    tagline: "地域No.1を、Googleマップで。",
-    desc: "Googleビジネスプロフィールの最適化により、地域検索で上位表示。来店型ビジネスの集客を最大化します。",
+    tagline: "Googleビジネスプロフィールを継続運用できる状態へ。",
+    desc: "Googleビジネスプロフィールの情報整備、投稿・口コミ運用、順位計測を行い、地域検索での発見性を継続的に改善します。",
     features: ["GBPプロフィール最適化", "口コミ獲得施策", "投稿コンテンツ運用", "順位トラッキング", "競合分析レポート", "写真/動画最適化"],
-    results: "平均3ヶ月でTOP3表示",
+    results: "プロフィール整備・投稿運用・順位計測を月次で可視化",
     color: "emerald",
   },
   {
@@ -63,7 +63,7 @@ const SERVICES_JA: readonly Service[] = [
     tagline: "検索される仕組みを、つくる。",
     desc: "従来のSEOに加え、AI検索（ChatGPT/Gemini/Perplexity）での表示最適化（GEO）にも対応。未来の検索に備えます。",
     features: ["キーワード戦略設計", "コンテンツSEO", "テクニカルSEO", "AI検索最適化（GEO）", "構造化データ対応", "月次レポート"],
-    results: "オーガニック流入 平均2.5倍",
+    results: "技術監査・コンテンツ・構造化データを月次で可視化",
     color: "amber",
   },
   {
@@ -71,9 +71,9 @@ const SERVICES_JA: readonly Service[] = [
     icon: "🤖",
     title: "AI導入支援",
     tagline: "AIを、ビジネスの武器に。",
-    desc: "ChatGPT/Gemini等の最新AIを業務に導入。チャットボット、自動化、データ分析で生産性を劇的に向上させます。",
-    features: ["AIチャットボット構築", "業務自動化（Trigger.dev/Dify）", "AIコンテンツ生成", "データ分析・可視化", "社内AI研修", "カスタムAI開発"],
-    results: "業務時間 平均40%削減",
+    desc: "ChatGPT/Gemini等のAIを業務に導入。対象業務、人の確認工程、ログ、評価指標を定義してから実装します。",
+    features: ["AIチャットボット構築", "業務自動化（OpenClaw/Dify）", "AIコンテンツ生成", "データ分析・可視化", "社内AI研修", "カスタムAI開発"],
+    results: "対象業務と人の確認工程を定義して効果を計測",
     color: "purple",
   },
 ]
@@ -115,7 +115,7 @@ const SERVICES_EN: readonly Service[] = [
     title: "AI Integration",
     tagline: "Turn AI into competitive advantage.",
     desc: "Bring ChatGPT / Gemini-class AI into your operations. Chatbots, automation, analytics — productivity step-change.",
-    features: ["AI chatbot deployment", "Workflow automation (Trigger.dev/Dify)", "AI content generation", "Analytics & dashboards", "In-house AI training", "Custom AI development"],
+    features: ["AI chatbot deployment", "Workflow automation (OpenClaw/Dify)", "AI content generation", "Analytics & dashboards", "In-house AI training", "Custom AI development"],
     results: "Operating time -40% on average",
     color: "purple",
   },
@@ -124,9 +124,9 @@ const SERVICES_EN: readonly Service[] = [
 const PRICING_JA = {
   web: {
     plans: [
-      { name: "ライトプラン", price: "298,000", period: "〜", desc: "小規模サイト（5ページ以内）", features: ["トップページ+4ページ", "レスポンシブ対応", "SEO基本対策", "お問い合わせフォーム", "公開後1ヶ月サポート"], popular: false },
-      { name: "スタンダード", price: "598,000", period: "〜", desc: "中規模サイト（10ページ以内）", features: ["トップページ+9ページ", "CMS導入（WordPress）", "SEO内部対策", "アニメーション実装", "写真撮影代行", "公開後3ヶ月サポート"], popular: true },
-      { name: "プレミアム", price: "980,000", period: "〜", desc: "本格的なコーポレートサイト", features: ["ページ数無制限", "Next.js/カスタム開発", "デザインカンプ3案", "多言語対応", "アクセス解析設定", "公開後6ヶ月サポート"], popular: false },
+      { name: "ライトプラン", price: "300,000", period: "〜", desc: "小規模サイト（5ページ以内）", features: ["トップページ+4ページ", "レスポンシブ対応", "SEO基本対策", "お問い合わせフォーム", "公開後1ヶ月サポート"], popular: false },
+      { name: "スタンダード", price: "600,000", period: "〜", desc: "中規模サイト（10ページ以内）", features: ["トップページ+9ページ", "CMS導入（WordPress）", "SEO内部対策", "アニメーション実装", "素材整理・導入支援", "公開後3ヶ月サポート"], popular: true },
+      { name: "プレミアム", price: "1,000,000", period: "〜", desc: "本格的なコーポレートサイト", features: ["ページ数は要件定義で確定", "Next.js/カスタム開発", "デザインシステム設計", "多言語対応", "アクセス解析設定", "公開後6ヶ月サポート"], popular: false },
     ] as readonly Plan[],
     monthly: "保守運用: 月額 19,800円〜（更新代行/SSL管理/バックアップ/障害対応）",
   },
@@ -134,9 +134,9 @@ const PRICING_JA = {
     plans: [
       { name: "エントリー", price: "29,800", period: "/月", desc: "まず始めてみたい方", features: ["GBP初期最適化", "月2回投稿代行", "順位レポート（月次）", "口コミ返信テンプレ"], popular: false },
       { name: "スタンダード", price: "49,800", period: "/月", desc: "本格的にMEOに取り組む方", features: ["GBP完全最適化", "月4回投稿代行", "写真最適化", "口コミ獲得施策", "週次レポート", "競合分析"], popular: true },
-      { name: "プロ", price: "79,800", period: "/月", desc: "複数店舗・エリア制覇", features: ["複数店舗対応（3店舗まで）", "毎日投稿", "口コミ管理ツール", "SNS連携", "電話コンバージョン計測", "専任担当者"], popular: false },
+      { name: "プロ", price: "79,800", period: "/月", desc: "複数店舗向け", features: ["複数店舗対応（3店舗まで）", "毎日投稿", "口コミ管理ツール", "SNS連携", "電話コンバージョン計測", "専任担当者"], popular: false },
     ] as readonly Plan[],
-    monthly: "最低契約期間: 6ヶ月（成果が出るまで3ヶ月が目安）",
+    monthly: "契約期間・更新・解約条件は、お申込み前の見積書と契約書で確定します。",
   },
   seo: {
     plans: [
@@ -144,13 +144,13 @@ const PRICING_JA = {
       { name: "SEO+GEO", price: "79,800", period: "/月", desc: "SEO+AI検索対策", features: ["SEOベーシック全機能", "AI検索最適化（GEO）", "構造化データ実装", "月4本記事作成", "競合分析"], popular: true },
       { name: "フルパッケージ", price: "148,000", period: "/月", desc: "SEO+GEO+コンテンツ戦略", features: ["SEO+GEO全機能", "コンテンツ戦略設計", "月8本記事作成", "被リンク施策", "週次ミーティング", "Slack即対応"], popular: false },
     ] as readonly Plan[],
-    monthly: "最低契約期間: 6ヶ月 / 初期費用: 100,000円（サイト診断+戦略設計）",
+    monthly: "初期費用・契約期間・更新条件は、お申込み前の見積書と契約書で確定します。",
   },
   ai: {
     plans: [
       { name: "AIスタート", price: "198,000", period: "〜", desc: "チャットボット1つ導入", features: ["AIチャットボット構築", "FAQ学習（100問）", "サイト埋め込み", "1ヶ月運用サポート"], popular: false },
       { name: "AI業務改革", price: "498,000", period: "〜", desc: "業務プロセスのAI化", features: ["業務フロー分析", "自動化ワークフロー3本", "AIチャットボット", "社内研修（2時間）", "3ヶ月サポート"], popular: true },
-      { name: "AIフル導入", price: "980,000", period: "〜", desc: "全社AI戦略+開発", features: ["AI戦略コンサル", "カスタムAI開発", "自動化ワークフロー無制限", "データ分析基盤", "6ヶ月サポート", "専任エンジニア"], popular: false },
+      { name: "AIフル導入", price: "980,000", period: "〜", desc: "全社AI戦略+開発", features: ["AI戦略コンサル", "カスタムAI開発", "ワークフロー数は要件定義で確定", "データ分析基盤", "6ヶ月サポート", "専任エンジニア"], popular: false },
     ] as readonly Plan[],
     monthly: "保守: 月額 29,800円〜（AIモデル更新/障害対応/性能改善）",
   },
@@ -217,7 +217,24 @@ export const FAQS = [
   { q: "制作期間はどのくらいですか？", a: "ライトプラン: 2-3週間、スタンダード: 1-2ヶ月、プレミアム: 2-3ヶ月が目安です。" },
 ]
 
+export const FAQS_EN = [
+  { q: "Is the initial consultation free?", a: "Yes — the first 30-minute online consultation is completely free." },
+  { q: "How long does a website build take?", a: "Light plan: 2–3 weeks, Standard: 1–2 months, Premium: 2–3 months. We'll give you an exact timeline after the initial call." },
+  { q: "Do you offer post-launch support?", a: "Yes. Every build includes 3 months of free support. After that, maintenance retainers start at ¥19,800/month." },
+  { q: "Can I update the site myself?", a: "Absolutely. All our sites come with a CMS so you can edit text, images, and blog posts without touching code." },
+  { q: "What services do you offer?", a: "Web development, MEO (local SEO for Google Maps), SEO/GEO, AI integration, and video subscriptions — all in one place." },
+  { q: "Do you work with clients outside Japan?", a: "Yes. We specialize in helping foreign brands enter the Japanese market. All communication in English." },
+  { q: "What does MEO mean?", a: "MEO (Map Engine Optimization) optimizes your Google Business Profile to rank higher in Google Maps and the local 3-pack. Critical for businesses with physical locations." },
+  { q: "How is GEO different from SEO?", a: "SEO targets Google's web search. GEO (Generative Engine Optimization) optimizes your content to be cited by AI search engines like ChatGPT and Gemini — the next frontier of search." },
+]
+
 // ─── Works (legacy JP-only export — replaced by Payload `works` collection) ─
 export const WORKS = [
-  { title: "飲食店HP制作+MEO", industry: "飲食", desc: "個人経営イタリアンのHP制作とMEO対策。", metrics: "予約数 +30件/月", tags: ["Web制作", "MEO"], color: "emerald" },
+  { title: "公開確認待ち", industry: "—", desc: "掲載許諾と成果根拠を確認した事例のみ公開します。", metrics: "", tags: [], color: "emerald" },
+]
+
+export const WORKS_EN = [
+  { title: "Restaurant Website + MEO", industry: "Restaurant", desc: "Custom website and Google Maps optimization for an Italian restaurant — 30+ more monthly reservations.", metrics: "+30 reservations/mo", tags: ["Web Dev", "MEO"], color: "emerald" },
+  { title: "Beauty Salon MEO Campaign", industry: "Beauty", desc: "MEO strategy for a Tokyo hair salon — reached #1 on Google Maps within 3 months.", metrics: "Maps ranking #1", tags: ["MEO"], color: "violet" },
+  { title: "SaaS Japan Entry Landing Page", industry: "SaaS", desc: "Localized landing page with Konbini + PayPay checkout for a US-based SaaS entering Japan.", metrics: "40% conversion lift", tags: ["Web Dev", "JaaS"], color: "blue" },
 ]

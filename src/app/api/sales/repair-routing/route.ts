@@ -2,8 +2,8 @@
  * POST /api/sales/repair-routing
  *
  * 役割: 既存リードの slug / report_url / country / locale / template_variant を自己修復する。
- * Notion に行を追加したがレポート URL が生えない、旧データに slug が無い、という状態を
- * Supabase SSOT 側で一括補正し、次の Supabase→Notion 同期で GUI に反映させる。
+ * CRMに行を追加したがレポート URL が生えない、旧データに slug が無い、という状態を
+ * 補助DB側で一括補正し、次のTwenty writebackで営業OSへ反映させる。
  */
 
 import { NextRequest, NextResponse } from "next/server"

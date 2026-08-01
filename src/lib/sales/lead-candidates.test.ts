@@ -5,6 +5,9 @@ import {
   technologySlug,
   tldPatternsForCountry,
 } from "./lead-candidate-scoring"
+import { inferFreshDomainSignals } from "./global-smb-scoring"
+import { getGlobalSmbMarketConfig } from "./global-smb-market-config"
+import { freshDomainRowsFromSeeds } from "./fresh-domain-discovery"
 
 describe("lead candidate acquisition", () => {
   it("normalizes technology names for stack filters", () => {
@@ -45,10 +48,121 @@ describe("lead candidate acquisition", () => {
     expect(score.opportunityScore).toBeGreaterThan(55)
   })
 
-  it("maps country codes to Common Crawl CDX patterns", () => {
+  it("does not treat generic .com or .org domains as US or Canadian evidence", () => {
+    const us = inferCountrySignals({ domain: "example.com", targetCountry: "US" })
+    const ca = inferCountrySignals({ domain: "example.org", targetCountry: "CA" })
+
+    expect(us.some((signal) => signal.signalType === "tld")).toBe(false)
+    expect(ca.some((signal) => signal.signalType === "tld")).toBe(false)
+  })
+
+  it("scores a hosted Shopify SMB with objective US evidence above the factory gate", () => {
+    const score = scoreCandidate({
+      requestedTechnology: "Shopify",
+      detections: [{ name: "Shopify", category: "Hosted Platform", confidence: 98 }],
+      countrySignals: inferCountrySignals({
+        domain: "independent-store.myshopify.com",
+        targetCountry: "US",
+        evidenceText: "Visit our Seattle store. Prices are shown in USD.",
+      }),
+      lane: "tech_footprint",
+      hasWebsite: true,
+      hasContactSignal: true,
+      source: "multi_source_domains",
+    })
+
+    expect(score.stackFitScore).toBe(96)
+    expect(score.geoConfidence).toBeGreaterThanOrEqual(70)
+    expect(score.smbScore).toBeGreaterThanOrEqual(50)
+    expect(score.opportunityScore).toBeGreaterThanOrEqual(68)
+  })
+
+  it("scores fresh parked local-service domains without using WHOIS contacts as proof", () => {
+    const signals = inferFreshDomainSignals({
+      domain: "austin-roof-care.com",
+      countryCode: "US",
+      registeredAt: new Date().toISOString(),
+      companyName: "Austin Roof Care",
+      industryHint: "Roofing",
+      websiteState: "parked",
+      hasPublicContact: false,
+      evidenceText: "Austin roofing contractor",
+    })
+    const score = scoreCandidate({
+      countrySignals: inferCountrySignals({
+        domain: "austin-roof-care.com",
+        targetCountry: "US",
+        evidenceText: "Austin roofing contractor",
+      }),
+      lane: "dns_freshness",
+      hasWebsite: false,
+      hasContactSignal: signals.contactabilityHint,
+      source: "dns_freshness",
+      isEnterpriseLike: signals.isEnterpriseLike,
+      websiteWeaknessScore: signals.websiteWeaknessScore,
+      freshnessHintScore: signals.freshnessHintScore,
+      marketFitScore: signals.localServiceFitScore,
+    })
+
+    expect(signals.freshnessHintScore).toBeGreaterThanOrEqual(90)
+    expect(signals.websiteWeaknessScore).toBeGreaterThan(80)
+    expect(score.opportunityScore).toBeGreaterThan(55)
+    expect(score.contactabilityScore).toBeLessThan(50)
+  })
+
+  it("flags enterprise-like fresh domains before promotion", () => {
+    const signals = inferFreshDomainSignals({
+      domain: "global-bank-holdings.com",
+      countryCode: "US",
+      companyName: "Global Bank Holdings Corporation",
+      websiteState: "under_construction",
+    })
+
+    expect(signals.isEnterpriseLike).toBe(true)
+  })
+
+  it("normalizes UK input to the existing GB country scope", () => {
+    const market = getGlobalSmbMarketConfig("UK")
+    const signals = inferCountrySignals({
+      domain: "example.co.uk",
+      targetCountry: "UK",
+      evidenceText: "London £120",
+    })
+
+    expect(market.countryCode).toBe("GB")
+    expect(tldPatternsForCountry("UK")).toContain("*.co.uk")
+    expect(signals.every((signal) => signal.countryCode === "GB")).toBe(true)
+    expect(Math.max(...signals.map((signal) => signal.confidence))).toBeGreaterThanOrEqual(90)
+  })
+
+  it("builds fresh-domain ingestion rows without persisting contact data", () => {
+    const rows = freshDomainRowsFromSeeds({
+      countryCode: "UK",
+      websiteState: "under_construction",
+      seeds: [{
+        domain: "example.co.uk",
+        sources: ["crtsh_bulk", "zone_file", "crtsh_bulk"],
+        rdap: {
+          registeredAt: "2026-06-01T00:00:00Z",
+          changedAt: "2026-06-10T00:00:00Z",
+          eventActions: ["registration"],
+          statuses: ["active"],
+          lookupUrl: "https://rdap.example/domain/example.co.uk",
+        },
+      }],
+    })
+
+    expect(rows[0]?.countryCode).toBe("GB")
+    expect(rows[0]?.websiteState).toBe("under_construction")
+    expect(rows[0]?.raw?.acquisition_sources).toEqual(["crtsh_bulk", "zone_file"])
+    expect(JSON.stringify(rows[0])).not.toContain("@")
+  })
+
+  it("maps country codes to passive corpus TLD patterns", () => {
     expect(tldPatternsForCountry("ZA")).toContain("*.co.za")
     expect(tldPatternsForCountry("ZA")).toContain("*.za")
     expect(tldPatternsForCountry("CH")).toContain("*.swiss")
+    expect(tldPatternsForCountry("GB")).toContain("*.co.uk")
     expect(tldPatternsForCountry("EG")).toContain("*.com.eg")
     expect(tldPatternsForCountry("BR")).toEqual(["*.br"])
   })

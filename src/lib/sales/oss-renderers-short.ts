@@ -49,7 +49,7 @@ try {
   console.info(JSON.stringify(result))
 } catch (e) {
   // SDK がない場合 FFmpeg でフォールバック
-  console.warn(JSON.stringify({ fallback: true, message: e.message }));
+  console.error("[oss-renderers-short] ShortVideoMaker SDK unavailable:", e instanceof Error ? e.message : String(e));
 }
 `
     writeFileSync(scriptPath, script, "utf-8")
@@ -94,6 +94,7 @@ try {
       }
     }
   } catch (error) {
+    console.error("[oss-renderers-short] ShortVideoMaker render failed:", error)
     return {
       ok: false,
       error: `Short Video Maker render failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -201,6 +202,7 @@ print(json.dumps({"output": config["output"], "segments": len(config["segments"]
       metadata: { segments: segments.length, configPath },
     }
   } catch (error) {
+    console.error("[oss-renderers-short] OpenMontage render failed:", error)
     return {
       ok: false,
       error: `OpenMontage render failed: ${error instanceof Error ? error.message : String(error)}`,

@@ -57,7 +57,7 @@ export function buildHook(company: SalesCompany, industry: Industry | null, loca
       ? `公開データに基づく分析では、問い合わせ前の不安解消、比較検討、信頼材料の見せ方に改善余地があります。${dataSuffix}`
       : `Public evidence analysis indicates room to improve pre-inquiry confidence, comparison, and trust proof.${dataSuffix}`)
   }
-  return (jp ? INDUSTRY_HOOK_JA[industry] : INDUSTRY_HOOK_EN[industry]) + dataSuffix
+  return ((jp ? INDUSTRY_HOOK_JA[industry] : INDUSTRY_HOOK_EN[industry]) ?? "") + dataSuffix
 }
 
 export function issueLabel(issueCode: IssueCode, locale: ReportLocale): string {

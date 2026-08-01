@@ -32,8 +32,9 @@ console.log(`📡 Fetching report data from ${baseUrl}...`)
 
 let reportData
 try {
+  const apiKey = process.env.SALES_API_KEY
   const res = await fetch(`${baseUrl}/api/sales/diagnostic?slug=${encodeURIComponent(slug)}&locale=${locale}`, {
-    headers: { "x-api-key": process.env.SALES_API_KEY || "" }
+    headers: apiKey ? { "x-api-key": apiKey } : {}
   })
   if (!res.ok) {
     // Fallback: use demo data generation
@@ -130,16 +131,16 @@ console.log(`\n📺 PUBLIC URL: ${publicUrl}`)
 process.stdout.write(publicUrl)
 
 // ─── Demo data generator (fallback when API unavailable) ───
-function generateDemoData(s: string, l: string) {
+function generateDemoData(s, l) {
   const variants = {
-    japan_entry: { company_name: "GreenTech Solutions Inc.", industry: "consulting", template_variant: "japan_entry", total_loss: "¥2,800,000", hook: "日本市場で御社の製品を購入しようとした消費者が、特商法表示の不備を理由に離脱しています。", report_url: `https://paradigmjp.com/${l}/report/demo/${s}`, source_coverage: { score: 72 }, acts: [{ headline: "日本市場で御社のブランドが信用されていない", metric_label: "信頼スコア", metric_value: "8/100", body: "日本消費者は購入前に必ず「特定商取引法に基づく表記」を確認します。" }, { headline: "このまま放置すると取り返しがつかない", metric_label: "残り猶予", metric_value: "3-6ヶ月", body: "日本EC市場は年率12%で成長中。" }, { headline: "最短30日で日本参入・売上化が可能", metric_label: "最短納期", metric_value: "30日", body: "弊社の日本参入パッケージでは、特商法対応・決済導入・日本語サイト構築を全て並行して進めます。" }], cta_text: "まずは15分の無料診断で、御社の日本参入に必要な具体的ステップを明確にします。" }
+    japan_entry: { company_name: "GreenTech Solutions Inc.", industry: "consulting", template_variant: "japan_entry", total_loss: "Not estimated", hook: "日本市場向けの表示・購入導線を、公開情報から確認します。", report_url: `https://paradigmjp.com/${l}/report/demo/${s}`, source_coverage: { score: 72 }, acts: [{ headline: "日本市場での信頼導線を確認", metric_label: "信頼シグナル", metric_value: "公開観測", body: "日本の購入者が確認する表示・問い合わせ導線を、公開情報から点検します。" }, { headline: "準備の依存条件を可視化", metric_label: "確認項目", metric_value: "素材・承認・決済", body: "必要な素材、承認、決済・規制条件を先に揃えることで、実装を前に進められます。" }, { headline: "開始日から14営業日の納品保証", metric_label: "納品保証", metric_value: "14日", body: "Japan Entry Packageでは、書面範囲、入金、必要素材・アクセス、承認者が揃った開始日から固定セットアップを納品します。未納品時はセットアップ費用を全額返金します。" }], cta_text: "Apply for Japan Entry — $15,000 setup; selected launch partners receive the first 90 days of managed operation at no additional monthly charge." }
   }
   const d = variants[s] || variants.japan_entry
   return { ...d, report_locale: l, target_country: "JP" }
 }
 
 // ─── Composition HTML builder (Bento Grid) ───
-function buildCompositionHtml(data: any, lang: string) {
+function buildCompositionHtml(data, lang) {
   const isJa = lang === "ja"
   const th = { bg: "#030912", orb1: "#1e3a5f", orb2: "#172554", accent: "#3b82f6", text: "#eff6ff", muted: "rgba(239,246,255,0.55)", signal: "#60a5fa", warn: "#fbbf24" }
   const co = esc(data.company_name)
@@ -150,7 +151,7 @@ function buildCompositionHtml(data: any, lang: string) {
   const barColor = score < 40 ? th.signal : score < 70 ? th.warn : th.accent
 
   // Labels
-  const l = (k: string) => esc(k)
+  const l = (k) => esc(k)
   const T = {
     diag: isJa ? l("Paradigm 診断") : l("Paradigm Diagnostic"),
     evidence: isJa ? l("公開データ分析") : l("Public Evidence"),
@@ -266,5 +267,5 @@ tl.play();
 </script>
 </body></html>`
 
-  function esc(s: string): string { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") }
+  function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") }
 }

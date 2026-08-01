@@ -58,8 +58,6 @@ export async function POST(req: NextRequest) {
     docusealSubmissionId: text(body.docusealSubmissionId) ?? text(body.docuseal_submission_id),
     docusealUrl: text(body.docusealUrl) ?? text(body.docuseal_url),
     calComUrl: text(body.calComUrl) ?? text(body.cal_com_url),
-    notionPageUrl: text(body.notionPageUrl) ?? text(body.notion_page_url),
-    notionPageId: text(body.notionPageId) ?? text(body.notion_page_id),
     assignedTo: text(body.assignedTo) ?? text(body.assigned_to),
     meta: isRecord(body.meta) ? body.meta : {},
   })

@@ -26,7 +26,7 @@ begin
     into custom_application_id
   from core."fieldMetadata" f
   where f."objectMetadataId" = company_object_id
-    and f."isCustom" = true
+    and f."isSystem" = false
     and f."applicationId" is not null
   limit 1;
 
@@ -61,7 +61,7 @@ begin
   limit 1;
 
   update core."view"
-  set name = '営業リスト',
+  set name = 'Japan Entry 候補',
       "updatedAt" = now()
   where id = table_view_id;
 
@@ -95,7 +95,7 @@ begin
     into custom_application_id
   from core."fieldMetadata" f
   where f."objectMetadataId" = company_object_id
-    and f."isCustom" = true
+    and f."isSystem" = false
     and f."applicationId" is not null
   limit 1;
 
@@ -109,7 +109,6 @@ begin
     icon,
     settings,
     options,
-    "isCustom",
     "isActive",
     "isSystem",
     "isUIReadOnly",
@@ -131,7 +130,6 @@ begin
     p_icon,
     p_settings,
     p_options,
-    true,
     true,
     false,
     false,
@@ -273,19 +271,24 @@ begin
   perform public._paradigm_twenty_ensure_company_field('paradigmIndustryName', '業種名', 'TEXT', 'Supabase企業カルテで判定した業種名', 'IconCategory');
   perform public._paradigm_twenty_ensure_company_field('paradigmSourceName', 'ソース元', 'TEXT', 'Apollo、Fumadata、BIZMap、手動投入などのリスト取得元', 'IconDatabaseImport');
   perform public._paradigm_twenty_ensure_company_field('paradigmSalesStatus', '営業ステータス', 'TEXT', 'Supabase pipeline_status と deal_stage を営業担当向けに要約した状態', 'IconProgressCheck');
+  perform public._paradigm_twenty_ensure_company_field('paradigmLeadStatus', '候補ステータス', 'TEXT', 'フォーム適格リストの確認状態。文面・レポート・送信とは分離する', 'IconListCheck');
+  perform public._paradigm_twenty_ensure_company_field('paradigmTechnology', '技術', 'TEXT', '公開サイトから確認したEC/SaaS基盤などの技術', 'IconStack2');
+  perform public._paradigm_twenty_ensure_company_field('paradigmOpportunityScore', '機会スコア', 'NUMBER', 'Japan Entry候補の客観シグナルに基づく0〜100の機会スコア', 'IconChartDots');
+  perform public._paradigm_twenty_ensure_company_field('paradigmSmbScore', 'SMBスコア', 'NUMBER', 'SMB適合ヒューリスティックの0〜100スコア', 'IconBuildingStore');
   perform public._paradigm_twenty_ensure_company_field('paradigmSalesMaterialUrl', '営業資料URL', 'LINKS', 'Slidev/Gotenberg等で生成した営業資料URL', 'IconPresentationAnalytics', '{"maxNumberOfValues":1}'::jsonb);
   perform public._paradigm_twenty_ensure_company_field('paradigmDemoUrl', 'デモURL', 'LINKS', 'Astro差し替えデモサイトURL', 'IconBrowserCheck', '{"maxNumberOfValues":1}'::jsonb);
-  perform public._paradigm_twenty_ensure_company_field('paradigmCustomerPortalUrl', '顧客用Notion URL', 'LINKS', '成約後に顧客と共有するNotionページURL', 'IconBrandNotion', '{"maxNumberOfValues":1}'::jsonb);
+  perform public._paradigm_twenty_ensure_company_field('paradigmCustomerPortalUrl', '顧客ポータルURL', 'LINKS', '成約後に顧客と共有する顧客ポータルURL', 'IconLink', '{"maxNumberOfValues":1}'::jsonb);
+  perform public._paradigm_twenty_ensure_company_field('paradigmOutreachTargetUrl', '営業先URL', 'LINKS', '実際に開いて提案する掲載ページまたは確認済みフォーム', 'IconExternalLink', '{"maxNumberOfValues":1}'::jsonb);
 
   update core."fieldMetadata"
   set label = case name
-      when 'paradigmReportUrl' then '診断レポートURL'
+      when 'paradigmReportUrl' then 'Opportunity Brief URL'
       when 'paradigmFormUrl' then 'フォームURL'
-      when 'paradigmCustomerPortalUrl' then '顧客用Notion URL'
+      when 'paradigmCustomerPortalUrl' then '顧客ポータルURL'
       when 'paradigmRecommendedProducts' then '推奨商材'
       when 'paradigmKarteScore' then 'カルテスコア'
       when 'paradigmSourceCoverage' then 'データ取得率'
-      when 'paradigmKarteSummary' then '企業カルテ要約'
+      when 'paradigmKarteSummary' then '候補根拠 / Brief要約'
       else label
     end,
     "isLabelSyncedWithName" = false,
@@ -306,6 +309,10 @@ begin
   execute format('alter table %I.company add column if not exists "paradigmIndustryName" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmSourceName" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmSalesStatus" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmLeadStatus" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmTechnology" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOpportunityScore" numeric', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmSmbScore" numeric', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmSalesMaterialUrlPrimaryLinkLabel" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmSalesMaterialUrlPrimaryLinkUrl" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmSalesMaterialUrlSecondaryLinks" jsonb', company_schema);
@@ -315,9 +322,34 @@ begin
   execute format('alter table %I.company add column if not exists "paradigmCustomerPortalUrlPrimaryLinkLabel" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmCustomerPortalUrlPrimaryLinkUrl" text', company_schema);
   execute format('alter table %I.company add column if not exists "paradigmCustomerPortalUrlSecondaryLinks" jsonb', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlPrimaryLinkLabel" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlPrimaryLinkUrl" text', company_schema);
+  execute format('alter table %I.company add column if not exists "paradigmOutreachTargetUrlSecondaryLinks" jsonb', company_schema);
+
+  -- Migrate legacy portal/form links into the explicit operator-facing target column.
+  -- This is idempotent and keeps existing Twenty records immediately actionable.
+  execute format($sql$
+    update %I.company company
+    set "paradigmOutreachTargetUrlPrimaryLinkLabel" = case
+          when "paradigmSourceName" in ('ekiten', 'houzz', 'jmty') then '営業先（ポータル掲載ページ）'
+          else '営業先（確認済みフォーム）'
+        end,
+        "paradigmOutreachTargetUrlPrimaryLinkUrl" = "paradigmFormUrlPrimaryLinkUrl",
+        "paradigmFormUrlPrimaryLinkLabel" = case
+          when "paradigmSourceName" in ('ekiten', 'houzz', 'jmty') then ''
+          else "paradigmFormUrlPrimaryLinkLabel"
+        end,
+        "paradigmFormUrlPrimaryLinkUrl" = case
+          when "paradigmSourceName" in ('ekiten', 'houzz', 'jmty') then ''
+          else "paradigmFormUrlPrimaryLinkUrl"
+        end,
+        "updatedAt" = now()
+    where nullif("paradigmFormUrlPrimaryLinkUrl", '') is not null
+      and nullif("paradigmOutreachTargetUrlPrimaryLinkUrl", '') is null
+  $sql$, company_schema);
 
   update core."view"
-  set name = '営業リスト',
+  set name = 'Japan Entry 候補',
       "updatedAt" = now()
   where id = table_view_id;
 
@@ -330,21 +362,25 @@ begin
       select id
       from core."fieldMetadata"
       where "objectMetadataId" = company_object_id
-        and name in ('createdBy', 'accountOwner', 'createdAt', 'employees', 'linkedinLink', 'address')
+        and name in (
+          'createdBy', 'accountOwner', 'createdAt', 'employees', 'linkedinLink', 'address',
+          'paradigmSalesStatus', 'paradigmDataStatus', 'paradigmDataSources',
+          'paradigmSourceCoverage', 'paradigmNextAction', 'paradigmLastError',
+          'paradigmReportUrl', 'paradigmSalesMaterialUrl', 'paradigmDemoUrl',
+          'paradigmCustomerPortalUrl'
+        )
     );
 
   perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'name'), 0, 220, true);
   perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'domainName'), 1, 150, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSalesStatus'), 2, 150, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmLeadStatus'), 2, 220, true);
   perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmCountryName'), 3, 110, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmRegionName'), 4, 130, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmIndustryName'), 5, 140, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSourceName'), 6, 130, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmFormUrl'), 7, 170, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmReportUrl'), 8, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSalesMaterialUrl'), 9, 170, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmDemoUrl'), 10, 160, true);
-  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmCustomerPortalUrl'), 11, 180, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmTechnology'), 4, 140, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmOpportunityScore'), 5, 110, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSmbScore'), 6, 100, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSourceName'), 7, 140, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmFormUrl'), 8, 180, true);
+  perform public._paradigm_twenty_ensure_view_field(table_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmOutreachTargetUrl'), 9, 220, true);
 
   update core."viewField"
   set "isVisible" = false,
@@ -355,22 +391,25 @@ begin
       select id
       from core."fieldMetadata"
       where "objectMetadataId" = company_object_id
-        and name in ('createdBy', 'accountOwner', 'createdAt', 'employees', 'linkedinLink', 'xLink')
+        and name in (
+          'createdBy', 'accountOwner', 'createdAt', 'employees', 'linkedinLink', 'xLink',
+          'paradigmSalesStatus', 'paradigmDataStatus', 'paradigmDataSources',
+          'paradigmSourceCoverage', 'paradigmNextAction', 'paradigmLastError',
+          'paradigmReportUrl', 'paradigmSalesMaterialUrl', 'paradigmDemoUrl',
+          'paradigmCustomerPortalUrl', 'paradigmRecommendedProducts'
+        )
     );
 
   perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'domainName'), 0, 170, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSalesStatus'), 1, 170, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmLeadStatus'), 1, 220, true);
   perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmCountryName'), 2, 150, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmRegionName'), 3, 150, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmIndustryName'), 4, 150, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSourceName'), 5, 150, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmFormUrl'), 6, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmReportUrl'), 7, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSalesMaterialUrl'), 8, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmDemoUrl'), 9, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmCustomerPortalUrl'), 10, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmRecommendedProducts'), 11, 180, true);
-  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmKarteSummary'), 12, 240, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmTechnology'), 3, 170, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmOpportunityScore'), 4, 130, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSmbScore'), 5, 120, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmSourceName'), 6, 150, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmFormUrl'), 7, 180, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmOutreachTargetUrl'), 8, 220, true);
+  perform public._paradigm_twenty_ensure_view_field(record_view_id, (select id from core."fieldMetadata" where "objectMetadataId" = company_object_id and name = 'paradigmKarteSummary'), 9, 280, true);
 end $$;
 
 drop function if exists public._paradigm_twenty_ensure_view_field(uuid, uuid, numeric, integer, boolean);

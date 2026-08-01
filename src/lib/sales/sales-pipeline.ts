@@ -3,6 +3,7 @@
  *
  * Sales OS のパイプラインオーケストレーションメイン。
  * 500行制限対応のため内部ロジックを分離済み。
+ * 2026-07-06: Trigger.dev HTTP dispatch 削除 → ローカル実行に統一。
  */
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
@@ -14,7 +15,7 @@ import { startSalesPipelineRunFallback } from "./sales-pipeline-fallback"
 import {
   buildSalesPipelinePlan,
   fetchRunWithSteps,
-  getSalesPipelineTriggerConfig,
+  getPipelineOrchestratorConfig,
   updateRun,
 } from "./sales-pipeline-helpers"
 
@@ -35,7 +36,7 @@ export async function createSalesPipelineRun(input: {
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role is not configured" }
 
-  const trigger = getSalesPipelineTriggerConfig()
+  const orchestrator = getPipelineOrchestratorConfig()
   const plan = buildSalesPipelinePlan({
     requireVideo: input.requireVideo,
     autoSyncExternalStudios: input.autoSyncExternalStudios,
@@ -48,7 +49,7 @@ export async function createSalesPipelineRun(input: {
       source: input.source ?? "sales_os",
       status: "queued",
       current_step: plan[0]?.key ?? null,
-      trigger_task_id: trigger.taskId,
+      trigger_task_id: orchestrator.taskId,
       requested_by: input.requestedBy ?? "sales-os",
       require_video: input.requireVideo === true,
       auto_sync_external_studios: input.autoSyncExternalStudios !== false,
@@ -154,87 +155,37 @@ export async function listSalesPipelineRuns(limit = 20): Promise<DashboardSalesP
   return { runs: [], error: error.message }
 }
 
+/**
+ * Dispatch a pipeline run for local execution.
+ * 2026-07-06: Trigger.dev HTTP dispatch removed — always uses local fallback.
+ */
 export async function dispatchSalesPipelineRun(runId: string): Promise<{ ok: boolean; run?: SalesPipelineRun; error?: string; message?: string }> {
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role is not configured" }
 
   const run = await fetchRunWithSteps(sb, runId)
-  const trigger = getSalesPipelineTriggerConfig()
-  if (!trigger.endpoint || !trigger.secretKey) {
+  const orchestrator = getPipelineOrchestratorConfig()
+
+  if (!orchestrator.ready) {
     await updateRun(sb, run.id, {
       status: "queued",
       trigger_provider: "local",
-      error_message: "Trigger.dev Sales OS pipeline task is not configured; app fallback queued",
+      error_message: "OpenClaw pipeline orchestrator is not ready; app fallback queued",
     })
     startSalesPipelineRunFallback(run.id)
     return {
       ok: true,
       run: await fetchRunWithSteps(sb, run.id),
-      message: "Trigger.dev is not configured; app fallback queued",
+      message: "OpenClaw orchestrator not ready; app fallback queued",
     }
   }
 
-  try {
-    const res = await fetch(trigger.endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${trigger.secretKey}` },
-      body: JSON.stringify({
-        payload: {
-          run_id: run.id,
-          company_id: run.company_id,
-          source: run.source,
-          require_video: run.require_video,
-          auto_sync_external_studios: run.auto_sync_external_studios,
-          steps: (run.steps ?? []).map((step) => ({
-            key: step.step_key,
-            required: step.required,
-            owner_tool: step.owner_tool,
-          })),
-        },
-        context: { source: "revenue-os", runId: run.id },
-        options: {
-          idempotencyKey: `sales-os-pipeline-${run.id}`,
-          concurrencyKey: `company-${run.company_id}`,
-          queue: { name: "sales-os-pipeline", concurrencyLimit: 2 },
-        },
-      }),
-    })
-
-    const text = await res.text()
-    if (!res.ok) throw new Error(`Trigger.dev dispatch failed: HTTP ${res.status} ${text.slice(0, 240)}`)
-    let parsed: JsonRecord = {}
-    try {
-      parsed = text ? (JSON.parse(text) as JsonRecord) : {}
-    } catch (error) {
-      console.warn("[sales-pipeline] Trigger.dev returned non-json:", error)
-    }
-    const triggerRunId =
-      typeof parsed.id === "string"
-        ? parsed.id
-        : typeof parsed.runId === "string"
-          ? parsed.runId
-          : typeof parsed.run_id === "string"
-            ? parsed.run_id
-            : null
-
-    await updateRun(sb, run.id, {
-      status: "waiting_external",
-      trigger_provider: "trigger.dev",
-      trigger_run_id: triggerRunId,
-      started_at: run.started_at ?? new Date().toISOString(),
-      error_message: null,
-    })
-    startSalesPipelineRunFallback(run.id, { delayMs: 60_000 })
-    return { ok: true, run: await fetchRunWithSteps(sb, run.id), message: "Trigger.dev dispatch queued; app fallback armed" }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Trigger.dev dispatch failed"
-    console.error("[sales-pipeline] Trigger.dev dispatch failed:", error)
-    await updateRun(sb, run.id, {
-      status: "queued",
-      trigger_provider: "local",
-      error_message: `${message}; app fallback queued`,
-    })
-    startSalesPipelineRunFallback(run.id)
-    return { ok: true, run: await fetchRunWithSteps(sb, run.id), message: `${message}; app fallback queued` }
-  }
+  await updateRun(sb, run.id, {
+    status: "queued",
+    trigger_provider: "openclaw",
+    started_at: run.started_at ?? new Date().toISOString(),
+    error_message: null,
+  })
+  startSalesPipelineRunFallback(run.id)
+  return { ok: true, run: await fetchRunWithSteps(sb, run.id), message: "Pipeline run queued for local execution via OpenClaw" }
 }

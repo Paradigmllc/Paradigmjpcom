@@ -38,6 +38,7 @@ export async function GET(
       form_message_engine: typeof meta.form_message_engine === "string" ? meta.form_message_engine : null,
       form_message_generated_at: typeof meta.form_message_generated_at === "string" ? meta.form_message_generated_at : null,
       form_message_history: Array.isArray(meta.form_message_history) ? meta.form_message_history : [],
+      form_message_evidence: meta.form_message_evidence ?? null,
     })
   } catch (e) {
     console.error("[form-message] GET failed:", e instanceof Error ? e.message : String(e))

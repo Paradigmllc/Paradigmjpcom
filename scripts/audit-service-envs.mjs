@@ -24,8 +24,7 @@ const SERVICES = [
   { name: "Cal.com", envs: ["CALCOM_BASE_URL", "CALCOM_API_KEY"] },
   { name: "Supabase Studio", envs: ["NEXT_PUBLIC_SUPABASE_STUDIO_URL"] },
   { name: "Dify Cloud", envs: ["DIFY_API_KEY"], optional: ["DIFY_BASE_URL", "DIFY_API_BASE"] },
-  { name: "Trigger.dev", envs: ["TRIGGER_SECRET_KEY"], optional: ["TRIGGER_API_URL", "TRIGGER_DASHBOARD_URL", "TRIGGER_SALES_OS_PIPELINE_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID", "TRIGGER_CHATWOOT_REPLY_TASK_ID", "TRIGGER_LIVEKIT_DISCOVERY_TASK_ID"] },
-  { name: "n8n (legacy)", envs: [], optional: ["N8N_BASE_URL", "N8N_WEBHOOK_SECRET"] },
+  { name: "OpenClaw", envs: ["OPENCLAW_API_KEY"], optional: ["OPENCLAW_API_URL", "OPENCLAW_PIPELINE_TASK_ID", "OPENCLAW_ENRICHMENT_TASK_ID"] },
   { name: "Stripe", envs: ["STRIPE_SECRET_KEY", "STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET"] },
   { name: "Vast.ai", envs: ["VAST_API_KEY"] },
 ];

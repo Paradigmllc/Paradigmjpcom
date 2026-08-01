@@ -1,6 +1,10 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { SalesCompany } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import {
+  companyJapanMarketAudit, companyPainDiagnosis, companyTechStack,
+  companyVisualEvidence, companyDifyResult, mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
 
 type JsonRecord = Record<string, unknown>
 
@@ -106,7 +110,7 @@ const SOURCES: SourceDefinition[] = [
     label: "Wappalyzer CLI",
     category: "analysis",
     maxAgeDays: 30,
-    detect: (_m, c) => !!c.tech_stack || Array.isArray((_m.tech as JsonRecord | undefined)?.stack),
+    detect: (_m, c) => !!companyTechStack(c) || Array.isArray((_m.tech as JsonRecord | undefined)?.stack),
     detail: "CMS/framework/analytics stack",
     meaning: "CMS・計測・フレームワークは、改修難度、表示速度、セキュリティ負債、既存投資の見込みを読む材料です。",
     missingConsequence: "未取得だと、なぜAstro/Next.js差し替えが効くのか、既存環境に合わせた説明が薄くなります。",
@@ -122,7 +126,7 @@ const SOURCES: SourceDefinition[] = [
     category: "analysis",
     maxAgeDays: 30,
     env: ["DIFY_JAPAN_MARKET_AUDITOR_API_KEY", "DIFY_API_KEY", "CRAWL4AI_BASE_URL"],
-    detect: (_m, c) => !!c.japan_market_audit || !!_m.japan_market_audit,
+    detect: (_m, c) => !!companyJapanMarketAudit(c),
     detail: "Tokushoho, APPI/privacy, and Japan-local payment readiness",
     meaning: "Japan-entry prospects need a buyer-ready trust path: commercial disclosure, privacy handling, and local payment familiarity. This signal turns public-page gaps into a human-reviewed sales hypothesis.",
     missingConsequence: "Without this audit, Japan-entry reports can miss the concrete friction that makes overseas SMBs hesitate or fail to convert Japanese buyers.",
@@ -175,6 +179,22 @@ const SOURCES: SourceDefinition[] = [
     nextStep: "Crawl4AIで候補URLを抽出し、フォーム分類とpreflightへ渡します。",
   },
   {
+    slug: "website_assets",
+    label: "Website visual & content extraction",
+    category: "outreach",
+    detect: (m) => {
+      const wa = m.website_assets as Record<string, unknown> | undefined
+      const imgs = wa?.images as Record<string, unknown> | undefined
+      const hero = imgs?.hero as Record<string, unknown> | undefined
+      const c = wa?.content as Record<string, unknown> | undefined
+      return !!(hero?.url) || !!(c?.about)
+    },
+    detail: "Real company images, brand colors, and subpage content extracted from the company's own website",
+    meaning: "デモサイトのパーソナライズに使う実画像・実色・実テキストです。フリー素材やAI生成に依存せず、相手企業の本物だけを使います。",
+    missingConsequence: "未取得だと、デモサイトのビジュアルと文言が汎用テンプレートのままになり、パーソナライズ感が大幅に下がります。",
+    nextStep: "Playwrightで企業HPを開き、hero画像・ロゴ・ブランド色・about/serviceページの実テキストを収集します。",
+  },
+  {
     slug: "stagehand",
     label: "Stagehand AI Agent",
     category: "outreach",
@@ -204,17 +224,17 @@ const SOURCES: SourceDefinition[] = [
       "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
       "DIFY_API_KEY",
     ],
-    detect: (m) => !!m.pain_diagnosis || !!m.dify_diagnosis,
+    detect: (_m, c) => !!companyPainDiagnosis(c) || !!companyDifyResult(c),
     detail: "Pain summary and offer mapping",
     meaning: "取得した事実を、相手の業種・国・商材に合わせた痛みと言葉へ変換する中核です。",
     missingConsequence: "未取得だと、レポートは数字の羅列に寄り、相手が自分事として理解しにくくなります。",
     nextStep: "Dify Cloud + DeepSeek V4 で、痛み・損失仮説・提案テンプレを選定します。",
   },
   { slug: "deepseek", label: "DeepSeek V4 copy", category: "orchestration", env: ["DEEPSEEK_API_KEY"], detect: (m) => !!m.personalized_copy, detail: "Personalized diagnosis copy" },
-  { slug: "trigger_dev", label: "Trigger.dev", category: "orchestration", env: ["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_SALES_ENRICHMENT_TASK_ID"], detect: (m) => !!m.enrichment, detail: "Job execution and audit trail" },
-  { slug: "chatwoot", label: "Chatwoot", category: "post_outreach", env: ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID", "CHATWOOT_WEBHOOK_URL", "TRIGGER_CHATWOOT_REPLY_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID"], detect: (m) => !!m.chatwoot || !!m.post_outreach_reply, detail: "Unified inbox and AI reply handoff for landed outreach" },
+  { slug: "openclaw", label: "OpenClaw Pipeline", category: "orchestration", env: [], detect: (m) => !!m.enrichment, detail: "Primary pipeline orchestrator (replaces Trigger.dev)" },
+  { slug: "chatwoot", label: "Chatwoot", category: "post_outreach", env: ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID", "CHATWOOT_WEBHOOK_URL"], detect: (m) => !!m.chatwoot || !!m.post_outreach_reply, detail: "Unified inbox and AI reply handoff for landed outreach" },
   { slug: "calcom", label: "Cal.com", category: "post_outreach", env: ["CALCOM_BASE_URL", "CALCOM_WEBHOOK_URL"], detect: (m) => !!m.calcom || !!m.meeting_booking, detail: "Embedded scheduling and booking webhook capture" },
-  { slug: "livekit", label: "LiveKit", category: "post_outreach", env: ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "LIVEKIT_WEBHOOK_URL", "TRIGGER_LIVEKIT_DISCOVERY_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID"], detect: (m) => !!m.livekit || !!m.discovery_call, detail: "Realtime AI discovery-call lane and transcript capture" },
+  { slug: "livekit", label: "LiveKit", category: "post_outreach", env: ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "LIVEKIT_WEBHOOK_URL"], detect: (m) => !!m.livekit || !!m.discovery_call, detail: "Realtime AI discovery-call lane and transcript capture" },
   { slug: "hermes_slack", label: "Hermes Agent / Slack", category: "orchestration", env: ["SLACK_WEBHOOK_URL", "HERMES_AGENT_WEBHOOK_URL"], detect: (m) => !!m.hermes || !!m.slack_notification, detail: "Human approval and alert routing" },
   { slug: "listmonk", label: "Listmonk / Mautic", category: "outreach", env: ["LISTMONK_BASE_URL", "MAUTIC_BASE_URL"], detect: (m) => !!m.listmonk || !!m.mautic, detail: "Email campaign routing when form is not appropriate" },
   { slug: "smartlead", label: "Smartlead.ai", category: "outreach", env: ["SMARTLEAD_API_KEY"], detect: (m) => !!m.smartlead, detail: "Email sequence fallback" },
@@ -222,8 +242,7 @@ const SOURCES: SourceDefinition[] = [
   { slug: "docsend", label: "DocSend", category: "outreach", env: ["DOCSEND_API_KEY"], detect: (m) => !!m.docsend, detail: "Tracked sales material delivery" },
   { slug: "twilio", label: "Twilio / IVRy", category: "outreach", env: ["TWILIO_ACCOUNT_SID", "IVRY_API_KEY"], detect: (m) => !!m.twilio || !!m.ivry, detail: "Phone outreach and call status" },
   { slug: "serp_tavily", label: "Serp API / Tavily", category: "analysis", env: ["SERPAPI_API_KEY", "TAVILY_API_KEY"], detect: (m) => !!m.serpapi || !!m.tavily, detail: "Search result and market context evidence" },
-  { slug: "notion_mcp", label: "Notion MCP", category: "orchestration", env: ["NOTION_API_KEY", "NOTION_MCP_TOKEN"], detect: (m) => !!m.notion_mcp || !!m.customer_notion_url, detail: "Customer portal and handoff page integration" },
-  { slug: "supabase_mcp", label: "Supabase MCP / NocoDB", category: "orchestration", env: ["SUPABASE_ACCESS_TOKEN", "NOCODB_BASE_URL"], detect: (m) => !!m.supabase_mcp || !!m.nocodb, detail: "SSOT operations and spreadsheet workbench bridge" },
+  { slug: "supabase_mcp", label: "Supabase MCP / NocoDB", category: "orchestration", env: ["SUPABASE_ACCESS_TOKEN", "NOCODB_BASE_URL"], detect: (m) => !!m.supabase_mcp || !!m.nocodb, detail: "Event-store operations and spreadsheet workbench bridge" },
   { slug: "directus", label: "Directus", category: "asset", env: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"], detect: (m) => !!m.directus || !!m.sales_material_cms, detail: "Asset and proposal management studio" },
   { slug: "keystatic", label: "Keystatic", category: "demo", env: ["KEYSTATIC_BASE_URL", "NEXT_PUBLIC_KEYSTATIC_URL"], detect: (m) => !!m.keystatic || !!m.demo_site_cms, detail: "Git-backed CMS for Astro demo sites" },
   { slug: "chrome_mcp", label: "Chrome MCP", category: "orchestration", env: ["CHROME_MCP_URL"], detect: (m) => !!m.chrome_mcp, detail: "Operator-side browser verification and demo review" },
@@ -289,6 +308,12 @@ const SOURCES: SourceDefinition[] = [
   { slug: "smb_signals", label: "SMB Signals", category: "analysis", env: [], detect: (m) => !!m.smb_signals, detail: "Small business digital presence signals" },
   { slug: "market_data", label: "e-Stat Market Data", category: "analysis", env: [], detect: (m) => !!m.market_data, detail: "Industry market statistics from e-Stat API" },
   { slug: "flowsint", label: "Flowsint OSINT", category: "list", env: ["FLOWSINT_API_URL", "FLOWSINT_API_TOKEN"], detect: (m) => !!m.flowsint, detail: "Flowsint internal OSINT aggregation" },
+  { slug: "whoxy", label: "Whoxy API WHOIS", category: "list", env: ["WHOXY_API_KEY"], detect: (m) => !!m.whoxy, detail: "Whoxy WHOIS company name, country, email, registrar, dates" },
+  { slug: "country_nic", label: "Country NIC RDAP", category: "list", env: [], detect: (m) => !!m.country_nic, detail: "Official NIC RDAP lookup — UK/DE/AU/JP/US/CA registries" },
+  { slug: "manta", label: "Manta.com SMB", category: "list", env: [], detect: (m) => !!m.manta, detail: "US SMB directory — <10 employees, category, location" },
+  { slug: "bbb", label: "BBB.org Businesses", category: "list", env: [], detect: (m) => !!m.bbb, detail: "US/CA BBB accredited local businesses — rating, years in business" },
+  { slug: "hello_work", label: "Hello Work Jobs (JP)", category: "list", env: [], detect: (m) => !!m.hello_work, detail: "Japan Hello Work job postings — hiring SMBs by prefecture/industry" },
+  { slug: "smb_purification", label: "SMB Pipeline 3-Stage", category: "orchestration", env: ["CRAWL4AI_BASE_URL"], detect: (m) => !!m.smb_pipeline, detail: "CZDS→Enterprise exclusion→Crawl4AI→Wappalyzer 3-stage filter" },
 ]
 
 function hasConfiguredEnv(names?: string[]): boolean {
@@ -357,6 +382,7 @@ const SOURCE_QUALITY_ALIASES: Record<string, string[]> = {
   green_web: ["green_web"],
   builtwith_free: ["builtwith"],
   jina_reader: ["jina_reader"],
+  website_assets: ["website_assets"],
   subfinder: ["subfinder"],
   trufflehog: ["trufflehog"],
 }
@@ -384,7 +410,7 @@ function sourceQualityError(meta: JsonRecord, slug: string): string | null {
 }
 
 export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnapshot {
-  const meta = (company.meta ?? {}) as JsonRecord
+  const meta = mergedCompanyMeta(company)
   const items = SOURCES.map((source): SourceCoverageItem => {
     const collected = source.detect(meta, company)
     const configured = hasConfiguredEnv(source.env)
@@ -431,13 +457,13 @@ function getSourceMeasuredAt(company: SalesCompany, slug: string): string | null
       return company.report_generated_at
     case "wappalyzer":
     case "whatweb":
-      return company.tech_stack ? company.report_generated_at : null
+      return companyTechStack(company) ? company.report_generated_at : null
     case "google_places":
       return typeof company.meta?.place === "object" && company.meta.place ? company.report_generated_at : null
     case "browser_screenshot":
-      return company.visual_evidence ? company.report_generated_at : null
+      return companyVisualEvidence(company) ? company.report_generated_at : null
     case "japan_market_audit":
-      return company.japan_market_audit ? company.report_generated_at : null
+      return companyJapanMarketAudit(company) ? company.report_generated_at : null
     default:
       return null
   }

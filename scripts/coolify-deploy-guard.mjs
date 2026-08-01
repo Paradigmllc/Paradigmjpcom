@@ -13,6 +13,7 @@
 import fs from "node:fs"
 import { spawnSync } from "node:child_process"
 import { DEFAULT_APP_UUID, coolifyRequest } from "./lib/coolify-env.mjs"
+import { sshArgs } from "./lib/ssh-options.mjs"
 
 const appUuid = process.env.PARADIGM_APP_UUID || DEFAULT_APP_UUID
 const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
@@ -25,7 +26,7 @@ const skipSsh = process.argv.includes("--skip-ssh") || process.env.PARADIGM_SKIP
 function ssh(command, input = null) {
   const result = spawnSync(
     "ssh",
-    ["-o", "BatchMode=yes", "-o", `ConnectTimeout=${timeoutSec}`, host, command],
+    [...sshArgs(host, { connectTimeout: timeoutSec }), command],
     { encoding: "utf8", input },
   )
   if (result.status !== 0) {
@@ -40,7 +41,10 @@ function assertDockerfileRuntimeGuards() {
   const required = [
     [/ENV\s+HOSTNAME=0\.0\.0\.0/, "Dockerfile runner must set ENV HOSTNAME=0.0.0.0"],
     [/ENV\s+PORT=3000/, "Dockerfile runner must set ENV PORT=3000"],
-    [/apk\s+add\s+--no-cache\s+curl/, "Dockerfile runner must install curl for Coolify healthchecks"],
+    [
+      /RUN\s+apk\s+add\s+--no-cache\b(?:[^\n]*\\\r?\n)*[^\n]*\bcurl\b/,
+      "Dockerfile runner must install curl for Coolify healthchecks",
+    ],
     [/HEALTHCHECK\b[\s\S]*127\.0\.0\.1:\$\{PORT:-3000\}/, "Dockerfile must include a localhost healthcheck"],
   ]
 

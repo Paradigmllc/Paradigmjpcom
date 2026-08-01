@@ -1,7 +1,7 @@
 /**
  * lib/sales/customers.ts — sales_customers CRUD (Sprint 8)
  *
- * 役割: 成約後の顧客管理。Notion 主管・双方向同期。
+ * 役割: 成約後の顧客管理。Supabaseを正本にTwentyへ同期する。
  *       WL 戦略 (is_white_label) を初日から対応。
  */
 
@@ -86,20 +86,6 @@ export async function calculateMrr(): Promise<{
     wl_count: wlCount,
     wl_revenue: wlRevenue,
   }
-}
-
-/** notion_page_id でルックアップ (逆流時の anchor) */
-export async function findCustomerByNotionId(
-  notionPageId: string,
-): Promise<SalesCustomer | null> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return null
-  const { data } = await sb
-    .from(DB_TABLES.SALES_CUSTOMERS)
-    .select("*")
-    .eq("notion_page_id", notionPageId)
-    .maybeSingle()
-  return (data as SalesCustomer) ?? null
 }
 
 /** 健全度更新 (health: 🟢/🟡/🔴) — 解約予兆検知の hook */

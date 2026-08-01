@@ -35,8 +35,8 @@ const altNamesFor = (locale: string) =>
 
 const orgDescFor = (locale: string) =>
   localeContentVariant(locale) === "ja"
-    ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
-    : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC."
+    ? "Web制作、MEO、SEO/GEO、AI導入を、設計から公開後の運用まで支援するParadigm合同会社。"
+    : "A fixed Japan Entry package for overseas SMBs: localized buyer path, market evidence, channel setup, regulatory screening, launch operations, and handover."
 
 // ─── LocalBusiness (組織) ────────────────────────────────────────
 export function buildLocalBusinessSchema(locale: string = "ja") {
@@ -55,7 +55,7 @@ export function buildLocalBusinessSchema(locale: string = "ja") {
       addressCountry: "JP",
       addressRegion: "Tokyo",
     },
-    sameAs: ["https://github.com/Paradigmllc", "https://twitter.com/paradigm_jp"],
+    sameAs: [],
     serviceArea: { "@type": "Country", name: ["Japan", "Worldwide"] },
     priceRange: "¥¥¥",
     areaServed: ["JP", "US", "EU", "Worldwide"],
@@ -85,7 +85,7 @@ export function buildServiceSchema(input: {
       "@id": `${BASE}#organization`,
       name: orgNameFor(locale),
     },
-    areaServed: { "@type": "Country", name: ["Japan", "Worldwide"] },
+    areaServed: { "@type": "Country", name: "Japan" },
     offers: input.priceRangeJpy
       ? {
           "@type": "Offer",
@@ -97,6 +97,34 @@ export function buildServiceSchema(input: {
           },
         }
       : undefined,
+  }
+}
+
+export function buildPageSchema(input: {
+  type: "WebPage" | "AboutPage" | "CollectionPage" | "ContactPage"
+  title: string
+  description?: string
+  url: string
+  locale: string
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": input.type,
+    "@id": `${input.url}#webpage`,
+    name: input.title,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.locale,
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": `${BASE}#website`,
+      url: BASE,
+    },
+    about: {
+      "@type": "Organization",
+      "@id": `${BASE}#organization`,
+      name: orgNameFor(input.locale),
+    },
   }
 }
 
@@ -167,19 +195,11 @@ export function buildWebSiteSchema(locale: string = "ja") {
     "@id": `${BASE}#website`,
     url: BASE,
     name: orgNameFor(locale),
-    inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"],
+    inLanguage: ["ja", "en"],
     publisher: {
       "@type": "Organization",
       "@id": `${BASE}#organization`,
       name: orgNameFor(locale),
-    },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${BASE}/${locale}/blog?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
     },
   }
 }

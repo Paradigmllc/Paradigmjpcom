@@ -1,8 +1,8 @@
 /**
- * lib/sales/templates.ts — sales_templates lookup + Notion 同期 (Sprint 8・Sprint 16 region 拡張)
+ * lib/sales/templates.ts — sales_templates lookup (Sprint 16 region 拡張)
  *
  * 役割: 業種×課題コードで診断レポートのテンプレ文言を取得.
- *       Notion 📝 テンプレDB が主管・cron で Supabase に upsert.
+ *       Reviewed content is stored in Supabase and selected by region and locale.
  *
  * Sprint 16: region (jp / global) スコープ必須.
  *           jp = 日本語テンプレ (paradigmjp.com/ja/report)
@@ -90,71 +90,6 @@ export async function getTemplatesByIndustry(
     if (!byIssue.has(row.issue_code)) byIssue.set(row.issue_code, row)
   }
   return issueCodes.map((issue) => byIssue.get(issue)).filter(Boolean) as SalesTemplate[]
-}
-
-/** Notion → Supabase upsert (cron が呼ぶ・notion_page_id で重複防止) */
-export async function upsertTemplateFromNotion(input: {
-  notion_page_id: string
-  region?: Region
-  template_variant?: TemplateVariant
-  report_locale?: ReportLocale
-  target_country?: string
-  template_name: string
-  industry: Industry
-  issue_code: IssueCode
-  severity?: "critical" | "warning" | "info"
-  headline?: string | null
-  pain?: string | null
-  fear?: string | null
-  loss?: string | null
-  cta_text?: string | null
-  is_active?: boolean
-}): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return { ok: false, error: "Supabase service_role not configured" }
-  const payload = {
-      notion_page_id: input.notion_page_id,
-      region: input.region ?? "jp",
-      template_variant: input.template_variant ?? "website_diagnostic",
-      report_locale: input.report_locale ?? (input.region === "global" ? "en" : "ja"),
-      target_country: input.target_country ?? (input.region === "global" ? "US" : "JP"),
-      template_name: input.template_name,
-      industry: input.industry,
-      issue_code: input.issue_code,
-      severity: input.severity ?? "warning",
-      headline: input.headline ?? null,
-      pain: input.pain ?? null,
-      fear: input.fear ?? null,
-      loss: input.loss ?? null,
-      cta_text: input.cta_text ?? null,
-      is_active: input.is_active ?? true,
-      last_synced: new Date().toISOString(),
-    }
-  const { error } = await sb.from(DB_TABLES.SALES_TEMPLATES).upsert(
-    payload,
-    { onConflict: "notion_page_id", ignoreDuplicates: false },
-  )
-  if (error) {
-    const missingRoutingColumn =
-      /template_variant|report_locale|target_country/.test(error.message) &&
-      /column|schema cache/i.test(error.message)
-    if (missingRoutingColumn) {
-      console.warn("[templates] routing columns missing, retrying with legacy fields:", error.message)
-    }
-    if (!missingRoutingColumn) return { ok: false, error: error.message }
-    const {
-      template_variant: _templateVariant,
-      report_locale: _reportLocale,
-      target_country: _targetCountry,
-      ...legacyPayload
-    } = payload
-    const legacy = await sb.from(DB_TABLES.SALES_TEMPLATES).upsert(
-      legacyPayload,
-      { onConflict: "notion_page_id", ignoreDuplicates: false },
-    )
-    if (legacy.error) return { ok: false, error: legacy.error.message }
-  }
-  return { ok: true }
 }
 
 /** 全テンプレ取得 (admin / debug 用・region scope・最大 1000 件) */

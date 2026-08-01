@@ -6,9 +6,11 @@ export interface TwentyLinkField {
 export interface TwentyRecord {
   id?: string
   name?: string
+  updatedAt?: string | null
   domainName?: TwentyLinkField | null
   paradigmReportUrl?: TwentyLinkField | null
   paradigmFormUrl?: TwentyLinkField | null
+  paradigmOutreachTargetUrl?: TwentyLinkField | null
   paradigmCustomerPortalUrl?: TwentyLinkField | null
   paradigmSalesMaterialUrl?: TwentyLinkField | null
   paradigmDemoUrl?: TwentyLinkField | null
@@ -27,6 +29,10 @@ export interface TwentyRecord {
   paradigmKarteSummary?: {
     markdown?: string | null
   } | null
+  paradigmLeadStatus?: string | null
+  paradigmTechnology?: string | null
+  paradigmOpportunityScore?: number | string | null
+  paradigmSmbScore?: number | string | null
 }
 
 export interface TwentyListResponse<T> {
@@ -65,9 +71,6 @@ export interface TwentyPullResult {
   created: number
   updated: number
   skipped: number
-  pipelineRunsCreated: number
-  pipelineRunsDispatched?: number
-  pipelineRunsReused?: number
   failures: { twentyCompanyId?: string | null; domain?: string | null; reason: string }[]
   error?: string
 }
@@ -101,6 +104,12 @@ export function twentyBaseUrl(): string | null {
   return base ? base.replace(/\/$/, "") : null
 }
 
+function twentyFetchTimeoutMs(): number {
+  const raw = process.env.TWENTY_FETCH_TIMEOUT_MS
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN
+  return Number.isFinite(parsed) && parsed >= 1_000 ? parsed : 20_000
+}
+
 export function normalizeDomain(input: string | null | undefined): string | null {
   if (!input) return null
   try {
@@ -113,7 +122,10 @@ export function normalizeDomain(input: string | null | undefined): string | null
 }
 
 export function domainMatches(record: TwentyRecord, domain: string): boolean {
-  const normalized = domain.toLowerCase()
+  // Strict exact match after normalization — no partial/subdomain matching.
+  // example.com must NOT match example.com.au or myexample.com.
+  const normalized = normalizeDomain(domain)
+  if (!normalized) return false
   const url = normalizeDomain(record.domainName?.primaryLinkUrl)
   const label = normalizeDomain(record.domainName?.primaryLinkLabel)
   return url === normalized || label === normalized
@@ -125,25 +137,61 @@ export async function twentyFetch<T>(
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const baseUrl = twentyBaseUrl()
   const apiKey = env("TWENTY_API_KEY")
-  if (!baseUrl || !apiKey) return { ok: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
+  if (!baseUrl || !apiKey) {
+    const msg = "Twenty is the Sales OS SSOT — TWENTY_BASE_URL and TWENTY_API_KEY are REQUIRED. Sync cannot proceed."
+    console.error(`[twenty-sync] ${msg}`)
+    return { ok: false, error: msg }
+  }
 
-  const res = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
-  })
-
-  const text = await res.text()
-  if (!res.ok) return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
+  // Circuit breaker: don't hammer a failing Twenty instance
+  const opKey = init.method === "GET" || !init.method ? "read" : "write"
+  // Dynamic import to avoid circular dependency — circuit is loaded lazily
+  let circuitGate = true
+  try {
+    const { circuitAllows } = await import("./twenty-circuit")
+    circuitGate = circuitAllows(opKey)
+  } catch {
+    // If circuit module can't be loaded, proceed without it
+  }
+  if (!circuitGate) {
+    return { ok: false, error: "Twenty circuit breaker is open — all calls blocked temporarily" }
+  }
 
   try {
-    return { ok: true, data: JSON.parse(text) as T }
+    const res = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(twentyFetchTimeoutMs()),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      },
+    })
+
+    const text = await res.text()
+    if (!res.ok) {
+      const { circuitReportFailure } = await import("./twenty-circuit").catch(() => ({ circuitReportFailure: () => {} }))
+      circuitReportFailure(opKey)
+      return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
+    }
+
+    try {
+      const data = JSON.parse(text) as T
+      const { circuitReportSuccess } = await import("./twenty-circuit").catch(() => ({ circuitReportSuccess: () => {} }))
+      circuitReportSuccess(opKey)
+      return { ok: true, data }
+    } catch (error) {
+      console.error("[twenty-sync] invalid JSON response:", error)
+      const { circuitReportFailure } = await import("./twenty-circuit").catch(() => ({ circuitReportFailure: () => {} }))
+      circuitReportFailure(opKey)
+      return { ok: false, error: "Twenty API returned invalid JSON" }
+    }
   } catch (error) {
-    console.error("[twenty-sync] invalid JSON response:", error)
-    return { ok: false, error: "Twenty API returned invalid JSON" }
+    const message = error instanceof Error ? error.message : "Twenty API request failed"
+    console.error("[twenty-sync] request failed:", error)
+    const { circuitReportFailure } = await import("./twenty-circuit").catch(() => ({ circuitReportFailure: () => {} }))
+    circuitReportFailure(opKey)
+    return { ok: false, error: message }
   }
 }
 
@@ -210,8 +258,8 @@ export function parseSalesStatusLabel(label: string | null): { pipelineStatus?: 
 
   let pipelineStatus: string | undefined
   if (pipelineLabel) {
-    const entry = Object.entries(PIPELINE_LABELS).find(([, val]) => val === pipelineLabel)
-    if (entry) pipelineStatus = entry[0]
+    const entry = Object.entries(PIPELINE_LABELS).find(([, val]) => val.startsWith(pipelineLabel))
+    pipelineStatus = entry?.[0] ?? pipelineLabel
   }
 
   return {

@@ -14,6 +14,9 @@ import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
+import { getSiteSettings } from "@/lib/settings"
+
+export const dynamic = "force-dynamic"
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -30,7 +33,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LegalPage({ params }: Props) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "legalPage" })
-  const ROWS = t.raw("rows") as Array<[string, string]>
+  const settings = await getSiteSettings(locale)
+  const translatedRows = t.raw("rows") as Array<[string, string]>
+  const ROWS = translatedRows.map(([label, value], index): [string, string] => {
+    if (index === 0) return [label, settings.company.legalName || value]
+    if (index === 1) return [label, value]
+    if (index === 2) return [label, settings.company.address || settings.contact.address || value]
+    if (index === 3) return [label, settings.contact.phone || value]
+    if (index === 4) return [label, settings.contact.email || value]
+    return [label, value]
+  })
+  if (settings.company.registrationNumber) {
+    ROWS.splice(2, 0, [locale === "ja" ? "法人番号" : "Registration number", settings.company.registrationNumber])
+  }
 
   return (
     <>

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { motion } from "framer-motion"
 import { CheckCircle2, Clock, Package, TrendingUp, Zap } from "lucide-react"
@@ -21,34 +21,32 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
     {
       problem: speed?.headline ?? (lang === "ja" ? "表示速度の改善" : "Speed improvement"),
       solution: lang === "ja"
-        ? "Astro + 画像最適化でPageSpeed 85点以上を保証。CDN配信で全国どこからでも高速表示。"
-        : "Astro + image optimization guarantees PageSpeed 85+. CDN delivery for fast loading nationwide.",
-      timeline: lang === "ja" ? "2週間" : "2 weeks",
-      metric: `${speed?.metric_value ?? "?"} → 85+`,
+        ? "Astro + 画像最適化とCDN配信を適用し、計測済みの基準値に対して公開時の改善結果を検証します。"
+        : "Apply image, delivery, and rendering improvements against the measured baseline, then record launch acceptance checks.",
+      timeline: lang === "ja" ? "固定範囲内" : "Fixed scope",
+      metric: lang === "ja" ? "公開時に実測" : "Measured at launch",
       icon: Zap,
     },
     {
       problem: trust?.headline ?? (lang === "ja" ? "信頼表示の最適化" : "Trust optimization"),
       solution: lang === "ja"
-        ? "SSL A+グレード + HSTS Preload + セキュリティヘッダー完備。B2B審査も通過する信頼基盤を構築。"
-        : "SSL A+ grade + HSTS Preload + security headers. Build trust infrastructure that passes B2B audits.",
-      timeline: lang === "ja" ? "1週間" : "1 week",
-      metric: lang === "ja" ? "グレードA+保証" : "Grade A+ guaranteed",
+        ? "公開環境に適したセキュリティヘッダーと信頼表示を設定し、公開前チェックリストで確認します。"
+        : "Configure appropriate security headers and buyer-facing trust disclosures, verified with a pre-launch checklist.",
+      timeline: lang === "ja" ? "固定範囲内" : "Fixed scope",
+      metric: lang === "ja" ? "チェック表で確認" : "Verified checklist",
       icon: CheckCircle2,
     },
     {
       problem: reach?.headline ?? (lang === "ja" ? "集客導線の拡大" : "Reach expansion"),
       solution: lang === "ja"
-        ? "OGP/SNS最適化 + MEO対策 + フォーム改善。検索・SNS・マップの3経路から集客を最大化。"
-        : "OGP/SNS optimization + MEO + form improvement. Maximize leads from search, social, and maps.",
-      timeline: lang === "ja" ? "1週間" : "1 week",
-      metric: lang === "ja" ? "集客導線3経路完備" : "3-channel coverage",
+        ? "合意した対象チャネルの情報設計と問い合わせ導線を整え、計測可能な状態で公開します。"
+        : "Localize the agreed Japan buyer journey, inquiry routing, analytics, and operational handoff.",
+      timeline: lang === "ja" ? "固定範囲内" : "Fixed scope",
+      metric: lang === "ja" ? "導線を公開前確認" : "Buyer journey verified",
       icon: TrendingUp,
     },
   ]
 
-  // Calculate total timeline and package
-  const totalWeeks = proposals.length
   const hasDemo = !!data.demo_url
 
   return (
@@ -68,12 +66,12 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
           <h2 className="text-2xl font-bold text-zinc-900">
             {lang === "ja"
               ? `御社の${data.company_name}に最適化した改善パッケージ`
-              : `Tailored improvement package for ${data.company_name}`}
+              : `Fixed Japan Entry scope for ${data.company_name}`}
           </h2>
           <p className="mt-3 text-sm text-zinc-500 max-w-2xl mx-auto">
             {lang === "ja"
-              ? `診断で検出した課題を、すべて一括で解決します。個別に依頼するより早く、安く、確実です。`
-              : `All detected issues solved in one package — faster, cheaper, and more reliable than piecemeal fixes.`}
+              ? `診断結果をもとに対象範囲・受入条件・追加費用の有無を着手前の書面で確定します。`
+              : `One $15,000 setup scope, with dependencies, acceptance checks, exclusions, and third-party costs confirmed in writing before payment.`}
           </p>
         </motion.div>
 
@@ -131,11 +129,11 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
               <div className="space-y-2">
                 {[
                   lang === "ja" ? "全課題の一括診断・改善提案" : "Comprehensive audit and improvement plan",
-                  lang === "ja" ? "PageSpeed 85点以上を保証" : "PageSpeed 85+ guaranteed",
-                  lang === "ja" ? "SSL A+グレード + セキュリティ対策" : "SSL A+ grade + security hardening",
-                  lang === "ja" ? "OGP/SNS/MEO 3経路の集客最適化" : "3-channel reach optimization (social/search/maps)",
+                  lang === "ja" ? "表示速度を基準値から改善し公開時に実測" : "Localized Japan revenue site and conversion path",
+                  lang === "ja" ? "信頼表示 + セキュリティ対策" : "Buyer-facing trust and compliance coordination",
+                  lang === "ja" ? "合意した集客・問い合わせ導線の最適化" : "Eligible payment or inquiry routing, analytics, and notifications",
                   hasDemo ? (lang === "ja" ? "改善デモサイト公開済み" : "Demo site already live") : (lang === "ja" ? "改善デモサイト作成" : "Demo site creation"),
-                  lang === "ja" ? "導入後30日間の無料サポート" : "30-day free post-launch support",
+                  lang === "ja" ? "選定した契約先には月額2,000ドル×3か月＝6,000ドル相当の運用を追加月額なしで提供" : "Selected launch partners receive $2,000/month × 3 months = $6,000 of standard managed-operation value included",
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -150,10 +148,10 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
               </h3>
               <div className="space-y-3">
                 {[
-                  { step: "1", label: lang === "ja" ? "無料診断レポート確認（今すぐ）" : "Review free diagnostic (now)", time: "0分" },
-                  { step: "2", label: lang === "ja" ? "15分無料相談で優先順位決定" : "15min free consult to prioritize", time: lang === "ja" ? "翌日以降" : "Next day" },
-                  { step: "3", label: lang === "ja" ? "改善作業着手〜完了" : "Implementation start → complete", time: `${totalWeeks}${lang === "ja" ? "週間" : "wks"}` },
-                  { step: "4", label: lang === "ja" ? "公開・効果測定開始" : "Go live + measurement", time: lang === "ja" ? "即日" : "Same day" },
+                  { step: "1", label: lang === "ja" ? "診断レポート確認" : "Confirm decision authority and fit", time: lang === "ja" ? "今すぐ" : "Fit review" },
+                  { step: "2", label: lang === "ja" ? "15分の要件確認" : "Sign, pay $15,000, and provide launch inputs", time: lang === "ja" ? "翌日以降" : "Before kickoff" },
+                  { step: "3", label: lang === "ja" ? "合意範囲の実装・検証" : "Implement and verify the fixed scope", time: lang === "ja" ? "書面で確定" : "14-business-day guarantee" },
+                  { step: "4", label: lang === "ja" ? "公開・効果測定開始" : "Launch, operate, and hand over", time: lang === "ja" ? "検証後" : "6 managed months" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-200 text-xs font-bold text-violet-700">{item.step}</span>

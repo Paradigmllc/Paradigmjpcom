@@ -1,12 +1,17 @@
 import { enrichFromContact } from "./enrich"
 import { upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
-import { fetchDiagnosticReport } from "./diagnostic"
+import { runAssetExtraction } from "./extract-assets"
+import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
+import { autoPersonalize } from "./personalize"
 import { generateReplacementDemo } from "./demo-generator"
-import { generateDiagnosticVideo } from "./video-generator"
+import { generateDiagnosticVideo, generateProfessionalVideo } from "./video-generator"
+import { getComfyuiClientConfig } from "./comfyui-client"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
 import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
+import { generateFormMessage } from "./form-message"
+import { requiresVerifiedOutreachMetrics } from "./outreach/evidence-mode"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit"
 import { resolveDifyWorkflowKey, normalizeDifyCloudBaseUrl } from "./dify-cloud"
@@ -62,6 +67,21 @@ export async function processEnrichmentPhase(
   }
 
   const refreshed = (enrich.company ?? company) as SalesCompany
+
+  // Extract real website assets (images, colors, subpage content) for demo personalization.
+  // Non-blocking: if extraction fails, enrichment continues with partial data.
+  let websiteAssets: Record<string, unknown> | null = null
+  try {
+    const assets = await runAssetExtraction(refreshed)
+    if (assets.ok && assets.assets) {
+      websiteAssets = assets.assets as unknown as Record<string, unknown>
+    } else {
+      console.warn(`[sales-enrichment] website asset extraction skipped: ${assets.error ?? assets.skipped ?? "unknown"}`)
+    }
+  } catch (e) {
+    console.error("[sales-enrichment] website asset extraction failed (non-fatal):", e)
+  }
+
   const save = await upsertCompanyByDomain({
     domain: refreshed.domain,
     company_name: refreshed.company_name,
@@ -79,6 +99,7 @@ export async function processEnrichmentPhase(
     meta: {
       ...(refreshed.meta ?? {}),
       enrichment: { job_id: job.id, phase1_completed_at: new Date().toISOString() },
+      ...(websiteAssets ? { website_assets: websiteAssets } : {}),
     },
     tech_stack: refreshed.meta?.tech as Record<string, unknown> | null,
   })
@@ -116,14 +137,21 @@ export async function processDiagnosisPhase(
         ...(company.meta?.enrichment as JsonRecord ?? {}),
         phase2_completed_at: new Date().toISOString(),
       },
+      pain_diagnosis: painDiagnosis,
+      dify_diagnosis: dify.raw ?? dify.summary,
+      japan_market_audit: japanMarketAudit,
     },
     pain_diagnosis: painDiagnosis as Record<string, unknown> | null,
     dify_result: dify.raw as Record<string, unknown> | null,
     japan_market_audit: japanMarketAudit as unknown as Record<string, unknown> | null,
   })
 
+  // Phase 1 retry-isolation (root-cause fix for "0 reports"): a Dify failure (e.g. HTTP 400)
+  // must NOT fail the whole enrichment job or block report generation. The local/DeepSeek
+  // fallback summary is already persisted above, so record the Dify error and continue — the
+  // diagnostic report and DeepSeek personalization (autoPersonalize) still get produced.
   if (!dify.ok && dify.configured) {
-    return { ok: false, error: dify.error ?? "Dify diagnosis failed", difyConfigured: dify.configured, difyOk: false, difyError: dify.error ?? undefined, painSummary: dify.summary.primaryPain }
+    console.warn(`[sales-enrichment] Dify diagnosis degraded (${dify.error ?? "unknown"}); continuing with fallback summary so the report still generates`)
   }
 
   return { ok: true, difyConfigured: dify.configured, difyOk: dify.ok, difyError: dify.ok ? undefined : (dify.error ?? undefined), painSummary: dify.summary.primaryPain }
@@ -143,8 +171,33 @@ export async function processReportPhase(
     templateVariant: company.template_variant ?? undefined,
   })
 
-  await saveSourceCoverageRows(company)
-  const coverage = computeSourceCoverage(company)
+  if (report) {
+    await markReportGenerated(company.id)
+    // Phase 6-1 / 1-4: generate company-specific report copy into meta.personalized_copy
+    // so diagnostic.ts renders a tailored narrative instead of the generic template.
+    // personalizeReport uses DeepSeek today; Dify karte→report becomes primary once
+    // DIFY_KARTE_TO_REPORT_API_KEY is configured (decision: Dify 正本 / DeepSeek fallback).
+    try {
+      const personalize = await autoPersonalize(company.id)
+      await logDiagnosisEvent(sb, {
+        companyId: company.id,
+        jobId: _job.id,
+        eventType: "report_personalized",
+        status: personalize.ok ? "success" : "warning",
+        title: personalize.ok ? "診断レポート文面をパーソナライズしました" : "文面パーソナライズをスキップ",
+        message: personalize.ok ? undefined : (personalize.skipped ?? personalize.error),
+      })
+    } catch (e) {
+      console.error("[sales-enrichment] autoPersonalize failed (non-fatal):", e)
+    }
+  }
+
+  const refreshed = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("id", company.id).maybeSingle()
+  if (refreshed.error) console.error("[sales-enrichment] refresh after report failed:", refreshed.error.message)
+  const coverageCompany = (refreshed.data as SalesCompany | null) ?? company
+
+  await saveSourceCoverageRows(coverageCompany)
+  const coverage = computeSourceCoverage(coverageCompany)
 
   await logDiagnosisEvent(sb, {
     companyId: company.id,
@@ -208,6 +261,10 @@ export async function processAssetPhase(
     costGuardVideoEnabled &&
     coverage.score >= videoMinScore &&
     !hasRecentAsset("sales_video")
+  const useProfessionalVideoPipeline =
+    shouldGenerateVideo &&
+    process.env.PROFESSIONAL_VIDEO_PIPELINE_ENABLED === "true" &&
+    getComfyuiClientConfig().ready
 
   if (reportData && isWebProduction && !shouldGenerateDemo && costGuardDemoEnabled) {
     const reason = hasRecentAsset("demo_site") ? "recently_generated" : `coverage_score_${coverage.score}_below_${demoMinScore}`
@@ -234,17 +291,27 @@ export async function processAssetPhase(
   const [demo, videoResult] = await Promise.all([
     shouldGenerateDemo
       ? generateReplacementDemo(company, reportData).catch((e: unknown) => {
+          console.error(`[enrichment-phases] replacement demo generation:`, e instanceof Error ? e.message : String(e))
           errors.push(`demo generation: ${e instanceof Error ? e.message : String(e)}`)
           return { ok: false, demoUrl: null }
         })
       : Promise.resolve({ ok: false, demoUrl: null as string | null }),
 
     shouldGenerateVideo
-      ? generateDiagnosticVideo(company.id, company.report_locale).catch((e: unknown) => {
+      ? (useProfessionalVideoPipeline
+          ? generateProfessionalVideo({
+              companyIdOrSlugOrDomain: company.id,
+              locale: company.report_locale ?? undefined,
+              generateDiagnostic: true,
+            }).then((result) => result.diagnostic ?? { ok: result.ok, error: result.error })
+          : generateDiagnosticVideo(company.id, company.report_locale)
+        ).catch((e: unknown) => {
+          console.error(`[enrichment-phases] ${useProfessionalVideoPipeline ? "professional" : "diagnostic"} video generation:`, e instanceof Error ? e.message : String(e))
           errors.push(`video generation: ${e instanceof Error ? e.message : String(e)}`)
           return null
         })
       : Promise.resolve(null),
+
   ])
 
   let updatedCompany = company
@@ -296,6 +363,24 @@ export async function processSyncPhase(
     resultPayload: JsonRecord,
   ) => Promise<void>,
 ): Promise<{ ok: boolean; error?: string }> {
+  const isLeadCandidateFlow = job.triggered_by === "lead_candidate_acquisition" || job.source === "lead_candidate_acquisition"
+  const formMessage = isLeadCandidateFlow
+    ? await generateFormMessage(company.id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
+    : null
+  if (formMessage && !formMessage.ok) {
+    await logDiagnosisEvent(sb, {
+      companyId: company.id,
+      jobId: job.id,
+      eventType: "form_message_draft_failed",
+      status: "warning",
+      title: `Evidence-backed form message draft unavailable for ${company.domain}`,
+      message: formMessage.error,
+      payload: {
+        metric_unknowns: formMessage.metric_unknowns ?? [],
+        verified_metric_count: formMessage.verified_metrics?.length ?? 0,
+      },
+    })
+  }
   const twentySync = await syncCompanyKarteToTwenty(company.id)
   if (!twentySync.ok && twentySync.configured) {
     console.error("[sales-enrichment] Twenty karte sync failed:", twentySync.error)
@@ -315,6 +400,9 @@ export async function processSyncPhase(
     demo_url: phaseResults.demoUrl,
     source_coverage_score: phaseResults.coverageScore,
     twenty_sync: twentySync.ok ? "synced" : twentySync.configured ? "failed" : "not_configured",
+    form_message_draft: formMessage?.ok ? "generated" : formMessage ? "needs_review" : "not_requested",
+    form_message_engine: formMessage?.engine ?? null,
+    form_message_metric_count: formMessage?.verified_metrics?.length ?? 0,
     dify_configured: phaseResults.difyConfigured,
     dify_ok: phaseResults.difyOk,
     dify_error: phaseResults.difyError ?? null,

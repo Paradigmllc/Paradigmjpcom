@@ -1,12 +1,8 @@
 import { redirect } from "next/navigation"
+import { twentyBaseUrl } from "@/lib/sales/twenty-sync-utils"
 
 export const dynamic = "force-dynamic"
 
-interface Props {
-  params: Promise<{ locale: string }>
-}
-
-export default async function AdminIndexPage({ params }: Props) {
-  const { locale } = await params
-  redirect(`/${locale}/admin/sales`)
+export default function AdminIndexPage() {
+  redirect(twentyBaseUrl() ?? "https://twenty.paradigmjp.com")
 }

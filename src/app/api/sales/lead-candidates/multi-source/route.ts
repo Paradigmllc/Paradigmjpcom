@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
+import { getLeadSourceReadiness } from "@/lib/sales/lead-source-selection"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -14,7 +15,11 @@ const BodySchema = z.object({
   verifyLimit: z.number().int().min(0).max(5000).optional(),
   promote: z.boolean().optional(),
   minOpportunityScore: z.number().min(0).max(100).optional(),
+  minSmbScore: z.number().min(0).max(100).optional(),
   syncVerifyBatchSize: z.number().int().min(0).max(120).optional(),
+  requireVerifiedForm: z.boolean().optional(),
+  minFormConfidence: z.number().int().min(0).max(100).optional(),
+  syncTwenty: z.boolean().optional(),
 })
 
 function errorMessage(error: unknown): string {
@@ -29,7 +34,13 @@ export async function POST(req: NextRequest) {
       console.error("[lead-candidates/multi-source] invalid body:", parsed.error)
       return NextResponse.json({ ok: false, error: "Invalid request body", details: parsed.error.flatten() }, { status: 400 })
     }
-    const result = await ingestLeadCandidatesDurable(parsed.data)
+    const countryCode = parsed.data.countryCode.toUpperCase()
+    const readiness = await getLeadSourceReadiness([countryCode])
+    const sourceConfigIds = readiness[countryCode]?.sourceIds ?? []
+    if (sourceConfigIds.length === 0) {
+      return NextResponse.json({ ok: false, error: `No evidence-bearing lead source is ready for ${countryCode}` }, { status: 409 })
+    }
+    const result = await ingestLeadCandidatesDurable({ ...parsed.data, countryCode, sourceConfigIds })
     return NextResponse.json(result, { status: result.ok ? 200 : 502 })
   } catch (error) {
     console.error("[lead-candidates/multi-source] request failed:", error)

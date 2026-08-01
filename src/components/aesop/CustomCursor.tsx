@@ -33,7 +33,7 @@ export default function CustomCursor() {
     if (typeof window === "undefined") return
     if (!window.matchMedia("(hover:hover) and (pointer:fine)").matches) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    setEnabled(true)
+    const enableFrame = window.requestAnimationFrame(() => setEnabled(true))
 
     function move(e: MouseEvent) {
       mouseX.set(e.clientX)
@@ -50,6 +50,7 @@ export default function CustomCursor() {
     return () => {
       window.removeEventListener("mousemove", move)
       window.removeEventListener("mouseover", over)
+      window.cancelAnimationFrame(enableFrame)
     }
   }, [mouseX, mouseY])
 

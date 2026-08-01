@@ -1,0 +1,73 @@
+---
+// Apple 3-Column Feature Grid Component
+// Props: items, columns (2|3|4)
+// Apple Design System - Strict Compliance
+
+export interface Props {
+  items: {
+    icon: string;
+    title: string;
+    body: string;
+  }[];
+  columns?: 2 | 3 | 4;
+}
+
+const { items, columns = 3 } = Astro.props;
+
+const gridColsClass = {
+  2: "md:grid-cols-2",
+  3: "md:grid-cols-3",
+  4: "md:grid-cols-4",
+}[columns];
+---
+
+<div
+  class="w-full bg-[#f5f5f7] py-[clamp(4rem,8vw,8rem)]"
+  style="font-family: 'Gilroy', -apple-system, sans-serif;"
+>
+  <div class="mx-auto max-w-[980px] px-6">
+    <div
+      class={`grid grid-cols-1 gap-6 sm:gap-8 ${gridColsClass}`}
+    >
+      {
+        items.map((item, index) => (
+          <div
+            class="group flex flex-col items-center text-center rounded-[22px] bg-white p-8 shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-500 ease-out hover:shadow-[0_25px_70px_rgba(0,0,0,0.12)]"
+            style="animation: fadeInUp 0.6s ease-out both; animation-delay: ${index * 0.1}s;"
+          >
+            {/* Icon */}
+            <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#0071e3]/10 text-2xl">
+              <span class="text-[#0071e3]">{item.icon}</span>
+            </div>
+
+            {/* Title */}
+            <h3
+              class="mb-3 text-xl font-[400] tracking-[-0.02em] text-[#1d1d1f]"
+              style="line-height: 1.15;"
+            >
+              {item.title}
+            </h3>
+
+            {/* Body */}
+            <p class="text-base leading-relaxed text-[#1d1d1f]/70">
+              {item.body}
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

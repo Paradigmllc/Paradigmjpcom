@@ -1,0 +1,106 @@
+---
+// AppleDesignHero.astro
+export interface Props {
+  headline?: string;
+  subheadline?: string;
+  image?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+const {
+  headline = "Think different.",
+  subheadline = "The new standard in design and performance.",
+  image = "https://images.unsplash.com/photo-1611186871348-b1f696f3bb0c?q=80&w=2070&auto=format&fit=crop",
+  ctaLabel = "Learn more",
+  ctaHref = "#",
+} = Astro.props;
+---
+
+<section
+  class="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden bg-[#f5f5f7]"
+>
+  <!-- 背景画像 + グラデーションオーバーレイ -->
+  <div class="absolute inset-0 z-0">
+    <img
+      src={image}
+      alt=""
+      class="w-full h-full object-cover object-center"
+      loading="lazy"
+      decoding="async"
+    />
+    <!-- マルチレイヤーグラデーション: 上下左右からフェード -->
+    <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+    <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+    <!-- エッジソフトベール -->
+    <div class="absolute inset-0 bg-gradient-to-t from-[#f5f5f7] via-transparent to-transparent opacity-30" />
+  </div>
+
+  <!-- コンテンツ -->
+  <div class="relative z-10 w-full max-w-[980px] mx-auto px-6 md:px-12 py-[clamp(4rem,8vw,8rem)] text-center">
+    <div class="flex flex-col items-center gap-6 md:gap-8">
+      <!-- 見出し -->
+      <h1
+        class="text-white font-[400] tracking-[-0.02em] leading-[1.15] text-[clamp(3rem,7vw,5.5rem)] drop-shadow-lg"
+        style="font-family: 'Gilroy', -apple-system, sans-serif;"
+      >
+        {headline}
+      </h1>
+
+      <!-- サブ見出し -->
+      <p
+        class="text-white/90 font-[400] text-[clamp(1.1rem,2.5vw,1.5rem)] leading-relaxed max-w-2xl mx-auto drop-shadow-md"
+        style="font-family: 'Gilroy', -apple-system, sans-serif;"
+      >
+        {subheadline}
+      </p>
+
+      <!-- CTA ボタン -->
+      {ctaLabel && (
+        <a
+          href={ctaHref}
+          class="inline-block mt-4 bg-[#0071e3] text-white font-[500] text-[1.0625rem] leading-[1.176] px-[24px] py-[12px] rounded-[54px] transition-all duration-300 ease-out hover:bg-[#0077ed] hover:scale-[1.02] active:scale-[0.98] shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
+          style="font-family: 'Gilroy', -apple-system, sans-serif;"
+        >
+          {ctaLabel}
+        </a>
+      )}
+    </div>
+  </div>
+
+  <!-- 下端フェードアウト (セクション境界) -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#f5f5f7] to-transparent pointer-events-none" />
+</section>
+
+<style is:global>
+  /* フェードインアニメーション */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  section > div:last-of-type > div {
+    animation: fadeInUp 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+
+  section h1 {
+    animation: fadeInUp 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s forwards;
+    opacity: 0;
+  }
+
+  section p {
+    animation: fadeInUp 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.2s forwards;
+    opacity: 0;
+  }
+
+  section a {
+    animation: fadeInUp 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) 0.3s forwards;
+    opacity: 0;
+  }
+</style>

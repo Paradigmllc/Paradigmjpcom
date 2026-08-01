@@ -1,8 +1,9 @@
-﻿"use client"
+"use client"
+// force chunk rebuild 2026-06-22
 
 import { LineChart } from "lucide-react"
+import { MotionConfig } from "framer-motion"
 import { useState } from "react"
-import Link from "next/link"
 import dynamic from "next/dynamic"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore } from "@/lib/sales/company-intelligence"
@@ -10,10 +11,10 @@ import { labelForIndustry } from "@/lib/sales/render-quality"
 import { localizeReportIntelligence, reportEvidenceText, sourceCategoryLabel, sourceCoverageDetail } from "./report-intelligence-copy"
 import { REPORT_COPY, normalizeReportLang, type ReportLang } from "./report-copy"
 import { getReportOfferCopy } from "./report-offer-copy"
-import { cleanText, formatMoney, numericValue, reportTitle, Pill, Stat } from "./report-utils"
-import { SlideInSection, StaggeredFadeIn } from "./ReportAnimations"
+import { cleanText, formatMoney, reportTitle, Pill, Stat } from "./report-utils"
+import { SlideInSection } from "./ReportAnimations"
 import { ReportExecutiveSummary } from "./ReportExecutiveSummary"
-import { LossImpactBar, SourceCoverageRadar, CompetitorBenchmarkChart, TimelineChart, type BenchmarkItem, type LossImpactItem, type TimelinePoint } from "./ReportCharts"
+import { LossImpactBar, CompetitorBenchmarkChart, type BenchmarkItem, type LossImpactItem, type TimelinePoint } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
 import { ReportFaqSection } from "./ReportFaqSection"
@@ -24,15 +25,16 @@ import { localeContentVariant } from "@/lib/locale-map"
 import { ReportHeader } from "./ReportHeader"
 import ReportHeroSection from "./ReportHeroSection"
 import ReportDarkSurface from "./ReportDarkSurface"
-import ReportFindingCard from "./ReportFindingCard"
 import ReportPainCard from "./ReportPainCard"
-import ReportSignalCard from "./ReportSignalCard"
-import ReportSourceRow from "./ReportSourceRow"
+import { ReportAppendixSections, ReportFooter } from "./ReportAppendixSections"
 import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
 import { ErrorBoundary } from "./ErrorBoundary"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
+import type { ReportBlogLinks } from "./report-constants"
+import { parseExplicitPositiveAmount } from "./report-evidence"
+import { JapanEntryProjectionSection } from "./JapanEntryProjectionSection"
 
 // Heavy components — code-split for faster initial load
 const ReportHyperFramesPlayer = dynamic(() => import("./ReportHyperFramesPlayer"), { ssr: false, loading: () => <div className="aspect-video bg-zinc-100 rounded-2xl animate-pulse" /> })
@@ -44,76 +46,88 @@ export default function DiagnosticReport({
   data,
   trackingSlug,
   locale,
+  approvedBlogLinks = {},
 }: {
   data: DiagnosticReportData
   trackingSlug?: string
   locale?: string
+  approvedBlogLinks?: ReportBlogLinks
 }) {
-  const lang = normalizeReportLang(locale ?? data.report_locale)
+  // 🔒 Client-side safety: prevent hydration crashes from undefined nested fields
+  const safeContentTemplate = data.content_template ?? { purpose: "", variant: "website_diagnostic" as const, html_content: "", title: "", quality_bar: "" }
+  const safeIntelligence = {
+    signals: Array.isArray(data.intelligence?.signals) ? data.intelligence.signals : [],
+    painPoints: Array.isArray(data.intelligence?.painPoints) ? data.intelligence.painPoints : [],
+    nextActions: Array.isArray(data.intelligence?.nextActions) && data.intelligence.nextActions.length > 0
+      ? data.intelligence.nextActions
+      : [locale === "ja" ? "Revenue OSで診断データを再取得する" : "Refresh diagnostic data in Revenue OS"],
+  }
+  const safeSourceCoverage = data.source_coverage ?? { score: 0, collected: 0, configured: 0, missing: 0, items: [] }
+  const safeData: typeof data = {
+    ...data,
+    content_template: safeContentTemplate,
+    localized_report_urls: data.localized_report_urls ?? [],
+    acts: data.acts ?? [],
+    intelligence: safeIntelligence,
+    source_coverage: {
+      score: Number.isFinite(safeSourceCoverage.score) ? safeSourceCoverage.score : 0,
+      collected: Number.isFinite(safeSourceCoverage.collected) ? safeSourceCoverage.collected : 0,
+      configured: Number.isFinite(safeSourceCoverage.configured) ? safeSourceCoverage.configured : 0,
+      missing: Number.isFinite(safeSourceCoverage.missing) ? safeSourceCoverage.missing : 0,
+      items: Array.isArray(safeSourceCoverage.items) ? safeSourceCoverage.items : [],
+    },
+  }
+  
+  const lang = normalizeReportLang(locale ?? safeData.report_locale)
   const copy = REPORT_COPY[lang]
-  const offerCopy = getReportOfferCopy(lang, data.template_variant)
-  const intelligence = localizeReportIntelligence(data.intelligence, lang)
-  const localizedData = { ...data, intelligence }
-  const activeLocale = locale ?? data.report_locale
-  const confidence = signalScore(intelligence.signals)
-  const loss = numericValue(data.total_loss)
+  const offerCopy = getReportOfferCopy(lang, safeData.template_variant)
+  const intelligence = localizeReportIntelligence(safeData.intelligence, lang)
+  const activeLocale = locale ?? safeData.report_locale
+  const confidence = intelligence.signals.length > 0
+    ? signalScore(intelligence.signals)
+    : null
+  const loss = parseExplicitPositiveAmount(safeData.total_loss)
+  const notMeasured = lang === "ja" ? "未測定" : "Not measured"
   const topPain = intelligence.painPoints?.[0] ?? { label: lang === "ja" ? "改善ポイント" : "Improvement point" }
   const videoHref = trackingSlug
     ? `/${activeLocale}/report/${trackingSlug}/video`
     : null
-  const industryLabel = labelForIndustry(data.industry, lang)
-  const visibleSources = (data.source_coverage?.items ?? [])
+  const industryLabel = labelForIndustry(safeData.industry, lang)
+  const visibleSources = (safeData.source_coverage?.items ?? [])
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 14)
-  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name ?? "Client")}`
-  const displayScreenshotUrl = data.evidence_screenshot_url ?? data.screenshot_url ?? null
+  const calHref = lang === "ja"
+    ? `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(safeData.company_name ?? "Client")}`
+    : `/en/contact?intent=japan-entry&utm_source=diagnostic-report&utm_campaign=outbound-report&company=${encodeURIComponent(safeData.company_name ?? "Client")}`
+  const displayScreenshotUrl = safeData.evidence_screenshot_url ?? safeData.screenshot_url ?? null
 
   const [isDark, setIsDark] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
 
-  const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
-  const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
+  const heroText = cleanText(reportEvidenceText(safeData.hook, lang), offerCopy.heroLead)
+  const ctaText = cleanText(reportEvidenceText(safeData.cta_text, lang), offerCopy.finalBody)
   const qualityBar = cleanText(
-    reportEvidenceText(data.content_template.quality_bar, lang),
+    reportEvidenceText(safeData.content_template.quality_bar, lang),
     copy.qualityBar
   )
   const templateTitle = cleanText(
-    reportEvidenceText(data.content_template.title, lang),
+    reportEvidenceText(safeData.content_template.title, lang),
     copy.templateDirection
   )
   const templatePurpose = cleanText(
-    reportEvidenceText(data.content_template.purpose, lang),
+    reportEvidenceText(safeData.content_template.purpose, lang),
     copy.finalBody
   )
   const businessImpact = cleanText(topPain?.implication, ctaText)
-  const sourceScore = data.source_coverage.score
+  const sourceScore = safeData.source_coverage.score
 
-  const benchmarkItems: BenchmarkItem[] = data.acts
-    .filter((act) => {
-      const n = numericValue(act.metric_value)
-      return n > 0 && !isNaN(n)
-    })
-    .map((act) => {
-      const n = numericValue(act.metric_value)
-      const maxVal = 100
-      const yourScore = Math.min(100, Math.max(0, (n / maxVal) * 100))
-      return {
-        label: cleanText(act.metric_label, copy.evidence).slice(0, 20),
-        yourScore,
-        industryAvg: 70,
-      }
-    })
-
-  const lossItems: LossImpactItem[] = data.acts
-    .filter((act) => {
-      const n = numericValue(act.metric_value)
-      return n > 0 && !isNaN(n)
-    })
-    .map((act, i) => ({
-      label: cleanText(act.headline, act.metric_label).slice(0, 30),
-      amount: Math.round((loss / data.acts.length) * (data.acts.length - i) * 0.8 + loss * 0.2),
-    }))
+  // Diagnostic acts currently carry presentation copy, not source provenance or
+  // per-metric calculation inputs. Do not manufacture comparison/loss values
+  // from those strings. These charts stay hidden until the report payload has
+  // explicit, source-backed series for them.
+  const benchmarkItems: BenchmarkItem[] = []
+  const lossItems: LossImpactItem[] = []
 
   const radarItems = (() => {
     const categories: Record<string, { sum: number; count: number }> = {}
@@ -131,17 +145,13 @@ export default function DiagnosticReport({
       .slice(0, 8)
   })()
 
-  const timelineItems: TimelinePoint[] = [
-    { month: lang === "ja" ? "現在" : "Now", loss, competitorGap: loss * 0.5 },
-    ...([1, 3, 6].map((m) => ({
-      month: `${m}${lang === "ja" ? "ヶ月" : "mo"}`,
-      loss: Math.round(loss * (1 + m * 0.05)),
-      competitorGap: Math.round(Math.max(0, loss * (1 + m * 0.05) * 0.4)),
-    }))),
-  ]
-  const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
+  const timelineItems: TimelinePoint[] = []
+  const isProjection = lang === "ja"
+    ? "出典付きの時系列予測データは未取得です。"
+    : "No source-backed forecast is available."
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className={[
       "relative",
       isDark ? "bg-zinc-950 text-white" : "bg-[#fbfaf7] text-zinc-950",
@@ -178,16 +188,16 @@ export default function DiagnosticReport({
         {/* ── Hero ──────────────────────────────────────────── */}
         <ReportHeroSection
           offerCopy={offerCopy}
-          reportTitleEl={reportTitle(data.company_name, offerCopy.reportLabel, lang)}
+          reportTitleEl={reportTitle(safeData.company_name, offerCopy.reportLabel, lang)}
           heroText={heroText}
-          demoUrl={data.demo_url ?? null}
+          demoUrl={safeData.demo_url ?? null}
           calHref={calHref}
           lang={lang}
           industryLabel={industryLabel}
-          targetCountry={data.target_country}
-          prefecture={data.prefecture ?? null}
+          targetCountry={safeData.target_country}
+          prefecture={safeData.prefecture ?? null}
           screenshotUrl={displayScreenshotUrl}
-          annotations={data.visual_annotations ?? []}
+          annotations={safeData.visual_annotations ?? []}
         />
 
         {/* ── Diagnostic video ─────── */}
@@ -199,7 +209,7 @@ export default function DiagnosticReport({
                   {lang === "ja" ? "動画を読み込めませんでした。" : "Failed to load video."}
                 </p>
               }>
-                <ReportHyperFramesPlayer src={videoHref} lang={lang} mp4Url={data.video_url} />
+                <ReportHyperFramesPlayer src={videoHref} lang={lang} mp4Url={safeData.video_url} />
               </ErrorBoundary>
             </div>
           </section>
@@ -207,7 +217,7 @@ export default function DiagnosticReport({
 
         {/* ── Variant-specific sections ─────── */}
         {(() => {
-          const layout = getVariantLayout(data.template_variant)
+          const layout = getVariantLayout(safeData.template_variant)
           return layout.sections
             .filter((s) => !["hero", "stats", "executive_summary", "dark_surface", "benchmark", "findings", "loss_chart", "screenshot", "pain_points", "source_coverage", "timeline", "evidence", "faq", "cta"].includes(s.id))
             .map((s) => <VariantSection key={s.id} sectionId={s.id} data={data} lang={lang} />)
@@ -218,27 +228,31 @@ export default function DiagnosticReport({
           <div className="mx-auto grid max-w-6xl border-y border-zinc-200 md:grid-cols-4">
             <Stat
               label={copy.evidenceReady}
-              value={`${data.source_coverage.collected}`}
+              value={`${safeData.source_coverage.collected}`}
               detail={sourceCoverageDetail(
-                data.source_coverage.configured,
-                data.source_coverage.missing,
+                safeData.source_coverage.configured,
+                safeData.source_coverage.missing,
                 lang
               )}
             />
             <Stat
               label={copy.sourceCoverage}
-              value={`${data.source_coverage.score}%`}
+              value={`${safeData.source_coverage.score}%`}
               detail={copy.sourceMissing}
             />
             <Stat
               label={copy.monthlyLoss}
-              value={formatMoney(loss, lang)}
-              detail={ctaText}
+              value={loss === null ? notMeasured : formatMoney(loss, lang)}
+              detail={loss === null
+                ? (lang === "ja" ? "出典付きの損失試算は未取得です。" : "No source-backed loss estimate is available.")
+                : ctaText}
             />
             <Stat
               label={copy.confidence}
-              value={`${confidence}/100`}
-              detail={qualityBar}
+              value={confidence === null ? notMeasured : `${confidence}/100`}
+              detail={confidence === null
+                ? (lang === "ja" ? "診断シグナルが未取得です。" : "No diagnostic signals are available.")
+                : qualityBar}
             />
           </div>
         </section>
@@ -246,25 +260,30 @@ export default function DiagnosticReport({
         {/* ── Executive Summary ──────────────────────────────── */}
         <ReportExecutiveSummary
           lang={lang}
-          companyName={data.company_name}
+          companyName={safeData.company_name}
           reportLabel={offerCopy.reportLabel}
           businessImpact={businessImpact}
           firstAction={cleanText(intelligence.nextActions[0], ctaText)}
           topPain={topPain}
-          sourceScore={data.source_coverage.score}
-          confidence={confidence}
-          monthlyLoss={loss}
-          findingsCount={data.acts.length}
+          sourceScore={safeData.source_coverage.score}
+          confidence={confidence ?? undefined}
+          monthlyLoss={loss ?? undefined}
+          findingsCount={safeData.acts.length}
         />
+
+        {safeData.template_variant === "japan_entry" && (
+          <JapanEntryProjectionSection data={safeData} lang={lang} />
+        )}
 
         {/* ── Score Overview ─────────────────────────────────── */}
         <ReportScoreOverview data={data} lang={lang} confidence={confidence} sourceScore={sourceScore} />
 
         {/* ── Dark Diagnostic Surface ───────────────────────── */}
         <ReportDarkSurface
-          data={localizedData}
+          data={safeData}
           copy={copy}
           confidence={confidence}
+          monthlyLoss={loss}
           lang={lang}
           sourceScore={sourceScore}
         />
@@ -284,11 +303,12 @@ export default function DiagnosticReport({
 
         {/* ── Findings ──────────────────────────────────────── */}
         <ReportFindingsSection
-          data={localizedData}
+          data={safeData}
           copy={copy}
           lang={lang}
           businessImpact={businessImpact}
           loss={loss}
+          approvedBlogLinks={approvedBlogLinks}
         />
 
         {/* ── Loss Impact Chart ─────────────────────────────── */}
@@ -313,7 +333,7 @@ export default function DiagnosticReport({
               data={data}
               screenshotUrl={displayScreenshotUrl}
               lang={lang}
-              screenshotAlt={`${data.company_name} ${offerCopy.screenshotAlt}`}
+              screenshotAlt={`${safeData.company_name} ${offerCopy.screenshotAlt}`}
               heroText={heroText}
             />
           </SlideInSection>
@@ -372,70 +392,24 @@ export default function DiagnosticReport({
           </div>
         </section>
 
-        {/* ── Source Coverage Radar ─────────────────────────── */}
-        {radarItems.length > 1 && (
-          <SlideInSection direction="up" className="px-5 py-10">
-            <div className="mx-auto max-w-6xl">
-              <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                {lang === "ja" ? "ソースカバレッジ（カテゴリ別）" : "Source Coverage by Category"}
-              </h3>
-              <p className="text-sm text-slate-500 mb-4">
-                {lang === "ja" ? "各データカテゴリのカバレッジスコア分布" : "Coverage score distribution across data categories"}
-              </p>
-              <SourceCoverageRadar items={radarItems} />
-            </div>
-          </SlideInSection>
-        )}
-
-        {/* ── Timeline Forecast ─────────────────────────────── */}
-        <SlideInSection direction="up" className="px-5 pb-10">
-          <div className="mx-auto max-w-6xl">
-            <h3 className="text-lg font-semibold text-slate-800 mb-1">
-              {lang === "ja" ? "損失予測" : "Loss Forecast"}
-            </h3>
-            <p className="text-sm text-slate-500 mb-4">
-              {lang === "ja" ? "現状維持の場合の月間損失推移と競合との差" : "Monthly loss trajectory and competitor gap"}
-            </p>
-            <TimelineChart points={timelineItems} lang={lang} />
-            <p className="mt-2 text-[10px] text-slate-400 text-center">{isProjection}</p>
-          </div>
-        </SlideInSection>
-
-        {/* ── Evidence / Data Appendix ──────────────────────── */}
-        <section className="px-5 py-14">
-          <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <SlideInSection direction="left">
-                <div>
-                  <Pill tone="neutral">{copy.evidence}</Pill>
-                  <h2 className="mt-5 text-3xl font-semibold text-zinc-950">
-                    {copy.dataAppendix}
-                  </h2>
-                </div>
-              </SlideInSection>
-              <div className="text-sm text-zinc-500">
-                {data.source_coverage.collected} / {data.source_coverage.configured} /{" "}
-                {data.source_coverage.missing}
-              </div>
-            </div>
-            <StaggeredFadeIn delay={0.1} stagger={0.05} className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {intelligence.signals
-                .slice(0, 9)
-                .map((signal) => (
-                  <ReportSignalCard key={signal.id} signal={signal} copy={copy} lang={lang} />
-                ))}
-            </StaggeredFadeIn>
-            <div className="mt-8 grid gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm md:grid-cols-2 lg:grid-cols-3">
-              {visibleSources.map((item) => (
-                <ReportSourceRow key={item.slug} item={item} copy={copy} lang={lang} />
-              ))}
-            </div>
-          </div>
-        </section>
+        <ReportAppendixSections
+          radarItems={radarItems}
+          timelineItems={timelineItems}
+          isProjection={isProjection}
+          copy={copy}
+          lang={lang}
+          sourceSummary={{
+            collected: safeData.source_coverage.collected,
+            configured: safeData.source_coverage.configured,
+            missing: safeData.source_coverage.missing,
+          }}
+          signals={intelligence.signals}
+          sources={visibleSources}
+        />
 
         {/* ── FAQ ───────────────────────────────────────────── */}
         <ReportFaqSection
-          variant={data.template_variant}
+          variant={safeData.template_variant}
           lang={lang === "ja" ? "ja" : "en"}
           copy={copy}
           isDark={isDark}
@@ -447,7 +421,7 @@ export default function DiagnosticReport({
           copy={copy}
           lang={lang}
           calHref={calHref}
-          demoUrl={data.demo_url ?? null}
+          demoUrl={safeData.demo_url ?? null}
           videoHref={videoHref}
         />
       </main>
@@ -455,22 +429,10 @@ export default function DiagnosticReport({
 
       <script dangerouslySetInnerHTML={{ __html: TRACKING_SCRIPT(trackingSlug ?? "") }} />
       {/* A/B test tracking */}
-      <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=ab_test&variant=${encodeURIComponent(data.template_variant)}&industry=${encodeURIComponent(data.industry || "")}`} alt="" width={1} height={1} className="hidden" />
+      <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=ab_test&variant=${encodeURIComponent(safeData.template_variant)}&industry=${encodeURIComponent(safeData.industry || "")}`} alt="" width={1} height={1} className="hidden" />
 
       {/* ── Footer ── */}
-      <footer className={`border-t px-5 py-8 mt-10 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
-        <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className={`text-xs ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>
-            © {new Date().getFullYear()} Paradigm LLC. {lang === "ja" ? "無断転載禁止" : "All rights reserved."}
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <Link href="/ja" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>Paradigm HP</Link>
-            <Link href="/ja/agency" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "制作事例" : "Works"}</Link>
-            <Link href="/ja/video" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "動画制作" : "Video"}</Link>
-            <a href={calHref} target="_blank" rel="noopener noreferrer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "無料相談" : "Free Consult"}</a>
-          </div>
-        </div>
-      </footer>
+      <ReportFooter isDark={isDark} lang={lang} calHref={calHref} />
       <BackToTop />
 
       {/* ── 資料請求 Modal ── */}
@@ -482,7 +444,8 @@ export default function DiagnosticReport({
       />
 
       <style>{PRINT_CSS}</style>
-      <DifyChatbot locale={localeContentVariant(locale ?? data.report_locale as string)} />
+      <DifyChatbot locale={localeContentVariant(locale ?? safeData.report_locale as string)} />
     </div>
+    </MotionConfig>
   )
 }

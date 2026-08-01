@@ -9,13 +9,14 @@ import type { ContentAssetType } from "./content-templates"
 
 export type JsonRecord = Record<string, unknown>
 
-export type SalesPipelineSource = "sales_os" | "twenty" | "twenty_csv_intake" | "csv" | "manual" | "webhook" | "batch"
+export type SalesPipelineSource = "sales_os" | "twenty" | "twenty_csv_intake" | "csv" | "manual" | "webhook" | "batch" | "event_driven"
 export type SalesPipelineStatus = "queued" | "running" | "waiting_external" | "needs_review" | "completed" | "failed" | "cancelled"
 export type SalesPipelineStepStatus = SalesPipelineStatus | "skipped"
 
 export type SalesPipelineStepKey =
   | "twenty_csv_intake"
   | "supabase_normalize"
+  | "data_collection"
   | "karte_generate"
   | "report_generate"
   | "video_generate"
@@ -40,7 +41,7 @@ export interface SalesPipelineRun {
   source: SalesPipelineSource
   status: SalesPipelineStatus
   current_step: SalesPipelineStepKey | null
-  trigger_provider: "trigger.dev" | "local" | "manual"
+  trigger_provider: "openclaw" | "local" | "manual"
   trigger_task_id: string | null
   trigger_run_id: string | null
   requested_by: string
@@ -101,9 +102,10 @@ export interface DashboardSalesPipeline {
 export const SALES_PIPELINE_STEPS: SalesPipelineStepDefinition[] = [
   { key: "twenty_csv_intake", label: "Twenty/CSV intake", ownerTool: "twenty_or_csv", required: true },
   { key: "supabase_normalize", label: "Supabase normalization", ownerTool: "supabase", required: true },
+  { key: "data_collection", label: "Multi-source data collection", ownerTool: "multi_source", required: true },
   { key: "karte_generate", label: "Company karte generation", ownerTool: "supabase_dify", required: true },
   { key: "report_generate", label: "Diagnostic report generation", ownerTool: "nextjs_reports", required: true },
-  { key: "video_generate", label: "Video job generation", ownerTool: "trigger_dev_video", required: false },
+  { key: "video_generate", label: "Video job generation", ownerTool: "openclaw_video", required: false },
   { key: "r2_manifest", label: "R2 artifact manifest", ownerTool: "cloudflare_r2", required: true },
   { key: "external_studio_sync", label: "Directus/Keystatic sync", ownerTool: "directus_keystatic", required: false },
   { key: "twenty_writeback", label: "Twenty delivery writeback", ownerTool: "twenty", required: true },

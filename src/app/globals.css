@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 /* 2026-05-03: @paradigmllc/blocks 内の Tailwind class を scan 対象に追加。
    node_modules は v4 default では scan されないため @source 必須。
@@ -7,16 +7,16 @@
 @source "../../node_modules/@paradigmllc/blocks";
 
 /* ────────────────────────────────────────────────────────────────────────
-   Paradigm "Aurora" Design Tokens (2026-06-09 全面刷新)
+   Paradigm editorial design tokens
    ────────────────────────────────────────────────────────────────────────
-   旧 "Modern Tech × Aesop" (indigo/cyan/冷クリーム) → Aurora システムへ刷新:
-     - アクセント: violet → fuchsia → warm orange のオーロラグラデーション
-     - 紙色: より暖かみのあるクリーム (light) / 深い紫黒 (dark)
-     - 全体的にコントラスト高め・ビビッド寄り・Stripe 風のモダン路線
+   Public site direction:
+     - CMS/editable business site, not a static one-off landing page
+     - neutral paper, restrained blue/green accents, editorial hierarchy
+     - low-motion cards that stay readable across all locale routes
    Hex equivalents:
      LIGHT   paper #fafaf7  paper-deep #f2f0eb  paper-card #fefefc
-             ink #0f1115    ink-soft   #3d4148  ink-mute   #787c85
-             line #e5e3de   accent     #8b5cf6  glow       #ec4899
+             ink #0f1115    ink-soft   #3d4148  ink-mute   #676c75
+             line #e4e7eb   accent     #2563eb  glow       #10b981
              tech #f59e0b   surface    #ffffff
      DARK    paper #0a0813  paper-deep #06040c  paper-card #13101f
              ink #f0edf5    ink-soft   #c4bfd3  ink-mute   #7a7590
@@ -26,16 +26,16 @@
 :root,
 [data-theme="light"] {
   --paradigm-paper: 250 250 247;
-  --paradigm-paper-deep: 242 240 235;
-  --paradigm-paper-card: 254 254 252;
+  --paradigm-paper-deep: 246 247 249;
+  --paradigm-paper-card: 255 255 255;
   --paradigm-surface: 255 255 255;
   --paradigm-ink: 15 17 21;
   --paradigm-ink-soft: 61 65 72;
-  --paradigm-ink-mute: 120 124 133;
-  --paradigm-line: 229 227 222;
-  --paradigm-accent: 139 92 246;
-  --paradigm-accent-soft: 167 139 250;
-  --paradigm-glow: 236 72 153;
+  --paradigm-ink-mute: 103 108 117;
+  --paradigm-line: 228 231 235;
+  --paradigm-accent: 37 99 235;
+  --paradigm-accent-soft: 96 165 250;
+  --paradigm-glow: 16 185 129;
   --paradigm-tech: 245 158 11;
 
   --background: rgb(var(--paradigm-paper));
@@ -134,11 +134,11 @@ body {
 
 /* Display — bold geometric headings (Aurora redesign: Outfit 600-800 weight).
    Sharp, modern, high-impact. Letter-spacing tightened for large sizes. */
-.font-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; }
+.font-display { font-family: var(--font-display); font-weight: 600; letter-spacing: 0; }
 
 /* Eyebrow — Aesop's signature small caps with wide tracking, used above
    section headings to anchor hierarchy without competing for attention. */
-.paradigm-eyebrow {
+:where(.paradigm-eyebrow) {
   font-family: var(--font-mono);
   font-size: 0.6875rem;       /* 11px */
   letter-spacing: 0.18em;
@@ -252,11 +252,11 @@ body.no-grain::before { display: none; }
   inset: -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.10), transparent 45%),
-    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-glow) / 0.08), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-tech) / 0.08), transparent 45%);
-  filter: blur(60px);
-  animation: meshDrift 22s ease-in-out infinite;
+    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.05), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-glow) / 0.04), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-tech) / 0.04), transparent 45%);
+  filter: blur(72px);
+  animation: none;
 }
 [data-theme="dark"] .paradigm-mesh {
   background:
@@ -271,39 +271,45 @@ body.no-grain::before { display: none; }
   inset: -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 15% 15%, rgb(139 92 246 / 0.28), transparent 40%),
-    radial-gradient(circle at 85% 20%, rgb(236 72 153 / 0.28), transparent 40%),
-    radial-gradient(circle at 25% 85%, rgb(245 158 11 / 0.24), transparent 40%),
-    radial-gradient(circle at 75% 75%, rgb(167 139 250 / 0.24), transparent 40%),
-    radial-gradient(circle at 50% 50%, rgb(244 114 182 / 0.16), transparent 50%);
-  filter: blur(80px);
-  animation: meshDrift 18s ease-in-out infinite;
+    radial-gradient(circle at 15% 15%, rgb(37 99 235 / 0.12), transparent 42%),
+    radial-gradient(circle at 85% 20%, rgb(16 185 129 / 0.10), transparent 42%),
+    radial-gradient(circle at 25% 85%, rgb(245 158 11 / 0.10), transparent 42%);
+  filter: blur(88px);
+  animation: none;
 }
 
-/* Glassmorphism — semi-transparent + backdrop blur card */
+/* Editorial card surface — kept under legacy class name for site-wide migration. */
 .paradigm-glass {
-  background: rgb(var(--paradigm-paper) / 0.65);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgb(var(--paradigm-paper) / 0.35);
+  background: rgb(var(--paradigm-surface));
+  border: 1px solid rgb(var(--paradigm-line));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 [data-theme="dark"] .paradigm-glass {
-  background: rgb(var(--paradigm-paper-card) / 0.55);
-  border-color: rgb(var(--paradigm-line) / 0.5);
+  background: rgb(var(--paradigm-paper-card));
+  border-color: rgb(var(--paradigm-line));
 }
 
-/* Glow shadows for premium depth — aurora palette */
-.paradigm-glow-sm { box-shadow: 0 4px 16px -4px rgb(139 92 246 / 0.18); }
-.paradigm-glow-md { box-shadow: 0 12px 36px -8px rgb(139 92 246 / 0.22); }
-.paradigm-glow-lg { box-shadow: 0 24px 60px -16px rgb(139 92 246 / 0.28), 0 8px 16px -4px rgb(236 72 153 / 0.14); }
-.paradigm-glow-xl { box-shadow: 0 36px 96px -24px rgb(139 92 246 / 0.32), 0 12px 24px -6px rgb(236 72 153 / 0.18), 0 4px 8px -2px rgb(245 158 11 / 0.10); }
+/* Restrained depth for production pages. */
+.paradigm-glow-sm { box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+.paradigm-glow-md { box-shadow: 0 8px 22px -18px rgb(15 23 42 / 0.18); }
+.paradigm-glow-lg { box-shadow: 0 16px 32px -24px rgb(15 23 42 / 0.22); }
+.paradigm-glow-xl { box-shadow: 0 24px 48px -30px rgb(15 23 42 / 0.24); }
+
+.paradigm-glass.rounded-xl,
+.paradigm-glass.rounded-2xl,
+.paradigm-glass.rounded-3xl,
+.rounded-2xl.paradigm-glass,
+.rounded-3xl.paradigm-glass {
+  border-radius: 0.5rem !important;
+}
 
 /* Gradient border (1px outer ring with rainbow) — used on CTAs */
 .paradigm-gradient-border {
   position: relative;
   background:
     linear-gradient(rgb(var(--paradigm-paper)), rgb(var(--paradigm-paper))) padding-box,
-    linear-gradient(135deg, rgb(99 102 241), rgb(14 165 233), rgb(244 114 182)) border-box;
+    linear-gradient(135deg, rgb(var(--paradigm-line)), rgb(var(--paradigm-accent) / 0.28)) border-box;
   border: 1px solid transparent;
 }
 
@@ -333,9 +339,7 @@ body.no-grain::before { display: none; }
 
 /* Ambient glow text — for hero headlines */
 .paradigm-glow-text {
-  text-shadow:
-    0 0 40px rgb(165 180 252 / 0.35),
-    0 0 80px rgb(99 102 241 / 0.25);
+  text-shadow: none;
 }
 
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
@@ -352,6 +356,27 @@ body.no-grain::before { display: none; }
 @keyframes blobFloat3 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50%      { transform: translate(14px, 20px) scale(1.08); }
+}
+
+@keyframes japanPetal {
+  0% { opacity: 0; transform: translate3d(-12px, -18px, 0) rotate(12deg); }
+  15% { opacity: .78; }
+  55% { opacity: .58; transform: translate3d(18px, 46px, 0) rotate(128deg); }
+  100% { opacity: 0; transform: translate3d(-8px, 132px, 0) rotate(232deg); }
+}
+
+.japan-petal {
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  border-radius: 80% 18% 80% 18%;
+  background: linear-gradient(135deg, #fff1f5, #f5a8c0);
+  box-shadow: 0 0 16px rgba(251, 182, 206, .42);
+  animation: japanPetal 14s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .japan-petal { animation: none; opacity: .5; }
 }
 .ph-blob-1 { animation: blobFloat  14s ease-in-out infinite; }
 .ph-blob-2 { animation: blobFloat2 18s ease-in-out infinite; }
@@ -412,4 +437,972 @@ body.no-grain::before { display: none; }
 }
 [data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+/* Entrance animations */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim-fade-up { animation: fadeSlideUp 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+.anim-fade-up-1 { animation: fadeSlideUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
+.anim-fade-up-2 { animation: fadeSlideUp 0.7s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
+.anim-fade-up-3 { animation: fadeSlideUp 0.7s 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* Shared page-hero visual: a restrained operating-path diagram. */
+.page-hero-visual {
+  position: relative;
+  width: min(100%, 300px);
+  height: 184px;
+  margin-bottom: 1.35rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--paradigm-line) 78%, transparent);
+  border-radius: 1.1rem;
+  background: radial-gradient(circle at 78% 20%, color-mix(in srgb, var(--paradigm-accent) 15%, transparent), transparent 42%), linear-gradient(135deg, color-mix(in srgb, var(--paradigm-paper-deep) 92%, white), var(--paradigm-paper));
+  box-shadow: 0 18px 38px color-mix(in srgb, var(--paradigm-ink) 8%, transparent);
+}
+.page-hero-visual__mesh {
+  position: absolute;
+  inset: 0;
+  opacity: .42;
+  background-image: linear-gradient(color-mix(in srgb, var(--paradigm-line) 58%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--paradigm-line) 58%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(130deg, black, transparent 78%);
+}
+.page-hero-visual__orbit {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--paradigm-accent) 25%, transparent);
+  border-radius: 999px;
+  transform: rotate(-18deg);
+  animation: pageHeroOrbit 12s ease-in-out infinite;
+}
+.page-hero-visual__orbit--outer { width: 260px; height: 98px; left: 14px; top: 46px; }
+.page-hero-visual__orbit--inner { width: 182px; height: 70px; left: 54px; top: 60px; border-color: color-mix(in srgb, var(--paradigm-glow) 36%, transparent); animation-duration: 9s; animation-direction: reverse; }
+.page-hero-visual__beam {
+  position: absolute;
+  height: 1px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--paradigm-accent) 72%, transparent), transparent);
+  animation: pageHeroBeam 4.5s ease-in-out infinite;
+}
+.page-hero-visual__beam--one { width: 142px; left: 76px; top: 93px; transform: rotate(-28deg); }
+.page-hero-visual__beam--two { width: 118px; left: 106px; top: 95px; transform: rotate(26deg); animation-delay: -1.8s; }
+.page-hero-visual__node {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--paradigm-line) 72%, transparent);
+  border-radius: 999px;
+  color: var(--paradigm-ink);
+  background: color-mix(in srgb, var(--paradigm-paper) 86%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--paradigm-ink) 10%, transparent);
+}
+.page-hero-visual__node span {
+  position: absolute;
+  right: -2px;
+  bottom: -7px;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--paradigm-paper);
+  background: var(--paradigm-ink);
+  font-size: 8px;
+  font-weight: 700;
+}
+.page-hero-visual__node--signal { left: 20px; top: 30px; color: #1d4ed8; }
+.page-hero-visual__node--scope { right: 22px; top: 38px; color: #047857; }
+.page-hero-visual__node--launch { right: 28px; bottom: 24px; color: #b45309; }
+.page-hero-visual__core {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--paradigm-accent) 45%, transparent);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, var(--paradigm-ink), #1d4ed8);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--paradigm-accent) 22%, transparent);
+  transform: translate(-50%, -50%) rotate(8deg);
+  animation: pageHeroCore 5s ease-in-out infinite;
+}
+.page-hero-visual__core-dot { width: 10px; height: 10px; border-radius: 999px; background: #a7f3d0; box-shadow: 0 0 0 7px rgba(167, 243, 208, .13), 0 0 18px rgba(167, 243, 208, .75); }
+.page-hero-visual__core-line { position: absolute; bottom: 12px; width: 22px; height: 2px; border-radius: 999px; background: rgba(255, 255, 255, .72); }
+.page-hero-visual__core-line--short { bottom: 8px; width: 13px; opacity: .5; }
+@keyframes pageHeroOrbit { 0%, 100% { transform: rotate(-18deg) translateY(0); } 50% { transform: rotate(-13deg) translateY(-4px); } }
+@keyframes pageHeroBeam { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+@keyframes pageHeroCore { 0%, 100% { transform: translate(-50%, -50%) rotate(8deg); } 50% { transform: translate(-50%, -53%) rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .page-hero-visual__orbit,
+  .page-hero-visual__beam,
+  .page-hero-visual__core { animation: none; }
+}
+
+.font-premium-serif {
+  font-family: var(--demo-font-display, "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif);
+}
+
+/* ─── Premium demo system v2 ──────────────────────────────────────────────
+   The demo renderer is shared by every generated proposal. Keep the visual
+   baseline here so a typography or motion correction improves the whole
+   catalogue without regenerating company content. Japanese display faces
+   need a slightly calmer scale and more generous leading than Latin-first
+   utility defaults; otherwise long headings become the template's loudest
+   element and the page loses its premium rhythm.
+*/
+[data-demo-site="premium-v3"] {
+  --demo-heading-max: 4.35rem;
+  --demo-section-max: 3.25rem;
+  --demo-card-max: 1.85rem;
+  --demo-page-gutter: clamp(1.25rem, 3.2vw, 4rem);
+  font-family: var(--demo-font-body, "Noto Sans JP", "Noto Sans", sans-serif);
+  font-feature-settings: "palt" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+  background-image: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--demo-accent) 5%, transparent), transparent 28rem), radial-gradient(circle at 94% 42%, color-mix(in srgb, var(--demo-ink) 3%, transparent), transparent 34rem);
+}
+
+/* A screenshot-to-code style visual grammar layer. The generator's useful
+   output is the composition language, not per-company JSX. These layers keep
+   that language deterministic and data-driven across every V3 page. */
+[data-demo-site="premium-v3"] .premium-v3-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__orb,
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__ring,
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__grid {
+  position: absolute;
+  display: block;
+}
+
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__orb {
+  width: clamp(18rem, 36vw, 38rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--demo-accent) 11%, transparent);
+  filter: blur(44px);
+  opacity: .58;
+  transform: translateZ(0);
+}
+
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__orb--one {
+  top: 6rem;
+  right: -12rem;
+}
+
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__orb--two {
+  top: 46%;
+  left: -16rem;
+  opacity: .32;
+}
+
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__ring {
+  top: 10rem;
+  right: 5vw;
+  width: clamp(14rem, 22vw, 24rem);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--demo-accent) 22%, transparent);
+  border-radius: 50%;
+  opacity: .45;
+  transform: rotate(-18deg);
+}
+
+[data-demo-site="premium-v3"] .premium-v3-atmosphere__grid {
+  inset: 0;
+  background-image: linear-gradient(color-mix(in srgb, var(--demo-ink) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--demo-ink) 7%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(135deg, transparent 10%, #000 45%, transparent 90%);
+  opacity: .08;
+}
+
+[data-demo-site="premium-v3"][data-demo-motif="hairline"] .premium-v3-atmosphere__grid {
+  background-size: 92px 92px;
+  opacity: .05;
+}
+
+[data-demo-site="premium-v3"][data-demo-motif="numbered-index"] .premium-v3-atmosphere__ring {
+  border-style: dashed;
+  border-width: 1px 0 0 1px;
+  opacity: .58;
+}
+
+[data-demo-site="premium-v3"][data-demo-motif="framed-media"] .premium-v3-atmosphere__ring {
+  border-radius: 1.25rem;
+  transform: rotate(12deg);
+}
+
+[data-demo-site="premium-v3"][data-demo-motif="offset-grid"] .premium-v3-atmosphere__grid {
+  background-size: 42px 42px;
+  mask-image: linear-gradient(160deg, #000 10%, transparent 76%);
+  opacity: .13;
+}
+
+[data-demo-site="premium-v3"][data-demo-motif="kinetic-rail"] .premium-v3-atmosphere__ring {
+  animation: premiumV3AtmosphereDrift 16s ease-in-out infinite;
+}
+
+[data-demo-site="premium-v3"][data-demo-density="airy"] section {
+  --demo-section-space: 1.12;
+}
+
+[data-demo-site="premium-v3"][data-demo-density="compact"] section {
+  --demo-section-space: .9;
+}
+
+[data-demo-site="premium-v3"][data-demo-palette="monochrome"] .premium-v3-atmosphere__orb {
+  background: color-mix(in srgb, var(--demo-ink) 10%, transparent);
+}
+
+[data-demo-site="premium-v3"][data-demo-palette="cool-professional"] .premium-v3-atmosphere__ring {
+  border-color: color-mix(in srgb, #4b9bb2 34%, transparent);
+}
+
+[data-demo-site="premium-v3"][data-demo-palette="earth"] .premium-v3-atmosphere__orb {
+  background: color-mix(in srgb, #a86e43 14%, transparent);
+}
+
+[data-demo-site="premium-v3"][data-demo-motion="expressive"] .premium-v3-atmosphere__orb--one {
+  animation: premiumV3AtmosphereFloat 12s ease-in-out infinite;
+}
+
+[data-demo-site="premium-v3"][data-demo-motion="restrained"] .premium-v3-atmosphere__orb,
+[data-demo-site="premium-v3"][data-demo-motion="restrained"] .premium-v3-atmosphere__ring {
+  opacity: .28;
+}
+
+[data-demo-site="premium-v3"][data-demo-nav="hidden-drawer"] nav > div > div:nth-child(2),
+[data-demo-site="premium-v3"][data-demo-nav="sidebar"] nav > div > div:nth-child(2) {
+  display: none;
+}
+
+[data-demo-site="premium-v3"][data-demo-nav="mega-menu"] nav > div > div:nth-child(2) {
+  gap: 1.5rem;
+}
+
+[data-demo-site="premium-v3"][data-demo-nav="sidebar"] nav {
+  border-left: 2px solid var(--demo-accent);
+}
+
+@keyframes premiumV3AtmosphereFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-2rem, 1.5rem, 0) scale(1.08); }
+}
+
+@keyframes premiumV3AtmosphereDrift {
+  0%, 100% { transform: rotate(-18deg) translate3d(0, 0, 0); }
+  50% { transform: rotate(-8deg) translate3d(-1rem, 2rem, 0); }
+}
+
+[data-demo-site="premium-v3"] h1,
+[data-demo-site="premium-v3"] h2,
+[data-demo-site="premium-v3"] h3 {
+  font-kerning: normal;
+  font-synthesis: none;
+  text-wrap: balance;
+}
+
+[data-demo-site="premium-v3"] h1 {
+  font-size: clamp(2.2rem, 4.2vw, var(--demo-heading-max)) !important;
+  line-height: 1.14 !important;
+  letter-spacing: -0.026em !important;
+}
+
+[data-demo-site="premium-v3"] h2 {
+  font-size: clamp(1.85rem, 3.1vw, var(--demo-section-max)) !important;
+  line-height: 1.22 !important;
+  letter-spacing: -0.022em !important;
+}
+
+[data-demo-site="premium-v3"] h3 {
+  font-size: clamp(1.2rem, 1.75vw, var(--demo-card-max)) !important;
+  line-height: 1.34 !important;
+  letter-spacing: -0.012em !important;
+}
+
+[data-demo-site="premium-v3"] p,
+[data-demo-site="premium-v3"] li {
+  text-wrap: pretty;
+}
+
+[data-demo-site="premium-v3"] a {
+  text-underline-offset: 0.18em;
+}
+
+[data-demo-site="premium-v3"] :focus-visible {
+  outline: 2px solid var(--demo-accent);
+  outline-offset: 4px;
+}
+
+[data-demo-site="premium-v3"] ::selection {
+  background: var(--demo-accent);
+  color: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] section,
+[data-demo-site="premium-v3"] header {
+  scroll-margin-top: 6.5rem;
+}
+
+[data-demo-site="premium-v3"] details > summary {
+  transition: color 300ms ease, padding 300ms ease;
+}
+
+[data-demo-site="premium-v3"] details > summary:hover {
+  color: var(--demo-accent);
+}
+
+[data-demo-site="premium-v3"] details[open] > summary {
+  padding-bottom: 1.1rem;
+}
+
+[data-demo-site="premium-v3"] button,
+[data-demo-site="premium-v3"] a {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-demo-site="premium-v3"] .group img {
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1), filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-demo-site="premium-v3"] .group:hover img {
+  transform: scale(1.035);
+  filter: saturate(1.04) contrast(1.02);
+}
+
+[data-demo-site="premium-v3"] button,
+[data-demo-site="premium-v3"] a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 767px) {
+  [data-demo-site="premium-v3"] {
+    --demo-heading-max: 3.15rem;
+    --demo-section-max: 2.45rem;
+    --demo-card-max: 1.55rem;
+  }
+
+  [data-demo-site="premium-v3"] h1 {
+    line-height: 1.18 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  [data-demo-site="premium-v3"] h2 {
+    line-height: 1.26 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-site="premium-v3"] .group img {
+    transition: none;
+  }
+
+  [data-demo-site="premium-v3"] {
+    scroll-behavior: auto;
+  }
+
+  [data-demo-site="premium-v3"] details > summary {
+    transition: none;
+  }
+}
+
+/* ─── Hospitality editorial family ──────────────────────────────────────
+   This is a real composition family, not a restaurant label on the generic
+   SMB grid. It uses an editorial index, asymmetric menu cards, a dark ritual
+   chapter, and a visit decision block so the page has a beginning, middle,
+   and useful end for an actual guest.
+*/
+[data-demo-site="premium-v3"] .premium-hospitality-home {
+  --hospitality-rule: color-mix(in srgb, var(--demo-ink) 15%, transparent);
+  position: relative;
+  isolation: isolate;
+}
+
+/* Hospitality compositions are data-driven: the same content can become an
+   editorial split, an intimate cinematic story, or a gallery-led composition.
+   This prevents every restaurant demo from collapsing into one template. */
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--demo-surface-alt) 88%, white), var(--demo-surface) 68%),
+    var(--demo-surface);
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content h1 {
+  color: var(--demo-ink);
+  max-width: 11em;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content > div:first-child {
+  color: var(--demo-muted);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content > p {
+  border-color: color-mix(in srgb, var(--demo-ink) 32%, transparent);
+  color: var(--demo-muted);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content a:first-of-type {
+  background: var(--demo-ink);
+  color: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hero-deck--split .premium-hero-deck__split-copy .premium-hero-deck__content a:last-of-type {
+  border-color: color-mix(in srgb, var(--demo-ink) 35%, transparent);
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index {
+  background: var(--demo-ink);
+  color: white;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index .premium-hospitality-kicker,
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index span {
+  color: color-mix(in srgb, var(--demo-accent) 78%, white);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index,
+[data-demo-site="premium-v3"] .premium-hospitality-home--v1 .premium-hospitality-index > div {
+  border-color: rgba(255, 255, 255, .2);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-manifesto {
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--demo-accent) 17%, transparent), transparent 20rem),
+    var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-menu {
+  background: var(--demo-ink);
+  color: white;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-menu .premium-hospitality-kicker,
+[data-demo-site="premium-v3"] .premium-hospitality-home--v2 .premium-hospitality-menu .premium-hospitality-link {
+  color: color-mix(in srgb, var(--demo-accent) 72%, white);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-home::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(50% - .5px), color-mix(in srgb, var(--demo-ink) 3%, transparent) 50%, transparent calc(50% + .5px)),
+    radial-gradient(circle at 92% 21%, color-mix(in srgb, var(--demo-accent) 12%, transparent), transparent 28rem);
+  opacity: .72;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-kicker {
+  color: var(--demo-accent);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .27em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-vertical-mark {
+  display: inline-block;
+  color: var(--demo-muted);
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .26em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link {
+  position: relative;
+  transition: color 300ms ease, gap 300ms ease;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -.42rem;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: "";
+  transform: scaleX(.34);
+  transform-origin: left;
+  transition: transform 400ms cubic-bezier(.22, 1, .36, 1);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link:hover {
+  gap: 1rem;
+  color: var(--demo-accent);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-link:hover::after {
+  transform: scaleX(1);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-index {
+  background: color-mix(in srgb, var(--demo-surface) 85%, white);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-manifesto {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--demo-surface-alt) 46%, transparent), transparent 46%),
+    var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-side-note {
+  border-left: 1px solid var(--hospitality-rule);
+  padding-left: 1.25rem;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu {
+  background: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card {
+  overflow: hidden;
+  background: var(--demo-ink);
+  box-shadow: 0 24px 70px -42px color-mix(in srgb, var(--demo-ink) 65%, transparent);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card img,
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card video {
+  transition: transform 1.2s cubic-bezier(.22, 1, .36, 1), filter 1.2s ease;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card:hover img,
+[data-demo-site="premium-v3"] .premium-hospitality-menu-card:hover video {
+  filter: saturate(1.13) contrast(1.06);
+  transform: scale(1.055);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-ritual {
+  position: relative;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-ritual::after {
+  position: absolute;
+  top: 0;
+  right: 6vw;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(transparent, rgba(255,255,255,.18) 18%, rgba(255,255,255,.18) 82%, transparent);
+  content: "";
+  opacity: .45;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-process {
+  background-image: linear-gradient(90deg, transparent 0, transparent calc(66% - .5px), color-mix(in srgb, var(--demo-ink) 4%, transparent) 66%, transparent calc(66% + .5px));
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-scenes {
+  position: relative;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-scenes::before {
+  position: absolute;
+  top: 6rem;
+  right: 8vw;
+  width: clamp(12rem, 24vw, 25rem);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--demo-accent) 18%, transparent);
+  border-radius: 50%;
+  content: "";
+  opacity: .45;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-journal {
+  background: var(--demo-surface);
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-visit {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-visit::before {
+  position: absolute;
+  top: -12rem;
+  right: -7rem;
+  width: 34rem;
+  height: 34rem;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 50%;
+  content: "";
+  opacity: .6;
+}
+
+[data-demo-site="premium-v3"] .premium-hospitality-visit > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  [data-demo-site="premium-v3"] .premium-hospitality-side-note {
+    border-left: 0;
+    border-top: 1px solid var(--hospitality-rule);
+    padding-left: 0;
+    padding-top: 1rem;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hospitality-vertical-mark {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hospitality-ritual::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-site="premium-v3"] .premium-hospitality-menu-card img,
+  [data-demo-site="premium-v3"] .premium-hospitality-menu-card video,
+  [data-demo-site="premium-v3"] .premium-hospitality-link::after {
+    transition: none;
+  }
+}
+
+/* ─── Premium V3 hero deck ────────────────────────────────────────────────
+   The first viewport is a real media experience, not a single static hero.
+   The deck keeps the source imagery unique while giving every profile a
+   layered color field, slide controls, and a distinct split/cinematic rhythm.
+*/
+[data-demo-site="premium-v3"] .premium-hero-deck {
+  isolation: isolate;
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__viewport,
+[data-demo-site="premium-v3"] .premium-hero-deck__slide {
+  height: 100%;
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__slide img,
+[data-demo-site="premium-v3"] .premium-hero-deck__slide video {
+  filter: saturate(.9) contrast(1.05);
+  transition: filter 1.2s ease, transform 1.8s cubic-bezier(.22, 1, .36, 1);
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__slide:hover img,
+[data-demo-site="premium-v3"] .premium-hero-deck__slide:hover video {
+  filter: saturate(1.08) contrast(1.06);
+  transform: scale(1.045);
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__slide.is-active img,
+[data-demo-site="premium-v3"] .premium-hero-deck__slide.is-active video {
+  filter: saturate(1.04) contrast(1.07);
+  transform: scale(1.035);
+}
+
+[data-demo-site="premium-v3"][data-demo-hero="precision-split"] .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--demo-accent) 13%, transparent), transparent 48%),
+    linear-gradient(145deg, color-mix(in srgb, var(--demo-ink) 98%, #000), var(--demo-ink));
+}
+
+[data-demo-site="premium-v3"][data-demo-hero="editorial-split"] .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    radial-gradient(circle at 86% 16%, color-mix(in srgb, var(--demo-accent) 25%, transparent), transparent 18rem),
+    linear-gradient(145deg, color-mix(in srgb, var(--demo-surface-alt) 92%, #fff), var(--demo-surface));
+}
+
+[data-demo-site="premium-v3"][data-demo-hero="editorial-split"] .premium-hero-deck--split .premium-hero-deck__content {
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck--cinematic .premium-hero-deck__image-wash {
+  background:
+    linear-gradient(90deg, rgba(8, 8, 7, .82) 0%, rgba(8, 8, 7, .46) 42%, rgba(8, 8, 7, .06) 100%),
+    linear-gradient(0deg, rgba(8, 8, 7, .65), transparent 48%, rgba(8, 8, 7, .12));
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--demo-accent) 30%, transparent), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--demo-ink) 96%, #000), var(--demo-ink));
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck--split .premium-hero-deck__image-wash {
+  background: linear-gradient(0deg, rgba(8, 8, 7, .58), transparent 52%, rgba(8, 8, 7, .08));
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__ambient {
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--demo-accent) 42%, transparent), transparent 24rem),
+    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--demo-accent) 18%, transparent), transparent 30rem);
+  mix-blend-mode: screen;
+  opacity: .52;
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__ambient::after {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(color-mix(in srgb, var(--demo-surface) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--demo-surface) 7%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
+  content: "";
+  mask-image: linear-gradient(135deg, transparent 10%, #000 42%, transparent 92%);
+  opacity: .2;
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__content h1 {
+  text-shadow: 0 14px 32px rgba(0, 0, 0, .22);
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck--split .premium-hero-deck__content h1 {
+  text-shadow: none;
+}
+
+[data-demo-site="premium-v3"] .premium-hero-deck__controls button:focus-visible,
+[data-demo-site="premium-v3"] .premium-hero-deck__controls [role="tab"]:focus-visible {
+  outline-color: #fff;
+}
+
+@media (max-width: 1023px) {
+  [data-demo-site="premium-v3"] .premium-hero-deck--split .premium-hero-deck__split-copy {
+    min-height: 560px;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-demo-site="premium-v3"] .premium-hero-deck--cinematic,
+  [data-demo-site="premium-v3"] .premium-hero-deck--cinematic .premium-hero-deck__cinematic-copy {
+    min-height: 680px;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hero-deck__controls {
+    gap: .35rem;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hero-deck__controls button {
+    height: 2.75rem;
+    width: 2.75rem;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hero-deck__controls [role="tablist"] {
+    margin-left: .25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-site="premium-v3"] .premium-hero-deck__slide img,
+  [data-demo-site="premium-v3"] .premium-hero-deck__slide video {
+    transition: none;
+  }
+
+  [data-demo-site="premium-v3"] .premium-hero-deck__ambient::after {
+    display: none;
+  }
+}
+
+/* ─── Industry compositions ─────────────────────────────────────────────
+   These are intentionally different information architectures, not a color
+   skin over the corporate renderer. The profile decides the rhythm, density,
+   and image treatment so a clinic, builder, shop, and professional practice
+   do not read as the same template.
+*/
+[data-demo-site="premium-v3"] .premium-industry-hero,
+[data-demo-site="premium-v3"] .premium-industry-inner,
+[data-demo-site="premium-v3"] .premium-industry-works {
+  --industry-rule: color-mix(in srgb, var(--demo-ink) 15%, transparent);
+}
+
+[data-demo-site="premium-v3"] .premium-industry-hero__index {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  min-height: 3.5rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--industry-rule);
+  color: var(--demo-muted);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-hero--precision .premium-hero-deck__split-copy {
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--demo-accent) 24%, transparent), transparent 42%),
+    radial-gradient(circle at 18% 90%, color-mix(in srgb, var(--demo-accent) 18%, transparent), transparent 22rem),
+    #121817;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-hero--craft .premium-hero-deck__split-copy {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.04), transparent 45%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.04) 0 1px, transparent 1px 18px),
+    #171716;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-hero--retail .premium-hero-deck__split-copy {
+  background:
+    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--demo-accent) 32%, transparent), transparent 17rem),
+    linear-gradient(145deg, var(--demo-surface-alt), var(--demo-surface));
+}
+
+[data-demo-site="premium-v3"] .premium-industry-hero--retail .premium-hero-deck__split-copy .premium-hero-deck__content {
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-industry-hero--retail .premium-hero-deck__split-copy h1 {
+  letter-spacing: -.055em;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--precision .premium-industry-care {
+  background-image: linear-gradient(90deg, transparent 0, transparent calc(66% - .5px), rgba(255,255,255,.08) 66%, transparent calc(66% + .5px));
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--precision .premium-industry-care::before {
+  display: block;
+  width: clamp(5rem, 12vw, 11rem);
+  height: 1px;
+  margin-bottom: 3rem;
+  background: var(--demo-accent);
+  content: "";
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--craft .premium-industry-signature {
+  background: color-mix(in srgb, var(--demo-surface-alt) 70%, var(--demo-accent));
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--craft .premium-industry-signature p,
+[data-demo-site="premium-v3"] .premium-industry-home--retail .premium-industry-signature p {
+  letter-spacing: -.02em;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--craft .premium-industry-signature::after {
+  display: block;
+  height: 1px;
+  margin: 0 1.25rem;
+  background: color-mix(in srgb, var(--demo-accent) 36%, transparent);
+  content: "";
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--professional .premium-industry-signature {
+  background: var(--demo-ink);
+  color: white;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--professional .premium-industry-signature p,
+[data-demo-site="premium-v3"] .premium-industry-home--professional .premium-industry-signature .text-\[var\(--demo-muted\)\] {
+  color: rgba(255,255,255,.72);
+}
+
+[data-demo-site="premium-v3"] .premium-industry-home--retail .premium-industry-signature {
+  background: var(--demo-surface-alt);
+}
+
+[data-demo-site="premium-v3"] .premium-industry-inner__intro,
+[data-demo-site="premium-v3"] .premium-industry-home--precision .premium-industry-precision-intro {
+  position: relative;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-inner__intro::before,
+[data-demo-site="premium-v3"] .premium-industry-home--precision .premium-industry-precision-intro::before {
+  position: absolute;
+  top: 3rem;
+  right: 7vw;
+  width: clamp(8rem, 19vw, 17rem);
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--demo-accent) 20%, transparent);
+  border-radius: 50%;
+  content: "";
+  opacity: .45;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-inner__values {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-inner__values::after {
+  position: absolute;
+  right: -10rem;
+  bottom: -14rem;
+  width: 34rem;
+  height: 34rem;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  content: "";
+}
+
+[data-demo-site="premium-v3"] .premium-industry-inner__values > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-services--dental .premium-industry-inner__values,
+[data-demo-site="premium-v3"] .premium-industry-services--retail .premium-industry-inner__values {
+  background: var(--demo-surface-alt);
+  color: var(--demo-ink);
+}
+
+[data-demo-site="premium-v3"] .premium-industry-works--construction .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,.04) 0 1px, transparent 1px 15px),
+    #191918;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-works--dental .premium-hero-deck--split .premium-hero-deck__split-copy {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--demo-accent) 22%, transparent), transparent 52%),
+    #121817;
+}
+
+[data-demo-site="premium-v3"] .premium-industry-works .premium-hero-deck__content h1,
+[data-demo-site="premium-v3"] .premium-industry-inner .premium-hero-deck__content h1 {
+  max-width: 12em;
+}
+
+@media (min-width: 640px) {
+  [data-demo-site="premium-v3"] .premium-industry-hero__index {
+    padding-inline: 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-demo-site="premium-v3"] .premium-industry-hero__index {
+    padding-inline: 4rem;
+  }
+
+  [data-demo-site="premium-v3"] .premium-industry-inner__intro::before,
+  [data-demo-site="premium-v3"] .premium-industry-home--precision .premium-industry-precision-intro::before {
+    top: 5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-demo-site="premium-v3"] .premium-industry-hero__index {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  [data-demo-site="premium-v3"] .premium-industry-inner__intro::before,
+  [data-demo-site="premium-v3"] .premium-industry-home--precision .premium-industry-precision-intro::before {
+    top: 2rem;
+    right: -3rem;
+    width: 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-site="premium-v3"] .premium-industry-home img,
+  [data-demo-site="premium-v3"] .premium-industry-inner img,
+  [data-demo-site="premium-v3"] .premium-industry-works img {
+    transition: none;
+  }
 }

@@ -13,8 +13,11 @@
  */
 
 import { defineConfig, devices } from "@playwright/test"
+import fs from "node:fs"
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "https://paradigmjp.com"
+const SYSTEM_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+const CHROME_EXECUTABLE = process.env.PLAYWRIGHT_CHROME_EXECUTABLE || (fs.existsSync(SYSTEM_CHROME) ? SYSTEM_CHROME : undefined)
 
 export default defineConfig({
   testDir: "./e2e",
@@ -36,11 +39,26 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(CHROME_EXECUTABLE
+          ? { launchOptions: { executablePath: CHROME_EXECUTABLE } }
+          : {}),
+      },
     },
-    {
-      name: "mobile-safari",
-      use: { ...devices["iPhone 14"] },
-    },
+    CHROME_EXECUTABLE
+      ? {
+          name: "mobile-chrome",
+          use: {
+            ...devices["Pixel 7"],
+            launchOptions: { executablePath: CHROME_EXECUTABLE },
+          },
+        }
+      : {
+          name: "mobile-safari",
+          use: {
+            ...devices["iPhone 14"],
+          },
+        },
   ],
 })

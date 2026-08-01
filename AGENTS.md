@@ -13,7 +13,7 @@
 # Paradigm Coding Rules — All AI Agents
 
 > すべての AI エージェント（Claude Code / Cursor / Cline / OpenAI Codex 等）はこのルールに従うこと。
-> このファイルは `docs/ai-rules-coding.md` が正本。直接編集し `bash sync.sh deploy-ai-rules` で各ツールに展開する。
+> このファイルが正本。直接編集し `bash sync.sh deploy-ai-rules` で各ツールに展開する。
 
 ---
 
@@ -180,13 +180,15 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 
 ## 💰 AI モデル選定（PP）
 
-デフォルトは **DeepSeek V3（最優先）→ Gemini Flash 2.5（次点）** の順で採用。
+**DeepSeek V4 一択。DeepSeek公式APIを直接呼び出し、Pro / Flashを使い分ける。**
+APIキーはグローバルメモリ管理（環境変数 `DEEPSEEK_API_KEY`）。
 
-| 用途 | モデル |
-|------|--------|
-| コーディング・JSON 出力・大量生成 | DeepSeek V3（Context Caching で実効 $0.014/1M = 90%OFF） |
-| 画像・PDF・マルチモーダル | Gemini 1.5 Flash |
-| 複雑な推論・長文生成・アーキテクチャ設計 | Claude Sonnet / Gemini Pro |
+| 用途 | モデル | 経路 |
+|------|--------|------|
+| コーディング・JSON出力・大量生成 | DeepSeek V4 Pro | DeepSeek API直叩き |
+| 軽量タスク・高速応答 | DeepSeek V4 Flash | DeepSeek API直叩き |
+| 画像・PDF・マルチモーダル | DeepSeek V4 Pro | DeepSeek API直叩き |
+| 複雑な推論・長文生成・アーキテクチャ設計 | DeepSeek V4 Pro | DeepSeek API直叩き |
 
 ---
 
@@ -201,11 +203,25 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 **deploy 完了の定義**:
 - deploy webhook の HTTP 200 は「キュー成功」であって「build 成功」ではない
 - 本番 URL で新コードの fingerprint を確認するまで完了とみなさない
+- Paradigmjpcom は `npm run release:prod` のみを正式入口にする。互換の `npm run deploy:prod` も release gate へ入るが、`node scripts/sales-os-no-login-deploy.mjs` / Coolify webhook / UI 直叩きで完了扱いにしてはいけない。
+- release gate は `release-doctor --pre-deploy` → DB/migration/seed → Coolify deploy → Traefik route refresh → `release-doctor --post-deploy` の順に完走して初めて完了。
+- `NEXT_PUBLIC_SUPABASE_URL` / `SALES_SUPABASE_URL` が `http://supabase-rest-1:3000` の場合、それは Docker 内部専用 URL。ローカル AI agent から REST fetch してはいけない。DB 検証・migration・seed は既存スクリプトの Postgres/DB SSH channel に任せる。
+- Coolify `finished` 後に `paradigmjp.com` が 502 の場合、同じ deploy を再試行しない。まず Traefik file-provider の `paradigmhp-svc` upstream が最新 app container の coolify network IP を向いているかを確認する。正式 release script は自動修復する。
+- Revenue OS の release gate は HTTP 200 だけで合格にしない。`/api/sales/health` は Coolify env の shared secret を使って JSON `ok:true` まで検査し、`ok:false` なら deploy 失敗。
+- WW-EVENT の実体条件: 本番で `services-n8n-1` / cron / `pg_cron` / systemd timer / 常駐 polling worker が稼働していたら release 失敗。n8n は成果物 JSON の archive のみ許可し、runtime container は停止状態を維持する。
+- Supabase Realtime はコード前提ではなくインフラ前提も必須。`supabase-db-1` は `wal_level=logical`、`supabase-realtime` は healthy、`public.sales_pipeline_runs` は `supabase_realtime` publication に含める。`/api/sales/pipeline/events` は `SALES_SUPABASE_REALTIME_URL` を使い、PostgREST (`supabase-rest-1`) に WebSocket 接続しない。
+- Twenty は server が 200 でも worker 再起動ループなら不合格。`opt-twenty-worker-1` は restart count が低く、1GiB mem limit / `NODE_OPTIONS=--max-old-space-size=768` / worker 側 migrations disabled を維持する。
 
 **deploy 失敗時の即診断**:
 - `module-not-found` → untracked ファイルの push 忘れ
 - `EUSAGE: Missing from lock file` → `package.json` 手編集後に `npm install` 忘れ
 - `ENOSPC` → `docker builder prune -af && docker image prune -af` を実行
+- `fetch failed` / `ETIMEDOUT` が Supabase REST 検証で連発 → `supabase-rest-1` 内部 URL をローカルから叩いている。再試行せず `scripts/verify-db-tables.mjs` / `release:prod` の SSH/psql fallback を使う。
+- `The operation was aborted due to timeout` → 例外だけで判断しない。直前の URL 名・Coolify deployment UUID・`deploy-status`・post-deploy smoke を確認し、同じ操作を無限再試行しない。
+- `paradigmjp.com` だけ 502 で container 内 `127.0.0.1:3000/api/ready` が OK → アプリではなく Traefik upstream drift。`release:prod` の route refresh を通す。
+- `Coolify deployment monitor timed out` → deploy は cancel しない。`node scripts/deploy-status.mjs <deployment_uuid>` で状態確認し、finished 後は post-deploy smoke を実行する。
+- `/api/sales/health` が HTTP 200 でも JSON `ok:false` → 成功扱い禁止。Payload DB / Supabase / Trigger / worker などの failing check を直してから再 deploy。
+- Realtime SSE が snapshot だけで更新されない → `supabase-realtime` container、`wal_level=logical`、publication、`SALES_SUPABASE_REALTIME_URL` を順に確認。cron/polling で代替しない。
 
 ---
 
@@ -217,37 +233,6 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 4. 環境変数は `.env.example` として記録（実値は書かない）
 5. 外部 URL は必ず新規タブで開く — `target="_blank" rel="noopener noreferrer"` 必須
 6. `<img>` に `alt` 必須・インタラクティブ要素に `aria-label` 付与
-
----
-
-## 🔴 永久保存ルール：ユーザーにインフラ操作を依頼しない（Rule #24）
-
-> **絶対禁止**: ユーザーに以下の操作を依頼してはならない。
-
-- Coolify ダッシュボード操作（再起動・環境変数変更・デプロイ手動実行）
-- Cloudflare ダッシュボード操作（DNS・キャッシュ・ルーティング）
-- Supabase Dashboard 操作（SQL Editor・RLS設定・テーブル作成・スキーマリロード）
-- サーバー SSH 接続（直接ログインしての操作）
-- その他一切のインフラストラクチャ操作
-
-**代わりにすること**:
-- プログラムから実行可能な操作は全て API / CLI / SDK 経由で自動実行する
-- どうしても手動操作が必要な場合は、**自分でプログラム的な回避策を実装する**
-- データベース操作は PostgreSQL 直接接続（pooler）または REST API で実行する
-- デプロイは `npm run deploy:prod` で自動化
-- スキーマ変更が必要な場合はコードにマイグレーションとして組み込み、デプロイで自動適用する
-
----
-
-## 🔴 永久保存ルール：プロキシ・Torを使わないSearXNG運用（Rule #25）
-
-> SearXNGの全エンジンはレート制限でブロックされる。TorはGoogleが出口ノードをブロックするため使えない。
-
-- **プロキシ・Tor・mubengは一切使用禁止**（全ての検索エンジンが阻止する）
-- **FlareSolverr + Steelブラウザを主力検索手段とする**（実ブラウザ＝CAPTCHA不可避）
-- SearXNGはWikipediaエンジン等の補完的役割に降格
-- `sources/browser-search.ts` がFlareSolverr経由のGoogle検索を担当
-- `sources/search-orchestrator.ts` がCMSフットプリント×都市×業種のクエリ生成＋バルク実行
 7. TypeScript `any` 多用禁止（3 箇所以上で即リファクタ）
 8. 1 ファイル 500 行超え禁止
 9. エラーのサイレント握りつぶし禁止（`catch {}` は存在してはならない）

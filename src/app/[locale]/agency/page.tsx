@@ -6,13 +6,17 @@
  */
 
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildServiceSchema } from "@/lib/seo/schemas"
+import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import RoiCalculator from "@/components/agency/RoiCalculator"
+
+export const dynamic = "force-dynamic"
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -35,6 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AgencyPage({ params }: Props) {
   const { locale } = await params
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "agencyPage" })
   const STEPS = t.raw("steps") as Step[]
   const PLANS = t.raw("plans") as Plan[]
@@ -127,12 +132,12 @@ export default async function AgencyPage({ params }: Props) {
                       </li>
                     ))}
                   </ul>
-                  <a
-                    href="mailto:info@paradigmjp.com?subject=代理店WLパッケージの相談"
+                  <Link
+                    href="/contact?intent=agency"
                     className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl py-3 text-[12px] tracking-wider uppercase font-semibold hover:bg-paradigm-accent transition-colors"
                   >
-                    Start WL Partnership
-                  </a>
+                    WL提供範囲を相談する
+                  </Link>
                 </div>
               </FadeIn>
             ))}

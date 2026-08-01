@@ -189,7 +189,7 @@ function checkBuildSpeedGuards() {
   // 🟡 .dockerignore allows heavy directories into build context
   const dockerignore = readFile(".dockerignore")
   if (dockerignore) {
-    const requiredIgnores = ["astro-demo", "worker", "trigger", "supabase"]
+    const requiredIgnores = ["astro-demo", "worker", "supabase"]
     for (const entry of requiredIgnores) {
       if (!dockerignore.includes(entry)) {
         warn(`.dockerignore: "${entry}" not excluded from Docker build context — adds unnecessary transfer time`)
@@ -259,6 +259,34 @@ function checkFileSizes() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 5. WW-EVENT: NO SERVER-SIDE PERIODIC AUTOMATION
+// ═══════════════════════════════════════════════════════════════
+
+function checkEventDrivenAutomation() {
+  const serverFiles = [
+    "src/instrumentation.ts",
+    ...findSourceFiles().filter((rel) => rel.startsWith("src/lib/sales/") || rel.startsWith("src/app/api/sales/")),
+  ]
+  for (const rel of serverFiles) {
+    const content = readFile(rel)
+    if (content && /\bsetInterval\s*\(/.test(content)) {
+      error(`${rel}: server-side setInterval is forbidden by WW-EVENT; use webhook/queue event drain`)
+    }
+  }
+
+  const runMigrations = readFile("scripts/run-migrations.sh")
+  if (runMigrations && !runMigrations.includes("migration_044_abolish_pg_cron_event_driven.sql")) {
+    error("scripts/run-migrations.sh: missing migration_044_abolish_pg_cron_event_driven.sql")
+  }
+
+  // The legacy admin abolition endpoint was removed with the old Sales
+  // dashboard. The migration above remains the single source of truth for
+  // eliminating pg_cron; runtime scheduling must stay event-driven.
+
+  ok("WW-EVENT no periodic automation guards verified")
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════
 
@@ -268,6 +296,7 @@ checkMobileSafariGuards()
 checkBuildSpeedGuards()
 checkSilentCatches()
 checkFileSizes()
+checkEventDrivenAutomation()
 
 console.log(`\n${errors === 0 ? "✅" : "❌"} ${errors} error(s), ${warnings} warning(s)\n`)
 

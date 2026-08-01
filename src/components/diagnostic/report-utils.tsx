@@ -16,9 +16,13 @@ export function numericValue(value: string): number {
 export function formatMoney(amount: number, lang: ReportLang): string {
   return new Intl.NumberFormat(intlLocale(lang), {
     style: "currency",
-    currency: "JPY",
+    currency: lang === "ja" ? "JPY" : "USD",
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+export function reportCurrencySymbol(lang: ReportLang): "¥" | "$" {
+  return lang === "ja" ? "¥" : "$"
 }
 
 export function formatMetric(value: string, lang: ReportLang): string {
