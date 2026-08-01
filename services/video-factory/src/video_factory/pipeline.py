@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from .adapters.base import EngineContext
@@ -27,7 +28,26 @@ from .state import initialize_project_state, transition_project_state
 from .validation import validate_brief
 from .workspace import ProjectWorkspace
 
-SERVICE_ROOT = Path(__file__).resolve().parents[2]
+
+def _resolve_service_root() -> Path:
+    configured = os.getenv("VIDEO_FACTORY_ROOT", "").strip()
+    if configured:
+        root = Path(configured).expanduser().resolve()
+        if not (root / "config" / "engine-routing.yaml").is_file():
+            raise FileNotFoundError(
+                f"VIDEO_FACTORY_ROOT does not contain config/engine-routing.yaml: {root}"
+            )
+        return root
+
+    for root in (Path(__file__).resolve().parents[2], Path.cwd().resolve()):
+        if (root / "config" / "engine-routing.yaml").is_file():
+            return root
+    raise FileNotFoundError(
+        "Video Factory service root was not found; set VIDEO_FACTORY_ROOT"
+    )
+
+
+SERVICE_ROOT = _resolve_service_root()
 
 
 def _dry_run_spec(spec: DeliverableSpec, *, max_dimension: int = 640) -> DeliverableSpec:
