@@ -1,7 +1,10 @@
 from pathlib import Path
 
+import video_factory.pipeline as pipeline
 from video_factory.io import load_data
+from video_factory.models import ClientBrief, Engine, PipelineResult, ValidationReport
 from video_factory.pipeline import _resolve_service_root, production_flow
+from video_factory.planner import deterministic_plan
 
 
 def test_service_root_uses_explicit_packaged_runtime_path(
@@ -114,3 +117,68 @@ def test_dry_run_manifest_scales_deliverables() -> None:
     assert preview.primary_deliverable.height == 360
     assert preview.primary_deliverable.fps == 15
     assert preview.deliverables[0] == preview.primary_deliverable
+
+
+def test_managed_gpu_is_used_only_when_routed_manifest_needs_comfyui(
+    example_brief_path: Path,
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(tmp_path / "workspace"))
+    payload = load_data(example_brief_path)
+    brief = ClientBrief.model_validate(payload)
+    report = ValidationReport(valid=True, findings=[])
+    manifest = deterministic_plan(brief)
+    calls: list[str] = []
+
+    async def ensure_gpu(*_args, **_kwargs):
+        calls.append("start")
+        return {"phase": "ready"}
+
+    async def release_gpu(*_args, **_kwargs):
+        calls.append("stop")
+        return {"phase": "stopped"}
+
+    def result(**kwargs) -> PipelineResult:
+        selected = kwargs["manifest"]
+        return PipelineResult(
+            project_id=selected.project_id,
+            status="draft_review_required",
+            workspace=str(tmp_path / "workspace" / selected.project_id),
+            manifest_path=str(tmp_path / "manifest.json"),
+        )
+
+    monkeypatch.setattr(pipeline, "validate_task", lambda _path: (brief, report))
+    monkeypatch.setattr(pipeline, "plan_task", lambda *_args: manifest)
+    monkeypatch.setattr(pipeline, "_production_flow_impl", result)
+    monkeypatch.setattr(pipeline, "ensure_gpu_ready", ensure_gpu)
+    monkeypatch.setattr(pipeline, "release_gpu_if_idle", release_gpu)
+
+    hyperframes_manifest = manifest.model_copy(
+        update={
+            "shots": [
+                shot.model_copy(update={"engine": Engine.HYPERFRAMES})
+                for shot in manifest.shots
+            ]
+        }
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "route_task",
+        lambda *_args: hyperframes_manifest,
+    )
+    pipeline.production_flow.fn(str(example_brief_path), dry_run=False)
+    assert calls == ["stop"]
+
+    calls.clear()
+    comfy_manifest = manifest.model_copy(
+        update={
+            "shots": [
+                shot.model_copy(update={"engine": Engine.COMFYUI})
+                for shot in manifest.shots
+            ]
+        }
+    )
+    monkeypatch.setattr(pipeline, "route_task", lambda *_args: comfy_manifest)
+    pipeline.production_flow.fn(str(example_brief_path), dry_run=False)
+    assert calls == ["start", "stop"]

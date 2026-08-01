@@ -69,3 +69,12 @@ video-factory workflows bind WORKFLOW_ID workflow-api.json \
 - **Post-approval file change:** approval becomes invalid automatically; create a new review record.
 - **GPU/model drift:** compare workflow/model hashes and container image; restore pinned versions.
 - **Rights dispute:** stop delivery and portfolio use; preserve source declarations and licenses.
+
+## GPU lifecycle operations
+
+- Adopt exactly one `paradigm-comfyui-*` instance in the console. Its ID is persisted with mode `0600` and is never inferred from an arbitrary account instance.
+- A production submission starts the managed instance only after routing selects a ComfyUI shot, then waits up to `VIDEO_FACTORY_GPU_START_TIMEOUT_SECONDS` for the authenticated ComfyUI readiness contract. Dry runs, rejected briefs, and non-ComfyUI routes leave it stopped.
+- The final queued/running job stops the managed instance. If another job is queued, the GPU remains available for that job and is stopped after it completes.
+- On application restart, interrupted local jobs are marked failed for operator review before the idle GPU is reconciled. They are not replayed automatically because generation is not assumed idempotent.
+- Use **GPU・接続設定 → GPU空き状態を再判定** for a one-shot reconciliation. Do not add cron polling.
+- A stop/start failure appears in the console, the workspace event record, the DB bell, and Slack. Do not destroy or replace the managed GPU until its persistent assets are backed up and the lifecycle assignment is deliberately changed.

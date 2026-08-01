@@ -39,6 +39,7 @@ def console_index() -> HTMLResponse:
             '<script src="/console/console-run-poll.js" defer></script>\n'
             '<script src="/console/console-registry-link.js" defer></script>\n'
             '<script src="/console/console-vast-connect.js" defer></script>\n'
+            '<script src="/console/console-gpu-lifecycle.js" defer></script>\n'
             '<script src="/console/console-upload.js" defer></script>\n'
             "</body>"
         ),

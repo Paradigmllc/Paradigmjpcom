@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-01 Video Factory GPUオンデマンド化（実装・release検証中）
+
+- 管理対象GPUをVast.ai instance **46258780**の1台に固定し、ComfyUIが必要な本番runの開始時だけ自動起動、生成完了・失敗時にproduction runと全workerのGPU leaseが0件なら自動停止するevent-driven lifecycleを実装した。定期polling、予備GPUの自動作成、別instanceへの暗黙切替は行わない。
+- dry-run、企画/validation失敗、ComfyUIを使わないroute、draft/final承認、local deliveryではGPUを起動しない。手動startと管理GPUのdestroy/重複createをAPI/UIの両方で拒否し、active runまたはprocess leaseがある間の手動stopも拒否する。
+- 複数Prefect/API worker間は`flock` leaseで保護する。rolling deploy前の旧workerもleaseを保持でき、プロセス異常終了後のstale leaseだけを安全に回収する。API再起動時は永続queued/running jobを非冪等再実行せず明示failedへ復旧し、one-shotでidle GPUを停止する。
+- lifecycle状態、Vast実状態、run/lease、時給、最終action/error、直近run履歴を管理consoleへ追加した。loading/empty/errorを可視化し、再確認は明示ボタン・接続・タブ選択時のみで、常駐pollingは使わない。
+- `gpu_starting` / `gpu_ready` / `gpu_stopped` / `gpu_error`を権限600のevent journalへ永続化し、認証付き内部Next APIから既存`notifyBothChannels`へ渡してDBベル+Slackの両方へ通知する。片方でも失敗した場合は成功扱いにせずjournalへ残す。
+- 新規/対象test 27件、Ruff、mypy strict、TypeScript、対象Vitest 5件、ESLint、品質guard error 0、Next.js production buildをpass。ローカル全Video Factory pytestはmacOS側に`ffmpeg`実行ファイルがない既存環境差だけで停止したため、production image CIで全件を再確認する。
+- 作業開始時点でVast.ai GPU **46258780**を停止し、実状態`exited`、active production run 0件をread-back済み。release後は停止→実runによる自動起動→実生成→自動停止→2段階承認→納品を本番で通し、最終実状態を再び非稼働にして完了する。
+
 ## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（実GPU生成・2段階承認・納品まで完了）
 
 - 本番`/data/video-factory`にはVast.ai資格情報とテンプレートHashが永続保存済み。既存RTX 3090 24GBインスタンスは稼働中だが、ComfyUIプロセスの自己起動と本番ランタイムへの接続、承認済みWorkflow登録が完了していなかった。
@@ -86,8 +96,8 @@
 
 ## ACTIVE HANDOFF
 
-- Video Factory本番復旧はmain **40ddab1e** / deployment **nahfyfola6j0gnqozcl7j7wa**で完了。実生成、2段階承認、納品artifact検証までpass済み。
-- 既存Vast.ai GPU **46258780**はComfyUI API / TLS proxy readyで稼働中。追加GPUは作成していない。即時実務利用のためrunningを維持し、GPU課金は約`$0.132/h`で継続中。
+- Video Factory本番復旧はmain **40ddab1e** / deployment **nahfyfola6j0gnqozcl7j7wa**で完了。現在は既存GPU **46258780**を対象とするevent-driven自動start/stopを`feat/video-factory-gpu-lifecycle-20260801`でrelease検証中。
+- 既存Vast.ai GPU **46258780**は作業開始時に停止し、実状態`exited`、active production run 0件。追加GPUは作成していない。release後の実生成proof完了後も停止状態へ戻す。
 - Vast.aiインスタンスAPIの出力に秘密値を含めない。プロキシ鍵はadopt処理と永続runtimeの内部だけで扱う。
 - `/work` fast-firstは本番反映済み。新規Raw URLは高速一次判定、選抜候補のみ「詳細解析へ昇格」でフル解析する。
 - VaaS Branch: `feat/video-as-a-service-commercial-launch`

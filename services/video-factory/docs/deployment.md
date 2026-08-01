@@ -37,6 +37,10 @@ The control-plane image trusts only the public Vast.ai Jupyter CA copied from <h
 
 The operator console lists only an allowlist of instance metadata. Vast.ai fields such as `extra_env`, notebook tokens, SSH material, and the ComfyUI proxy key must never be returned to the browser. Use **既存GPUを安全に回収** to recover the proxy URL and key server-side, verify the authenticated status endpoint, and save them to the mode-`0600` runtime configuration.
 
+Adoption also records the managed instance ID and enables event-driven lifecycle control. Non-dry-run jobs start that exact instance only when the routed manifest contains a ComfyUI shot, wait for authenticated readiness, and stop it when no queued/running job remains. Dry runs and non-ComfyUI routes do not start it. The controller never searches the marketplace or creates a replacement. Set `VIDEO_FACTORY_GPU_LIFECYCLE_ENABLED=false` only during an operator-controlled incident; disabling it restores manual responsibility for compute charges.
+
+Vast.ai bills stopped instances for storage even though active GPU compute billing is paused. Restart can remain in `scheduling` when the original GPU has been reassigned. Treat a start timeout as a visible capacity incident rather than silently provisioning a second GPU.
+
 The approved initial model is Wan 2.2 TI2V-5B from the official ComfyUI distribution. Record the downloaded artifact checksums and the upstream Apache-2.0 model license before binding `abstract-broll-t2v`:
 
 - <https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B>

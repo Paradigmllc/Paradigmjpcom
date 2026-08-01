@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Paradigm Video Factory</title>
   <link rel="stylesheet" href="/console/console.css">
+  <link rel="stylesheet" href="/console/console-gpu-lifecycle.css">
 </head>
 <body>
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
@@ -163,6 +164,15 @@
       </section>
 
       <section class="view" data-view-panel="gpu">
+        <article class="panel gpu-lifecycle-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">AUTOMATIC GPU LIFECYCLE</p><h2>必要な時だけGPUを稼働</h2></div>
+            <div class="lifecycle-heading-actions"><span id="gpu-lifecycle-badge" class="badge neutral">確認中</span><button id="reconcile-gpu" class="icon-button" type="button" aria-label="GPU空き状態を再判定">↻</button></div>
+          </div>
+          <p class="panel-lead">本番制作の受付時に既存の管理GPUだけを起動し、ComfyUIの準備完了を待ってから生成します。全ジョブ終了後は即時停止し、cronや常駐ポーリングは使いません。</p>
+          <div id="gpu-lifecycle-status" class="lifecycle-status"><div class="empty compact">GPUライフサイクルを確認しています。</div></div>
+          <div id="gpu-run-list" class="gpu-run-list"><div class="empty compact">最近の実行履歴を確認しています。</div></div>
+        </article>
         <div class="gpu-grid">
           <article class="panel settings-panel">
             <div class="panel-heading"><div><p class="eyebrow">SECURE RUNTIME</p><h2>API・ComfyUI接続</h2></div><span id="runtime-badge" class="badge neutral">未確認</span></div>
