@@ -108,6 +108,10 @@ export const DB_TABLES = {
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",
 
+  // ── Video Factory audited OSS engine catalog ──
+  VIDEO_FACTORY_ENGINE_PROFILES: "video_factory_engine_profiles",
+  VIDEO_FACTORY_ENGINE_EVENTS: "video_factory_engine_events",
+
   // ── Pipeline Metrics (migration_066) ──
   SALES_PIPELINE_METRICS: "sales_pipeline_metrics",
 

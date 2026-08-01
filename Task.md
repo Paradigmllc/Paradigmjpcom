@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-01 Video Factory主要OSSエンジン統合（実装・ローカル検証完了 / release準備中）
+
+- Wan既存レーンは維持しつつ、FramePack、SkyReels V2/V3、NVIDIA Cosmos 3、Pyramid Flow、Open-Sora系、VideoCrafter/DynamiCrafterを含む主要な動画生成・人物アニメーション・音声・補正・3D/図解OSS計40プロファイルを、単一の監査可能な台帳へ統合する。モデル重量は常駐・一括取得せず、承認済みプロファイルだけをジョブ単位で遅延ロードする。
+- 各プロファイルは公式source、immutable revision、code/model license、商用可否、最低/推奨VRAM、対応shot kind、実行runtime、workflow/model binding、審査者を保持する。未審査、非商用、24GB超過、workflow/model未承認はGUIで理由を表示し、本番実行はfail-closedで拒否する。
+- DBはprofile snapshot・選択/実行eventをRLS付きで保存し、APIは認証・入力検証・DBベル+Slack通知を行う。Consoleはcatalogのloading/empty/error、カテゴリ、稼働可否、VRAM、ライセンス、選択結果を可視化する。
+- Vast.ai GPUは既存のjob-scoped lifecycleだけを使い、preview・catalog閲覧・審査・設定変更では起動しない。新規GPU作成、常駐polling、暗黙fallback、未承認weight downloadは行わない。
+- arm64ネイティブFFmpeg/ffprobeを用いたVideo Factory全71テスト、Ruff、mypy strict（50 source files）、TypeScript、対象Vitest 9件、ESLint、quality guard error 0、release-doctorの新規RLS/release wiring検査、Next.js production buildをpass。全体Vitestは今回変更外の既存`/work`系3 files / 13 testsのみ不一致（1344 pass）。
+- 実ブラウザでdesktop/mobileの40 cards、10 shot-kind selector、loading/error、絞り込みを確認し、390px viewportで`scrollWidth == clientWidth == 390`、console error 0。検証中もGPUは起動していない。
+
 ## CURRENT STATUS — 2026-08-01 Video Factory GPUオンデマンド化（本番release完了）
 
 - 管理対象GPUをVast.ai instance **46258780**の1台に固定し、ComfyUIが必要な本番runの開始時だけ自動起動、生成完了・失敗時にproduction runと全workerのGPU leaseが0件なら自動停止するevent-driven lifecycleを実装した。定期polling、予備GPUの自動作成、別instanceへの暗黙切替は行わない。

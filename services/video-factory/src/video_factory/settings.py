@@ -33,6 +33,7 @@ class Settings:
     comfyui_required_workflows: tuple[str, ...]
     comfyui_allow_unregistered_workflows: bool
     model_registry_path: Path
+    engine_profile_catalog_path: Path
     production_region: str | None
     playwright_node: str
     playwright_capture_script: Path
@@ -103,6 +104,14 @@ class Settings:
             if runtime.gpu_lifecycle_enabled is not None
             else lifecycle_default
         )
+        service_root = Path(
+            os.getenv("VIDEO_FACTORY_ROOT", Path(__file__).resolve().parents[2])
+        ).expanduser().resolve()
+
+        def service_path(name: str, default: str) -> Path:
+            value = Path(os.getenv(name, default)).expanduser()
+            return value.resolve() if value.is_absolute() else (service_root / value).resolve()
+
         return cls(
             workspace=workspace,
             api_key=api_key,
@@ -114,7 +123,7 @@ class Settings:
             ),
             hyperframes_version=os.getenv("HYPERFRAMES_VERSION", "0.7.87"),
             hyperframes_npx=os.getenv("HYPERFRAMES_NPX", "npx"),
-            hyperframes_render_quality=os.getenv("HYPERFRAMES_RENDER_QUALITY", "draft"),
+            hyperframes_render_quality=os.getenv("HYPERFRAMES_RENDER_QUALITY", "high"),
             master_compositor=os.getenv("VIDEO_FACTORY_MASTER_COMPOSITOR", "hyperframes"),
             allow_ffmpeg_compositor_fallback=os.getenv(
                 "VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK", "false"
@@ -154,6 +163,10 @@ class Settings:
             model_registry_path=Path(
                 os.getenv("VIDEO_FACTORY_MODEL_REGISTRY", "config/model-registry.yaml")
             ).expanduser().resolve(),
+            engine_profile_catalog_path=service_path(
+                "VIDEO_FACTORY_ENGINE_PROFILE_CATALOG",
+                "config/engine-profiles.yaml",
+            ),
             production_region=(
                 os.getenv("VIDEO_FACTORY_PRODUCTION_REGION") or ""
             ).strip()
@@ -223,5 +236,6 @@ class Settings:
         data["comfyui_workflow_root"] = str(self.comfyui_workflow_root)
         data["comfyui_workflow_registry"] = str(self.comfyui_workflow_registry)
         data["model_registry_path"] = str(self.model_registry_path)
+        data["engine_profile_catalog_path"] = str(self.engine_profile_catalog_path)
         data["playwright_capture_script"] = str(self.playwright_capture_script)
         return dict(json.loads(json.dumps(data, default=list)))

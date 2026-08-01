@@ -2,6 +2,8 @@ import { timingSafeEqual } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { notifyBothChannels } from "@/lib/notify"
+import { DB_TABLES } from "@/lib/sales/db-tables"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -13,6 +15,11 @@ const eventSchema = z.object({
     "gpu_ready",
     "gpu_stopped",
     "gpu_error",
+    "profile_selected",
+    "profile_started",
+    "profile_progress",
+    "profile_completed",
+    "profile_failed",
   ]),
   title: z.string().trim().min(1).max(160),
   message: z.string().trim().min(1).max(2_000),
@@ -20,6 +27,11 @@ const eventSchema = z.object({
   instance_id: z.number().int().positive().nullable().optional(),
   run_id: z.string().uuid().nullable().optional(),
   hourly_price: z.number().nonnegative().nullable().optional(),
+  profile_id: z.string().regex(/^[a-z0-9][a-z0-9-]{2,79}$/).nullable().optional(),
+  project_id: z.string().regex(/^[a-z0-9][a-z0-9-]{2,119}$/).nullable().optional(),
+  state: z.string().trim().min(1).max(80).nullable().optional(),
+  progress: z.number().int().min(0).max(100).nullable().optional(),
+  error_message: z.string().trim().min(1).max(2_000).nullable().optional(),
 }).strict()
 
 function internalApiKey(): string | null {
@@ -59,16 +71,54 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     parsed.instance_id ? `GPU ${parsed.instance_id}` : null,
     parsed.run_id ? `run ${parsed.run_id}` : null,
     parsed.hourly_price != null ? `$${parsed.hourly_price.toFixed(3)}/h` : null,
+    parsed.profile_id ? `profile ${parsed.profile_id}` : null,
+    parsed.progress != null ? `${parsed.progress}%` : null,
   ].filter(Boolean).join(" · ")
   const text = context
     ? `${parsed.title}\n${parsed.message}\n${context}`
     : `${parsed.title}\n${parsed.message}`
+  if (parsed.event_type.startsWith("profile_")) {
+    const database = getServiceSalesSupabase()
+    if (!database) {
+      console.error("[video-factory-events] sales Supabase is not configured")
+      return NextResponse.json({ ok: false, error: "Database unavailable" }, { status: 503 })
+    }
+    const { error: databaseError } = await database
+      .from(DB_TABLES.VIDEO_FACTORY_ENGINE_EVENTS)
+      .insert({
+        id: parsed.event_id,
+        event_type: parsed.event_type,
+        profile_id: parsed.profile_id ?? null,
+        run_id: parsed.run_id ?? null,
+        project_id: parsed.project_id ?? null,
+        state: parsed.state ?? parsed.event_type.replace("profile_", ""),
+        progress: parsed.progress ?? null,
+        message: parsed.message,
+        error: parsed.error_message ?? null,
+        payload: {
+          title: parsed.title,
+          created_at: parsed.created_at,
+          instance_id: parsed.instance_id ?? null,
+          hourly_price: parsed.hourly_price ?? null,
+        },
+      })
+    if (databaseError) {
+      console.error("[video-factory-events] engine event persistence failed", databaseError)
+      return NextResponse.json(
+        { ok: false, error: "Engine event persistence failed" },
+        { status: 502 },
+      )
+    }
+  }
+
+  const isProfileEvent = parsed.event_type.startsWith("profile_")
+  const isErrorEvent = parsed.event_type === "gpu_error" || parsed.event_type === "profile_failed"
   const notification = await notifyBothChannels(text, {
     title: parsed.title,
     message: parsed.message,
-    link: "/video-factory-console#gpu",
+    link: isProfileEvent ? "/video-factory-console#engines" : "/video-factory-console#gpu",
     type: `video_factory_${parsed.event_type}`,
-    priority: parsed.event_type === "gpu_error" ? 95 : 70,
+    priority: isErrorEvent ? 95 : 70,
     idempotencyKey: parsed.event_id,
     clientMessageId: parsed.event_id,
   })

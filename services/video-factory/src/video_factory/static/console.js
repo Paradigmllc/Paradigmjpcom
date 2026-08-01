@@ -67,11 +67,13 @@ function setView(name) {
     dashboard: "ダッシュボード",
     create: "新しい動画",
     projects: "制作案件",
+    engines: "OSSエンジン",
     gpu: "GPU・接続設定",
   }
   $("#page-title").textContent = titles[name] || "Video Factory"
   history.replaceState(null, "", `#${name}`)
   if (name === "projects") void loadProjects()
+  if (name === "engines" && window.loadEngineCatalog) void window.loadEngineCatalog()
   if (name === "gpu") void loadRuntimeAndGpu()
 }
 
@@ -126,14 +128,6 @@ function formatTime(value) {
       dateStyle: "short",
       timeStyle: "short",
     }).format(date)
-}
-
-function formatBytes(value) {
-  const bytes = Number(value || 0)
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`
-  return `${(bytes / 1024 ** 3).toFixed(1)} GB`
 }
 
 function flattenHealth(doctor) {
@@ -200,6 +194,9 @@ async function loadBootstrap() {
     Boolean(comfy && body.vast?.configured),
   )
   renderHealth()
+  if (window.renderEngineCatalogFromBootstrap) {
+    window.renderEngineCatalogFromBootstrap(body.engine_catalog)
+  }
   await loadProjects(true)
   if (!state.projectPoll) {
     state.projectPoll = setInterval(
@@ -381,6 +378,9 @@ function buildBrief() {
     deliverables,
     localizations,
     requested_shot_kinds: selectedValues($("#shot-kinds")),
+    engine_profile_overrides: window.selectedEngineProfileOverrides
+      ? window.selectedEngineProfileOverrides()
+      : {},
     notes: `${$("#notes").value.trim()}\nCTA: ${cta}`.trim(),
   }
 }
@@ -435,388 +435,6 @@ async function submitVideo(event) {
   }
 }
 
-async function fetchArtifactBlob(url) {
-  const headers = new Headers()
-  if (state.apiKey) headers.set("X-Api-Key", state.apiKey)
-  const response = await fetch(url, { headers, cache: "no-store" })
-  if (!response.ok) throw new Error(`Artifact HTTP ${response.status}`)
-  return response.blob()
-}
-
-async function showPreview(url) {
-  if (state.previewObjectUrl) URL.revokeObjectURL(state.previewObjectUrl)
-  const blob = await fetchArtifactBlob(url)
-  state.previewObjectUrl = URL.createObjectURL(blob)
-  const video = $("#project-preview")
-  if (video) {
-    video.src = state.previewObjectUrl
-    video.load()
-  }
-}
-
-async function downloadArtifact(url, name) {
-  try {
-    const blob = await fetchArtifactBlob(url)
-    const objectUrl = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = objectUrl
-    link.download = name
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
-  } catch (error) {
-    toast(error.message || "ダウンロードできませんでした", "error")
-  }
-}
-
-function currentStatus(detail) {
-  return detail?.state?.status || "unknown"
-}
-
-async function projectAction(path, body = null, successMessage = "更新しました") {
-  if (!state.activeProjectId) return
-  try {
-    await api(`/v1/projects/${state.activeProjectId}${path}`, {
-      method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
-    })
-    toast(successMessage)
-    await loadProjects(true)
-    await loadProjectDetail(state.activeProjectId)
-  } catch (error) {
-    console.error("[video-factory-console] project action failed", error)
-    toast(error.message || "操作に失敗しました", "error")
-  }
-}
-
-function reviewControls(status) {
-  if (status === "draft_review_required") {
-    return `<div class="review-form"><textarea id="review-notes" rows="2" placeholder="承認コメントまたは修正内容"></textarea><div class="button-row"><button class="button primary" data-project-action="approve-draft" type="button">ドラフト承認</button><button class="button secondary" data-project-action="change-draft" type="button">修正を依頼</button></div></div>`
-  }
-  if (status === "draft_approved") {
-    return '<div class="project-actions"><button class="button primary" data-project-action="finalize" type="button">最終版を生成</button></div>'
-  }
-  if (status === "final_review_required") {
-    return `<div class="review-form"><textarea id="review-notes" rows="2" placeholder="最終承認コメントまたは修正内容"></textarea><div class="button-row"><button class="button primary" data-project-action="approve-final" type="button">最終版を承認</button><button class="button secondary" data-project-action="change-final" type="button">修正を依頼</button></div></div>`
-  }
-  if (status === "final_approved") {
-    return '<div class="project-actions"><button class="button primary" data-project-action="deliver-local" type="button">ローカル納品</button><button class="button secondary" data-project-action="deliver-rclone" type="button">Drive / rclone納品</button><button class="button secondary" data-project-action="deliver-frameio" type="button">Frame.io納品</button></div>'
-  }
-  return ""
-}
-
-function wireProjectActions() {
-  $$('[data-project-action]').forEach((button) => {
-    button.addEventListener("click", async () => {
-      const notes = $("#review-notes")?.value.trim() || null
-      const reviewer = state.bootstrap?.factory?.environment === "production"
-        ? "Paradigm Producer"
-        : "GUI Reviewer"
-      const actions = {
-        "approve-draft": [
-          "/reviews/draft/approve",
-          { reviewer, notes },
-          "ドラフトを承認しました",
-        ],
-        "change-draft": [
-          "/reviews/draft/request-changes",
-          { reviewer, notes },
-          "ドラフトを差し戻しました",
-        ],
-        finalize: ["/finalize", null, "最終版を生成しました"],
-        "approve-final": [
-          "/reviews/final/approve",
-          { reviewer, notes },
-          "最終版を承認しました",
-        ],
-        "change-final": [
-          "/reviews/final/request-changes",
-          { reviewer, notes },
-          "最終版を差し戻しました",
-        ],
-        "deliver-local": [
-          "/deliver", { target: "local" }, "ローカル納品を完了しました",
-        ],
-        "deliver-rclone": [
-          "/deliver", { target: "rclone" }, "Drive納品を開始しました",
-        ],
-        "deliver-frameio": [
-          "/deliver", { target: "frameio" }, "Frame.io納品を開始しました",
-        ],
-      }
-      const selected = actions[button.dataset.projectAction]
-      if (!selected) return
-      if (button.dataset.projectAction.startsWith("change-") && !notes) {
-        toast("修正内容を入力してください", "warn")
-        return
-      }
-      await projectAction(selected[0], selected[1], selected[2])
-    })
-  })
-}
-
-async function loadProjectDetail(projectId) {
-  if (!projectId) return
-  const target = $("#project-detail")
-  target.innerHTML = '<div class="empty tall">案件を読み込んでいます。</div>'
-  try {
-    const [detail, artifactBody] = await Promise.all([
-      api(`/v1/projects/${projectId}`),
-      api(`/v1/projects/${projectId}/artifacts`),
-    ])
-    const artifacts = artifactBody.artifacts || []
-    const videos = artifacts.filter((item) => {
-      return String(item.media_type).startsWith("video/")
-    })
-    const status = currentStatus(detail)
-    target.innerHTML = `
-      <div class="project-detail-header">
-        <p class="eyebrow">${escapeHtml(projectId)}</p>
-        <h2>${escapeHtml(detail.manifest?.project_name || projectId)}</h2>
-        <div class="project-meta">${statusBadge(status)}<span class="badge neutral">${escapeHtml(detail.manifest?.duration_seconds || "—")}s</span><span class="badge neutral">${artifacts.length} files</span></div>
-      </div>
-      ${videos.length
-        ? '<div class="preview-wrap"><video id="project-preview" controls playsinline></video></div>'
-        : '<div class="empty compact">プレビュー動画はまだありません。</div>'}
-      ${reviewControls(status)}
-      <div class="artifact-list">
-        <div class="panel-heading" style="padding:8px 0 14px;border:0"><div><p class="eyebrow">ARTIFACTS</p><h2>成果物・証跡</h2></div></div>
-        ${artifacts.length
-          ? artifacts.map((item) => `<div class="artifact-row"><span><strong>${escapeHtml(item.path)}</strong><small>${escapeHtml(item.media_type)} · ${formatBytes(item.size)}</small></span><button data-download-url="${escapeHtml(item.url)}" data-download-name="${escapeHtml(item.name)}" type="button">保存</button></div>`).join("")
-          : '<div class="empty compact">成果物はありません。</div>'}
-      </div>`
-    if (videos.length) await showPreview(videos.at(-1).url)
-    $$('[data-download-url]', target).forEach((button) => {
-      button.addEventListener("click", () => {
-        void downloadArtifact(
-          button.dataset.downloadUrl,
-          button.dataset.downloadName,
-        )
-      })
-    })
-    wireProjectActions()
-  } catch (error) {
-    console.error("[video-factory-console] detail failed", error)
-    target.innerHTML = `<div class="empty tall"><strong>案件を表示できません</strong><p>${escapeHtml(error.message)}</p></div>`
-  }
-}
-
-async function loadRuntimeAndGpu() {
-  if (!state.connected) return
-  try {
-    const body = await api("/v1/runtime")
-    $("#comfyui-url").value = body.effective_comfyui?.base_url || ""
-    $("#vast-template-hash").value = body.runtime?.vast_template_hash
-      || body.vast?.default_template_hash
-      || state.selectedTemplate
-      || ""
-    const configured = body.vast?.configured
-      || body.effective_comfyui?.api_key_configured
-    $("#runtime-badge").textContent = configured ? "設定済み" : "要設定"
-    $("#runtime-badge").className = `badge ${configured ? "good" : "warn"}`
-    await loadInstances(true)
-  } catch (error) {
-    console.error("[video-factory-console] runtime failed", error)
-    toast(error.message || "設定を取得できませんでした", "error")
-  }
-}
-
-async function saveRuntime() {
-  const body = {}
-  const vastKey = $("#vast-api-key").value.trim()
-  const comfyKey = $("#comfyui-api-key").value.trim()
-  const comfyUrl = $("#comfyui-url").value.trim()
-  const templateHash = $("#vast-template-hash").value.trim()
-  if (vastKey) body.vast_api_key = vastKey
-  if (comfyKey) body.comfyui_api_key = comfyKey
-  if (comfyUrl) body.comfyui_base_url = comfyUrl
-  if (templateHash) body.vast_template_hash = templateHash
-  try {
-    await api("/v1/runtime", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    })
-    $("#vast-api-key").value = ""
-    $("#comfyui-api-key").value = ""
-    toast("接続設定を安全に保存しました")
-    await loadBootstrap()
-    await loadRuntimeAndGpu()
-  } catch (error) {
-    toast(error.message || "設定を保存できませんでした", "error")
-  }
-}
-
-async function searchTemplates() {
-  try {
-    const query = encodeURIComponent(
-      $("#template-query").value.trim() || "ComfyUI",
-    )
-    const body = await api(
-      `/v1/vast/templates?query=${query}&recommended_only=true&ssh_only=true`,
-    )
-    const templates = body.templates || []
-    $("#template-list").innerHTML = templates.length
-      ? templates.map((item) => {
-        const hash = item.hash_id || item.hash || ""
-        return `<button class="template-chip ${state.selectedTemplate === hash ? "active" : ""}" data-template-hash="${escapeHtml(hash)}" type="button"><strong>${escapeHtml(item.name || item.image || "Template")}</strong><small>${escapeHtml(hash || "hash unavailable")}</small></button>`
-      }).join("")
-      : '<div class="empty compact">該当テンプレートがありません。</div>'
-    $$('[data-template-hash]').forEach((button) => {
-      button.addEventListener("click", () => {
-        state.selectedTemplate = button.dataset.templateHash
-        sessionStorage.setItem(
-          "videoFactoryTemplateHash",
-          state.selectedTemplate,
-        )
-        $("#vast-template-hash").value = state.selectedTemplate
-        $$('[data-template-hash]').forEach((item) => {
-          item.classList.toggle("active", item === button)
-        })
-        toast("起動テンプレートを選択しました")
-      })
-    })
-  } catch (error) {
-    toast(error.message || "テンプレートを検索できませんでした", "error")
-  }
-}
-
-function offerPrice(item) {
-  return Number(item.dph_total ?? item.search?.totalHour ?? item.min_bid ?? 0)
-}
-
-async function searchOffers() {
-  const target = $("#offer-list")
-  target.innerHTML = '<div class="empty">Vast.aiから空きGPUを取得しています。</div>'
-  try {
-    const body = await api("/v1/vast/offers/search", {
-      method: "POST",
-      body: JSON.stringify({
-        gpu_names: [$("#gpu-model").value],
-        min_gpu_ram_gb: Number($("#gpu-vram").value),
-        min_reliability: Number($("#gpu-reliability").value),
-        verified: true,
-        instance_type: "on-demand",
-        max_hourly_price: Number($("#gpu-max-price").value) || null,
-        limit: 30,
-      }),
-    })
-    const offers = body.offers || []
-    target.innerHTML = offers.length
-      ? offers.map((item) => {
-        const price = offerPrice(item)
-        const ram = Number(item.gpu_ram || 0) / 1024
-        const reliability = Number(item.reliability || 0) * 100
-        return `<article class="offer-card"><div class="instance-head"><h3>${escapeHtml(item.gpu_name || "GPU")}</h3><span class="badge good">Verified</span></div><div class="offer-price">$${price.toFixed(3)}<small>/hour</small></div><div class="offer-stats"><span>VRAM ${ram.toFixed(0)} GB</span><span>信頼性 ${reliability.toFixed(1)}%</span><span>DLPerf ${Number(item.dlperf || 0).toFixed(1)}</span><span>${escapeHtml(item.geolocation || item.country || "Location —")}</span></div><button class="button dark full" data-launch-offer="${escapeHtml(item.id || item.ask_contract_id)}" data-offer-price="${price}" type="button">このGPUを起動</button></article>`
-      }).join("")
-      : '<div class="empty">条件に合うGPUがありません。価格上限か信頼性を調整してください。</div>'
-    $$('[data-launch-offer]').forEach((button) => {
-      button.addEventListener("click", () => {
-        void launchOffer(
-          button.dataset.launchOffer,
-          button.dataset.offerPrice,
-        )
-      })
-    })
-  } catch (error) {
-    target.innerHTML = `<div class="empty"><strong>GPU検索に失敗しました</strong><p>${escapeHtml(error.message)}</p></div>`
-  }
-}
-
-async function launchOffer(offerId, price) {
-  const template = $("#vast-template-hash").value.trim()
-    || state.selectedTemplate
-  if (!template) {
-    toast("先にComfyUIテンプレートを選択してください", "warn")
-    return
-  }
-  const accepted = await confirmAction(
-    `Offer ${offerId} を $${Number(price).toFixed(3)}/h で起動します。GPU利用料が発生します。`,
-  )
-  if (!accepted) return
-  try {
-    await api("/v1/vast/instances", {
-      method: "POST",
-      body: JSON.stringify({
-        offer_id: Number(offerId),
-        template_hash_id: template,
-        label: `paradigm-comfyui-${Date.now().toString().slice(-6)}`,
-        disk_gb: 80,
-        target_state: "running",
-        mount_path: "/workspace",
-      }),
-    })
-    toast("Vast.aiインスタンスを作成しました")
-    await loadInstances()
-  } catch (error) {
-    toast(error.message || "GPUを起動できませんでした", "error")
-  }
-}
-
-async function loadInstances(quiet = false) {
-  if (!state.connected) return
-  const target = $("#instance-list")
-  try {
-    const body = await api("/v1/vast/instances")
-    const instances = body.instances || []
-    target.innerHTML = instances.length
-      ? instances.map((item) => {
-        const id = item.id || item.instance_id
-        const status = item.actual_status || item.status || "unknown"
-        const price = Number(item.dph_total || item.total_hour || 0)
-        const port = item.ports?.["8188/tcp"]?.[0]?.HostPort
-          || item.direct_port_start
-          || "—"
-        return `<div class="instance-card"><div class="instance-head"><strong>${escapeHtml(item.label || `Instance ${id}`)}</strong>${statusBadge(status)}</div><div class="instance-meta"><span>${escapeHtml(item.gpu_name || "GPU")}</span><span>$${price.toFixed(3)}/h</span><span>${escapeHtml(item.public_ipaddr || item.ssh_host || "IP loading")}</span><span>ComfyUI port ${escapeHtml(port)}</span></div><div class="instance-actions">${status === "running" ? `<button class="button secondary" data-instance-state="stopped" data-instance-id="${id}" type="button">停止</button>` : `<button class="button secondary" data-instance-state="running" data-instance-id="${id}" type="button">開始</button>`}<button class="button danger" data-instance-destroy="${id}" type="button">破棄</button></div></div>`
-      }).join("")
-      : '<div class="empty compact">稼働中のGPUインスタンスはありません。</div>'
-    $$('[data-instance-state]').forEach((button) => {
-      button.addEventListener("click", () => {
-        void changeInstanceState(
-          button.dataset.instanceId,
-          button.dataset.instanceState,
-        )
-      })
-    })
-    $$('[data-instance-destroy]').forEach((button) => {
-      button.addEventListener("click", () => {
-        void destroyInstance(button.dataset.instanceDestroy)
-      })
-    })
-  } catch (error) {
-    if (!quiet) {
-      toast(error.message || "インスタンスを取得できませんでした", "error")
-    }
-    target.innerHTML = `<div class="empty compact">${escapeHtml(error.message || "Vast.ai APIキーを設定してください。")}</div>`
-  }
-}
-
-async function changeInstanceState(id, status) {
-  try {
-    await api(`/v1/vast/instances/${id}/state`, {
-      method: "POST",
-      body: JSON.stringify({ state: status }),
-    })
-    toast(status === "running" ? "GPUを開始しました" : "GPUを停止しました")
-    await loadInstances()
-  } catch (error) {
-    toast(error.message || "状態を変更できませんでした", "error")
-  }
-}
-
-async function destroyInstance(id) {
-  const accepted = await confirmAction(
-    `Instance ${id} を完全に破棄します。コンテナストレージは失われます。`,
-    true,
-  )
-  if (!accepted) return
-  try {
-    await api(`/v1/vast/instances/${id}`, { method: "DELETE" })
-    toast("GPUインスタンスを破棄しました")
-    await loadInstances()
-  } catch (error) {
-    toast(error.message || "インスタンスを破棄できませんでした", "error")
-  }
-}
-
 function wireEvents() {
   $$(".nav-item").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view))
@@ -862,7 +480,7 @@ async function init() {
   wireEvents()
   updateDeliverableSummary()
   const initialView = location.hash.replace("#", "") || "dashboard"
-  setView(["dashboard", "create", "projects", "gpu"].includes(initialView)
+  setView(["dashboard", "create", "projects", "engines", "gpu"].includes(initialView)
     ? initialView
     : "dashboard")
   $("#factory-api-key").value = state.apiKey

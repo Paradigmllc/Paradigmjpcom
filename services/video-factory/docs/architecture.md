@@ -5,6 +5,8 @@
 - `ClientBrief` and JSON schemas define the request contract.
 - Planner converts a valid brief to `ShotManifest`.
 - Router chooses only available, policy-compliant engines.
+- `config/engine-profiles.yaml` binds every major OSS capability to an immutable upstream
+  revision, runtime, commercial policy, VRAM floor, workflow/model IDs, and reviewer state.
 - Prefect handles durable queueing and retries.
 - Project workspaces hold immutable inputs, provenance, QA, approvals, and delivery records.
 
@@ -15,6 +17,20 @@
 - ComfyUI produces approved conceptual assets through API-format workflows.
 - FFmpeg normalizes all media and produces delivery variants.
 - Specialist engines run as isolated adapters, never as arbitrary repository commands.
+- Non-native OSS engines use one JSON request/output worker contract. The selected profile ID and
+  source/license provenance are written to every engine output.
+
+## Engine profile gate
+
+Profile routing is fail-closed before GPU acquisition. A requested profile must support the shot
+kind, be commercially approved, have its specific runtime command, have all workflow contracts
+approved and bound, and have every exact model artifact approved. Preview ignores production
+profile selection and routes to the mock engine, so it cannot load weights or start a GPU.
+
+The committed catalog is mirrored into RLS-protected Supabase tables through the authenticated
+internal API. Selection, start, completion, and failure events are appended to the DB and also
+persisted in the local mode-0600 event journal. Console refresh is explicit; there is no catalog
+polling process and no GPU side effect.
 
 ## ComfyUI policy layer
 

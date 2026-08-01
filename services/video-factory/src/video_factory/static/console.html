@@ -7,6 +7,8 @@
   <title>Paradigm Video Factory</title>
   <link rel="stylesheet" href="/console/console.css">
   <link rel="stylesheet" href="/console/console-gpu-lifecycle.css">
+  <link rel="stylesheet" href="/console/console-engine-catalog.css">
+  <link rel="stylesheet" href="/console/console-responsive.css">
 </head>
 <body>
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
@@ -20,7 +22,8 @@
         <button class="nav-item active" data-view="dashboard"><span>01</span>ダッシュボード</button>
         <button class="nav-item" data-view="create"><span>02</span>新しい動画</button>
         <button class="nav-item" data-view="projects"><span>03</span>制作案件</button>
-        <button class="nav-item" data-view="gpu"><span>04</span>GPU・接続設定</button>
+        <button class="nav-item" data-view="engines"><span>04</span>OSSエンジン</button>
+        <button class="nav-item" data-view="gpu"><span>05</span>GPU・接続設定</button>
       </nav>
       <div class="sidebar-footer">
         <div class="status-line"><i id="sidebar-status" class="dot offline"></i><span id="sidebar-status-text">未接続</span></div>
@@ -126,6 +129,7 @@
             <article class="panel form-section">
               <div class="section-number">04</div><div class="section-copy"><p class="eyebrow">PRODUCTION</p><h2>制作方法</h2><p>必要なレーンだけを選びます。未承認Workflowは本番実行されません。</p></div>
               <fieldset class="field span-2"><legend>使用する表現</legend><div class="choice-row multi" id="shot-kinds"><label class="choice"><input type="checkbox" value="text_motion" checked><span>文字・モーション</span></label><label class="choice"><input type="checkbox" value="ui_capture" checked><span>Web・UI収録</span></label><label class="choice"><input type="checkbox" value="generative" checked><span>生成Bロール</span></label><label class="choice"><input type="checkbox" value="supplied_edit"><span>支給映像編集</span></label><label class="choice"><input type="checkbox" value="chart"><span>図表・データ</span></label><label class="choice"><input type="checkbox" value="technical_diagram"><span>技術図解</span></label><label class="choice"><input type="checkbox" value="portrait_animation"><span>人物アニメ</span></label><label class="choice"><input type="checkbox" value="lip_sync"><span>リップシンク</span></label></div></fieldset>
+              <div class="field span-2"><span>エンジンプロファイル指定</span><div id="engine-profile-selectors" class="engine-profile-selectors"><div class="empty compact">OSSエンジン台帳の読込後に、表現ごとの本番利用可能プロファイルを表示します。</div></div><small>指定しない表現は承認済み標準ルーターを使います。GPUなしプレビューではweightを読み込みません。</small></div>
               <label class="field span-2"><span>追加指示</span><textarea id="notes" rows="5" placeholder="トーン、構成、避けたい表現、参考動画のどこを参考にするか等"></textarea></label>
             </article>
 
@@ -161,6 +165,24 @@
           </article>
           <article id="project-detail" class="panel project-detail"><div class="empty tall"><strong>案件を選択</strong><p>動画、QA、承認状態、納品物を確認できます。</p></div></article>
         </div>
+      </section>
+
+      <section class="view" data-view-panel="engines">
+        <article class="panel engine-catalog-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">AUDITED OSS ENGINE CATALOG</p><h2>主要OSSエンジン</h2></div>
+            <div class="engine-heading-actions"><span id="engine-catalog-count" class="badge neutral">未読込</span><button id="sync-engines" class="button secondary" type="button">DBへ同期</button><button id="refresh-engines" class="icon-button" type="button" aria-label="OSSエンジンを更新">↻</button></div>
+          </div>
+          <p class="panel-lead">モデルは常駐・一括取得しません。公式source、revision、ライセンス、VRAM、workflow、weight hash、人間審査が揃ったプロファイルだけを、制作ジョブ中に限り起動します。</p>
+          <div class="engine-toolbar">
+            <label class="field"><span>カテゴリ</span><select id="engine-category"><option value="all">すべて</option><option value="composition">合成・収録</option><option value="video">動画生成</option><option value="image">画像生成</option><option value="people">人物</option><option value="audio">音声</option><option value="enhancement">補正</option><option value="three_d">3D・図解</option></select></label>
+            <label class="field"><span>状態</span><select id="engine-readiness"><option value="all">すべて</option><option value="ready">本番利用可</option><option value="blocked">要対応・利用不可</option></select></label>
+            <label class="field engine-search"><span>検索</span><input id="engine-search" type="search" placeholder="LTX、字幕、アップスケール…"></label>
+          </div>
+          <div id="engine-catalog-status" class="engine-catalog-status" role="status"><div class="empty">OSSエンジン台帳を読み込んでいます。</div></div>
+          <div id="engine-catalog-list" class="engine-catalog-list"><div class="empty">接続後にエンジンを表示します。</div></div>
+          <div class="engine-event-section"><div class="panel-heading"><div><p class="eyebrow">RECENT ENGINE EVENTS</p><h3>選択・進捗・エラー</h3></div></div><div id="engine-event-list" class="engine-event-list"><div class="empty compact">実行イベントはまだありません。</div></div></div>
+        </article>
       </section>
 
       <section class="view" data-view-panel="gpu">
@@ -220,5 +242,8 @@
     </form>
   </dialog>
   <script src="/console/console.js" defer></script>
+  <script src="/console/console-projects.js" defer></script>
+  <script src="/console/console-runtime.js" defer></script>
+  <script src="/console/console-engine-catalog.js" defer></script>
 </body>
 </html>

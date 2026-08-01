@@ -21,6 +21,7 @@ from .models import (
     ShotManifest,
     ValidationReport,
 )
+from .operator_events import emit_operator_event
 from .orchestration import flow, task
 from .planner import plan_brief
 from .qa import run_technical_qa
@@ -51,6 +52,45 @@ def _resolve_service_root() -> Path:
 
 
 SERVICE_ROOT = _resolve_service_root()
+
+
+def _manifest_profile_ids(manifest: ShotManifest) -> list[str]:
+    return sorted(
+        {
+            profile_id
+            for shot in manifest.shots
+            if (profile_id := str(shot.metadata.get("engine_profile_id") or "").strip())
+        }
+    )
+
+
+def _emit_profile_events(
+    settings: Settings,
+    manifest: ShotManifest,
+    *,
+    event_type: str,
+    title: str,
+    message: str,
+    state: str,
+    progress: int,
+    run_id: str | None,
+    error_message: str | None = None,
+) -> None:
+    for profile_id in _manifest_profile_ids(manifest):
+        run_lifecycle(
+            emit_operator_event(
+                settings,
+                event_type=event_type,
+                title=title,
+                message=message,
+                run_id=run_id,
+                profile_id=profile_id,
+                project_id=manifest.project_id,
+                state=state,
+                progress=progress,
+                error_message=error_message,
+            )
+        )
 
 
 def _dry_run_spec(spec: DeliverableSpec, *, max_dimension: int = 640) -> DeliverableSpec:
@@ -311,6 +351,17 @@ def production_flow(
     )
     gpu_lease: GpuLease | None = None
     try:
+        if not dry_run:
+            _emit_profile_events(
+                settings,
+                manifest,
+                event_type="profile_selected",
+                title="OSSエンジンを選択",
+                message="監査済みプロファイルを制作runへ固定しました。",
+                state="selected",
+                progress=0,
+                run_id=lifecycle_run_id,
+            )
         if requires_managed_gpu:
             gpu_lease = acquire_gpu_lease(settings, lifecycle_run_id)
             run_lifecycle(ensure_gpu_ready(settings, run_id=lifecycle_run_id))
@@ -322,16 +373,54 @@ def production_flow(
                     completed_lease=gpu_lease,
                 )
             )
-        return _production_flow_impl(
-            settings=Settings.from_env(),
-            brief=brief,
-            validation_report=validation_report,
-            manifest=manifest,
-            dry_run=dry_run,
-            auto_approve=auto_approve,
-            reviewer=reviewer,
-            delivery_target=delivery_target,
-        )
+        if not dry_run:
+            _emit_profile_events(
+                settings,
+                manifest,
+                event_type="profile_started",
+                title="OSSエンジン処理を開始",
+                message="必要なworkerまたはComfyUI workflowの実行を開始しました。",
+                state="running",
+                progress=10,
+                run_id=lifecycle_run_id,
+            )
+        try:
+            result = _production_flow_impl(
+                settings=Settings.from_env(),
+                brief=brief,
+                validation_report=validation_report,
+                manifest=manifest,
+                dry_run=dry_run,
+                auto_approve=auto_approve,
+                reviewer=reviewer,
+                delivery_target=delivery_target,
+            )
+        except Exception as error:
+            if not dry_run:
+                _emit_profile_events(
+                    settings,
+                    manifest,
+                    event_type="profile_failed",
+                    title="OSSエンジン処理に失敗",
+                    message="制作runを安全停止しました。Consoleで失敗理由を確認してください。",
+                    state="failed",
+                    progress=100,
+                    run_id=lifecycle_run_id,
+                    error_message=str(error)[:2000],
+                )
+            raise
+        if not dry_run:
+            _emit_profile_events(
+                settings,
+                manifest,
+                event_type="profile_completed",
+                title="OSSエンジン処理が完了",
+                message="生成素材の処理が完了し、QA・承認工程へ進みました。",
+                state="completed",
+                progress=100,
+                run_id=lifecycle_run_id,
+            )
+        return result
     finally:
         if requires_managed_gpu:
             run_lifecycle(

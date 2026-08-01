@@ -6,6 +6,7 @@ from typing import Any
 
 import yaml
 
+from .engine_profiles import assert_profile_routable, load_engine_profile_catalog
 from .models import Engine, ShotManifest
 from .settings import Settings
 from .workflow_registry import load_workflow_registry, registry_readiness
@@ -40,6 +41,7 @@ def engine_availability(settings: Settings, *, dry_run: bool = False) -> dict[En
         Engine.MANIM: bool(settings.external_commands.get("manim")),
         Engine.LIVEPORTRAIT: bool(settings.external_commands.get("liveportrait")),
         Engine.MUSETALK: bool(settings.external_commands.get("musetalk")),
+        Engine.OSS: True,
     }
 
 
@@ -60,6 +62,12 @@ def route_manifest(
     config = load_routing_config(routing_path)
     availability = engine_availability(settings, dry_run=dry_run)
     routed = manifest.model_copy(deep=True)
+    try:
+        profile_catalog = load_engine_profile_catalog(
+            settings.engine_profile_catalog_path
+        )
+    except (OSError, ValueError) as error:
+        raise RoutingError(f"Engine profile catalog is invalid: {error}") from error
 
     shot_groups = [routed.shots, *routed.localized_shots.values()]
     for shots in shot_groups:
@@ -67,7 +75,25 @@ def route_manifest(
             rule = config["rules"].get(shot.kind.value)
             if not isinstance(rule, dict):
                 raise RoutingError(f"No routing rule for shot kind: {shot.kind.value}")
-            candidates = [rule.get("primary"), *(rule.get("fallbacks") or [])]
+            profile_id = str(shot.metadata.get("engine_profile_id") or "").strip()
+            profile = None
+            if profile_id and not dry_run:
+                try:
+                    profile = profile_catalog.get(profile_id)
+                    assert_profile_routable(
+                        profile,
+                        shot_kind=shot.kind,
+                        availability=availability,
+                        workflow_registry_path=settings.comfyui_workflow_registry,
+                        model_registry_path=settings.model_registry_path,
+                    )
+                except (KeyError, ValueError) as error:
+                    raise RoutingError(str(error)) from error
+                candidates: list[object] = [profile.adapter.value]
+                if profile.workflow_ids:
+                    shot.metadata["comfyui_workflow_id"] = profile.workflow_ids[0]
+            else:
+                candidates = [rule.get("primary"), *(rule.get("fallbacks") or [])]
             selected: Engine | None = None
             rejected: list[str] = []
             for value in candidates:
@@ -90,6 +116,7 @@ def route_manifest(
             shot.engine = selected
             shot.routing_reason = (
                 f"selected={selected.value}; "
+                f"profile={profile.id if profile else 'default'}; "
                 f"candidates={','.join(str(item) for item in candidates)}; "
                 f"rejected={','.join(rejected) or 'none'}"
             )

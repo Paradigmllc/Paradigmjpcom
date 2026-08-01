@@ -11,6 +11,7 @@ from .ffmpeg import FFmpegAdapter
 from .hyperframes import HyperFramesAdapter
 from .mock import MockAdapter
 from .playwright import PlaywrightAdapter
+from .profile_cli import ProfileCliAdapter
 
 
 class AdapterRegistry:
@@ -33,6 +34,7 @@ class AdapterRegistry:
             Engine.MUSETALK: ExternalCliAdapter(
                 Engine.MUSETALK, settings.external_commands.get("musetalk", ())
             ),
+            Engine.OSS: ProfileCliAdapter(),
         }
 
     def get(self, engine: Engine) -> EngineAdapter:

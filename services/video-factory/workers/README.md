@@ -7,7 +7,22 @@ BLENDER_ADAPTER_COMMAND=/opt/workers/blender/run
 MANIM_ADAPTER_COMMAND=/opt/workers/manim/run
 LIVEPORTRAIT_ADAPTER_COMMAND=/opt/workers/liveportrait/run
 MUSETALK_ADAPTER_COMMAND=/opt/workers/musetalk/run
+WHISPER_ADAPTER_COMMAND=/opt/workers/whisper/run
+KOKORO_ADAPTER_COMMAND=/opt/workers/kokoro/run
+DEMUCS_ADAPTER_COMMAND=/opt/workers/demucs/run
+REAL_ESRGAN_ADAPTER_COMMAND=/opt/workers/real-esrgan/run
+RIFE_ADAPTER_COMMAND=/opt/workers/rife/run
+GFPGAN_ADAPTER_COMMAND=/opt/workers/gfpgan/run
+SAM2_ADAPTER_COMMAND=/opt/workers/sam2/run
+REMBG_ADAPTER_COMMAND=/opt/workers/rembg/run
+LAMA_ADAPTER_COMMAND=/opt/workers/lama/run
+TRIPOSR_ADAPTER_COMMAND=/opt/workers/triposr/run
 ```
+
+`config/engine-profiles.yaml` is the source of truth for every supported worker.
+Noncommercial profiles remain visible in the Console but must never receive a command in
+production. Worker images are built ahead of a client job; the command may start only for the
+job and must exit after writing the requested output so no GPU model remains resident.
 
 The factory invokes:
 

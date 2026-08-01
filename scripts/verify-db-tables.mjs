@@ -59,7 +59,7 @@ const ALL_TABLES = [
   // Japan Readiness
   "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_initial_form_drafts", "sales_report_factory_state",
   // Video
-  "sales_video_jobs",
+  "sales_video_jobs", "video_factory_engine_profiles", "video_factory_engine_events",
   // Platform Health
   "sales_platform_health_snapshots",
   // Infrastructure
@@ -387,6 +387,8 @@ function printSummaryAndExit(ok, missing, errored) {
         "sales_error_log": "supabase/migrations/migration_045_sales_error_log.sql",
         "demo_contact_submissions": "supabase/migrations/migration_070_demo_contact_hardening.sql",
         "public_japan_entry_checks": "supabase/migrations/migration_072_public_japan_entry_checks.sql",
+        "video_factory_engine_profiles": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
+        "video_factory_engine_events": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "manual_japan_entry_batches": "supabase/migrations/20260720233215_manual_work_durable_batches.sql",
         "manual_japan_entry_batch_items": "supabase/migrations/20260720233215_manual_work_durable_batches.sql",
         "sales_lead_candidate_domains": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",

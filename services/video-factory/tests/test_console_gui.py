@@ -32,10 +32,36 @@ def test_console_static_app_and_runtime_secret_masking(
     assert "CLIを使わず" in page.text
     assert "必要な時だけGPUを稼働" in page.text
     assert "console-gpu-lifecycle.js" in page.text
+    assert "主要OSSエンジン" in page.text
+    assert "console-projects.js" in page.text
+    assert "console-runtime.js" in page.text
+    assert "console-engine-catalog.js" in page.text
+    assert "console-responsive.css" in page.text
     lifecycle_script = client.get("/console/console-gpu-lifecycle.js")
     assert lifecycle_script.status_code == 200
     assert "catch {" not in lifecycle_script.text
     assert "setInterval" not in lifecycle_script.text
+    catalog_script = client.get("/console/console-engine-catalog.js")
+    assert catalog_script.status_code == 200
+    assert "catch {" not in catalog_script.text
+    assert "setInterval" not in catalog_script.text
+    assert 'target="_blank" rel="noopener noreferrer"' in catalog_script.text
+    for asset in ("console-projects.js", "console-runtime.js"):
+        response = client.get(f"/console/{asset}")
+        assert response.status_code == 200
+        assert "catch {" not in response.text
+        assert "setInterval" not in response.text
+    responsive_styles = client.get("/console/console-responsive.css")
+    assert responsive_styles.status_code == 200
+    assert "overflow-x: hidden" in responsive_styles.text
+
+    catalog = client.get("/v1/engine-profiles", headers=_headers())
+    assert catalog.status_code == 200
+    assert catalog.json()["total"] == 40
+    assert any(
+        profile["id"] == "ltx-video" and profile["ready"] is False
+        for profile in catalog.json()["profiles"]
+    )
 
     registry_page = client.get("/console/registry.html")
     assert registry_page.status_code == 200
@@ -238,6 +264,41 @@ def test_console_lists_persisted_run_history(
     assert response.status_code == 200
     assert response.json()["runs"][0]["run_id"] == run_id
     assert response.json()["runs"][0]["project_id"] == "production-readiness"
+
+
+def test_console_lists_profile_progress_and_error_events(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    events = workspace / "events"
+    events.mkdir(parents=True)
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "factory-test-key")
+    (events / "b4f369fd-dfb4-48ca-9816-6f763912b2d1.json").write_text(
+        json.dumps(
+            {
+                "event_id": "b4f369fd-dfb4-48ca-9816-6f763912b2d1",
+                "event_type": "profile_failed",
+                "title": "OSSエンジン処理に失敗",
+                "message": "安全停止しました。",
+                "created_at": "2026-08-01T04:00:00+00:00",
+                "profile_id": "ltx-video",
+                "project_id": "demo-project",
+                "state": "failed",
+                "progress": 100,
+                "error_message": "worker failed",
+                "delivery_state": "delivered",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    response = TestClient(app).get("/v1/engine-events", headers=_headers())
+
+    assert response.status_code == 200
+    assert response.json()["events"][0]["profile_id"] == "ltx-video"
+    assert response.json()["events"][0]["error_message"] == "worker failed"
 
 
 def test_console_adopts_managed_vast_instance_without_exposing_proxy_key(

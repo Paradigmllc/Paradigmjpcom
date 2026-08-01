@@ -313,6 +313,16 @@
       "title": "Duration Seconds",
       "type": "number"
     },
+    "engine_profile_overrides": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/ShotKind"
+      },
+      "title": "Engine Profile Overrides",
+      "type": "object"
+    },
     "languages": {
       "items": {
         "type": "string"

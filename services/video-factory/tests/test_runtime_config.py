@@ -83,6 +83,21 @@ def test_initial_production_profile_requires_only_bound_wan_workflow(
     assert settings.comfyui_required_workflows == ("abstract-broll-t2v",)
 
 
+def test_production_render_defaults_to_high_and_catalog_is_packaged(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(tmp_path / "workspace"))
+    monkeypatch.delenv("HYPERFRAMES_RENDER_QUALITY", raising=False)
+    monkeypatch.delenv("VIDEO_FACTORY_ENGINE_PROFILE_CATALOG", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.hyperframes_render_quality == "high"
+    assert settings.engine_profile_catalog_path.name == "engine-profiles.yaml"
+    assert settings.engine_profile_catalog_path.is_file()
+
+
 def test_production_uses_existing_internal_admin_secret_for_api_auth(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

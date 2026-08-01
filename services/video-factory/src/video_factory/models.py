@@ -15,6 +15,7 @@ class Engine(StrEnum):
     MANIM = "manim"
     LIVEPORTRAIT = "liveportrait"
     MUSETALK = "musetalk"
+    OSS = "oss"
     MOCK = "mock"
 
 
@@ -141,6 +142,7 @@ class ClientBrief(BaseModel):
     deliverables: list[DeliverableSpec] = Field(min_length=1, max_length=20)
     localizations: dict[str, LocalizationSpec] = Field(default_factory=dict)
     requested_shot_kinds: list[ShotKind] = Field(default_factory=list)
+    engine_profile_overrides: dict[ShotKind, str] = Field(default_factory=dict)
     notes: str | None = None
 
     @model_validator(mode="after")
