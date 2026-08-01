@@ -1,7 +1,6 @@
 # Paradigmjpcom Task
 
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
-
 - 既存Wanレーンは変更せず、主要OSS 40プロファイルのうち外部GPU実行型をcontrol planeの任意CLIから分離し、認証付き単一プロセスGPU workerへ強制する。CPU型はcontrol plane、ComfyUI型は既存workflow、外部GPU型はmanaged workerという実行境界を台帳・API・DB・GUIへ反映した。
 - workerはprofile IDと固定40桁revision、商用承認、権利宣言、事前導入済みcommand/executableを検証する。1 GPU 1 job、shell不使用、timeout、MP4 probe、出力上限、SHA-256、temporary cleanupを実装し、未審査・非商用・revision不一致・未導入はfail-closedで拒否する。
 - 非ComfyUIの外部GPU profileも本番runで既存managed GPU leaseを取得し、Vast起動後にComfyUI proxyと必要なworker profile revisionをpreflightする。成功・失敗のfinallyでidle判定後に停止し、dry-run、catalog表示、設定、CPU routeではGPUを起動しない。新GPU作成・常駐polling・job中downloadは行わない。
@@ -14,7 +13,6 @@
 - 管理GPU **46258780**はVast実状態`exited / stopped`、active run 0、GPU lease 0、errorなし。catalog閲覧・設定・DB同期・CPU routeでは起動せず、生成jobが必要とする場合だけ起動し、完了・失敗時にidleなら即停止する。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSSエンジン統合（本番release完了）
-
 - Wan既存レーンは維持しつつ、FramePack、SkyReels V2/V3、NVIDIA Cosmos 3、Pyramid Flow、Open-Sora系、VideoCrafter/DynamiCrafterを含む主要な動画生成・人物アニメーション・音声・補正・3D/図解OSS計40プロファイルを、単一の監査可能な台帳へ統合する。モデル重量は常駐・一括取得せず、承認済みプロファイルだけをジョブ単位で遅延ロードする。
 - 各プロファイルは公式source、immutable revision、code/model license、商用可否、最低/推奨VRAM、対応shot kind、実行runtime、workflow/model binding、審査者を保持する。未審査、非商用、24GB超過、workflow/model未承認はGUIで理由を表示し、本番実行はfail-closedで拒否する。
 - DBはprofile snapshot・選択/実行eventをRLS付きで保存し、APIは認証・入力検証・DBベル+Slack通知を行う。Consoleはcatalogのloading/empty/error、カテゴリ、稼働可否、VRAM、ライセンス、選択結果を可視化する。
@@ -26,7 +24,6 @@
 - hotfix PR **#640**をmain **d693b28c**へsquash mergeし、canonical deployment **kag5gash9hwzj85mi2rr0yys**を完走。新containerは同commit imageでhealthy。本番registryは18件、追加10件は全てdisabled、既存`abstract-broll-t2v`だけがapproved_bound / enabledでSHA-256とreviewerを維持した。台帳40件を再同期し、event completed、DBベルopen、Slack `slack_ok: true`をread-backした。公開readyは`true`、GPU **46258780**は`exited / stopped`、active run/lease 0、errorなし。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory GPUオンデマンド化（本番release完了）
-
 - 管理対象GPUをVast.ai instance **46258780**の1台に固定し、ComfyUIが必要な本番runの開始時だけ自動起動、生成完了・失敗時にproduction runと全workerのGPU leaseが0件なら自動停止するevent-driven lifecycleを実装した。定期polling、予備GPUの自動作成、別instanceへの暗黙切替は行わない。
 - dry-run、企画/validation失敗、ComfyUIを使わないroute、draft/final承認、local deliveryではGPUを起動しない。手動startと管理GPUのdestroy/重複createをAPI/UIの両方で拒否し、active runまたはprocess leaseがある間の手動stopも拒否する。
 - 複数Prefect/API worker間は`flock` leaseで保護する。rolling deploy前の旧workerもleaseを保持でき、プロセス異常終了後のstale leaseだけを安全に回収する。API再起動時は永続queued/running jobを非冪等再実行せず明示failedへ復旧し、one-shotでidle GPUを停止する。
@@ -41,7 +38,6 @@
 - 実証中に検出した`ready`/`stopped` stateへ直前の接続待機detailが残る表示不整合も、各phaseで説明文を必ず上書きするPR **#637** / main **b9c596ec**で修正した。canonical deployment **d12xwzq945vjqdz1hpxba8d2**は`finished`、新コンテナ`n8i2sjiqvr2d8hrzppop2m2i-063758291997`は同commit imageでhealthy。公開ready、認証gate、console assetを確認し、最終read-backは`stopped / already_stopped`、Vast実状態`exited`、active run/lease 0、errorなし、停止説明文更新済み。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（実GPU生成・2段階承認・納品まで完了）
-
 - 本番`/data/video-factory`にはVast.ai資格情報とテンプレートHashが永続保存済み。既存RTX 3090 24GBインスタンスは稼働中だが、ComfyUIプロセスの自己起動と本番ランタイムへの接続、承認済みWorkflow登録が完了していなかった。
 - 既存GPUを追加作成せず回収する。Vast.aiの生レスポンスから`jupyter_token`、`extra_env`、プロキシ鍵などを管理画面へ返さない許可リスト境界と、秘密値をサーバー内だけで復元・検証・権限600のruntimeへ保存するadopt API/UIを実装した。
 - GPU起動スクリプトは、既存モデルを再利用して専用ComfyUI APIを明示起動し、`system_stats`、必須ノード、TLSプロキシ自身の応答を確認できるまで待つ。ComfyUI本体に対する`git reset --hard`は廃止した。
@@ -66,14 +62,12 @@
 - 完了済みのCountry Partner one-shot workflow 2本と、V2へ置換済みの旧Vast bootstrap workflow 1本がmain pushごとにjob 0件の偽failure runを作っていたため削除した。現行の`direct-vast-production-bootstrap-v2.yml`と通常のproduction deployは維持する。
 
 ## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
-
 - 全ページ末尾へ機械的に挿入していた共通画像カルーセル、工程表、ショーリールを撤去する。同じ生成画像を複数ページで反復せず、ページ本文と既存の専用コンポーネントを主役に戻す。
 - 共通`PageHero`は生成画像ではなく、実績を装わない抽象的なUI図解へ戻す。`/ja/works`では既存の実績カード、制作工程、確認基準を表示し、無関係な生成素材を実績画像として見せない。
 - 追加済みの生成画像4点、ショーリール、専用HyperFrames compositionは公開物とリポジトリから削除する。新しいフリー素材への置換は行わない。
 - TypeScript、変更ファイルESLint、production build、Playwrightのdesktop/mobile計4ケースを通過。`/ja/works`の実画面キャプチャでも、生成画像レールが消え、PageHeroから既存実績カードへ直接つながることを確認した。
 
 ## CURRENT STATUS — 2026-07-29 `/work`高速一次判定＋選抜詳細解析（本番release完了 / 外部送信0）
-
 - 完全新規URLの標準処理を、従来の全社フル解析から**ホームページ1回取得だけの高速一次判定**へ変更した。URL正規化、企業名・商品/サービス・業態、日本語/JPY/日本配送の公開有無、0〜100点と`promote / review / low`を決定論で保存する。
 - Raw候補ではDeepSeek、Crawl4AI、複数ページ探索、問い合わせフォーム探索、PV/ROI試算、初回文面、10章レポート、Twenty同期を実行しない。DeepSeek残高がなくても500 URLバッチを開始できる。
 - 営業候補として残す企業だけ、履歴の**「詳細解析へ昇格」**から既存の厳格なフル解析へ進める。昇格後は公開根拠収集、フォーム検証、企業別文面、品質・類似度・安全性gate、顧客向けレポート、Twenty read-backを従来どおり実行する。
@@ -82,7 +76,6 @@
 - Production release **30394964339**はrouting validation、Coolify deploy、公開URL検証を完走した。deployment **j3srqefjxcuopbvjgr5mmrcc**はcommit **aa8af979**を`finished`で反映し、`/ja`、`/en`、VaaS日英ページ・規約・申込導線、`/api/ready`はHTTP 200 / missing 0。`/work`は管理者専用、外部自動送信0件を維持する。
 
 ## CURRENT STATUS — 2026-07-28 Video制作パイプライン標準化（HyperFrames＋ComfyUI）
-
 - 公開価格は変更しない（Essential `$1,500/月`、Unlimited `$3,500/月`、Priority `$5,500/月`）。価格はAI実行時間ではなく、企画・ブランド設計・修正・派生・ローカライズ・最終QAを含む承認可能な完成動画に対するものとする。
 - `generateProfessionalVideo`を実運用オーケストレーターへ変更した。会社／診断レポートを入力に、ComfyUIの背景・Bロール・サムネイル（必要時のみアバター・動画）を並列生成し、HyperFramesの決定的な最終合成を独立レーンとして実行する。
 - ComfyUI各レーンとHyperFramesレーンは個別に成功／失敗を返す。未設定・一部失敗でも成功レーンを破棄せず、エラーをQAで確認できる。最終採用は人間が行い、権利・ブランド・事実・字幕・音量・テンポを確認する。
@@ -90,7 +83,6 @@
 - エンリッチメント自動処理からの複合レーン切り替えは`PROFESSIONAL_VIDEO_PIPELINE_ENABLED=true`の明示オプトインとし、認証済みComfyUIがない環境では従来のHyperFrames診断動画へフォールバックする。
 
 ## CURRENT STATUS — 2026-07-28 Initial Japan Country Partnershipを90日へ変更（実装中 / 外部送信0）
-
 - Japan Entryの標準オファーを`$15,000`のJapan Market Setup＋Go-Live Dateから90日間のInitial Japan Country Operationsへ統一する。
 - 契約日ではなくGo-Live Dateを運用期間の起点とし、Day 45/65/75/85の継続判断、Day 90の継続契約または引き継ぎを明記する。
 - 月額運用価値は`$2,000/月 × 3か月 = $6,000`、Month 4以降は署名済み条件の$2,000/月。広告費・物流・法務・税務・専門家費用など外部費用は別途とする。
@@ -115,10 +107,7 @@
 
 ## CURRENT STATUS — 2026-07-28 Video as a Service 商用運用PR検証中
 
-- Video as a Serviceの商品設計を3プランに確定した。
-  - Essential: USD 1,500 / month、条件を満たすショート動画を月10本まで、同時進行1本、各動画3修正ラウンド。
-  - Unlimited: USD 3,500 / month、依頼キュー無制限、同時進行1本、合意ブリーフ内の修正無制限。
-  - Priority: USD 5,500 / month、依頼キュー無制限、同時進行2本、合意ブリーフ内の修正無制限、優先キュー。
+- Video as a Serviceの商品設計を3プランに確定した: Essential USD 1,500/月（10本・同時1本・各3修正）、Unlimited USD 3,500/月（無制限キュー・同時1本）、Priority USD 5,500/月（無制限キュー・同時2本・優先キュー）。
 - Readyとなった標準依頼へ原則2営業日以内に着手する。これは完成・納品時間の保証ではない。
 - 申込み、適合確認、Service Order、初回決済、オンボーディング、制作キュー、レビュー、納品、更新・解約までの運用仕様を `docs/knowledge/video-as-a-service-operating-system.md` に定義した。
 - 公開用FAQ・日英利用規約、VaaS専用申込フォーム、CRM/Slack用intent・plan保存、Service Order・Client Brief・メールテンプレートを実装した。
@@ -143,10 +132,6 @@
   - 日本法弁護士による利用規約とService Orderの最終レビュー
 - 公開利用規約は事業者向け共通条件であり、案件固有の条件はService Orderを優先させる。
 
-## RELEASE REFERENCES
-
-- Previous Country Partner implementation PR: #565
-- Previous production verification run: `30311462742`
-- `/work` fast-first PR: #586 / main `aa8af979` / validation `30394597067` / release `30394964339` / deployment `j3srqefjxcuopbvjgr5mmrcc`
-- VaaS implementation PR: #573
-- VaaS production deployment: pending
+- Release references: Country Partner PR #565 / verification `30311462742`; `/work` PR #586 / main `aa8af979` / validation `30394597067` / release `30394964339` / deployment `j3srqefjxcuopbvjgr5mmrcc`; VaaS PR #573 / deployment pending.
+## CURRENT STATUS - 2026-08-02 Japan market operator Wave 1
+- Converted both strategy chats into the public three-desk offer and $5,000 validation -> $20,000 launch -> $2,500/month + 10% operator package; added five evidence-backed Wave 1 prospects, permission-first memo draft, and `docs/knowledge/japan-market-operator-playbook.md` with external sends at 0. Active handoff: human-review five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.
