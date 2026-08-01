@@ -1,6 +1,6 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（HyperFrames契約hotfix検証済み / 再release待ち）
+## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（実GPU生成・2段階承認・納品まで完了）
 
 - 本番`/data/video-factory`にはVast.ai資格情報とテンプレートHashが永続保存済み。既存RTX 3090 24GBインスタンスは稼働中だが、ComfyUIプロセスの自己起動と本番ランタイムへの接続、承認済みWorkflow登録が完了していなかった。
 - 既存GPUを追加作成せず回収する。Vast.aiの生レスポンスから`jupyter_token`、`extra_env`、プロキシ鍵などを管理画面へ返さない許可リスト境界と、秘密値をサーバー内だけで復元・検証・権限600のruntimeへ保存するadopt API/UIを実装した。
@@ -19,6 +19,10 @@
 - HyperFrames契約修正PR **#631**をmain **f08dc939**へsquash mergeし、deployment **qss4jbj0kgd32h6aolbykw1o**で本番反映した。新コンテナ`n8i2sjiqvr2d8hrzppop2m2i-024628201239`は同commit imageでhealthy、HyperFrames 0.7.87、doctor `production_ready: true`、blocking 0を確認した。
 - 3回目の実生成run **3323059b-e491-4264-ae20-066bfb2c6095**は、GPU生成後のbrowser checkでsystem ChromiumのCDP `Network.enable`がtimeoutして安全停止した。Node 22.12 Alpine imageのChromium 136とHyperFrames 0.7.87の固定ブラウザ152に世代差があり、公式chrome-headless-shellはglibc配布のためAlpineでは実行不可。Node全stageを公式`22.23.1-alpine3.24`へ固定して同世代Chromiumへ更新し、software GPUと900秒protocol timeoutを明示する。CI production image内で実HyperFrames check＋1秒MP4 render＋ffprobeを必須化する。
 - PR #632の初回container CIでAlpine 3.24標準Python 3.14.5がVideo Factoryの安全な対応範囲`>=3.11,<3.14`を外れることを検出した。制約は緩めず、runnerを公式`python:3.13.14-alpine3.24`へ固定し、公式Node stageからNode 22.23.1 runtimeのみを移植して、Python 3.13・Node 22・新世代Chromiumを同居させる。
+- Chromium runtime修正PR **#632**をmain **40ddab1e**へsquash mergeした。CI production imageでNode 22.23.1、Python 3.13.14、Chromium 150.0.7871.181をread-backし、HyperFrames 0.7.87 `check`と24/24 framesの1.000秒MP4 render、ffprobeをpass。Video Factory pytest 49件、Ruff、mypy strict、TypeScript、quality guard error 0もpassした。
+- canonical `npm run release:prod`をdeployment **nahfyfola6j0gnqozcl7j7wa**で完走した。新コンテナ`n8i2sjiqvr2d8hrzppop2m2i-033416492325`はmain **40ddab1e**のimageでhealthy、93/93 DB table、Traefik origin lock、公開smoke、post-deploy doctorをpass。本番Video Factory doctorは`production_ready: true`、blocking reason 0、HyperFrames 0.7.87、ComfyUI認証・到達性・23.56GB VRAM、必須workflow/model readyを確認した。
+- 実GPU run **2c9248b4-7758-4002-b6e9-fecb5470686a** / project **production-readiness-1785555821**で、Wan 2.2 TI2V-5B生成を含む8秒動画を完走した。`draft_review_required`で停止→明示draft承認→finalize→`final_review_required`で停止→明示final承認→local deliverをread-backし、最終stateは`delivered`。`production-readiness-master.mp4`はH.264 640×360/24fps＋AAC、8.000秒、230,838 bytes、SHA-256 `bd1d61447d7423a009f3ea6c98e07cedce37e3e8c592c5a93d3e9e0e97d0efbd`で、4時点フレームも目視確認した。
+- 公開`/api/video-factory/ready`は`ready: true`。`/video-factory-console#dashboard`はブラウザで管理者ログインへ正しくリダイレクトし、認証フォーム描画、error overlayなし、console error 0を確認した。既存Vast.ai GPU **46258780**のみを使用し、新規GPUは作成していない。同GPUはRTX 3090 / managed proxy有効 / `running`で、継続課金は`$0.1317222222/h`。
 
 ## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
 
@@ -81,8 +85,8 @@
 
 ## ACTIVE HANDOFF
 
-- Video Factory Chromium runtime hotfix branch: `fix/video-factory-chromium-runtime-20260801`
-- 既存Vast.ai GPU **46258780**はComfyUI API / TLS proxy readyで稼働中。追加GPUは作成しない。GPU課金は約`$0.132/h`で継続中のため、実生成と2段階承認のread-back後に稼働状態を明記する。
+- Video Factory本番復旧はmain **40ddab1e** / deployment **nahfyfola6j0gnqozcl7j7wa**で完了。実生成、2段階承認、納品artifact検証までpass済み。
+- 既存Vast.ai GPU **46258780**はComfyUI API / TLS proxy readyで稼働中。追加GPUは作成していない。即時実務利用のためrunningを維持し、GPU課金は約`$0.132/h`で継続中。
 - Vast.aiインスタンスAPIの出力に秘密値を含めない。プロキシ鍵はadopt処理と永続runtimeの内部だけで扱う。
 - `/work` fast-firstは本番反映済み。新規Raw URLは高速一次判定、選抜候補のみ「詳細解析へ昇格」でフル解析する。
 - VaaS Branch: `feat/video-as-a-service-commercial-launch`
