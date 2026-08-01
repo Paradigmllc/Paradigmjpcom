@@ -94,6 +94,7 @@ const EN_BRANDS: Record<OpportunityBrandSlug, OpportunityBrand> = {
     inquiryTypes: ["Paid Market Validation", "Japan Launch", "Hybrid Growth", "Certification / Compliance", "Distributor Search"],
     accent: "violet",
     metric: { value: "$20k", label: "launch setup, staged after paid validation" },
+    disclaimer: "This operator lane is separate from the fixed $15,000 Country Partner Setup. It covers a staged distribution and operating relationship; exact SKU, channel, importer, liability and exclusivity terms require signed agreements.",
   },
   "source-from-japan": {
     slug: "source-from-japan",
@@ -158,6 +159,7 @@ const JA_BRANDS: Record<OpportunityBrandSlug, OpportunityBrand> = {
     ],
     inquiryTypes: ["有料市場検証", "日本ローンチ", "ハイブリッド運営", "認証・規制対応", "代理店・販売先開拓"],
     metric: { value: "$20k", label: "有料検証後に段階実行するローンチ総額" },
+    disclaimer: "この運営レーンは、固定15,000ドルのCountry Partner Setupとは別商品です。SKU、チャネル、輸入者、責任分担、独占条件は署名済み契約で確定します。",
   },
   "source-from-japan": {
     ...EN_BRANDS["source-from-japan"],

@@ -707,6 +707,14 @@ async function applyPublicJapanEntryChecksMigration(envs) {
   return applySqlMigration(envs, "migration_072_public_japan_entry_checks.sql", "Public Japan Entry checks migration")
 }
 
+async function applyJapanOperatorCasesMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260801224308_sales_japan_operator_cases.sql",
+    "Japan market operator case control migration",
+  )
+}
+
 async function applyFormQualifiedLeadFactoryMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1589,6 +1597,7 @@ async function main() {
     console.log(await applyDemoContactHardeningMigration(envs))
     console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyPublicJapanEntryChecksMigration(envs))
+    console.log(await applyJapanOperatorCasesMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyInitialFormDraftFactoryMigration(envs))

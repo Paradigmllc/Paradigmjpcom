@@ -12,13 +12,13 @@
 
 ## CURRENT STATUS — 2026-08-02 Japan market operator Wave 1
 
-- Read the two shared strategy chats and converted the core model into an executable external Japan market operator offer.
-- Standardized the public package: $5,000 Paid Market Validation (credited), $20,000 total Japan Launch, then $2,500/month + 10% of Net Collected Japan Sales.
-- Revalidated the historic candidate lists against current public sources; rejected brands with existing Japan distribution/export evidence.
-- Added five evidence-backed Wave 1 prospects to production RevenueOS: CHEFCLEAN, Little Archive / DONGJIN BEDDING, B.FTER / Another Day, HOLEN and QURV / F.R.P. Industry.
-- Updated the permission-first outbound draft to ask to send a three-page Japan Opportunity Memo; no external messages have been sent.
-- Added `docs/knowledge/japan-market-operator-playbook.md` with ICP, package, outreach sequence, first-wave list and MSA/SOW/KPI-conditional exclusivity structure.
-- Active handoff: run human review on the five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.
+- External Japan Market Operatorを12段階（証拠確認→人間承認→許可送信→有償検証→Launch/Operator契約→運用中）の案件ワークフローへ具体化した。各段階にentry gate、担当、SLA、next action、期限、revision競合防止、監査eventを持たせる。
+- 標準商品は$5,000 Paid Market Validation（Launchへ充当）、$20,000 total Japan Launch、その後$2,500/月 + Net Collected Japan Salesの10%。既存の$15,000 Country Partner Setupは代理店指名・独占・売上歩合を含まない別レーンとして公開表示も分離した。
+- RLS/権限を最小化した`cases`/`events`、原子的RPC、認証API、DBベル+Slack通知、管理画面のcase boardを追加した。外部自動送信機能は追加せず、送信は必ず`human_approved`後の手動操作とする。
+- 運用マニュアルにICP hard gate、規制レビュー条件、RACI、日次/週次運用、30分商談、検証受入基準、Net Collected精算、KPI条件付き独占、recall/incident、offboardingまで定義した。Opportunity Memo、契約チェック、週次報告のテンプレートも追加した。
+- Wave 1の5社（CHEFCLEAN、Little Archive / DONGJIN BEDDING、B.FTER / Another Day、HOLEN、QURV / F.R.P. Industry）を`evidence_verified`へseedする。初回実行順はCHEFCLEAN→HOLEN、外部送信0件を維持する。
+- 対象unit/API/release wiring test、TypeScript、変更ファイルESLint、Next.js production build、公開導線Playwright 4件をクリーン環境でpassした。
+- Active handoff: release後、CHEFCLEANとHOLENのOpportunity Memoを人間が確認し、全gateを満たした案件だけpermission-first文面を1社ずつ送る。返信後はqualificationを記録し、無償提案へ逸脱せずPaid Market Validation SOWへ進める。
 
 ## CURRENT STATUS — 2026-08-02 Tiny Shops of Japan Shopify Operations OS（実装・本番DB適用済み / release準備中）
 
@@ -94,24 +94,9 @@
 - 公開`/api/video-factory/ready`は`ready: true`。`/video-factory-console#dashboard`はブラウザで管理者ログインへ正しくリダイレクトし、認証フォーム描画、error overlayなし、console error 0を確認した。既存Vast.ai GPU **46258780**のみを使用し、新規GPUは作成していない。同GPUはRTX 3090 / managed proxy有効 / `running`で、継続課金は`$0.1317222222/h`。
 - 完了済みのCountry Partner one-shot workflow 2本と、V2へ置換済みの旧Vast bootstrap workflow 1本がmain pushごとにjob 0件の偽failure runを作っていたため削除した。現行の`direct-vast-production-bootstrap-v2.yml`と通常のproduction deployは維持する。
 
-## CURRENT STATUS — 2026-07-29 公開HPの生成Visual重複を解消（実装・ローカル検証完了 / release準備中）
-
-- 全ページ末尾へ機械的に挿入していた共通画像カルーセル、工程表、ショーリールを撤去する。同じ生成画像を複数ページで反復せず、ページ本文と既存の専用コンポーネントを主役に戻す。
-- 共通`PageHero`は生成画像ではなく、実績を装わない抽象的なUI図解へ戻す。`/ja/works`では既存の実績カード、制作工程、確認基準を表示し、無関係な生成素材を実績画像として見せない。
-- 追加済みの生成画像4点、ショーリール、専用HyperFrames compositionは公開物とリポジトリから削除する。新しいフリー素材への置換は行わない。
-- TypeScript、変更ファイルESLint、production build、Playwrightのdesktop/mobile計4ケースを通過。`/ja/works`の実画面キャプチャでも、生成画像レールが消え、PageHeroから既存実績カードへ直接つながることを確認した。
-
-## CURRENT STATUS — 2026-07-29 `/work`高速一次判定＋選抜詳細解析（本番release完了 / 外部送信0）
-
-- 完全新規URLの標準処理を、従来の全社フル解析から**ホームページ1回取得だけの高速一次判定**へ変更した。URL正規化、企業名・商品/サービス・業態、日本語/JPY/日本配送の公開有無、0〜100点と`promote / review / low`を決定論で保存する。
-- Raw候補ではDeepSeek、Crawl4AI、複数ページ探索、問い合わせフォーム探索、PV/ROI試算、初回文面、10章レポート、Twenty同期を実行しない。DeepSeek残高がなくても500 URLバッチを開始できる。
-- 営業候補として残す企業だけ、履歴の**「詳細解析へ昇格」**から既存の厳格なフル解析へ進める。昇格後は公開根拠収集、フォーム検証、企業別文面、品質・類似度・安全性gate、顧客向けレポート、Twenty read-backを従来どおり実行する。
-- 永続キュー、最大500 URL、最大20バッチ、3件ずつのDB claim、再開、重複統合、RLS、外部自動送信0件の境界は維持した。新しいDB migrationは追加せず、既存スキーマで実装した。
-- PR **#586**をmain **aa8af979**へsquash mergeした。PR validation **30394597067**で対象Vitest、TypeScript、変更実装ESLint warning 0、production buildがpassした。
-- Production release **30394964339**はrouting validation、Coolify deploy、公開URL検証を完走した。deployment **j3srqefjxcuopbvjgr5mmrcc**はcommit **aa8af979**を`finished`で反映し、`/ja`、`/en`、VaaS日英ページ・規約・申込導線、`/api/ready`はHTTP 200 / missing 0。`/work`は管理者専用、外部自動送信0件を維持する。
-
 ## ACTIVE HANDOFF
 
+- Japan operatorは外部送信0件のまま。`/ja/admin/opportunity-briefs`のcase boardでCHEFCLEAN→HOLENの順に証拠・memo・人間承認gateを完了し、送信と返信を必ずaudit eventへ記録する。契約・表示・規制判断は運用マニュアルのreview triggerに従う。
 - Tiny Shops Shopify Operations OSはDB適用・ローカル品質gateまで完了。canonical release後に`/ja/admin/shopify`、認証gate、API 401、商品12件、RLS、DBベル＋Slackを本番read-backする。
 - Video Factory主要OSS実行基盤はPR **#642** / main **b2163b0a** / deployment **ofw2znwsajogrgadwsz0mkjp**で本番反映済み。40 profileは実行境界・固定revision・license・model/workflow・reviewer gateを保持し、未承認profileを利用可能扱いにしない。
 - 本番OSS worker URL/keyは未設定。これは接続先・事前導入worker artifact・exact weight hash・人間の商用審査がないprofileを暗黙実行しない安全境界であり、Consoleの「worker未設定」と各profileのblocking reasonを解消せずにreadyへ変更してはならない。
