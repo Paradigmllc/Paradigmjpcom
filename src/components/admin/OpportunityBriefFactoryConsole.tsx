@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { JapanOperatorCaseBoard } from "@/components/admin/JapanOperatorCaseBoard";
 
 interface RejectedCompany {
   companyId: string;
@@ -304,6 +305,8 @@ export function OpportunityBriefFactoryConsole() {
                 : "Realtime要確認"}
           </Badge>
         </div>
+
+        <JapanOperatorCaseBoard />
 
         <OpportunityBriefStatusGrid counts={counts} />
 
