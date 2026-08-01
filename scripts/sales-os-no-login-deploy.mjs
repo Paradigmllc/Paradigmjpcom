@@ -715,6 +715,14 @@ async function applyJapanOperatorCasesMigration(envs) {
   )
 }
 
+async function applyJapanOperatorCaseHardeningMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260801235327_sales_japan_operator_case_hardening.sql",
+    "Japan market operator append-only audit and Wave 1 alias hardening",
+  )
+}
+
 async function applyFormQualifiedLeadFactoryMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1598,6 +1606,7 @@ async function main() {
     console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanOperatorCasesMigration(envs))
+    console.log(await applyJapanOperatorCaseHardeningMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyInitialFormDraftFactoryMigration(envs))
