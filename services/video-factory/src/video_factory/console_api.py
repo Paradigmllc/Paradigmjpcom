@@ -17,6 +17,7 @@ from .console_models import (
     VastOfferSearchRequest,
 )
 from .doctor import doctor_report
+from .engine_profile_service import engine_catalog_payload
 from .gpu_lifecycle import gpu_lifecycle_status, release_gpu_if_idle
 from .runtime_config import load_runtime_config, update_runtime_config
 from .settings import Settings
@@ -148,6 +149,7 @@ def console_bootstrap() -> dict[str, object]:
         "runtime": runtime.safe_dict(),
         "vast": vast.safe_dict(),
         "doctor": doctor_report(settings),
+        "engine_catalog": engine_catalog_payload(settings),
         "project_count": project_count,
     }
 

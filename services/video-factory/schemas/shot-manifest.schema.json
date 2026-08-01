@@ -148,6 +148,7 @@
         "manim",
         "liveportrait",
         "musetalk",
+        "oss",
         "mock"
       ],
       "title": "Engine",

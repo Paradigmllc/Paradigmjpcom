@@ -194,6 +194,13 @@ def deterministic_plan(brief: ClientBrief) -> ShotManifest:
                     "platforms": brief.platforms,
                     "reference_urls": brief.reference_urls,
                     **(
+                        {
+                            "engine_profile_id": brief.engine_profile_overrides[kind],
+                        }
+                        if kind in brief.engine_profile_overrides
+                        else {}
+                    ),
+                    **(
                         {"comfyui_workflow_id": "abstract-broll-t2v"}
                         if kind is ShotKind.GENERATIVE
                         else {}

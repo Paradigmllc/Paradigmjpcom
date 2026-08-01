@@ -1,0 +1,836 @@
+version: 1
+updated_at: 2026-08-01T08:00:00+09:00
+profiles:
+  - id: hyperframes
+    display_name: HyperFrames
+    category: composition
+    summary: ブランド準拠のモーショングラフィックス、字幕、最終合成を決定論的に実行する。
+    capabilities: [motion_graphics, typography, captions, master_composition]
+    shot_kinds: [text_motion, chart, transition]
+    runtime: builtin
+    adapter: hyperframes
+    source_url: https://github.com/heygen-com/hyperframes
+    revision: 343c02518889f46ee3962256b19ac4189264907d
+    code_license: Apache-2.0
+    model_license: NOT_APPLICABLE
+    commercial_policy: allowed
+    approval: approved
+    install_mode: bundled
+    reviewed_by: Paradigm Engineering
+    reviewed_at: 2026-08-01T08:00:00+09:00
+
+  - id: ffmpeg
+    display_name: FFmpeg
+    category: composition
+    summary: 支給素材の編集、変換、音声合成、プローブ、最終メディア検証を行う。
+    capabilities: [editing, transcoding, audio_mix, media_probe]
+    shot_kinds: [supplied_edit, transition]
+    runtime: builtin
+    adapter: ffmpeg
+    source_url: https://github.com/FFmpeg/FFmpeg
+    revision: 946272b79a325e9bce613b260e50e4e4fe7f3159
+    code_license: BUILD_DEPENDENT_LGPL_OR_GPL
+    model_license: NOT_APPLICABLE
+    commercial_policy: allowed
+    approval: approved
+    install_mode: bundled
+    reviewed_by: Paradigm Engineering
+    reviewed_at: 2026-08-01T08:00:00+09:00
+    notes: 実際のbinary build flagsはrelease doctorで別途確認する。
+
+  - id: playwright
+    display_name: Playwright
+    category: composition
+    summary: 許可済みホストの実UIを再現可能な操作列で撮影し、動画素材化する。
+    capabilities: [ui_capture, browser_automation]
+    shot_kinds: [ui_capture]
+    runtime: builtin
+    adapter: playwright
+    source_url: https://github.com/microsoft/playwright
+    revision: 15b1aec478d90f0293dae7b7b6dafd494d9f0154
+    code_license: Apache-2.0
+    model_license: NOT_APPLICABLE
+    commercial_policy: allowed
+    approval: approved
+    install_mode: bundled
+    reviewed_by: Paradigm Engineering
+    reviewed_at: 2026-08-01T08:00:00+09:00
+
+  - id: blender
+    display_name: Blender
+    category: three_d
+    summary: 商品、空間、ロゴを含む3Dシーンを決定論的なworker契約でレンダリングする。
+    capabilities: [three_d, product_render, camera_animation]
+    shot_kinds: [three_d]
+    runtime: external_cli
+    adapter: blender
+    source_url: https://github.com/blender/blender
+    revision: 085eebde0d27bdd56760abfb763b741ae1148a8e
+    code_license: GPL-3.0-or-later
+    model_license: SOURCE_ASSET_DEPENDENT
+    commercial_policy: allowed
+    approval: approved
+    install_mode: on_demand
+    command_env: BLENDER_ADAPTER_COMMAND
+    reviewed_by: Paradigm Engineering
+    reviewed_at: 2026-08-01T08:00:00+09:00
+
+  - id: manim
+    display_name: Manim Community
+    category: three_d
+    summary: 数式、工程、構造、比較などの技術図解をコードから再現可能に生成する。
+    capabilities: [technical_diagram, math_animation, charts]
+    shot_kinds: [technical_diagram, chart]
+    runtime: external_cli
+    adapter: manim
+    source_url: https://github.com/ManimCommunity/manim
+    revision: 6f20425eef98cd3513df857507fdc3126c6e9950
+    code_license: MIT
+    model_license: SOURCE_ASSET_DEPENDENT
+    commercial_policy: allowed
+    approval: approved
+    install_mode: on_demand
+    command_env: MANIM_ADAPTER_COMMAND
+    reviewed_by: Paradigm Engineering
+    reviewed_at: 2026-08-01T08:00:00+09:00
+
+  - id: ltx-video
+    display_name: LTX-Video / LTX-2
+    category: video
+    summary: テキスト、画像、複数キーフレームから短尺動画を生成するComfyUIネイティブ系統。
+    capabilities: [text_to_video, image_to_video, multi_keyframe, audio_video]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/Lightricks/LTX-Video
+    revision: 4b2d053057623ddd4d0a1d3e9cd28890e9ef487f
+    code_license: Apache-2.0
+    model_license: OpenRail-M
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 16
+    recommended_vram_gb: 24
+    workflow_ids: [ltx-video-t2v]
+    model_ids: [ltx-video-reviewed-weight]
+    notes: exact variant、weight hash、model card、出力品質の承認後だけ有効化する。
+
+  - id: hunyuan-video-1-5
+    display_name: HunyuanVideo 1.5
+    category: video
+    summary: 高品質なテキスト動画・画像動画生成を行うTencent公式の動画基盤モデル。
+    capabilities: [text_to_video, image_to_video]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5
+    revision: 60783e704160023913bee78f0b47036d393d4dfa
+    code_license: Tencent Hunyuan Community License
+    model_license: Tencent Hunyuan Community License
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 24
+    recommended_vram_gb: 48
+    workflow_ids: [hunyuan-video-15-t2v]
+    model_ids: [hunyuan-video-15-reviewed-weight]
+
+  - id: cogvideox
+    display_name: CogVideoX
+    category: video
+    summary: テキストおよび画像条件から動画を生成するZ.ai公式のオープン動画モデル群。
+    capabilities: [text_to_video, image_to_video]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/zai-org/CogVideo
+    revision: 7a1af7154511e0ce4e4be8d62faa8c5e5a3532d2
+    code_license: Apache-2.0
+    model_license: MODEL_CARD_DEPENDENT
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 16
+    recommended_vram_gb: 24
+    workflow_ids: [cogvideox-t2v]
+    model_ids: [cogvideox-reviewed-weight]
+
+  - id: mochi-1
+    display_name: Mochi 1
+    category: video
+    summary: 自然な動きとプロンプト追従を重視したGenmo公式のテキスト動画モデル。
+    capabilities: [text_to_video]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/genmoai/mochi
+    revision: 0c86aebf386e6622deadfb47ff1996878cefc0ac
+    code_license: Apache-2.0
+    model_license: Apache-2.0
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 24
+    recommended_vram_gb: 48
+    workflow_ids: [mochi-1-t2v]
+    model_ids: [mochi-1-reviewed-weight]
+
+  - id: stable-video-diffusion-xt
+    display_name: Stable Video Diffusion XT
+    category: video
+    summary: 承認済み静止画を短い動画へ変換するStability AIの画像動画モデル。
+    capabilities: [image_to_video]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/Stability-AI/generative-models
+    revision: e8cd657656fa5d61688191730d0e03242bf4ed44
+    code_license: MIT
+    model_license: Stability AI Community License
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 12
+    recommended_vram_gb: 16
+    workflow_ids: [svd-xt-i2v]
+    model_ids: [svd-xt-reviewed-weight]
+
+  - id: animatediff
+    display_name: AnimateDiff
+    category: video
+    summary: SD系画像モデルとmotion moduleを組み合わせ、制御可能な短尺アニメーションを生成する。
+    capabilities: [text_to_video, image_to_video, controlled_motion]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/guoyww/AnimateDiff
+    revision: e92bd5671ba62c0d774a32951453e328018b7c5b
+    code_license: Apache-2.0
+    model_license: BASE_MODEL_AND_MOTION_MODULE_DEPENDENT
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 12
+    recommended_vram_gb: 24
+    workflow_ids: [animatediff-t2v]
+    model_ids: [animatediff-reviewed-motion-module]
+
+  - id: open-sora
+    display_name: Open-Sora
+    category: video
+    summary: 長尺・高解像度動画生成研究を検証するためのColossalAI公式オープン実装。
+    capabilities: [text_to_video, image_to_video, video_to_video]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/hpcaitech/Open-Sora
+    revision: 7ad6a96a135feb81f755c84fb391818718f6beb2
+    code_license: Apache-2.0
+    model_license: MODEL_CARD_DEPENDENT
+    commercial_policy: review_required
+    approval: blocked
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 48
+    recommended_vram_gb: 80
+    workflow_ids: [open-sora-t2v]
+    model_ids: [open-sora-reviewed-weight]
+    block_reason: 現行24GB管理GPUでは最低VRAMを満たさないため本番実行不可。
+
+  - id: framepack
+    display_name: FramePack
+    category: video
+    summary: 長尺I2Vを低VRAMで段階生成し、長さに伴うコンテキスト増大とドリフトを抑える。
+    capabilities: [image_to_video, long_video, progressive_generation]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/lllyasviel/FramePack
+    revision: 97fe5dbe06ac1f337ece08935b1076a35eefeeb9
+    code_license: Apache-2.0
+    model_license: HUNYUAN_MODEL_DEPENDENT
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    command_env: FRAMEPACK_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 6
+    recommended_vram_gb: 24
+    model_ids: [framepack-reviewed-weight]
+    notes: 公式コードはApache-2.0だが、使用する基盤weightの条件とhashを個別承認する。
+
+  - id: skyreels-v2
+    display_name: SkyReels V2
+    category: video
+    summary: T2V、I2V、拡張、始終端制御、長尺Diffusion Forcingを提供する映像生成系統。
+    capabilities: [text_to_video, image_to_video, video_extension, long_video]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/SkyworkAI/SkyReels-V2
+    revision: 9351d13152207cc04de780e055346b08ade0b851
+    code_license: Skywork Community License
+    model_license: Skywork Community License
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    command_env: SKYREELS_V2_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 24
+    recommended_vram_gb: 80
+    model_ids: [skyreels-v2-reviewed-weight]
+    notes: 商用利用可能と明記されるが、Community Licenseと安全審査条件を案件単位で確認する。
+
+  - id: skyreels-v3
+    display_name: SkyReels V3
+    category: video
+    summary: 複数参照画像、音声条件、V2V、動画延長、talking avatarを統合する現行SkyReels系統。
+    capabilities: [reference_to_video, audio_to_video, video_to_video, talking_avatar]
+    shot_kinds: [generative, portrait_animation, lip_sync]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/SkyworkAI/SkyReels-V3
+    revision: 28c771e8456341be6a213e3d1133ed1fd19bf75d
+    code_license: Skywork Community License
+    model_license: Skywork Community License
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    command_env: SKYREELS_V3_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 48
+    recommended_vram_gb: 80
+    model_ids: [skyreels-v3-reviewed-weight]
+    notes: 14B/19B weightと案件の肖像・音声権利を承認後に限定有効化する。
+
+  - id: nvidia-cosmos-3
+    display_name: NVIDIA Cosmos 3
+    category: video
+    summary: T2V、I2V、V2V、同期音声、物理世界シミュレーションを統合するomnimodal world model。
+    capabilities: [text_to_video, image_to_video, video_to_video, synchronized_audio]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/NVIDIA/cosmos
+    revision: 404b9bf2144640834c63ae7d9e7269e0f4ea02cb
+    code_license: Apache-2.0
+    model_license: NVIDIA Open Model License
+    commercial_policy: review_required
+    approval: blocked
+    install_mode: on_demand
+    command_env: NVIDIA_COSMOS3_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 80
+    recommended_vram_gb: 141
+    model_ids: [nvidia-cosmos-3-reviewed-weight]
+    block_reason: 現行24GB管理GPUは公式推奨のデータセンター級GPU要件を満たさないため本番実行不可。
+
+  - id: pyramid-flow
+    display_name: Pyramid Flow
+    category: video
+    summary: autoregressive flow matchingでT2V/I2Vを生成し、CPU offloadで低VRAM検証にも対応する。
+    capabilities: [text_to_video, image_to_video, cpu_offload]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/jy0205/Pyramid-Flow
+    revision: a012faa1dc4d71301a7a153c7f9554c081947ea2
+    code_license: MIT
+    model_license: MODEL_CARD_DEPENDENT
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    command_env: PYRAMID_FLOW_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 24
+    model_ids: [pyramid-flow-reviewed-weight]
+
+  - id: open-sora-plan
+    display_name: Open-Sora-Plan / Helios
+    category: video
+    summary: T2V/I2Vと長尺Helios研究系統を検証するOpen-Sora-Plan公式実装。
+    capabilities: [text_to_video, image_to_video, long_video]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/PKU-YuanGroup/Open-Sora-Plan
+    revision: f7fa604f4e3a523d6b973e4c89a5620ed1aff65a
+    code_license: RESEARCH_LICENSE
+    model_license: NONCOMMERCIAL_RESEARCH
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    command_env: OPEN_SORA_PLAN_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 24
+    recommended_vram_gb: 80
+    model_ids: [open-sora-plan-reviewed-weight]
+    block_reason: 研究・非商用条件のため顧客案件と有償制作では実行不可。
+
+  - id: videocrafter2
+    display_name: VideoCrafter2
+    category: video
+    summary: T2V/I2Vの研究生成と旧資産再現用に保持するVideoCrafter公式ツールボックス。
+    capabilities: [text_to_video, image_to_video]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/AILab-CVC/VideoCrafter
+    revision: f6c7f7f28f71d3069a9ee0e002d2f4b019eb78f6
+    code_license: RESEARCH_ONLY
+    model_license: NONCOMMERCIAL_RESEARCH
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    command_env: VIDEOCRAFTER2_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 16
+    recommended_vram_gb: 24
+    model_ids: [videocrafter2-reviewed-weight]
+    block_reason: 公式READMEがpersonal/research/non-commercialに限定するため顧客案件では実行不可。
+
+  - id: dynamicrafter
+    display_name: DynamiCrafter
+    category: video
+    summary: 静止画の内容を維持しながら高解像度の自然な動きを付与する専用I2V研究モデル。
+    capabilities: [image_to_video, image_animation]
+    shot_kinds: [generative]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/Doubiiu/DynamiCrafter
+    revision: 859021927d8e0f8eb4d91d16f86711b8c25a2023
+    code_license: RESEARCH_ONLY
+    model_license: NONCOMMERCIAL_RESEARCH
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    command_env: DYNAMICRAFTER_ADAPTER_COMMAND
+    gpu_required: true
+    min_vram_gb: 16
+    recommended_vram_gb: 24
+    model_ids: [dynamicrafter-reviewed-weight]
+    block_reason: 研究・非商用条件のため顧客案件と有償制作では実行不可。
+
+  - id: flux-1-schnell
+    display_name: FLUX.1-schnell
+    category: image
+    summary: 動画内のキービジュアル、背景、絵コンテ素材を高速生成する画像モデル。
+    capabilities: [text_to_image, key_visual, storyboard]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/black-forest-labs/flux
+    revision: 802fb4713906133fcbd0d8dc5351620ca4773036
+    code_license: Apache-2.0
+    model_license: Apache-2.0
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 12
+    recommended_vram_gb: 24
+    workflow_ids: [flux-schnell-image]
+    model_ids: [flux-schnell-reviewed-weight]
+
+  - id: qwen-image
+    display_name: Qwen-Image
+    category: image
+    summary: 多言語文字を含むキービジュアルと画像編集に対応するQwen公式画像モデル。
+    capabilities: [text_to_image, image_edit, text_rendering]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/QwenLM/Qwen-Image
+    revision: 6b5e1f5cec987d404be5ac6657db3b9aacb56a89
+    code_license: Apache-2.0
+    model_license: Apache-2.0
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 16
+    recommended_vram_gb: 24
+    workflow_ids: [qwen-image-generate]
+    model_ids: [qwen-image-reviewed-weight]
+
+  - id: sdxl-base
+    display_name: Stable Diffusion XL
+    category: image
+    summary: 背景、サムネイル、絵コンテを生成する成熟した汎用画像生成モデル。
+    capabilities: [text_to_image, image_to_image, inpainting]
+    shot_kinds: [generative]
+    runtime: comfyui
+    adapter: comfyui
+    source_url: https://github.com/Stability-AI/generative-models
+    revision: e8cd657656fa5d61688191730d0e03242bf4ed44
+    code_license: MIT
+    model_license: CreativeML Open RAIL++-M
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 12
+    workflow_ids: [sdxl-image]
+    model_ids: [sdxl-base-reviewed-weight]
+
+  - id: liveportrait
+    display_name: LivePortrait
+    category: people
+    summary: 肖像利用許諾済みの静止画を、ドライビング映像に合わせてアニメーション化する。
+    capabilities: [portrait_animation, expression_transfer]
+    shot_kinds: [portrait_animation]
+    runtime: external_cli
+    adapter: liveportrait
+    source_url: https://github.com/KlingAIResearch/LivePortrait
+    revision: 9b294b3d0536135442ea73cb01e6cb3ca7029dd3
+    code_license: LICENSE_FILE_REVIEW_REQUIRED
+    model_license: MODEL_AND_DEPENDENCY_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 12
+    model_ids: [liveportrait-reviewed-weights]
+    command_env: LIVEPORTRAIT_ADAPTER_COMMAND
+
+  - id: musetalk
+    display_name: MuseTalk
+    category: people
+    summary: 音声と許諾済み人物素材を同期させ、口元の動きを生成するリアルタイム系モデル。
+    capabilities: [lip_sync, talking_head]
+    shot_kinds: [lip_sync]
+    runtime: external_cli
+    adapter: musetalk
+    source_url: https://github.com/TMElyralab/MuseTalk
+    revision: 0a89dec45a0192b824e3cf4daf96c239440c5ed8
+    code_license: LICENSE_FILE_REVIEW_REQUIRED
+    model_license: MODEL_AND_DEPENDENCY_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 12
+    model_ids: [musetalk-reviewed-weights]
+    command_env: MUSETALK_ADAPTER_COMMAND
+
+  - id: wav2lip
+    display_name: Wav2Lip
+    category: people
+    summary: 音声に合わせて既存人物動画の口元を同期する研究実装。
+    capabilities: [lip_sync]
+    shot_kinds: [lip_sync]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/Rudrabha/Wav2Lip
+    revision: bac9a81e63ecc153202353372e5724b83d9e6322
+    code_license: NONCOMMERCIAL_RESEARCH
+    model_license: NONCOMMERCIAL_RESEARCH
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 12
+    model_ids: [wav2lip-weight]
+    command_env: WAV2LIP_ADAPTER_COMMAND
+    block_reason: 公式公開物の非商用制限により商用制作では実行しない。
+
+  - id: whisper
+    display_name: OpenAI Whisper
+    category: audio
+    summary: 多言語音声の文字起こし、字幕タイミング生成、翻訳の下処理を行う。
+    capabilities: [transcription, subtitles, translation]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/openai/whisper
+    revision: 5f86d1d86363843179951550570367b37c5d6f78
+    code_license: MIT
+    model_license: MIT
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: false
+    model_ids: [whisper-reviewed-weight]
+    command_env: WHISPER_ADAPTER_COMMAND
+
+  - id: kokoro
+    display_name: Kokoro
+    category: audio
+    summary: ナレーション用音声をローカルで生成する軽量なオープンウェイトTTS。
+    capabilities: [text_to_speech, narration]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/hexgrad/kokoro
+    revision: dfb907a02bba8152ca444717ca5d78747ccb4bec
+    code_license: Apache-2.0
+    model_license: Apache-2.0
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: false
+    model_ids: [kokoro-reviewed-weight]
+    command_env: KOKORO_ADAPTER_COMMAND
+
+  - id: f5-tts
+    display_name: F5-TTS
+    category: audio
+    summary: 参照音声を条件に高品質音声を生成するフローマッチングTTS研究実装。
+    capabilities: [text_to_speech, voice_clone]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/SWivid/F5-TTS
+    revision: 9c614e9657089213efc6a7421b30630be138a3f5
+    code_license: MIT
+    model_license: CC-BY-NC-4.0_PRETRAINED_MODELS
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 12
+    model_ids: [f5-tts-weight]
+    command_env: F5_TTS_ADAPTER_COMMAND
+    block_reason: 公式pretrained modelの非商用制限により商用制作では実行しない。
+
+  - id: fish-speech
+    display_name: Fish Speech
+    category: audio
+    summary: 多言語TTSと声質条件付けを提供するオープン音声生成モデル。
+    capabilities: [text_to_speech, voice_clone]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/fishaudio/fish-speech
+    revision: e5e292632cb11e7a27b2b7487f58f612bc101e13
+    code_license: LICENSE_FILE_REVIEW_REQUIRED
+    model_license: CC-BY-NC-SA-4.0_MODEL_DEPENDENT
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 16
+    model_ids: [fish-speech-weight]
+    command_env: FISH_SPEECH_ADAPTER_COMMAND
+    block_reason: 主要公開weightの非商用条件により商用制作では実行しない。
+
+  - id: demucs
+    display_name: Demucs
+    category: audio
+    summary: 支給音源をボーカル、ドラム、ベース等へ分離し、編集可能なstemを生成する。
+    capabilities: [source_separation, stem_export]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/facebookresearch/demucs
+    revision: e976d93ecc3865e5757426930257e200846a520a
+    code_license: MIT
+    model_license: MODEL_CARD_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: false
+    model_ids: [demucs-reviewed-weight]
+    command_env: DEMUCS_ADAPTER_COMMAND
+
+  - id: musicgen
+    display_name: AudioCraft MusicGen
+    category: audio
+    summary: テキストからBGM候補を生成するMeta AudioCraftの音楽生成モデル。
+    capabilities: [text_to_music, background_music]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/facebookresearch/audiocraft
+    revision: 896ec7c47f5e5d1e5aa1e4b260c4405328bf009d
+    code_license: MIT
+    model_license: CC-BY-NC-4.0_WEIGHTS
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 16
+    model_ids: [musicgen-weight]
+    command_env: MUSICGEN_ADAPTER_COMMAND
+    block_reason: 公式weightの非商用条件により商用BGM生成では実行しない。
+
+  - id: real-esrgan
+    display_name: Real-ESRGAN
+    category: enhancement
+    summary: 低解像度の画像・動画フレームをアップスケールし、納品解像度へ整える。
+    capabilities: [upscale, restoration]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/xinntao/Real-ESRGAN
+    revision: a4abfb2979a7bbff3f69f58f58ae324608821e27
+    code_license: BSD-3-Clause
+    model_license: MODEL_CARD_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 4
+    recommended_vram_gb: 8
+    model_ids: [real-esrgan-reviewed-weight]
+    command_env: REAL_ESRGAN_ADAPTER_COMMAND
+
+  - id: rife
+    display_name: RIFE
+    category: enhancement
+    summary: フレーム補間で高fps化とスローモーションを行い、動きを滑らかにする。
+    capabilities: [frame_interpolation, slow_motion]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/hzwer/ECCV2022-RIFE
+    revision: 7fb9e41a2497a85713a0820f2e92e8c30df2f69b
+    code_license: MIT
+    model_license: MODEL_CARD_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 4
+    recommended_vram_gb: 8
+    model_ids: [rife-reviewed-weight]
+    command_env: RIFE_ADAPTER_COMMAND
+
+  - id: gfpgan
+    display_name: GFPGAN
+    category: enhancement
+    summary: 許諾済み人物素材の低品質な顔領域を復元する補正モデル。
+    capabilities: [face_restoration]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/TencentARC/GFPGAN
+    revision: 7552a7791caad982045a7bbe5634bbf1cd5c8679
+    code_license: Apache-2.0
+    model_license: MODEL_AND_DEPENDENCY_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 4
+    recommended_vram_gb: 8
+    model_ids: [gfpgan-reviewed-weight]
+    command_env: GFPGAN_ADAPTER_COMMAND
+
+  - id: codeformer
+    display_name: CodeFormer
+    category: enhancement
+    summary: 顔画像の復元と補正を行う研究実装。
+    capabilities: [face_restoration]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/sczhou/CodeFormer
+    revision: b33cc7d639d6545bfcccc7e0bc6ae51f24e79c2b
+    code_license: NTU S-Lab License 1.0
+    model_license: NTU S-Lab License 1.0
+    commercial_policy: noncommercial
+    approval: blocked
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 4
+    recommended_vram_gb: 8
+    model_ids: [codeformer-weight]
+    command_env: CODEFORMER_ADAPTER_COMMAND
+    block_reason: 公式ライセンスの非商用条件により商用制作では実行しない。
+
+  - id: sam2
+    display_name: Segment Anything 2
+    category: enhancement
+    summary: 画像・動画内の対象を追跡分割し、背景置換やマスク編集へ渡す。
+    capabilities: [segmentation, object_tracking, mask_generation]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/facebookresearch/sam2
+    revision: 2b90b9f5ceec907a1c18123530e92e794ad901a4
+    code_license: Apache-2.0
+    model_license: Apache-2.0
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 16
+    model_ids: [sam2-reviewed-weight]
+    command_env: SAM2_ADAPTER_COMMAND
+
+  - id: rembg
+    display_name: rembg
+    category: enhancement
+    summary: 静止画や動画フレームの背景をローカルで除去し、透過素材を生成する。
+    capabilities: [background_removal, alpha_mask]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/danielgatis/rembg
+    revision: 684f8e9f6c9162009b21ab637d8f2b0c05502470
+    code_license: MIT
+    model_license: MODEL_VARIANT_DEPENDENT
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: false
+    model_ids: [rembg-reviewed-weight]
+    command_env: REMBG_ADAPTER_COMMAND
+
+  - id: lama
+    display_name: LaMa
+    category: enhancement
+    summary: マスク指定した不要物や領域を画像から除去し、背景を補完する。
+    capabilities: [inpainting, object_removal]
+    shot_kinds: [supplied_edit]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/advimman/lama
+    revision: 786f5936b27fb3dacd2b1ad799e4de968ea697e7
+    code_license: Apache-2.0
+    model_license: MODEL_CARD_REVIEW_REQUIRED
+    commercial_policy: review_required
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 4
+    recommended_vram_gb: 8
+    model_ids: [lama-reviewed-weight]
+    command_env: LAMA_ADAPTER_COMMAND
+
+  - id: triposr
+    display_name: TripoSR
+    category: three_d
+    summary: 許諾済み単一画像から3Dメッシュを生成し、Blender工程へ渡す。
+    capabilities: [image_to_3d, mesh_generation]
+    shot_kinds: [three_d]
+    runtime: external_cli
+    adapter: oss
+    source_url: https://github.com/VAST-AI-Research/TripoSR
+    revision: 107cefdc244c39106fa830359024f6a2f1c78871
+    code_license: MIT
+    model_license: MIT
+    commercial_policy: allowed
+    approval: pending
+    install_mode: on_demand
+    gpu_required: true
+    min_vram_gb: 8
+    recommended_vram_gb: 12
+    model_ids: [triposr-reviewed-weight]
+    command_env: TRIPOSR_ADAPTER_COMMAND

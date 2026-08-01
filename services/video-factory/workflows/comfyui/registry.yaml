@@ -88,3 +88,115 @@ workflows:
     required_nodes: [LoadImage, approved-segmentation-node, ImageCompositeMasked, SaveImage]
     required_models: [approved-segmentation-model]
     required_rights: [source_assets_cleared]
+
+  - id: ltx-video-t2v
+    version: "1.0"
+    purpose: Generate conceptual B-roll with the exact approved LTX-Video variant.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveVideo]
+    required_models: [ltx-video-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+    notes: Native ComfyUI graph must be exported, hashed, model-bound, and reviewed.
+
+  - id: hunyuan-video-15-t2v
+    version: "1.0"
+    purpose: Generate conceptual B-roll with the exact approved HunyuanVideo 1.5 variant.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveVideo]
+    required_models: [hunyuan-video-15-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+
+  - id: cogvideox-t2v
+    version: "1.0"
+    purpose: Generate conceptual B-roll with the exact approved CogVideoX variant.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveVideo]
+    required_models: [cogvideox-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+
+  - id: mochi-1-t2v
+    version: "1.0"
+    purpose: Generate conceptual B-roll with the exact approved Mochi 1 weight.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveVideo]
+    required_models: [mochi-1-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+
+  - id: svd-xt-i2v
+    version: "1.0"
+    purpose: Animate a cleared image with the exact approved Stable Video Diffusion XT weight.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [LoadImage, SaveVideo]
+    required_models: [svd-xt-reviewed-weight]
+    required_rights: [source_assets_cleared, ai_generation_allowed]
+
+  - id: animatediff-t2v
+    version: "1.0"
+    purpose: Animate an approved base model with an exact approved AnimateDiff motion module.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveVideo]
+    required_models: [animatediff-reviewed-motion-module]
+    required_rights: [ai_generation_allowed]
+
+  - id: open-sora-t2v
+    version: "1.0"
+    purpose: Evaluate an exact approved Open-Sora weight on hardware that meets its VRAM floor.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveVideo]
+    required_models: [open-sora-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+    notes: Blocked on the current 24GB managed GPU.
+
+  - id: flux-schnell-image
+    version: "1.0"
+    purpose: Generate text-free key visuals with an exact approved FLUX.1-schnell weight.
+    media_kind: image
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveImage]
+    required_models: [flux-schnell-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+
+  - id: qwen-image-generate
+    version: "1.0"
+    purpose: Generate or edit key visuals with an exact approved Qwen-Image weight.
+    media_kind: image
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CLIPTextEncode, SaveImage]
+    required_models: [qwen-image-reviewed-weight]
+    required_rights: [ai_generation_allowed]
+
+  - id: sdxl-image
+    version: "1.0"
+    purpose: Generate text-free key visuals with an exact approved SDXL weight.
+    media_kind: image
+    approval: approved_contract
+    enabled: false
+    risk: standard
+    required_nodes: [CheckpointLoaderSimple, CLIPTextEncode, KSampler, VAEDecode, SaveImage]
+    required_models: [sdxl-base-reviewed-weight]
+    required_rights: [ai_generation_allowed]

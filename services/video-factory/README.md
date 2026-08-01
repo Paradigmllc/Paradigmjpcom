@@ -29,8 +29,15 @@ Natural-language request in Codex
 - Deterministic planner plus a schema-bound external planner contract for Codex
 - Per-shot routing for HyperFrames, Playwright, ComfyUI, FFmpeg, Blender, Manim, LivePortrait, and MuseTalk
 - Deterministic HyperFrames composition for every language/aspect-ratio deliverable
+- High-quality HyperFrames production rendering by default (`draft` remains CI-only)
 - Authenticated ComfyUI execution with SHA-pinned approved workflow registry
-- Eight fail-closed ComfyUI workflow contracts
+- Eighteen fail-closed ComfyUI workflow contracts, including the major non-Wan OSS families
+- A 40-profile audited OSS catalog spanning composition, video, image, people, audio,
+  enhancement, and 3D
+- Per-profile immutable source revision, code/model license, commercial policy, VRAM floor,
+  exact workflow/model bindings, worker command, and reviewer gate
+- Generic isolated worker contract for major OSS tools that do not execute natively in ComfyUI
+- Authenticated catalog DB sync plus profile selection/completion/failure events in DB bell + Slack
 - ComfyUI workflow bind/disable/readiness commands
 - ComfyUI endpoint node validation and exact model-artifact binding
 - Route-limited API-key reverse proxy for a private GPU ComfyUI worker
@@ -48,6 +55,29 @@ Natural-language request in Codex
 ## Deliberate boundaries
 
 The factory does not silently download model weights, install custom nodes, approve creative output, or treat generated footage as factual evidence. ComfyUI remains unavailable until its endpoint, GPU, API authentication, exact model files, model licenses, workflow JSON, reviewer, and hashes all pass `video-factory doctor`.
+
+## Major OSS engine catalog
+
+Open `/video-factory-console#engines` to inspect all profiles and their exact blocking reasons.
+The catalog includes LTX-Video/LTX-2, HunyuanVideo 1.5, CogVideoX, Mochi 1, Stable Video
+Diffusion XT, AnimateDiff, Open-Sora, FLUX.1-schnell, Qwen-Image, SDXL, LivePortrait,
+MuseTalk, Whisper, Kokoro, Demucs, Real-ESRGAN, RIFE, GFPGAN, SAM 2, rembg, LaMa,
+TripoSR, Blender, and Manim. Wav2Lip, F5-TTS, Fish Speech, MusicGen, and CodeFormer are
+visible but blocked because their principal official public artifacts are noncommercial or need
+additional license review.
+
+Catalog presence does not equal production approval. A profile becomes selectable only when:
+
+1. its official source is pinned to an immutable commit;
+2. the exact weight filename and SHA-256 are in the model registry;
+3. code and model licenses permit the intended commercial region;
+4. its API-format ComfyUI workflow or isolated worker image is reviewed and pinned;
+5. the managed GPU meets the VRAM floor; and
+6. a named human reviewer records approval.
+
+Weights are not preloaded. Approved workers start only for the production job and exit after
+output; ComfyUI uses the existing event-driven GPU lease and stops the managed GPU when the last
+job finishes. Browsing, catalog sync, brief validation, and GPU-free preview never start a GPU.
 
 ## Local setup
 
@@ -139,7 +169,8 @@ Stopping removes active GPU compute charges, but Vast.ai storage charges continu
 
 ## Approved ComfyUI workflow binding
 
-The repository contains eight reviewed workflow contracts, initially disabled:
+The repository contains the original eight production-purpose contracts plus ten non-Wan OSS
+family contracts. New family contracts are initially disabled:
 
 - brand background
 - product hero still
@@ -149,6 +180,9 @@ The repository contains eight reviewed workflow contracts, initially disabled:
 - video upscale
 - frame interpolation
 - background removal/replacement
+- LTX-Video, HunyuanVideo 1.5, CogVideoX, Mochi 1
+- Stable Video Diffusion XT, AnimateDiff, Open-Sora
+- FLUX.1-schnell, Qwen-Image, Stable Diffusion XL
 
 Export an exact ComfyUI workflow in **API format**, then bind it only after model and license review:
 
@@ -199,6 +233,9 @@ docker compose up --build
 - `POST /v1/briefs/plan`
 - `POST /v1/runs/sync` — dry-run only
 - `POST /v1/runs` — Prefect production queue
+- `GET /v1/engine-profiles` — readiness, licenses, VRAM, and blocking reasons
+- `POST /v1/engine-profiles/sync` — authenticated DB snapshot + DB bell/Slack notification
+- `GET /v1/engine-events` — recent selection, completion, and failure events
 - `GET /v1/runs/{run_id}`
 - `GET /v1/projects/{project_id}`
 - `POST /v1/projects/{project_id}/reviews/draft/approve`

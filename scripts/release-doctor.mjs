@@ -279,6 +279,30 @@ function checkStaticReleaseRules() {
     fail("Japan Entry score utility persistence must have RLS and release migration wiring")
   }
 
+  const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
+  const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
+    ? fs.readFileSync(engineProfilesMigrationPath, "utf8")
+    : ""
+  const engineProfileSecurityMarkers = [
+    "video_factory_engine_profiles",
+    "video_factory_engine_events",
+    "ENABLE ROW LEVEL SECURITY",
+    "FORCE ROW LEVEL SECURITY",
+    "revoke all on table public.video_factory_engine_profiles from anon, authenticated",
+    "revoke all on table public.video_factory_engine_events from anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    engineProfilesMigration &&
+    engineProfileSecurityMarkers.every((marker) => engineProfilesMigration.toLowerCase().includes(marker.toLowerCase())) &&
+    noLoginDeploy.includes("20260801091559_video_factory_engine_profiles.sql") &&
+    noLoginDeploy.includes("applyVideoFactoryEngineProfilesMigration")
+  ) {
+    pass("Video Factory engine catalog/events have RLS and release migration wiring")
+  } else {
+    fail("Video Factory engine catalog/events require RLS and release migration wiring")
+  }
+
   const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
   const projectionMigration = fs.existsSync(projectionMigrationPath)
     ? fs.readFileSync(projectionMigrationPath, "utf8")

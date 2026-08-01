@@ -23,6 +23,11 @@ class OperatorEvent:
     instance_id: int | None = None
     run_id: str | None = None
     hourly_price: float | None = None
+    profile_id: str | None = None
+    project_id: str | None = None
+    state: str | None = None
+    progress: int | None = None
+    error_message: str | None = None
     delivery_state: str = "pending"
     delivered_at: str | None = None
     delivery_error: str | None = None
@@ -59,6 +64,11 @@ async def emit_operator_event(
     instance_id: int | None = None,
     run_id: str | None = None,
     hourly_price: float | None = None,
+    profile_id: str | None = None,
+    project_id: str | None = None,
+    state: str | None = None,
+    progress: int | None = None,
+    error_message: str | None = None,
 ) -> OperatorEvent:
     event = OperatorEvent(
         event_id=str(uuid.uuid4()),
@@ -69,6 +79,11 @@ async def emit_operator_event(
         instance_id=instance_id,
         run_id=run_id,
         hourly_price=hourly_price,
+        profile_id=profile_id,
+        project_id=project_id,
+        state=state,
+        progress=progress,
+        error_message=error_message,
     )
     _write_event(settings, event)
     if not settings.operator_event_url:
@@ -102,6 +117,11 @@ async def emit_operator_event(
                     "instance_id": event.instance_id,
                     "run_id": event.run_id,
                     "hourly_price": event.hourly_price,
+                    "profile_id": event.profile_id,
+                    "project_id": event.project_id,
+                    "state": event.state,
+                    "progress": event.progress,
+                    "error_message": event.error_message,
                 },
             )
             response.raise_for_status()

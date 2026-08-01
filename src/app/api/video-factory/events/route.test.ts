@@ -3,10 +3,17 @@ import { NextRequest } from "next/server"
 
 const mocks = vi.hoisted(() => ({
   notifyBothChannels: vi.fn(),
+  insertEngineEvent: vi.fn(),
 }))
 
 vi.mock("@/lib/notify", () => ({
   notifyBothChannels: mocks.notifyBothChannels,
+}))
+
+vi.mock("@/lib/supabase", () => ({
+  getServiceSalesSupabase: () => ({
+    from: () => ({ insert: mocks.insertEngineEvent }),
+  }),
 }))
 
 import { POST } from "./route"
@@ -26,6 +33,8 @@ describe("Video Factory operator events", () => {
   beforeEach(() => {
     vi.stubEnv("VIDEO_FACTORY_INTERNAL_API_KEY", "factory-secret")
     mocks.notifyBothChannels.mockReset()
+    mocks.insertEngineEvent.mockReset()
+    mocks.insertEngineEvent.mockResolvedValue({ error: null })
     mocks.notifyBothChannels.mockResolvedValue({
       ok: true,
       slack: { ok: true },
@@ -88,5 +97,40 @@ describe("Video Factory operator events", () => {
 
     expect(response.status).toBe(502)
     expect(await response.json()).toMatchObject({ ok: false })
+  })
+
+  it("persists profile progress before notifying both channels", async () => {
+    const profileEvent = {
+      ...event,
+      event_type: "profile_progress",
+      profile_id: "ltx-video",
+      project_id: "launch-video",
+      state: "running",
+      progress: 60,
+      instance_id: null,
+      hourly_price: null,
+    }
+    const response = await POST(new NextRequest(
+      "https://www.paradigmjp.com/api/video-factory/events",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": "factory-secret",
+        },
+        body: JSON.stringify(profileEvent),
+      },
+    ))
+
+    expect(response.status).toBe(200)
+    expect(mocks.insertEngineEvent).toHaveBeenCalledWith(expect.objectContaining({
+      event_type: "profile_progress",
+      profile_id: "ltx-video",
+      progress: 60,
+    }))
+    expect(mocks.notifyBothChannels).toHaveBeenCalledWith(
+      expect.stringContaining("profile ltx-video"),
+      expect.objectContaining({ type: "video_factory_profile_progress" }),
+    )
   })
 })
