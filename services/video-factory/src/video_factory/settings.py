@@ -117,7 +117,7 @@ class Settings:
                 item.strip()
                 for item in os.getenv(
                     "COMFYUI_REQUIRED_WORKFLOWS",
-                    "brand-background,product-hero-still,social-thumbnail,abstract-broll-t2v,product-broll-i2v,video-upscale,frame-interpolation,background-remove-replace",
+                    "abstract-broll-t2v",
                 ).split(",")
                 if item.strip()
             ),

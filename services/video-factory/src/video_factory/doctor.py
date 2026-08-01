@@ -125,12 +125,14 @@ def doctor_report(settings: Settings) -> dict[str, object]:
         for name in ("python", "ffmpeg", "ffprobe", "node", "npx", "uvx", "rclone")
     }
     core_ready = all(binaries[name] for name in ("python", "ffmpeg", "ffprobe", "node", "npx"))
-    auth_ready = settings.environment != "production" or bool(
-        settings.api_key and settings.comfyui_api_key
+    service_auth_ready = settings.environment != "production" or bool(settings.api_key)
+    comfy_auth_ready = settings.environment != "production" or bool(
+        settings.comfyui_api_key
     )
     production_ready = bool(
         core_ready
-        and auth_ready
+        and service_auth_ready
+        and comfy_auth_ready
         and comfy_status.get("reachable")
         and comfy_status.get("vram_ready")
         and registry.get("required_ready")
@@ -162,7 +164,8 @@ def doctor_report(settings: Settings) -> dict[str, object]:
             reason
             for reason, blocked in (
                 ("core binaries missing", not core_ready),
-                ("production API authentication missing", not auth_ready),
+                ("production API authentication missing", not service_auth_ready),
+                ("ComfyUI API authentication missing", not comfy_auth_ready),
                 ("ComfyUI endpoint unavailable", not comfy_status.get("reachable")),
                 ("GPU VRAM below requirement or not reported", not comfy_status.get("vram_ready")),
                 ("required ComfyUI workflows are not bound", not registry.get("required_ready")),

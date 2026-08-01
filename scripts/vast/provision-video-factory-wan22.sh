@@ -38,12 +38,6 @@ mkdir -p \
   "$BOOTSTRAP_ROOT"
 chmod 700 "$BOOTSTRAP_ROOT"
 
-if [ -d "$COMFY_ROOT/.git" ]; then
-  log "Updating ComfyUI core"
-  git -C "$COMFY_ROOT" fetch --depth 1 origin master || true
-  git -C "$COMFY_ROOT" reset --hard origin/master || true
-fi
-
 fetch_file() {
   local url="$1" target="$2"
   if [ -s "$target" ]; then
@@ -132,6 +126,7 @@ import http.client
 import json
 import os
 import secrets
+import ssl
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -143,6 +138,8 @@ UPSTREAM_PORT = int(os.environ.get("COMFY_INTERNAL_PORT", "18188"))
 LISTEN_PORT = int(os.environ.get("COMFY_PROXY_PORT", "18189"))
 ROOT = Path(os.environ.get("VIDEO_FACTORY_BOOTSTRAP_ROOT", "/workspace/video-factory-bootstrap"))
 MANIFEST_BASE = ROOT / "manifest-base.json"
+TLS_CERTIFICATE = Path(os.environ.get("COMFY_PROXY_TLS_CERT", "/etc/instance.crt"))
+TLS_PRIVATE_KEY = Path(os.environ.get("COMFY_PROXY_TLS_KEY", "/etc/instance.key"))
 
 REQUIRED_NODES = {
     "UNETLoader",
@@ -355,7 +352,13 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     server = ThreadingHTTPServer(("0.0.0.0", LISTEN_PORT), Handler)
-    print(f"[comfy-proxy] listening on 0.0.0.0:{LISTEN_PORT}, upstream={UPSTREAM_HOST}:{UPSTREAM_PORT}", flush=True)
+    if not TLS_CERTIFICATE.is_file() or not TLS_PRIVATE_KEY.is_file():
+        raise SystemExit("Vast.ai TLS certificate or private key is unavailable")
+    tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    tls.minimum_version = ssl.TLSVersion.TLSv1_2
+    tls.load_cert_chain(TLS_CERTIFICATE, TLS_PRIVATE_KEY)
+    server.socket = tls.wrap_socket(server.socket, server_side=True)
+    print(f"[comfy-proxy] HTTPS 0.0.0.0:{LISTEN_PORT}, upstream={UPSTREAM_HOST}:{UPSTREAM_PORT}", flush=True)
     server.serve_forever()
 PY
 chmod 700 "$BOOTSTRAP_ROOT/proxy.py"
@@ -379,4 +382,94 @@ nohup env \
 echo $! > "$BOOTSTRAP_ROOT/proxy.pid"
 chmod 600 "$BOOTSTRAP_ROOT/proxy.pid"
 
-log "Provisioning complete; ComfyUI can finish starting in the background"
+proxy_is_ready() {
+  COMFY_PROXY_KEY="$COMFY_PROXY_KEY" \
+    COMFY_PROXY_PORT="$COMFY_PROXY_PORT" \
+    python3 - <<'PY'
+import json
+import os
+import ssl
+import urllib.request
+
+# This probe never leaves loopback. External clients must validate the Vast.ai CA.
+context = ssl._create_unverified_context()
+request = urllib.request.Request(
+    f"https://127.0.0.1:{os.environ['COMFY_PROXY_PORT']}/__video_factory/status",
+    headers={"Authorization": f"Bearer {os.environ['COMFY_PROXY_KEY']}"},
+)
+with urllib.request.urlopen(request, context=context, timeout=10) as response:
+    payload = json.load(response)
+if not isinstance(payload, dict):
+    raise SystemExit(1)
+PY
+}
+
+choose_comfy_python() {
+  local candidate pid executable
+  while read -r pid; do
+    [ -n "$pid" ] || continue
+    executable="$(readlink -f "/proc/$pid/exe" 2>/dev/null || true)"
+    if [ -n "$executable" ] && [ -x "$executable" ]; then
+      printf '%s\n' "$executable"
+      return 0
+    fi
+  done < <(pgrep -f '[p]ython.*ComfyUI.*/main.py' || true)
+  for candidate in \
+    "$COMFY_ROOT/.venv/bin/python" \
+    /venv/main/bin/python \
+    /workspace/venv/bin/python \
+    /opt/venv/bin/python \
+    "$(command -v python3 || true)"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ] \
+      && "$candidate" -c 'import torch, aiohttp' >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! curl -fsS --max-time 5 \
+  "http://127.0.0.1:${COMFY_INTERNAL_PORT}/system_stats" >/dev/null 2>&1; then
+  COMFY_PYTHON="$(choose_comfy_python || true)"
+  [ -n "$COMFY_PYTHON" ] \
+    || fail "A Python environment capable of running ComfyUI was not found"
+  if [ -f "$BOOTSTRAP_ROOT/comfyui.pid" ]; then
+    old_pid="$(cat "$BOOTSTRAP_ROOT/comfyui.pid" 2>/dev/null || true)"
+    if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+      kill "$old_pid" 2>/dev/null || true
+      sleep 2
+    fi
+  fi
+  log "Starting dedicated ComfyUI API on $COMFY_INTERNAL_PORT"
+  (
+    cd "$COMFY_ROOT"
+    nohup "$COMFY_PYTHON" main.py \
+      --disable-auto-launch \
+      --listen 127.0.0.1 \
+      --port "$COMFY_INTERNAL_PORT" \
+      > "$BOOTSTRAP_ROOT/comfyui.log" 2>&1 &
+    echo $! > "$BOOTSTRAP_ROOT/comfyui.pid"
+  )
+  chmod 600 "$BOOTSTRAP_ROOT/comfyui.pid"
+fi
+
+for attempt in $(seq 1 180); do
+  if curl -fsS --max-time 10 \
+    "http://127.0.0.1:${COMFY_INTERNAL_PORT}/system_stats" >/dev/null 2>&1 \
+    && curl -fsS --max-time 20 \
+      "http://127.0.0.1:${COMFY_INTERNAL_PORT}/object_info" \
+      | python3 -c 'import json,sys; required={"UNETLoader","CLIPLoader","VAELoader","ModelSamplingSD3","CLIPTextEncode","Wan22ImageToVideoLatent","KSampler","VAEDecode","CreateVideo","SaveVideo"}; data=json.load(sys.stdin); missing=required-set(data); raise SystemExit(0 if not missing else 1)' \
+    && kill -0 "$(cat "$BOOTSTRAP_ROOT/proxy.pid")" 2>/dev/null \
+    && proxy_is_ready; then
+    log "Provisioning complete; ComfyUI API and authenticated proxy are ready"
+    exit 0
+  fi
+  if [ $((attempt % 12)) -eq 0 ]; then
+    log "Waiting for ComfyUI API readiness (${attempt}/180)"
+    tail -n 20 "$BOOTSTRAP_ROOT/comfyui.log" 2>/dev/null || true
+  fi
+  sleep 5
+done
+
+fail "ComfyUI API did not become ready; inspect $BOOTSTRAP_ROOT/comfyui.log"

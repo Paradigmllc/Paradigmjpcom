@@ -4,7 +4,9 @@ import json
 import mimetypes
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -12,7 +14,13 @@ from pydantic import BaseModel, Field
 from .doctor import doctor_report
 from .runtime_config import load_runtime_config, update_runtime_config
 from .settings import Settings
-from .vast import VastAPIError, VastClient, VastConfig
+from .vast import (
+    VastAPIError,
+    VastClient,
+    VastConfig,
+    safe_vast_instance,
+    vast_instance_connection,
+)
 
 router = APIRouter()
 
@@ -242,6 +250,13 @@ def runtime_status() -> dict[str, object]:
 @router.put("/v1/runtime", dependencies=[Depends(require_console_api_key)])
 def configure_runtime(request: RuntimeConfigRequest) -> dict[str, object]:
     settings = Settings.from_env()
+    if request.comfyui_base_url and settings.environment == "production":
+        scheme = urlparse(request.comfyui_base_url.strip()).scheme.lower()
+        if scheme != "https":
+            raise HTTPException(
+                status_code=422,
+                detail="Production ComfyUI endpoints must use HTTPS",
+            )
     updates: dict[str, Any] = {}
     for field in (
         "comfyui_base_url",
@@ -318,7 +333,75 @@ async def vast_instances() -> dict[str, object]:
         instances = await client.list_instances()
     except VastAPIError as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
-    return {"ok": True, "instances": instances}
+    return {
+        "ok": True,
+        "instances": [safe_vast_instance(instance) for instance in instances],
+    }
+
+
+@router.post(
+    "/v1/vast/instances/{instance_id}/adopt",
+    dependencies=[Depends(require_console_api_key)],
+)
+async def adopt_vast_instance(instance_id: int) -> dict[str, object]:
+    settings = Settings.from_env()
+    client = VastClient(VastConfig.from_workspace(settings.workspace))
+    try:
+        instances = await client.list_instances()
+        instance = next(
+            (
+                item
+                for item in instances
+                if int(item.get("id") or item.get("instance_id") or 0) == instance_id
+            ),
+            None,
+        )
+        if instance is None:
+            raise ValueError("Vast.ai instance was not found")
+        connection = vast_instance_connection(instance)
+        async with httpx.AsyncClient(
+            timeout=15.0,
+            headers={
+                "Authorization": f"Bearer {connection.api_key}",
+                "X-API-Key": connection.api_key,
+            },
+        ) as proxy:
+            response = await proxy.get(
+                f"{connection.base_url}/__video_factory/status"
+            )
+            response.raise_for_status()
+            payload = response.json()
+        if not isinstance(payload, dict):
+            raise ValueError("Managed ComfyUI proxy returned an invalid status")
+        runtime = update_runtime_config(
+            settings.workspace,
+            {
+                "comfyui_base_url": connection.base_url,
+                "comfyui_api_key": connection.api_key,
+                "vast_template_hash": connection.template_hash,
+            },
+        )
+    except VastAPIError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    except httpx.HTTPError as error:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Managed ComfyUI proxy is unavailable: {error}",
+        ) from error
+    except (OSError, ValueError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {
+        "ok": True,
+        "instance": safe_vast_instance(instance),
+        "connection": connection.safe_dict(),
+        "runtime": runtime.safe_dict(),
+        "provisioning": {
+            "ready": bool(payload.get("ready")),
+            "phase": payload.get("phase"),
+            "detail": payload.get("detail"),
+            "missing_nodes": payload.get("missing_nodes", []),
+        },
+    }
 
 
 @router.post("/v1/vast/instances", dependencies=[Depends(require_console_api_key)])

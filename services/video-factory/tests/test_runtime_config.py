@@ -65,3 +65,15 @@ def test_runtime_config_rejects_credential_bearing_url(tmp_path: Path) -> None:
             tmp_path / "workspace",
             {"comfyui_base_url": "https://user:password@gpu.example.test"},
         )
+
+
+def test_initial_production_profile_requires_only_bound_wan_workflow(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(tmp_path / "workspace"))
+    monkeypatch.delenv("COMFYUI_REQUIRED_WORKFLOWS", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.comfyui_required_workflows == ("abstract-broll-t2v",)

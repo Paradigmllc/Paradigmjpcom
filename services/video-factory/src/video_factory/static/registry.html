@@ -63,6 +63,17 @@
       <section class="panel"><div class="panel-heading"><div><p class="eyebrow">WORKFLOW CONTRACTS</p><h2>Workflow状態</h2></div></div><div id="workflow-list" class="registry-list"><div class="empty">読込中…</div></div></section>
     </div>
   </div>
+  <dialog id="registry-confirm-dialog" class="confirm-dialog">
+    <form method="dialog">
+      <p class="eyebrow">CONFIRM ACTION</p>
+      <h2>操作を確認</h2>
+      <p id="registry-confirm-message"></p>
+      <div class="button-row">
+        <button class="button secondary" value="cancel">キャンセル</button>
+        <button class="button danger" value="confirm">無効化する</button>
+      </div>
+    </form>
+  </dialog>
   <script src="/console/registry.js" defer></script>
 </body>
 </html>
