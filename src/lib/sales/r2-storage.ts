@@ -21,6 +21,12 @@ export interface R2SignedUpload {
   expiresInSeconds: number
 }
 
+export interface R2SignedDownload {
+  objectKey: string
+  downloadUrl: string
+  expiresInSeconds: number
+}
+
 import { optionalEnv } from "./japan-readiness-utils"
 
 export function getR2StorageConfig(): R2StorageConfig {
@@ -103,6 +109,31 @@ export async function createR2SignedUploads(requests: R2UploadRequest[]): Promis
       }
     }),
   )
+}
+
+export async function createR2SignedDownloads(
+  objectKeys: string[],
+  expiresInSeconds: number = 900,
+): Promise<R2SignedDownload[]> {
+  const config = getR2StorageConfig()
+  if (!config.ready || !config.bucket) {
+    throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
+  }
+  const bucket = config.bucket
+  const client = await createR2Client()
+  const { GetObjectCommand } = await import("@aws-sdk/client-s3")
+  const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner")
+  const ttl = Math.max(60, Math.min(expiresInSeconds, 3600))
+  return Promise.all(objectKeys.map(async (rawKey) => {
+    const objectKey = sanitizeR2ObjectName(rawKey)
+    if (!objectKey) throw new Error("R2 object key is empty")
+    const downloadUrl = await getSignedUrl(
+      client,
+      new GetObjectCommand({ Bucket: bucket, Key: objectKey }),
+      { expiresIn: ttl },
+    )
+    return { objectKey, downloadUrl, expiresInSeconds: ttl }
+  }))
 }
 
 export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, contentType: string): Promise<string> {
