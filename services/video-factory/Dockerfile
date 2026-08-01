@@ -8,6 +8,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     VIDEO_FACTORY_ROOT=/app \
     VIRTUAL_ENV=/opt/venv \
     PATH=/opt/venv/bin:$PATH \
+    HYPERFRAMES_BROWSER_PATH=/usr/bin/chromium \
+    PRODUCER_BROWSER_GPU_MODE=software \
+    PRODUCER_PUPPETEER_PROTOCOL_TIMEOUT_MS=900000 \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium
 
