@@ -8,6 +8,7 @@
 - Added five evidence-backed Wave 1 prospects to production RevenueOS: CHEFCLEAN, Little Archive / DONGJIN BEDDING, B.FTER / Another Day, HOLEN and QURV / F.R.P. Industry.
 - Updated the permission-first outbound draft to ask to send a three-page Japan Opportunity Memo; no external messages have been sent.
 - Added `docs/knowledge/japan-market-operator-playbook.md` with ICP, package, outreach sequence, first-wave list and MSA/SOW/KPI-conditional exclusivity structure.
+- PR **#644** merged as main **9ad77fa5**. Production deploy **30721053939** and fast probe **30721053901** passed; the EN/JA hub, Source desk, sitemap fingerprint and invalid inquiry API gate were verified live, with production Chromium E2E **3/3** passing.
 - Active handoff: run human review on the five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.
 
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
