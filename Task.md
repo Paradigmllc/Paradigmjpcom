@@ -70,3 +70,12 @@
   - `https://demo.paradigmjp.com/demo`: HTTP 200.
   - Public HTML checks: `className=0`, `accentLiteral=0`, `--brand: #7c3aed`.
   - Chrome headless screenshot saved at `C:\Users\apple\AppData\Local\Temp\demo-paradigmjp-demo-fixed.png` and visually checked.
+## CURRENT STATUS - 2026-08-02 Japan market operator Wave 1
+
+- Read the two shared strategy chats and converted the core model into an executable external Japan market operator offer.
+- Standardized the public package: $5,000 Paid Market Validation (credited), $20,000 total Japan Launch, then $2,500/month + 10% of Net Collected Japan Sales.
+- Revalidated the historic candidate lists against current public sources; rejected brands with existing Japan distribution/export evidence.
+- Added five evidence-backed Wave 1 prospects to production RevenueOS: CHEFCLEAN, Little Archive / DONGJIN BEDDING, B.FTER / Another Day, HOLEN and QURV / F.R.P. Industry.
+- Updated the permission-first outbound draft to ask to send a three-page Japan Opportunity Memo; no external messages have been sent.
+- Added `docs/knowledge/japan-market-operator-playbook.md` with ICP, package, outreach sequence, first-wave list and MSA/SOW/KPI-conditional exclusivity structure.
+- Active handoff: run human review on the five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.

@@ -163,7 +163,7 @@ export function buildLocalInsight(company: SalesCompany, audit: JapanMarketAudit
     lossMin === null || lossMax === null ? "loss_amount_directional_only" : null,
   ].filter((item): item is string => item !== null)
   const confidence = clampScore((traffic.monthlyVisits ? 22 : 0) + (traffic.japanSharePercent ? 22 : 0) + (audit ? 22 : 0) + (shopifyDetected ? 18 : 0) + (monthlyRevenue ? 16 : 0)) / 100
-  const subject = `${company.company_name}: Japan-entry conversion gaps worth reviewing`
+  const subject = `${company.company_name}: Japan opportunity memo`
   const body = buildLocalEmail(company, { traffic, lossMin, lossMax, audit, gaps })
   return {
     priority,
@@ -205,18 +205,16 @@ export function buildLocalEmail(company: SalesCompany, input: {
   audit: JapanMarketAudit | null
   gaps: JapanReadinessGap[]
 }): string {
-  const japanVisits = input.traffic.japanVisits === null ? "a measurable number of" : input.traffic.japanVisits.toLocaleString("en-US")
-  const loss = input.lossMin !== null && input.lossMax !== null
-    ? `$${input.lossMin.toLocaleString("en-US")}-$${input.lossMax.toLocaleString("en-US")}`
-    : "an unpriced but visible"
   const primaryGap = input.gaps[0]?.title ?? "Japan-entry readiness gap"
   return [
     `Hi ${company.company_name} team,`,
     "",
-    `We reviewed ${company.domain} as a Japan-entry prospect and found ${japanVisits} Japan-side visits or readiness signals that may not be converting cleanly yet.`,
+    `We identified ${company.company_name} while researching overseas brands with credible potential in Japan and reviewed the public buyer path on ${company.domain}.`,
     "",
-    `The first gap to validate is: ${primaryGap}. Based on the public-page audit and stack evidence, the opportunity is currently estimated as ${loss} monthly conversion risk. This is a sales hypothesis, not legal advice, and should be checked by a human before final sending.`,
+    `The first point we would validate is: ${primaryGap}. This is a commercial hypothesis based only on public signals, not a claim about your current performance or legal position.`,
     "",
-    "Paradigm can package the Japan buyer path asynchronously: localized site copy, payment/trust cues, and Loom-style video explainers so your team does not need live Japanese sales coverage.",
+    "We have prepared a concise three-page Japan Opportunity Memo covering positioning, pricing, priority channels and a 90-day launch path. Paradigm can then act as your external Japan market operator across localization, commerce, partners and local execution.",
+    "",
+    "May I send the memo for your review?",
   ].join("\n")
 }
