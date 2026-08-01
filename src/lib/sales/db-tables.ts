@@ -140,6 +140,11 @@ export const DB_TABLES = {
   MANUAL_JAPAN_ENTRY_SOURCE_CATALOG: "manual_japan_entry_source_catalog",
   MANUAL_JAPAN_ENTRY_WORK_SOURCES: "manual_japan_entry_work_sources",
 
+  // ── Tiny Shops of Japan / Shopify Operations (20260801212630) ──
+  SHOPIFY_OPS_PRODUCTS: "shopify_ops_products",
+  SHOPIFY_OPS_CONTENT_ITEMS: "shopify_ops_content_items",
+  SHOPIFY_OPS_DAILY_METRICS: "shopify_ops_daily_metrics",
+
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
   // NOTE: These tables have no migrations in this repo. Managed by Appexxme (separate project).
