@@ -11,11 +11,13 @@ from urllib.parse import urlparse
 
 @dataclass(frozen=True)
 class RuntimeConfig:
-    schema_version: int = 1
+    schema_version: int = 2
     comfyui_base_url: str | None = None
     comfyui_api_key: str | None = None
     vast_api_key: str | None = None
     vast_template_hash: str | None = None
+    vast_instance_id: int | None = None
+    gpu_lifecycle_enabled: bool | None = None
     updated_at: str | None = None
 
     def safe_dict(self) -> dict[str, object]:
@@ -25,6 +27,8 @@ class RuntimeConfig:
             "comfyui_api_key_configured": bool(self.comfyui_api_key),
             "vast_api_key_configured": bool(self.vast_api_key),
             "vast_template_hash": self.vast_template_hash,
+            "vast_instance_id": self.vast_instance_id,
+            "gpu_lifecycle_enabled": self.gpu_lifecycle_enabled,
             "updated_at": self.updated_at,
         }
 
@@ -71,6 +75,16 @@ def load_runtime_config(workspace: Path) -> RuntimeConfig:
             if payload.get("vast_template_hash")
             else None
         ),
+        vast_instance_id=(
+            int(payload["vast_instance_id"])
+            if payload.get("vast_instance_id") is not None
+            else None
+        ),
+        gpu_lifecycle_enabled=(
+            bool(payload["gpu_lifecycle_enabled"])
+            if payload.get("gpu_lifecycle_enabled") is not None
+            else None
+        ),
         updated_at=str(payload["updated_at"]) if payload.get("updated_at") else None,
     )
 
@@ -99,5 +113,12 @@ def update_runtime_config(workspace: Path, updates: dict[str, Any]) -> RuntimeCo
         if key in updates:
             value = updates[key]
             values[key] = str(value).strip() if value else None
+    if "vast_instance_id" in updates:
+        value = updates["vast_instance_id"]
+        values["vast_instance_id"] = int(value) if value is not None else None
+    if "gpu_lifecycle_enabled" in updates:
+        value = updates["gpu_lifecycle_enabled"]
+        values["gpu_lifecycle_enabled"] = bool(value) if value is not None else None
+    values["schema_version"] = 2
     values["updated_at"] = current.updated_at
     return save_runtime_config(workspace, RuntimeConfig(**values))

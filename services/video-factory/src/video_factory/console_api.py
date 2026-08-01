@@ -3,15 +3,21 @@ from __future__ import annotations
 import json
 import mimetypes
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
 
+from .console_models import (
+    RuntimeConfigRequest,
+    VastCreateInstanceRequest,
+    VastInstanceStateRequest,
+    VastOfferSearchRequest,
+)
 from .doctor import doctor_report
+from .gpu_lifecycle import gpu_lifecycle_status, release_gpu_if_idle
 from .runtime_config import load_runtime_config, update_runtime_config
 from .settings import Settings
 from .vast import (
@@ -46,53 +52,12 @@ _ALLOWED_ARTIFACT_SUFFIXES = {
 def require_console_api_key(
     x_api_key: Annotated[str | None, Header()] = None,
 ) -> None:
-    configured = Settings.from_env().api_key
+    settings = Settings.from_env()
+    configured = settings.api_key
+    if not configured and settings.environment == "production":
+        raise HTTPException(status_code=503, detail="Video Factory API key is not configured")
     if configured and x_api_key != configured:
         raise HTTPException(status_code=401, detail="Invalid API key")
-
-
-class RuntimeConfigRequest(BaseModel):
-    comfyui_base_url: str | None = None
-    comfyui_api_key: str | None = None
-    vast_api_key: str | None = None
-    vast_template_hash: str | None = None
-    clear_comfyui_api_key: bool = False
-    clear_vast_api_key: bool = False
-
-
-class VastOfferSearchRequest(BaseModel):
-    gpu_names: list[str] = Field(default_factory=lambda: ["RTX 4090"])
-    min_gpu_ram_gb: float = Field(default=24, ge=8, le=192)
-    min_reliability: float = Field(default=0.99, ge=0, le=1)
-    verified: bool = True
-    instance_type: Literal["on-demand", "ondemand", "bid"] = "on-demand"
-    max_hourly_price: float | None = Field(default=None, gt=0, le=100)
-    limit: int = Field(default=20, ge=1, le=100)
-
-
-class VastCreateInstanceRequest(BaseModel):
-    offer_id: int = Field(gt=0)
-    template_hash_id: str | None = Field(default=None, max_length=128)
-    label: str = Field(default="paradigm-comfyui", min_length=2, max_length=120)
-    disk_gb: float = Field(default=80, ge=16, le=4096)
-    target_state: Literal["running", "stopped"] = "running"
-    volume_id: int | None = Field(default=None, gt=0)
-    mount_path: str = Field(default="/workspace", pattern=r"^/[A-Za-z0-9_./-]+$")
-    env: dict[str, str] = Field(default_factory=dict, max_length=100)
-    onstart: str | None = Field(default=None, max_length=20_000)
-    runtype: Literal[
-        "ssh",
-        "jupyter",
-        "args",
-        "ssh_proxy",
-        "ssh_direct",
-        "jupyter_proxy",
-        "jupyter_direct",
-    ] | None = None
-
-
-class VastInstanceStateRequest(BaseModel):
-    state: Literal["running", "stopped"]
 
 
 def _read_json(path: Path) -> Any | None:
@@ -247,6 +212,22 @@ def runtime_status() -> dict[str, object]:
     }
 
 
+@router.get("/v1/gpu-lifecycle", dependencies=[Depends(require_console_api_key)])
+async def lifecycle_status() -> dict[str, object]:
+    settings = Settings.from_env()
+    return {"ok": True, "lifecycle": await gpu_lifecycle_status(settings)}
+
+
+@router.post(
+    "/v1/gpu-lifecycle/reconcile",
+    dependencies=[Depends(require_console_api_key)],
+)
+async def reconcile_gpu_lifecycle() -> dict[str, object]:
+    settings = Settings.from_env()
+    state = await release_gpu_if_idle(settings)
+    return {"ok": state.get("phase") != "error", "lifecycle": state}
+
+
 @router.put("/v1/runtime", dependencies=[Depends(require_console_api_key)])
 def configure_runtime(request: RuntimeConfigRequest) -> dict[str, object]:
     settings = Settings.from_env()
@@ -263,6 +244,7 @@ def configure_runtime(request: RuntimeConfigRequest) -> dict[str, object]:
         "comfyui_api_key",
         "vast_api_key",
         "vast_template_hash",
+        "gpu_lifecycle_enabled",
     ):
         if field in request.model_fields_set:
             updates[field] = getattr(request, field)
@@ -379,6 +361,8 @@ async def adopt_vast_instance(instance_id: int) -> dict[str, object]:
                 "comfyui_base_url": connection.base_url,
                 "comfyui_api_key": connection.api_key,
                 "vast_template_hash": connection.template_hash,
+                "vast_instance_id": connection.instance_id,
+                "gpu_lifecycle_enabled": True,
             },
         )
     except VastAPIError as error:
@@ -407,6 +391,15 @@ async def adopt_vast_instance(instance_id: int) -> dict[str, object]:
 @router.post("/v1/vast/instances", dependencies=[Depends(require_console_api_key)])
 async def create_vast_instance(request: VastCreateInstanceRequest) -> dict[str, object]:
     settings = Settings.from_env()
+    runtime = load_runtime_config(settings.workspace)
+    if settings.gpu_lifecycle_enabled and runtime.vast_instance_id:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Managed GPU {runtime.vast_instance_id} already exists. "
+                "Video Factory will start it automatically for production runs."
+            ),
+        )
     client = VastClient(VastConfig.from_workspace(settings.workspace))
     try:
         result = await client.create_instance(
@@ -435,6 +428,19 @@ async def set_vast_instance_state(
     request: VastInstanceStateRequest,
 ) -> dict[str, object]:
     settings = Settings.from_env()
+    runtime = load_runtime_config(settings.workspace)
+    if settings.gpu_lifecycle_enabled and runtime.vast_instance_id == instance_id:
+        if request.state == "running":
+            raise HTTPException(
+                status_code=409,
+                detail="Managed GPU starts automatically when a production run begins.",
+            )
+        lifecycle = await gpu_lifecycle_status(settings)
+        if lifecycle.get("active_runs") or lifecycle.get("active_gpu_leases"):
+            raise HTTPException(
+                status_code=409,
+                detail="Managed GPU cannot be stopped while production runs or GPU leases are active.",
+            )
     client = VastClient(VastConfig.from_workspace(settings.workspace))
     try:
         result = await client.set_instance_state(instance_id, request.state)
@@ -449,6 +455,15 @@ async def set_vast_instance_state(
 )
 async def destroy_vast_instance(instance_id: int) -> dict[str, object]:
     settings = Settings.from_env()
+    runtime = load_runtime_config(settings.workspace)
+    if settings.gpu_lifecycle_enabled and runtime.vast_instance_id == instance_id:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Managed Video Factory GPU cannot be destroyed while automatic "
+                "lifecycle control is enabled."
+            ),
+        )
     client = VastClient(VastConfig.from_workspace(settings.workspace))
     try:
         result = await client.destroy_instance(instance_id)

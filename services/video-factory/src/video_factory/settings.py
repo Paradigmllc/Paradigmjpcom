@@ -44,6 +44,11 @@ class Settings:
     prefect_deployment_name: str
     queue_backend: str
     local_queue_workers: int
+    gpu_lifecycle_enabled: bool
+    gpu_start_timeout_seconds: int
+    gpu_stop_timeout_seconds: int
+    gpu_poll_seconds: float
+    operator_event_url: str | None
     frameio_access_token: str | None
     frameio_create_file_url: str | None
     frameio_api_base_url: str
@@ -59,6 +64,18 @@ class Settings:
             os.getenv("VIDEO_FACTORY_WORKSPACE", "workspace")
         ).expanduser().resolve()
         runtime = load_runtime_config(workspace)
+        environment = os.getenv("VIDEO_FACTORY_ENVIRONMENT", "local").strip().lower()
+        api_key = (os.getenv("VIDEO_FACTORY_API_KEY") or "").strip() or None
+        if api_key is None and environment == "production":
+            for name in (
+                "VIDEO_FACTORY_INTERNAL_API_KEY",
+                "ADMIN_SCRIPT_SECRET",
+                "ADMIN_PASSWORD",
+            ):
+                candidate = (os.getenv(name) or "").strip()
+                if candidate:
+                    api_key = candidate
+                    break
         allowed_hosts = tuple(
             item.strip().lower()
             for item in os.getenv("PLAYWRIGHT_ALLOWED_HOSTS", "").split(",")
@@ -77,10 +94,19 @@ class Settings:
         local_queue_workers = int(os.getenv("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", "1"))
         if not 1 <= local_queue_workers <= 8:
             raise ValueError("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS must be between 1 and 8")
+        lifecycle_default = os.getenv(
+            "VIDEO_FACTORY_GPU_LIFECYCLE_ENABLED",
+            "true" if environment == "production" else "false",
+        ).lower() in {"1", "true", "yes"}
+        gpu_lifecycle_enabled = (
+            runtime.gpu_lifecycle_enabled
+            if runtime.gpu_lifecycle_enabled is not None
+            else lifecycle_default
+        )
         return cls(
             workspace=workspace,
-            api_key=os.getenv("VIDEO_FACTORY_API_KEY") or None,
-            environment=os.getenv("VIDEO_FACTORY_ENVIRONMENT", "local").strip().lower(),
+            api_key=api_key,
+            environment=environment,
             log_level=os.getenv("VIDEO_FACTORY_LOG_LEVEL", "INFO"),
             planner_command=command("VIDEO_FACTORY_PLANNER_COMMAND"),
             external_timeout_seconds=int(
@@ -160,6 +186,23 @@ class Settings:
             ),
             queue_backend=queue_backend,
             local_queue_workers=local_queue_workers,
+            gpu_lifecycle_enabled=gpu_lifecycle_enabled,
+            gpu_start_timeout_seconds=int(
+                os.getenv("VIDEO_FACTORY_GPU_START_TIMEOUT_SECONDS", "900")
+            ),
+            gpu_stop_timeout_seconds=int(
+                os.getenv("VIDEO_FACTORY_GPU_STOP_TIMEOUT_SECONDS", "180")
+            ),
+            gpu_poll_seconds=float(os.getenv("VIDEO_FACTORY_GPU_POLL_SECONDS", "5")),
+            operator_event_url=(
+                os.getenv("VIDEO_FACTORY_OPERATOR_EVENT_URL")
+                or (
+                    "http://127.0.0.1:3000/api/video-factory/events"
+                    if environment == "production"
+                    else ""
+                )
+            ).strip()
+            or None,
             frameio_access_token=os.getenv("FRAMEIO_ACCESS_TOKEN") or None,
             frameio_create_file_url=os.getenv("FRAMEIO_CREATE_FILE_URL") or None,
             frameio_api_base_url=os.getenv(

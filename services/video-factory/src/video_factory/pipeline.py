@@ -8,10 +8,13 @@ from .adapters.registry import AdapterRegistry
 from .compositor import compose_master
 from .delivery import deliver_project
 from .finalization import finalize_project
+from .gpu_lifecycle import ensure_gpu_ready, release_gpu_if_idle, run_lifecycle
+from .gpu_lifecycle_state import GpuLease, acquire_gpu_lease
 from .io import load_brief, write_json, write_model
 from .models import (
     ClientBrief,
     DeliverableSpec,
+    Engine,
     PipelineResult,
     ReviewStage,
     ReviewStatus,
@@ -96,21 +99,17 @@ def route_task(
     )
 
 
-@flow(name="paradigm-video-production", log_prints=True)
-def production_flow(
-    brief_path: str,
-    dry_run: bool = False,
-    planner_provider: str = "deterministic",
+def _production_flow_impl(
+    *,
+    settings: Settings,
+    brief: ClientBrief,
+    validation_report: ValidationReport,
+    manifest: ShotManifest,
+    dry_run: bool,
     auto_approve: bool = False,
     reviewer: str = "Automated test fixture",
     delivery_target: str = "local",
 ) -> PipelineResult:
-    settings = Settings.from_env()
-    brief, validation_report = validate_task(brief_path)
-    manifest = plan_task(brief, settings, planner_provider)
-    manifest = route_task(manifest, settings, dry_run)
-    if dry_run:
-        manifest = _dry_run_manifest(manifest)
     workspace = ProjectWorkspace.create(settings.workspace, manifest.project_id)
 
     write_model(workspace.root / "brief.json", brief)
@@ -289,3 +288,56 @@ def production_flow(
         delivery_path=str(delivery_path),
         warnings=[f"Delivered {len(delivery.items)} dry-run variants after two approvals."],
     )
+
+
+@flow(name="paradigm-video-production", log_prints=True)
+def production_flow(
+    brief_path: str,
+    dry_run: bool = False,
+    planner_provider: str = "deterministic",
+    auto_approve: bool = False,
+    reviewer: str = "Automated test fixture",
+    delivery_target: str = "local",
+    lifecycle_run_id: str | None = None,
+) -> PipelineResult:
+    settings = Settings.from_env()
+    brief, validation_report = validate_task(brief_path)
+    manifest = plan_task(brief, settings, planner_provider)
+    manifest = route_task(manifest, settings, dry_run)
+    if dry_run:
+        manifest = _dry_run_manifest(manifest)
+    requires_managed_gpu = not dry_run and any(
+        shot.engine is Engine.COMFYUI for shot in manifest.shots
+    )
+    gpu_lease: GpuLease | None = None
+    try:
+        if requires_managed_gpu:
+            gpu_lease = acquire_gpu_lease(settings, lifecycle_run_id)
+            run_lifecycle(ensure_gpu_ready(settings, run_id=lifecycle_run_id))
+        elif not dry_run:
+            run_lifecycle(
+                release_gpu_if_idle(
+                    settings,
+                    completed_run_id=lifecycle_run_id,
+                    completed_lease=gpu_lease,
+                )
+            )
+        return _production_flow_impl(
+            settings=Settings.from_env(),
+            brief=brief,
+            validation_report=validation_report,
+            manifest=manifest,
+            dry_run=dry_run,
+            auto_approve=auto_approve,
+            reviewer=reviewer,
+            delivery_target=delivery_target,
+        )
+    finally:
+        if requires_managed_gpu:
+            run_lifecycle(
+                release_gpu_if_idle(
+                    settings,
+                    completed_run_id=lifecycle_run_id,
+                    completed_lease=gpu_lease,
+                )
+            )

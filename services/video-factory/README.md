@@ -129,6 +129,14 @@ docker compose --profile gpu up --build
 
 The proxy exposes only the ComfyUI routes required for health, node discovery, queueing, history, output retrieval, interrupt, and queue control. Manager/install routes are blocked.
 
+### Automatic GPU lifecycle
+
+In production, the adopted Vast.ai instance is the only GPU managed by the factory. A non-dry-run submission starts that instance only when routing selected at least one ComfyUI shot, waits for both Vast.ai `running` state and the authenticated ComfyUI readiness endpoint, and then begins generation. Dry runs, validation failures, and non-ComfyUI routes never start it. When the last queued/running local job ends, the instance is stopped immediately. Concurrent jobs keep it running until the queue is empty.
+
+The lifecycle is event-driven: run submission, run completion, and process startup reconciliation are the only triggers. There is no cron or resident status poller. The console shows the managed instance, active runs, last transition, cost, and any stop/start error. Lifecycle events are persisted under the workspace and delivered through the shared DB bell + Slack notifier.
+
+Stopping removes active GPU compute charges, but Vast.ai storage charges continue while the instance exists. A stopped marketplace GPU may enter `scheduling` if the original hardware is no longer available; the factory fails visibly and never creates a replacement GPU automatically.
+
 ## Approved ComfyUI workflow binding
 
 The repository contains eight reviewed workflow contracts, initially disabled:

@@ -1,19 +1,30 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import os
 import uuid
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from pydantic import BaseModel
 
 from .delivery import deliver_project
 from .doctor import doctor_report
 from .finalization import finalize_project
+from .gpu_lifecycle import release_gpu_if_idle
 from .io import write_model
-from .local_jobs import load_local_job, local_job_response, submit_local_job
+from .local_jobs import (
+    list_local_jobs,
+    load_local_job,
+    local_job_response,
+    reconcile_interrupted_local_jobs,
+    submit_local_job,
+)
 from .models import (
     ClientBrief,
     PipelineResult,
@@ -29,10 +40,50 @@ from .state import load_project_state, transition_project_state
 from .validation import validate_brief
 from .workspace import ProjectWorkspace, slugify
 
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    settings = Settings.from_env()
+    try:
+        interrupted = reconcile_interrupted_local_jobs(settings)
+        if interrupted:
+            logger.error(
+                "Marked %s interrupted Video Factory jobs as failed",
+                len(interrupted),
+            )
+    except OSError:
+        logger.exception("Could not reconcile interrupted Video Factory jobs")
+
+    startup_task: asyncio.Task[dict[str, object]] | None = None
+    if settings.gpu_lifecycle_enabled:
+        async def stop_idle_gpu_after_startup() -> dict[str, object]:
+            await asyncio.sleep(5)
+            return await release_gpu_if_idle(settings)
+
+        startup_task = asyncio.create_task(
+            stop_idle_gpu_after_startup(),
+            name="video-factory-startup-gpu-reconciliation",
+        )
+    try:
+        yield
+    finally:
+        if startup_task is not None:
+            if not startup_task.done():
+                startup_task.cancel()
+            try:
+                await startup_task
+            except asyncio.CancelledError:
+                logger.warning("Startup GPU reconciliation was cancelled during shutdown")
+            except Exception:
+                logger.exception("Startup GPU reconciliation failed")
+
 app = FastAPI(
     title="Paradigm Video Factory",
     version="0.1.0",
     description="Validated, multi-engine video-production orchestration.",
+    lifespan=lifespan,
 )
 
 
@@ -54,7 +105,10 @@ class DeliveryRequest(BaseModel):
 
 
 def require_api_key(x_api_key: Annotated[str | None, Header()] = None) -> None:
-    configured = Settings.from_env().api_key
+    settings = Settings.from_env()
+    configured = settings.api_key
+    if not configured and settings.environment == "production":
+        raise HTTPException(status_code=503, detail="Video Factory API key is not configured")
     if configured and x_api_key != configured:
         raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -236,6 +290,19 @@ async def run_status_endpoint(run_id: str) -> dict[str, Any]:
         "state_type": str(state.type) if state else None,
         "created": flow_run.created.isoformat() if flow_run.created else None,
         "updated": flow_run.updated.isoformat() if flow_run.updated else None,
+    }
+
+
+@app.get("/v1/runs", dependencies=[Depends(require_api_key)])
+def list_runs_endpoint(
+    limit: int = Query(default=100, ge=1, le=500),
+) -> dict[str, Any]:
+    settings = Settings.from_env()
+    jobs, errors = list_local_jobs(settings, limit=limit)
+    return {
+        "ok": not errors,
+        "runs": [local_job_response(job) for job in jobs],
+        "errors": errors,
     }
 
 

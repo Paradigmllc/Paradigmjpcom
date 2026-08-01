@@ -6,7 +6,11 @@ from pathlib import Path
 import pytest
 
 from video_factory import local_jobs
-from video_factory.local_jobs import load_local_job, submit_local_job
+from video_factory.local_jobs import (
+    load_local_job,
+    reconcile_interrupted_local_jobs,
+    submit_local_job,
+)
 from video_factory.models import PipelineResult
 from video_factory.settings import Settings
 
@@ -65,3 +69,39 @@ def test_queue_settings_are_validated(
 
     with pytest.raises(ValueError, match="QUEUE_BACKEND"):
         Settings.from_env()
+
+
+def test_startup_reconciliation_marks_interrupted_jobs_failed(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    settings = Settings.from_env()
+    runs = workspace / "runs"
+    runs.mkdir(parents=True)
+    run_id = "e8a2743a-4c93-460d-a5e4-b3cf56fdca8b"
+    (runs / f"{run_id}.json").write_text(
+        """{
+  "run_id": "e8a2743a-4c93-460d-a5e4-b3cf56fdca8b",
+  "status": "running",
+  "created_at": "2026-08-01T00:00:00+00:00",
+  "updated_at": "2026-08-01T00:01:00+00:00",
+  "brief_path": "/data/video-factory/inbox/brief.json",
+  "dry_run": false,
+  "planner_provider": "deterministic",
+  "auto_approve": false,
+  "delivery_target": "local"
+}
+""",
+        encoding="utf-8",
+    )
+
+    interrupted = reconcile_interrupted_local_jobs(settings)
+    loaded = load_local_job(settings, run_id)
+
+    assert len(interrupted) == 1
+    assert loaded is not None
+    assert loaded.status == "failed"
+    assert loaded.error is not None
+    assert "restarted" in loaded.error

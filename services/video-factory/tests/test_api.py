@@ -99,3 +99,22 @@ def test_sync_production_is_rejected(tmp_path: Path, monkeypatch) -> None:
         json={"brief": brief, "dry_run": False},
     )
     assert response.status_code == 409
+
+
+def test_production_api_fails_closed_without_any_internal_key(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(tmp_path / "workspace"))
+    monkeypatch.setenv("VIDEO_FACTORY_ENVIRONMENT", "production")
+    for name in (
+        "VIDEO_FACTORY_API_KEY",
+        "VIDEO_FACTORY_INTERNAL_API_KEY",
+        "ADMIN_SCRIPT_SECRET",
+        "ADMIN_PASSWORD",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    response = TestClient(app).get("/v1/runs")
+
+    assert response.status_code == 503

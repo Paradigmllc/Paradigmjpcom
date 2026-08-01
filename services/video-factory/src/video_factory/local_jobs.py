@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
 import uuid
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -12,6 +13,8 @@ from typing import Any
 from .models import PipelineResult
 from .pipeline import production_flow
 from .settings import Settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,52 @@ def load_local_job(settings: Settings, run_id: str) -> LocalJob | None:
         return None
 
 
+def list_local_jobs(
+    settings: Settings,
+    *,
+    limit: int = 100,
+) -> tuple[list[LocalJob], list[str]]:
+    jobs: list[LocalJob] = []
+    errors: list[str] = []
+    for path in sorted(
+        _runs_root(settings).glob("*.json"),
+        key=lambda item: item.stat().st_mtime,
+        reverse=True,
+    ):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise TypeError("expected a JSON object")
+            jobs.append(LocalJob(**payload))
+        except (OSError, json.JSONDecodeError, TypeError) as error:
+            errors.append(f"{path.name}: {error}")
+        if len(jobs) >= limit:
+            break
+    return jobs, errors
+
+
+def reconcile_interrupted_local_jobs(settings: Settings) -> list[LocalJob]:
+    jobs, errors = list_local_jobs(settings, limit=10_000)
+    if errors:
+        logger.error("Unreadable local job records during startup: %s", errors)
+    interrupted: list[LocalJob] = []
+    for job in jobs:
+        if job.status not in {"queued", "running"}:
+            continue
+        failed = replace(
+            job,
+            status="failed",
+            updated_at=_now(),
+            error=(
+                "Video Factory restarted before this job completed. "
+                "The job was stopped safely; review artifacts before resubmitting."
+            ),
+        )
+        _write_job(settings, failed)
+        interrupted.append(failed)
+    return interrupted
+
+
 def _executor(settings: Settings) -> ThreadPoolExecutor:
     workers = max(1, settings.local_queue_workers)
     with _lock:
@@ -99,6 +148,7 @@ def _run_job(settings: Settings, job: LocalJob) -> None:
             planner_provider=job.planner_provider,
             auto_approve=job.auto_approve,
             delivery_target=job.delivery_target,
+            lifecycle_run_id=job.run_id,
         )
         dumped = pipeline_result.model_dump(mode="json")
         completed = replace(
@@ -110,6 +160,7 @@ def _run_job(settings: Settings, job: LocalJob) -> None:
         )
         _write_job(settings, completed)
     except Exception as error:
+        logger.exception("Video Factory local job %s failed", job.run_id)
         failed = replace(
             running,
             status="failed",

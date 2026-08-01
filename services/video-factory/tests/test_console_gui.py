@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 import video_factory.console_api as console_api
-from video_factory.runtime_config import load_runtime_config
+from video_factory.runtime_config import load_runtime_config, update_runtime_config
 from video_factory.vast import VastClient
 from video_factory.web import app
 
@@ -29,6 +30,12 @@ def test_console_static_app_and_runtime_secret_masking(
     assert page.status_code == 200
     assert "Paradigm Video Factory" in page.text
     assert "CLIを使わず" in page.text
+    assert "必要な時だけGPUを稼働" in page.text
+    assert "console-gpu-lifecycle.js" in page.text
+    lifecycle_script = client.get("/console/console-gpu-lifecycle.js")
+    assert lifecycle_script.status_code == 200
+    assert "catch {" not in lifecycle_script.text
+    assert "setInterval" not in lifecycle_script.text
 
     registry_page = client.get("/console/registry.html")
     assert registry_page.status_code == 200
@@ -62,6 +69,10 @@ def test_console_static_app_and_runtime_secret_masking(
     assert status.status_code == 200
     assert status.json()["effective_comfyui"]["base_url"] == "https://gpu.example.test:8189"
 
+    lifecycle = client.get("/v1/gpu-lifecycle", headers=_headers())
+    assert lifecycle.status_code == 200
+    assert lifecycle.json()["lifecycle"]["phase"] == "not_checked"
+
 
 def test_console_rejects_plain_http_comfyui_in_production(
     monkeypatch: pytest.MonkeyPatch,
@@ -80,6 +91,58 @@ def test_console_rejects_plain_http_comfyui_in_production(
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Production ComfyUI endpoints must use HTTPS"
+
+
+def test_console_blocks_duplicate_or_destructive_managed_gpu_actions(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "factory-test-key")
+    update_runtime_config(
+        workspace,
+        {
+            "vast_instance_id": 46258780,
+            "gpu_lifecycle_enabled": True,
+        },
+    )
+    client = TestClient(app)
+
+    start = client.post(
+        "/v1/vast/instances/46258780/state",
+        headers=_headers(),
+        json={"state": "running"},
+    )
+    create = client.post(
+        "/v1/vast/instances",
+        headers=_headers(),
+        json={"offer_id": 123, "template_hash_id": "template-hash"},
+    )
+    destroy = client.delete(
+        "/v1/vast/instances/46258780",
+        headers=_headers(),
+    )
+    monkeypatch.setattr(
+        console_api,
+        "gpu_lifecycle_status",
+        AsyncMock(
+            return_value={
+                "active_runs": [],
+                "active_gpu_leases": ["worker-run"],
+            }
+        ),
+    )
+    stop = client.post(
+        "/v1/vast/instances/46258780/state",
+        headers=_headers(),
+        json={"state": "stopped"},
+    )
+
+    assert start.status_code == 409
+    assert stop.status_code == 409
+    assert create.status_code == 409
+    assert destroy.status_code == 409
 
 
 def test_console_project_catalog_and_protected_artifacts(
@@ -139,6 +202,42 @@ def test_console_project_catalog_and_protected_artifacts(
         headers=_headers(),
     )
     assert traversal.status_code in {404, 422}
+
+
+def test_console_lists_persisted_run_history(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "factory-test-key")
+    runs = workspace / "runs"
+    runs.mkdir(parents=True)
+    run_id = "2c9248b4-7758-4002-b6e9-fecb5470686a"
+    (runs / f"{run_id}.json").write_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "status": "completed",
+                "created_at": "2026-08-01T00:00:00+00:00",
+                "updated_at": "2026-08-01T00:10:00+00:00",
+                "brief_path": "/data/video-factory/inbox/brief.json",
+                "dry_run": False,
+                "planner_provider": "deterministic",
+                "auto_approve": False,
+                "delivery_target": "local",
+                "project_id": "production-readiness",
+            }
+        ),
+        encoding="utf-8",
+    )
+    client = TestClient(app)
+
+    response = client.get("/v1/runs?limit=10", headers=_headers())
+
+    assert response.status_code == 200
+    assert response.json()["runs"][0]["run_id"] == run_id
+    assert response.json()["runs"][0]["project_id"] == "production-readiness"
 
 
 def test_console_adopts_managed_vast_instance_without_exposing_proxy_key(
@@ -210,3 +309,5 @@ def test_console_adopts_managed_vast_instance_without_exposing_proxy_key(
     runtime = load_runtime_config(workspace)
     assert runtime.comfyui_base_url == "https://203.0.113.10:48189"
     assert runtime.comfyui_api_key == proxy_key
+    assert runtime.vast_instance_id == 9001
+    assert runtime.gpu_lifecycle_enabled is True

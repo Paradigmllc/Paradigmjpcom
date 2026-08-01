@@ -22,6 +22,8 @@ def test_runtime_config_round_trip_and_masking(tmp_path: Path) -> None:
             "comfyui_api_key": "comfy-secret",
             "vast_api_key": "vast-secret",
             "vast_template_hash": "template-hash",
+            "vast_instance_id": 46258780,
+            "gpu_lifecycle_enabled": True,
         },
     )
 
@@ -29,6 +31,8 @@ def test_runtime_config_round_trip_and_masking(tmp_path: Path) -> None:
     loaded = load_runtime_config(workspace)
     assert loaded.comfyui_api_key == "comfy-secret"
     assert loaded.vast_api_key == "vast-secret"
+    assert loaded.vast_instance_id == 46258780
+    assert loaded.gpu_lifecycle_enabled is True
     assert loaded.safe_dict()["comfyui_api_key_configured"] is True
     assert "comfy-secret" not in str(loaded.safe_dict())
     assert "vast-secret" not in str(loaded.safe_dict())
@@ -77,3 +81,18 @@ def test_initial_production_profile_requires_only_bound_wan_workflow(
     settings = Settings.from_env()
 
     assert settings.comfyui_required_workflows == ("abstract-broll-t2v",)
+
+
+def test_production_uses_existing_internal_admin_secret_for_api_auth(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(tmp_path / "workspace"))
+    monkeypatch.setenv("VIDEO_FACTORY_ENVIRONMENT", "production")
+    monkeypatch.delenv("VIDEO_FACTORY_API_KEY", raising=False)
+    monkeypatch.delenv("VIDEO_FACTORY_INTERNAL_API_KEY", raising=False)
+    monkeypatch.setenv("ADMIN_SCRIPT_SECRET", "existing-internal-secret")
+
+    settings = Settings.from_env()
+
+    assert settings.api_key == "existing-internal-secret"
