@@ -7,8 +7,9 @@
 - 複数Prefect/API worker間は`flock` leaseで保護する。rolling deploy前の旧workerもleaseを保持でき、プロセス異常終了後のstale leaseだけを安全に回収する。API再起動時は永続queued/running jobを非冪等再実行せず明示failedへ復旧し、one-shotでidle GPUを停止する。
 - lifecycle状態、Vast実状態、run/lease、時給、最終action/error、直近run履歴を管理consoleへ追加した。loading/empty/errorを可視化し、再確認は明示ボタン・接続・タブ選択時のみで、常駐pollingは使わない。
 - `gpu_starting` / `gpu_ready` / `gpu_stopped` / `gpu_error`を権限600のevent journalへ永続化し、認証付き内部Next APIから既存`notifyBothChannels`へ渡してDBベル+Slackの両方へ通知する。片方でも失敗した場合は成功扱いにせずjournalへ残す。
-- 新規/対象test 27件、Ruff、mypy strict、TypeScript、対象Vitest 5件、ESLint、品質guard error 0、Next.js production buildをpass。ローカル全Video Factory pytestはmacOS側に`ffmpeg`実行ファイルがない既存環境差だけで停止したため、production image CIで全件を再確認する。
+- 新規/対象test 28件、Ruff、mypy strict、TypeScript、対象Vitest 5件、ESLint、品質guard error 0、Next.js production buildをpass。ローカル全Video Factory pytestはmacOS側に`ffmpeg`実行ファイルがない既存環境差だけで停止したため、production image CIで全件を再確認する。
 - 作業開始時点でVast.ai GPU **46258780**を停止し、実状態`exited`、active production run 0件をread-back済み。release後は停止→実runによる自動起動→実生成→自動停止→2段階承認→納品を本番で通し、最終実状態を再び非稼働にして完了する。
+- 初回release **vnf5ibia5yw7bgj790uyyzju** / main **c1d98f32**はhealthy・公開readyまでpassしたが、旧bootstrap stateが本番workspaceに残っておらず、停止中Vast APIはproxy key/portも返さないため管理ID migrationがfail-closedになった。既存runtimeのComfyUI host＋template hashと、唯一のmanaged labelを照合して停止状態のままIDを移行するhotfixを追加し、任意GPU選択やGPU起動による回避は行わない。
 
 ## CURRENT STATUS — 2026-08-01 Video Factory本番復旧（実GPU生成・2段階承認・納品まで完了）
 

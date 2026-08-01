@@ -13,7 +13,11 @@ from video_factory.gpu_lifecycle import (
     release_gpu_if_idle,
     run_lifecycle,
 )
-from video_factory.gpu_lifecycle_state import acquire_gpu_lease, release_gpu_lease
+from video_factory.gpu_lifecycle_state import (
+    acquire_gpu_lease,
+    find_managed_instance,
+    release_gpu_lease,
+)
 from video_factory.runtime_config import load_runtime_config, update_runtime_config
 from video_factory.settings import Settings
 from video_factory.vast import VastClient
@@ -144,6 +148,35 @@ def test_gpu_waits_for_proxy_metadata_after_vast_reports_running(
 
     assert state["phase"] == "ready"
     assert calls == 3
+
+
+def test_stopped_gpu_is_migrated_from_existing_runtime_identity(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    settings = _settings(monkeypatch, tmp_path)
+    update_runtime_config(
+        settings.workspace,
+        {
+            "vast_instance_id": None,
+            "comfyui_base_url": "https://203.0.113.10:48189",
+            "vast_template_hash": "template-hash",
+        },
+    )
+    stopped = _instance(
+        {
+            "actual_status": "exited",
+            "intended_status": "stopped",
+            "cur_state": "stopped",
+        }
+    )
+    stopped["ports"] = {}
+    stopped["extra_env"] = []
+
+    selected = find_managed_instance(settings, [stopped])
+
+    assert selected["id"] == 46258780
+    assert load_runtime_config(settings.workspace).vast_instance_id == 46258780
 
 
 def test_gpu_remains_running_while_another_job_is_queued(
