@@ -105,5 +105,13 @@ jobs:
             command -v hyperframes &&
             command -v ffmpeg &&
             command -v chromium-browser &&
+            test "$(node --version)" = "v22.23.1" &&
+            chromium-browser --version &&
+            cp -R /opt/video-factory/examples/hyperframes-smoke /tmp/hyperframes-smoke &&
+            chown -R nextjs:nodejs /tmp/hyperframes-smoke &&
+            su-exec nextjs:nodejs env HOME=/home/nextjs hyperframes check /tmp/hyperframes-smoke --json &&
+            su-exec nextjs:nodejs env HOME=/home/nextjs hyperframes render /tmp/hyperframes-smoke --output /tmp/hyperframes-smoke/out.mp4 --quality draft --no-browser-gpu &&
+            test -s /tmp/hyperframes-smoke/out.mp4 &&
+            ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 /tmp/hyperframes-smoke/out.mp4 &&
             python3 --version
           '

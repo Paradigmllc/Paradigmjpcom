@@ -2,12 +2,12 @@
 # Paradigm public site and the admin-only Video Factory share one Coolify
 # application, but run as isolated processes on ports 3000 and 8080.
 
-FROM node:22.12.0-alpine AS deps
+FROM node:22.23.1-alpine3.24 AS deps
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN --mount=type=cache,target=/root/.npm npm install --prefer-offline --no-audit --no-fund
 
-FROM node:22.12.0-alpine AS builder
+FROM node:22.23.1-alpine3.24 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json /app/package-lock.json ./
@@ -25,7 +25,7 @@ ENV NEXT_BUILD_BUNDLER=webpack
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN --mount=type=cache,target=/app/.next/cache,id=paradigm-next-cache-webpack-v1 npm run build -- --webpack
 
-FROM node:22.12.0-alpine AS runner
+FROM node:22.23.1-alpine3.24 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -39,6 +39,9 @@ ENV VIDEO_FACTORY_LOCAL_QUEUE_WORKERS=1
 ENV VIDEO_FACTORY_MASTER_COMPOSITOR=hyperframes
 ENV VIDEO_FACTORY_ALLOW_FFMPEG_COMPOSITOR_FALLBACK=false
 ENV HYPERFRAMES_VERSION=0.7.87
+ENV HYPERFRAMES_BROWSER_PATH=/usr/bin/chromium
+ENV PRODUCER_BROWSER_GPU_MODE=software
+ENV PRODUCER_PUPPETEER_PROTOCOL_TIMEOUT_MS=900000
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/vast-ai-jupyter-root.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
