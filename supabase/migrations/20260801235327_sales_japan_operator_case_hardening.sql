@@ -50,7 +50,6 @@ INSERT INTO public.sales_companies (
   company_name,
   region,
   pipeline_status,
-  deal_stage,
   source,
   meta
 )
@@ -59,7 +58,6 @@ VALUES (
   'DONGJIN BEDDING Co., Ltd. / Little Archive',
   'global',
   'pending',
-  '未対応',
   'japan-market-operator-wave1',
   jsonb_build_object(
     'japan_operator_wave1',
@@ -115,7 +113,7 @@ SELECT
   'evidence_verified',
   'active',
   'Paradigm commercial lead',
-  'Japan Opportunity Memoを作成し、人間レビューへ回す',
+  'Create the Japan Opportunity Memo and route it to human review.',
   now() + make_interval(days => priority),
   jsonb_build_object(
     'evidence_verified',
