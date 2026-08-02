@@ -188,12 +188,14 @@
 ## CURRENT STATUS — 2026-08-02 Content API + Pet Life Movie
 
 - Content APIは公開CORS catalog、全文JSON/Markdown、3つの有料decision packetを日英配信する。PR #659、fix #660-#662、deployment `lbxrxhx5vpcyvpolyzusi8qe`はhealthy。x402は財務承認までHTTP 503でfail-closed、無料APIは継続する。
-- Pet Life Movieの商用品質引上げを`codex/pet-life-movie-commercial-perfect`で実装した。日英西葡LPへ注文前の価格・支払方法/時期・納期・保存期間・取消し/不具合/返金・サポート・FAQを表示し、商品固有の提供条件、sitemap、構造化データ、再開導線を追加した。
+- Pet Life Movieの商用品質引上げをPR **#689**、Checkout再試行/削除hardeningをPR **#691**でmainへmergeした。日英西葡LPへ注文前の価格・支払方法/時期・納期・保存期間・取消し/不具合/返金・サポート・FAQを表示し、商品固有の提供条件、sitemap、構造化データ、再開導線を追加した。
 - 家族招待は写真だけでなく実在する思い出と明示的な権利同意を保存し、全員分をstoryboardへ反映する。owner/contributor uploadはR2のsize・Content-Type・magic bytesを確認し、偽装ファイルを削除する。期限切れ招待、20件超の招待、旧render callbackによる承認迂回を拒否する。
-- Checkoutは提供条件version/同意時刻をDB保存し、既存open sessionを失効して二重セッションを防ぐ。DB保存失敗時も新sessionを自動失効する。500系APIは内部例外を返さず相関IDだけを返す。専用rate-limit saltをCoolifyへ生成・設定・read-back済み。
-- ローカルはPet TypeScript、対象ESLint、Vitest **17/17**、Next.js production build **636/636**、Pet Playwright **10/10**、日英西葡LP/規約WCAG 2.2 AA **8/8**、実iPhone profile、desktop/mobile overflow、`npm audit --omit=dev` 0 vulnerabilitiesを通過した。全体Vitestは今回変更外4 files / 17 testsのみ不一致で **1448 tests pass**。
-- Stripe liveのMini $19 / Story $39 / Cinema $79、署名Webhook、Resendは設定済み。過去の金銭移動なし本番E2Eはproject→private R2→preview→live Checkout作成/失効→webhook→全削除まで成功済み。実課金・render・承認・納品・返金の金融E2Eは明示承認まで未実施のまま維持する。
-- ACTIVE HANDOFF: 商用品質PRをmainへmergeし、migration、production deploy、日英西葡LP/提供条件、no-charge owner+family upload、checkout session失効、RLS/列、削除を本番read-backする。Cloudflare API token交換はtoken管理権限不足の既存blockerとして分離する。
+- Checkoutは提供条件version/同意時刻をDB保存し、再試行ごとに固有のStripe idempotency keyを使う。既存open sessionとDB保存失敗時の新sessionを失効し、顧客削除前にもpending sessionを閉じる。500系APIは内部例外を返さず相関IDだけを返す。専用rate-limit saltをCoolifyへ生成・設定・read-back済み。
+- ローカル/CIはPet TypeScript、対象ESLint、Vitest **19/19**、Next.js production build **636/636**、PR #691 CI **3分59秒**、現行本番Pet Playwright **10/10**、日英西葡LP/規約WCAG 2.2 AA **8/8**、実iPhone profile、desktop/mobile overflow、`npm audit --omit=dev` 0 vulnerabilitiesを通過した。全体Vitestは今回変更外4 files / 17 testsのみ不一致で **1448 tests pass**。
+- migration `20260802210000_pet_life_movie_commercial_quality.sql`を本番適用し、同意/家族memory列、check constraint、Pet全6 tableのRLS+FORCE RLS、anon/authenticated grant 0をread-backした。最新main **4f9917a2**（#691の **2653ca71** を包含）をdeployment **z8wcfljvb23ths9tryzn7e67**で反映し、container `n8i2sjiqvr2d8hrzppop2m2i-105318095593`はhealthy。
+- 本番no-charge E2Eはowner 5枚→storyboard→preview→家族1枚+memory/権利同意→storyboard反映→live Mini $19 Checkoutを同一planで2回作成まで完走した。sessionは別ID、1件目expired/2件目open、双方livemode・USD 1900・unpaid。顧客削除後は双方expired、R2 object 0、project/assets/contributors DB row 0を確認し、金銭移動は発生していない。
+- Coolify cloneを公開HTTPSへ変更してappの秘密鍵参照を解除し、旧GitHub deploy key・旧host authorized key・旧Coolify private keyを全失効した。新host専用鍵へ分離し、新deployment logのprivate-key候補0、一時検証token 0をread-backした。Docker未使用cache/imageを整理し、host diskは88%/空き19GBから68%/空き47GBへ回復した。
+- ACTIVE HANDOFF: 課金以外の商用SaaS/LP/API/DB/R2/家族共同編集/削除/アクセシビリティ/本番運用は完了。残りは明示的な金融承認を伴う実購入→render→人間承認→納品→返金の一回限りの証跡作成。Cloudflare API token交換はtoken管理権限不足の既存control-plane blockerとして製品品質から分離する。
 
 ## ACTIVE HANDOFF
 
@@ -204,7 +206,7 @@
 - Japan operator: production releaseとDB/API/UI/送信guardのread-backは完了。実運用はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を揃え、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後にsecretをapproved storeへ設定し、0.25 USDC実購入、settlement、paid delivery、hashed reference、DBベル、Slackを確認する。
 - Pet Life Movie: Coolify API tokenは最小権限へ交換し、検証用一時root tokenとremote secret fileも削除・DB残数0を確認した。Cloudflare API tokenはactive・DNS read可能だがtoken管理権限がなく、交換だけが未完了。認証済みDashboard sessionを確保でき次第API tokenを交換する。
-- Pet Life Movie: live Stripe / 3 Price / Webhook / Resend設定、署名Webhook、本番no-charge Checkout、Session失効、テストデータ完全削除まで完了。残りは明示的な金融承認を伴う実購入→render→承認→納品→返金の一回限りの証跡作成であり、通常checkout自体は本番有効。
+- Pet Life Movie: PR #689/#691、production migration、最新main deployment、owner+family no-charge E2E、再Checkout、削除時Session失効、R2/DB完全削除、鍵分離/失効まで完了。残りは明示的な金融承認を伴う実購入→render→承認→納品→返金の一回限りの証跡作成であり、通常checkout自体は本番有効。
 - Video Factoryは既存の承認済みGPUだけを使用し、既定で追加GPUを作成しない。
 
 ## RELEASE REFERENCES
@@ -231,5 +233,5 @@
 - SERICIA Shopify storefront and BASE sync: PR **#657**、hardening PR **#675** / main `e9238314`（latest live `b0a9eca1`に包含）/ deployment `q80cl9qe9wofsrkwoj440tf4`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Content API: PR **#659**、fixes **#660-#662**、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
-- Pet Life Movie: PR **#664** / **#669** / **#676**、validation **30732125162**、production run **30735560298**、main **b0a9eca1**、deployment `q80cl9qe9wofsrkwoj440tf4`。
+- Pet Life Movie: PR **#664** / **#669** / **#676** / **#689** / **#691**、commercial main **2653ca71**（latest **4f9917a2**に包含）、deployment **z8wcfljvb23ths9tryzn7e67**、container `n8i2sjiqvr2d8hrzppop2m2i-105318095593`。
 - Previous detailed archive: `docs/handoff-archive/2026-08-02-pre-content-api-task.md`。
