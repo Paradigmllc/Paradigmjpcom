@@ -50,19 +50,6 @@
 - Shopify Admin APIのstore domain/token/versionはapproved secret storeに未登録のため、接続済みとは表示しない。資格情報が設定されるまで、商品ID/handleと運営データは内部SSOTで安全に管理する。
 - 対象Vitest 6件、Shopify範囲TypeScript、対象ESLint、deploy script構文、差分検査をpass。Next.js 16 Turbopackはcompileと468/468 static page生成をpassし、Windowsのstandalone最終copyだけ`EBUSY`で停止したため、Linux canonical releaseで最終判定する。
 
-## CURRENT STATUS — 2026-08-01 Video Factory主要OSS実行基盤（本番release完了）
-
-- 既存Wanレーンは変更せず、主要OSS 40プロファイルのうち外部GPU実行型をcontrol planeの任意CLIから分離し、認証付き単一プロセスGPU workerへ強制する。CPU型はcontrol plane、ComfyUI型は既存workflow、外部GPU型はmanaged workerという実行境界を台帳・API・DB・GUIへ反映した。
-- workerはprofile IDと固定40桁revision、商用承認、権利宣言、事前導入済みcommand/executableを検証する。1 GPU 1 job、shell不使用、timeout、MP4 probe、出力上限、SHA-256、temporary cleanupを実装し、未審査・非商用・revision不一致・未導入はfail-closedで拒否する。
-- 非ComfyUIの外部GPU profileも本番runで既存managed GPU leaseを取得し、Vast起動後にComfyUI proxyと必要なworker profile revisionをpreflightする。成功・失敗のfinallyでidle判定後に停止し、dry-run、catalog表示、設定、CPU routeではGPUを起動しない。新GPU作成・常駐polling・job中downloadは行わない。
-- runtime schema v3へOSS worker URL/API keyを追加し、mode 0600保存、secret非再表示、production HTTPS強制、Consoleの接続設定・worker状態badgeを実装した。DB migrationはexecution target/resolved adapter、RLS/role grantを追加し、release migration wiringも更新した。
-- GPU worker用CUDA/FFmpeg container、Compose GPU profile、環境変数、operator runbookを追加した。モデル/worker artifactはread-only mount前提で、ネットワーク遮断可能な実行構成とする。
-- Video Factory全76 pytest、Ruff、mypy strict 53 source files、ESLint、TypeScript、対象Vitest、Next.js production build、release-doctor、PR CIのtest/production-container/routing-storageをpass。desktop/mobile実ブラウザは40 card、worker設定、loading/error、横overflowなし、console error 0を確認した。
-- PR **#642**をmain **b2163b0a**へsquash mergeし、canonical deployment **ofw2znwsajogrgadwsz0mkjp**を完走。新containerは同commit imageでhealthy、公開`/api/ready`は`ok: true / ready`、DB migrationと95/95 table検査、Traefik origin lock、公開smoke、post-deploy doctorをpassした。
-- 本番runtimeをschema v3へ安全に移行し、secretを再表示せずmode 600を確認。40 profileを再同期し、ready 3 / blocked 37、managed GPU 31 / control plane 9、`catalog_synced` completed 100%、DBベルopen、Slack `slack_ok: true`をread-backした。未設定worker、未審査weight、非商用、24GB超過は理由付きで選択不能のまま維持する。
-- RLSはprofile/event両tableで有効、anon/authenticated grant 0。共通migrationが再作成する重複service-role policyも最終hardeningで毎release削除し、明示した最小権限policyだけを残す。
-- 管理GPU **46258780**はVast実状態`exited / stopped`、active run 0、GPU lease 0、errorなし。catalog閲覧・設定・DB同期・CPU routeでは起動せず、生成jobが必要とする場合だけ起動し、完了・失敗時にidleなら即停止する。
-
 ## CURRENT STATUS — 2026-08-01 Video Factory主要OSSエンジン統合（本番release完了）
 
 - Wan既存レーンは維持しつつ、FramePack、SkyReels V2/V3、NVIDIA Cosmos 3、Pyramid Flow、Open-Sora系、VideoCrafter/DynamiCrafterを含む主要な動画生成・人物アニメーション・音声・補正・3D/図解OSS計40プロファイルを、単一の監査可能な台帳へ統合する。モデル重量は常駐・一括取得せず、承認済みプロファイルだけをジョブ単位で遅延ロードする。
@@ -146,12 +133,7 @@
 
 ## ACTIVE HANDOFF - 2026-08-02 Vertical SaaS direction
 
-- Product direction is fixed on an industry-specific vertical SaaS; the global PLG/OSS-wrapper consumer SaaS discussion is explicitly out of scope for this initiative.
-- Default first wedge: quote follow-up and dormant-opportunity recovery for Japanese industrial machinery manufacturers, machinery trading companies, and adjacent equipment businesses.
-- Go-to-market model: one shared workflow engine, prove paid retention in one narrow industry, then expand only to adjacent industries that can reuse at least 80% of the product.
-- Commercial policy is now no free pilot and no free trial. Starter is JPY 29,800/month including tax (3 seats, 2,000 imported rows/month); Team is JPY 49,800/month including tax (10 seats, 10,000 imported rows/month).
-- The no-login quote-neglect diagnostic remains only as acquisition content. Qualified users proceed directly to account creation and paid Stripe Checkout.
-- Existing RevenueOS company collection, signal scoring, CRM, pipeline, notifications, and operational monitoring should be reused for acquisition operations. The customer-facing vertical SaaS must remain a separately scoped product surface and data model.
+- Direction: industry-specific Quote Recovery SaaS for Japanese machinery manufacturers/traders; no free pilot/trial. Starter is JPY 29,800/month including tax (3 seats, 2,000 rows/month), Team is JPY 49,800/month including tax (10 seats, 10,000 rows/month); the global PLG/OSS-wrapper track is out of scope.
 - Commercial SaaS core is implemented: secure password/session auth, password reset flow, organization and role membership, tenant-isolated quote/import/activity/notification/usage/audit data, CSV import and export, explainable priority dashboard, quote status/owner/next-action updates, activity history, member invite/role/removal, plan limits, loading/empty/error states, and responsive Japanese UI.
 - Stripe Billing is implemented with live-mode enforcement, hosted subscription Checkout, Customer Portal sessions, webhook signature verification, duplicate-event ledger, out-of-order event protection, payment-failure access control, billing audit records, and DB + Slack billing notifications.
 - Stripe live products exist in the Paradigm LLC account: Quote Recovery Starter and Team with monthly JPY tax-inclusive prices. The dedicated production webhook endpoint is registered for Checkout, subscription lifecycle, and invoice paid/failed events.
