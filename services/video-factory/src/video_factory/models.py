@@ -55,15 +55,52 @@ class Severity(StrEnum):
     ERROR = "error"
 
 
+class MotionPreset(StrEnum):
+    CONFIDENT = "confident"
+    EDITORIAL = "editorial"
+    MINIMAL = "minimal"
+    ENERGETIC = "energetic"
+    CINEMATIC = "cinematic"
+
+
+class CaptionMode(StrEnum):
+    OFF = "off"
+    SIDECAR = "sidecar"
+    BURNED = "burned"
+
+
+CreativeTemplateId = Literal[
+    "kinetic-type",
+    "product-spotlight",
+    "ui-focus",
+    "data-proof",
+    "social-cta",
+]
+
+
 class BrandSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=200)
+    kit_id: str = Field(default="project-brand", pattern=r"^[a-z0-9][a-z0-9-]{2,79}$")
     primary_color: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
     accent_color: str = Field(pattern=r"^#[0-9A-Fa-f]{6}$")
+    secondary_color: str = Field(default="#111827", pattern=r"^#[0-9A-Fa-f]{6}$")
     text_color: str = Field(default="#FFFFFF", pattern=r"^#[0-9A-Fa-f]{6}$")
-    font_family: str = Field(default="Inter", min_length=1, max_length=100)
+    font_family: str = Field(default="IBM Plex Sans", min_length=1, max_length=100)
     logo_path: str | None = None
+    motion_preset: MotionPreset = MotionPreset.CONFIDENT
+    safe_margin_percent: int = Field(default=7, ge=4, le=15)
+
+
+class AudioSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    narration_path: str | None = Field(default=None, max_length=2000)
+    music_path: str | None = Field(default=None, max_length=2000)
+    narration_volume: float = Field(default=1.0, ge=0, le=2)
+    music_volume: float = Field(default=0.18, ge=0, le=1)
+    captions: CaptionMode = CaptionMode.SIDECAR
 
 
 class RightsDeclaration(BaseModel):
@@ -135,6 +172,8 @@ class ClientBrief(BaseModel):
     duration_seconds: float = Field(ge=5, le=600)
     languages: list[str] = Field(min_length=1, max_length=12)
     brand: BrandSpec
+    template_id: CreativeTemplateId | Literal["auto"] = "auto"
+    audio: AudioSpec = Field(default_factory=AudioSpec)
     source_assets: list[str] = Field(default_factory=list, max_length=200)
     reference_urls: list[str] = Field(default_factory=list, max_length=50)
     rights: RightsDeclaration
@@ -194,6 +233,7 @@ class Shot(BaseModel):
     language: str
     headline: str = ""
     body: str = ""
+    template_id: CreativeTemplateId = "product-spotlight"
     source_assets: list[str] = Field(default_factory=list)
     engine: Engine | None = None
     routing_reason: str | None = None
@@ -211,6 +251,8 @@ class ShotManifest(BaseModel):
     primary_deliverable: DeliverableSpec
     deliverables: list[DeliverableSpec]
     brand: BrandSpec
+    template_id: CreativeTemplateId | Literal["auto"] = "auto"
+    audio: AudioSpec = Field(default_factory=AudioSpec)
     rights: RightsDeclaration
     approver: Approver
     shots: list[Shot]
@@ -260,6 +302,8 @@ class MediaProbe(BaseModel):
     fps: float
     has_audio: bool
     codec: str | None = None
+    audio_mean_db: float | None = None
+    audio_peak_db: float | None = None
 
 
 class QaCheck(BaseModel):

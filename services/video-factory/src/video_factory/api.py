@@ -329,6 +329,12 @@ def project_endpoint(project_id: str) -> dict[str, Any]:
         "draft_review": read_json(workspace.review / "draft-review.json"),
         "final_review": read_json(workspace.review / "final-review.json"),
         "delivery": read_json(workspace.deliverables / "delivery.json"),
+        "revisions": [
+            read_json(path)
+            for path in sorted((workspace.root / "revisions").glob("*.json"))
+        ]
+        if (workspace.root / "revisions").exists()
+        else [],
     }
 
 

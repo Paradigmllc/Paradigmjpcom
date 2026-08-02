@@ -34,6 +34,7 @@ interface StripeEvent {
       customer?: string
       subscription?: string
       status?: string
+      payment_status?: string
       current_period_end?: number
       metadata?: Record<string, string>
       amount_total?: number
@@ -90,6 +91,8 @@ export async function POST(req: NextRequest) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
+        const { handlePetMovieCheckoutCompleted } = await import("@/lib/pet-life-movie/render")
+        if (await handlePetMovieCheckoutCompleted(obj)) break
         // 新規顧客作成
         const plan = obj.metadata?.plan ?? ""
         const isWl = plan.startsWith("agency")
@@ -103,6 +106,11 @@ export async function POST(req: NextRequest) {
           is_white_label: isWl,
           assigned_to: null,
         })
+        break
+      }
+      case "checkout.session.async_payment_succeeded": {
+        const { handlePetMovieCheckoutCompleted } = await import("@/lib/pet-life-movie/render")
+        await handlePetMovieCheckoutCompleted(obj)
         break
       }
       case "customer.subscription.updated": {

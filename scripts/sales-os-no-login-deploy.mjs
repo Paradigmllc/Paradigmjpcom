@@ -34,6 +34,7 @@ const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 let preferDbSshChannel = false
+const cachedSupabaseDbContainers = new Map()
 const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const APPLY_SHOPIFY_ONLY = process.argv.includes("--apply-shopify-only")
 
@@ -457,6 +458,7 @@ function applySqlMigrationThroughHost(sql, label) {
   const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "paradigm-droplet")
   const dbContainer = resolveSupabaseDbContainer(sshTarget)
   const commonArgs = sshArgs(sshTarget, { acceptNew: true })
+  const sqlWithSchemaReload = `${sql.trimEnd()}\nNOTIFY pgrst, 'reload schema';\n`
   const apply = spawnSync(
     "ssh",
     [
@@ -474,25 +476,13 @@ function applySqlMigrationThroughHost(sql, label) {
       "-d",
       "postgres",
     ],
-    { input: sql, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
+    { input: sqlWithSchemaReload, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
   )
   if (apply.status !== 0) {
     const detail = `${apply.stderr || apply.stdout || ""}`.trim()
     throw new Error(`${label} DB SSH fallback failed: ${detail.slice(0, 300)}`)
   }
 
-  const reload = spawnSync(
-    "ssh",
-    [
-      ...commonArgs,
-      `docker exec ${dbContainer} psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';"`,
-    ],
-    { encoding: "utf8", maxBuffer: 1024 * 1024 },
-  )
-  if (reload.status !== 0) {
-    const detail = `${reload.stderr || reload.stdout || ""}`.trim()
-    throw new Error(`${label} schema reload failed: ${detail.slice(0, 300)}`)
-  }
   return `${label}: applied through DB SSH channel`
 }
 
@@ -555,6 +545,8 @@ function resolveTwentyDbContainer(sshTarget) {
 function resolveSupabaseDbContainer(sshTarget) {
   const explicit = envValue("PARADIGM_SUPABASE_DB_CONTAINER")
   if (explicit) return explicit
+  const cached = cachedSupabaseDbContainers.get(sshTarget)
+  if (cached) return cached
 
   const result = spawnSync(
     "ssh",
@@ -583,16 +575,58 @@ function resolveSupabaseDbContainer(sshTarget) {
     .filter((row) => row.name.length > 0)
 
   const exact = rows.find((row) => row.name === "paradigm-supabase-db" || row.name === "supabase-db-1")
-  if (exact) return exact.name
+  if (exact) {
+    cachedSupabaseDbContainers.set(sshTarget, exact.name)
+    return exact.name
+  }
 
   const candidate = rows.find((row) => /supabase.*db|db.*supabase/i.test(row.name) && /postgres/i.test(row.image))
-  if (candidate) return candidate.name
+  if (candidate) {
+    cachedSupabaseDbContainers.set(sshTarget, candidate.name)
+    return candidate.name
+  }
 
   throw new Error("Could not resolve Supabase Postgres container on host")
 }
 
 async function applyContentTemplateMigration(envs) {
   return applySqlMigration(envs, "migration_022_sales_content_templates.sql", "Content template migration")
+}
+
+async function applyPetLifeMovieMigration(envs) {
+  return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
+}
+
+async function verifyPetLifeMovieSchema(envs) {
+  const { url, key } = salesSupabase(envs)
+  if (isInternalDataApiUrl(url)) {
+    await applySqlMigrationThroughPostgres(
+      envs,
+      `
+do $$
+begin
+  if to_regclass('public.pet_movie_projects') is null then
+    raise exception 'pet_movie_projects is missing';
+  end if;
+  if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
+    raise exception 'service_role cannot read pet_movie_projects';
+  end if;
+end
+$$;
+`,
+      "Pet Life Movie schema verification",
+    )
+    return "Pet Life Movie schema: verified through Postgres service_role privileges"
+  }
+  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Pet Life Movie schema verification failed: HTTP ${response.status} ${detail.slice(0, 180)}`)
+  }
+  return "Pet Life Movie schema: verified through service role"
 }
 
 async function applyAgentTeamMigration(envs) {
@@ -632,6 +666,22 @@ async function applyVideoFactoryOssExecutionTargetsMigration(envs) {
     envs,
     "20260801114845_video_factory_oss_execution_targets.sql",
     "Video Factory OSS execution targets migration",
+  )
+}
+
+async function applyVideoFactoryCommercialStudioMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802093000_video_factory_commercial_studio.sql",
+    "Video Factory commercial Studio migration",
+  )
+}
+
+async function applyVideoFactoryStudioLeastPrivilegeMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802113000_video_factory_studio_least_privilege.sql",
+    "Video Factory Studio least-privilege migration",
   )
 }
 
@@ -697,6 +747,26 @@ async function applyPublicSurfaceRlsMigration(envs) {
 
 async function applyPublicJapanEntryChecksMigration(envs) {
   return applySqlMigration(envs, "migration_072_public_japan_entry_checks.sql", "Public Japan Entry checks migration")
+}
+
+async function applyJapanOperatorCasesMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260801224308_sales_japan_operator_cases.sql",
+    "Japan market operator case control migration",
+  )
+}
+
+async function applyJapanOperatorCaseHardeningMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260801235327_sales_japan_operator_case_hardening.sql",
+    "Japan market operator append-only audit and Wave 1 alias hardening",
+  )
+}
+
+async function applyContentCommerceMigration(envs) {
+  return applySqlMigration(envs, "20260801231006_content_commerce.sql", "Content API and x402 commerce migration")
 }
 
 async function applyFormQualifiedLeadFactoryMigration(envs) {
@@ -1096,6 +1166,10 @@ async function applySalesToolingBootstrapMigration(envs) {
 
 async function applySalesOptionalColumnRepairMigration(envs) {
   return applySqlMigration(envs, "migration_054_sales_cloud_optional_column_repair.sql", "Sales optional column repair migration")
+}
+
+async function applyQuoteRecoveryValidationMigration(envs) {
+  return applySqlMigration(envs, "migration_059_quote_recovery_validation.sql", "Quote Recovery validation migration")
 }
 
 async function applyContentTemplates(envs) {
@@ -1570,6 +1644,8 @@ async function main() {
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
+    console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
@@ -1584,6 +1660,9 @@ async function main() {
     console.log(await applyDemoContactHardeningMigration(envs))
     console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyPublicJapanEntryChecksMigration(envs))
+    console.log(await applyJapanOperatorCasesMigration(envs))
+    console.log(await applyJapanOperatorCaseHardeningMigration(envs))
+    console.log(await applyContentCommerceMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyInitialFormDraftFactoryMigration(envs))
@@ -1623,6 +1702,8 @@ async function main() {
     console.log(await applyVideoProductionMigration(envs))
     console.log(await applyVideoFactoryEngineProfilesMigration(envs))
     console.log(await applyVideoFactoryOssExecutionTargetsMigration(envs))
+    console.log(await applyVideoFactoryCommercialStudioMigration(envs))
+    console.log(await applyVideoFactoryStudioLeastPrivilegeMigration(envs))
     console.log(await applyCrmFieldMasterMigration(envs))
     console.log(await applySourceTechMetricsMigration(envs))
     console.log(await applyMonthlyLeadBatchMigration(envs))
@@ -1643,6 +1724,7 @@ async function main() {
     console.log(await applyPassiveInventorySegmentsMigration(envs))
     console.log(await applySalesRaceConditionGuardsMigration(envs))
     console.log(await applySalesOptionalColumnRepairMigration(envs))
+    console.log(await applyQuoteRecoveryValidationMigration(envs))
     // Keep the latest claim contract last: older compatibility migrations also
     // define this RPC and can otherwise restore a stale no-retry function.
     console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
@@ -1675,6 +1757,8 @@ async function main() {
 
   const smokeTargets = [
     { url: "https://paradigmjp.com/api/ready" },
+    { url: "https://paradigmjp.com/ja/quote-recovery", markers: ["見積を出した後", "無料でCSV診断する"] },
+    { url: "https://paradigmjp.com/ja/pet-life-movie" },
     { url: "https://paradigmjp.com/ja/admin/shopify" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },

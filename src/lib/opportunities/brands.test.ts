@@ -12,6 +12,7 @@ describe("Enter & Operate Japan commercial package", () => {
     ])
     expect(offer.offers[0]?.description).toContain("fully credited toward launch")
     expect(offer.inquiryTypes).toContain("Paid Market Validation")
+    expect(offer.disclaimer).toContain("separate from the fixed $15,000 Country Partner Setup")
   })
 
   it("publishes the same staged package in Japanese", () => {
@@ -20,5 +21,6 @@ describe("Enter & Operate Japan commercial package", () => {
     expect(offer.offers[0]?.name).toBe("有料市場検証")
     expect(offer.offers[1]?.price).toBe("総額 $20,000")
     expect(offer.offers[2]?.price).toBe("$2,500/月 + 10%")
+    expect(offer.disclaimer).toContain("固定15,000ドル")
   })
 })

@@ -25,6 +25,10 @@ export const DB_TABLES = {
   // NOTE: CMS_CONTENT_BLOCKS has no migration in this repo. Managed by Appexxme (separate project).
   CMS_CONTENT_BLOCKS: "cms_content_blocks",
 
+  // ── Content commerce (x402 + public Content API) ──
+  CONTENT_PRODUCTS: "content_products",
+  CONTENT_ACCESS_EVENTS: "content_access_events",
+
   // ── Sales OS Core (migration_003) ──
   SALES_COMPANIES: "sales_companies",
   SALES_CUSTOMERS: "sales_customers",
@@ -104,6 +108,8 @@ export const DB_TABLES = {
   SALES_JAPAN_ENTRY_PROJECTIONS: "sales_japan_entry_projections",
   SALES_INITIAL_FORM_DRAFTS: "sales_initial_form_drafts",
   SALES_REPORT_FACTORY_STATE: "sales_report_factory_state",
+  SALES_JAPAN_OPERATOR_CASES: "sales_japan_operator_cases",
+  SALES_JAPAN_OPERATOR_EVENTS: "sales_japan_operator_events",
 
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",
@@ -111,6 +117,11 @@ export const DB_TABLES = {
   // ── Video Factory audited OSS engine catalog ──
   VIDEO_FACTORY_ENGINE_PROFILES: "video_factory_engine_profiles",
   VIDEO_FACTORY_ENGINE_EVENTS: "video_factory_engine_events",
+  VIDEO_FACTORY_BRAND_KITS: "video_factory_brand_kits",
+  VIDEO_FACTORY_CREATIVE_TEMPLATES: "video_factory_creative_templates",
+  VIDEO_FACTORY_STUDIO_PROJECTS: "video_factory_studio_projects",
+  VIDEO_FACTORY_SHOT_REVISIONS: "video_factory_shot_revisions",
+  VIDEO_FACTORY_QUALITY_METRICS: "video_factory_quality_metrics",
 
   // ── Pipeline Metrics (migration_066) ──
   SALES_PIPELINE_METRICS: "sales_pipeline_metrics",

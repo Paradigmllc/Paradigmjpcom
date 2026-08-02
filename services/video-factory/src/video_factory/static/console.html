@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/console/console.css">
   <link rel="stylesheet" href="/console/console-gpu-lifecycle.css">
   <link rel="stylesheet" href="/console/console-engine-catalog.css">
+  <link rel="stylesheet" href="/console/console-studio.css">
   <link rel="stylesheet" href="/console/console-responsive.css">
 </head>
 <body>
@@ -118,9 +119,14 @@
               <div class="section-number">03</div><div class="section-copy"><p class="eyebrow">BRAND & ASSETS</p><h2>ブランドと素材</h2><p>UI、商品名、価格、ロゴは生成AIではなく正確な合成レーンで扱います。</p></div>
               <div class="field-grid">
                 <label class="field"><span>ブランド名 *</span><input id="brand-name" value="Paradigm" required></label>
-                <label class="field"><span>フォント</span><input id="font-family" value="Inter, Noto Sans JP"></label>
+                <label class="field"><span>Brand Kit ID</span><input id="brand-kit-id" value="paradigm-default" pattern="[a-z0-9][a-z0-9-]{2,79}"></label>
+                <label class="field"><span>フォント</span><input id="font-family" value="IBM Plex Sans, Noto Sans JP"></label>
                 <label class="field color-field"><span>メインカラー</span><div><input id="primary-color" type="color" value="#0F172A"><input id="primary-color-text" value="#0F172A" maxlength="7"></div></label>
                 <label class="field color-field"><span>アクセント</span><div><input id="accent-color" type="color" value="#34D399"><input id="accent-color-text" value="#34D399" maxlength="7"></div></label>
+                <label class="field color-field"><span>セカンダリ</span><div><input id="secondary-color" type="color" value="#111827"><input id="secondary-color-text" value="#111827" maxlength="7"></div></label>
+                <label class="field color-field"><span>文字色</span><div><input id="text-color" type="color" value="#FFFFFF"><input id="text-color-text" value="#FFFFFF" maxlength="7"></div></label>
+                <label class="field"><span>モーション</span><select id="motion-preset"><option value="confident">Confident</option><option value="energetic">Energetic</option><option value="editorial">Editorial</option><option value="minimal">Minimal</option><option value="cinematic">Cinematic</option></select></label>
+                <label class="field"><span>セーフマージン</span><select id="safe-margin"><option value="5">5%</option><option value="7" selected>7%</option><option value="10">10%</option><option value="12">12%</option></select></label>
                 <label class="field span-2"><span>素材パス・URL（1行1件）</span><textarea id="source-assets" rows="4" placeholder="/data/client/logo.svg&#10;https://signed-url.example/video.mp4"></textarea></label>
                 <label class="field span-2"><span>参考URL（1行1件）</span><textarea id="reference-urls" rows="3" placeholder="https://example.com/product"></textarea></label>
               </div>
@@ -128,13 +134,24 @@
 
             <article class="panel form-section">
               <div class="section-number">04</div><div class="section-copy"><p class="eyebrow">PRODUCTION</p><h2>制作方法</h2><p>必要なレーンだけを選びます。未承認Workflowは本番実行されません。</p></div>
+              <div class="field span-2 studio-template-field"><span>クリエイティブテンプレート</span><select id="creative-template"><option value="auto">シーンごとに自動選択</option></select><div id="creative-template-catalog" class="studio-template-catalog" role="list"><div class="empty compact">テンプレートを読み込んでいます。</div></div></div>
               <fieldset class="field span-2"><legend>使用する表現</legend><div class="choice-row multi" id="shot-kinds"><label class="choice"><input type="checkbox" value="text_motion" checked><span>文字・モーション</span></label><label class="choice"><input type="checkbox" value="ui_capture" checked><span>Web・UI収録</span></label><label class="choice"><input type="checkbox" value="generative" checked><span>生成Bロール</span></label><label class="choice"><input type="checkbox" value="supplied_edit"><span>支給映像編集</span></label><label class="choice"><input type="checkbox" value="chart"><span>図表・データ</span></label><label class="choice"><input type="checkbox" value="technical_diagram"><span>技術図解</span></label><label class="choice"><input type="checkbox" value="portrait_animation"><span>人物アニメ</span></label><label class="choice"><input type="checkbox" value="lip_sync"><span>リップシンク</span></label></div></fieldset>
               <div class="field span-2"><span>エンジンプロファイル指定</span><div id="engine-profile-selectors" class="engine-profile-selectors"><div class="empty compact">OSSエンジン台帳の読込後に、表現ごとの本番利用可能プロファイルを表示します。</div></div><small>指定しない表現は承認済み標準ルーターを使います。GPUなしプレビューではweightを読み込みません。</small></div>
               <label class="field span-2"><span>追加指示</span><textarea id="notes" rows="5" placeholder="トーン、構成、避けたい表現、参考動画のどこを参考にするか等"></textarea></label>
             </article>
 
             <article class="panel form-section">
-              <div class="section-number">05</div><div class="section-copy"><p class="eyebrow">RIGHTS & APPROVAL</p><h2>権利と承認者</h2><p>商用制作の必須チェックです。</p></div>
+              <div class="section-number">05</div><div class="section-copy"><p class="eyebrow">AUDIO & CAPTIONS</p><h2>音声と字幕</h2><p>支給ナレーションとBGMを自動ミックスし、字幕証跡を生成します。</p></div>
+              <div class="field-grid">
+                <label class="field span-2"><span>ナレーション音源パス</span><input id="narration-path" placeholder="/data/client/narration.wav"></label>
+                <label class="field span-2"><span>BGM音源パス</span><input id="music-path" placeholder="/data/client/music.mp3"></label>
+                <label class="field"><span>BGM音量</span><input id="music-volume" type="number" min="0" max="1" step="0.01" value="0.18"></label>
+                <label class="field"><span>字幕</span><select id="caption-mode"><option value="sidecar">VTTを生成</option><option value="burned">映像へ焼き込み＋VTT</option><option value="off">生成しない</option></select></label>
+              </div>
+            </article>
+
+            <article class="panel form-section">
+              <div class="section-number">06</div><div class="section-copy"><p class="eyebrow">RIGHTS & APPROVAL</p><h2>権利と承認者</h2><p>商用制作の必須チェックです。</p></div>
               <div class="field-grid">
                 <label class="field"><span>最終承認者名 *</span><input id="approver-name" required placeholder="氏名"></label>
                 <label class="field"><span>承認者メール *</span><input id="approver-email" type="email" required placeholder="name@company.com"></label>
@@ -247,5 +264,6 @@
   <script src="/console/console-projects.js" defer></script>
   <script src="/console/console-runtime.js" defer></script>
   <script src="/console/console-engine-catalog.js" defer></script>
+  <script src="/console/console-studio.js" defer></script>
 </body>
 </html>

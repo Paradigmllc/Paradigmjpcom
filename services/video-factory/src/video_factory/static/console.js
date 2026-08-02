@@ -73,6 +73,7 @@ function setView(name) {
   $("#page-title").textContent = titles[name] || "Video Factory"
   history.replaceState(null, "", `#${name}`)
   if (name === "projects") void loadProjects()
+  if (name === "create" && window.loadStudioTemplates) void window.loadStudioTemplates()
   if (name === "engines" && window.loadEngineCatalog) void window.loadEngineCatalog()
   if (name === "gpu") void loadRuntimeAndGpu()
 }
@@ -181,6 +182,7 @@ async function loadBootstrap() {
   const body = await api("/v1/console/bootstrap")
   state.bootstrap = body
   setConnection(true)
+  if (window.loadStudioTemplates) void window.loadStudioTemplates()
   $("#metric-projects").textContent = String(body.project_count ?? 0)
   const comfy = body.runtime?.comfyui_base_url || body.factory?.comfyui_base_url
   $("#metric-comfy").textContent = comfy ? "Connected" : "Not set"
@@ -360,7 +362,9 @@ function buildBrief() {
       font_family: $("#font-family").value.trim() || "Inter",
       logo_path: lines($("#source-assets").value)
         .find((item) => /logo/i.test(item)) || null,
+      ...(window.studioBrandFields ? window.studioBrandFields() : {}),
     },
+    ...(window.studioBriefFields ? window.studioBriefFields() : {}),
     source_assets: lines($("#source-assets").value),
     reference_urls: lines($("#reference-urls").value),
     rights: {

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .media import probe_media
+from .media import probe_audio_levels, probe_media
 from .models import DeliverableSpec, QaCheck, QaReport
 
 
@@ -10,10 +10,17 @@ def run_technical_qa(
     media_path: str | Path,
     expected: DeliverableSpec,
     expected_duration: float,
+    *,
+    audio_required: bool = False,
+    captions_path: str | Path | None = None,
 ) -> QaReport:
     checks: list[QaCheck] = []
     try:
         probe = probe_media(media_path)
+        mean_db, peak_db = probe_audio_levels(media_path) if probe.has_audio else (None, None)
+        probe = probe.model_copy(
+            update={"audio_mean_db": mean_db, "audio_peak_db": peak_db}
+        )
     except Exception as error:  # QA must return a report rather than hiding the failure.
         return QaReport(
             passed=False,
@@ -62,4 +69,28 @@ def run_technical_qa(
             ),
         ]
     )
+    if audio_required:
+        checks.append(
+            QaCheck(
+                name="audio-level",
+                passed=probe.audio_peak_db is not None and probe.audio_peak_db > -50,
+                expected="> -50 dBFS peak",
+                actual=(
+                    f"{probe.audio_peak_db:.1f} dBFS"
+                    if probe.audio_peak_db is not None
+                    else "silent"
+                ),
+                message="支給音声が無音または極端に小さい可能性があります。",
+            )
+        )
+    if captions_path is not None:
+        caption_file = Path(captions_path)
+        checks.append(
+            QaCheck(
+                name="captions",
+                passed=caption_file.is_file() and caption_file.stat().st_size > 8,
+                expected="valid WebVTT sidecar",
+                actual=str(caption_file),
+            )
+        )
     return QaReport(passed=all(check.passed for check in checks), probe=probe, checks=checks)

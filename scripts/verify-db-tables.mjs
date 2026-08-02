@@ -20,6 +20,8 @@ const ALL_TABLES = [
   // CMS
   "cms_posts", "cms_services", "cms_pricing", "cms_faqs", "cms_works",
   "cms_settings", "cms_media", "cms_content_blocks",
+  // Content commerce
+  "content_products", "content_access_events",
   // Sales OS Core
   "sales_companies", "sales_customers", "sales_deliveries", "sales_templates", "sales_campaigns",
   // Contracts & KPI
@@ -58,8 +60,14 @@ const ALL_TABLES = [
   "sales_searxng_search_runs", "sales_searxng_search_results",
   // Japan Readiness
   "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_initial_form_drafts", "sales_report_factory_state",
+  "sales_japan_operator_cases", "sales_japan_operator_events",
+  // Pet Life Movie
+  "pet_movie_projects", "pet_movie_contributors", "pet_movie_assets", "pet_movie_jobs", "pet_movie_events",
   // Video
   "sales_video_jobs", "video_factory_engine_profiles", "video_factory_engine_events",
+  "video_factory_brand_kits", "video_factory_creative_templates",
+  "video_factory_studio_projects", "video_factory_shot_revisions",
+  "video_factory_quality_metrics",
   // Platform Health
   "sales_platform_health_snapshots",
   // Infrastructure
@@ -387,8 +395,17 @@ function printSummaryAndExit(ok, missing, errored) {
         "sales_error_log": "supabase/migrations/migration_045_sales_error_log.sql",
         "demo_contact_submissions": "supabase/migrations/migration_070_demo_contact_hardening.sql",
         "public_japan_entry_checks": "supabase/migrations/migration_072_public_japan_entry_checks.sql",
+        "sales_japan_operator_cases": "supabase/migrations/20260801224308_sales_japan_operator_cases.sql",
+        "sales_japan_operator_events": "supabase/migrations/20260801224308_sales_japan_operator_cases.sql",
+        "content_products": "supabase/migrations/20260801231006_content_commerce.sql",
+        "content_access_events": "supabase/migrations/20260801231006_content_commerce.sql",
         "video_factory_engine_profiles": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_engine_events": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
+        "video_factory_brand_kits": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_creative_templates": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_studio_projects": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_shot_revisions": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_quality_metrics": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
         "manual_japan_entry_batches": "supabase/migrations/20260720233215_manual_work_durable_batches.sql",
         "manual_japan_entry_batch_items": "supabase/migrations/20260720233215_manual_work_durable_batches.sql",
         "sales_lead_candidate_domains": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",

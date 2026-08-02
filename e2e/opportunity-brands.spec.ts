@@ -22,4 +22,13 @@ test.describe("Japan opportunity brands", () => {
     })
     expect(response.status()).toBe(400)
   })
+
+  test("keeps the fixed setup lane distinct from the external operator lane", async ({ page }) => {
+    await page.goto("/en/japan-market-partner")
+    await expect(page.getByText("This $15,000 fixed setup lane does not appoint Paradigm as a distributor")).toBeVisible()
+    await expect(page.getByRole("link", { name: "View the External Japan Market Operator package" })).toHaveAttribute(
+      "href",
+      "/en/japan-opportunities/enter-and-operate-japan",
+    )
+  })
 })

@@ -279,6 +279,96 @@ function checkStaticReleaseRules() {
     fail("Japan Entry score utility persistence must have RLS and release migration wiring")
   }
 
+  const operatorCasesMigrationPath = "supabase/migrations/20260801224308_sales_japan_operator_cases.sql"
+  const operatorCasesMigration = fs.existsSync(operatorCasesMigrationPath)
+    ? fs.readFileSync(operatorCasesMigrationPath, "utf8")
+    : ""
+  const operatorHardeningMigrationPath = "supabase/migrations/20260801235327_sales_japan_operator_case_hardening.sql"
+  const operatorHardeningMigration = fs.existsSync(operatorHardeningMigrationPath)
+    ? fs.readFileSync(operatorHardeningMigrationPath, "utf8")
+    : ""
+  const operatorCaseMarkers = [
+    "sales_japan_operator_cases",
+    "sales_japan_operator_events",
+    "sales_apply_japan_operator_action",
+    "sales_create_japan_operator_case",
+    "ENABLE ROW LEVEL SECURITY",
+    "FORCE ROW LEVEL SECURITY",
+    "FROM PUBLIC, anon, authenticated",
+    "TO service_role",
+    "external_messages_sent",
+  ]
+  const operatorHardeningMarkers = [
+    "REVOKE ALL ON TABLE public.sales_japan_operator_cases FROM service_role",
+    "REVOKE ALL ON TABLE public.sales_japan_operator_events FROM service_role",
+    "GRANT SELECT, INSERT ON TABLE public.sales_japan_operator_events TO service_role",
+    "DONGJIN BEDDING Co., Ltd. / Little Archive",
+    "external_messages_sent', 0",
+  ]
+  if (
+    operatorCaseMarkers.every((marker) => operatorCasesMigration.includes(marker)) &&
+    operatorHardeningMarkers.every((marker) => operatorHardeningMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801224308_sales_japan_operator_cases.sql") &&
+    noLoginDeploy.includes("applyJapanOperatorCasesMigration") &&
+    noLoginDeploy.includes("20260801235327_sales_japan_operator_case_hardening.sql") &&
+    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration")
+  ) {
+    pass("Japan market operator cases have atomic audit actions, RLS and release wiring")
+  } else {
+    fail("Japan market operator cases require atomic audit actions, RLS and release wiring")
+  }
+
+  const petMovieMigrationPath = "supabase/migrations/20260801213954_pet_life_movie_mvp.sql"
+  const petMovieMigration = fs.existsSync(petMovieMigrationPath)
+    ? fs.readFileSync(petMovieMigrationPath, "utf8")
+    : ""
+  const petMovieRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
+  const petMovieDbVerifier = fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
+  const petMovieMarkers = [
+    "pet_movie_projects",
+    "pet_movie_contributors",
+    "pet_movie_assets",
+    "pet_movie_jobs",
+    "pet_movie_events",
+    "enable row level security",
+    "force row level security",
+    "from public, anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    petMovieMarkers.every((marker) => petMovieMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    noLoginDeploy.includes("applyPetLifeMovieMigration") &&
+    petMovieRunMigrations.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    petMovieMarkers.slice(0, 5).every((marker) => petMovieDbVerifier.includes(marker))
+  ) {
+    pass("Pet Life Movie persistence has RLS, service-role isolation, migration execution, and DB verification wiring")
+  } else {
+    fail("Pet Life Movie persistence requires RLS, service-role isolation, migration execution, and DB verification wiring")
+  }
+
+  const contentCommerceMigrationPath = "supabase/migrations/20260801231006_content_commerce.sql"
+  const contentCommerceMigration = fs.existsSync(contentCommerceMigrationPath)
+    ? fs.readFileSync(contentCommerceMigrationPath, "utf8")
+    : ""
+  const contentCommerceSecurityMarkers = [
+    "content_products",
+    "content_access_events",
+    "ENABLE ROW LEVEL SECURITY",
+    "REVOKE ALL ON public.content_products FROM PUBLIC, anon, authenticated",
+    "REVOKE ALL ON public.content_access_events FROM PUBLIC, anon, authenticated",
+    "TO service_role",
+  ]
+  if (
+    contentCommerceSecurityMarkers.every((marker) => contentCommerceMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801231006_content_commerce.sql") &&
+    noLoginDeploy.includes("applyContentCommerceMigration")
+  ) {
+    pass("Content API products and x402 access events have RLS and release migration wiring")
+  } else {
+    fail("Content commerce requires service-role-only RLS and release migration wiring")
+  }
+
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
   const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
     ? fs.readFileSync(engineProfilesMigrationPath, "utf8")
@@ -320,6 +410,41 @@ function checkStaticReleaseRules() {
     pass("Video Factory engine catalog/events have RLS and release migration wiring")
   } else {
     fail("Video Factory engine catalog/events require RLS and release migration wiring")
+  }
+
+  const studioMigrationPath = "supabase/migrations/20260802093000_video_factory_commercial_studio.sql"
+  const studioMigration = fs.existsSync(studioMigrationPath)
+    ? fs.readFileSync(studioMigrationPath, "utf8")
+    : ""
+  const studioHardeningMigrationPath = "supabase/migrations/20260802113000_video_factory_studio_least_privilege.sql"
+  const studioHardeningMigration = fs.existsSync(studioHardeningMigrationPath)
+    ? fs.readFileSync(studioHardeningMigrationPath, "utf8")
+    : ""
+  const studioSecurityMarkers = [
+    "video_factory_brand_kits",
+    "video_factory_creative_templates",
+    "video_factory_studio_projects",
+    "video_factory_shot_revisions",
+    "video_factory_quality_metrics",
+    "enable row level security",
+    "force row level security",
+    "revoke all on table public.video_factory_brand_kits from anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    studioMigration
+    && studioSecurityMarkers.every((marker) => studioMigration.toLowerCase().includes(marker))
+    && studioHardeningMigration.toLowerCase().includes("revoke all on table public.video_factory_creative_templates from service_role")
+    && studioHardeningMigration.toLowerCase().includes("grant select on table public.video_factory_creative_templates to service_role")
+    && studioHardeningMigration.toLowerCase().includes("grant select, insert on table public.video_factory_shot_revisions to service_role")
+    && noLoginDeploy.includes("20260802093000_video_factory_commercial_studio.sql")
+    && noLoginDeploy.includes("applyVideoFactoryCommercialStudioMigration")
+    && noLoginDeploy.includes("20260802113000_video_factory_studio_least_privilege.sql")
+    && noLoginDeploy.includes("applyVideoFactoryStudioLeastPrivilegeMigration")
+  ) {
+    pass("Video Factory commercial Studio data has server-only RLS and release wiring")
+  } else {
+    fail("Video Factory commercial Studio requires RLS and release migration wiring")
   }
 
   const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
@@ -505,7 +630,9 @@ function checkStaticReleaseRules() {
     && legacyExternalSyncMigration.includes("'portal_candidate_twenty_sync'")
     && legacyExternalSyncMigration.includes("'demo_candidate_sync'")
     && noLoginDeploy.includes('"ON_ERROR_STOP=1"')
-    && noLoginDeploy.includes("psql -X -v ON_ERROR_STOP=1")
+    && noLoginDeploy.includes("const sqlWithSchemaReload")
+    && noLoginDeploy.includes("NOTIFY pgrst, 'reload schema'")
+    && noLoginDeploy.includes("input: sqlWithSchemaReload")
     && !noLoginDeploy.includes("/already exists|duplicate/i.test")
     && noLoginDeploy.includes("20260715193000_sales_sync_logs_list_lead.sql")
     && noLoginDeploy.includes("applySalesSyncLogsListLeadMigration")

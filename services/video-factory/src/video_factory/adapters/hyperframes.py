@@ -8,6 +8,7 @@ from typing import Literal
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
 from ..commands import run_command
+from ..creative_templates import creative_template
 from ..media import create_placeholder_clip
 from ..models import Engine, EngineOutput, Shot
 from .base import EngineAdapter, EngineContext
@@ -27,7 +28,8 @@ class HyperFramesAdapter(EngineAdapter):
         status: Literal["completed", "dry_run", "failed"]
         project = context.workspace.hyperframes / context.namespace / shot.id
         project.mkdir(parents=True, exist_ok=True)
-        template = self.environment.get_template("basic-launch/index.html.j2")
+        selected = creative_template(shot.template_id)
+        template = self.environment.get_template("commercial-studio/index.html.j2")
         rendered = template.render(
             project_name=context.manifest.project_name,
             composition_id=shot.id,
@@ -39,6 +41,9 @@ class HyperFramesAdapter(EngineAdapter):
             eyebrow=shot.title,
             headline=shot.headline or shot.title,
             body=shot.body or shot.purpose,
+            template_id=selected.id,
+            template_name=selected.display_name,
+            shot_kind=shot.kind.value,
             brand=context.manifest.brand.model_dump(mode="json"),
         )
         (project / "index.html").write_text(rendered, encoding="utf-8")
@@ -54,7 +59,7 @@ class HyperFramesAdapter(EngineAdapter):
             ),
             encoding="utf-8",
         )
-        frame_source = self.template_root / "basic-launch" / "frame.md"
+        frame_source = self.template_root / "commercial-studio" / "frame.md"
         (project / "frame.md").write_text(
             frame_source.read_text(encoding="utf-8"), encoding="utf-8"
         )
@@ -107,7 +112,7 @@ class HyperFramesAdapter(EngineAdapter):
             provenance={
                 "version": context.settings.hyperframes_version,
                 "project": str(project),
-                "template": "basic-launch",
+                "template": selected.id,
             },
             warnings=warnings,
             elapsed_seconds=time.monotonic() - started,
