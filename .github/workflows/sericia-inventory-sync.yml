@@ -1,6 +1,13 @@
 name: SERICIA BASE inventory sync
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/sericia-inventory-sync.yml"
+      - "src/app/api/shopify-ops/base/**"
+      - "src/components/shopify-ops/ShopifyBaseSyncPanel.tsx"
+      - "src/lib/shopify-ops/base-*.ts"
+      - "src/lib/shopify-ops/types.ts"
   schedule:
     # Every 30 minutes. The API applies only safe diffs and records blocked irregularities.
     - cron: "7,37 * * * *"
@@ -14,7 +21,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Focused inventory automation tests
+        run: >-
+          npm exec -- vitest run
+          src/lib/shopify-ops/base-sync.test.ts
+          src/lib/shopify-ops/base-sync-automation.test.ts
+          src/app/api/shopify-ops/base/daily/route.test.ts
+      - name: TypeScript
+        run: npm exec -- tsc --noEmit --pretty false
+      - name: Lint inventory automation
+        run: >-
+          npm exec -- eslint
+          src/lib/shopify-ops/base-sync-service.ts
+          src/lib/shopify-ops/base-sync-automation.ts
+          src/lib/shopify-ops/base-sync-automation.test.ts
+          src/app/api/shopify-ops/base/daily/route.ts
+          src/app/api/shopify-ops/base/daily/route.test.ts
+          src/components/shopify-ops/ShopifyBaseSyncPanel.tsx
+          --max-warnings=0
+      - name: Production build
+        run: npm run build
+
   run:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
