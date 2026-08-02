@@ -12,19 +12,21 @@
 
 ## CURRENT STATUS — 2026-08-02 Video Subscription Commercial Operations
 
-- Branch `codex/video-growth-commercial-ops` で、Direct Growthを商用実務ワークオーダーへ拡張。顧客・契約参照・請求状態・月次制作枠・優先度・言語・担当・開始日・納期・SLAをDB/API/GUIで一元管理する。
-- 契約、請求・入金、制作ブリーフ、ブランド素材、利用権、LP、計測の7項目を全てpassed/waivedにするまで案件レビューをDBで拒否する。法務は契約/権利、財務は請求、Delivery/Commercialは制作工程を更新できる。
-- 各動画はContent Revision単位の内部品質QAと顧客公開承認を必須化。依頼者と承認者を分離し、Admin自己承認は20文字以上の根拠を必須化。旧create/transition/update RPCのservice-role権限を外し、商用ガードを迂回できない。
-- 修正依頼、担当、期限、解決記録、日次成果、累計自動再計算、SLA/承認/修正/月次枠KPI、検索・工程絞込、Excel向けCSV（式注入対策）を追加。外部SNS投稿・メール送信機能は追加していない。
-- RLS/FORCE RLS/service-role最小権限の新規5テーブルと4 migrationをrelease wiring済み。local release doctor、ESLint、TypeScript、Vitest 11件、Next.js build 564ページ、Playwright PC/390×844を通過。
-- ACTIVE HANDOFF: commit/push/PR/CI/main merge後、migration適用、Coolify deploy、本番API/UI/RLS/ACL/公開ガード/CSV/post-deploy doctorをread-backして完了する。実顧客案件、外部投稿、メール送信は作成しない。
+- Direct Growthを、顧客・契約参照・請求状態・月次制作枠・優先度・言語・担当・開始日・納期・SLAをDB/API/GUIで一元管理する商用実務ワークオーダーへ拡張した。契約、請求・入金、制作ブリーフ、ブランド素材、利用権、LP、計測の7項目がpassed/waivedになるまで案件レビューをDBで拒否する。
+- 各動画はContent Revision単位の内部品質QAと顧客公開承認を必須化した。依頼者と承認者を分離し、Admin自己承認は20文字以上の根拠を要求する。旧create/transition/update RPCのservice-role実行権限を外し、商用ガードの迂回を防止した。
+- 修正依頼、担当、期限、解決記録、日次成果、累計自動再計算、SLA/承認/修正/月次枠KPI、検索・工程絞込、Excel向けCSV（式注入対策）を追加した。外部SNS投稿・メール送信機能は追加していない。
+- PR **#680**をmain `4f39e5ab`へsquash mergeし、CI 5/5、local release doctor、ESLint、TypeScript、Vitest 11件、Next.js build 564ページ、Playwright PC/390×844を通過した。本番deployment `x7ct7g60yj8d2ho5wln6xtpm`はfinishedで、対象main commitと一致する。
+- 本番へ4 migrationを適用し、新規5テーブルのRLS/FORCE RLS、video growth全8テーブルのservice-role限定policy、anon/authenticated権限0、旧3 RPC権限失効、新商用RPC限定権限、7項目・二段階承認・職務分離・公開ガードをread-backした。8テーブルは全て0件で、架空案件は作成していない。
+- 未認証API/CSV 401、認証API/CSV 200、UTF-8 BOM/no-store、管理画面PC/390×844のAPI 200・H1・管理者表示・CSV導線・横overflowなしを確認した。post-deploy doctorもpass。ACTIVE HANDOFF: 実顧客案件は、承認済みStudio案件を選び、契約/請求/素材/権利/LP/計測を確認してから登録する。外部投稿とメール送信は引き続き人間が実行する。
 
 ## CURRENT STATUS — 2026-08-02 Hana Creator Video Factory bridge
 
+- Production verified: PR #677/main `1b0b84b1`, Coolify deployment `bq6td1c4coh8kqaxfbbr7z3a`, and the full post-deploy release gate passed. Live dry-run accepted the same Hana UUID twice with one execution and `idempotent_replay`, completed in draft-review state, exposed the constrained artifact list, and left managed Vast.ai instance 46258780 `exited`.
+- Security response: the first env import accidentally created a malformed multiline Coolify value and appeared only in a failed build. The bridge and affected Hana automation/media secrets were rotated in approved storage and both runtimes before the successful deployment; the failed value is no longer valid.
 - 独立運用中のHana Creatorから、本番Video Factoryへ安全に制作ジョブを投入する専用machine-to-machine bridgeを追加した。Hana専用secret、承認済み参照画像、`hana-<job UUID>` project、生成shot、ローカル納品だけを許可する。
 - Hana job UUIDをVideo Factoryのrun IDとして永続化し、タイムアウト再送やworker再起動でも同じジョブを二重生成しない。既存のVast.ai管理GPU 46258780、1 GPU 1 job、商用ライセンス・workflow審査、完了/失敗時停止をそのまま再利用する。
 - bridgeはsubmit/status/artifact listと、Hana projectの画像・動画成果物だけを取得できるprivate file proxyを提供する。他project、brief、review JSON、未承認参照画像は拒否する。
-- Active handoff: Linux CI通過後にPRをmainへmergeし、`VIDEO_FACTORY_CREATOR_BRIDGE_SECRET`を本番Paradigm/Hanaのapproved secretへ同値設定する。まずdry-runでGPUが停止したまま冪等submit/status/artifact境界を確認し、その後だけproduction seriesを有効化する。
+- Active handoff: bridge rollout is complete. Keep the Hana runtime on dry-run and series disabled until commercially approved ComfyUI model/workflow profiles and SNS app credentials/audits are ready; activate one SFW canary series before any broader production run.
 
 ## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio + Direct Growth
 
