@@ -42,10 +42,10 @@ test("real iPhone profile loads the complete styled experience", async ({ browse
   })
   const response = await page.goto("/ja/pet-life-movie", { waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
-  await expect(page.getByRole("heading", { name: "写真を、家族の物語に。" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: /写真を、\s*家族の物語に。/ })).toBeVisible()
   expect(await page.evaluate(() => document.styleSheets.length)).toBeGreaterThan(0)
   expect(await page.evaluate(() => Number.parseFloat(getComputedStyle(document.querySelector("h1")!).fontSize))).toBeGreaterThan(30)
-  const pipeline = page.getByText("透明なOSSパイプライン")
+  const pipeline = page.getByText("見えない工程まで、誠実に。")
   await pipeline.scrollIntoViewIfNeeded()
   await expect(pipeline).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
@@ -85,16 +85,18 @@ test("creates a no-account Pet Life Movie preview", async ({ page }) => {
   })
 
   await page.goto("/ja/pet-life-movie")
-  await expect(page.getByRole("heading", { name: "写真を、家族の物語に。" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: /写真を、\s*家族の物語に。/ })).toBeVisible()
   await expect(page.getByRole("heading", { name: "注文前に、すべて明確に。" })).toBeVisible()
   await expect(page.getByText("$19").first()).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth))
-  await page.getByRole("button", { name: "無料プレビューを生成" }).click()
+  await page.getByRole("button", { name: "次へ" }).click()
   await expect(page.getByText("未入力または確認が必要な項目があります").first()).toBeVisible()
   await page.getByLabel("ペットのお名前").fill("Mugi")
   await page.getByLabel("一緒に過ごした時間").fill("12年間")
-  await page.getByPlaceholder("1.").fill("川沿いの散歩")
-  await page.getByLabel("写真を5〜20枚選ぶ").setInputFiles(assetIds.map((_, index) => ({
+  await page.getByRole("button", { name: "次へ" }).click()
+  await page.getByLabel("本当にあった思い出 1").fill("川沿いの散歩")
+  await page.getByRole("button", { name: "次へ" }).click()
+  await page.getByLabel(/写真を追加する/).setInputFiles(assetIds.map((_, index) => ({
     name: `mugi-${index + 1}.jpg`,
     mimeType: "image/jpeg",
     buffer: Buffer.from(`photo-${index + 1}`),

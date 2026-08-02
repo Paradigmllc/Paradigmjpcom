@@ -195,6 +195,15 @@
 - 完了済みのCountry Partner one-shot workflow 2本と、V2へ置換済みの旧Vast bootstrap workflow 1本がmain pushごとにjob 0件の偽failure runを作っていたため削除した。現行の`direct-vast-production-bootstrap-v2.yml`と通常のproduction deployは維持する。
 -->
 
+## CURRENT STATUS — 2026-08-02 Pet Life Movie delight-quality UI/UX
+
+- 返金処理と法規制文言は今回の対象外として維持し、それ以外の公開LP・無料制作・家族招待・鑑賞/進捗画面を感情設計から刷新した。DB/API/保存形式/Stripe契約は変更せず、既存プロジェクトとの互換性を維持する。
+- 権利が明確な専用キービジュアルを生成・WebP最適化し、完成イメージが最初の画面で伝わるeditorial hero、作品体験を先に見せる情報順、3段階の制作ストーリー、価値訴求、価格/FAQ、OSS制作工程の視覚階層へ再構成した。
+- 長い単一フォームを「あの子のこと→本当にあった思い出→写真」の3ステップへ分割した。入力別validation、戻る/進む、犬猫selector、写真追加/削除preview、安全なupload進捗、完成後の共有/家族招待/管理/注文導線、モバイルsticky preview、reduced-motionを実装した。
+- 家族招待画面をprivate invitationとして再設計し、招待の意味・限定性・直接private storage送信を明示した。写真preview/削除、文字数、権利同意、進捗、完了後の更新preview導線を同じproduct languageへ統一した。
+- 検証: full TypeScript、対象ESLint warning 0、Pet Vitest 19/19、Next.js production build 636/636、production-mode Playwright 10/10（4言語desktop/mobile、実iPhone、no-account preview）、WCAG 2.2 AA 4言語違反0、横overflow 0、`npm audit --omit=dev` 0 vulnerabilities。
+- ACTIVE HANDOFF: branch `codex/pet-life-movie-delight` をPR/CI後にmainへmergeし、正式な `npm run release:prod`、本番4言語/実iPhone/console/ready/visual fingerprintまで確認する。返金処理と法規制文言は別承認スコープのまま変更しない。
+
 ## CURRENT STATUS — 2026-08-02 Content API + Pet Life Movie
 
 - Content APIは公開CORS catalog、全文JSON/Markdown、3つの有料decision packetを日英配信する。PR #659、fix #660-#662、deployment `lbxrxhx5vpcyvpolyzusi8qe`はhealthy。x402は財務承認までHTTP 503でfail-closed、無料APIは継続する。
