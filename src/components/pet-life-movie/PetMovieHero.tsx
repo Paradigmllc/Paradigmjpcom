@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image"
-import Link from "next/link"
 import { motion, useReducedMotion } from "framer-motion"
 import { ArrowDown, Check, Heart, LockKeyhole, Play, Sparkles, Users } from "lucide-react"
 
@@ -90,19 +89,21 @@ export default function PetMovieHero({ locale }: { locale: Locale }) {
             {t.description}
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
+            <a
               href="#create"
+              data-pet-movie-event="hero_cta"
               className="group inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-paradigm-ink px-7 text-sm font-semibold text-paradigm-paper shadow-[0_18px_50px_rgba(15,17,21,.2)] transition hover:-translate-y-0.5 hover:bg-paradigm-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paradigm-accent focus-visible:ring-offset-4"
             >
               <Play className="h-4 w-4 fill-current" aria-hidden="true" />
               {t.cta}
-            </Link>
-            <Link
+            </a>
+            <a
               href="#experience"
+              data-pet-movie-event="experience_cta"
               className="inline-flex min-h-14 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold text-paradigm-ink transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-paradigm-accent"
             >
               {t.secondary}<ArrowDown className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            </a>
           </div>
           <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-paradigm-ink-mute">
             {t.promises.map((promise) => (

@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-03 Pet Life Movie global growth launch
+
+- Implemented a service-role-only, RLS/FORCE-RLS marketing ledger for campaigns, regional runs, channel posts, retries, publishing outcomes, and privacy-safe attribution events. The seeded launch covers Japanese, English, Spanish, and Portuguese across JP, AU, GB, ES, PT, US, MX, and BR.
+- Added deterministic localized content planning and UTM links for APAC, Europe, and Americas. Instagram Business and Pinterest Business can publish directly with Pet-specific credentials; TikTok and YouTube remain draft-only until their public publishing audits are complete. Missing connectors fail closed without losing the generated launch queue.
+- Added the authenticated `/ja/admin/pet-life-movie-growth` command center with 30-day funnel KPIs, connector health, regional manual runs, campaign pause/resume, run history, and the content flight board. Mutations emit DB bell and Slack notifications.
+- Added LP attribution for page view, hero/experience CTA, wizard start, project creation, preview creation, and checkout start. Only a salted anonymous hash, referrer hostname, path, locale, market, and UTM fields are retained through a rate-limited API.
+- Added `.github/workflows/pet-life-movie-global-growth.yml` for three daily global windows and an authenticated daily API with idempotent run/post keys, bounded retries, no duplicate publishing, and no public database grants.
+- Local verification so far: full TypeScript passed, targeted ESLint passed, the quality guard has 0 errors, `git diff --check` passed, 6 Vitest files / 13 tests passed, the Next.js production build generated 648 pages, and the attributed CTA flow passed in desktop Chromium and Mobile Safari. CI, migration application, deployment, first live regional runs, and production browser verification remain in progress.
+- ACTIVE HANDOFF: complete the release gates, merge and deploy, apply migration, trigger each regional canary, and verify the public LP plus authenticated command center. Pet-specific Instagram/Pinterest credentials are not present in approved storage, so direct publishing must remain fail-closed while worldwide drafts and attribution run in production.
+
 ## CURRENT STATUS - 2026-08-03 SERICIA semi-automated storefront operations
 
 - Live storefront URL is `https://sericia.com`; it currently redirects to Shopify's password page and remains intentionally non-public. The private operations console is `https://paradigmjp.com/ja/admin/shopify`.

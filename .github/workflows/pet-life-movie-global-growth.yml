@@ -1,0 +1,59 @@
+name: Pet Life Movie global growth
+
+on:
+  schedule:
+    - cron: "15 0 * * *"
+    - cron: "15 9 * * *"
+    - cron: "15 17 * * *"
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: Global publishing window
+        required: true
+        default: apac
+        type: choice
+        options:
+          - apac
+          - europe
+          - americas
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pet-life-movie-global-growth-${{ github.event.schedule || inputs.slot || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Select global market window
+        id: market
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_SLOT: ${{ inputs.slot }}
+        run: |
+          case "$SCHEDULE" in
+            "15 0 * * *") slot="apac" ;;
+            "15 9 * * *") slot="europe" ;;
+            "15 17 * * *") slot="americas" ;;
+            "") slot="$MANUAL_SLOT" ;;
+            *) echo "Unsupported schedule: $SCHEDULE" >&2; exit 1 ;;
+          esac
+          case "$slot" in apac|europe|americas) ;; *) echo "Invalid slot" >&2; exit 1 ;; esac
+          echo "slot=$slot" >> "$GITHUB_OUTPUT"
+
+      - name: Generate, schedule, and publish eligible content
+        env:
+          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
+          SLOT: ${{ steps.market.outputs.slot }}
+        run: |
+          test -n "$WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --retry 2 --retry-all-errors --max-time 90 \
+            --request POST \
+            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
+            --header "Content-Type: application/json" \
+            "https://paradigmjp.com/api/pet-life-movie/marketing/daily?slot=$SLOT"
