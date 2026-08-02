@@ -56,7 +56,7 @@ test.describe("Japan opportunity brands", () => {
     await expect(page.getByText("28 distinct decisions, not keyword variants")).toBeVisible()
     await page.getByLabel("Filter by geography").selectOption("Greater Tokyo")
     await page.getByPlaceholder(/Search market/).fill("Yokohama")
-    await expect(page.getByText("Showing 1 of 28 evidence-gated briefs.")).toBeVisible()
+    await expect(page.getByText("Showing 2 of 28 evidence-gated briefs.")).toBeVisible()
     await page.getByRole("link", { name: /Yokohama Real Estate Investment/ }).click()
 
     await expect(page.getByRole("heading", { level: 1, name: /Yokohama Real Estate Investment/ })).toBeVisible()
@@ -68,8 +68,9 @@ test.describe("Japan opportunity brands", () => {
     await expect(baseYield).toContainText("3.38%")
     await page.getByLabel("Purchase price").fill("800")
     await expect(baseYield).toContainText("2.54%")
-    await expect(page.locator('script[type="application/ld+json"]')).toContainText(/Dataset/)
-    await expect(page.locator('script[type="application/ld+json"]')).toContainText(/FAQPage/)
+    const structuredData = await page.locator('script[type="application/ld+json"]').allTextContents()
+    expect(structuredData.some((value) => value.includes('"@type":"Dataset"'))).toBe(true)
+    expect(structuredData.some((value) => value.includes('"@type":"FAQPage"'))).toBe(true)
   })
 
   test("keeps the fixed setup lane distinct from the external operator lane", async ({ page }) => {
