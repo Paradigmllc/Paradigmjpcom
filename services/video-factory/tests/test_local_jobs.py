@@ -71,6 +71,59 @@ def test_queue_settings_are_validated(
         Settings.from_env()
 
 
+def test_local_queue_deduplicates_explicit_run_id(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_QUEUE_BACKEND", "local")
+    monkeypatch.setenv("VIDEO_FACTORY_LOCAL_QUEUE_WORKERS", "1")
+    settings = Settings.from_env()
+    brief_path = workspace / "inbox" / "brief.json"
+    brief_path.parent.mkdir(parents=True)
+    brief_path.write_text("{}\n", encoding="utf-8")
+    execution_count = 0
+
+    def fake_flow(**_kwargs) -> PipelineResult:
+        nonlocal execution_count
+        execution_count += 1
+        return PipelineResult(
+            project_id="hana-project",
+            status="draft_review_required",
+            workspace=str(workspace / "projects" / "hana-project"),
+            manifest_path=str(workspace / "projects" / "hana-project" / "manifest.json"),
+        )
+
+    monkeypatch.setattr(local_jobs, "production_flow", fake_flow)
+    request_id = "a0ec88b2-7be8-43b7-b615-8adcb63d9248"
+    first = submit_local_job(
+        settings,
+        run_id=request_id,
+        brief_path=brief_path,
+        dry_run=False,
+        planner_provider="deterministic",
+        auto_approve=False,
+        delivery_target="local",
+    )
+    duplicate = submit_local_job(
+        settings,
+        run_id=request_id,
+        brief_path=brief_path,
+        dry_run=False,
+        planner_provider="deterministic",
+        auto_approve=False,
+        delivery_target="local",
+    )
+
+    assert duplicate.run_id == first.run_id
+    for _ in range(100):
+        if execution_count == 1:
+            break
+        time.sleep(0.01)
+    assert execution_count == 1
+
+
 def test_startup_reconciliation_marks_interrupted_jobs_failed(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

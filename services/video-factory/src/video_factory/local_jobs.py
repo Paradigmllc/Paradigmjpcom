@@ -180,6 +180,7 @@ def _run_job(settings: Settings, job: LocalJob) -> None:
 def submit_local_job(
     settings: Settings,
     *,
+    run_id: str | None = None,
     brief_path: Path,
     dry_run: bool,
     planner_provider: str,
@@ -188,25 +189,32 @@ def submit_local_job(
     manifest_path: Path | None = None,
     rerender_shot_ids: list[str] | None = None,
 ) -> LocalJob:
-    run_id = str(uuid.uuid4())
-    timestamp = _now()
-    job = LocalJob(
-        run_id=run_id,
-        status="queued",
-        created_at=timestamp,
-        updated_at=timestamp,
-        brief_path=str(brief_path),
-        dry_run=dry_run,
-        planner_provider=planner_provider,
-        auto_approve=auto_approve,
-        delivery_target=delivery_target,
-        manifest_path=str(manifest_path) if manifest_path else None,
-        rerender_shot_ids=rerender_shot_ids,
-    )
-    _write_job(settings, job)
-    future = _executor(settings).submit(_run_job, settings, job)
     with _lock:
-        _futures[run_id] = future
+        selected_run_id = run_id or str(uuid.uuid4())
+        try:
+            uuid.UUID(selected_run_id)
+        except ValueError as error:
+            raise ValueError("run_id must be a UUID") from error
+        existing = load_local_job(settings, selected_run_id)
+        if existing is not None:
+            return existing
+        timestamp = _now()
+        job = LocalJob(
+            run_id=selected_run_id,
+            status="queued",
+            created_at=timestamp,
+            updated_at=timestamp,
+            brief_path=str(brief_path),
+            dry_run=dry_run,
+            planner_provider=planner_provider,
+            auto_approve=auto_approve,
+            delivery_target=delivery_target,
+            manifest_path=str(manifest_path) if manifest_path else None,
+            rerender_shot_ids=rerender_shot_ids,
+        )
+        _write_job(settings, job)
+        future = _executor(settings).submit(_run_job, settings, job)
+        _futures[selected_run_id] = future
     return job
 
 
