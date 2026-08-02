@@ -7,7 +7,8 @@
 - キャンペーン、媒体variant、append-only監査eventの3テーブルとRPCをservice-role最小権限で追加した。Studio最終承認、4媒体レビュー準備、人間承認、将来日時指定の順に状態遷移を強制する。
 - `/ja/admin/video-growth`と`/api/sales/video-growth`にKPI、30秒更新、loading/empty/error、作成、編集、承認、配信予定、手動公開URL、累積成果、監査ログを実装し、全mutationをDBベル+Slackへ通知する。
 - 外部投稿・メール送信機能は意図的に持たせない。未保存コピーのレビュー移行、未承認配信、指標の巻き戻し、納品物不一致、revision競合はDB/APIで拒否する。
-- PR **#665**。ESLint警告0、TypeScript、Vitest **7件**、Next.js build **564ページ**、Playwright PC/390×844 mobile、release-doctor、PR CI 3 jobsをpass。
+- PR **#665**をmain `f2339929`へsquash mergeし、feature deployment `ghen9whanscvtws0cqndwj5y`と最新live deployment `szv2lqpeybjf476rtqcu6djm`はいずれもfinished、アプリはhealthy。ESLint警告0、TypeScript、Vitest **7件**、Next.js build **564ページ**、Playwright PC/390×844 mobile、PR CI 3 jobsをpass。
+- 本番migrationをPostgreSQLへ適用し、3テーブルすべてでRLS/FORCE RLS、service-role限定policy/table grant、anon/authenticated権限0、RPC 3/3のservice-role限定実行権限をread-backした。未認証API 401、認証API 200、管理画面タイトル、readiness 200、キャンペーン/variant/event 0件を確認し、post-deploy doctorもrelease gateをpass。架空キャンペーンと外部送信は作成していない。
 
 ## CURRENT STATUS — 2026-08-02 SERICIA Shopify storefront
 
@@ -39,8 +40,8 @@
 
 ## ACTIVE HANDOFF
 
-- Direct Growth: PR **#665**をmainへsquash mergeし、canonical releaseでmigrationを適用する。3テーブルのRLS/FORCE RLS、anon/authenticated grant 0、service-role policy/RPCをread-backする。
-- Direct Growth: 本番管理画面の認証redirect、API未認証401/認証200、4媒体、外部送信controlなし、DBベル+Slackを確認する。架空キャンペーンや外部投稿は作成しない。
+- Direct Growth: 実装、main merge、本番deployment、migration、RLS/ACL、API/UI/readiness、post-deploy doctorまで完了。外部投稿・メール送信controlは持たず、本番データ0件を維持した。
+- Direct Growth: 初回実運用は、最終承認済みの実在Studio案件を1件登録し、4媒体copyの人間レビュー、DBベル+Slack通知、将来日時、手動公開URL、成果指標を同一campaignで記録する。通知の本番mutation確認は架空データを作らず、この実案件で行う。
 - SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
 - Japan operator: production releaseとDB/API/UI/送信guardのread-backは完了。実運用はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を揃え、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後にsecretをapproved storeへ設定し、0.25 USDC実購入、settlement、paid delivery、hashed reference、DBベル、Slackを確認する。
@@ -50,7 +51,7 @@
 
 ## RELEASE REFERENCES
 
-- Direct Growth: PR **#665** / branch `feat/video-direct-growth`。
+- Direct Growth: PR **#665** / main `f2339929` / feature deployment `ghen9whanscvtws0cqndwj5y` / latest live deployment `szv2lqpeybjf476rtqcu6djm`。
 - SERICIA Shopify storefront and BASE sync: PR **#657** / main `ad3e6d2b` / deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Content API: PR **#659**、fixes **#660-#662**、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
