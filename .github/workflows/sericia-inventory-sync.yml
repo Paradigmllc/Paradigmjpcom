@@ -1,0 +1,30 @@
+name: SERICIA BASE inventory sync
+
+on:
+  schedule:
+    # Every 30 minutes. The API applies only safe diffs and records blocked irregularities.
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sericia-base-inventory-sync
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Synchronize safe BASE catalog and inventory diffs
+        env:
+          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
+        run: |
+          test -n "$WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
+            --header "Content-Type: application/json" \
+            https://paradigmjp.com/api/shopify-ops/base/daily

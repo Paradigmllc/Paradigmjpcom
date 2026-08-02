@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-03 SERICIA semi-automated storefront operations
+
+- Live storefront URL is `https://sericia.com`; it currently redirects to Shopify's password page and remains intentionally non-public. The private operations console is `https://paradigmjp.com/ja/admin/shopify`.
+- Live audit confirms Shopify Admin API is healthy but the store has 0 products. The 12 dashboard rows are planning candidates with inventory/evidence gates at 0/14, not saleable catalog items. The 2026-08-03 SNS scheduled run succeeded technically and stopped safely with 0 eligible/generated/published posts.
+- BASE is not yet operationally connected: the production dashboard reports Developers app false, OAuth false, linked products 0, and sync-ready false. Instagram/Pinterest are supported but unconfigured; TikTok/YouTube direct publishing stays disabled pending platform review/audit. Shopify Payments/PayPal completion and a real checkout have not been proven, so global business launch remains blocked.
+- Added a webhook-authenticated BASE scheduled endpoint plus GitHub Actions workflow every 30 minutes. Normal diffs update Shopify DRAFT products/inventory; unchanged snapshots skip Shopify writes. Zero source items, source-count collapse/spike, missing connections, or concurrent sync stop fail-closed and persist a blocked/failed run.
+- Irregular or material-change runs notify both the DB bell and Slack. Repeated identical connection blocks are throttled for 12 hours and failures for 2 hours. Automatic Shopify publication and product deletion remain disabled.
+- Admin UI now shows auto-run/safe-stop state, interval, last scheduled run, and manual/automatic history. Validation: 4 focused Vitest files / 16 tests pass, targeted ESLint passes, and `tsc --noEmit` passes. Local full build was stopped after 23 minutes of resource contention with another workspace build; definitive GitHub CI and production build remain the release gate.
+- ACTIVE HANDOFF: merge/deploy only after CI passes, then run one authenticated canary and verify its persisted run plus dual notification. Commercial launch remains fail-closed until verified BASE inventory, product evidence/images/rights/export data, payments, shipping/tax/returns checkout tests, and supported social business credentials are present.
+
 ## CURRENT STATUS - 2026-08-02 Greater Tokyo investor pSEO expansion (production complete)
 
 - PRs #701, #702, and #704 implement the production feature, and PR #705 records the corrected live E2E contract. The verified release `bdf645a5a53b540b1048bff4160e17632d14446a` is running healthy through Coolify deployment `g9y1tesbx8frl0abkmsu9wbv`; the one-time pre-deployment command remains cleared.
