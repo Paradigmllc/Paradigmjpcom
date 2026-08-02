@@ -10,6 +10,12 @@ function statusLabel(status: BaseSyncStatus["recentRuns"][number]["status"]): st
   return "失敗"
 }
 
+function statusTone(status: BaseSyncStatus["recentRuns"][number]["status"]): string {
+  if (status === "succeeded") return "bg-emerald-50 text-emerald-700"
+  if (status === "running" || status === "blocked") return "bg-amber-50 text-amber-700"
+  return "bg-rose-50 text-rose-700"
+}
+
 function dateTime(value: string): string {
   return new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Tokyo" }).format(new Date(value))
 }
@@ -63,8 +69,8 @@ export function ShopifyBaseSyncPanel({ status, locale, submit }: { status: BaseS
               <input type="hidden" name="pageLocale" value={locale} />
               <h3 className="font-bold text-zinc-900">1. dry-run</h3>
               <p className="mt-2 min-h-10 text-xs leading-relaxed text-zinc-500">BASE商品を読み取り、作成予定のSKU・価格・在庫・分類を確認します。</p>
-              <button type="submit" disabled={!status.baseShopConnected} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40">
-                <PackageSearch className="h-4 w-4" /> 読み取りテスト
+              <button type="submit" disabled={!status.baseShopConnected || status.syncRunning} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40">
+                <PackageSearch className="h-4 w-4" /> {status.syncRunning ? "同期実行中" : "読み取りテスト"}
               </button>
             </form>
             <form action={submit} className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
@@ -73,12 +79,12 @@ export function ShopifyBaseSyncPanel({ status, locale, submit }: { status: BaseS
               <h3 className="font-bold text-zinc-900">2. 下書き同期</h3>
               <p className="mt-2 min-h-10 text-xs leading-relaxed text-zinc-500">4コレクションを用意し、商品を下書きでupsertします。商品削除・自動公開は行いません。</p>
               <button type="submit" disabled={!status.readyToSync} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-3 py-2 text-sm font-bold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40">
-                <RefreshCw className="h-4 w-4" /> BASEから同期
+                <RefreshCw className={`h-4 w-4 ${status.syncRunning ? "animate-spin" : ""}`} /> {status.syncRunning ? "同期実行中" : "BASEから同期"}
               </button>
             </form>
           </div>
           {status.lastRun && (
-            <p className={`mt-4 rounded-xl p-3 text-xs font-semibold ${status.lastRun.status === "succeeded" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+            <p className={`mt-4 rounded-xl p-3 text-xs font-semibold ${statusTone(status.lastRun.status)}`} aria-live="polite">
               最終実行 {dateTime(status.lastRun.startedAt)} · {statusLabel(status.lastRun.status)} · 取得 {status.lastRun.sourceCount} / 新規 {status.lastRun.createdCount} / 更新 {status.lastRun.updatedCount} / 失敗 {status.lastRun.failedCount}
             </p>
           )}
@@ -117,7 +123,7 @@ export function ShopifyBaseSyncPanel({ status, locale, submit }: { status: BaseS
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-zinc-950">同期履歴</h2><a href="https://docs.thebase.in/api/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-violet-600">BASE API仕様 <ExternalLink className="h-3 w-3" /></a></div>
         {status.recentRuns.length === 0 ? <p className="mt-4 text-sm text-zinc-500">まだ同期履歴がありません。</p> : (
-          <div className="mt-4 space-y-2">{status.recentRuns.map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3 text-xs"><span className="font-semibold text-zinc-700">{dateTime(run.startedAt)} · {run.mode === "dry_run" ? "dry-run" : "本同期"}</span><span className={run.status === "succeeded" ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>{statusLabel(run.status)} · {run.sourceCount}件</span></div>)}</div>
+          <div className="mt-4 space-y-2">{status.recentRuns.map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3 text-xs"><span className="font-semibold text-zinc-700">{dateTime(run.startedAt)} · {run.mode === "dry_run" ? "dry-run" : "本同期"}</span><span className={`rounded-full px-2 py-1 font-bold ${statusTone(run.status)}`}>{statusLabel(run.status)} · {run.sourceCount}件</span></div>)}</div>
         )}
       </section>
     </div>

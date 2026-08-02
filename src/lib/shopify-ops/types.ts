@@ -127,6 +127,7 @@ export type BaseSyncStatus = {
   baseAppConfigured: boolean
   baseShopConnected: boolean
   shopifyConfigured: boolean
+  syncRunning: boolean
   readyToSync: boolean
   lastRun: BaseSyncRun | null
   recentRuns: BaseSyncRun[]

@@ -3,6 +3,7 @@ import { z } from "zod"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { BaseItem } from "./base-sync"
+import { isRetryableHttpStatus, RetryableExternalError, retryableHttpError, withExternalRetry } from "./external-retry"
 
 const BASE_API = "https://api.thebase.in/1"
 const TOKEN_REFRESH_WINDOW_MS = 5 * 60 * 1_000
@@ -44,6 +45,11 @@ const baseItemSchema = z.object({
 }).loose()
 
 const itemsResponseSchema = z.object({ items: z.array(baseItemSchema) })
+
+const baseApiErrorSchema = z.object({
+  error: z.string(),
+  error_description: z.string().optional(),
+})
 
 type OAuthRow = {
   access_token_ciphertext: string
@@ -124,13 +130,27 @@ async function tokenRequest(parameters: URLSearchParams) {
 async function baseGet<T>(path: string, accessToken: string, schema: z.ZodType<T>, query?: URLSearchParams): Promise<T> {
   const url = new URL(`${BASE_API}${path}`)
   if (query) query.forEach((value, key) => url.searchParams.set(key, value))
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    signal: AbortSignal.timeout(20_000),
+  return withExternalRetry(`BASE API ${path}`, async () => {
+    let response: Response
+    try {
+      response = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(20_000),
+      })
+    } catch (error) {
+      throw new RetryableExternalError(`BASE API ${path}との通信に失敗しました: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (!response.ok) {
+      if (isRetryableHttpStatus(response.status)) throw retryableHttpError(`BASE API ${path}`, response)
+      throw new Error(`BASE API ${path} が失敗しました (HTTP ${response.status})`)
+    }
+    const payload = (await response.json()) as unknown
+    const apiError = baseApiErrorSchema.safeParse(payload)
+    if (apiError.success) {
+      throw new Error(`BASE API ${path}: ${apiError.data.error_description ?? apiError.data.error}`)
+    }
+    return schema.parse(payload)
   })
-  const payload = (await response.json()) as unknown
-  if (!response.ok) throw new Error(`BASE API ${path} が失敗しました (HTTP ${response.status})`)
-  return schema.parse(payload)
 }
 
 async function persistTokens(tokens: z.infer<typeof tokenResponseSchema>, user?: z.infer<typeof baseUserSchema>["user"]): Promise<void> {
