@@ -89,6 +89,7 @@ app = FastAPI(
 
 class RunRequest(BaseModel):
     brief: ClientBrief
+    request_id: uuid.UUID | None = None
     dry_run: bool = False
     planner_provider: str = "deterministic"
     auto_approve: bool = False
@@ -178,11 +179,20 @@ async def enqueue_run_endpoint(request: RunRequest) -> dict[str, Any]:
     """Persist a brief and queue it through Prefect or the standalone local worker."""
     _validated_brief(request)
     settings = Settings.from_env()
-    brief_path = _persist_inbox_brief(request.brief, settings)
-
     if not _use_prefect(settings):
+        if request.request_id:
+            existing = load_local_job(settings, str(request.request_id))
+            if existing is not None:
+                return {
+                    "accepted": True,
+                    "run_id": existing.run_id,
+                    "backend": "local",
+                    "idempotent_replay": True,
+                }
+        brief_path = _persist_inbox_brief(request.brief, settings)
         job = submit_local_job(
             settings,
+            run_id=str(request.request_id) if request.request_id else None,
             brief_path=brief_path,
             dry_run=request.dry_run,
             planner_provider=request.planner_provider,
@@ -196,12 +206,15 @@ async def enqueue_run_endpoint(request: RunRequest) -> dict[str, Any]:
             "brief_path": str(brief_path),
         }
 
+    brief_path = _persist_inbox_brief(request.brief, settings)
+
     try:
         from prefect.deployments import run_deployment
     except ImportError as error:
         if settings.queue_backend == "auto":
             job = submit_local_job(
                 settings,
+                run_id=str(request.request_id) if request.request_id else None,
                 brief_path=brief_path,
                 dry_run=request.dry_run,
                 planner_provider=request.planner_provider,
@@ -235,6 +248,7 @@ async def enqueue_run_endpoint(request: RunRequest) -> dict[str, Any]:
         if settings.queue_backend == "auto":
             job = submit_local_job(
                 settings,
+                run_id=str(request.request_id) if request.request_id else None,
                 brief_path=brief_path,
                 dry_run=request.dry_run,
                 planner_provider=request.planner_provider,

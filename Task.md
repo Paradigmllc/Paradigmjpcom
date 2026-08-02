@@ -1,5 +1,12 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 Hana Creator Video Factory bridge
+
+- 独立運用中のHana Creatorから、本番Video Factoryへ安全に制作ジョブを投入する専用machine-to-machine bridgeを追加した。Hana専用secret、承認済み参照画像、`hana-<job UUID>` project、生成shot、ローカル納品だけを許可する。
+- Hana job UUIDをVideo Factoryのrun IDとして永続化し、タイムアウト再送やworker再起動でも同じジョブを二重生成しない。既存のVast.ai管理GPU 46258780、1 GPU 1 job、商用ライセンス・workflow審査、完了/失敗時停止をそのまま再利用する。
+- bridgeはsubmit/status/artifact listと、Hana projectの画像・動画成果物だけを取得できるprivate file proxyを提供する。他project、brief、review JSON、未承認参照画像は拒否する。
+- Active handoff: Linux CI通過後にPRをmainへmergeし、`VIDEO_FACTORY_CREATOR_BRIDGE_SECRET`を本番Paradigm/Hanaのapproved secretへ同値設定する。まずdry-runでGPUが停止したまま冪等submit/status/artifact境界を確認し、その後だけproduction seriesを有効化する。
+
 ## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio + Direct Growth
 
 - Commercial Studioは5テンプレート、拡張Brand Kit、音声/BGM/字幕、Storyboard差分再生成を本番提供済み。PR **#654**、deployment **d6u37wcjeje7wqq7i8o3qfdl**、5テーブルのRLS/FORCE RLS/最小権限を確認済み。
