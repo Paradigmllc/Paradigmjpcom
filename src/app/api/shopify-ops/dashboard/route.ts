@@ -9,12 +9,14 @@ import {
   upsertShopifyOpsDailyMetric,
 } from "@/lib/shopify-ops/repository"
 import { runBaseToShopifySync } from "@/lib/shopify-ops/base-sync-service"
+import { runDailySocialPipeline, tokyoDateString } from "@/lib/shopify-ops/social-pipeline"
 import {
   createContentSchema,
   dailyMetricSchema,
   updateContentStatusSchema,
   updateProductSchema,
   baseSyncSchema,
+  socialRunSchema,
 } from "@/lib/shopify-ops/schemas"
 
 export const runtime = "nodejs"
@@ -70,6 +72,10 @@ export async function POST(request: NextRequest) {
       const input = baseSyncSchema.parse(body)
       result = await runBaseToShopifySync(input.mode)
       message = input.mode === "dry_run" ? "BASE同期dry-runを実行しました" : "BASEからShopifyへ商品を同期しました"
+    } else if (action === "run_social_daily") {
+      const input = socialRunSchema.parse(body)
+      result = await runDailySocialPipeline(input.runDate || tokyoDateString())
+      message = "SNS日次生成・公開キューを実行しました"
     } else {
       return NextResponse.json({ ok: false, error: "Unknown action" }, { status: 400 })
     }
