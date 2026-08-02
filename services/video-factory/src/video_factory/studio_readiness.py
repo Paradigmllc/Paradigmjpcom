@@ -4,7 +4,6 @@ import math
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from enum import StrEnum
-from pathlib import Path
 from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,9 +15,6 @@ from .planner import deterministic_plan
 from .router import engine_availability, load_routing_config
 from .settings import Settings
 from .validation import validate_brief
-
-SERVICE_ROOT = Path(__file__).resolve().parents[2]
-ROUTING_PATH = SERVICE_ROOT / "config" / "engine-routing.yaml"
 
 
 class ReadinessState(StrEnum):
@@ -135,7 +131,8 @@ def _selected_engine(
 
 
 def _capabilities(settings: Settings) -> tuple[list[StudioCapability], bool]:
-    routing = load_routing_config(ROUTING_PATH)
+    routing_path = settings.engine_profile_catalog_path.with_name("engine-routing.yaml")
+    routing = load_routing_config(routing_path)
     availability = engine_availability(settings)
     catalog = engine_catalog_payload(settings)
     profiles = _profile_rows(catalog.get("profiles"))
