@@ -1,12 +1,14 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio機能拡充（実装・ローカル検証完了 / PR準備中）
+## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio機能拡充（本番反映・DB検証完了）
 
 - 既存Studioの制作可能範囲を商用品質で明示するため、`Kinetic Type`、`Product Spotlight`、`UI Focus`、`Data Proof`、`Social CTA`の5テンプレート台帳を追加した。shot kindからの自動選択と案件単位の明示選択をサポートし、HyperFrames 0.7.87の実ブラウザ検査で全5種ともlint/runtime/layout/contrast 0 error・0 warningを確認した。
 - Brand Kitへセカンダリ色、文字色、モーション、セーフマージンを追加し、Consoleから設定できる。支給ナレーション/BGMの自動ミックス、音量QA、WebVTT生成、任意の字幕焼き込みを追加し、支給音声が無音の場合は安全にQA failedとする。
 - 案件詳細にStoryboard編集UIを追加した。見出し・本文・テンプレートの変更をappend-only revisionとして保存し、指定shotだけを再生成して未変更shotの既存成果物を再利用し、masterを再合成する。納品済み案件は編集・再生成を409で拒否して不変性を守る。
 - Brand Kit、template、Studio project、shot revision、quality metricの5テーブルをRLS強制・server-only権限で追加した。StudioイベントはDB永続化成功後に既存のDBベル+Slackへ通知する。
 - Ruff、mypy strict Linux想定56 source files、対象pytest、TypeScript、イベントAPI Vitest 5件、品質guard、release-doctorをpass。HyperFramesアダプター経由でH.264 640x360/15fps/1秒の実MP4を完走した。Next.jsはwebpack compileと504/504 page生成までpassし、Windowsの最終standalone font copyだけがOS file lock `EBUSY`で停止したため、Linux production-container CIで最終判定する。
+- 実装PR **#654**をmain **023a8283**へsquash mergeし、main **70dc29b0**を含むdeployment **d6u37wcjeje7wqq7i8o3qfdl**で本番反映した。GitHub Actionsのtest、production-container、routing/storage検査と、公開Video Factory/VaaS検査はすべてpassした。
+- 本番Postgresへ5テーブルと5テンプレートを適用してread-backした。全テーブルでRLS/FORCE RLS有効、anon/authenticated grant 0、service-role policy 5件を確認し、Supabase既定権限による過剰DMLも追加マイグレーションで最小権限へ固定した。
 
 ## CURRENT STATUS - 2026-08-02 Pet Life Movie OSS wrapper SaaS MVP
 

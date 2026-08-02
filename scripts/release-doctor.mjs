@@ -394,6 +394,10 @@ function checkStaticReleaseRules() {
   const studioMigration = fs.existsSync(studioMigrationPath)
     ? fs.readFileSync(studioMigrationPath, "utf8")
     : ""
+  const studioHardeningMigrationPath = "supabase/migrations/20260802113000_video_factory_studio_least_privilege.sql"
+  const studioHardeningMigration = fs.existsSync(studioHardeningMigrationPath)
+    ? fs.readFileSync(studioHardeningMigrationPath, "utf8")
+    : ""
   const studioSecurityMarkers = [
     "video_factory_brand_kits",
     "video_factory_creative_templates",
@@ -408,8 +412,13 @@ function checkStaticReleaseRules() {
   if (
     studioMigration
     && studioSecurityMarkers.every((marker) => studioMigration.toLowerCase().includes(marker))
+    && studioHardeningMigration.toLowerCase().includes("revoke all on table public.video_factory_creative_templates from service_role")
+    && studioHardeningMigration.toLowerCase().includes("grant select on table public.video_factory_creative_templates to service_role")
+    && studioHardeningMigration.toLowerCase().includes("grant select, insert on table public.video_factory_shot_revisions to service_role")
     && noLoginDeploy.includes("20260802093000_video_factory_commercial_studio.sql")
     && noLoginDeploy.includes("applyVideoFactoryCommercialStudioMigration")
+    && noLoginDeploy.includes("20260802113000_video_factory_studio_least_privilege.sql")
+    && noLoginDeploy.includes("applyVideoFactoryStudioLeastPrivilegeMigration")
   ) {
     pass("Video Factory commercial Studio data has server-only RLS and release wiring")
   } else {
