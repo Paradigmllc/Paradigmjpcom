@@ -53,4 +53,14 @@ describe("BASE catalog normalization", () => {
     expect(result.compareAtPriceJpy).toBeNull()
     expect(result.inventory).toBe(6)
   })
+
+  it("makes duplicate BASE variation names unique for Shopify options", () => {
+    const result = normalizeBaseItem(fixture({
+      variations: [
+        { variation_id: 8, variation: "藍", variation_stock: 2, variation_identifier: "BOWL-AI-S", barcode: null },
+        { variation_id: 9, variation: "藍", variation_stock: 4, variation_identifier: "BOWL-AI-L", barcode: null },
+      ],
+    }))
+    expect(result.variations.map((variation) => variation.name)).toEqual(["藍", "藍 (2)"])
+  })
 })

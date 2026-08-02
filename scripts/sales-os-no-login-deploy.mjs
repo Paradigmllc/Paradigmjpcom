@@ -732,6 +732,10 @@ async function applyShopifyBaseSyncMigration(envs) {
   return applySqlMigration(envs, "20260802153000_shopify_base_sync.sql", "SERICIA BASE to Shopify sync migration")
 }
 
+async function applyShopifyBaseSyncHardeningMigration(envs) {
+  return applySqlMigration(envs, "20260802160000_shopify_base_sync_hardening.sql", "SERICIA BASE sync hardening migration")
+}
+
 async function applyReleaseTableParityMigration(envs) {
   return applySqlMigration(envs, "migration_061_release_table_parity.sql", "Release table parity migration")
 }
@@ -1632,6 +1636,7 @@ async function main() {
   if (APPLY_SHOPIFY_ONLY) {
     console.log(await applyShopifyOpsMigration({}))
     console.log(await applyShopifyBaseSyncMigration({}))
+    console.log(await applyShopifyBaseSyncHardeningMigration({}))
     return
   }
 
@@ -1672,6 +1677,7 @@ async function main() {
   if (!DRY) {
     console.log(await applyShopifyOpsMigration(envs))
     console.log(await applyShopifyBaseSyncMigration(envs))
+    console.log(await applyShopifyBaseSyncHardeningMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))

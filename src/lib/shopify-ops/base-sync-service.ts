@@ -68,11 +68,15 @@ export async function getBaseSyncStatus(): Promise<BaseSyncStatus> {
   const recentRuns = runRows.map(runFromRow)
   const lastSummary = runRows[0]?.summary
   const shopifyConfigured = isShopifyAdminConfigured()
+  const syncRunning = recentRuns.some((run) => (
+    run.status === "running" && Date.parse(run.startedAt) >= Date.now() - 30 * 60 * 1_000
+  ))
   return {
     baseAppConfigured: isBaseAppConfigured(),
     baseShopConnected: connected,
     shopifyConfigured,
-    readyToSync: connected && shopifyConfigured,
+    syncRunning,
+    readyToSync: connected && shopifyConfigured && !syncRunning,
     lastRun: recentRuns[0] ?? null,
     recentRuns,
     linkedProductCount: linksResult.count ?? 0,
@@ -82,13 +86,16 @@ export async function getBaseSyncStatus(): Promise<BaseSyncStatus> {
 
 async function createRun(mode: BaseSyncMode): Promise<string> {
   const database = requireDatabase()
-  const { data, error } = await database
-    .from(DB_TABLES.SHOPIFY_BASE_SYNC_RUNS)
-    .insert({ mode, status: "running" })
-    .select("id")
-    .single()
-  if (error) throw new Error(`BASE同期履歴の開始に失敗しました: ${error.message}`)
-  return stringFrom((data as DbRow).id)
+  const { data, error } = await database.rpc("shopify_base_start_sync", { p_mode: mode })
+  if (error) {
+    if (/already running|既に実行中/i.test(error.message)) {
+      throw new Error("BASE同期は既に実行中です。完了後に再試行してください")
+    }
+    throw new Error(`BASE同期履歴の開始に失敗しました: ${error.message}`)
+  }
+  const id = stringFrom(data)
+  if (!id) throw new Error("BASE同期履歴の開始結果が不正です")
+  return id
 }
 
 async function updateRun(id: string, patch: Record<string, unknown>): Promise<void> {
