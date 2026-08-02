@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { captureException } from "@/lib/error-monitor"
+import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
 import {
   listPremiumProducts,
   listPublicArticles,
@@ -41,14 +42,16 @@ export async function GET(request: NextRequest) {
 
   const locale = normalizeContentLocale(request.nextUrl.searchParams.get("locale"))
   const requestedType = request.nextUrl.searchParams.get("type")
-  const [articleResult, premiumResult] = await Promise.allSettled([
+  const [articleResult, premiumResult, investorResult] = await Promise.allSettled([
     listPublicArticles(locale),
     listPremiumProducts(locale),
+    locale === "en" ? listInvestorBriefs() : Promise.resolve([]),
   ])
 
   const warnings: Array<{ code: string; message: string }> = []
   let articles: ContentCatalogItem[] = []
   let premium: ContentCatalogItem[] = []
+  let investorBriefs: ContentCatalogItem[] = []
 
   if (articleResult.status === "fulfilled") {
     articles = articleResult.value
@@ -66,7 +69,35 @@ export async function GET(request: NextRequest) {
     warnings.push({ code: "PREMIUM_CATALOG_UNAVAILABLE", message: "Premium content metadata is temporarily unavailable." })
   }
 
-  if (articleResult.status === "rejected" && premiumResult.status === "rejected") {
+  if (investorResult.status === "fulfilled") {
+    investorBriefs = investorResult.value.map((brief) => ({
+      slug: brief.slug,
+      locale: "en",
+      title: brief.title,
+      summary: brief.summary,
+      contentType: "investor_brief",
+      accessModel: "free",
+      price: null,
+      network: null,
+      preview: brief.preview,
+      sourceUrl: `https://paradigmjp.com${brief.pageUrl}`,
+      license: brief.license,
+      version: brief.version,
+      publishedAt: brief.publishedAt,
+      updatedAt: brief.updatedAt,
+      endpoint: brief.endpoint,
+    }))
+  } else {
+    console.error("[content-api] investor brief catalog failed:", investorResult.reason)
+    await captureException(investorResult.reason, { source: "/api/v1/content", severity: "warning" })
+    warnings.push({ code: "INVESTOR_BRIEF_CATALOG_UNAVAILABLE", message: "Investor brief metadata is temporarily unavailable." })
+  }
+
+  if (
+    articleResult.status === "rejected"
+    && premiumResult.status === "rejected"
+    && investorResult.status === "rejected"
+  ) {
     await recordContentAccess({
       locale,
       accessChannel: "catalog",
@@ -82,7 +113,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const items = [...premium, ...articles].filter((item) => matchesType(item, requestedType))
+  const items = [...premium, ...investorBriefs, ...articles].filter((item) => matchesType(item, requestedType))
   const x402 = resolveX402Configuration()
   await recordContentAccess({
     locale,

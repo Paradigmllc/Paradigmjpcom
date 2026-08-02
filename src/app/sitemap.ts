@@ -5,8 +5,15 @@ import {
   MARKETING_LOCALES,
 } from "@/i18n/locales"
 import type { MarketingLocale } from "@/lib/marketing-routing"
+import { listCuratedComparisonSummaries } from "@/lib/investor-briefs/comparisons"
+import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
 
 const BASE = "https://paradigmjp.com"
+
+// Investor brief and comparison URLs are database-published. Keeping the
+// sitemap dynamic prevents a build with intentionally disabled DB access from
+// freezing an empty investor catalog into the production artifact.
+export const dynamic = "force-dynamic"
 
 type StaticRoute = {
   path: string
@@ -16,6 +23,7 @@ type StaticRoute = {
 }
 
 const JAPANESE_ONLY = ["ja"] as const
+const ENGLISH_ONLY = ["en"] as const
 const DUAL_SERVICE = ["ja", "en"] as const
 const INTERNATIONAL_ONLY = [
   "en",
@@ -100,6 +108,8 @@ const STATIC_ROUTES: StaticRoute[] = [
     locales: JAPANESE_ONLY,
   },
   { path: "/japan-opportunities", changeFrequency: "weekly", priority: 0.9, locales: DUAL_SERVICE },
+  { path: "/japan-opportunities/invest", changeFrequency: "weekly", priority: 0.9, locales: ENGLISH_ONLY },
+  { path: "/japan-opportunities/invest/compare", changeFrequency: "weekly", priority: 0.8, locales: ENGLISH_ONLY },
   { path: "/japan-opportunities/capital-in-japan", changeFrequency: "weekly", priority: 0.8, locales: DUAL_SERVICE },
   { path: "/japan-opportunities/enter-and-operate-japan", changeFrequency: "weekly", priority: 0.9, locales: DUAL_SERVICE },
   { path: "/japan-opportunities/source-from-japan", changeFrequency: "weekly", priority: 0.9, locales: DUAL_SERVICE },
@@ -204,5 +214,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   )
   const blogPages: MetadataRoute.Sitemap = blogPagesPerLocale.flat()
 
-  return [...staticPages, ...blogPages]
+  let investorBriefPages: MetadataRoute.Sitemap = []
+  let investorComparisonPages: MetadataRoute.Sitemap = []
+  try {
+    const investorBriefs = await listInvestorBriefs()
+    investorBriefPages = investorBriefs.map((brief) => ({
+      url: `${BASE}${brief.pageUrl}`,
+      lastModified: new Date(brief.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+      alternates: {
+        languages: {
+          en: `${BASE}${brief.pageUrl}`,
+          "x-default": `${BASE}${brief.pageUrl}`,
+        },
+      },
+    }))
+    investorComparisonPages = listCuratedComparisonSummaries(investorBriefs).map((comparison) => ({
+      url: `${BASE}${comparison.path}`,
+      lastModified: new Date(Math.max(
+        new Date(comparison.leftBrief.updatedAt).getTime(),
+        new Date(comparison.rightBrief.updatedAt).getTime(),
+      )),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+      alternates: {
+        languages: {
+          en: `${BASE}${comparison.path}`,
+          "x-default": `${BASE}${comparison.path}`,
+        },
+      },
+    }))
+  } catch (error) {
+    console.error("[sitemap] investor brief URLs could not be loaded:", error)
+  }
+
+  return [...staticPages, ...investorBriefPages, ...investorComparisonPages, ...blogPages]
 }

@@ -26,6 +26,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const ENDPOINTS = [
   { method: "GET", path: "/api/v1/content?locale=en", note: "Free catalog" },
+  { method: "GET", path: "/api/v1/investor-briefs", note: "Investor brief catalog" },
+  { method: "GET", path: "/api/v1/investor-briefs/{slug}", note: "Free JSON / Markdown" },
+  { method: "GET", path: "/api/v1/investor-briefs/compare?left={slug}&right={slug}", note: "Dynamic A/B comparison" },
+  { method: "GET", path: "/api/v1/investor-briefs/factory", note: "pSEO scale and quality manifest" },
   { method: "GET", path: "/api/v1/content/public/{slug}?locale=en", note: "Free JSON / Markdown" },
   { method: "GET", path: "/api/v1/content/premium/{slug}?locale=en", note: "x402 / USDC" },
 ] as const
