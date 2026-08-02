@@ -58,6 +58,9 @@ const ALL_TABLES = [
   "sales_searxng_search_runs", "sales_searxng_search_results",
   // Japan Readiness
   "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_initial_form_drafts", "sales_report_factory_state",
+  "sales_japan_operator_cases", "sales_japan_operator_events",
+  // Pet Life Movie
+  "pet_movie_projects", "pet_movie_contributors", "pet_movie_assets", "pet_movie_jobs", "pet_movie_events",
   // Video
   "sales_video_jobs", "video_factory_engine_profiles", "video_factory_engine_events",
   "video_factory_brand_kits", "video_factory_creative_templates",
@@ -390,6 +393,8 @@ function printSummaryAndExit(ok, missing, errored) {
         "sales_error_log": "supabase/migrations/migration_045_sales_error_log.sql",
         "demo_contact_submissions": "supabase/migrations/migration_070_demo_contact_hardening.sql",
         "public_japan_entry_checks": "supabase/migrations/migration_072_public_japan_entry_checks.sql",
+        "sales_japan_operator_cases": "supabase/migrations/20260801224308_sales_japan_operator_cases.sql",
+        "sales_japan_operator_events": "supabase/migrations/20260801224308_sales_japan_operator_cases.sql",
         "video_factory_engine_profiles": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_engine_events": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_brand_kits": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",

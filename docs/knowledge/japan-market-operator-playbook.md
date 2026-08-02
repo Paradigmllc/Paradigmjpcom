@@ -14,6 +14,8 @@ Paradigm acts as an **external Japan market operator**, not a stock-buying distr
 
 The $5,000 validation fee is fully credited toward the $20,000 launch total when the brand proceeds within 30 days. External legal advice, laboratory tests, certification fees, inventory, freight, duties, media spend and third-party software are excluded unless a SOW explicitly includes them.
 
+This is the **distribution/operator lane**. Do not quote it interchangeably with the separate $15,000 Country Partner Setup, which is a fixed setup lane without distributor appointment, KPI-linked exclusivity or the 10% revenue share. See [Japan Market Operator — Operating Manual v1](japan-market-operator-operating-manual.md) for routing, stage gates, RACI, finance close, incident handling and Wave 1 execution.
+
 ## Ideal customer profile
 
 - Overseas D2C or consumer brand with roughly $2M–$30M annual revenue.
@@ -66,6 +68,12 @@ Initial exclusivity should be 12 months and conditional. It activates only for n
 
 ## RevenueOS operating stages
 
-`evidence_verified → memo_ready → human_approved → permission_sent → replied → qualification → validation_sow → paid_validation → launch_sow → operator_contract`
+`prospect_intake → evidence_verified → memo_ready → human_approved → permission_sent → replied → qualification → validation_sow → paid_validation → launch_sow → operator_contract → active_operator`
 
 No outbound message may move from `memo_ready` to `permission_sent` without human approval and a verified delivery route. Docuseal signed events remain the contract source for customer handoff.
+
+Working templates:
+
+- [3-page Japan Opportunity Memo](../templates/japan-opportunity-memo-template.md)
+- [Contract issue checklist](../templates/japan-operator-contract-checklist.md)
+- [Weekly operator report](../templates/japan-operator-weekly-report.md)

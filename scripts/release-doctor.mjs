@@ -279,6 +279,74 @@ function checkStaticReleaseRules() {
     fail("Japan Entry score utility persistence must have RLS and release migration wiring")
   }
 
+  const operatorCasesMigrationPath = "supabase/migrations/20260801224308_sales_japan_operator_cases.sql"
+  const operatorCasesMigration = fs.existsSync(operatorCasesMigrationPath)
+    ? fs.readFileSync(operatorCasesMigrationPath, "utf8")
+    : ""
+  const operatorHardeningMigrationPath = "supabase/migrations/20260801235327_sales_japan_operator_case_hardening.sql"
+  const operatorHardeningMigration = fs.existsSync(operatorHardeningMigrationPath)
+    ? fs.readFileSync(operatorHardeningMigrationPath, "utf8")
+    : ""
+  const operatorCaseMarkers = [
+    "sales_japan_operator_cases",
+    "sales_japan_operator_events",
+    "sales_apply_japan_operator_action",
+    "sales_create_japan_operator_case",
+    "ENABLE ROW LEVEL SECURITY",
+    "FORCE ROW LEVEL SECURITY",
+    "FROM PUBLIC, anon, authenticated",
+    "TO service_role",
+    "external_messages_sent",
+  ]
+  const operatorHardeningMarkers = [
+    "REVOKE ALL ON TABLE public.sales_japan_operator_cases FROM service_role",
+    "REVOKE ALL ON TABLE public.sales_japan_operator_events FROM service_role",
+    "GRANT SELECT, INSERT ON TABLE public.sales_japan_operator_events TO service_role",
+    "DONGJIN BEDDING Co., Ltd. / Little Archive",
+    "external_messages_sent', 0",
+  ]
+  if (
+    operatorCaseMarkers.every((marker) => operatorCasesMigration.includes(marker)) &&
+    operatorHardeningMarkers.every((marker) => operatorHardeningMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801224308_sales_japan_operator_cases.sql") &&
+    noLoginDeploy.includes("applyJapanOperatorCasesMigration") &&
+    noLoginDeploy.includes("20260801235327_sales_japan_operator_case_hardening.sql") &&
+    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration")
+  ) {
+    pass("Japan market operator cases have atomic audit actions, RLS and release wiring")
+  } else {
+    fail("Japan market operator cases require atomic audit actions, RLS and release wiring")
+  }
+
+  const petMovieMigrationPath = "supabase/migrations/20260801213954_pet_life_movie_mvp.sql"
+  const petMovieMigration = fs.existsSync(petMovieMigrationPath)
+    ? fs.readFileSync(petMovieMigrationPath, "utf8")
+    : ""
+  const petMovieRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
+  const petMovieDbVerifier = fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
+  const petMovieMarkers = [
+    "pet_movie_projects",
+    "pet_movie_contributors",
+    "pet_movie_assets",
+    "pet_movie_jobs",
+    "pet_movie_events",
+    "enable row level security",
+    "force row level security",
+    "from public, anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    petMovieMarkers.every((marker) => petMovieMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    noLoginDeploy.includes("applyPetLifeMovieMigration") &&
+    petMovieRunMigrations.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    petMovieMarkers.slice(0, 5).every((marker) => petMovieDbVerifier.includes(marker))
+  ) {
+    pass("Pet Life Movie persistence has RLS, service-role isolation, migration execution, and DB verification wiring")
+  } else {
+    fail("Pet Life Movie persistence requires RLS, service-role isolation, migration execution, and DB verification wiring")
+  }
+
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
   const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
     ? fs.readFileSync(engineProfilesMigrationPath, "utf8")

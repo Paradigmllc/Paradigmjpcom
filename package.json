@@ -11,6 +11,7 @@
     "test": "node scripts/run-vitest.mjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "typecheck:pet-life-movie": "tsc --pretty false -p tsconfig.pet-life-movie.json",
     "e2e": "playwright test",
     "e2e:install": "playwright install chromium webkit",
     "e2e:local": "E2E_BASE_URL=http://localhost:3000 playwright test",

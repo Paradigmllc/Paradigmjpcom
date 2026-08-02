@@ -35,6 +35,7 @@ const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 let preferDbSshChannel = false
 const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
+const APPLY_SHOPIFY_ONLY = process.argv.includes("--apply-shopify-only")
 
 const PRODUCTS = [
   {
@@ -589,6 +590,23 @@ async function applyContentTemplateMigration(envs) {
   return applySqlMigration(envs, "migration_022_sales_content_templates.sql", "Content template migration")
 }
 
+async function applyPetLifeMovieMigration(envs) {
+  return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
+}
+
+async function verifyPetLifeMovieSchema(envs) {
+  const { url, key } = salesSupabase(envs)
+  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Pet Life Movie schema verification failed: HTTP ${response.status} ${detail.slice(0, 180)}`)
+  }
+  return "Pet Life Movie schema: verified through service role"
+}
+
 async function applyAgentTeamMigration(envs) {
   return applySqlMigration(envs, "migration_023_sales_agent_team.sql", "Agent team migration")
 }
@@ -657,6 +675,10 @@ async function applySalesProductsSchemaMigration(envs) {
   return applySqlMigration(envs, "migration_052_sales_products_bootstrap.sql", "Sales products bootstrap migration")
 }
 
+async function applyShopifyOpsMigration(envs) {
+  return applySqlMigration(envs, "20260801212630_shopify_ops.sql", "Tiny Shops Shopify operations migration")
+}
+
 async function applyReleaseTableParityMigration(envs) {
   return applySqlMigration(envs, "migration_061_release_table_parity.sql", "Release table parity migration")
 }
@@ -691,6 +713,22 @@ async function applyPublicSurfaceRlsMigration(envs) {
 
 async function applyPublicJapanEntryChecksMigration(envs) {
   return applySqlMigration(envs, "migration_072_public_japan_entry_checks.sql", "Public Japan Entry checks migration")
+}
+
+async function applyJapanOperatorCasesMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260801224308_sales_japan_operator_cases.sql",
+    "Japan market operator case control migration",
+  )
+}
+
+async function applyJapanOperatorCaseHardeningMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260801235327_sales_japan_operator_case_hardening.sql",
+    "Japan market operator append-only audit and Wave 1 alias hardening",
+  )
 }
 
 async function applyFormQualifiedLeadFactoryMigration(envs) {
@@ -978,7 +1016,6 @@ async function applyDemoCompanyTriggerGuardMigration(envs) {
     "SMB demo company trigger guard migration",
   )
 }
-
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1521,6 +1558,11 @@ async function main() {
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 
+  if (APPLY_SHOPIFY_ONLY) {
+    console.log(await applyShopifyOpsMigration(envs))
+    return
+  }
+
   // Auto-ensure non-secret defaults are set in Coolify.
   // Secret values must already exist in the approved runtime secret store.
   const { ensureCoolifyEnvs, updateCoolifyEnvs } = await import("./lib/coolify-env.mjs")
@@ -1550,10 +1592,13 @@ async function main() {
   }
 
   if (!DRY) {
+    console.log(await applyShopifyOpsMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
+    console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
@@ -1568,6 +1613,8 @@ async function main() {
     console.log(await applyDemoContactHardeningMigration(envs))
     console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyPublicJapanEntryChecksMigration(envs))
+    console.log(await applyJapanOperatorCasesMigration(envs))
+    console.log(await applyJapanOperatorCaseHardeningMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyInitialFormDraftFactoryMigration(envs))
@@ -1660,6 +1707,8 @@ async function main() {
 
   const smokeTargets = [
     { url: "https://paradigmjp.com/api/ready" },
+    { url: "https://paradigmjp.com/ja/pet-life-movie" },
+    { url: "https://paradigmjp.com/ja/admin/shopify" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
     { url: "https://paradigmjp.com/ja/blog", markers: ["GEO対策とは？AI検索時代のSEO戦略を解説", "MEO対策の基本と成功のポイント"] },

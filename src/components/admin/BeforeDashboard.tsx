@@ -127,6 +127,9 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
           <Link href="/admin/collections/leads" style={adminButtonStyle()}>
             Payloadリード
           </Link>
+          <Link href={`/${detectedLocale}/admin/shopify`} style={adminButtonStyle()}>
+            Tiny Shops 運営OS
+          </Link>
           <a href={twentyUrl} target="_blank" rel="noopener noreferrer" style={adminButtonStyle()}>
             Twenty Sales OS
           </a>

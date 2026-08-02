@@ -104,6 +104,8 @@ export const DB_TABLES = {
   SALES_JAPAN_ENTRY_PROJECTIONS: "sales_japan_entry_projections",
   SALES_INITIAL_FORM_DRAFTS: "sales_initial_form_drafts",
   SALES_REPORT_FACTORY_STATE: "sales_report_factory_state",
+  SALES_JAPAN_OPERATOR_CASES: "sales_japan_operator_cases",
+  SALES_JAPAN_OPERATOR_EVENTS: "sales_japan_operator_events",
 
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",
@@ -144,6 +146,11 @@ export const DB_TABLES = {
   MANUAL_JAPAN_ENTRY_BATCH_ITEMS: "manual_japan_entry_batch_items",
   MANUAL_JAPAN_ENTRY_SOURCE_CATALOG: "manual_japan_entry_source_catalog",
   MANUAL_JAPAN_ENTRY_WORK_SOURCES: "manual_japan_entry_work_sources",
+
+  // ── Tiny Shops of Japan / Shopify Operations (20260801212630) ──
+  SHOPIFY_OPS_PRODUCTS: "shopify_ops_products",
+  SHOPIFY_OPS_CONTENT_ITEMS: "shopify_ops_content_items",
+  SHOPIFY_OPS_DAILY_METRICS: "shopify_ops_daily_metrics",
 
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
