@@ -34,6 +34,7 @@ const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 let preferDbSshChannel = false
+const cachedSupabaseDbContainers = new Map()
 const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const APPLY_SHOPIFY_ONLY = process.argv.includes("--apply-shopify-only")
 
@@ -452,6 +453,7 @@ function applySqlMigrationThroughHost(sql, label) {
   const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "paradigm-droplet")
   const dbContainer = resolveSupabaseDbContainer(sshTarget)
   const commonArgs = sshArgs(sshTarget, { acceptNew: true })
+  const sqlWithSchemaReload = `${sql.trimEnd()}\nNOTIFY pgrst, 'reload schema';\n`
   const apply = spawnSync(
     "ssh",
     [
@@ -469,25 +471,13 @@ function applySqlMigrationThroughHost(sql, label) {
       "-d",
       "postgres",
     ],
-    { input: sql, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
+    { input: sqlWithSchemaReload, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
   )
   if (apply.status !== 0) {
     const detail = `${apply.stderr || apply.stdout || ""}`.trim()
     throw new Error(`${label} DB SSH fallback failed: ${detail.slice(0, 300)}`)
   }
 
-  const reload = spawnSync(
-    "ssh",
-    [
-      ...commonArgs,
-      `docker exec ${dbContainer} psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';"`,
-    ],
-    { encoding: "utf8", maxBuffer: 1024 * 1024 },
-  )
-  if (reload.status !== 0) {
-    const detail = `${reload.stderr || reload.stdout || ""}`.trim()
-    throw new Error(`${label} schema reload failed: ${detail.slice(0, 300)}`)
-  }
   return `${label}: applied through DB SSH channel`
 }
 
@@ -550,6 +540,8 @@ function resolveTwentyDbContainer(sshTarget) {
 function resolveSupabaseDbContainer(sshTarget) {
   const explicit = envValue("PARADIGM_SUPABASE_DB_CONTAINER")
   if (explicit) return explicit
+  const cached = cachedSupabaseDbContainers.get(sshTarget)
+  if (cached) return cached
 
   const result = spawnSync(
     "ssh",
@@ -578,10 +570,16 @@ function resolveSupabaseDbContainer(sshTarget) {
     .filter((row) => row.name.length > 0)
 
   const exact = rows.find((row) => row.name === "paradigm-supabase-db" || row.name === "supabase-db-1")
-  if (exact) return exact.name
+  if (exact) {
+    cachedSupabaseDbContainers.set(sshTarget, exact.name)
+    return exact.name
+  }
 
   const candidate = rows.find((row) => /supabase.*db|db.*supabase/i.test(row.name) && /postgres/i.test(row.image))
-  if (candidate) return candidate.name
+  if (candidate) {
+    cachedSupabaseDbContainers.set(sshTarget, candidate.name)
+    return candidate.name
+  }
 
   throw new Error("Could not resolve Supabase Postgres container on host")
 }
@@ -592,6 +590,14 @@ async function applyContentTemplateMigration(envs) {
 
 async function applyPetLifeMovieMigration(envs) {
   return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
+}
+
+async function applyPetLifeMovieMarketReadyMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802020742_pet_life_movie_market_ready.sql",
+    "Pet Life Movie market-ready migration",
+  )
 }
 
 async function verifyPetLifeMovieSchema(envs) {
@@ -605,6 +611,9 @@ begin
   if to_regclass('public.pet_movie_projects') is null then
     raise exception 'pet_movie_projects is missing';
   end if;
+  if to_regclass('public.pet_movie_deliverables') is null then
+    raise exception 'pet_movie_deliverables is missing';
+  end if;
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
   end if;
@@ -615,7 +624,7 @@ $$;
     )
     return "Pet Life Movie schema: verified through Postgres service_role privileges"
   }
-  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+  const response = await fetch(`${url}/rest/v1/pet_movie_deliverables?select=id&limit=1`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
     signal: AbortSignal.timeout(30_000),
   })
@@ -1641,6 +1650,7 @@ async function main() {
     console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
     console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await applyPetLifeMovieMarketReadyMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
