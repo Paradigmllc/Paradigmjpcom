@@ -79,3 +79,18 @@
 - Updated the permission-first outbound draft to ask to send a three-page Japan Opportunity Memo; no external messages have been sent.
 - Added `docs/knowledge/japan-market-operator-playbook.md` with ICP, package, outreach sequence, first-wave list and MSA/SOW/KPI-conditional exclusivity structure.
 - Active handoff: run human review on the five memos, approve the first two sends, then route positive replies to the Paid Market Validation SOW in Docuseal.
+
+## ACTIVE HANDOFF - 2026-08-02 Vertical SaaS direction
+
+- Product direction is fixed on an industry-specific vertical SaaS; the global PLG/OSS-wrapper consumer SaaS discussion is explicitly out of scope for this initiative.
+- Default first wedge: quote follow-up and dormant-opportunity recovery for Japanese industrial machinery manufacturers, machinery trading companies, and adjacent equipment businesses.
+- Go-to-market model: one shared workflow engine, prove paid retention in one narrow industry, then expand only to adjacent industries that can reuse at least 80% of the product.
+- Pricing hypothesis to validate: 14-day reverse trial, Starter at JPY 29,800/month, Team at JPY 49,800/month, annual prepayment, and optional migration/onboarding packages.
+- Acquisition hypothesis: distribute a no-login quote-neglect diagnostic to companies with visible intent signals such as trade-show participation, quote-request forms, sales-operations hiring, or multiple sales offices; prioritize product-qualified usage over raw registrations.
+- Existing RevenueOS company collection, signal scoring, CRM, pipeline, notifications, and operational monitoring should be reused for acquisition operations. The customer-facing vertical SaaS must remain a separately scoped product surface and data model.
+- MVP scope was validated against current manufacturing workflow and CRM/quote-management competitors. The initial production slice deliberately validates the riskiest assumptions before building tenant/auth/billing: no-login CSV diagnostic, explainable recovery priority, aggregate-only measurement, and qualified 14-day pilot inquiry.
+- Implemented `/[locale]/quote-recovery` with Japanese Stripe-style responsive UI, CSV upload/sample flow, visible parse errors, aging buckets, monetary KPIs, explainable candidate ranking, loading/empty/error states, and a pilot form.
+- Implemented `/api/quote-recovery/diagnose` and `/api/quote-recovery/pilot` with Zod validation, request-size/rate limits, structured error responses, Supabase persistence, and DB + Slack notification for pilot inquiries.
+- Added `migration_059_quote_recovery_validation.sql`: aggregate diagnostic events and pilot inquiries only, RLS enabled, anon/authenticated grants revoked, service-role policies explicit. Raw quote rows are never persisted by this slice.
+- Added unit coverage for Japanese/quoted CSV parsing, required-field rejection, rule-based prioritization, and exclusion of closed quotes. `npx tsc --noEmit --pretty false` passes. Vitest is currently blocked before test discovery by the pre-existing incomplete `node_modules/@vitest/utils` installation (`dist/constants.js` missing); repair dependencies without overwriting the user's in-progress package/lock changes, then rerun.
+- Validation gates before building the authenticated SaaS core: confirm actual CSV import completion, candidate-ranking acceptance, pilot conversion, and repeated weekly use. Only then add organization membership, quote/activity persistence, reminders, invites, and billing; email auto-send, quote creation, OCR, and black-box AI scoring remain out of scope.

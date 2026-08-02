@@ -531,6 +531,10 @@ async function applySalesOptionalColumnRepairMigration(envs) {
   return applySqlMigration(envs, "migration_054_sales_cloud_optional_column_repair.sql", "Sales optional column repair migration")
 }
 
+async function applyQuoteRecoveryValidationMigration(envs) {
+  return applySqlMigration(envs, "migration_059_quote_recovery_validation.sql", "Quote Recovery validation migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -694,6 +698,7 @@ async function main() {
     console.log(await applyPassiveInventorySegmentsMigration(envs))
     console.log(await applySalesRaceConditionGuardsMigration(envs))
     console.log(await applySalesOptionalColumnRepairMigration(envs))
+    console.log(await applyQuoteRecoveryValidationMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")
@@ -707,7 +712,7 @@ async function main() {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
 
-  for (const url of ["https://paradigmjp.com/ja/admin/sales", "https://paradigmjp.com/ja", "https://twenty.paradigmjp.com"]) {
+  for (const url of ["https://paradigmjp.com/ja/quote-recovery", "https://paradigmjp.com/ja/admin/sales", "https://paradigmjp.com/ja", "https://twenty.paradigmjp.com"]) {
     const status = await smoke(url)
     console.log(`Smoke OK: ${url} HTTP ${status}`)
   }
