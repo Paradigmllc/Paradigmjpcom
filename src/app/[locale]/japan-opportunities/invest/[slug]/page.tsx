@@ -3,7 +3,11 @@ import { cache } from "react"
 import { notFound, permanentRedirect } from "next/navigation"
 import { InvestorBriefDetail } from "@/components/opportunities/InvestorBriefDetail"
 import JsonLd from "@/components/seo/JsonLd"
-import { getInvestorBrief, listInvestorBriefs } from "@/lib/investor-briefs/repository"
+import {
+  getInvestorBrief,
+  investorBriefReadableWordCount,
+  listInvestorBriefs,
+} from "@/lib/investor-briefs/repository"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildArticleSchema, buildBreadcrumbSchema, buildFAQSchema } from "@/lib/seo/schemas"
 
@@ -22,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const brief = await getCachedBrief(slug)
   if (!brief) return {}
   const canonical = `https://paradigmjp.com${brief.pageUrl}`
+  const socialImage = `${canonical}/opengraph-image`
   return {
     title: brief.title,
     description: brief.summary,
@@ -38,9 +43,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: brief.publishedAt,
       modifiedTime: brief.updatedAt,
       authors: [brief.payload.methodology.reviewedBy],
-      images: [{ url: "/og-image.png", width: 1200, height: 630, alt: brief.title }],
+      images: [{ url: socialImage, width: 1200, height: 630, alt: brief.title }],
     },
-    twitter: { card: "summary_large_image", title: brief.title, description: brief.summary },
+    twitter: {
+      card: "summary_large_image",
+      title: brief.title,
+      description: brief.summary,
+      images: [{ url: socialImage, alt: brief.title }],
+    },
   }
 }
 
@@ -67,26 +77,56 @@ export default async function InvestorBriefPage({ params }: Props) {
     about: [brief.preview.assetClass, brief.preview.region, "Foreign investment in Japan"],
     isAccessibleForFree: true,
     citation: brief.payload.sources.map((source) => source.url),
-    wordCount: JSON.stringify(brief.payload).split(/\s+/).length,
+    wordCount: investorBriefReadableWordCount(brief),
   }
   const datasetSchema = brief.payload.marketEvidence ? {
     "@context": "https://schema.org",
     "@type": "Dataset",
     name: `${brief.title} market evidence`,
     description: brief.payload.marketEvidence.scope,
+    identifier: `${canonical}#market-evidence`,
     url: canonical,
-    creator: { "@type": "Organization", name: "Paradigm" },
+    creator: {
+      "@type": "Organization",
+      name: "Paradigm",
+      url: "https://paradigmjp.com/en/about",
+    },
+    includedInDataCatalog: {
+      "@type": "DataCatalog",
+      name: "Paradigm Japan Investor Briefs",
+      url: "https://paradigmjp.com/en/japan-opportunities/invest",
+    },
+    datePublished: brief.publishedAt,
     dateModified: brief.updatedAt,
     temporalCoverage: brief.payload.marketEvidence.asOf,
-    spatialCoverage: brief.payload.coveredMarkets?.join(", ") ?? brief.preview.region,
+    spatialCoverage: (brief.payload.coveredMarkets ?? [brief.preview.region]).map((market) => ({
+      "@type": "Place",
+      name: market,
+    })),
+    keywords: [
+      brief.preview.region,
+      brief.preview.assetClass,
+      brief.preview.category,
+      "Japan real estate investment",
+      "official land price evidence",
+    ],
     variableMeasured: ["Average residential land price in JPY per square metre", "Annual average change in percent"],
+    measurementTechnique: "Paradigm extraction and decision-oriented normalization of cited official Japanese land-price evidence; not an asset valuation.",
     isAccessibleForFree: true,
     license: brief.license,
-    distribution: [{
-      "@type": "DataDownload",
-      encodingFormat: "application/json",
-      contentUrl: `https://paradigmjp.com${brief.endpoint}`,
-    }],
+    version: String(brief.version),
+    distribution: [
+      {
+        "@type": "DataDownload",
+        encodingFormat: "application/json",
+        contentUrl: `https://paradigmjp.com${brief.endpoint}`,
+      },
+      {
+        "@type": "DataDownload",
+        encodingFormat: "text/markdown",
+        contentUrl: `https://paradigmjp.com${brief.endpoint}?format=markdown`,
+      },
+    ],
   } : null
 
   return (

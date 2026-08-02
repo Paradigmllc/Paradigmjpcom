@@ -3,6 +3,7 @@ import path from "node:path"
 import { describe, expect, it } from "vitest"
 import {
   investorBriefPayloadSchema,
+  investorBriefReadableWordCount,
   investorBriefToMarkdown,
   type InvestorBrief,
   type InvestorBriefPayload,
@@ -161,6 +162,76 @@ describe("investor brief content contract", () => {
       expect(parsed.success, `${seed.slug} must satisfy the investor brief schema`).toBe(true)
       if (parsed.success) expect(seed.preview.sourceCount).toBe(parsed.data.sources.length)
     }
+  })
+
+  it("expands every legacy brief with unique sourced analysis and durable official links", () => {
+    const seedMigration = fs.readFileSync(
+      path.join(process.cwd(), "supabase/migrations/20260802043347_foreign_investor_pseo.sql"),
+      "utf8",
+    )
+    const expansionMigration = fs.readFileSync(
+      path.join(process.cwd(), "supabase/migrations/20260802202105_expand_legacy_investor_briefs.sql"),
+      "utf8",
+    )
+    const seedMatch = seedMigration.match(/\$investor_briefs\$\s*(\[[\s\S]*?\])\s*\$investor_briefs\$::jsonb/)
+    const expansionMatch = expansionMigration.match(/\$legacy_expansions\$\s*(\[[\s\S]*?\])\s*\$legacy_expansions\$::jsonb/)
+    const seeds = JSON.parse(seedMatch?.[1] ?? "[]") as Array<{
+      slug: string
+      title: string
+      summary: string
+      payload: InvestorBriefPayload
+    }>
+    const expansions = JSON.parse(expansionMatch?.[1] ?? "[]") as Array<{
+      slug: string
+      chapters: NonNullable<InvestorBriefPayload["chapters"]>
+    }>
+    const chaptersBySlug = new Map(expansions.map((expansion) => [expansion.slug, expansion.chapters]))
+
+    expect(expansions).toHaveLength(12)
+    expect(new Set(expansions.map((expansion) => expansion.slug)).size).toBe(12)
+    for (const seed of seeds) {
+      const chapters = chaptersBySlug.get(seed.slug)
+      expect(chapters, `${seed.slug} needs a legacy expansion`).toHaveLength(4)
+      const expandedPayload = { ...seed.payload, chapters }
+      const parsed = investorBriefPayloadSchema.safeParse(expandedPayload)
+      expect(parsed.success, `${seed.slug} expansion must satisfy the schema`).toBe(true)
+      if (!parsed.success) continue
+
+      const sourceIds = new Set(parsed.data.sources.map((source) => source.id))
+      for (const chapter of parsed.data.chapters ?? []) {
+        expect(chapter.paragraphs).toHaveLength(2)
+        expect(chapter.paragraphs.every((paragraph) => paragraph.length >= 300)).toBe(true)
+        expect(chapter.sourceIds.every((sourceId) => sourceIds.has(sourceId))).toBe(true)
+      }
+      expect(investorBriefReadableWordCount({
+        title: seed.title,
+        summary: seed.summary,
+        payload: parsed.data,
+      }), `${seed.slug} needs substantial decision content`).toBeGreaterThanOrEqual(1_100)
+    }
+
+    expect(expansionMigration).toContain("https://minpakuportal.city.kyoto.lg.jp/list/list1")
+    expect(expansionMatch?.[1]).not.toContain("20260131itiran_eng.pdf")
+    expect(expansionMigration).toContain("retired Kyoto lodging PDF URL remains in investor content")
+  })
+
+  it("counts rendered prose instead of serialized payload keys", () => {
+    const readableCount = investorBriefReadableWordCount(brief)
+    const changedMachineFields: InvestorBrief = {
+      ...brief,
+      payload: {
+        ...brief.payload,
+        sources: brief.payload.sources.map((source, index) => ({
+          ...source,
+          id: `${source.id}-machine-id-${index}`,
+          url: `https://example.go.jp/machine-path-${index}`,
+        })),
+      },
+    }
+
+    expect(readableCount).toBeGreaterThan(80)
+    expect(investorBriefReadableWordCount(changedMachineFields)).toBe(readableCount)
+    expect(JSON.stringify(brief.payload).split(/\s+/).length).not.toBe(readableCount)
   })
 
   it("ships sixteen distinct, evidence-rich Greater Tokyo market profiles", () => {

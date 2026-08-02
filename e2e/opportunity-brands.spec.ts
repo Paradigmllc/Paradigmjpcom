@@ -33,11 +33,22 @@ test.describe("Japan opportunity brands", () => {
 
     await page.goto("/en/japan-opportunities/invest/japan-data-center-investment")
     await expect(page.getByRole("heading", { level: 1, name: /Japan Data Center Investment/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Treat power as a dated, deliverable project right" })).toBeVisible()
     await expect(page.getByRole("heading", { name: "Primary sources" })).toBeVisible()
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       "href",
       "https://paradigmjp.com/en/japan-opportunities/invest/japan-data-center-investment",
     )
+    const socialImage = "https://paradigmjp.com/en/japan-opportunities/invest/japan-data-center-investment/opengraph-image"
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", socialImage)
+    const socialImageResponse = await request.get("/en/japan-opportunities/invest/japan-data-center-investment/opengraph-image")
+    expect(socialImageResponse.ok()).toBeTruthy()
+    expect(socialImageResponse.headers()["content-type"]).toContain("image/png")
+
+    const markdownResponse = await request.get("/api/v1/investor-briefs/japan-data-center-investment?format=markdown")
+    expect(markdownResponse.ok()).toBeTruthy()
+    expect(markdownResponse.headers()["content-type"]).toContain("text/markdown")
+    expect(await markdownResponse.text()).toContain("Treat power as a dated, deliverable project right")
 
     await expect(page.getByRole("heading", { name: "Evidence readiness score" })).toBeVisible()
 
@@ -70,6 +81,8 @@ test.describe("Japan opportunity brands", () => {
     await expect(baseYield).toContainText("2.54%")
     const structuredData = await page.locator('script[type="application/ld+json"]').allTextContents()
     expect(structuredData.some((value) => value.includes('"@type":"Dataset"'))).toBe(true)
+    expect(structuredData.some((value) => value.includes('"encodingFormat":"text/markdown"'))).toBe(true)
+    expect(structuredData.some((value) => value.includes('"includedInDataCatalog"'))).toBe(true)
     expect(structuredData.some((value) => value.includes('"@type":"FAQPage"'))).toBe(true)
   })
 

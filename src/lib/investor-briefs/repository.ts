@@ -129,6 +129,8 @@ export interface InvestorBrief extends InvestorBriefSummary {
   payload: InvestorBriefPayload
 }
 
+type InvestorBriefReadableContent = Pick<InvestorBrief, "title" | "summary" | "payload">
+
 export class InvestorBriefRepositoryError extends Error {
   constructor(message: string, public readonly code: "DATABASE_UNAVAILABLE" | "DATABASE_ERROR" | "DATA_INVALID") {
     super(message)
@@ -221,6 +223,40 @@ export async function getInvestorBrief(slug: string): Promise<InvestorBrief | nu
     )
   }
   return { ...toSummary(parsed.data), payload: parsed.data.payload }
+}
+
+function countReadableWords(value: string): number {
+  return value.match(/[\p{L}\p{N}]+(?:[.'’\u2010-\u2015-][\p{L}\p{N}]+)*/gu)?.length ?? 0
+}
+
+export function investorBriefReadableWordCount(brief: InvestorBriefReadableContent): number {
+  const { payload } = brief
+  const readableFields = [
+    brief.title,
+    brief.summary,
+    payload.kicker,
+    payload.answer,
+    payload.decisionQuestion,
+    ...payload.audience,
+    ...payload.keyFacts.flatMap((fact) => [fact.label, fact.value, fact.meaning]),
+    ...payload.risks.flatMap((risk) => [risk.title, risk.whyItMatters, risk.diligenceAction]),
+    ...payload.decisionGates.flatMap((gate) => [gate.title, gate.evidence, gate.passCondition]),
+    ...payload.checklist,
+    ...payload.faqs.flatMap((faq) => [faq.question, faq.answer]),
+    payload.methodology.purpose,
+    payload.methodology.process,
+    payload.methodology.limitations,
+    payload.methodology.reviewedBy,
+    ...(payload.chapters?.flatMap((chapter) => [chapter.title, chapter.lede, ...chapter.paragraphs]) ?? []),
+    ...(payload.marketEvidence
+      ? [
+          payload.marketEvidence.scope,
+          ...payload.marketEvidence.points.map((point) => point.market),
+        ]
+      : []),
+    ...payload.sources.flatMap((source) => [source.title, source.publisher]),
+  ]
+  return readableFields.reduce((total, field) => total + countReadableWords(field), 0)
 }
 
 export function investorBriefToMarkdown(brief: InvestorBrief): string {
