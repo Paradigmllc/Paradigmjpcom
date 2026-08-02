@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Check, Copy, Loader2, PawPrint, Sparkles, Upload, UserPlus } from "lucide-react"
+import { Check, Copy, KeyRound, Loader2, PawPrint, Sparkles, Upload, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,7 +27,7 @@ const text = {
 const plans: Array<{ id: PetMoviePlan; name: string; price: string; detail: string }> = [
   { id: "mini", name: "Mini", price: "$19", detail: "30 sec · 9:16" },
   { id: "story", name: "Story", price: "$39", detail: "60 sec · 9:16 + 16:9" },
-  { id: "cinema", name: "Cinema", price: "$79", detail: "60 sec · all formats + narration" },
+  { id: "cinema", name: "Cinema", price: "$79", detail: "60 sec · 9:16 + 16:9 + 1:1" },
 ]
 
 async function jsonRequest<T>(url: string, init: RequestInit): Promise<T> {
@@ -43,6 +43,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
   const [localUrls, setLocalUrls] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [checkoutEmail, setCheckoutEmail] = useState("")
   const [preview, setPreview] = useState<{ storyboard: PetMovieStoryboard; assetUrls: Record<string, string>; url: string; projectId: string; token: string } | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const form = useForm<CreatePetMovieProjectInput>({
@@ -55,7 +56,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
       mood: "warm",
       timeTogether: "",
       memories: ["", "", ""],
-      consentConfirmed: true,
+      consentConfirmed: false,
     },
   })
 
@@ -73,7 +74,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
     setBusy(true)
     setProgress(5)
     try {
-      const payload = { ...values, memories: values.memories.filter((memory) => memory.trim()) }
+      const payload = { ...values, memories: values.memories.filter((memory: string) => memory.trim()) }
       const created = await jsonRequest<{ project: { id: string }; accessToken: string }>("/api/pet-life-movie/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +82,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
       })
       const projectId = created.project.id
       const token = created.accessToken
-      sessionStorage.setItem(`pet-movie:${projectId}`, token)
+      localStorage.setItem(`pet-movie:${projectId}`, token)
       setProgress(18)
       const signed = await jsonRequest<{ uploads: Array<{ assetId: string; uploadUrl: string; contentType: string }> }>(`/api/pet-life-movie/projects/${projectId}/uploads`, {
         method: "POST",
@@ -127,12 +128,16 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
 
   async function startCheckout(plan: PetMoviePlan) {
     if (!preview) return
+    if (!/^\S+@\S+\.\S+$/.test(checkoutEmail.trim())) {
+      toast.error(locale === "ja" ? "納品先のメールアドレスを入力してください" : "Enter the email address for delivery")
+      return
+    }
     setBusy(true)
     try {
       const result = await jsonRequest<{ url: string }>(`/api/pet-life-movie/projects/${preview.projectId}/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-pet-movie-token": preview.token },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, email: checkoutEmail.trim() }),
       })
       window.location.assign(result.url)
     } catch (error) {
@@ -170,6 +175,17 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
     }
   }
 
+  async function copyManageLink() {
+    if (!preview) return
+    try {
+      await navigator.clipboard.writeText(`${preview.url}#manage=${encodeURIComponent(preview.token)}`)
+      toast.success(locale === "ja" ? "管理用リンクをコピーしました。共有しないでください。" : "Management link copied. Keep it private.")
+    } catch (error) {
+      console.error("[pet-life-movie] management link copy failed", error)
+      toast.error(t.failed)
+    }
+  }
+
   return (
     <section id="create" className="bg-paradigm-paper-deep py-20 md:py-28">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 md:px-8 lg:grid-cols-[1.05fr_.95fr]">
@@ -197,11 +213,11 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
         </Card>
         <div className="flex flex-col items-center justify-center gap-6">
           {preview ? <PetMoviePreview storyboard={preview.storyboard} assetUrls={preview.assetUrls} className="w-full max-w-[360px]" /> : <div className="grid aspect-[9/16] w-full max-w-[360px] place-items-center rounded-[2rem] border border-paradigm-line bg-paradigm-paper-card text-center shadow-xl"><div className="p-8"><PawPrint className="mx-auto mb-4 h-12 w-12 text-paradigm-accent" aria-hidden="true" /><p className="font-display text-xl">{t.previewPlaceholder}</p><p className="mt-2 text-sm text-paradigm-ink-mute">{t.previewDetail}</p></div></div>}
-          {preview && <div className="flex flex-wrap justify-center gap-3"><Button variant="outline" onClick={copyShareLink}><Copy className="h-4 w-4" aria-hidden="true" />{t.share}</Button><Button variant="outline" onClick={createInvite}><UserPlus className="h-4 w-4" aria-hidden="true" />{t.invite}</Button></div>}
+          {preview && <div className="flex flex-wrap justify-center gap-3"><Button variant="outline" onClick={copyShareLink}><Copy className="h-4 w-4" aria-hidden="true" />{t.share}</Button><Button variant="outline" onClick={createInvite}><UserPlus className="h-4 w-4" aria-hidden="true" />{t.invite}</Button><Button variant="ghost" onClick={copyManageLink}><KeyRound className="h-4 w-4" aria-hidden="true" />{locale === "ja" ? "管理用リンク" : "Management link"}</Button></div>}
           {inviteUrl && <p className="max-w-sm break-all text-center text-xs text-paradigm-ink-mute">{inviteUrl}</p>}
         </div>
       </div>
-      {preview && <div className="mx-auto mt-16 max-w-5xl px-5 md:px-8"><h3 className="mb-7 text-center font-display text-3xl">{t.plans}</h3><div className="grid gap-4 md:grid-cols-3">{plans.map((plan) => <Card key={plan.id} className={plan.id === "story" ? "border-paradigm-accent shadow-lg" : "border-paradigm-line"}><CardContent className="p-6"><div className="mb-4 flex items-start justify-between"><div><p className="font-display text-xl">{plan.name}</p><p className="text-sm text-paradigm-ink-mute">{plan.detail}</p></div><span className="text-2xl font-bold">{plan.price}</span></div><ul className="mb-5 space-y-2 text-sm text-paradigm-ink-soft"><li className="flex gap-2"><Check className="h-4 w-4 text-paradigm-accent" />{t.noWatermark}</li><li className="flex gap-2"><Check className="h-4 w-4 text-paradigm-accent" />{t.identitySafe}</li></ul><Button className="w-full" variant={plan.id === "story" ? "default" : "outline"} disabled={busy || !checkoutEnabled} onClick={() => startCheckout(plan.id)}>{checkoutEnabled ? t.choosePlan.replace("{plan}", plan.name) : t.paidSoon}</Button></CardContent></Card>)}</div></div>}
+      {preview && <div className="mx-auto mt-16 max-w-5xl px-5 md:px-8"><h3 className="mb-7 text-center font-display text-3xl">{t.plans}</h3><div className="mx-auto mb-7 max-w-md space-y-2"><Label htmlFor="checkoutEmail">{locale === "ja" ? "納品先メールアドレス" : "Delivery email"}</Label><Input id="checkoutEmail" type="email" autoComplete="email" required value={checkoutEmail} onChange={(event) => setCheckoutEmail(event.target.value)} placeholder="you@example.com" /><p className="text-xs text-paradigm-ink-mute">{locale === "ja" ? "注文確認と、品質確認済み動画の完成通知にのみ使用します。" : "Used for your receipt, order confirmation, and reviewed-film delivery."}</p></div><div className="grid gap-4 md:grid-cols-3">{plans.map((plan) => <Card key={plan.id} className={plan.id === "story" ? "border-paradigm-accent shadow-lg" : "border-paradigm-line"}><CardContent className="p-6"><div className="mb-4 flex items-start justify-between"><div><p className="font-display text-xl">{plan.name}</p><p className="text-sm text-paradigm-ink-mute">{plan.detail}</p></div><span className="text-2xl font-bold">{plan.price}</span></div><ul className="mb-5 space-y-2 text-sm text-paradigm-ink-soft"><li className="flex gap-2"><Check className="h-4 w-4 text-paradigm-accent" />{t.noWatermark}</li><li className="flex gap-2"><Check className="h-4 w-4 text-paradigm-accent" />{t.identitySafe}</li></ul><Button className="w-full" variant={plan.id === "story" ? "default" : "outline"} disabled={busy || !checkoutEnabled} onClick={() => startCheckout(plan.id)}>{checkoutEnabled ? t.choosePlan.replace("{plan}", plan.name) : t.paidSoon}</Button></CardContent></Card>)}</div></div>}
     </section>
   )
 }

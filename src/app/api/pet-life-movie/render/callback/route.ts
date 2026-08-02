@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { PET_MOVIE_TABLES, recordPetMovieEvent, requirePetMovieDatabase } from "@/lib/pet-life-movie/data"
@@ -7,6 +8,13 @@ import { notifyBothChannels } from "@/lib/notify"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+
+function secretMatches(actual: string | null, expected: string): boolean {
+  if (!actual) return false
+  const left = Buffer.from(actual)
+  const right = Buffer.from(expected)
+  return left.length === right.length && timingSafeEqual(left, right)
+}
 
 const callbackSchema = z.object({
   jobId: z.string().uuid(),
@@ -18,7 +26,7 @@ const callbackSchema = z.object({
 export async function POST(request: Request) {
   try {
     const secret = process.env.PET_MOVIE_RENDERER_WEBHOOK_SECRET
-    if (!secret || request.headers.get("x-renderer-secret") !== secret) {
+    if (!secret || !secretMatches(request.headers.get("x-renderer-secret"), secret)) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     }
     const input = callbackSchema.parse(await parseJsonBody(request))

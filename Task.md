@@ -44,6 +44,15 @@
 - Canonical pre-deploy and post-deploy release gates passed.
 - Production smoke passed for public readiness, Japanese and English pages, Twenty CRM, sales health, and origin-lock enforcement.
 
+## CURRENT STATUS - 2026-08-02 Pet Life Movie market-readiness hardening
+
+- Upgraded payments to the official Stripe SDK with signed webhooks, retries, idempotent Checkout/render creation, required delivery email, refunds, and fail-closed readiness across Stripe, Resend, and the internal renderer.
+- Added the dedicated Video Factory pet render lane, strict signed-R2 input validation, factual supplied-photo FFmpeg rendering, plan-specific 9:16/16:9/1:1 outputs, and mandatory draft/final human approval gates.
+- Added private multi-format delivery ingestion with size/SHA-256 verification, R2 storage, durable deliverable records, delivery email, and short-lived signed downloads.
+- Added explicit unchecked consent, private management links, customer deletion, 30-day free/90-day paid retention, expiry enforcement, cleanup API, and R2 deletion support.
+- Added migration `20260802020742_pet_life_movie_market_ready.sql`: customer/payment state, one-active-render uniqueness, deliverables, FORCE RLS, Data API revocation, and service-role-only access. All canonical migration and release verifiers include it.
+- Verification passed: Next.js production build 552/552 pages, Pet TypeScript, changed-scope ESLint, Vitest 9/9, Python compile/Ruff, targeted pytest, and production-mode Playwright for the five-photo no-account preview flow.
+- Release handoff: merge and run the canonical deployment; apply/read back the migration; set the internal Video Factory URL and R2 lifecycle; configure live Stripe products/webhook and Resend only through authenticated control-plane access. Checkout remains disabled until every dependency is present, so customers cannot be charged prematurely.
 ## MONETIZATION DECISIONS
 
 - Wave 1 uses free content APIs for reach and pay-per-request decision packets for immediate machine-to-machine revenue testing.

@@ -1,7 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { petMovieSecretsMatch } from "./auth"
 import { hashPetMovieSecret } from "./auth"
-import type { PetMovieAssetRow, PetMovieProjectRow } from "./types"
+import type { PetMovieAssetRow, PetMovieDeliverableRow, PetMovieProjectRow } from "./types"
 
 export const PET_MOVIE_TABLES = {
   PROJECTS: "pet_movie_projects",
@@ -9,6 +9,7 @@ export const PET_MOVIE_TABLES = {
   CONTRIBUTORS: "pet_movie_contributors",
   JOBS: "pet_movie_jobs",
   EVENTS: "pet_movie_events",
+  DELIVERABLES: "pet_movie_deliverables",
 } as const
 
 export function requirePetMovieDatabase() {
@@ -29,7 +30,24 @@ export async function authorizePetMovieProject(projectId: string, token: string 
   const project = data as PetMovieProjectRow | null
   if (!project || !petMovieSecretsMatch(token, project.access_token_hash)) return null
   if (["expired", "deleted"].includes(project.status)) return null
+  if (new Date(project.expires_at).getTime() <= Date.now()) {
+    const { error: expiryError } = await db.from(PET_MOVIE_TABLES.PROJECTS)
+      .update({ status: "expired", share_enabled: false })
+      .eq("id", project.id)
+    if (expiryError) console.error("[pet-life-movie] project expiry update failed", expiryError.message)
+    return null
+  }
   return project
+}
+
+export async function listPetMovieDeliverables(projectId: string): Promise<PetMovieDeliverableRow[]> {
+  const db = requirePetMovieDatabase()
+  const { data, error } = await db.from(PET_MOVIE_TABLES.DELIVERABLES)
+    .select("*")
+    .eq("project_id", projectId)
+    .order("created_at")
+  if (error) throw new Error(`Could not load movie deliverables: ${error.message}`)
+  return (data ?? []) as PetMovieDeliverableRow[]
 }
 
 export async function listPetMovieAssets(projectId: string, uploadedOnly = false): Promise<PetMovieAssetRow[]> {

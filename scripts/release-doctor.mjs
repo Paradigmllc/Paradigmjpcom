@@ -322,6 +322,10 @@ function checkStaticReleaseRules() {
   const petMovieMigration = fs.existsSync(petMovieMigrationPath)
     ? fs.readFileSync(petMovieMigrationPath, "utf8")
     : ""
+  const petMovieMarketMigrationPath = "supabase/migrations/20260802020742_pet_life_movie_market_ready.sql"
+  const petMovieMarketMigration = fs.existsSync(petMovieMarketMigrationPath)
+    ? fs.readFileSync(petMovieMarketMigrationPath, "utf8")
+    : ""
   const petMovieRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
   const petMovieDbVerifier = fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
   const petMovieMarkers = [
@@ -339,7 +343,13 @@ function checkStaticReleaseRules() {
     petMovieMarkers.every((marker) => petMovieMigration.includes(marker)) &&
     noLoginDeploy.includes("20260801213954_pet_life_movie_mvp.sql") &&
     noLoginDeploy.includes("applyPetLifeMovieMigration") &&
+    noLoginDeploy.includes("20260802020742_pet_life_movie_market_ready.sql") &&
+    noLoginDeploy.includes("applyPetLifeMovieMarketReadyMigration") &&
     petMovieRunMigrations.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    petMovieRunMigrations.includes("20260802020742_pet_life_movie_market_ready.sql") &&
+    petMovieMarketMigration.includes("pet_movie_deliverables") &&
+    petMovieMarketMigration.includes("force row level security") &&
+    petMovieMarketMigration.includes("to service_role") &&
     petMovieMarkers.slice(0, 5).every((marker) => petMovieDbVerifier.includes(marker))
   ) {
     pass("Pet Life Movie persistence has RLS, service-role isolation, migration execution, and DB verification wiring")

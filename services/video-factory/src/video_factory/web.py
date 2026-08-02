@@ -11,12 +11,14 @@ from .engine_profile_api import router as engine_profile_router
 from .registry_api import router as registry_router
 from .studio_api import router as studio_router
 from .uploads import router as upload_router
+from .pet_movie_api import router as pet_movie_router
 
 app.include_router(console_router)
 app.include_router(engine_profile_router)
 app.include_router(registry_router)
 app.include_router(studio_router)
 app.include_router(upload_router)
+app.include_router(pet_movie_router)
 
 _STATIC_ROOT = Path(__file__).resolve().parent / "static"
 
