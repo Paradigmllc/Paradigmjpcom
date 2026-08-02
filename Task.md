@@ -14,7 +14,7 @@
 - Shopify Admin、独自ドメイン、`Tableware` / `Craft` / `Living` / `Gifts` collectionを設定済み。未公開テーマ `SERICIA WoodMart OS2 - Development`（ID `144315482160`）にOS2 storefrontを反映し、公開Riseテーマとpassword保護は変更していない。
 - merchant app `SERICIA BASE Sync` は商品・在庫・locationの最小5 scopeでinstall済み。Shopify client credentialsをapproved referenceとCoolifyへ安全に反映し、24時間token exchange、5 scope、active locationをAdmin APIでread-backした。
 - BASE OAuth、暗号化token保存、pagination、draft-only `productSet` upsert、在庫同期、dry-run/apply UI、履歴、エラー可視化、通知、service-role-only RLSを実装し、migration `20260802153000_shopify_base_sync.sql` を本番適用済み。自動公開と自動削除は無効。
-- PR **#657**は最新mainを統合中。BASE Developersは未ログインのためclient ID/secret未取得で、BASE OAuth・dry-run・実商品同期のみ保留する。重量、配送、対象国、税務が確定するまでJapan以外のMarkets等は変更しない。
+- PR **#657**をmain `ad3e6d2b`へsquash mergeし、Coolify deployment `p4vhvcggml1qcnqt22u5wv3e` はfinished。post-deploy doctor、公開smoke、本番管理APIを通過し、Shopify configured、API `2026-07`、商品管理行12件をread-backした。BASE Developersは未ログインのためclient ID/secret未取得で、BASE OAuth・dry-run・実商品同期のみ保留する。重量、配送、対象国、税務が確定するまでJapan以外のMarkets等は変更しない。
 
 ## CURRENT STATUS — 2026-08-02 Japan Market Operator Operations OS
 
@@ -35,7 +35,7 @@
 
 - Direct Growth: PR **#665**をmainへsquash mergeし、canonical releaseでmigrationを適用する。3テーブルのRLS/FORCE RLS、anon/authenticated grant 0、service-role policy/RPCをread-backする。
 - Direct Growth: 本番管理画面の認証redirect、API未認証401/認証200、4媒体、外部送信controlなし、DBベル+Slackを確認する。架空キャンペーンや外部投稿は作成しない。
-- SERICIA: canonical release後に本番Shopify接続、未接続BASE表示、テーマpreviewを確認する。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
+- SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
 - Japan operator: canonical release後にDB RLS/権限/RPC、認証API、管理画面fingerprint、dry-run許可、未承認live送信拒否を本番確認する。運用開始はCHEFCLEAN→HOLENの順で、中央guardを迂回しない。
 - x402: 財務承認後にsecretをapproved storeへ設定し、0.25 USDC実購入、settlement、paid delivery、hashed reference、DBベル、Slackを確認する。
 - Pet Life Movie: 市場公開前に承認済みCloudflare API tokenをローテーションする。ローカル診断出力に露出した旧tokenは安全とみなさない。
@@ -45,8 +45,8 @@
 ## RELEASE REFERENCES
 
 - Direct Growth: PR **#665** / branch `feat/video-direct-growth`。
-- SERICIA Shopify storefront and BASE sync: PR **#657**。
+- SERICIA Shopify storefront and BASE sync: PR **#657** / main `ad3e6d2b` / deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Japan operator OS: PR **#666** / main **cf105607**。
 - Content API: PR **#659**、fixes **#660-#662**、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
-- Pet Life Movie: PR **#664**、release **30730953842**、deployment **sdldvalovxfxubub7z13edbn**。
+- Pet Life Movie: PR **#664**、release **30730953842**、deployment `sdldvalovxfxubub7z13edbn`。
 - Previous detailed archive: `docs/handoff-archive/2026-08-02-pre-content-api-task.md`。
