@@ -11,10 +11,12 @@
 
 ## CURRENT STATUS — 2026-08-02 Hana Creator Video Factory bridge
 
+- Production verified: PR #677/main `1b0b84b1`, Coolify deployment `bq6td1c4coh8kqaxfbbr7z3a`, and the full post-deploy release gate passed. Live dry-run accepted the same Hana UUID twice with one execution and `idempotent_replay`, completed in draft-review state, exposed the constrained artifact list, and left managed Vast.ai instance 46258780 `exited`.
+- Security response: the first env import accidentally created a malformed multiline Coolify value and appeared only in a failed build. The bridge and affected Hana automation/media secrets were rotated in approved storage and both runtimes before the successful deployment; the failed value is no longer valid.
 - 独立運用中のHana Creatorから、本番Video Factoryへ安全に制作ジョブを投入する専用machine-to-machine bridgeを追加した。Hana専用secret、承認済み参照画像、`hana-<job UUID>` project、生成shot、ローカル納品だけを許可する。
 - Hana job UUIDをVideo Factoryのrun IDとして永続化し、タイムアウト再送やworker再起動でも同じジョブを二重生成しない。既存のVast.ai管理GPU 46258780、1 GPU 1 job、商用ライセンス・workflow審査、完了/失敗時停止をそのまま再利用する。
 - bridgeはsubmit/status/artifact listと、Hana projectの画像・動画成果物だけを取得できるprivate file proxyを提供する。他project、brief、review JSON、未承認参照画像は拒否する。
-- Active handoff: Linux CI通過後にPRをmainへmergeし、`VIDEO_FACTORY_CREATOR_BRIDGE_SECRET`を本番Paradigm/Hanaのapproved secretへ同値設定する。まずdry-runでGPUが停止したまま冪等submit/status/artifact境界を確認し、その後だけproduction seriesを有効化する。
+- Active handoff: bridge rollout is complete. Keep the Hana runtime on dry-run and series disabled until commercially approved ComfyUI model/workflow profiles and SNS app credentials/audits are ready; activate one SFW canary series before any broader production run.
 
 ## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio + Direct Growth
 
