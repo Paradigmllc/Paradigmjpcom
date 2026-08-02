@@ -211,7 +211,9 @@
 - 長い単一フォームを「あの子のこと→本当にあった思い出→写真」の3ステップへ分割した。入力別validation、戻る/進む、犬猫selector、写真追加/削除preview、安全なupload進捗、完成後の共有/家族招待/管理/注文導線、モバイルsticky preview、reduced-motionを実装した。
 - 家族招待画面をprivate invitationとして再設計し、招待の意味・限定性・直接private storage送信を明示した。写真preview/削除、文字数、権利同意、進捗、完了後の更新preview導線を同じproduct languageへ統一した。
 - 検証: full TypeScript、対象ESLint warning 0、Pet Vitest 19/19、Next.js production build 636/636、production-mode Playwright 10/10（4言語desktop/mobile、実iPhone、no-account preview）、WCAG 2.2 AA 4言語違反0、横overflow 0、`npm audit --omit=dev` 0 vulnerabilities。
-- ACTIVE HANDOFF: branch `codex/pet-life-movie-delight` をPR/CI後にmainへmergeし、正式な `npm run release:prod`、本番4言語/実iPhone/console/ready/visual fingerprintまで確認する。返金処理と法規制文言は別承認スコープのまま変更しない。
+- PR **#700** はvalidate CI通過後にmain **f98bd46f**へsquash merge済み。Coolify deployment **qdqjy137y6e3wsdgjodb3nhd** は後続main **999706ea**（f98bd46fを包含）を本番へ反映し、status `finished` を確認した。
+- 本番 `ready`、専用WebP、日英西葡LP、新hero copy、実iPhone横overflow 0、アニメーション完了後のWCAG 2.2 AA違反0を確認した。DB project作成/認証read、R2署名、5画像PUT/検証、事実限定storyboard、private preview、DB/R2完全削除まで実データsmokeを完走し、検証データ残数0を確認した。
+- ACTIVE HANDOFF: 返金処理・法規制文言を除くPet Life Movieのdelight-quality UI/UXと本番正常系は完了。canonical releaseのSSH依存preflightはhost port 22 timeoutのため利用できず、DB変更がないことを確認して公式Coolify deploy APIへ切替済み。公開アプリ/route/APIはhealthyで、SSH経路の復旧はproduct launchとは分離したinfra運用課題として扱う。
 
 ## CURRENT STATUS — 2026-08-02 Content API + Pet Life Movie
 
