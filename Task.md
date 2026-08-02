@@ -10,11 +10,11 @@
 
 ## CURRENT STATUS — 2026-08-02 Video Factory Studio Scale Readiness
 
-- 既存Studioの実行環境・5テンプレート・10表現種・技術QA・承認ゲート・キュー容量を実測する量産準備度を追加した。現行構成は76/100、Ready 5、Conditional 3、Blocked 2、安全並列1件として表示し、見た目の品質は自動採点せずドラフト/最終の人間レビューを維持する。
-- 本番制作前のpreflightをGUIとAPIの両方に追加した。人物アニメーション/リップシンクの未対応runtimeをキュー投入前に409で停止し、明示指定された生成動画・3D・技術図解を代替表現へ黙って差し替えない。自動Plannerの代替レーンはConditionalとして警告付きで利用できる。
-- 準備度snapshotは新規append-onlyテーブルへ保存し、RLS/FORCE RLS、service-roleのSELECT/INSERT限定、DBベル+Slack通知、release migration、DB table verificationを接続した。
-- ローカル検証はRuff、対象mypy、Python 13 tests、Vitest 3 tests、TypeScript、対象ESLint、Node syntax、diff checkを通過した。Chrome desktop/mobileでは10 capability、preflight停止、横overflowなし、console error 0を確認した。
-- ACTIVE HANDOFF: 実装は `codex/video-studio-scale-readiness` でリリース待ち。PR/CI/merge後にmigration適用、本番Studio readiness同期、DB/RLS read-back、公開console/ready、post-deploy doctorまで確認する。
+- 既存Studioの実行環境・5テンプレート・10表現種・技術QA・承認ゲート・キュー容量を実測する量産準備度と本番preflightをAPI/GUI/DBへ追加した。本番実測は86/100、Ready 6、Conditional 4、Blocked 0、安全並列1件。Readyはtext motion、UI capture、chart、generative、supplied edit、transition。3D、技術図解、人物アニメーション、lip syncはfallbackのConditionalで、明示指定時は専用runtime/templateが揃うまでfail-closedとし、見た目の品質はドラフト/最終の人間レビューを維持する。
+- 機能PR **#690** はmain **e0b7b6c6**、service-role対象RLS修正PR **#692** はmain **4f9917a2**、packaged runtimeの設定パス修正PR **#694** はmain **311bb3ca** へsquash mergeした。PR #694のdirect-growth、全Video Factory tests、実本番container、routing/storageは全件passし、main CI run **30745264493** もpassした。
+- migration `20260802203000_video_factory_studio_scale_readiness.sql` を本番へ適用し、append-only table、RLS/FORCE RLS、service-role SELECT/INSERTのみ、anon/authenticated権限なしをread-backした。本番snapshot **37d0477c-ecbd-496f-b1a0-e3218358f4d7** は86/100・6/4/0・並列1として保存され、運用ベル **a770a8ed-728a-4356-bcd6-224561f45fc6** はopen、Slack送信結果trueを確認した。
+- 最新main **87160b18** をCoolify deployment **mwbaxk97us1bdubmec11zu2y** で本番反映し、公開VaaSと埋め込みVideo Factory verificationをpassした。本番`/api/video-factory/ready`はready true、390px管理画面は10 capability、score 86、横overflowなし、browser error 0。post-deploy release doctorも全項目passした。
+- ACTIVE HANDOFF: 基盤は商用カナリア投入可能。最初の承認済み顧客はReady 6表現種を中心に1案件ずつ流し、権利/訴求承認→ドラフトレビュー→最終レビューを維持する。専用3D・人物・lip sync profile/templateと水平workerを追加するまではConditional 4表現種の明示発注と同時並列2件以上を解放しない。
 
 ## CURRENT STATUS — 2026-08-02 Foreign Investor pSEO + GEO
 
