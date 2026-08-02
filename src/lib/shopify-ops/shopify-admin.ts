@@ -43,6 +43,12 @@ export function isShopifyAdminConfigured(): boolean {
   return commonReady && (legacyTokenReady || clientCredentialsReady)
 }
 
+export type ShopifyCatalogSnapshot = {
+  reachable: boolean
+  productCount: number
+  primaryDomain: string | null
+}
+
 async function shopifyAccessToken(domain: string): Promise<string> {
   const legacyToken = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim()
   if (legacyToken) return legacyToken
@@ -110,6 +116,26 @@ async function shopifyGraphql<T>(query: string, variables: Record<string, unknow
     if (!payload.data) throw new Error("Shopify Admin APIの応答にdataがありません")
     return payload.data
   })
+}
+
+export async function getShopifyCatalogSnapshot(): Promise<ShopifyCatalogSnapshot> {
+  if (!isShopifyAdminConfigured()) {
+    return { reachable: false, productCount: 0, primaryDomain: null }
+  }
+  const data = await shopifyGraphql<{
+    shop: { primaryDomain: { url: string } }
+    productsCount: { count: number }
+  }>(`
+    query SericiaLaunchCatalogSnapshot {
+      shop { primaryDomain { url } }
+      productsCount { count }
+    }
+  `)
+  return {
+    reachable: true,
+    productCount: Number.isFinite(data.productsCount.count) ? data.productsCount.count : 0,
+    primaryDomain: data.shop.primaryDomain.url || null,
+  }
 }
 
 export async function getShopifyLocationId(): Promise<string> {

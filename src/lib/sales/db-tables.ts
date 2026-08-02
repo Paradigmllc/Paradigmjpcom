@@ -187,6 +187,7 @@ export const DB_TABLES = {
   SHOPIFY_BASE_PRODUCT_LINKS: "shopify_base_product_links",
   SHOPIFY_BASE_SYNC_RUNS: "shopify_base_sync_runs",
   SHOPIFY_SOCIAL_RUNS: "shopify_social_runs",
+  SHOPIFY_LAUNCH_AUDIT_RUNS: "shopify_launch_audit_runs",
 
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",

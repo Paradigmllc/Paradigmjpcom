@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { BarChart3, Boxes, LayoutDashboard, LoaderCircle, RefreshCw, Store, Video } from "lucide-react"
+import { BarChart3, Boxes, LayoutDashboard, LoaderCircle, RefreshCw, Rocket, Store, Video } from "lucide-react"
 import { Toaster, toast } from "sonner"
 import {
   createContentAction,
@@ -13,6 +13,7 @@ import {
   upsertDailyMetricAction,
   runBaseSyncAction,
   runSocialPipelineAction,
+  runLaunchAuditAction,
 } from "@/app/[locale]/admin/shopify/actions"
 import type { ShopifyOpsActionResult } from "@/app/[locale]/admin/shopify/actions"
 import type { ShopifyOpsDashboard } from "@/lib/shopify-ops/types"
@@ -21,13 +22,15 @@ import { ShopifyProductsPanel } from "./ShopifyProductsPanel"
 import { ShopifyContentPanel } from "./ShopifyContentPanel"
 import { ShopifyMetricsPanel } from "./ShopifyMetricsPanel"
 import { ShopifyBaseSyncPanel } from "./ShopifyBaseSyncPanel"
+import { ShopifyLaunchControlPanel } from "./ShopifyLaunchControlPanel"
 
-type TabId = "overview" | "products" | "sync" | "content" | "metrics"
+type TabId = "overview" | "launch" | "products" | "sync" | "content" | "metrics"
 type Action = (formData: FormData) => Promise<ShopifyOpsActionResult>
 type SubmitAction = (formData: FormData) => Promise<void>
 
 const tabs = [
   { id: "overview" as const, label: "全体", icon: LayoutDashboard },
+  { id: "launch" as const, label: "ローンチ", icon: Rocket },
   { id: "products" as const, label: "商品", icon: Boxes },
   { id: "sync" as const, label: "BASE同期", icon: RefreshCw },
   { id: "content" as const, label: "コンテンツ", icon: Video },
@@ -63,6 +66,8 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
 
   const content = activeTab === "overview"
     ? <ShopifyOverview dashboard={dashboard} />
+    : activeTab === "launch"
+      ? <ShopifyLaunchControlPanel control={dashboard.launchControl} locale={locale} submit={submit(runLaunchAuditAction)} />
     : activeTab === "products"
       ? <ShopifyProductsPanel products={dashboard.products} locale={locale} submit={submit(updateProductAction)} />
       : activeTab === "sync"

@@ -427,6 +427,7 @@ function printSummaryAndExit(ok, missing, errored) {
         "pet_movie_marketing_runs": "supabase/migrations/20260802201649_pet_life_movie_global_growth.sql",
         "pet_movie_marketing_posts": "supabase/migrations/20260802201649_pet_life_movie_global_growth.sql",
         "pet_movie_marketing_events": "supabase/migrations/20260802201649_pet_life_movie_global_growth.sql",
+        "shopify_launch_audit_runs": "supabase/migrations/20260802214457_sericia_launch_control.sql",
         "video_factory_engine_profiles": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_engine_events": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_brand_kits": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",

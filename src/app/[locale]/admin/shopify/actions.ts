@@ -12,6 +12,7 @@ import {
 } from "@/lib/shopify-ops/repository"
 import { runBaseToShopifySync } from "@/lib/shopify-ops/base-sync-service"
 import { runDailySocialPipeline, tokyoDateString } from "@/lib/shopify-ops/social-pipeline"
+import { runLaunchAudit } from "@/lib/shopify-ops/launch-control"
 import {
   createContentSchema,
   dailyMetricSchema,
@@ -174,6 +175,33 @@ export async function runSocialPipelineAction(formData: FormData): Promise<Shopi
     return run.status === "failed" ? { ok: false, error: message } : { ok: true, message }
   } catch (error) {
     console.error("[shopify-ops-action] social pipeline failed:", error)
+    return { ok: false, error: errorMessage(error) }
+  }
+}
+
+export async function runLaunchAuditAction(formData: FormData): Promise<ShopifyOpsActionResult> {
+  try {
+    await requireAdmin()
+    const result = await runLaunchAudit("manual")
+    const message = result.audit.status === "ready"
+      ? `ローンチ条件 ${result.audit.totalGateCount}/${result.audit.totalGateCount} を通過しました`
+      : `ローンチ条件 ${result.audit.readyGateCount}/${result.audit.totalGateCount}。未達${result.audit.blockers.length}件は安全停止中です`
+    const notification = result.notifyOperator
+      ? await notifyBothChannels(`SERICIA ${message}`, {
+          title: "SERICIA ローンチ監査",
+          message,
+          link: "/ja/admin/shopify",
+          type: "shopify_launch_audit_manual",
+          region: "global",
+          priority: result.audit.status === "ready" ? 90 : 70,
+          idempotencyKey: `shopify-launch-audit:${result.audit.fingerprint}:${result.audit.status}`,
+        })
+      : null
+    if (notification && !notification.ok) console.error("[shopify-ops-action] launch audit notification incomplete:", notification)
+    revalidatePath(`/${localeFrom(formData)}/admin/shopify`)
+    return { ok: true, message }
+  } catch (error) {
+    console.error("[shopify-ops-action] launch audit failed:", error)
     return { ok: false, error: errorMessage(error) }
   }
 }

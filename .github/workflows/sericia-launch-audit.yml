@@ -1,0 +1,73 @@
+name: SERICIA commercial launch audit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/sericia-launch-audit.yml"
+      - "src/app/api/shopify-ops/launch/**"
+      - "src/components/shopify-ops/ShopifyLaunchControlPanel.tsx"
+      - "src/lib/shopify-ops/launch-control.ts"
+      - "src/lib/shopify-ops/launch-control.test.ts"
+      - "src/lib/shopify-ops/shopify-admin.ts"
+      - "src/lib/shopify-ops/types.ts"
+      - "supabase/migrations/20260802214457_sericia_launch_control.sql"
+  schedule:
+    # Six-hourly commercial readiness audit. Unchanged blocks are persisted without notification spam.
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sericia-commercial-launch-audit
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Focused launch control tests
+        run: >-
+          npm exec -- vitest run
+          src/lib/shopify-ops/launch-control.test.ts
+          src/app/api/shopify-ops/launch/audit/route.test.ts
+      - name: TypeScript
+        run: npm exec -- tsc --noEmit --pretty false
+      - name: Lint launch control
+        run: >-
+          npm exec -- eslint
+          src/lib/shopify-ops/launch-control.ts
+          src/lib/shopify-ops/launch-control.test.ts
+          src/app/api/shopify-ops/launch/audit/route.ts
+          src/app/api/shopify-ops/launch/audit/route.test.ts
+          src/components/shopify-ops/ShopifyLaunchControlPanel.tsx
+          --max-warnings=0
+      - name: Production build
+        run: npm run build
+
+  run:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Audit storefront commercial readiness
+        env:
+          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
+        run: |
+          test -n "$WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
+            --header "Content-Type: application/json" \
+            https://paradigmjp.com/api/shopify-ops/launch/audit
