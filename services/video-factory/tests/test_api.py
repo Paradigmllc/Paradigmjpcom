@@ -4,10 +4,11 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import video_factory.studio_readiness as studio_readiness
 from video_factory import local_jobs
 from video_factory.api import app
 from video_factory.io import load_data
-from video_factory.models import PipelineResult
+from video_factory.models import Engine, PipelineResult
 
 
 def test_api_key_and_two_gate_review_delivery(tmp_path: Path, monkeypatch) -> None:
@@ -101,6 +102,44 @@ def test_sync_production_is_rejected(tmp_path: Path, monkeypatch) -> None:
         json={"brief": brief, "dry_run": False},
     )
     assert response.status_code == 409
+
+
+def test_production_preflight_blocks_unavailable_people_runtime_before_queue(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_QUEUE_BACKEND", "local")
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "test-secret")
+    monkeypatch.setattr(
+        studio_readiness,
+        "engine_availability",
+        lambda _settings: {
+            engine: engine in {Engine.HYPERFRAMES, Engine.FFMPEG, Engine.PLAYWRIGHT}
+            for engine in Engine
+        },
+    )
+    monkeypatch.setattr(
+        studio_readiness,
+        "engine_catalog_payload",
+        lambda _settings: {"ok": True, "profiles": []},
+    )
+    brief = load_data(Path(__file__).parents[1] / "examples/briefs/saas-launch.yaml")
+    brief["requested_shot_kinds"] = ["portrait_animation"]
+    brief["rights"]["likeness_consent"] = "granted"
+
+    response = TestClient(app).post(
+        "/v1/runs",
+        json={"brief": brief, "dry_run": False},
+        headers={"X-Api-Key": "test-secret"},
+    )
+
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["message"] == "Studio production preflight failed"
+    assert any("portrait_animation" in blocker for blocker in detail["blockers"])
+    assert not (workspace / "inbox").exists()
 
 
 def test_async_run_request_id_is_idempotent(tmp_path: Path, monkeypatch) -> None:

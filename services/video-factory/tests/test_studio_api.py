@@ -55,6 +55,16 @@ def test_studio_catalog_and_shot_revision(
     assert catalog.status_code == 200
     assert len(catalog.json()["templates"]) == 5
 
+    readiness = client.get("/v1/studio/readiness", headers=_headers())
+    assert readiness.status_code == 200
+    assert len(readiness.json()["capabilities"]) == 10
+    assert (
+        readiness.json()["ready_capabilities"]
+        + readiness.json()["conditional_capabilities"]
+        + readiness.json()["blocked_capabilities"]
+        == 10
+    )
+
     response = client.patch(
         f"/v1/projects/{project_id}/shots/shot-001",
         headers=_headers(),

@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 Video Factory Studio Scale Readiness
+
+- 既存Studioの実行環境・5テンプレート・10表現種・技術QA・承認ゲート・キュー容量を実測する量産準備度を追加した。現行構成は76/100、Ready 5、Conditional 3、Blocked 2、安全並列1件として表示し、見た目の品質は自動採点せずドラフト/最終の人間レビューを維持する。
+- 本番制作前のpreflightをGUIとAPIの両方に追加した。人物アニメーション/リップシンクの未対応runtimeをキュー投入前に409で停止し、明示指定された生成動画・3D・技術図解を代替表現へ黙って差し替えない。自動Plannerの代替レーンはConditionalとして警告付きで利用できる。
+- 準備度snapshotは新規append-onlyテーブルへ保存し、RLS/FORCE RLS、service-roleのSELECT/INSERT限定、DBベル+Slack通知、release migration、DB table verificationを接続した。
+- ローカル検証はRuff、対象mypy、Python 13 tests、Vitest 3 tests、TypeScript、対象ESLint、Node syntax、diff checkを通過した。Chrome desktop/mobileでは10 capability、preflight停止、横overflowなし、console error 0を確認した。
+- ACTIVE HANDOFF: 実装は `codex/video-studio-scale-readiness` でリリース待ち。PR/CI/merge後にmigration適用、本番Studio readiness同期、DB/RLS read-back、公開console/ready、post-deploy doctorまで確認する。
+
 ## CURRENT STATUS — 2026-08-02 Foreign Investor pSEO + GEO
 
 - 海外投資家向け英語decision brief 12本を`content_products`のservice-role-only DB台帳へ追加した。不動産・宿泊・データセンター・再エネ・中小企業M&A・スタートアップ・FDI審査・会社設立を、一次情報、key facts、downside risks、decision gates、チェックリスト、FAQ、方法論、更新日で構造化する。

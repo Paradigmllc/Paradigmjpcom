@@ -139,6 +139,7 @@ export const DB_TABLES = {
   VIDEO_FACTORY_STUDIO_PROJECTS: "video_factory_studio_projects",
   VIDEO_FACTORY_SHOT_REVISIONS: "video_factory_shot_revisions",
   VIDEO_FACTORY_QUALITY_METRICS: "video_factory_quality_metrics",
+  VIDEO_FACTORY_STUDIO_READINESS_SNAPSHOTS: "video_factory_studio_readiness_snapshots",
 
   // ── Video subscription direct acquisition ──
   VIDEO_GROWTH_CAMPAIGNS: "video_growth_campaigns",
