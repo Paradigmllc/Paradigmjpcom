@@ -36,7 +36,6 @@
 - Dependency security gateはPR **#669** / main **d40eef47**へ反映済み。Next.js `16.2.12`、Sharp `0.35.3`（Next.js配下もdedupe）、full `npm audit` 0 vulnerabilities、552/552 production build、Pet TypeScript/Vitest 9/9、Linux validation run **30732125162**を通過した。
 - 最新の稼働コンテナはmain **2a036780**（`d40eef47`を包含）でhealthy。Coolify deployment **uiu3j3imc8sq9zero80nnlhi**はfinished。Pet page/renderer ready、anonymous create 201、owner load 200、delete 200、deleted read-back 404を再確認し、検証projectは削除した。checkoutは引き続きfail-closed。
 - Pet paid renderはlive Stripe secret/webhook/3 Price IDsとResendが揃うまで無効。実購入・返金・納品証跡が市場公開前に必要。
-- Dependency security gate: Next.js `16.2.12`、Sharp `0.35.3`（Next.js配下もdedupe）、full `npm audit` 0 vulnerabilities、production build 552/552、Pet TypeScript/Vitest 9/9、Linux CIを確認した。PR #669のmerge・本番再smoke待ち。
 
 ## ACTIVE HANDOFF
 
