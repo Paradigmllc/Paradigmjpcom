@@ -6,7 +6,10 @@
 - Added a replay-safe Greater Tokyo diversification migration. It rebuilds all four analysis chapters from each page's region, covered markets, asset class, decision stage, official MLIT point set, primary risk, diligence action and existing market-specific thesis.
 - Every Greater Tokyo chapter now has three region-specific paragraphs. The DB migration fails closed unless the full catalog contains exactly 112 unique chapter titles, 288 unique analysis paragraphs, no paragraph below 400 characters and no chapter-to-source reference mismatch.
 - The canonical no-login release path and the host migration runner both apply the original 12-brief expansion before the Greater Tokyo uniqueness migration. Production verification repeats the uniqueness, depth, market-dataset, source durability and service-role-isolation gates.
-- ACTIVE HANDOFF: run focused tests, TypeScript, release doctor and production build; commit/push/PR; wait for CI and exact-main deployment; apply/read back the migration and verify live JSON, Markdown, HTML, Dataset JSON-LD and per-page Open Graph assets.
+- PR #713 and migration-order hardening PR #714 are merged. Exact main `7be76f7b` deployed successfully through GitHub run `30771036918` / Coolify deployment `indb0xwk75bvga40vn3h3dqu`; the application is healthy and the full post-deploy release doctor passed.
+- Production read-back confirms 28 briefs, 112/112 unique chapter titles, 288/288 unique paragraphs, minimum paragraph length 401 characters, 0 unknown source references, 16 market datasets, retired Kyoto URL absent, durable Kyoto URL present, RLS/FORCE RLS enabled and anon/authenticated SELECT denied.
+- Live HTML exposes the region-specific chapters and canonical URL; Article JSON-LD reports 2,470 visible words on the Shinjuku/Shibuya sample; Dataset JSON-LD distributes JSON and Markdown; two sampled 1200x630 PNG social images have distinct hashes. Chromium and mobile-Safari production E2E both passed 6/6.
+- ACTIVE HANDOFF: monitor Search Console index coverage and query clusters, source freshness, API/Markdown consumption and qualified conversion. Keep expansion behind the existing distinct-intent, sourced-analysis and human-review quality gates; do not publish candidate combinations solely to increase page count.
 
 ## CURRENT STATUS - 2026-08-03 SERICIA commercial launch control
 
