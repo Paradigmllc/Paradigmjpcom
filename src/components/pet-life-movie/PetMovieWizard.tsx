@@ -16,6 +16,7 @@ import { createPetMovieProjectSchema, type CreatePetMovieProjectInput } from "@/
 import type { PetMoviePlan, PetMovieStoryboard } from "@/lib/pet-life-movie/types"
 import { validatePetMovieFiles } from "@/lib/pet-life-movie/client-files"
 import { PET_MOVIE_PLANS } from "@/lib/pet-life-movie/commercial"
+import { trackPetMarketingEvent } from "@/lib/pet-life-movie/marketing/client"
 import PetMoviePreview from "./PetMoviePreview"
 
 type Locale = "ja" | "en" | "es" | "pt"
@@ -215,6 +216,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
       })
       const projectId = created.project.id
       const token = created.accessToken
+      trackPetMarketingEvent("project_created", locale)
       localStorage.setItem(`pet-movie:${projectId}`, token)
       setProgress(18)
       const signed = await jsonRequest<{ uploads: Array<{ assetId: string; uploadUrl: string; contentType: string }> }>(`/api/pet-life-movie/projects/${projectId}/uploads`, {
@@ -254,6 +256,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
         token,
       })
       setProgress(100)
+      trackPetMarketingEvent("preview_created", locale)
       toast.success(t.previewReady)
     } catch (error) {
       console.error("[pet-life-movie] preview creation failed", error)
@@ -273,6 +276,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
       toast.error(t.invalid)
       return
     }
+    if (nextStep === 2) trackPetMarketingEvent("wizard_start", locale)
     setStep(nextStep)
   }
 
@@ -309,6 +313,7 @@ export default function PetMovieWizard({ locale, checkoutEnabled }: { locale: Lo
         headers: { "Content-Type": "application/json", "x-pet-movie-token": preview.token },
         body: JSON.stringify({ plan, email: checkoutEmail.trim(), termsAccepted }),
       })
+      trackPetMarketingEvent("checkout_started", locale)
       window.location.assign(result.url)
     } catch (error) {
       console.error("[pet-life-movie] checkout failed", error)

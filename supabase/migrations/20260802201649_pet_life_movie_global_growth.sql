@@ -1,0 +1,219 @@
+-- Pet Life Movie global organic growth automation.
+-- Operational campaign data is service-role only. Public attribution events
+-- are accepted by a rate-limited Next.js endpoint and never expose raw visitor
+-- identifiers to the database.
+
+create table if not exists public.pet_movie_marketing_campaigns (
+  id uuid primary key default gen_random_uuid(),
+  campaign_key text not null unique,
+  name text not null,
+  status text not null default 'draft',
+  locales text[] not null default array['ja', 'en', 'es', 'pt']::text[],
+  markets text[] not null default array['JP', 'AU', 'GB', 'ES', 'PT', 'US', 'MX', 'BR']::text[],
+  destination_path text not null default '/pet-life-movie',
+  media_url text not null,
+  auto_approve boolean not null default false,
+  auto_publish boolean not null default false,
+  content_policy_version text not null default 'pet-global-organic-v1',
+  starts_at timestamptz not null default now(),
+  ends_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint pet_movie_marketing_campaign_status_check
+    check (status in ('draft', 'active', 'paused', 'archived')),
+  constraint pet_movie_marketing_campaign_locales_check
+    check (cardinality(locales) between 1 and 12),
+  constraint pet_movie_marketing_campaign_markets_check
+    check (cardinality(markets) between 1 and 40),
+  constraint pet_movie_marketing_campaign_destination_check
+    check (destination_path like '/%'),
+  constraint pet_movie_marketing_campaign_media_check
+    check (media_url ~ '^https://'),
+  constraint pet_movie_marketing_campaign_window_check
+    check (ends_at is null or ends_at > starts_at)
+);
+
+create table if not exists public.pet_movie_marketing_runs (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references public.pet_movie_marketing_campaigns(id) on delete cascade,
+  run_key text not null unique,
+  run_date date not null,
+  slot text not null,
+  status text not null default 'running',
+  generated_post_count integer not null default 0,
+  published_post_count integer not null default 0,
+  failed_post_count integer not null default 0,
+  blocked_post_count integer not null default 0,
+  blocked_reason text,
+  summary jsonb not null default '{}'::jsonb,
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  updated_at timestamptz not null default now(),
+  constraint pet_movie_marketing_run_slot_check
+    check (slot in ('apac', 'europe', 'americas')),
+  constraint pet_movie_marketing_run_status_check
+    check (status in ('running', 'succeeded', 'degraded', 'blocked', 'failed')),
+  constraint pet_movie_marketing_run_counts_check check (
+    generated_post_count >= 0 and published_post_count >= 0
+    and failed_post_count >= 0 and blocked_post_count >= 0
+  )
+);
+
+create table if not exists public.pet_movie_marketing_posts (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references public.pet_movie_marketing_campaigns(id) on delete cascade,
+  run_id uuid references public.pet_movie_marketing_runs(id) on delete set null,
+  post_key text not null unique,
+  platform text not null,
+  locale text not null,
+  market text not null,
+  content_type text not null,
+  status text not null default 'draft',
+  hook text not null,
+  caption text not null,
+  hashtags text[] not null default '{}'::text[],
+  media_url text not null,
+  destination_url text not null,
+  utm_source text not null,
+  utm_medium text not null default 'organic_social',
+  utm_campaign text not null,
+  utm_content text not null,
+  scheduled_for timestamptz,
+  approved_at timestamptz,
+  approved_by text,
+  publish_attempts integer not null default 0,
+  last_publish_attempt_at timestamptz,
+  published_at timestamptz,
+  external_post_id text,
+  post_url text,
+  error_message text,
+  impressions integer not null default 0,
+  engagements integer not null default 0,
+  link_clicks integer not null default 0,
+  conversions integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint pet_movie_marketing_post_platform_check
+    check (platform in ('instagram', 'pinterest', 'tiktok', 'youtube')),
+  constraint pet_movie_marketing_post_locale_check
+    check (locale in ('ja', 'en', 'es', 'pt')),
+  constraint pet_movie_marketing_post_status_check
+    check (status in ('draft', 'approved', 'scheduled', 'published', 'blocked', 'failed')),
+  constraint pet_movie_marketing_post_url_check
+    check (media_url ~ '^https://' and destination_url ~ '^https://'),
+  constraint pet_movie_marketing_post_attempts_check
+    check (publish_attempts between 0 and 20),
+  constraint pet_movie_marketing_post_metrics_check check (
+    impressions >= 0 and engagements >= 0 and link_clicks >= 0 and conversions >= 0
+  )
+);
+
+create table if not exists public.pet_movie_marketing_events (
+  id bigint generated by default as identity primary key,
+  event_name text not null,
+  anonymous_id_hash text not null,
+  locale text not null,
+  market text,
+  path text not null,
+  referrer_host text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  occurred_at timestamptz not null default now(),
+  constraint pet_movie_marketing_event_name_check check (
+    event_name in ('page_view', 'hero_cta', 'experience_cta', 'wizard_start', 'project_created', 'preview_created', 'checkout_started')
+  ),
+  constraint pet_movie_marketing_event_locale_check
+    check (locale in ('ja', 'en', 'es', 'pt')),
+  constraint pet_movie_marketing_event_hash_check
+    check (anonymous_id_hash ~ '^[a-f0-9]{64}$'),
+  constraint pet_movie_marketing_event_path_check
+    check (path like '/%')
+);
+
+create index if not exists pet_movie_marketing_campaign_status_idx
+  on public.pet_movie_marketing_campaigns (status, starts_at);
+create index if not exists pet_movie_marketing_runs_recent_idx
+  on public.pet_movie_marketing_runs (run_date desc, slot);
+create index if not exists pet_movie_marketing_posts_due_idx
+  on public.pet_movie_marketing_posts (scheduled_for, platform)
+  where status = 'scheduled' and approved_at is not null and external_post_id is null;
+create index if not exists pet_movie_marketing_posts_campaign_idx
+  on public.pet_movie_marketing_posts (campaign_id, created_at desc);
+create index if not exists pet_movie_marketing_events_funnel_idx
+  on public.pet_movie_marketing_events (occurred_at desc, event_name);
+create index if not exists pet_movie_marketing_events_campaign_idx
+  on public.pet_movie_marketing_events (utm_campaign, occurred_at desc)
+  where utm_campaign is not null;
+
+drop trigger if exists pet_movie_marketing_campaigns_updated_at on public.pet_movie_marketing_campaigns;
+create trigger pet_movie_marketing_campaigns_updated_at
+before update on public.pet_movie_marketing_campaigns
+for each row execute function public.set_pet_movie_updated_at();
+
+drop trigger if exists pet_movie_marketing_runs_updated_at on public.pet_movie_marketing_runs;
+create trigger pet_movie_marketing_runs_updated_at
+before update on public.pet_movie_marketing_runs
+for each row execute function public.set_pet_movie_updated_at();
+
+drop trigger if exists pet_movie_marketing_posts_updated_at on public.pet_movie_marketing_posts;
+create trigger pet_movie_marketing_posts_updated_at
+before update on public.pet_movie_marketing_posts
+for each row execute function public.set_pet_movie_updated_at();
+
+alter table public.pet_movie_marketing_campaigns enable row level security;
+alter table public.pet_movie_marketing_runs enable row level security;
+alter table public.pet_movie_marketing_posts enable row level security;
+alter table public.pet_movie_marketing_events enable row level security;
+alter table public.pet_movie_marketing_campaigns force row level security;
+alter table public.pet_movie_marketing_runs force row level security;
+alter table public.pet_movie_marketing_posts force row level security;
+alter table public.pet_movie_marketing_events force row level security;
+
+revoke all on public.pet_movie_marketing_campaigns from anon, authenticated;
+revoke all on public.pet_movie_marketing_runs from anon, authenticated;
+revoke all on public.pet_movie_marketing_posts from anon, authenticated;
+revoke all on public.pet_movie_marketing_events from anon, authenticated;
+
+drop policy if exists pet_movie_marketing_campaigns_service_role_all on public.pet_movie_marketing_campaigns;
+create policy pet_movie_marketing_campaigns_service_role_all
+  on public.pet_movie_marketing_campaigns for all to service_role using (true) with check (true);
+drop policy if exists pet_movie_marketing_runs_service_role_all on public.pet_movie_marketing_runs;
+create policy pet_movie_marketing_runs_service_role_all
+  on public.pet_movie_marketing_runs for all to service_role using (true) with check (true);
+drop policy if exists pet_movie_marketing_posts_service_role_all on public.pet_movie_marketing_posts;
+create policy pet_movie_marketing_posts_service_role_all
+  on public.pet_movie_marketing_posts for all to service_role using (true) with check (true);
+drop policy if exists pet_movie_marketing_events_service_role_all on public.pet_movie_marketing_events;
+create policy pet_movie_marketing_events_service_role_all
+  on public.pet_movie_marketing_events for all to service_role using (true) with check (true);
+
+grant select, insert, update, delete on public.pet_movie_marketing_campaigns to service_role;
+grant select, insert, update, delete on public.pet_movie_marketing_runs to service_role;
+grant select, insert, update, delete on public.pet_movie_marketing_posts to service_role;
+grant select, insert, update, delete on public.pet_movie_marketing_events to service_role;
+grant usage, select on sequence public.pet_movie_marketing_events_id_seq to service_role;
+
+insert into public.pet_movie_marketing_campaigns (
+  campaign_key,
+  name,
+  status,
+  destination_path,
+  media_url,
+  auto_approve,
+  auto_publish,
+  content_policy_version
+) values (
+  'pet-life-movie-global-launch',
+  'Pet Life Movie global organic launch',
+  'active',
+  '/pet-life-movie',
+  'https://paradigmjp.com/pet-life-movie/hero-family-v1.webp',
+  true,
+  true,
+  'pet-global-organic-v1'
+)
+on conflict (campaign_key) do nothing;
+
+notify pgrst, 'reload schema';

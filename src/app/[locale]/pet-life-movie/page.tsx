@@ -5,6 +5,7 @@ import { pageAlternates } from "@/lib/page-metadata"
 import PetMovieHero from "@/components/pet-life-movie/PetMovieHero"
 import PetMovieWizard from "@/components/pet-life-movie/PetMovieWizard"
 import PetMovieCommercialDetails from "@/components/pet-life-movie/PetMovieCommercialDetails"
+import PetMovieAttribution from "@/components/pet-life-movie/PetMovieAttribution"
 import { getPetMovieMarketReadiness } from "@/lib/pet-life-movie/readiness"
 import { PET_MOVIE_DELIVERY_BUSINESS_DAYS, PET_MOVIE_PLANS } from "@/lib/pet-life-movie/commercial"
 
@@ -53,6 +54,7 @@ export default async function PetLifeMoviePage({ params }: Props) {
   }
   return (
     <main className="bg-paradigm-paper text-paradigm-ink">
+      <PetMovieAttribution locale={supportedLocale} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <PetMovieHero locale={supportedLocale} />
 
