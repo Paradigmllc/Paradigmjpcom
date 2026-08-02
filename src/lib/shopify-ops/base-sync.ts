@@ -93,14 +93,21 @@ export function normalizeBaseItem(raw: BaseItem): NormalizedBaseProduct {
   const stock = integer(raw.stock)
   const fallbackSku = `BASE-${baseItemId}`
   const sourceVariations = Array.isArray(raw.variations) ? raw.variations : []
+  const variationNameCounts = new Map<string, number>()
   const variations = sourceVariations.length > 0
-    ? sourceVariations.map((variation) => ({
-        baseVariationId: integer(variation.variation_id),
-        name: text(variation.variation) || `Variation ${integer(variation.variation_id)}`,
-        sku: text(variation.variation_identifier) || `${fallbackSku}-${integer(variation.variation_id)}`,
-        barcode: text(variation.barcode) || null,
-        inventory: integer(variation.variation_stock),
-      }))
+    ? sourceVariations.map((variation) => {
+        const variationId = integer(variation.variation_id)
+        const baseName = (text(variation.variation) || `Variation ${variationId}`).slice(0, 240)
+        const occurrence = (variationNameCounts.get(baseName) ?? 0) + 1
+        variationNameCounts.set(baseName, occurrence)
+        return {
+          baseVariationId: variationId,
+          name: occurrence === 1 ? baseName : `${baseName} (${occurrence})`,
+          sku: text(variation.variation_identifier) || `${fallbackSku}-${variationId}`,
+          barcode: text(variation.barcode) || null,
+          inventory: integer(variation.variation_stock),
+        }
+      })
     : [{
         baseVariationId: null,
         name: "Default Title",

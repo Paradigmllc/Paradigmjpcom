@@ -1,4 +1,6 @@
-type GraphqlError = { message: string }
+import { isRetryableHttpStatus, RetryableExternalError, retryableHttpError, withExternalRetry } from "./external-retry"
+
+type GraphqlError = { message: string; extensions?: { code?: string } }
 
 type ProductSetResult = {
   productSet: {
@@ -79,20 +81,35 @@ async function shopifyGraphql<T>(query: string, variables: Record<string, unknow
   const domain = requiredEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const version = requiredEnv("SHOPIFY_API_VERSION")
   const accessToken = await shopifyAccessToken(domain)
-  const response = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": accessToken,
-    },
-    body: JSON.stringify({ query, variables }),
-    signal: AbortSignal.timeout(30_000),
+  return withExternalRetry("Shopify Admin API", async () => {
+    let response: Response
+    try {
+      response = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": accessToken,
+        },
+        body: JSON.stringify({ query, variables }),
+        signal: AbortSignal.timeout(30_000),
+      })
+    } catch (error) {
+      throw new RetryableExternalError(`Shopify Admin APIとの通信に失敗しました: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (!response.ok) {
+      if (isRetryableHttpStatus(response.status)) throw retryableHttpError("Shopify Admin API", response)
+      throw new Error(`Shopify Admin APIが失敗しました (HTTP ${response.status})`)
+    }
+    const payload = (await response.json()) as { data?: T; errors?: GraphqlError[] }
+    if (payload.errors?.length) {
+      const message = payload.errors.map((error) => error.message).join(" / ")
+      const retryable = payload.errors.some((error) => ["THROTTLED", "INTERNAL_SERVER_ERROR"].includes(error.extensions?.code ?? ""))
+      if (retryable) throw new RetryableExternalError(message)
+      throw new Error(message)
+    }
+    if (!payload.data) throw new Error("Shopify Admin APIの応答にdataがありません")
+    return payload.data
   })
-  const payload = (await response.json()) as { data?: T; errors?: GraphqlError[] }
-  if (!response.ok) throw new Error(`Shopify Admin APIが失敗しました (HTTP ${response.status})`)
-  if (payload.errors?.length) throw new Error(payload.errors.map((error) => error.message).join(" / "))
-  if (!payload.data) throw new Error("Shopify Admin APIの応答にdataがありません")
-  return payload.data
 }
 
 export async function getShopifyLocationId(): Promise<string> {
