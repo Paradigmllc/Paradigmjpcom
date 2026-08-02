@@ -78,7 +78,7 @@ jobs:
       - name: Start local production server
         run: |
           npm start >/tmp/japan-operator-server.log 2>&1 &
-          for i in {1..60}; do curl -fsS http://127.0.0.1:3000/api/health >/dev/null && exit 0; sleep 2; done
+          for i in {1..60}; do curl -fsS http://127.0.0.1:3000/api/ready >/dev/null && exit 0; sleep 2; done
           cat /tmp/japan-operator-server.log
           exit 1
       - name: Authenticated admin E2E
