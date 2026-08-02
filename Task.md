@@ -57,8 +57,9 @@
 - 最新の稼働コンテナはmain **2a036780**（`d40eef47`を包含）でhealthy。Coolify deployment **uiu3j3imc8sq9zero80nnlhi**はfinished。Pet page/renderer ready、anonymous create 201、owner load 200、delete 200、deleted read-back 404を再確認し、検証projectは削除した。checkoutは引き続きfail-closed。
 - 市場投入gateを追加した。Pet変更時はclean `npm ci`、root audit、専用TypeScript、Vitest、対象ESLint、production buildをCIで必須検証する。ローカルではroot audit 0、Pet TypeScript、Vitest 9/9、対象ESLint、Next.js production build 564/564ページを通過した。
 - リポジトリ補助runtimeもhardeningし、Astroを7.1.6 / Node adapter 11.0.3へ更新してaudit 0・server build成功、outreach workerはStagehand 3.7.1 / Crawlee 3.17.0 / Playwright 1.62.1と安全なUndici 6.28.0へ更新してTypeScript・high以上0を確認した。上流Stagehandの`@ai-sdk/provider-utils`由来lowのみ継続監視する。
-- Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体とCloudflare API tokenは引き続きローテーション対象。
+- Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体もread/read:sensitive/write/deployの最小権限・365日失効へ交換し、新tokenのapplications/env API 200、approved secret store 2箇所の更新、旧token失効、remote一時secret削除を確認した。Cloudflare API tokenのみ引き続きローテーション対象。
 - 市場投入hardeningはPR **#676**をmain **b0a9eca1**へsquash merge済み。GitHub production run **30735560298**とCoolify deployment **q80cl9qe9wofsrkwoj440tf4**は成功し、対象commit一致、公開VaaS、埋め込みVideo Factoryを確認した。Pet本番smokeはpage 200、create 201、owner read 200、unauthorized 404、preview前checkout 409、delete 200、deleted read-back 404で、検証projectは削除済み。
+- 家族招待アップロードは既に本番実装済みのため、LPに残っていた「次回リリース」表現を日英西葡の4言語で実機能に合わせて修正した。Pet専用TypeScriptは通過。Stripe専用live key作成はStripe Dashboardのパスキー本人確認待ちで、決済設定はまだfail-closedのまま。
 - Pet paid renderはlive Stripe secret/webhook/3 Price IDsとResendが揃うまで無効。実購入・返金・納品証跡が市場公開前に必要。
 
 ## ACTIVE HANDOFF
@@ -68,7 +69,7 @@
 - SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
 - Japan operator: production releaseとDB/API/UI/送信guardのread-backは完了。実運用はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を揃え、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後にsecretをapproved storeへ設定し、0.25 USDC実購入、settlement、paid delivery、hashed reference、DBベル、Slackを確認する。
-- Pet Life Movie: 手動Webhook secret 4種のローテーションは完了。市場公開前に承認済みCloudflare API tokenとCoolify API token本体をローテーションする。ローカル診断出力に露出した旧tokenは安全とみなさない。
+- Pet Life Movie: 手動Webhook secret 4種とCoolify API token本体のローテーションは完了。市場公開前にCloudflare API tokenを交換する。現tokenはactive・DNS read可能だがtoken管理権限を持たないため、Cloudflare Dashboardの認証済みsessionが必要。
 - Pet Life Movie: live Stripe secret/webhook/3 Price IDsとResendをapproved secret storeへ設定後、実購入・署名webhook・render・承認・納品・返金を一度通し、checkoutを有効化する。
 - Video Factoryは既存の承認済みGPUだけを使用し、既定で追加GPUを作成しない。
 
