@@ -75,6 +75,34 @@ export function pipelineRunIdFromRecords(...records: JsonRecord[]): string | nul
   return uuidFromRecords(["pipelineRunId", "pipeline_run_id", "sales_pipeline_run_id", "run_id"], ...records)
 }
 
+async function persistContactSuppression(input: {
+  companyId: string | null
+  contactKey: string | null
+  source: string
+  reason: string
+}): Promise<void> {
+  const sb = getServiceSalesSupabase()
+  if (!sb || (!input.companyId && !input.contactKey)) return
+  let query = sb.from(DB_TABLES.SALES_CONTACT_SUPPRESSIONS).select("id").eq("status", "active")
+  query = input.companyId ? query.eq("company_id", input.companyId) : query.is("company_id", null)
+  query = input.contactKey ? query.eq("contact_key", input.contactKey.toLowerCase()) : query.is("contact_key", null)
+  const existing = await query.limit(1).maybeSingle()
+  if (existing.error) throw new Error(existing.error.message)
+  if (existing.data) return
+  const inserted = await sb.from(DB_TABLES.SALES_CONTACT_SUPPRESSIONS).insert({
+    company_id: input.companyId,
+    contact_key: input.contactKey?.toLowerCase() ?? null,
+    channel: "all",
+    scope: input.companyId ? "company" : "contact",
+    reason_code: "inbound_unsubscribe",
+    reason: input.reason,
+    status: "active",
+    created_by_key: `automation:${input.source}`,
+    created_by_email: null,
+  })
+  if (inserted.error) throw new Error(inserted.error.message)
+}
+
 function uuidFromRecords(keys: string[], ...records: JsonRecord[]): string | null {
   for (const record of records) {
     const value = text(record, keys)
@@ -118,6 +146,15 @@ export async function processInboundReply(input: {
 
   const companyId = companyIdFromRecords(input.summary, input.payload)
   const pipelineRunId = pipelineRunIdFromRecords(input.summary, input.payload)
+
+  if (classification.intent === "unsubscribe") {
+    await persistContactSuppression({
+      companyId,
+      contactKey: address === "unknown" ? null : address,
+      source: input.source,
+      reason: `Unsubscribe intent classified from inbound ${input.source} reply.`,
+    })
+  }
 
   await updatePipelineReplySteps({
     pipelineRunId,
@@ -236,6 +273,21 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
   if (activityError) {
     console.error("[post-outreach-webhook] sales_activity_log insert failed:", activityError.message)
     return { ok: false, error: activityError.message ?? "sales_activity_log insert failed" }
+  }
+
+  if (input.result === "unsubscribe") {
+    const contactKey = text(input.meta, ["from", "sender", "email", "contact_email"])
+    try {
+      await persistContactSuppression({
+        companyId: input.companyId,
+        contactKey,
+        source: text(input.meta, ["provider"]) ?? "post_outreach",
+        reason: "Unsubscribe result received from a post-outreach webhook.",
+      })
+    } catch (error) {
+      console.error("[post-outreach-webhook] durable suppression failed:", error)
+      return { ok: false, error: error instanceof Error ? error.message : "Durable suppression failed" }
+    }
   }
 
   await updatePipelineReplySteps({

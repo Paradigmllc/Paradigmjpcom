@@ -1,0 +1,84 @@
+<section class="serica-value-strip" aria-label="{{ section.settings.accessibility_label | escape }}">
+  <div class="serica-value-strip__grid page-width">
+    {%- for block in section.blocks -%}
+      <div class="serica-value-strip__item" {{ block.shopify_attributes }}>
+        <span class="serica-value-strip__icon" aria-hidden="true">
+          {%- case block.settings.icon -%}
+            {%- when 'globe' -%}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+            {%- when 'box' -%}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></svg>
+            {%- when 'heart' -%}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"/></svg>
+            {%- else -%}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 6v6c0 4.8 3.4 7.9 8 9 4.6-1.1 8-4.2 8-9V6l-8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/></svg>
+          {%- endcase -%}
+        </span>
+        <div>
+          <p class="serica-value-strip__title">{{ block.settings.heading | escape }}</p>
+          <p class="serica-value-strip__text">{{ block.settings.text | escape }}</p>
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "SERICIA service promises",
+  "tag": "section",
+  "class": "section",
+  "max_blocks": 4,
+  "settings": [
+    {
+      "type": "text",
+      "id": "accessibility_label",
+      "label": "Accessibility label",
+      "default": "Our service promises"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "promise",
+      "name": "Promise",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "default": "globe",
+          "options": [
+            { "value": "globe", "label": "Globe" },
+            { "value": "box", "label": "Package" },
+            { "value": "heart", "label": "Heart" },
+            { "value": "shield", "label": "Shield" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Heading",
+          "default": "Worldwide delivery"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Text",
+          "default": "Tracked shipping from Japan"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "SERICIA service promises",
+      "blocks": [
+        { "type": "promise", "settings": { "icon": "globe", "heading": "Worldwide delivery", "text": "Tracked shipping from Japan" } },
+        { "type": "promise", "settings": { "icon": "box", "heading": "Carefully packed", "text": "Handled by our Japan team" } },
+        { "type": "promise", "settings": { "icon": "heart", "heading": "Independent makers", "text": "Small-batch goods with a story" } },
+        { "type": "promise", "settings": { "icon": "shield", "heading": "Secure checkout", "text": "Protected international payments" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

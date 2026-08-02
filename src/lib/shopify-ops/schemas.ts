@@ -40,7 +40,12 @@ export const dailyMetricSchema = z.object({
   notes: z.string().trim().max(1_000).optional().nullable(),
 })
 
+export const baseSyncSchema = z.object({
+  mode: z.enum(["dry_run", "apply"]),
+})
+
 export type UpdateProductInput = z.infer<typeof updateProductSchema>
 export type CreateContentInput = z.infer<typeof createContentSchema>
 export type UpdateContentStatusInput = z.infer<typeof updateContentStatusSchema>
 export type DailyMetricInput = z.infer<typeof dailyMetricSchema>
+export type BaseSyncInput = z.infer<typeof baseSyncSchema>

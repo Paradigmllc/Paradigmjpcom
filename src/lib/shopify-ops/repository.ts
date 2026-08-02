@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { calculateProductEconomics, calculateStoreProfitJpy } from "./economics"
+import { getBaseSyncStatus } from "./base-sync-service"
 import type {
   ShopifyOpsContentItem,
   ShopifyOpsDailyMetric,
@@ -127,14 +128,16 @@ function metricFromRow(row: DbRow): ShopifyOpsDailyMetric {
 
 function connectionStatus(): ShopifyOpsDashboard["storeConnection"] {
   const domain = process.env.SHOPIFY_STORE_DOMAIN?.trim() || null
-  const token = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim() || null
+  const legacyToken = process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim() || null
+  const clientId = process.env.SHOPIFY_CLIENT_ID?.trim() || null
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET?.trim() || null
   const apiVersion = process.env.SHOPIFY_API_VERSION?.trim() || null
-  return { configured: Boolean(domain && token && apiVersion), domain, apiVersion }
+  return { configured: Boolean(domain && apiVersion && (legacyToken || (clientId && clientSecret))), domain, apiVersion }
 }
 
 export async function getShopifyOpsDashboard(): Promise<ShopifyOpsDashboard> {
   const database = requireDatabase()
-  const [productsResult, contentResult, metricsResult] = await Promise.all([
+  const [productsResult, contentResult, metricsResult, baseSync] = await Promise.all([
     database.from(DB_TABLES.SHOPIFY_OPS_PRODUCTS).select("*").order("sort_order", { ascending: true }),
     database
       .from(DB_TABLES.SHOPIFY_OPS_CONTENT_ITEMS)
@@ -146,6 +149,7 @@ export async function getShopifyOpsDashboard(): Promise<ShopifyOpsDashboard> {
       .select("*")
       .order("metric_date", { ascending: false })
       .limit(30),
+    getBaseSyncStatus(),
   ])
 
   if (productsResult.error) throw new Error(`商品データの取得に失敗しました: ${productsResult.error.message}`)
@@ -184,6 +188,7 @@ export async function getShopifyOpsDashboard(): Promise<ShopifyOpsDashboard> {
     products,
     contentItems,
     dailyMetrics,
+    baseSync,
     totals30d,
     launchReadiness: [
       { key: "hero", label: "Hero商品", current: listingReadyHeroes, target: 6, unit: "商品", ready: listingReadyHeroes >= 6 },

@@ -1,0 +1,95 @@
+name: Japan operator OS CI
+
+on:
+  pull_request:
+    paths:
+      - "src/app/api/sales/japan-operator/**"
+      - "src/app/api/sales/outreach/**"
+      - "src/app/api/sales/docuseal/**"
+      - "src/app/api/stripe/webhook/**"
+      - "src/components/admin/JapanOperatorCaseBoard.tsx"
+      - "src/components/admin/japan-operator/**"
+      - "src/lib/sales/japan-operator*"
+      - "src/lib/sales/outreach/**"
+      - "src/lib/sales/post-outreach-webhooks.ts"
+      - "supabase/migrations/*japan_operator*"
+      - "scripts/run-migrations.sh"
+      - "scripts/sales-os-no-login-deploy.mjs"
+      - "scripts/release-doctor.mjs"
+      - "scripts/verify-db-tables.mjs"
+      - "e2e/japan-operator-os.spec.ts"
+      - ".github/workflows/japan-operator-os-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: japan-operator-os-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      ADMIN_PASSWORD: lead-factory-e2e-admin-password
+      PAYLOAD_SECRET: japan-operator-ci-payload-secret-32
+      DATABASE_URI: postgres://postgres:postgres@127.0.0.1:54322/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Focused unit and API tests
+        run: >-
+          npm exec -- vitest run
+          src/lib/sales/japan-operator-workflow.test.ts
+          src/lib/sales/japan-operator-release-wiring.test.ts
+          src/lib/sales/japan-operator-docuseal.test.ts
+          src/lib/sales/outreach/global-suppression.test.ts
+          src/app/api/sales/japan-operator/cases/route.test.ts
+      - name: TypeScript
+        run: npm exec -- tsc --noEmit --pretty false
+      - name: Lint operator implementation
+        run: >-
+          npm exec -- eslint
+          src/app/api/sales/japan-operator
+          src/app/api/sales/outreach/guard
+          src/app/api/sales/outreach/stagehand/route.ts
+          src/app/api/sales/docuseal/webhook/route.ts
+          src/app/api/stripe/webhook/route.ts
+          src/components/admin/JapanOperatorCaseBoard.tsx
+          src/components/admin/japan-operator
+          src/lib/sales/japan-operator-automation.ts
+          src/lib/sales/japan-operator-docuseal.ts
+          src/lib/sales/japan-operator-stripe.ts
+          src/lib/sales/japan-operator-workspace-schema.ts
+          src/lib/sales/outreach/global-suppression.ts
+          src/lib/sales/outreach/outbound-submit-guard.ts
+          --max-warnings=0
+      - name: Production build
+        run: npm run build
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start local production server
+        run: |
+          npm start >/tmp/japan-operator-server.log 2>&1 &
+          for i in {1..60}; do curl -fsS http://127.0.0.1:3000/api/ready >/dev/null && exit 0; sleep 2; done
+          cat /tmp/japan-operator-server.log
+          exit 1
+      - name: Authenticated admin E2E
+        env:
+          E2E_BASE_URL: http://127.0.0.1:3000
+        run: npx playwright test e2e/japan-operator-os.spec.ts --project=chromium
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: japan-operator-os-ci-logs
+          path: /tmp/japan-operator-server.log
+          if-no-files-found: warn
+          retention-days: 7
