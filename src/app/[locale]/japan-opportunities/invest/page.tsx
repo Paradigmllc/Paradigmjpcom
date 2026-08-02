@@ -77,7 +77,7 @@ export default async function InvestorBriefCollectionPage({ params }: Props) {
             A growing library of decision briefs for global investors. Each page separates official facts, underwriting questions, downside risks and evidence gates—then exposes the same model through a public API.
           </p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="#briefs" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-paradigm-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-paradigm-paper transition hover:bg-paradigm-accent">Browse {briefs.length} briefs<ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href="#briefs" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-paradigm-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-paradigm-paper transition hover:bg-paradigm-accent">{`Browse ${briefs.length} briefs`}<ArrowRight size={16} aria-hidden="true" /></Link>
             <a href="/api/v1/investor-briefs" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-paradigm-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-paradigm-ink transition hover:bg-paradigm-ink hover:text-paradigm-paper"><Database size={16} aria-hidden="true" />Open the API</a>
           </div>
         </div>
