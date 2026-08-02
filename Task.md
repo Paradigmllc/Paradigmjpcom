@@ -189,7 +189,7 @@
 - 市場投入hardeningはPR **#676**をmain **b0a9eca1**へsquash merge済み。GitHub production run **30735560298**とCoolify deployment **q80cl9qe9wofsrkwoj440tf4**は成功し、対象commit一致、公開VaaS、埋め込みVideo Factoryを確認した。Pet本番smokeはpage 200、create 201、owner read 200、unauthorized 404、preview前checkout 409、delete 200、deleted read-back 404で、検証projectは削除済み。
 - 家族招待アップロードは既に本番実装済みのため、LPに残っていた「次回リリース」表現を日英西葡の4言語で実機能に合わせて修正した。PR **#684**をmain **723bf521**へsquash mergeし、Pet専用TypeScript、Vitest 9/9、Next.js production build 564/564を通過した。
 - Paradigm LLCのStripe live accountでcharges/payouts有効をread-backし、Mini $19 / Story $39 / Cinema $79のone-time Price、7 eventの署名Webhook、Resend、検証済み送信元`send.paradigmjp.com`を本番設定した。全8環境変数の一致、Resend safe test sink受理、署名付き副作用なしWebhook 200を確認した。
-- 金銭移動なしの本番E2Eでproject作成、R2へ5枚upload、storyboard 5 scene、preview、Stripe live Checkout Session（Mini / USD 19）、Stripe API metadata・金額・livemode read-back、Session expire、project/R2削除、削除後404まで成功した。checkoutは有効。実課金・render・承認・納品・返金の金融E2Eは未実施で、実売上を発生させる明示承認後に一度だけ通す。
+- 金銭移動なしの本番E2Eでproject作成、R2へ5枚upload、storyboard 5 scene、preview、Stripe live Checkout Session（Mini / USD 19）、Stripe API metadata・金額・livemode read-back、Session expire、project/R2削除、削除後404まで成功した。Stripe生成の`checkout.session.expired`も本番Webhookへ配送完了し、`pending_webhooks=0`を確認した。checkoutは有効。実課金・render・承認・納品・返金の金融E2Eは未実施で、実売上を発生させる明示承認後に一度だけ通す。
 
 ## ACTIVE HANDOFF
 
