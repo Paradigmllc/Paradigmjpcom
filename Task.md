@@ -29,11 +29,11 @@
 ## CURRENT STATUS - 2026-08-02 Pet Life Movie market-readiness hardening
 
 - Upgraded payments to the official Stripe SDK with signed webhooks, retries, idempotent Checkout/render creation, required delivery email, refunds, and fail-closed readiness across Stripe, Resend, and the internal renderer.
-- Added the dedicated Video Factory pet render lane, signed-R2 validation, factual supplied-photo FFmpeg rendering, plan-specific 9:16/16:9/1:1 outputs, and mandatory draft/final human approval gates.
-- Added private multi-format delivery ingestion with size/SHA-256 verification, R2 storage, durable deliverable records, delivery email, short-lived signed downloads, customer deletion, and 30-day free/90-day paid retention.
+- Added the dedicated Video Factory pet render lane, signed-R2 validation, factual supplied-photo FFmpeg rendering, plan-specific 9:16/16:9/1:1 outputs, mandatory draft/final human approval, private delivery, customer deletion, and 30-day free/90-day paid retention.
 - Migration `20260802020742_pet_life_movie_market_ready.sql` adds customer/payment state, one-active-render uniqueness, deliverables, FORCE RLS, Data API revocation, and service-role-only access.
-- Verification passed: Next.js build 552/552 pages, Pet TypeScript, ESLint, Vitest 9/9, Python compile/Ruff, targeted pytest, and production-mode Playwright five-photo preview flow.
-- R2 lifecycle rule `pet-life-movie-retention-90d` is enabled for prefix `pet-life-movie/`, read back at 90 days, and preserves the pre-existing bucket rule.
+- PR **#664** / main **7eb0f92f** / release **30730953842** / deployment **sdldvalovxfxubub7z13edbn** passed public VaaS and embedded Video Factory verification.
+- Production migration is applied. `pet_movie_deliverables` has RLS/FORCE RLS, anon/authenticated grants 0, one service-role policy, nine columns, and the one-active-render index.
+- Live smoke passed for public page, Video Factory ready, anonymous project create/owner load/delete/404 cleanup. Production reports `checkoutEnabled:false`; R2 lifecycle `pet-life-movie-retention-90d` is enabled and read back at 90 days.
 
 ## MONETIZATION DECISIONS
 
@@ -48,7 +48,8 @@
 - Direct Growth: 本番管理画面の認証redirect、API未認証401/認証200、4媒体、外部送信controlなし、DBベル+Slackを確認する。架空キャンペーンや外部投稿は作成しない。
 - Financial authorization required before x402 payment: approve the USDC receiving address and CDP facilitator identity, configure secrets programmatically, then execute one real 0.25 USDC purchase and verify settlement, persistence, DB bell, and Slack.
 - Preserve the free catalog/article lane after paid settlement is enabled.
-- Pet Life Movie: merge/release market-readiness hardening, apply/read back the migration, verify embedded Video Factory, and configure live Stripe/Resend only through authenticated control-plane access. Checkout remains disabled until all dependencies are present.
+- Pet Life Movie paid render remains disabled until live Stripe secret/webhook/three Price IDs and Resend are present. The renderer is healthy, but one real paid purchase/refund/delivery proof remains required.
+- Rotate the approved Cloudflare API token before Pet Life Movie market launch because it appeared in local diagnostic output. Coolify has corrected keys and R2 lifecycle read-back passed, but the exposed credential is not safe.
 - Japan operator external outreach remains at zero; human approval is required before any send.
 - Video Factory may use only the existing approved GPU instance for an actual production render; do not create another GPU by default.
 
@@ -56,5 +57,5 @@
 
 - Direct Growth: PR **#665** / branch `feat/video-direct-growth`.
 - Content API: PR **#659**; release fixes **#660-#662**; deployment **lbxrxhx5vpcyvpolyzusi8qe**.
-- Pet Life Movie market-readiness: PR **#664** / main **7eb0f92f**.
+- Pet Life Movie: PR **#664** / main **7eb0f92f** / deployment **sdldvalovxfxubub7z13edbn**.
 - Previous detailed status archive: `docs/handoff-archive/2026-08-02-pre-content-api-task.md`.
