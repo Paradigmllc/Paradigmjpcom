@@ -16,7 +16,7 @@
 - merchant app `SERICIA BASE Sync` は商品・在庫・locationの最小5 scopeでinstall済み。Shopify client credentialsをapproved referenceとCoolifyへ安全に反映し、24時間token exchange、5 scope、active locationをAdmin APIでread-backした。
 - BASE OAuth、暗号化token保存、pagination、draft-only `productSet` upsert、在庫同期、dry-run/apply UI、履歴、エラー可視化、通知、service-role-only RLSを実装し、migration `20260802153000_shopify_base_sync.sql` を本番適用済み。自動公開と自動削除は無効。
 - PR **#657**をmain `ad3e6d2b`へsquash mergeし、Coolify deployment `p4vhvcggml1qcnqt22u5wv3e` はfinished。post-deploy doctor、公開smoke、本番管理APIを通過し、Shopify configured、API `2026-07`、商品管理行12件をread-backした。BASE Developersは未ログインのためclient ID/secret未取得で、BASE OAuth・dry-run・実商品同期のみ保留する。重量、配送、対象国、税務が確定するまでJapan以外のMarkets等は変更しない。
-- 実商品同期前のhardeningとして、BASE/Shopifyの429・一時5xx再試行、Shopify THROTTLED再試行、重複バリエーション名の正規化、DB advisory lockによる同時実行拒否、30分超の中断run回収、実行中/待機/失敗のUI表示を実装。ESLint警告0、Vitest 5ファイル18件pass。全体TypeScript検査はローカル資源競合で10分timeoutしたためPR CIで最終判定する。BASE Developersの本人ログイン後にclient ID/secretをapproved storeへ反映し、OAuth→dry-run→draft同期を行う。
+- 実商品同期前のhardeningとして、BASE/Shopifyの429・一時5xx再試行、Shopify THROTTLED再試行、重複バリエーション名の正規化、DB advisory lockによる同時実行拒否、30分超の中断run回収、実行中/待機/失敗のUI表示を実装。PR **#675**のCI 4 jobs、ESLint警告0、Vitest 5ファイル18件、post-deploy doctorをpass。migration `20260802160000_shopify_base_sync_hardening.sql` を本番適用し、start RPCはSECURITY DEFINER/service-role限定、running 0件をread-backした。最新main `b0a9eca1`（`e9238314`を包含）/ deployment `q80cl9qe9wofsrkwoj440tf4` はfinished/healthy。本番管理APIはShopify configured、API `2026-07`、商品管理12件、BASE未接続・ready falseを返す。BASE Developersの本人ログイン後にclient ID/secretをapproved storeへ反映し、OAuth→dry-run→draft同期を行う。
 
 ## CURRENT STATUS — 2026-08-02 Japan Market Operator Operations OS
 
@@ -56,7 +56,7 @@
 ## RELEASE REFERENCES
 
 - Direct Growth: PR **#665** / main `f2339929` / feature deployment `ghen9whanscvtws0cqndwj5y` / latest live deployment `szv2lqpeybjf476rtqcu6djm`。
-- SERICIA Shopify storefront and BASE sync: PR **#657** / main `ad3e6d2b` / deployment `p4vhvcggml1qcnqt22u5wv3e`。
+- SERICIA Shopify storefront and BASE sync: PR **#657**、hardening PR **#675** / main `e9238314`（latest live `b0a9eca1`に包含）/ deployment `q80cl9qe9wofsrkwoj440tf4`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Content API: PR **#659**、fixes **#660-#662**、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
 - Pet Life Movie: PR **#664** / **#669**、validation **30732125162**、main **d40eef47**、live container **2a036780**、deployment `uiu3j3imc8sq9zero80nnlhi`。
