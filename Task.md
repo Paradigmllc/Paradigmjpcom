@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-03 Investor content uniqueness and depth
+
+- Production audit confirmed the 28-brief quality gate and four sourced chapters on every brief, but also found shared chapter titles and boilerplate paragraphs across the 16 Greater Tokyo market pages. The content was indexable and data-rich, yet not strong enough to call complete.
+- Added a replay-safe Greater Tokyo diversification migration. It rebuilds all four analysis chapters from each page's region, covered markets, asset class, decision stage, official MLIT point set, primary risk, diligence action and existing market-specific thesis.
+- Every Greater Tokyo chapter now has three region-specific paragraphs. The DB migration fails closed unless the full catalog contains exactly 112 unique chapter titles, 288 unique analysis paragraphs, no paragraph below 400 characters and no chapter-to-source reference mismatch.
+- The canonical no-login release path and the host migration runner both apply the original 12-brief expansion before the Greater Tokyo uniqueness migration. Production verification repeats the uniqueness, depth, market-dataset, source durability and service-role-isolation gates.
+- ACTIVE HANDOFF: run focused tests, TypeScript, release doctor and production build; commit/push/PR; wait for CI and exact-main deployment; apply/read back the migration and verify live JSON, Markdown, HTML, Dataset JSON-LD and per-page Open Graph assets.
+
 ## CURRENT STATUS - 2026-08-03 SERICIA commercial launch control
 
 - Implemented a truthful 12-gate commercial launch control across Shopify Admin reachability, storefront availability, BASE/OAuth source connection, inventory-sync freshness, real Shopify catalog count, 14-point product evidence, payment proof, real checkout E2E, shipping/tax/returns policy proof, supported social connector health, daily social-run freshness, and explicit public-release approval.

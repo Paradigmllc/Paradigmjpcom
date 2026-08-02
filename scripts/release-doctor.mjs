@@ -463,6 +463,10 @@ function checkStaticReleaseRules() {
   const legacyInvestorExpansion = fs.existsSync(legacyInvestorExpansionPath)
     ? fs.readFileSync(legacyInvestorExpansionPath, "utf8")
     : ""
+  const metroInvestorUniquenessPath = "supabase/migrations/20260802222332_diversify_greater_tokyo_investor_analysis.sql"
+  const metroInvestorUniqueness = fs.existsSync(metroInvestorUniquenessPath)
+    ? fs.readFileSync(metroInvestorUniquenessPath, "utf8")
+    : ""
   const investorComparisonPath = "src/lib/investor-briefs/comparisons.ts"
   const investorComparisonSource = fs.existsSync(investorComparisonPath)
     ? fs.readFileSync(investorComparisonPath, "utf8")
@@ -487,6 +491,8 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyGreaterTokyoInvestorMigrations")
     && noLoginDeploy.includes(path.basename(legacyInvestorExpansionPath))
     && noLoginDeploy.includes("applyInvestorContentQualityMigration")
+    && noLoginDeploy.includes(path.basename(metroInvestorUniquenessPath))
+    && noLoginDeploy.includes("applyInvestorContentUniquenessMigration")
     && noLoginDeploy.includes("verifyForeignInvestorPseoCatalog")
     && noLoginDeploy.includes("investor-briefs/factory")
     && investorComparisonSource.includes("CURATED_INVESTOR_COMPARISONS")
@@ -499,6 +505,11 @@ function checkStaticReleaseRules() {
     && legacyInvestorExpansion.includes("$legacy_expansions$")
     && legacyInvestorExpansion.includes("tokyo-multifamily-investment-due-diligence")
     && legacyInvestorExpansion.includes("https://minpakuportal.city.kyoto.lg.jp/list/list1")
+    && metroInvestorUniqueness.includes("investor chapter titles are not unique")
+    && metroInvestorUniqueness.includes("investor paragraphs are not unique")
+    && metroInvestorUniqueness.includes("length(paragraph.value) < 400")
+    && petMovieRunMigrations.includes(path.basename(legacyInvestorExpansionPath))
+    && petMovieRunMigrations.includes(path.basename(metroInvestorUniquenessPath))
     && investorPageSource.includes("investorBriefReadableWordCount")
     && investorPageSource.includes("text/markdown")
     && investorPageSource.includes("includedInDataCatalog")
@@ -507,9 +518,9 @@ function checkStaticReleaseRules() {
     && investorOgImageSource.includes('from "next/og"')
     && investorOgImageSource.includes("paletteFor(slug)")
   ) {
-    pass("Foreign investor pSEO has 28 sourced long-form briefs, durable source links, dataset distributions, per-page social images, quality-gated scale, and production verification wiring")
+    pass("Foreign investor pSEO has 28 sourced long-form briefs, unique substantial analysis, durable source links, dataset distributions, per-page social images, quality-gated scale, and production verification wiring")
   } else {
-    fail("Foreign investor pSEO requires sourced long-form data, durable sources, dataset/social metadata, quality-gated scale, and production verification wiring")
+    fail("Foreign investor pSEO requires sourced long-form data, unique substantial analysis, durable sources, dataset/social metadata, quality-gated scale, and production verification wiring")
   }
 
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"

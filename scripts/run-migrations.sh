@@ -58,7 +58,9 @@ docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabas
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802153000_shopify_base_sync.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802160000_shopify_base_sync_hardening.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802190000_shopify_product_social_pipeline.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802202105_expand_legacy_investor_briefs.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802214457_sericia_launch_control.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802222332_diversify_greater_tokyo_investor_analysis.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260713203000_japan_entry_report_factory.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260713220000_demo_clean_urls_and_factory.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260714143000_form_qualified_lead_factory.sql
