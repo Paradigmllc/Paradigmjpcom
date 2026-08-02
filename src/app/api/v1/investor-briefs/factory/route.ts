@@ -5,6 +5,7 @@ import { CURATED_INVESTOR_COMPARISONS } from "@/lib/investor-briefs/comparisons"
 import {
   calculateInvestorPseoScale,
   INVESTOR_PSEO_QUALITY_GATES,
+  NATIONAL_INVESTMENT_THEME_COUNT,
 } from "@/lib/investor-briefs/pseo-scale"
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         data: {
-          scale: calculateInvestorPseoScale(briefs.length),
+          scale: calculateInvestorPseoScale(NATIONAL_INVESTMENT_THEME_COUNT),
           qualityGates: INVESTOR_PSEO_QUALITY_GATES,
           publication: {
             publishedBriefs: briefs.length,

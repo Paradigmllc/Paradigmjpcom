@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { ArrowRight, Database, Scale, ShieldCheck } from "lucide-react"
 import { permanentRedirect } from "next/navigation"
-import { InvestorBriefCard } from "@/components/opportunities/InvestorBriefCard"
+import { InvestorBriefExplorer } from "@/components/opportunities/InvestorBriefExplorer"
 import JsonLd from "@/components/seo/JsonLd"
 import { Link } from "@/i18n/routing"
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
@@ -103,13 +103,11 @@ export default async function InvestorBriefCollectionPage({ params }: Props) {
         <div className="mx-auto max-w-6xl">
           <div className="max-w-3xl">
             <p className="paradigm-eyebrow text-paradigm-accent">PUBLISHED BRIEFS</p>
-            <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] text-paradigm-ink md:text-5xl">Twelve distinct decisions, not twelve keyword variants</h2>
-            <p className="mt-4 text-sm leading-7 text-paradigm-ink-soft">Each URL covers a materially different capital-allocation question. New pages are published only when they add a distinct source set, diligence workflow and decision gate.</p>
+            <h2 className="mt-4 font-display text-4xl font-semibold tracking-[-0.03em] text-paradigm-ink md:text-5xl">{briefs.length} distinct decisions, not keyword variants</h2>
+            <p className="mt-4 text-sm leading-7 text-paradigm-ink-soft">The Greater Tokyo cluster covers all 23 wards through decision-specific submarkets, plus Yokohama, Kawasaki, Saitama and Chiba. Every URL requires a distinct source set, narrative, diligence workflow and decision gate.</p>
           </div>
           {briefs.length > 0 ? (
-            <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {briefs.map((brief) => <InvestorBriefCard key={brief.slug} brief={brief} />)}
-            </div>
+            <InvestorBriefExplorer briefs={briefs} />
           ) : (
             <div className="mt-12 rounded-3xl border border-dashed border-paradigm-line bg-paradigm-paper-card p-10 text-center">
               <h2 className="font-display text-2xl font-semibold text-paradigm-ink">No briefs are published yet</h2>

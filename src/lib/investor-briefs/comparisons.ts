@@ -70,6 +70,41 @@ export const CURATED_INVESTOR_COMPARISONS = [
     right: "japan-data-center-investment",
     intent: "Compare FDI screening questions with a strategic digital-infrastructure investment.",
   },
+  {
+    left: "tokyo-central-three-wards-real-estate-investment",
+    right: "yokohama-real-estate-investment",
+    intent: "Compare a prime central-Tokyo basis with Yokohama ward and corridor income evidence.",
+  },
+  {
+    left: "shinjuku-shibuya-real-estate-investment",
+    right: "bunkyo-toshima-real-estate-investment",
+    intent: "Compare west-core mixed demand with north-central residential and education-led demand.",
+  },
+  {
+    left: "setagaya-nakano-suginami-real-estate-investment",
+    right: "kita-arakawa-itabashi-nerima-real-estate-investment",
+    intent: "Compare west-Tokyo family rental resilience with north-Tokyo income and condition risk.",
+  },
+  {
+    left: "koto-sumida-taito-real-estate-investment",
+    right: "adachi-katsushika-edogawa-real-estate-investment",
+    intent: "Compare east-core visitor and waterfront exposure with outer-east affordability and resilience.",
+  },
+  {
+    left: "yokohama-real-estate-investment",
+    right: "kawasaki-real-estate-investment",
+    intent: "Compare Yokohama's ward hierarchy with Kawasaki's Tokyo-Yokohama railway corridors.",
+  },
+  {
+    left: "saitama-urawa-omiya-real-estate-investment",
+    right: "south-saitama-real-estate-investment",
+    intent: "Compare Saitama City's major nodes with Tokyo-border rental and river-system exposure.",
+  },
+  {
+    left: "chiba-bay-real-estate-investment",
+    right: "kashiwa-nagareyama-narita-real-estate-investment",
+    intent: "Compare Chiba Bay access and resilience with outer-Chiba growth and employment nodes.",
+  },
 ] as const satisfies readonly CuratedComparisonDefinition[]
 
 export function comparisonPairSlug(left: string, right: string): string {

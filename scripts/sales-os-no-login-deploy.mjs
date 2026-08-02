@@ -863,6 +863,20 @@ async function applyForeignInvestorPseoMigration(envs) {
   return applySqlMigration(envs, "20260802043347_foreign_investor_pseo.sql", "Foreign investor pSEO migration")
 }
 
+async function applyGreaterTokyoInvestorMigrations(envs) {
+  const migrations = [
+    ["20260802123000_investor_metro_payload_builder.sql", "Greater Tokyo investor payload builder"],
+    ["20260802123100_tokyo_metro_investor_briefs.sql", "Tokyo metro investor brief catalog"],
+    ["20260802123200_greater_tokyo_ring_investor_briefs.sql", "Greater Tokyo ring investor brief catalog"],
+    ["20260802123300_investor_metro_payload_builder_cleanup.sql", "Greater Tokyo payload builder cleanup"],
+  ]
+  const results = []
+  for (const [file, label] of migrations) {
+    results.push(await applySqlMigration(envs, file, label))
+  }
+  return results.join("\n")
+}
+
 async function verifyForeignInvestorPseoCatalog(envs) {
   await applySqlMigrationThroughPostgres(
     envs,
@@ -870,6 +884,7 @@ async function verifyForeignInvestorPseoCatalog(envs) {
 do $$
 declare
   published_count integer;
+  enhanced_count integer;
 begin
   select count(*) into published_count
   from public.content_products
@@ -878,8 +893,8 @@ begin
     and access_model = 'free'
     and is_active = true;
 
-  if published_count <> 12 then
-    raise exception 'expected 12 published investor briefs, found %', published_count;
+  if published_count <> 28 then
+    raise exception 'expected 28 published investor briefs, found %', published_count;
   end if;
 
   if exists (
@@ -897,6 +912,25 @@ begin
     raise exception 'investor brief evidence contract is incomplete';
   end if;
 
+  select count(*) into enhanced_count
+  from public.content_products
+  where locale = 'en'
+    and content_type = 'investor_brief'
+    and is_active = true
+    and payload ? 'marketEvidence'
+    and payload ? 'coveredMarkets'
+    and jsonb_array_length(payload -> 'chapters') >= 4
+    and jsonb_array_length(payload -> 'coveredMarkets') >= 3
+    and jsonb_array_length(payload #> '{marketEvidence,points}') >= 2;
+
+  if enhanced_count <> 16 then
+    raise exception 'expected 16 enhanced Greater Tokyo briefs, found %', enhanced_count;
+  end if;
+
+  if to_regprocedure('public.build_investor_metro_payload(jsonb)') is not null then
+    raise exception 'temporary investor metro payload builder was not removed';
+  end if;
+
   if has_table_privilege('anon', 'public.content_products', 'SELECT')
     or has_table_privilege('authenticated', 'public.content_products', 'SELECT') then
     raise exception 'content_products must remain service-role-only';
@@ -906,7 +940,7 @@ $$;
 `,
     "Foreign investor pSEO catalog verification",
   )
-  return "Foreign investor pSEO catalog: verified 12 sourced briefs and service-role isolation"
+  return "Foreign investor pSEO catalog: verified 28 sourced briefs, 16 enhanced Greater Tokyo briefs, and service-role isolation"
 }
 
 async function applyFormQualifiedLeadFactoryMigration(envs) {
@@ -1811,6 +1845,7 @@ async function main() {
     console.log(await applyJapanOperatorOperationsOsMigrations(envs))
     console.log(await applyContentCommerceMigration(envs))
     console.log(await applyForeignInvestorPseoMigration(envs))
+    console.log(await applyGreaterTokyoInvestorMigrations(envs))
     console.log(await verifyForeignInvestorPseoCatalog(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
@@ -1947,13 +1982,13 @@ async function main() {
     { url: "https://paradigmjp.com/en/faq", markers: ["$15,000", "Which payment methods can we use?", "full setup fee is refunded"] },
     { url: "https://paradigmjp.com/en/works" },
     { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?", "The Source Pack That Keeps a Japan Launch Moving"] },
-    { url: "https://paradigmjp.com/en/japan-opportunities/invest", markers: ["Twelve distinct decisions", "Compare opportunity types", "Browse 12 briefs"] },
-    { url: "https://paradigmjp.com/en/japan-opportunities/invest/japan-data-center-investment", markers: ["Japan Data Center Investment", "Evidence readiness score", "Primary sources"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest", markers: ["28 distinct decisions", "Greater Tokyo cluster covers all 23 wards", "Browse 28 briefs"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest/yokohama-real-estate-investment", markers: ["Yokohama Real Estate Investment", "Compare the covered submarkets", "Stress the operating assumptions"] },
     { url: "https://paradigmjp.com/en/japan-opportunities/invest/compare/japan-data-center-investment-vs-japan-renewable-energy-investment", markers: ["Data centers", "Renewable power", "Source ledgers"] },
-    { url: "https://paradigmjp.com/api/v1/investor-briefs", markers: ["japan-data-center-investment", "\"count\":12"] },
-    { url: "https://paradigmjp.com/api/v1/investor-briefs/factory", markers: ["\"total\":189504", "indexableOnlyAfterQualityGate"] },
+    { url: "https://paradigmjp.com/api/v1/investor-briefs", markers: ["yokohama-real-estate-investment", "\"count\":28"] },
+    { url: "https://paradigmjp.com/api/v1/investor-briefs/factory", markers: ["\"total\":195264", "greaterTokyoStrategyProfileLocale", "indexableOnlyAfterQualityGate"] },
     { url: "https://paradigmjp.com/llms.txt", markers: ["Japan Investor Briefs", "pSEO factory manifest"] },
-    { url: "https://paradigmjp.com/sitemap.xml", markers: ["japan-data-center-investment", "japan-renewable-energy-investment"] },
+    { url: "https://paradigmjp.com/sitemap.xml", markers: ["japan-data-center-investment", "yokohama-real-estate-investment", "kashiwa-nagareyama-narita-real-estate-investment"] },
     { url: "https://paradigmjp.com/en/privacy" },
     { url: "https://paradigmjp.com/en/legal", markers: ["$15,000", "Wise", "100% of the USD 15,000 setup fee is refunded"] },
     { url: "https://paradigmjp.com/en/terms", markers: ["Terms of Service", "$15,000", "14 business days"] },
