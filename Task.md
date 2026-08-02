@@ -10,6 +10,15 @@
 - migration `20260802043347_foreign_investor_pseo.sql`は12シード、content type制約、検索index、RLS最小権限を含む。release scriptはmigration、12件・品質契約・anon/authenticated SELECT拒否、本番ページ/API/factory/llms/sitemap fingerprintを自動検証する。
 - ローカル検証はTypeScript 0件、ESLint 0警告、Vitest 9/9、品質guard 0エラー、Next.js production build 587 static pagesをpass。DB公開URLを落とさないため`sitemap.xml`はdynamic routeとして確認済み。release doctorはcommit前のdirty/untracked 2項目以外をpassした。
 
+## CURRENT STATUS — 2026-08-02 Video Subscription Commercial Operations
+
+- Branch `codex/video-growth-commercial-ops` で、Direct Growthを商用実務ワークオーダーへ拡張。顧客・契約参照・請求状態・月次制作枠・優先度・言語・担当・開始日・納期・SLAをDB/API/GUIで一元管理する。
+- 契約、請求・入金、制作ブリーフ、ブランド素材、利用権、LP、計測の7項目を全てpassed/waivedにするまで案件レビューをDBで拒否する。法務は契約/権利、財務は請求、Delivery/Commercialは制作工程を更新できる。
+- 各動画はContent Revision単位の内部品質QAと顧客公開承認を必須化。依頼者と承認者を分離し、Admin自己承認は20文字以上の根拠を必須化。旧create/transition/update RPCのservice-role権限を外し、商用ガードを迂回できない。
+- 修正依頼、担当、期限、解決記録、日次成果、累計自動再計算、SLA/承認/修正/月次枠KPI、検索・工程絞込、Excel向けCSV（式注入対策）を追加。外部SNS投稿・メール送信機能は追加していない。
+- RLS/FORCE RLS/service-role最小権限の新規5テーブルと4 migrationをrelease wiring済み。local release doctor、ESLint、TypeScript、Vitest 11件、Next.js build 564ページ、Playwright PC/390×844を通過。
+- ACTIVE HANDOFF: commit/push/PR/CI/main merge後、migration適用、Coolify deploy、本番API/UI/RLS/ACL/公開ガード/CSV/post-deploy doctorをread-backして完了する。実顧客案件、外部投稿、メール送信は作成しない。
+
 ## CURRENT STATUS — 2026-08-02 Hana Creator Video Factory bridge
 
 - 独立運用中のHana Creatorから、本番Video Factoryへ安全に制作ジョブを投入する専用machine-to-machine bridgeを追加した。Hana専用secret、承認済み参照画像、`hana-<job UUID>` project、生成shot、ローカル納品だけを許可する。
@@ -74,7 +83,7 @@
 
 ## RELEASE REFERENCES
 
-- Foreign Investor pSEO: branch `codex/foreign-investor-pseo` / PR・deploymentはrelease完了後に追記する。
+- Foreign Investor pSEO: PR **#681** / branch `codex/foreign-investor-pseo` / deploymentはrelease完了後に追記する。
 - Direct Growth: PR **#665** / main `f2339929` / feature deployment `ghen9whanscvtws0cqndwj5y` / latest live deployment `szv2lqpeybjf476rtqcu6djm`。
 - SERICIA Shopify storefront and BASE sync: PR **#657**、hardening PR **#675** / main `e9238314`（latest live `b0a9eca1`に包含）/ deployment `q80cl9qe9wofsrkwoj440tf4`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。

@@ -536,6 +536,50 @@ function checkStaticReleaseRules() {
     fail("Video subscription direct acquisition requires approval gates, RLS and release wiring")
   }
 
+  const videoGrowthCommercialPaths = [
+    "supabase/migrations/20260802190000_video_growth_commercial_schema.sql",
+    "supabase/migrations/20260802190100_video_growth_commercial_intake.sql",
+    "supabase/migrations/20260802190200_video_growth_commercial_quality.sql",
+    "supabase/migrations/20260802190300_video_growth_commercial_guards.sql",
+  ]
+  const videoGrowthCommercial = videoGrowthCommercialPaths
+    .map((migrationPath) => fs.existsSync(migrationPath) ? fs.readFileSync(migrationPath, "utf8") : "")
+    .join("\n")
+    .toLowerCase()
+  const videoGrowthRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
+  const videoGrowthApi = fs.readFileSync("src/app/api/sales/video-growth/route.ts", "utf8")
+  const videoGrowthExport = fs.readFileSync("src/lib/video-growth/export.ts", "utf8")
+  const videoGrowthCommercialMarkers = [
+    "video_growth_work_orders", "video_growth_readiness_checks", "video_growth_approvals",
+    "video_growth_revision_requests", "video_growth_daily_metrics", "content_revision",
+    "force row level security", "from public, anon, authenticated, service_role",
+    "video_growth_create_commercial_campaign", "video_growth_manage_approval",
+    "video_growth_manage_revision", "video_growth_record_daily_metrics", "video_growth_update_billing_status",
+    "internal quality and client release approval are required before publication",
+    "requester and approver must be different", "external_messages_sent",
+    "revoke all on function public.video_growth_create_campaign", "from service_role",
+  ]
+  const videoGrowthCommercialFunctions = [
+    "applyVideoGrowthCommercialSchemaMigration", "applyVideoGrowthCommercialIntakeMigration",
+    "applyVideoGrowthCommercialQualityMigration", "applyVideoGrowthCommercialGuardsMigration",
+  ]
+  if (
+    videoGrowthCommercialPaths.every((migrationPath) => fs.existsSync(migrationPath))
+    && videoGrowthCommercialMarkers.every((marker) => videoGrowthCommercial.includes(marker))
+    && videoGrowthCommercialPaths.every((migrationPath) => noLoginDeploy.includes(migrationPath.split("/").at(-1)))
+    && videoGrowthCommercialPaths.every((migrationPath) => videoGrowthRunMigrations.includes(migrationPath.split("/").at(-1)))
+    && videoGrowthCommercialFunctions.every((functionName) => noLoginDeploy.includes(functionName))
+    && videoGrowthApi.includes("authorizeSalesApiRequest")
+    && videoGrowthApi.includes("READ_ROLES")
+    && !videoGrowthApi.includes("isSalesApiAuthorized")
+    && videoGrowthExport.includes("videoGrowthDashboardToCsv")
+    && videoGrowthExport.includes("if (/^[=+\\-@]/.test(text))")
+  ) {
+    pass("Video subscription commercial operations have intake, SLA, dual approval, revision, metrics, RLS and release wiring")
+  } else {
+    fail("Video subscription commercial operations require complete workflow guards and release wiring")
+  }
+
   const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
   const projectionMigration = fs.existsSync(projectionMigrationPath)
     ? fs.readFileSync(projectionMigrationPath, "utf8")
