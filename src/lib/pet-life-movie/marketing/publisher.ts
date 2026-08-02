@@ -3,7 +3,7 @@ import {
   retryableHttpError,
   withExternalRetry,
 } from "@/lib/shopify-ops/external-retry"
-import type { PetMarketingConnectorStatus, PetMarketingPlatform } from "./types"
+import type { PetMarketingConnectorStatus } from "./types"
 
 export type PetMarketingPublishInput = {
   platform: "instagram" | "pinterest"
@@ -179,7 +179,7 @@ export async function publishPetMarketingPost(
 }
 
 export function isDirectPetMarketingPlatform(
-  platform: PetMarketingPlatform,
+  platform: string,
 ): platform is "instagram" | "pinterest" {
   return platform === "instagram" || platform === "pinterest"
 }

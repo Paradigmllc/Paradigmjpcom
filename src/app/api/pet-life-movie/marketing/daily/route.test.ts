@@ -30,7 +30,7 @@ describe("Pet marketing daily API", () => {
       status: "succeeded", generatedPostCount: 3, publishedPostCount: 2, failedPostCount: 0,
       blockedPostCount: 0, blockedReason: null, startedAt: "2026-08-03T09:15:00.000Z", completedAt: "2026-08-03T09:15:02.000Z",
     })
-    vi.mocked(notifyBothChannels).mockResolvedValue({ ok: true, db: { ok: true }, slack: { ok: true } })
+    vi.mocked(notifyBothChannels).mockResolvedValue({ ok: true, database: { ok: true }, slack: { ok: true } })
     const response = await POST(new NextRequest("https://paradigmjp.com/api/pet-life-movie/marketing/daily?slot=europe&date=2026-08-03", { method: "POST" }))
     expect(response.status).toBe(200)
     expect(runGlobalPetMarketingPipeline).toHaveBeenCalledWith("europe", "2026-08-03")
