@@ -40,6 +40,7 @@
 - 市場投入gateを追加した。Pet変更時はclean `npm ci`、root audit、専用TypeScript、Vitest、対象ESLint、production buildをCIで必須検証する。ローカルではroot audit 0、Pet TypeScript、Vitest 9/9、対象ESLint、Next.js production build 564/564ページを通過した。
 - リポジトリ補助runtimeもhardeningし、Astroを7.1.6 / Node adapter 11.0.3へ更新してaudit 0・server build成功、outreach workerはStagehand 3.7.1 / Crawlee 3.17.0 / Playwright 1.62.1と安全なUndici 6.28.0へ更新してTypeScript・high以上0を確認した。上流Stagehandの`@ai-sdk/provider-utils`由来lowのみ継続監視する。
 - Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体とCloudflare API tokenは引き続きローテーション対象。
+- 市場投入hardeningはPR **#676**をmain **b0a9eca1**へsquash merge済み。GitHub production run **30735560298**とCoolify deployment **q80cl9qe9wofsrkwoj440tf4**は成功し、対象commit一致、公開VaaS、埋め込みVideo Factoryを確認した。Pet本番smokeはpage 200、create 201、owner read 200、unauthorized 404、preview前checkout 409、delete 200、deleted read-back 404で、検証projectは削除済み。
 - Pet paid renderはlive Stripe secret/webhook/3 Price IDsとResendが揃うまで無効。実購入・返金・納品証跡が市場公開前に必要。
 
 ## ACTIVE HANDOFF
@@ -59,5 +60,5 @@
 - SERICIA Shopify storefront and BASE sync: PR **#657** / main `ad3e6d2b` / deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Content API: PR **#659**、fixes **#660-#662**、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
-- Pet Life Movie: PR **#664** / **#669**、validation **30732125162**、main **d40eef47**、live container **2a036780**、deployment `uiu3j3imc8sq9zero80nnlhi`。
+- Pet Life Movie: PR **#664** / **#669** / **#676**、validation **30732125162**、production run **30735560298**、main **b0a9eca1**、deployment `q80cl9qe9wofsrkwoj440tf4`。
 - Previous detailed archive: `docs/handoff-archive/2026-08-02-pre-content-api-task.md`。
