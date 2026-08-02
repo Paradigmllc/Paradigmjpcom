@@ -50,6 +50,7 @@ CREATE POLICY shopify_launch_audit_runs_service_role_select
   ON public.shopify_launch_audit_runs FOR SELECT TO service_role USING (true);
 CREATE POLICY shopify_launch_audit_runs_service_role_insert
   ON public.shopify_launch_audit_runs FOR INSERT TO service_role WITH CHECK (true);
+REVOKE ALL ON TABLE public.shopify_launch_audit_runs FROM service_role;
 GRANT SELECT, INSERT ON TABLE public.shopify_launch_audit_runs TO service_role;
 
 NOTIFY pgrst, 'reload schema';

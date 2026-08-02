@@ -400,6 +400,7 @@ function checkStaticReleaseRules() {
     "enable row level security",
     "force row level security",
     "from public, anon, authenticated",
+    "from service_role",
     "to service_role",
   ]
   if (
