@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import shutil
 from fractions import Fraction
 from pathlib import Path
 
 from .commands import run_command
-from .models import DeliverableSpec, MediaProbe
+from .models import CaptionMode, DeliverableSpec, MediaProbe, Shot, ShotManifest
 
 
 class MediaError(RuntimeError):
@@ -212,6 +213,194 @@ def assemble_clips(
         timeout=1200,
     )
     return target
+
+
+def write_caption_vtt(shots: list[Shot], output: str | Path) -> Path:
+    target = Path(output)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    position = 0.0
+    cues = ["WEBVTT", ""]
+    for index, shot in enumerate(shots, start=1):
+        end = position + shot.duration_seconds
+        text = "\n".join(part for part in (shot.headline.strip(), shot.body.strip()) if part)
+        cues.extend(
+            [
+                str(index),
+                f"{_vtt_timestamp(position)} --> {_vtt_timestamp(end)}",
+                text or shot.title,
+                "",
+            ]
+        )
+        position = end
+    target.write_text("\n".join(cues), encoding="utf-8")
+    return target
+
+
+def _vtt_timestamp(seconds: float) -> str:
+    milliseconds = max(0, round(seconds * 1000))
+    hours, remainder = divmod(milliseconds, 3_600_000)
+    minutes, remainder = divmod(remainder, 60_000)
+    whole_seconds, millis = divmod(remainder, 1000)
+    return f"{hours:02d}:{minutes:02d}:{whole_seconds:02d}.{millis:03d}"
+
+
+def _checked_audio_path(value: str | None, label: str) -> Path | None:
+    if not value:
+        return None
+    path = Path(value).expanduser().resolve()
+    if not path.is_file():
+        raise MediaError(f"{label} audio does not exist: {path}")
+    return path
+
+
+def mix_master_audio(
+    media_path: str | Path,
+    manifest: ShotManifest,
+    *,
+    duration_seconds: float,
+) -> Path:
+    narration = _checked_audio_path(manifest.audio.narration_path, "Narration")
+    music = _checked_audio_path(manifest.audio.music_path, "Music")
+    target = Path(media_path)
+    if narration is None and music is None:
+        return target
+
+    ffmpeg = _require("ffmpeg")
+    temporary = target.with_name(f"{target.stem}-audio-mix{target.suffix}")
+    command = [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", "-i", str(target)]
+    inputs: list[tuple[int, float, str]] = []
+    input_index = 1
+    if narration is not None:
+        command.extend(["-i", str(narration)])
+        inputs.append((input_index, manifest.audio.narration_volume, "narration"))
+        input_index += 1
+    if music is not None:
+        command.extend(["-stream_loop", "-1", "-i", str(music)])
+        inputs.append((input_index, manifest.audio.music_volume, "music"))
+
+    filters = [
+        f"[{index}:a:0]volume={volume},apad,atrim=0:{duration_seconds}[{label}]"
+        for index, volume, label in inputs
+    ]
+    labels = "".join(f"[{label}]" for _index, _volume, label in inputs)
+    if len(inputs) == 1:
+        mixed_label = inputs[0][2]
+    else:
+        filters.append(
+            f"{labels}amix=inputs={len(inputs)}:duration=longest:normalize=0,"
+            f"atrim=0:{duration_seconds}[mixed]"
+        )
+        mixed_label = "mixed"
+    command.extend(
+        [
+            "-filter_complex",
+            ";".join(filters),
+            "-map",
+            "0:v:0",
+            "-map",
+            f"[{mixed_label}]",
+            "-t",
+            str(duration_seconds),
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-ar",
+            "48000",
+            "-movflags",
+            "+faststart",
+            str(temporary),
+        ]
+    )
+    run_command(command, timeout=1200)
+    temporary.replace(target)
+    return target
+
+
+def burn_captions(media_path: str | Path, captions_path: str | Path) -> Path:
+    ffmpeg = _require("ffmpeg")
+    target = Path(media_path)
+    captions = Path(captions_path).resolve().as_posix().replace(":", r"\:").replace("'", r"\'")
+    temporary = target.with_name(f"{target.stem}-captioned{target.suffix}")
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(target),
+            "-vf",
+            (
+                f"subtitles=filename='{captions}':force_style='Alignment=2,MarginV=70,"
+                "FontSize=48,Outline=4,Shadow=0'"
+            ),
+            "-map",
+            "0:v:0",
+            "-map",
+            "0:a?",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "18",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "+faststart",
+            str(temporary),
+        ],
+        timeout=1200,
+    )
+    temporary.replace(target)
+    return target
+
+
+def finish_master_media(
+    media_path: str | Path,
+    manifest: ShotManifest,
+    shots: list[Shot],
+    *,
+    captions_path: str | Path,
+) -> Path | None:
+    mix_master_audio(media_path, manifest, duration_seconds=manifest.duration_seconds)
+    if manifest.audio.captions is CaptionMode.OFF:
+        return None
+    caption_file = write_caption_vtt(shots, captions_path)
+    if manifest.audio.captions is CaptionMode.BURNED:
+        burn_captions(media_path, caption_file)
+    return caption_file
+
+
+def probe_audio_levels(path: str | Path) -> tuple[float | None, float | None]:
+    ffmpeg = _require("ffmpeg")
+    completed = run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            str(path),
+            "-vn",
+            "-af",
+            "volumedetect",
+            "-f",
+            "null",
+            "-",
+        ],
+        timeout=300,
+    )
+    mean_match = re.search(r"mean_volume:\s*(-?inf|-?\d+(?:\.\d+)?) dB", completed.stderr)
+    peak_match = re.search(r"max_volume:\s*(-?inf|-?\d+(?:\.\d+)?) dB", completed.stderr)
+
+    def parse(match: re.Match[str] | None) -> float | None:
+        if match is None or match.group(1) in {"inf", "-inf"}:
+            return None
+        return float(match.group(1))
+
+    return parse(mean_match), parse(peak_match)
 
 
 def create_variant(source: Path, output: Path, spec: DeliverableSpec) -> Path:

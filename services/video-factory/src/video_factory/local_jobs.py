@@ -28,6 +28,8 @@ class LocalJob:
     planner_provider: str
     auto_approve: bool
     delivery_target: str
+    manifest_path: str | None = None
+    rerender_shot_ids: list[str] | None = None
     project_id: str | None = None
     error: str | None = None
     result: dict[str, Any] | None = None
@@ -149,6 +151,8 @@ def _run_job(settings: Settings, job: LocalJob) -> None:
             auto_approve=job.auto_approve,
             delivery_target=job.delivery_target,
             lifecycle_run_id=job.run_id,
+            manifest_path=job.manifest_path,
+            rerender_shot_ids=job.rerender_shot_ids,
         )
         dumped = pipeline_result.model_dump(mode="json")
         completed = replace(
@@ -181,6 +185,8 @@ def submit_local_job(
     planner_provider: str,
     auto_approve: bool,
     delivery_target: str,
+    manifest_path: Path | None = None,
+    rerender_shot_ids: list[str] | None = None,
 ) -> LocalJob:
     run_id = str(uuid.uuid4())
     timestamp = _now()
@@ -194,6 +200,8 @@ def submit_local_job(
         planner_provider=planner_provider,
         auto_approve=auto_approve,
         delivery_target=delivery_target,
+        manifest_path=str(manifest_path) if manifest_path else None,
+        rerender_shot_ids=rerender_shot_ids,
     )
     _write_job(settings, job)
     future = _executor(settings).submit(_run_job, settings, job)

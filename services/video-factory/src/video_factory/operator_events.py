@@ -28,6 +28,7 @@ class OperatorEvent:
     state: str | None = None
     progress: int | None = None
     error_message: str | None = None
+    payload: dict[str, Any] | None = None
     delivery_state: str = "pending"
     delivered_at: str | None = None
     delivery_error: str | None = None
@@ -69,6 +70,7 @@ async def emit_operator_event(
     state: str | None = None,
     progress: int | None = None,
     error_message: str | None = None,
+    payload: dict[str, Any] | None = None,
 ) -> OperatorEvent:
     event = OperatorEvent(
         event_id=str(uuid.uuid4()),
@@ -84,6 +86,7 @@ async def emit_operator_event(
         state=state,
         progress=progress,
         error_message=error_message,
+        payload=payload,
     )
     _write_event(settings, event)
     if not settings.operator_event_url:
@@ -122,11 +125,12 @@ async def emit_operator_event(
                     "state": event.state,
                     "progress": event.progress,
                     "error_message": event.error_message,
+                    "payload": event.payload or {},
                 },
             )
             response.raise_for_status()
-            payload: Any = response.json()
-        if not isinstance(payload, dict) or payload.get("ok") is not True:
+            response_payload: Any = response.json()
+        if not isinstance(response_payload, dict) or response_payload.get("ok") is not True:
             raise ValueError("Operator event endpoint did not confirm both channels")
         delivered = replace(
             event,

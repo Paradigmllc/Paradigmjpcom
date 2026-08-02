@@ -647,6 +647,14 @@ async function applyVideoFactoryOssExecutionTargetsMigration(envs) {
   )
 }
 
+async function applyVideoFactoryCommercialStudioMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802093000_video_factory_commercial_studio.sql",
+    "Video Factory commercial Studio migration",
+  )
+}
+
 async function applyCrmFieldMasterMigration(envs) {
   return applySqlMigration(envs, "migration_029_sales_crm_field_master.sql", "CRM field master migration")
 }
@@ -1650,6 +1658,7 @@ async function main() {
     console.log(await applyVideoProductionMigration(envs))
     console.log(await applyVideoFactoryEngineProfilesMigration(envs))
     console.log(await applyVideoFactoryOssExecutionTargetsMigration(envs))
+    console.log(await applyVideoFactoryCommercialStudioMigration(envs))
     console.log(await applyCrmFieldMasterMigration(envs))
     console.log(await applySourceTechMetricsMigration(envs))
     console.log(await applyMonthlyLeadBatchMigration(envs))

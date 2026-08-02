@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio機能拡充（実装・ローカル検証完了 / PR準備中）
+
+- 既存Studioの制作可能範囲を商用品質で明示するため、`Kinetic Type`、`Product Spotlight`、`UI Focus`、`Data Proof`、`Social CTA`の5テンプレート台帳を追加した。shot kindからの自動選択と案件単位の明示選択をサポートし、HyperFrames 0.7.87の実ブラウザ検査で全5種ともlint/runtime/layout/contrast 0 error・0 warningを確認した。
+- Brand Kitへセカンダリ色、文字色、モーション、セーフマージンを追加し、Consoleから設定できる。支給ナレーション/BGMの自動ミックス、音量QA、WebVTT生成、任意の字幕焼き込みを追加し、支給音声が無音の場合は安全にQA failedとする。
+- 案件詳細にStoryboard編集UIを追加した。見出し・本文・テンプレートの変更をappend-only revisionとして保存し、指定shotだけを再生成して未変更shotの既存成果物を再利用し、masterを再合成する。納品済み案件は編集・再生成を409で拒否して不変性を守る。
+- Brand Kit、template、Studio project、shot revision、quality metricの5テーブルをRLS強制・server-only権限で追加した。StudioイベントはDB永続化成功後に既存のDBベル+Slackへ通知する。
+- Ruff、mypy strict Linux想定56 source files、対象pytest、TypeScript、イベントAPI Vitest 5件、品質guard、release-doctorをpass。HyperFramesアダプター経由でH.264 640x360/15fps/1秒の実MP4を完走した。Next.jsはwebpack compileと504/504 page生成までpassし、Windowsの最終standalone font copyだけがOS file lock `EBUSY`で停止したため、Linux production-container CIで最終判定する。
+
 ## CURRENT STATUS - 2026-08-02 Pet Life Movie OSS wrapper SaaS MVP
 
 - Implemented the shared-chat MVP as a production-facing vertical slice: 5-20 private pet photos, factual-only storyboard, no-login free preview, unlisted sharing, family contribution links, one-time Stripe checkout contract, and paid GPU render dispatch/callback.

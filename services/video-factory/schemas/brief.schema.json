@@ -22,6 +22,57 @@
       "title": "Approver",
       "type": "object"
     },
+    "AudioSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "captions": {
+          "$ref": "#/$defs/CaptionMode",
+          "default": "sidecar"
+        },
+        "music_path": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Music Path"
+        },
+        "music_volume": {
+          "default": 0.18,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Music Volume",
+          "type": "number"
+        },
+        "narration_path": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Narration Path"
+        },
+        "narration_volume": {
+          "default": 1.0,
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Narration Volume",
+          "type": "number"
+        }
+      },
+      "title": "AudioSpec",
+      "type": "object"
+    },
     "BrandSpec": {
       "additionalProperties": false,
       "properties": {
@@ -31,10 +82,16 @@
           "type": "string"
         },
         "font_family": {
-          "default": "Inter",
+          "default": "IBM Plex Sans",
           "maxLength": 100,
           "minLength": 1,
           "title": "Font Family",
+          "type": "string"
+        },
+        "kit_id": {
+          "default": "project-brand",
+          "pattern": "^[a-z0-9][a-z0-9-]{2,79}$",
+          "title": "Kit Id",
           "type": "string"
         },
         "logo_path": {
@@ -49,6 +106,10 @@
           "default": null,
           "title": "Logo Path"
         },
+        "motion_preset": {
+          "$ref": "#/$defs/MotionPreset",
+          "default": "confident"
+        },
         "name": {
           "maxLength": 200,
           "minLength": 1,
@@ -58,6 +119,19 @@
         "primary_color": {
           "pattern": "^#[0-9A-Fa-f]{6}$",
           "title": "Primary Color",
+          "type": "string"
+        },
+        "safe_margin_percent": {
+          "default": 7,
+          "maximum": 15,
+          "minimum": 4,
+          "title": "Safe Margin Percent",
+          "type": "integer"
+        },
+        "secondary_color": {
+          "default": "#111827",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "title": "Secondary Color",
           "type": "string"
         },
         "text_color": {
@@ -74,6 +148,15 @@
       ],
       "title": "BrandSpec",
       "type": "object"
+    },
+    "CaptionMode": {
+      "enum": [
+        "off",
+        "sidecar",
+        "burned"
+      ],
+      "title": "CaptionMode",
+      "type": "string"
     },
     "DeliverableSpec": {
       "additionalProperties": false,
@@ -223,6 +306,17 @@
       "title": "LocalizedSegmentCopy",
       "type": "object"
     },
+    "MotionPreset": {
+      "enum": [
+        "confident",
+        "editorial",
+        "minimal",
+        "energetic",
+        "cinematic"
+      ],
+      "title": "MotionPreset",
+      "type": "string"
+    },
     "RightsDeclaration": {
       "additionalProperties": false,
       "properties": {
@@ -294,6 +388,9 @@
       "minLength": 10,
       "title": "Audience",
       "type": "string"
+    },
+    "audio": {
+      "$ref": "#/$defs/AudioSpec"
     },
     "brand": {
       "$ref": "#/$defs/BrandSpec"
@@ -397,6 +494,26 @@
       "maxItems": 200,
       "title": "Source Assets",
       "type": "array"
+    },
+    "template_id": {
+      "anyOf": [
+        {
+          "enum": [
+            "kinetic-type",
+            "product-spotlight",
+            "ui-focus",
+            "data-proof",
+            "social-cta"
+          ],
+          "type": "string"
+        },
+        {
+          "const": "auto",
+          "type": "string"
+        }
+      ],
+      "default": "auto",
+      "title": "Template Id"
     }
   },
   "required": [
