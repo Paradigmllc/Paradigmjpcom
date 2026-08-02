@@ -447,6 +447,33 @@ function checkStaticReleaseRules() {
     fail("Video Factory commercial Studio requires RLS and release migration wiring")
   }
 
+  const videoGrowthMigrationPath = "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql"
+  const videoGrowthMigration = fs.existsSync(videoGrowthMigrationPath)
+    ? fs.readFileSync(videoGrowthMigrationPath, "utf8")
+    : ""
+  const videoGrowthMarkers = [
+    "video_growth_campaigns",
+    "video_growth_variants",
+    "video_growth_events",
+    "force row level security",
+    "from public, anon, authenticated, service_role",
+    "video_growth_create_campaign",
+    "video_growth_transition_campaign",
+    "video_growth_update_variant",
+    "human approval is required before scheduling",
+    "external_messages_sent",
+  ]
+  if (
+    videoGrowthMigration
+    && videoGrowthMarkers.every((marker) => videoGrowthMigration.toLowerCase().includes(marker))
+    && noLoginDeploy.includes("20260802132000_video_growth_direct_acquisition.sql")
+    && noLoginDeploy.includes("applyVideoGrowthDirectAcquisitionMigration")
+  ) {
+    pass("Video subscription direct acquisition has approval gates, RLS and release wiring")
+  } else {
+    fail("Video subscription direct acquisition requires approval gates, RLS and release wiring")
+  }
+
   const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
   const projectionMigration = fs.existsSync(projectionMigrationPath)
     ? fs.readFileSync(projectionMigrationPath, "utf8")
