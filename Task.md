@@ -17,7 +17,9 @@
 - DocuSealはメール/SMSを送らない下書きだけを冪等作成し、契約SSOTへリンクする。Stripe webhookは支払証跡、請求、30日以内の検証費用控除を冪等記録する。
 - 管理画面に認証主体、証跡gate、完全一致送信申請/承認、契約・請求・SKU・成果物・精算・運用・KPI・終了記録、loading/empty/error状態を追加した。
 - SQL全chainを同一transaction内で2回再生してrollbackし、直接UPDATE拒否とRPC更新を本番Postgresで確認した。TypeScript、対象ESLint、Vitest 24件、品質guard 0 error、production build、認証付きPlaywrightを通過した。
-- PR **#666** は最新mainを統合済み。専用CIのDB非依存readiness修正をpushし、再実行待ち。外部ブランドへの送信は0件を維持している。
+- PR **#666** は専用CIと既存CIを通過し、main `cf105607` へsquash merge済み。最新main `ad3e6d2b` のGitHub production run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e` はfinished/healthyで、公開VaaSとVideo Factory検証も成功した。
+- 本番で3 migrationを1 transaction適用し、案件5件、engagement番号5件、offer snapshot 5件、追加table 17/17、RLS/FORCE RLS 17/17、anon/authenticated SELECT 0、業務RPC 7/7とservice-role実行権限7/7をread-backした。直接UPDATEはDB triggerが拒否した。
+- 認証案件APIとworkspaceはHTTP 200（5案件・5 event・14 collection）、管理画面は実ブラウザで見出し・外部送信0・完全一致guard・5 workspace buttonを確認した。dry-runは200、未承認live試行は409で案件紐付き拒否。post-deploy doctorも全gate通過し、外部ブランドへの送信は0件を維持した。
 
 ## CURRENT STATUS — 2026-08-02 Content API + x402 Wave 1 released
 
@@ -37,7 +39,7 @@
 ## ACTIVE HANDOFF
 
 - SERICIA: PR #657をmerge・canonical releaseし、本番管理画面のShopify接続、未接続BASE表示、テーマpreviewをread-backする。BASE Developersログイン後にAPI appを作成し、OAuth・dry-run・draft同期・価格/在庫read-backを完了する。
-- Japan operator: PR #666のCI成功後にmergeし、canonical release、DB RLS/権限/RPC、認証API、管理画面fingerprint、dry-run許可、未承認live送信拒否を本番read-backする。検証中も外部送信しない。
+- Japan operator: production releaseとread-backは完了。実運用はCHEFCLEAN→HOLENの順に進め、検証済み中央guardと案件台帳を使う。
 - Japan operator運用開始時はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を完了し、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後に必要環境変数を承認済みsecret storeへ設定し、0.25 USDCの実購入、settlement、paid delivery、hashed payment reference、DB bell、Slackを確認する。
 - Pet Life Movie: 市場公開前に承認済みCloudflare API tokenをローテーションする。ローカル診断出力に露出した旧tokenは安全とみなさない。
@@ -46,7 +48,7 @@
 ## RELEASE REFERENCES
 
 - SERICIA Shopify storefront and BASE sync: PR #657。
-- Japan operator OS: PR #666。
+- Japan operator OS: PR #666、main `cf105607`、GitHub run `30731931603`、Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Content API: PR #659、release fixes #660/#661/#662、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
 - Pet Life Movie: PR #664、GitHub release `30730953842`、deployment `sdldvalovxfxubub7z13edbn`。
 - Previous detailed archive: `docs/handoff-archive/2026-08-02-pre-content-api-task.md`。
