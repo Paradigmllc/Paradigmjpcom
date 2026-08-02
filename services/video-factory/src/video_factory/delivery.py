@@ -11,6 +11,7 @@ from .models import DeliveryItem, DeliveryRecord, ReviewStage, ShotManifest
 from .review import require_approved_review
 from .settings import Settings
 from .state import transition_project_state
+from .studio_events import emit_studio_project_delivered
 from .workspace import ProjectWorkspace
 
 
@@ -93,4 +94,5 @@ def deliver_project(
         expected="final_approved",
         delivery_path=str(workspace.deliverables / "delivery.json"),
     )
+    emit_studio_project_delivered(settings, manifest, record)
     return record

@@ -23,6 +23,7 @@ const eventSchema = z.object({
     "studio_project_created",
     "studio_revision_created",
     "studio_qa_completed",
+    "studio_project_delivered",
   ]),
   title: z.string().trim().min(1).max(160),
   message: z.string().trim().min(1).max(2_000),
@@ -63,6 +64,18 @@ const studioRevisionSchema = z.object({
 const studioQaSchema = z.object({
   deliverable_name: z.string().trim().min(1).max(80),
   qa: z.object({ passed: z.boolean() }).passthrough(),
+}).strict()
+
+const studioDeliveredSchema = z.object({
+  pet_movie_project_id: z.string().uuid(),
+  pet_movie_job_id: z.string().uuid(),
+  reviewer: z.string().trim().min(1).max(200),
+  items: z.array(z.object({
+    name: z.string().regex(/^[a-z0-9][a-z0-9-]{1,79}$/),
+    artifact_path: z.string().regex(/^deliverables\/[a-z0-9][a-z0-9.-]{1,100}$/),
+    sha256: z.string().regex(/^[a-f0-9]{64}$/),
+    size_bytes: z.number().int().positive().max(250 * 1024 * 1024),
+  }).strict()).min(1).max(3),
 }).strict()
 
 function internalApiKey(): string | null {
@@ -184,7 +197,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .from(DB_TABLES.VIDEO_FACTORY_SHOT_REVISIONS)
           .insert(payload)
         databaseError = result.error
-      } else {
+      } else if (parsed.event_type === "studio_qa_completed") {
         const payload = studioQaSchema.parse(parsed.payload)
         const result = await database
           .from(DB_TABLES.VIDEO_FACTORY_QUALITY_METRICS)
@@ -197,6 +210,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             created_at: parsed.created_at,
           })
         databaseError = result.error
+      } else {
+        const payload = studioDeliveredSchema.parse(parsed.payload)
+        const result = await database
+          .from(DB_TABLES.VIDEO_FACTORY_STUDIO_PROJECTS)
+          .update({ status: "delivered", updated_at: parsed.created_at })
+          .eq("project_id", parsed.project_id)
+        databaseError = result.error
+        if (!databaseError) {
+          const { ingestPetMovieDelivery } = await import("@/lib/pet-life-movie/delivery")
+          await ingestPetMovieDelivery({
+            rendererProjectId: parsed.project_id,
+            projectId: payload.pet_movie_project_id,
+            jobId: payload.pet_movie_job_id,
+            reviewer: payload.reviewer,
+            items: payload.items.map((item) => ({
+              name: item.name,
+              artifactPath: item.artifact_path,
+              sha256: item.sha256,
+              sizeBytes: item.size_bytes,
+            })),
+          })
+        }
       }
     } catch (error) {
       console.error("[video-factory-events] invalid studio event payload", error)

@@ -58,13 +58,12 @@ export function buildPipelineManifest(): PetMoviePipelineManifest {
     version: 1,
     identityProtection: { enabled: true, fallbackThreshold: 0.78, fallbackMotion: "parallax" },
     stages: [
-      { id: "restore", provider: "real-esrgan", required: false, endpointConfigured: configured("REAL_ESRGAN_API_URL") },
-      { id: "cutout", provider: "rembg", required: false, endpointConfigured: configured("REMBG_API_URL") },
-      { id: "mask", provider: "sam2", required: false, endpointConfigured: configured("SAM2_API_URL") },
-      { id: "motion", provider: "wan2.2-ti2v-5b", required: false, endpointConfigured: configured("WAN22_API_URL") },
-      { id: "narration", provider: "chatterbox", required: false, endpointConfigured: configured("CHATTERBOX_API_URL") },
-      { id: "music", provider: "ace-step", required: false, endpointConfigured: configured("ACE_STEP_API_URL") },
-      { id: "compose", provider: "ffmpeg", required: true, endpointConfigured: configured("PET_MOVIE_RENDERER_API_URL") },
+      {
+        id: "compose",
+        provider: "ffmpeg",
+        required: true,
+        endpointConfigured: configured("PET_MOVIE_RENDERER_API_URL") || configured("VIDEO_FACTORY_INTERNAL_URL"),
+      },
     ],
   }
 }

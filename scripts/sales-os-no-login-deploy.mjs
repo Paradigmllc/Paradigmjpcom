@@ -592,6 +592,14 @@ async function applyPetLifeMovieMigration(envs) {
   return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
 }
 
+async function applyPetLifeMovieMarketReadyMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802020742_pet_life_movie_market_ready.sql",
+    "Pet Life Movie market-ready migration",
+  )
+}
+
 async function verifyPetLifeMovieSchema(envs) {
   const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) {
@@ -603,6 +611,9 @@ begin
   if to_regclass('public.pet_movie_projects') is null then
     raise exception 'pet_movie_projects is missing';
   end if;
+  if to_regclass('public.pet_movie_deliverables') is null then
+    raise exception 'pet_movie_deliverables is missing';
+  end if;
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
   end if;
@@ -613,7 +624,7 @@ $$;
     )
     return "Pet Life Movie schema: verified through Postgres service_role privileges"
   }
-  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+  const response = await fetch(`${url}/rest/v1/pet_movie_deliverables?select=id&limit=1`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
     signal: AbortSignal.timeout(30_000),
   })
@@ -1631,6 +1642,7 @@ async function main() {
     console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
     console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await applyPetLifeMovieMarketReadyMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
