@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-02 Greater Tokyo investor pSEO expansion
+
+- Expanded the foreign-investor catalog design from 12 to 28 evidence-gated English decision briefs. The new Greater Tokyo cluster contains 16 distinct briefs: all 23 Tokyo wards grouped by investment intent, Tama, Yokohama, Kawasaki, Saitama City, South Saitama, Chiba Bay, and outer-Chiba growth/employment nodes.
+- Every new metro payload includes four sourced analysis chapters, multiple 2026 MLIT market points, covered-market boundaries, four downside risks, four decision gates, a 12-item diligence checklist, methodology, FAQs, and five primary/public sources. Web, JSON, and Markdown share the same DB record.
+- Added an interactive Recharts benchmark view, browser-local underwriting stress sandbox, Framer Motion catalog transitions, search/category/geography filters, Article/FAQ/Dataset JSON-LD, expanded curated A/B comparisons, dynamic sitemap coverage, and a 195,264-page candidate manifest. The model combines 12 national themes with prefecture/profile/locale and A/B dimensions, plus 16 Greater Tokyo submarkets with six property strategies, five investor profiles, and 12 locales. Candidates remain unpublished/noindex until the quality and human-translation gates pass.
+- Release wiring applies the temporary payload builder, Tokyo seeds, surrounding-metro seeds, and cleanup in order; then verifies exactly 28 active briefs, exactly 16 enhanced Greater Tokyo briefs, source/data minimums, helper cleanup, and service-role-only DB isolation.
+- Local verification passed: targeted Vitest 17/17, TypeScript, changed-file ESLint, release-doctor static gate, and Next.js production build with 636 generated static pages; investor pages, API, llms.txt, and sitemap remain dynamic.
+- ACTIVE HANDOFF: commit and push `codex/greater-tokyo-real-estate`, merge through PR after CI, deploy the exact main commit, apply/read back the four migrations, then verify 28 API records, all new sitemap URLs, HTTP 308 locale canonicalization, desktop/mobile interactions, JSON-LD, content depth, RLS, and post-deploy release doctor.
+
 ## CURRENT STATUS — 2026-08-02 SERICIA global storefront launch gate
 
 - Shopify production readiness was audited against the live store. The store is on Basic, `sericia.com` is the SSL-enabled primary domain, JPY is the only presentment currency, taxes are included, and shipping zones currently cover Japan plus 27 international destinations. Shopify Payments and PayPal both remain incomplete.

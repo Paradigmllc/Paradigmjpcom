@@ -75,3 +75,9 @@ docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabas
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802190200_video_growth_commercial_quality.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802190300_video_growth_commercial_guards.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802203000_video_factory_studio_scale_readiness.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260801231006_content_commerce.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802043347_foreign_investor_pseo.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802123000_investor_metro_payload_builder.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802123100_tokyo_metro_investor_briefs.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802123200_greater_tokyo_ring_investor_briefs.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/20260802123300_investor_metro_payload_builder_cleanup.sql

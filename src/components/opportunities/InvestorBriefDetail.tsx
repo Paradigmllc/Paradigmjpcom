@@ -1,5 +1,7 @@
 import { AlertTriangle, ArrowRight, CheckCircle2, Database, ExternalLink, FileCheck2 } from "lucide-react"
 import { InvestorReadinessTool } from "@/components/opportunities/InvestorReadinessTool"
+import { InvestorBriefNarrative } from "@/components/opportunities/InvestorBriefNarrative"
+import { InvestorMarketEvidence } from "@/components/opportunities/InvestorMarketEvidence"
 import { Link } from "@/i18n/routing"
 import type { InvestorBrief, InvestorBriefSummary } from "@/lib/investor-briefs/repository"
 
@@ -38,6 +40,13 @@ export function InvestorBriefDetail({ brief, related }: Props) {
               <span key={value} className="rounded-full border border-paradigm-line bg-paradigm-paper-card px-3 py-1.5">{value}</span>
             ))}
           </div>
+          {brief.payload.coveredMarkets ? (
+            <div className="mt-5 flex flex-wrap gap-2" aria-label="Covered markets">
+              {brief.payload.coveredMarkets.map((market) => (
+                <span key={market} className="rounded-full bg-paradigm-accent/10 px-3 py-1.5 text-xs font-semibold text-paradigm-accent">{market}</span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -53,7 +62,7 @@ export function InvestorBriefDetail({ brief, related }: Props) {
         <section aria-labelledby="facts" className="py-16 md:py-20">
           <p className="paradigm-eyebrow text-paradigm-accent">EVIDENCE SNAPSHOT</p>
           <h2 id="facts" className="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] text-paradigm-ink md:text-4xl">Facts that change the decision</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {brief.payload.keyFacts.map((fact) => (
               <article key={fact.label} className="rounded-2xl border border-paradigm-line bg-paradigm-paper-card p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-paradigm-ink-soft">{fact.label}</p>
@@ -73,6 +82,10 @@ export function InvestorBriefDetail({ brief, related }: Props) {
             ))}
           </div>
         </section>
+
+        {brief.payload.chapters ? <InvestorBriefNarrative chapters={brief.payload.chapters} /> : null}
+
+        {brief.payload.marketEvidence ? <InvestorMarketEvidence evidence={brief.payload.marketEvidence} /> : null}
 
         <section aria-labelledby="gates" className="border-t border-paradigm-line py-16 md:py-20">
           <div className="flex items-center gap-3 text-paradigm-accent"><FileCheck2 size={22} aria-hidden="true" /><p className="paradigm-eyebrow">INVESTMENT GATES</p></div>

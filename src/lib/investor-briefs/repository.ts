@@ -41,6 +41,26 @@ const decisionGateSchema = z.object({
   passCondition: z.string().min(1).max(800),
 })
 
+const investorBriefChapterSchema = z.object({
+  title: z.string().min(1).max(180),
+  lede: z.string().min(1).max(700),
+  paragraphs: z.array(z.string().min(1).max(2_000)).min(2).max(4),
+  sourceIds: z.array(z.string().min(1).max(80)).min(1),
+})
+
+const marketEvidencePointSchema = z.object({
+  market: z.string().min(1).max(100),
+  averagePriceYenPerSqm: z.number().int().nonnegative(),
+  annualChangePct: z.number().min(-100).max(100),
+  sourceIds: z.array(z.string().min(1).max(80)).min(1),
+})
+
+const marketEvidenceSchema = z.object({
+  asOf: z.string().date(),
+  scope: z.string().min(1).max(240),
+  points: z.array(marketEvidencePointSchema).min(2).max(12),
+})
+
 export const investorBriefPayloadSchema = z.object({
   schemaVersion: z.literal("1.0"),
   kicker: z.string().min(1).max(160),
@@ -63,6 +83,9 @@ export const investorBriefPayloadSchema = z.object({
   }),
   sources: z.array(sourceSchema).min(2),
   relatedSlugs: z.array(z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)).max(4),
+  coveredMarkets: z.array(z.string().min(1).max(100)).min(1).max(24).optional(),
+  chapters: z.array(investorBriefChapterSchema).min(3).max(8).optional(),
+  marketEvidence: marketEvidenceSchema.optional(),
 })
 
 const summaryRowSchema = z.object({
@@ -201,6 +224,29 @@ export async function getInvestorBrief(slug: string): Promise<InvestorBrief | nu
 }
 
 export function investorBriefToMarkdown(brief: InvestorBrief): string {
+  const narrative = brief.payload.chapters?.flatMap((chapter) => [
+    `### ${chapter.title}`,
+    "",
+    `_${chapter.lede}_`,
+    "",
+    ...chapter.paragraphs.flatMap((paragraph) => [paragraph, ""]),
+    `Sources: ${chapter.sourceIds.join(", ")}`,
+    "",
+  ]) ?? []
+  const marketEvidence = brief.payload.marketEvidence
+    ? [
+        "## Market evidence",
+        "",
+        `${brief.payload.marketEvidence.scope} As of ${brief.payload.marketEvidence.asOf}. These benchmarks are not asset valuations.`,
+        "",
+        "| Market | Average residential land price | Annual change |",
+        "| --- | ---: | ---: |",
+        ...brief.payload.marketEvidence.points.map((point) => (
+          `| ${point.market} | JPY ${point.averagePriceYenPerSqm.toLocaleString("en-US")}/sq m | ${point.annualChangePct.toFixed(1)}% |`
+        )),
+        "",
+      ]
+    : []
   const lines = [
     `# ${brief.title}`,
     "",
@@ -221,6 +267,8 @@ export function investorBriefToMarkdown(brief: InvestorBrief): string {
       fact.meaning,
       "",
     ]),
+    ...(narrative.length > 0 ? ["## Market analysis", "", ...narrative] : []),
+    ...marketEvidence,
     "## Decision gates",
     "",
     ...brief.payload.decisionGates.flatMap((gate) => [
@@ -241,6 +289,25 @@ export function investorBriefToMarkdown(brief: InvestorBrief): string {
       `Diligence action: ${risk.diligenceAction}`,
       "",
     ]),
+    "## Diligence checklist",
+    "",
+    ...brief.payload.checklist.map((item) => `- ${item}`),
+    "",
+    "## Questions investors ask",
+    "",
+    ...brief.payload.faqs.flatMap((faq) => [
+      `### ${faq.question}`,
+      "",
+      faq.answer,
+      "",
+    ]),
+    "## Methodology and limits",
+    "",
+    `- Purpose: ${brief.payload.methodology.purpose}`,
+    `- Process: ${brief.payload.methodology.process}`,
+    `- Limitations: ${brief.payload.methodology.limitations}`,
+    `- Reviewed by: ${brief.payload.methodology.reviewedBy}`,
+    "",
     "## Sources",
     "",
     ...brief.payload.sources.map((source) => `- [${source.title}](${source.url}) — ${source.publisher}; accessed ${source.accessedAt}`),

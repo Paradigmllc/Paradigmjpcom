@@ -77,6 +77,12 @@ const brief: InvestorBrief = {
   payload,
 }
 
+function extractMetroProfiles(file: string): Array<Record<string, unknown>> {
+  const migration = fs.readFileSync(path.join(process.cwd(), file), "utf8")
+  return [...migration.matchAll(/\$profile\$(\{[\s\S]*?\})\$profile\$/g)]
+    .map((match) => JSON.parse(match[1]) as Record<string, unknown>)
+}
+
 describe("investor brief content contract", () => {
   it("accepts a sourced decision brief with facts, risks and decision gates", () => {
     expect(investorBriefPayloadSchema.safeParse(payload).success).toBe(true)
@@ -93,6 +99,46 @@ describe("investor brief content contract", () => {
     expect(markdown).toContain("## Decision gates")
     expect(markdown).toContain("[Official source](https://example.go.jp/source)")
     expect(markdown).toContain("not investment, legal, tax, brokerage, or financial advice")
+  })
+
+  it("includes metro narrative and evidence tables in machine-readable Markdown", () => {
+    const metroBrief: InvestorBrief = {
+      ...brief,
+      payload: {
+        ...payload,
+        coveredMarkets: ["Market A", "Market B"],
+        chapters: [{
+          title: "Investment thesis",
+          lede: "A sourced market thesis.",
+          paragraphs: ["First evidence paragraph.", "Second evidence paragraph."],
+          sourceIds: ["official"],
+        }, {
+          title: "Demand",
+          lede: "Demand must be observed.",
+          paragraphs: ["Leasing evidence.", "Buyer evidence."],
+          sourceIds: ["official"],
+        }, {
+          title: "Downside",
+          lede: "Downside is explicit.",
+          paragraphs: ["Hazard evidence.", "Exit evidence."],
+          sourceIds: ["official-two"],
+        }],
+        marketEvidence: {
+          asOf: "2026-01-01",
+          scope: "Official residential benchmarks.",
+          points: [
+            { market: "Market A", averagePriceYenPerSqm: 500_000, annualChangePct: 5.2, sourceIds: ["official"] },
+            { market: "Market B", averagePriceYenPerSqm: 300_000, annualChangePct: 3.1, sourceIds: ["official"] },
+          ],
+        },
+      },
+    }
+    const markdown = investorBriefToMarkdown(metroBrief)
+    expect(markdown).toContain("## Market analysis")
+    expect(markdown).toContain("## Market evidence")
+    expect(markdown).toContain("| Market A | JPY 500,000/sq m | 5.2% |")
+    expect(markdown).toContain("## Diligence checklist")
+    expect(markdown).toContain("## Methodology and limits")
   })
 
   it("ships twelve database-seeded briefs that all satisfy the evidence contract", () => {
@@ -117,6 +163,29 @@ describe("investor brief content contract", () => {
     }
   })
 
+  it("ships sixteen distinct, evidence-rich Greater Tokyo market profiles", () => {
+    const tokyo = extractMetroProfiles("supabase/migrations/20260802123100_tokyo_metro_investor_briefs.sql")
+    const ring = extractMetroProfiles("supabase/migrations/20260802123200_greater_tokyo_ring_investor_briefs.sql")
+    const profiles = [...tokyo, ...ring]
+
+    expect(tokyo).toHaveLength(10)
+    expect(ring).toHaveLength(6)
+    expect(new Set(profiles.map((profile) => profile.slug)).size).toBe(16)
+    for (const profile of profiles) {
+      expect(profile).toMatchObject({
+        slug: expect.any(String),
+        title: expect.any(String),
+        summary: expect.any(String),
+        thesis: expect.any(String),
+        demand: expect.any(String),
+        supply: expect.any(String),
+        downside: expect.any(String),
+      })
+      expect(profile.coveredMarkets).toEqual(expect.arrayContaining([expect.any(String)]))
+      expect((profile.evidencePoints as unknown[]).length).toBeGreaterThanOrEqual(2)
+    }
+  })
+
   it("defines curated A/B URLs without turning every arbitrary pair into an indexable page", () => {
     expect(CURATED_INVESTOR_COMPARISONS.length).toBeGreaterThanOrEqual(10)
     const first = CURATED_INVESTOR_COMPARISONS[0]
@@ -128,10 +197,18 @@ describe("investor brief content contract", () => {
 
   it("models a six-figure candidate universe while keeping publication quality-gated", () => {
     const scale = calculateInvestorPseoScale(12)
-    expect(scale.inputs).toEqual({ themes: 12, prefectures: 47, investorProfiles: 5, locales: 12 })
+    expect(scale.inputs).toEqual({
+      themes: 12,
+      prefectures: 47,
+      investorProfiles: 5,
+      locales: 12,
+      greaterTokyoSubmarkets: 16,
+      metroPropertyStrategies: 6,
+    })
     expect(scale.candidates.themeMarketProfileLocale).toBe(33_840)
     expect(scale.candidates.marketComparisonsByThemeAndLocale).toBe(155_664)
-    expect(scale.candidates.total).toBe(189_504)
+    expect(scale.candidates.greaterTokyoStrategyProfileLocale).toBe(5_760)
+    expect(scale.candidates.total).toBe(195_264)
     expect(scale.policy.indexableOnlyAfterQualityGate).toBe(true)
     expect(INVESTOR_PSEO_QUALITY_GATES).toMatchObject({
       minimumPrimarySources: 2,

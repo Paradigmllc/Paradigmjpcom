@@ -13,6 +13,7 @@ import fs from "node:fs"
 import { spawnSync } from "node:child_process"
 import { lookup } from "node:dns/promises"
 import { isIP } from "node:net"
+import path from "node:path"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
 import { sshArgs } from "./lib/ssh-options.mjs"
 
@@ -409,6 +410,15 @@ function checkStaticReleaseRules() {
     "japan-foreign-direct-investment-screening",
     "Paradigm API Terms",
   ]
+  const greaterTokyoMigrationPaths = [
+    "supabase/migrations/20260802123000_investor_metro_payload_builder.sql",
+    "supabase/migrations/20260802123100_tokyo_metro_investor_briefs.sql",
+    "supabase/migrations/20260802123200_greater_tokyo_ring_investor_briefs.sql",
+    "supabase/migrations/20260802123300_investor_metro_payload_builder_cleanup.sql",
+  ]
+  const greaterTokyoMigrations = greaterTokyoMigrationPaths.map((migrationPath) => (
+    fs.existsSync(migrationPath) ? fs.readFileSync(migrationPath, "utf8") : ""
+  )).join("\n")
   const investorComparisonPath = "src/lib/investor-briefs/comparisons.ts"
   const investorComparisonSource = fs.existsSync(investorComparisonPath)
     ? fs.readFileSync(investorComparisonPath, "utf8")
@@ -421,10 +431,17 @@ function checkStaticReleaseRules() {
     foreignInvestorPseoMarkers.every((marker) => foreignInvestorPseoMigration.includes(marker))
     && noLoginDeploy.includes("20260802043347_foreign_investor_pseo.sql")
     && noLoginDeploy.includes("applyForeignInvestorPseoMigration")
+    && greaterTokyoMigrationPaths.every((migrationPath) => noLoginDeploy.includes(path.basename(migrationPath)))
+    && noLoginDeploy.includes("applyGreaterTokyoInvestorMigrations")
     && noLoginDeploy.includes("verifyForeignInvestorPseoCatalog")
     && noLoginDeploy.includes("investor-briefs/factory")
     && investorComparisonSource.includes("CURATED_INVESTOR_COMPARISONS")
+    && investorComparisonSource.includes("yokohama-real-estate-investment")
     && investorScaleSource.includes("indexableOnlyAfterQualityGate")
+    && investorScaleSource.includes("GREATER_TOKYO_SUBMARKETS")
+    && greaterTokyoMigrations.includes("greater-tokyo-real-estate-market")
+    && greaterTokyoMigrations.includes("kashiwa-nagareyama-narita-real-estate-investment")
+    && greaterTokyoMigrations.includes("DROP FUNCTION IF EXISTS public.build_investor_metro_payload")
   ) {
     pass("Foreign investor pSEO has sourced DB seed, quality-gated comparison scale, canonical migration execution, and production verification wiring")
   } else {

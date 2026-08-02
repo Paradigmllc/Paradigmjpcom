@@ -5,7 +5,7 @@ import { InvestorBriefDetail } from "@/components/opportunities/InvestorBriefDet
 import JsonLd from "@/components/seo/JsonLd"
 import { getInvestorBrief, listInvestorBriefs } from "@/lib/investor-briefs/repository"
 import { pageAlternates } from "@/lib/page-metadata"
-import { buildArticleSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
+import { buildArticleSchema, buildBreadcrumbSchema, buildFAQSchema } from "@/lib/seo/schemas"
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>
@@ -67,12 +67,34 @@ export default async function InvestorBriefPage({ params }: Props) {
     about: [brief.preview.assetClass, brief.preview.region, "Foreign investment in Japan"],
     isAccessibleForFree: true,
     citation: brief.payload.sources.map((source) => source.url),
+    wordCount: JSON.stringify(brief.payload).split(/\s+/).length,
   }
+  const datasetSchema = brief.payload.marketEvidence ? {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: `${brief.title} market evidence`,
+    description: brief.payload.marketEvidence.scope,
+    url: canonical,
+    creator: { "@type": "Organization", name: "Paradigm" },
+    dateModified: brief.updatedAt,
+    temporalCoverage: brief.payload.marketEvidence.asOf,
+    spatialCoverage: brief.payload.coveredMarkets?.join(", ") ?? brief.preview.region,
+    variableMeasured: ["Average residential land price in JPY per square metre", "Annual average change in percent"],
+    isAccessibleForFree: true,
+    license: brief.license,
+    distribution: [{
+      "@type": "DataDownload",
+      encodingFormat: "application/json",
+      contentUrl: `https://paradigmjp.com${brief.endpoint}`,
+    }],
+  } : null
 
   return (
     <>
       <InvestorBriefDetail brief={brief} related={related} />
       <JsonLd data={articleSchema} />
+      <JsonLd data={buildFAQSchema(brief.payload.faqs)} />
+      {datasetSchema ? <JsonLd data={datasetSchema} /> : null}
       <JsonLd data={buildBreadcrumbSchema([
         { name: "Japan Opportunities", url: "https://paradigmjp.com/en/japan-opportunities" },
         { name: "Investor Briefs", url: "https://paradigmjp.com/en/japan-opportunities/invest" },

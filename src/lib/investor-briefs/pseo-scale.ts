@@ -1,5 +1,7 @@
 import { MARKETING_LOCALES } from "@/i18n/locales"
 
+export const NATIONAL_INVESTMENT_THEME_COUNT = 12
+
 export const JAPAN_PREFECTURES = [
   "hokkaido",
   "aomori",
@@ -58,6 +60,34 @@ export const INVESTOR_PROFILES = [
   "corporate-strategic",
 ] as const
 
+export const GREATER_TOKYO_SUBMARKETS = [
+  "greater-tokyo-allocation",
+  "tokyo-central-three",
+  "tokyo-west-core",
+  "tokyo-north-core",
+  "tokyo-south",
+  "tokyo-west-residential",
+  "tokyo-east-core",
+  "tokyo-north",
+  "tokyo-east-outer",
+  "tokyo-tama",
+  "yokohama",
+  "kawasaki",
+  "saitama-city",
+  "south-saitama",
+  "chiba-bay",
+  "outer-chiba",
+] as const
+
+export const METRO_PROPERTY_STRATEGIES = [
+  "multifamily-income",
+  "family-rental",
+  "prime-residential",
+  "mixed-use",
+  "hospitality-linked",
+  "logistics-employment-linked",
+] as const
+
 export const INVESTOR_PSEO_QUALITY_GATES = {
   minimumPrimarySources: 2,
   minimumKeyFacts: 3,
@@ -76,10 +106,13 @@ export interface InvestorPseoScale {
     prefectures: number
     investorProfiles: number
     locales: number
+    greaterTokyoSubmarkets: number
+    metroPropertyStrategies: number
   }
   candidates: {
     themeMarketProfileLocale: number
     marketComparisonsByThemeAndLocale: number
+    greaterTokyoStrategyProfileLocale: number
     total: number
   }
   policy: {
@@ -95,6 +128,10 @@ export function calculateInvestorPseoScale(themeCount: number): InvestorPseoScal
   const marketPairCount = (prefectureCount * (prefectureCount - 1)) / 2
   const themeMarketProfileLocale = themeCount * prefectureCount * profileCount * localeCount
   const marketComparisonsByThemeAndLocale = themeCount * marketPairCount * localeCount
+  const greaterTokyoStrategyProfileLocale = GREATER_TOKYO_SUBMARKETS.length
+    * METRO_PROPERTY_STRATEGIES.length
+    * profileCount
+    * localeCount
 
   return {
     inputs: {
@@ -102,11 +139,14 @@ export function calculateInvestorPseoScale(themeCount: number): InvestorPseoScal
       prefectures: prefectureCount,
       investorProfiles: profileCount,
       locales: localeCount,
+      greaterTokyoSubmarkets: GREATER_TOKYO_SUBMARKETS.length,
+      metroPropertyStrategies: METRO_PROPERTY_STRATEGIES.length,
     },
     candidates: {
       themeMarketProfileLocale,
       marketComparisonsByThemeAndLocale,
-      total: themeMarketProfileLocale + marketComparisonsByThemeAndLocale,
+      greaterTokyoStrategyProfileLocale,
+      total: themeMarketProfileLocale + marketComparisonsByThemeAndLocale + greaterTokyoStrategyProfileLocale,
     },
     policy: {
       candidateDoesNotMeanPublished: true,
