@@ -144,6 +144,11 @@ export const DB_TABLES = {
   VIDEO_GROWTH_CAMPAIGNS: "video_growth_campaigns",
   VIDEO_GROWTH_VARIANTS: "video_growth_variants",
   VIDEO_GROWTH_EVENTS: "video_growth_events",
+  VIDEO_GROWTH_WORK_ORDERS: "video_growth_work_orders",
+  VIDEO_GROWTH_READINESS_CHECKS: "video_growth_readiness_checks",
+  VIDEO_GROWTH_APPROVALS: "video_growth_approvals",
+  VIDEO_GROWTH_REVISION_REQUESTS: "video_growth_revision_requests",
+  VIDEO_GROWTH_DAILY_METRICS: "video_growth_daily_metrics",
 
   // ── Pipeline Metrics (migration_066) ──
   SALES_PIPELINE_METRICS: "sales_pipeline_metrics",

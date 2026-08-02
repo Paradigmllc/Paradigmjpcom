@@ -17,6 +17,7 @@ on:
       - src/lib/video-growth/**
       - e2e/video-growth.spec.ts
       - supabase/migrations/20260802132000_video_growth_direct_acquisition.sql
+      - supabase/migrations/2026080219*_video_growth_commercial_*.sql
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
       - scripts/verify-db-tables.mjs
@@ -42,6 +43,7 @@ on:
       - src/lib/video-growth/**
       - e2e/video-growth.spec.ts
       - supabase/migrations/20260802132000_video_growth_direct_acquisition.sql
+      - supabase/migrations/2026080219*_video_growth_commercial_*.sql
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
       - scripts/verify-db-tables.mjs
@@ -73,6 +75,7 @@ jobs:
         run: >-
           npm exec -- vitest run
           src/lib/video-growth/workflow.test.ts
+          src/lib/video-growth/export.test.ts
           src/app/api/sales/video-growth/route.test.ts
           --pool=threads
           --maxWorkers=1
