@@ -814,6 +814,10 @@ async function applyShopifyProductSocialPipelineMigration(envs) {
   return applySqlMigration(envs, "20260802190000_shopify_product_social_pipeline.sql", "SERICIA product and social pipeline migration")
 }
 
+async function applyShopifyLaunchControlMigration(envs) {
+  return applySqlMigration(envs, "20260802214457_sericia_launch_control.sql", "SERICIA launch control migration")
+}
+
 async function applyReleaseTableParityMigration(envs) {
   return applySqlMigration(envs, "migration_061_release_table_parity.sql", "Release table parity migration")
 }
@@ -1800,6 +1804,7 @@ async function main() {
     console.log(await applyShopifyBaseSyncMigration({}))
     console.log(await applyShopifyBaseSyncHardeningMigration({}))
     console.log(await applyShopifyProductSocialPipelineMigration({}))
+    console.log(await applyShopifyLaunchControlMigration({}))
     return
   }
 
@@ -1849,6 +1854,7 @@ async function main() {
     console.log(await applyShopifyBaseSyncMigration(envs))
     console.log(await applyShopifyBaseSyncHardeningMigration(envs))
     console.log(await applyShopifyProductSocialPipelineMigration(envs))
+    console.log(await applyShopifyLaunchControlMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))

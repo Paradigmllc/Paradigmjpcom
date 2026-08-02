@@ -225,6 +225,52 @@ export type LaunchReadinessItem = {
   ready: boolean
 }
 
+export type LaunchGateStatus = "ready" | "blocked"
+export type LaunchAuditStatus = "ready" | "blocked" | "failed"
+export type LaunchAuditTrigger = "scheduled" | "manual"
+
+export type ShopifyLaunchGate = {
+  key: string
+  category: "storefront" | "catalog" | "operations" | "checkout" | "social"
+  label: string
+  status: LaunchGateStatus
+  detail: string
+}
+
+export type ShopifyLaunchAudit = {
+  id: string
+  triggerSource: LaunchAuditTrigger
+  status: LaunchAuditStatus
+  readyGateCount: number
+  totalGateCount: number
+  catalogProductCount: number
+  eligibleProductCount: number
+  storefrontPasswordProtected: boolean
+  publicReleaseApproved: boolean
+  fingerprint: string
+  gates: ShopifyLaunchGate[]
+  blockers: string[]
+  startedAt: string
+  completedAt: string
+}
+
+export type ShopifyLaunchControlStatus = {
+  status: LaunchAuditStatus
+  readyGateCount: number
+  totalGateCount: number
+  catalogProductCount: number
+  eligibleProductCount: number
+  storefrontPasswordProtected: boolean
+  publicReleaseApproved: boolean
+  safetyLockActive: boolean
+  gates: ShopifyLaunchGate[]
+  blockers: string[]
+  latestAudit: ShopifyLaunchAudit | null
+  recentAudits: ShopifyLaunchAudit[]
+  scheduledAutomationEnabled: boolean
+  auditIntervalHours: number
+}
+
 export type ShopifyOpsDashboard = {
   generatedAt: string
   storeConnection: {
@@ -237,6 +283,7 @@ export type ShopifyOpsDashboard = {
   dailyMetrics: ShopifyOpsDailyMetric[]
   baseSync: BaseSyncStatus
   socialAutomation: ShopifySocialAutomationStatus
+  launchControl: ShopifyLaunchControlStatus
   totals30d: ShopifyOpsTotals
   launchReadiness: LaunchReadinessItem[]
   goals: {

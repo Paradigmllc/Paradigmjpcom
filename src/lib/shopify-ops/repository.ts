@@ -5,6 +5,7 @@ import { calculateProductEconomics, calculateStoreProfitJpy } from "./economics"
 import { getBaseSyncStatus } from "./base-sync-service"
 import { evaluateProductPublicationGate } from "./product-readiness"
 import { getSocialAutomationStatus } from "./social-pipeline"
+import { getLaunchControlStatus } from "./launch-control"
 import type {
   ShopifyOpsContentItem,
   ShopifyOpsDailyMetric,
@@ -176,7 +177,7 @@ function connectionStatus(): ShopifyOpsDashboard["storeConnection"] {
 
 export async function getShopifyOpsDashboard(): Promise<ShopifyOpsDashboard> {
   const database = requireDatabase()
-  const [productsResult, contentResult, metricsResult, baseSync, socialAutomation] = await Promise.all([
+  const [productsResult, contentResult, metricsResult, baseSync, socialAutomation, launchControl] = await Promise.all([
     database.from(DB_TABLES.SHOPIFY_OPS_PRODUCTS).select("*").order("sort_order", { ascending: true }),
     database
       .from(DB_TABLES.SHOPIFY_OPS_CONTENT_ITEMS)
@@ -190,6 +191,7 @@ export async function getShopifyOpsDashboard(): Promise<ShopifyOpsDashboard> {
       .limit(30),
     getBaseSyncStatus(),
     getSocialAutomationStatus(),
+    getLaunchControlStatus(),
   ])
 
   if (productsResult.error) throw new Error(`商品データの取得に失敗しました: ${productsResult.error.message}`)
@@ -230,6 +232,7 @@ export async function getShopifyOpsDashboard(): Promise<ShopifyOpsDashboard> {
     dailyMetrics,
     baseSync,
     socialAutomation,
+    launchControl,
     totals30d,
     launchReadiness: [
       { key: "hero", label: "Hero商品", current: listingReadyHeroes, target: 6, unit: "商品", ready: listingReadyHeroes >= 6 },

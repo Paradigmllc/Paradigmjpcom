@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-03 SERICIA commercial launch control
+
+- Implemented a truthful 12-gate commercial launch control across Shopify Admin reachability, storefront availability, BASE/OAuth source connection, inventory-sync freshness, real Shopify catalog count, 14-point product evidence, payment proof, real checkout E2E, shipping/tax/returns policy proof, supported social connector health, daily social-run freshness, and explicit public-release approval.
+- Added the authenticated `/api/shopify-ops/launch/audit` scheduler endpoint and six-hour GitHub Actions workflow. Every run persists a complete fingerprinted snapshot; DB bell and Slack notifications fire only when the gate state changes, while unchanged blocks remain auditable without notification spam.
+- Added a service-role-only `shopify_launch_audit_runs` append-only ledger with RLS and FORCE RLS. Anonymous and authenticated roles have no grants; the release path automatically applies the migration and verifies the table exists.
+- Added a dedicated ローンチ tab and replaced the overview's aspirational checklist with current evidence gates, blocker details, Shopify/eligible product counts, storefront lock state, manual re-audit, and audit history.
+- Safety remains fail-closed: verification flags default false, public release requires explicit runtime approval plus proof that password protection is removed, and the current password-protected storefront is treated as a healthy pre-launch safety lock. No product, payment, policy, or connector state is fabricated.
+- Local verification passed: 7 focused Vitest files / 26 tests, repository-wide TypeScript, targeted ESLint, release-doctor static migration/RLS wiring, `git diff --check`, and the 648-page Next.js production build. PR, canonical deployment, migration read-back, authenticated scheduler canary, and live admin/storefront verification remain.
+- ACTIVE HANDOFF: commit/push/PR, deploy through `release:prod`, verify FORCE RLS and anon/authenticated denial, run one authenticated launch-audit canary, then confirm the admin gate count and continued `sericia.com` password protection. Commercial launch remains blocked until real products and business evidence exist.
+
 ## CURRENT STATUS - 2026-08-03 Pet Life Movie global growth launch
 
 - Implemented a service-role-only, RLS/FORCE-RLS marketing ledger for campaigns, regional runs, channel posts, retries, publishing outcomes, and privacy-safe attribution events. The seeded launch covers Japanese, English, Spanish, and Portuguese across JP, AU, GB, ES, PT, US, MX, and BR.

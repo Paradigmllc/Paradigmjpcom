@@ -388,6 +388,33 @@ function checkStaticReleaseRules() {
     fail("Pet Life Movie persistence requires RLS, service-role isolation, migration execution, and DB verification wiring")
   }
 
+  const sericiaLaunchMigrationPath = "supabase/migrations/20260802214457_sericia_launch_control.sql"
+  const sericiaLaunchMigration = fs.existsSync(sericiaLaunchMigrationPath)
+    ? fs.readFileSync(sericiaLaunchMigrationPath, "utf8").toLowerCase()
+    : ""
+  const sericiaLaunchWorkflow = fs.existsSync(".github/workflows/sericia-launch-audit.yml")
+    ? fs.readFileSync(".github/workflows/sericia-launch-audit.yml", "utf8")
+    : ""
+  const sericiaReleaseMarkers = [
+    "shopify_launch_audit_runs",
+    "enable row level security",
+    "force row level security",
+    "from public, anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    sericiaReleaseMarkers.every((marker) => sericiaLaunchMigration.includes(marker))
+    && noLoginDeploy.includes("20260802214457_sericia_launch_control.sql")
+    && noLoginDeploy.includes("applyShopifyLaunchControlMigration")
+    && petMovieRunMigrations.includes("20260802214457_sericia_launch_control.sql")
+    && petMovieDbVerifier.includes("shopify_launch_audit_runs")
+    && sericiaLaunchWorkflow.includes("/api/shopify-ops/launch/audit")
+  ) {
+    pass("SERICIA launch control has FORCE RLS, release wiring, DB verification, and scheduled audit")
+  } else {
+    fail("SERICIA launch control requires complete persistence and release wiring")
+  }
+
   const contentCommerceMigrationPath = "supabase/migrations/20260801231006_content_commerce.sql"
   const contentCommerceMigration = fs.existsSync(contentCommerceMigrationPath)
     ? fs.readFileSync(contentCommerceMigrationPath, "utf8")
