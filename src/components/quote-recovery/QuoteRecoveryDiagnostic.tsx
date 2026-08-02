@@ -1,11 +1,11 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { AlertTriangle, ArrowDown, CheckCircle2, FileSpreadsheet, LoaderCircle, ShieldCheck, Sparkles, Upload } from "lucide-react"
+import Link from "next/link"
+import { AlertTriangle, ArrowRight, CheckCircle2, FileSpreadsheet, LoaderCircle, ShieldCheck, Sparkles, Upload } from "lucide-react"
 import { Toaster, toast } from "sonner"
 import { diagnoseQuotes, parseQuoteCsv } from "@/lib/quote-recovery/diagnosis"
 import type { QuoteInput, QuoteRecoveryDiagnosis } from "@/lib/quote-recovery/types"
-import { PilotForm } from "./PilotForm"
 
 const SAMPLE_CSV = `見積番号,顧客名,見積日,見積金額,担当者,最終接触日,次回アクション日,ステータス
 Q-2401,東都精機株式会社,2026/04/08,4800000,田中,2026/05/10,,商談中
@@ -182,8 +182,12 @@ export function QuoteRecoveryDiagnostic() {
               {diagnosis.buckets.map((bucket) => <div key={bucket.label} className="rounded-xl border border-slate-200 p-4"><p className="text-xs font-semibold text-slate-500">{bucket.label}</p><p className="mt-2 font-bold text-slate-950">{bucket.count}件</p><p className="mt-1 text-xs text-slate-600">{formatYen(bucket.amount)}</p></div>)}
             </div>
             <div className="mt-14 grid gap-8 rounded-3xl bg-slate-950 p-6 text-white sm:p-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-              <div><CheckCircle2 className="text-emerald-400" aria-hidden="true" /><h2 className="mt-5 text-2xl font-bold">次は14日間、実案件で検証</h2><p className="mt-4 text-sm leading-7 text-slate-300">既存システムは置き換えず、回収候補・担当・次回アクション・接触履歴だけを運用します。自動課金はありません。</p><p className="mt-5 flex items-center gap-2 text-xs font-semibold text-violet-300"><ArrowDown aria-hidden="true" />診断値は申込に自動反映されます</p></div>
-              <div className="rounded-2xl bg-white p-5 text-slate-950 sm:p-7"><PilotForm diagnosis={diagnosis} /></div>
+              <div><CheckCircle2 className="text-emerald-400" aria-hidden="true" /><h2 className="mt-5 text-2xl font-bold">診断結果を、そのまま継続運用へ。</h2><p className="mt-4 text-sm leading-7 text-slate-300">契約後は見積明細・担当・次回アクション・接触履歴を組織専用ワークスペースへ保存。CSVを更新するたびに回収優先順位を再計算します。</p><p className="mt-5 text-xs font-semibold text-violet-300">無料パイロットなし・Stripe月額決済・いつでも請求ポータルから管理</p></div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {[{ name: "Starter", price: "¥29,800", detail: "3名・月2,000件" }, { name: "Team", price: "¥49,800", detail: "10名・月10,000件" }].map((plan) => (
+                  <div key={plan.name} className="rounded-2xl bg-white p-5 text-slate-950 sm:p-6"><p className="text-sm font-bold text-violet-600">{plan.name}</p><p className="mt-3 text-2xl font-bold">{plan.price}<span className="text-xs font-medium text-slate-500"> / 月</span></p><p className="mt-2 text-xs text-slate-500">{plan.detail}</p><Link href="/ja/quote-recovery/login?mode=signup" className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 text-sm font-bold text-white hover:bg-violet-700">契約アカウントを作成<ArrowRight className="size-4" /></Link></div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
