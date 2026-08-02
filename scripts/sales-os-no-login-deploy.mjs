@@ -722,6 +722,14 @@ async function applyVideoFactoryStudioLeastPrivilegeMigration(envs) {
   )
 }
 
+async function applyVideoFactoryStudioScaleReadinessMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802203000_video_factory_studio_scale_readiness.sql",
+    "Video Factory Studio scale readiness migration",
+  )
+}
+
 async function applyVideoGrowthDirectAcquisitionMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1839,6 +1847,7 @@ async function main() {
     console.log(await applyVideoFactoryOssExecutionTargetsMigration(envs))
     console.log(await applyVideoFactoryCommercialStudioMigration(envs))
     console.log(await applyVideoFactoryStudioLeastPrivilegeMigration(envs))
+    console.log(await applyVideoFactoryStudioScaleReadinessMigration(envs))
     console.log(await applyVideoGrowthDirectAcquisitionMigration(envs))
     console.log(await applyVideoGrowthCommercialSchemaMigration(envs))
     console.log(await applyVideoGrowthCommercialIntakeMigration(envs))

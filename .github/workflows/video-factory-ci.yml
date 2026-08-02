@@ -18,6 +18,7 @@ on:
       - e2e/video-growth.spec.ts
       - supabase/migrations/20260802132000_video_growth_direct_acquisition.sql
       - supabase/migrations/2026080219*_video_growth_commercial_*.sql
+      - supabase/migrations/20260802203000_video_factory_studio_scale_readiness.sql
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
       - scripts/verify-db-tables.mjs
@@ -44,6 +45,7 @@ on:
       - e2e/video-growth.spec.ts
       - supabase/migrations/20260802132000_video_growth_direct_acquisition.sql
       - supabase/migrations/2026080219*_video_growth_commercial_*.sql
+      - supabase/migrations/20260802203000_video_factory_studio_scale_readiness.sql
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
       - scripts/verify-db-tables.mjs
@@ -77,6 +79,7 @@ jobs:
           src/lib/video-growth/workflow.test.ts
           src/lib/video-growth/export.test.ts
           src/app/api/sales/video-growth/route.test.ts
+          src/app/api/video-factory/studio-readiness/route.test.ts
           --pool=threads
           --maxWorkers=1
       - name: TypeScript
@@ -88,6 +91,8 @@ jobs:
           'src/app/[locale]/admin/video-growth/loading.tsx'
           'src/app/[locale]/admin/video-growth/error.tsx'
           src/app/api/sales/video-growth/route.ts
+          src/app/api/video-factory/studio-readiness/route.ts
+          src/app/api/video-factory/studio-readiness/route.test.ts
           src/components/admin/BeforeDashboard.tsx
           src/components/video-growth
           src/lib/sales/db-tables.ts
@@ -120,7 +125,9 @@ jobs:
           node --check tools/playwright-capture/capture.mjs
           node --check src/video_factory/static/console.js
           node --check src/video_factory/static/console-run-poll.js
+          node --check src/video_factory/static/console-registry-link.js
           node --check src/video_factory/static/console-studio.js
+          node --check src/video_factory/static/console-readiness.js
           node --check src/video_factory/static/console-vast-connect.js
           node --check src/video_factory/static/console-upload.js
           grep -q "CLIを使わず" src/video_factory/static/console.html

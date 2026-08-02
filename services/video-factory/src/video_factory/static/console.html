@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2307111f'/%3E%3Cpath d='M10 8h7.5a6 6 0 0 1 0 12H14v4h-4V8Zm4 4v4h3.5a2 2 0 1 0 0-4H14Z' fill='%236ee7b7'/%3E%3C/svg%3E">
   <title>Paradigm Video Factory</title>
   <link rel="stylesheet" href="/console/console.css">
   <link rel="stylesheet" href="/console/console-gpu-lifecycle.css">
   <link rel="stylesheet" href="/console/console-engine-catalog.css">
   <link rel="stylesheet" href="/console/console-studio.css">
+  <link rel="stylesheet" href="/console/console-readiness.css">
   <link rel="stylesheet" href="/console/console-responsive.css">
 </head>
 <body>
@@ -23,8 +25,9 @@
         <button class="nav-item active" data-view="dashboard"><span>01</span>ダッシュボード</button>
         <button class="nav-item" data-view="create"><span>02</span>新しい動画</button>
         <button class="nav-item" data-view="projects"><span>03</span>制作案件</button>
-        <button class="nav-item" data-view="engines"><span>04</span>OSSエンジン</button>
-        <button class="nav-item" data-view="gpu"><span>05</span>GPU・接続設定</button>
+        <button class="nav-item" data-view="readiness"><span>04</span>量産準備度</button>
+        <button class="nav-item" data-view="engines"><span>05</span>OSSエンジン</button>
+        <button class="nav-item" data-view="gpu"><span>06</span>GPU・接続設定</button>
       </nav>
       <div class="sidebar-footer">
         <div class="status-line"><i id="sidebar-status" class="dot offline"></i><span id="sidebar-status-text">未接続</span></div>
@@ -119,7 +122,7 @@
               <div class="section-number">03</div><div class="section-copy"><p class="eyebrow">BRAND & ASSETS</p><h2>ブランドと素材</h2><p>UI、商品名、価格、ロゴは生成AIではなく正確な合成レーンで扱います。</p></div>
               <div class="field-grid">
                 <label class="field"><span>ブランド名 *</span><input id="brand-name" value="Paradigm" required></label>
-                <label class="field"><span>Brand Kit ID</span><input id="brand-kit-id" value="paradigm-default" pattern="[a-z0-9][a-z0-9-]{2,79}"></label>
+                <label class="field"><span>Brand Kit ID</span><input id="brand-kit-id" value="paradigm-default" pattern="[a-z0-9][a-z0-9\-]{2,79}"></label>
                 <label class="field"><span>フォント</span><input id="font-family" value="IBM Plex Sans, Noto Sans JP"></label>
                 <label class="field color-field"><span>メインカラー</span><div><input id="primary-color" type="color" value="#0F172A"><input id="primary-color-text" value="#0F172A" maxlength="7"></div></label>
                 <label class="field color-field"><span>アクセント</span><div><input id="accent-color" type="color" value="#34D399"><input id="accent-color-text" value="#34D399" maxlength="7"></div></label>
@@ -167,11 +170,36 @@
               <label class="mode-option"><input type="radio" name="run-mode" value="production"><span><strong>本番制作</strong><small>Vast.ai / ComfyUIを使って実素材を生成</small></span></label>
               <label class="field compact-field"><span>Planner</span><select id="planner-provider"><option value="deterministic">標準Planner</option><option value="external">Codex / 外部Planner</option></select></label>
               <div id="deliverable-summary" class="summary-box"></div>
+              <div id="studio-preflight" class="studio-preflight"><small>制作開始時に、対応表現・実行環境・量産波を自動検証します。</small></div>
               <button id="submit-video" class="button primary full" type="submit">制作を開始する</button>
               <p class="fine-print">ドラフト承認と最終承認は自動化されません。承認前の外部納品も行いません。</p>
             </div>
           </aside>
         </form>
+      </section>
+
+      <section class="view" data-view-panel="readiness">
+        <div class="readiness-summary">
+          <article class="panel readiness-score-panel">
+            <div class="readiness-score-head"><p class="eyebrow">STUDIO SCALE READINESS</p><span id="studio-readiness-badge" class="badge neutral">確認中</span></div>
+            <div class="readiness-score"><span id="studio-readiness-score">—</span><small>/100</small></div>
+            <p>実行中の環境、監査済みテンプレート、エンジン、QA、承認ゲートから算出します。見た目の品質は自動採点せず、人間レビューを必須にしています。</p>
+            <div class="readiness-mini-metrics">
+              <div><span>TEMPLATES</span><strong id="studio-template-count">—</strong><small>監査済み</small></div>
+              <div><span>READY CAPABILITIES</span><strong id="studio-capability-count">—</strong><small>全10種</small></div>
+              <div><span>SAFE PARALLEL</span><strong id="studio-safe-parallel">—</strong><small>jobs</small></div>
+            </div>
+          </article>
+          <article class="panel readiness-capability-panel">
+            <div class="panel-heading"><div><p class="eyebrow">CAPABILITY MATRIX</p><h2>表現別の本番対応状況</h2></div><div class="readiness-heading-actions"><small id="studio-readiness-time">未確認</small><button id="sync-studio-readiness" class="button secondary" type="button">DBへ同期</button><button id="refresh-studio-readiness" class="icon-button" type="button" aria-label="量産準備度を更新">↻</button></div></div>
+            <div id="studio-capability-list" class="readiness-capability-list"><div class="empty">実行環境から準備度を計算しています。</div></div>
+          </article>
+        </div>
+        <div class="readiness-lower-grid">
+          <article class="panel"><div class="panel-heading"><div><p class="eyebrow">QUALITY & SAFETY</p><h2>商用品質ゲート</h2></div></div><div id="studio-check-list" class="readiness-check-list"><div class="empty compact">確認中です。</div></div></article>
+          <article class="panel"><div class="panel-heading"><div><p class="eyebrow">AUTOMATION</p><h2>自動化範囲</h2></div></div><ol id="studio-stage-list" class="readiness-stages"></ol><div class="readiness-human"><strong>人間が保持するゲート</strong><ul id="studio-human-gates"></ul></div></article>
+          <article class="panel"><div class="panel-heading"><div><p class="eyebrow">EXPANSION BACKLOG</p><h2>機能拡充が必要な箇所</h2></div></div><ul id="studio-gap-list" class="readiness-gaps"><li>準備度の取得後に表示します。</li></ul></article>
+        </div>
       </section>
 
       <section class="view" data-view-panel="projects">
@@ -265,5 +293,6 @@
   <script src="/console/console-runtime.js" defer></script>
   <script src="/console/console-engine-catalog.js" defer></script>
   <script src="/console/console-studio.js" defer></script>
+  <script src="/console/console-readiness.js" defer></script>
 </body>
 </html>

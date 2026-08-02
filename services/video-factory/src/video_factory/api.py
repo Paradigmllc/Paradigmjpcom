@@ -37,6 +37,7 @@ from .planner import plan_brief
 from .review import approve_review, request_changes
 from .settings import Settings
 from .state import load_project_state, transition_project_state
+from .studio_readiness import preflight_studio_brief
 from .validation import validate_brief
 from .workspace import ProjectWorkspace, slugify
 
@@ -118,6 +119,17 @@ def _validated_brief(request: RunRequest) -> ValidationReport:
     report = validate_brief(request.brief)
     if not report.valid:
         raise HTTPException(status_code=422, detail=report.model_dump(mode="json"))
+    if not request.dry_run:
+        preflight = preflight_studio_brief(request.brief, Settings.from_env())
+        if not preflight.production_allowed:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "Studio production preflight failed",
+                    "blockers": preflight.blockers,
+                    "advisories": preflight.advisories,
+                },
+            )
     return report
 
 

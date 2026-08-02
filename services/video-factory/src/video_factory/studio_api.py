@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -11,11 +12,12 @@ from .creative_templates import creative_template, template_catalog_payload
 from .gpu_lifecycle import run_lifecycle
 from .io import write_json, write_model
 from .local_jobs import submit_local_job
-from .models import PipelineResult, ProjectStatus, Shot, ShotManifest
+from .models import ClientBrief, PipelineResult, ProjectStatus, Shot, ShotManifest
 from .operator_events import emit_operator_event
 from .pipeline import production_flow
 from .settings import Settings
 from .state import load_project_state, transition_project_state
+from .studio_readiness import build_studio_readiness, preflight_studio_brief
 from .workspace import ProjectWorkspace
 
 router = APIRouter()
@@ -109,6 +111,55 @@ def _return_to_production(
 @router.get("/v1/studio/templates", dependencies=[Depends(require_console_api_key)])
 def list_creative_templates() -> dict[str, object]:
     return {"ok": True, "templates": template_catalog_payload()}
+
+
+@router.get("/v1/studio/readiness", dependencies=[Depends(require_console_api_key)])
+def studio_readiness() -> dict[str, object]:
+    snapshot = build_studio_readiness(Settings.from_env())
+    return {"ok": True, **snapshot.model_dump(mode="json")}
+
+
+@router.post("/v1/studio/preflight", dependencies=[Depends(require_console_api_key)])
+def studio_preflight(brief: ClientBrief) -> dict[str, object]:
+    result = preflight_studio_brief(brief, Settings.from_env())
+    return {"ok": True, **result.model_dump(mode="json")}
+
+
+@router.post(
+    "/v1/studio/readiness/sync",
+    dependencies=[Depends(require_console_api_key)],
+)
+async def sync_studio_readiness() -> dict[str, object]:
+    settings = Settings.from_env()
+    if not settings.operator_event_url or not settings.api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Studio readiness sync endpoint or internal API key is not configured",
+        )
+    snapshot = build_studio_readiness(settings)
+    sync_url = settings.operator_event_url.rsplit("/", 1)[0] + "/studio-readiness"
+    payload = snapshot.model_dump(mode="json")
+    payload["event_id"] = str(uuid.uuid4())
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                sync_url,
+                headers={"X-API-Key": settings.api_key},
+                json=payload,
+            )
+            response.raise_for_status()
+            body = response.json()
+    except (httpx.HTTPError, ValueError) as error:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Studio readiness DB sync failed: {error}",
+        ) from error
+    if not isinstance(body, dict) or body.get("ok") is not True:
+        raise HTTPException(
+            status_code=502,
+            detail="Studio readiness DB sync did not confirm persistence and notifications",
+        )
+    return {"ok": True, "snapshot_id": body.get("snapshot_id")}
 
 
 @router.patch(

@@ -482,6 +482,10 @@ function checkStaticReleaseRules() {
   const studioHardeningMigration = fs.existsSync(studioHardeningMigrationPath)
     ? fs.readFileSync(studioHardeningMigrationPath, "utf8")
     : ""
+  const studioReadinessMigrationPath = "supabase/migrations/20260802203000_video_factory_studio_scale_readiness.sql"
+  const studioReadinessMigration = fs.existsSync(studioReadinessMigrationPath)
+    ? fs.readFileSync(studioReadinessMigrationPath, "utf8")
+    : ""
   const studioSecurityMarkers = [
     "video_factory_brand_kits",
     "video_factory_creative_templates",
@@ -503,10 +507,16 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyVideoFactoryCommercialStudioMigration")
     && noLoginDeploy.includes("20260802113000_video_factory_studio_least_privilege.sql")
     && noLoginDeploy.includes("applyVideoFactoryStudioLeastPrivilegeMigration")
+    && studioReadinessMigration.toLowerCase().includes("video_factory_studio_readiness_snapshots")
+    && studioReadinessMigration.toLowerCase().includes("force row level security")
+    && studioReadinessMigration.toLowerCase().includes("from public, anon, authenticated, service_role")
+    && studioReadinessMigration.toLowerCase().includes("grant select, insert")
+    && noLoginDeploy.includes("20260802203000_video_factory_studio_scale_readiness.sql")
+    && noLoginDeploy.includes("applyVideoFactoryStudioScaleReadinessMigration")
   ) {
-    pass("Video Factory commercial Studio data has server-only RLS and release wiring")
+    pass("Video Factory commercial Studio and readiness evidence have server-only RLS and release wiring")
   } else {
-    fail("Video Factory commercial Studio requires RLS and release migration wiring")
+    fail("Video Factory commercial Studio and readiness evidence require RLS and release migration wiring")
   }
 
   const videoGrowthMigrationPath = "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql"
