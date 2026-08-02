@@ -29,32 +29,46 @@ function ssh(command) {
   return result.stdout.trim()
 }
 
-function readUsedPercent() {
-  const output = ssh("df -P / | awk 'NR==2 {gsub(/%/,\"\",$5); print $5}'")
-  const used = Number.parseInt(output, 10)
-  if (!Number.isFinite(used)) throw new Error(`Could not parse disk usage from: ${output}`)
-  return used
-}
-
 function main() {
   if (skip) {
     console.log("Host disk preflight: skipped")
     return
   }
 
-  const before = readUsedPercent()
+  const output = ssh(`
+set -e
+before="$(df -P / | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
+changed=0
+if [ "$before" -ge ${failAt} ]; then
+  docker builder prune -af --filter 'until=168h' >/dev/null 2>&1 || true
+  docker image prune -af >/dev/null 2>&1 || true
+  docker container prune -f >/dev/null 2>&1 || true
+  docker system prune -f >/dev/null 2>&1 || true
+  changed=2
+elif [ "$before" -ge ${pruneAt} ]; then
+  docker image prune -af --filter 'until=72h' >/dev/null 2>&1 || true
+  docker container prune -f >/dev/null 2>&1 || true
+  changed=1
+fi
+after="$(df -P / | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
+printf '%s\\t%s\\t%s\\n' "$before" "$after" "$changed"
+`)
+  const [beforeValue, afterValue, changedValue] = output.trim().split("\t")
+  const before = Number.parseInt(beforeValue, 10)
+  const after = Number.parseInt(afterValue, 10)
+  const changed = Number.parseInt(changedValue, 10)
+  if (![before, after, changed].every(Number.isFinite)) {
+    throw new Error(`Could not parse disk preflight result from: ${output}`)
+  }
   console.log(`Host disk preflight: ${host} root disk ${before}% used`)
 
-  if (before >= failAt) {
+  if (changed === 2) {
     console.log(`Host disk preflight: usage >= ${failAt}%; aggressive Docker prune (builder cache 7d retention)`)
-    ssh("docker builder prune -af --filter 'until=168h' >/dev/null 2>&1 || true; docker image prune -af >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true; docker system prune -f >/dev/null 2>&1 || true")
-  } else if (before >= pruneAt) {
+  } else if (changed === 1) {
     console.log(`Host disk preflight: usage >= ${pruneAt}%; pruning old images only (preserving build cache)`)
-    ssh("docker image prune -af --filter 'until=72h' >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true")
   }
 
-  const after = readUsedPercent()
-  console.log(`Host disk preflight: ${host} root disk ${after}% used after check`)
+  console.log(`Host disk preflight: ${host} root disk ${after}% used after check${changed === 0 ? " (unchanged)" : ""}`)
 
   if (after >= failAt) {
     throw new Error(`Host disk remains ${after}% used after prune; refusing deploy to avoid Traefik/Coolify 503`)

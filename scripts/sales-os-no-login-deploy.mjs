@@ -767,6 +767,19 @@ async function applyJapanOperatorCaseHardeningMigration(envs) {
   )
 }
 
+async function applyJapanOperatorOperationsOsMigrations(envs) {
+  const migrations = [
+    ["20260802015455_japan_operator_operations_os.sql", "Japan operator identity, evidence and outbound controls"],
+    ["20260802015712_japan_operator_commercial_os.sql", "Japan operator sourcing, contracts, payments and SKU controls"],
+    ["20260802015715_japan_operator_delivery_os.sql", "Japan operator finance, delivery, KPI and outbox controls"],
+  ]
+  const results = []
+  for (const [file, label] of migrations) {
+    results.push(await applySqlMigration(envs, file, label))
+  }
+  return results.join("\n")
+}
+
 async function applyContentCommerceMigration(envs) {
   return applySqlMigration(envs, "20260801231006_content_commerce.sql", "Content API and x402 commerce migration")
 }
@@ -1660,6 +1673,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanOperatorCasesMigration(envs))
     console.log(await applyJapanOperatorCaseHardeningMigration(envs))
+    console.log(await applyJapanOperatorOperationsOsMigrations(envs))
     console.log(await applyContentCommerceMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))

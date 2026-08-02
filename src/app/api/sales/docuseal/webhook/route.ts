@@ -69,7 +69,9 @@ export async function POST(req: NextRequest) {
   const payload = Object.keys(data).length > 0 ? data : child(body, "submission")
   const effectivePayload = Object.keys(payload).length > 0 ? payload : body
   const submitter = firstSubmitter(effectivePayload)
-  const metadata = child(effectivePayload, "metadata")
+  const submissionMetadata = child(effectivePayload, "metadata")
+  const submitterMetadata = child(submitter, "metadata")
+  const metadata = Object.keys(submissionMetadata).length > 0 ? submissionMetadata : submitterMetadata
   const externalId =
     text(effectivePayload, ["id", "submission_id", "uuid"]) ??
     text(body, ["submission_id", "id"])
@@ -100,17 +102,43 @@ export async function POST(req: NextRequest) {
       provider: "docuseal",
       companyId: text(metadata, ["companyId", "company_id"]),
       productCode: text(metadata, ["productCode", "product_code"]),
+      japanOperatorCaseId: text(metadata, ["japanOperatorCaseId", "japan_operator_case_id", "operatorCaseId"]),
+      operatorContractKind: text(metadata, ["operatorContractKind", "operator_contract_kind"]),
       raw: body,
     },
   }
 
-  const { error } = await sb
+  const { data: contract, error } = await sb
     .from(DB_TABLES.SALES_CONTRACTS)
     .upsert(row, { onConflict: "docusign_envelope_id" })
+    .select("id")
+    .single()
 
   if (error) {
     console.error("[docuseal-webhook] upsert failed:", error.message)
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  }
+
+  const operatorCaseId = text(metadata, ["japanOperatorCaseId", "japan_operator_case_id", "operatorCaseId"])
+  const operatorContractKind = text(metadata, ["operatorContractKind", "operator_contract_kind"])
+  if (operatorCaseId && contract?.id && operatorContractKind && ["validation_sow", "launch_sow", "operator_agreement"].includes(operatorContractKind)) {
+    const operatorStatus = status === "cancelled" ? "declined" : status === "partially_signed" ? "viewed" : status
+    const linked = await sb.rpc("sales_link_japan_operator_contract_v1", {
+      p_case_id: operatorCaseId,
+      p_contract_kind: operatorContractKind,
+      p_sales_contract_id: contract.id,
+      p_docuseal_submission_id: externalId,
+      p_status: operatorStatus,
+      p_signed_at: row.signed_at,
+      p_actor_key: "automation:docuseal",
+      p_actor_email: null,
+      p_actor_role: "automation",
+      p_detail: { raw_status: rawStatus, document_url: row.pdf_r2_url },
+    })
+    if (linked.error) {
+      console.error("[docuseal-webhook] operator contract read-back failed:", linked.error.message)
+      return NextResponse.json({ ok: false, error: linked.error.message }, { status: 500 })
+    }
   }
 
   const companyId = text(metadata, ["companyId", "company_id"])
