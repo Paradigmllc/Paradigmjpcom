@@ -4,6 +4,7 @@ import { CheckCircle2, Film, Heart, LockKeyhole, PawPrint, ShieldCheck, Sparkles
 import { assertLocale } from "@/lib/cms/filters"
 import { pageAlternates } from "@/lib/page-metadata"
 import PetMovieWizard from "@/components/pet-life-movie/PetMovieWizard"
+import { getPetMovieMarketReadiness } from "@/lib/pet-life-movie/readiness"
 
 type SupportedLocale = "ja" | "en" | "es" | "pt"
 
@@ -36,6 +37,7 @@ export default async function PetLifeMoviePage({ params }: Props) {
   const locale = assertLocale(rawLocale)
   const supportedLocale = productLocale(locale)
   const t = copy[supportedLocale]
+  const readiness = getPetMovieMarketReadiness()
   return (
     <main className="bg-paradigm-paper text-paradigm-ink">
       <section className="relative isolate overflow-hidden px-5 pb-20 pt-28 md:px-8 md:pb-28 md:pt-36">
@@ -64,12 +66,7 @@ export default async function PetLifeMoviePage({ params }: Props) {
 
       <PetMovieWizard
         locale={supportedLocale}
-        checkoutEnabled={Boolean(
-          process.env.PET_MOVIE_RENDERER_API_URL
-          && process.env.STRIPE_PRICE_PET_MOVIE_MINI
-          && process.env.STRIPE_PRICE_PET_MOVIE_STORY
-          && process.env.STRIPE_PRICE_PET_MOVIE_CINEMA,
-        )}
+        checkoutEnabled={readiness.checkoutEnabled}
       />
 
       <section className="py-20 md:py-28">
@@ -80,7 +77,7 @@ export default async function PetLifeMoviePage({ params }: Props) {
       </section>
 
       <section className="bg-[#111018] py-20 text-white md:py-24">
-        <div className="mx-auto max-w-6xl px-5 md:px-8"><div className="mb-10 flex items-center gap-3"><Film className="h-7 w-7 text-violet-400" aria-hidden="true" /><h2 className="font-display text-3xl">{t.oss}</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{["Real-ESRGAN · restoration", "rembg + SAM 2 · masks", "Wan 2.2 · subtle motion", "Chatterbox + ACE-Step + FFmpeg"].map((item) => <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0 text-violet-400" aria-hidden="true" />{item}</div>)}</div></div>
+        <div className="mx-auto max-w-6xl px-5 md:px-8"><div className="mb-10 flex items-center gap-3"><Film className="h-7 w-7 text-violet-400" aria-hidden="true" /><h2 className="font-display text-3xl">{t.oss}</h2></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{["FFmpeg · private rendering", "Factual storyboard · no invention", "Human draft review", "Human final quality approval"].map((item) => <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0 text-violet-400" aria-hidden="true" />{item}</div>)}</div></div>
       </section>
     </main>
   )

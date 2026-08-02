@@ -5,7 +5,7 @@ import { DB_TABLES } from "./db-tables"
 
 export type StripeOperatorObject = {
   id: string
-  payment_intent?: string | null
+  payment_intent?: string | { id: string } | null
   payment_status?: string
   amount_total?: number
   currency?: string
@@ -31,6 +31,9 @@ export async function recordJapanOperatorStripePayment(
   if (!supabase) throw new Error("Supabase service role not configured")
   const now = new Date().toISOString()
   const paid = eventType === "checkout.session.async_payment_succeeded" || object.payment_status === "paid"
+  const paymentIntentId = typeof object.payment_intent === "string"
+    ? object.payment_intent
+    : object.payment_intent?.id ?? null
   const contentSha256 = createHash("sha256").update(rawBody).digest("hex")
   const evidenceInsert = await supabase.from(DB_TABLES.SALES_JAPAN_OPERATOR_EVIDENCE).insert({
     case_id: caseId, stage: invoiceKind === "validation" ? "paid_validation" : "launch_sow",
@@ -38,7 +41,7 @@ export async function recordJapanOperatorStripePayment(
     evidence_type: "payment", source_url: null, storage_path: null, recipient: "stripe", channel: "stripe_webhook",
     content_sha256: contentSha256, observed_at: now, verified_by_key: "automation:stripe", verified_by_email: null,
     verified_by_role: "automation", auth_source: "webhook", note: `Stripe ${eventType} verified for ${object.id}.`,
-    detail: { stripe_session_id: object.id, payment_intent: object.payment_intent ?? null, payment_status: object.payment_status ?? null },
+    detail: { stripe_session_id: object.id, payment_intent: paymentIntentId, payment_status: object.payment_status ?? null },
     idempotency_key: `stripe:${eventType}:${object.id}`,
   }).select("id").single()
   let evidence = evidenceInsert.data
@@ -63,7 +66,7 @@ export async function recordJapanOperatorStripePayment(
   }
   const { data: invoice, error: invoiceError } = await supabase.from(DB_TABLES.SALES_JAPAN_OPERATOR_INVOICES).upsert({
     case_id: caseId, invoice_kind: invoiceKind, provider: "stripe", external_invoice_id: object.id,
-    external_payment_id: object.payment_intent ?? object.id, amount_minor: object.amount_total ?? 0,
+    external_payment_id: paymentIntentId ?? object.id, amount_minor: object.amount_total ?? 0,
     currency: (object.currency ?? "usd").toUpperCase(), status: paid ? "paid" : "open",
     issued_at: now, paid_at: paid ? now : null, validation_credit_source_id: creditSourceId,
     validation_credit_minor: creditMinor, evidence_id: evidence.id, actor_key: "automation:stripe",

@@ -4,6 +4,7 @@ import { readProjectToken } from "@/lib/pet-life-movie/auth"
 import { authorizePetMovieProject, PET_MOVIE_TABLES, recordPetMovieEvent, requirePetMovieDatabase } from "@/lib/pet-life-movie/data"
 import { petMovieErrorResponse, siteBaseUrl } from "@/lib/pet-life-movie/http"
 import { parseJsonBody, petMovieCheckoutSchema } from "@/lib/pet-life-movie/schema"
+import { getPetMovieMarketReadiness } from "@/lib/pet-life-movie/readiness"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -20,6 +21,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const project = await authorizePetMovieProject(id, readProjectToken(request))
     if (!project) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 })
     if (!project.preview_url) return NextResponse.json({ ok: false, error: "Create a preview before checkout." }, { status: 409 })
+    if (!getPetMovieMarketReadiness().checkoutEnabled) {
+      return NextResponse.json({ ok: false, error: "Paid production is temporarily unavailable." }, { status: 503 })
+    }
     const input = petMovieCheckoutSchema.parse(await parseJsonBody(request))
     const priceId = PRICE_MAP[input.plan]
     if (!priceId) return NextResponse.json({ ok: false, error: `Stripe price is not configured for ${input.plan}.` }, { status: 503 })
@@ -31,6 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       cancelUrl: `${baseUrl}/${project.locale}/pet-life-movie/memories/${project.share_slug}?payment=cancelled`,
       mode: "payment",
       metadata: { product: "pet_life_movie", project_id: project.id, plan: input.plan, locale: project.locale },
+      idempotencyKey: `pet-movie-checkout-${project.id}-${input.plan}-${Math.floor(Date.now() / 1_800_000)}`,
     })
     if (!checkout.ok || !checkout.data) throw new Error(checkout.error ?? "Stripe checkout failed")
     const db = requirePetMovieDatabase()
@@ -39,6 +44,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       payment_status: "pending",
       status: "payment_required",
       stripe_checkout_session_id: checkout.data.id,
+      customer_email: input.email,
     }).eq("id", project.id)
     if (error) throw new Error(`Checkout state save failed: ${error.message}`)
     await recordPetMovieEvent(project.id, "checkout_started", project.locale, { plan: input.plan })

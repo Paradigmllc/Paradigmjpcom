@@ -1,5 +1,5 @@
 import { createR2SignedDownloads } from "@/lib/sales/r2-storage"
-import { PET_MOVIE_TABLES, listPetMovieAssets, requirePetMovieDatabase } from "./data"
+import { PET_MOVIE_TABLES, listPetMovieAssets, listPetMovieDeliverables, requirePetMovieDatabase } from "./data"
 import type { PetMovieProjectRow } from "./types"
 
 export async function loadSharedPetMovie(shareSlug: string) {
@@ -12,14 +12,26 @@ export async function loadSharedPetMovie(shareSlug: string) {
     .maybeSingle()
   if (error) throw new Error(`Shared movie lookup failed: ${error.message}`)
   const project = data as PetMovieProjectRow | null
-  if (!project || !project.storyboard || !["preview_ready", "payment_required", "full_rendering", "quality_check", "delivered"].includes(project.status)) {
+  if (!project || new Date(project.expires_at).getTime() <= Date.now() || !project.storyboard || !["preview_ready", "payment_required", "full_rendering", "quality_check", "delivered"].includes(project.status)) {
     return null
   }
-  const assets = await listPetMovieAssets(project.id, true)
-  const signed = await createR2SignedDownloads(assets.map((asset) => asset.object_key), 3600)
+  const [assets, deliverables] = await Promise.all([
+    listPetMovieAssets(project.id, true),
+    project.status === "delivered" ? listPetMovieDeliverables(project.id) : Promise.resolve([]),
+  ])
+  const [signed, signedDeliverables] = await Promise.all([
+    createR2SignedDownloads(assets.map((asset) => asset.object_key), 3600),
+    createR2SignedDownloads(deliverables.map((item) => item.object_key), 900),
+  ])
   return {
     project,
     assetUrls: Object.fromEntries(assets.map((asset, index) => [asset.id, signed[index].downloadUrl])),
+    deliverables: deliverables.map((item, index) => ({
+      name: item.name,
+      mimeType: item.mime_type,
+      sizeBytes: item.size_bytes,
+      downloadUrl: signedDeliverables[index].downloadUrl,
+    })),
   }
 }
 
