@@ -431,6 +431,10 @@ function checkStaticReleaseRules() {
   const greaterTokyoMigrations = greaterTokyoMigrationPaths.map((migrationPath) => (
     fs.existsSync(migrationPath) ? fs.readFileSync(migrationPath, "utf8") : ""
   )).join("\n")
+  const legacyInvestorExpansionPath = "supabase/migrations/20260802202105_expand_legacy_investor_briefs.sql"
+  const legacyInvestorExpansion = fs.existsSync(legacyInvestorExpansionPath)
+    ? fs.readFileSync(legacyInvestorExpansionPath, "utf8")
+    : ""
   const investorComparisonPath = "src/lib/investor-briefs/comparisons.ts"
   const investorComparisonSource = fs.existsSync(investorComparisonPath)
     ? fs.readFileSync(investorComparisonPath, "utf8")
@@ -439,12 +443,22 @@ function checkStaticReleaseRules() {
   const investorScaleSource = fs.existsSync(investorScalePath)
     ? fs.readFileSync(investorScalePath, "utf8")
     : ""
+  const investorPagePath = "src/app/[locale]/japan-opportunities/invest/[slug]/page.tsx"
+  const investorPageSource = fs.existsSync(investorPagePath)
+    ? fs.readFileSync(investorPagePath, "utf8")
+    : ""
+  const investorOgImagePath = "src/app/[locale]/japan-opportunities/invest/[slug]/opengraph-image.tsx"
+  const investorOgImageSource = fs.existsSync(investorOgImagePath)
+    ? fs.readFileSync(investorOgImagePath, "utf8")
+    : ""
   if (
     foreignInvestorPseoMarkers.every((marker) => foreignInvestorPseoMigration.includes(marker))
     && noLoginDeploy.includes("20260802043347_foreign_investor_pseo.sql")
     && noLoginDeploy.includes("applyForeignInvestorPseoMigration")
     && greaterTokyoMigrationPaths.every((migrationPath) => noLoginDeploy.includes(path.basename(migrationPath)))
     && noLoginDeploy.includes("applyGreaterTokyoInvestorMigrations")
+    && noLoginDeploy.includes(path.basename(legacyInvestorExpansionPath))
+    && noLoginDeploy.includes("applyInvestorContentQualityMigration")
     && noLoginDeploy.includes("verifyForeignInvestorPseoCatalog")
     && noLoginDeploy.includes("investor-briefs/factory")
     && investorComparisonSource.includes("CURATED_INVESTOR_COMPARISONS")
@@ -454,10 +468,20 @@ function checkStaticReleaseRules() {
     && greaterTokyoMigrations.includes("greater-tokyo-real-estate-market")
     && greaterTokyoMigrations.includes("kashiwa-nagareyama-narita-real-estate-investment")
     && greaterTokyoMigrations.includes("DROP FUNCTION IF EXISTS public.build_investor_metro_payload")
+    && legacyInvestorExpansion.includes("$legacy_expansions$")
+    && legacyInvestorExpansion.includes("tokyo-multifamily-investment-due-diligence")
+    && legacyInvestorExpansion.includes("https://minpakuportal.city.kyoto.lg.jp/list/list1")
+    && investorPageSource.includes("investorBriefReadableWordCount")
+    && investorPageSource.includes("text/markdown")
+    && investorPageSource.includes("includedInDataCatalog")
+    && investorPageSource.includes("/opengraph-image")
+    && !investorPageSource.includes('url: "/og-image.png"')
+    && investorOgImageSource.includes('from "next/og"')
+    && investorOgImageSource.includes("paletteFor(slug)")
   ) {
-    pass("Foreign investor pSEO has sourced DB seed, quality-gated comparison scale, canonical migration execution, and production verification wiring")
+    pass("Foreign investor pSEO has 28 sourced long-form briefs, durable source links, dataset distributions, per-page social images, quality-gated scale, and production verification wiring")
   } else {
-    fail("Foreign investor pSEO requires sourced data, quality-gated scale, canonical migration execution, and production verification wiring")
+    fail("Foreign investor pSEO requires sourced long-form data, durable sources, dataset/social metadata, quality-gated scale, and production verification wiring")
   }
 
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"

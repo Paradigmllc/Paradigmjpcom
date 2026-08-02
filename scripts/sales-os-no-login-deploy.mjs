@@ -901,6 +901,14 @@ async function applyGreaterTokyoInvestorMigrations(envs) {
   return results.join("\n")
 }
 
+async function applyInvestorContentQualityMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802202105_expand_legacy_investor_briefs.sql",
+    "Legacy investor brief analysis and source durability",
+  )
+}
+
 async function verifyForeignInvestorPseoCatalog(envs) {
   await applySqlMigrationThroughPostgres(
     envs,
@@ -909,6 +917,7 @@ do $$
 declare
   published_count integer;
   enhanced_count integer;
+  chapter_count integer;
 begin
   select count(*) into published_count
   from public.content_products
@@ -951,6 +960,41 @@ begin
     raise exception 'expected 16 enhanced Greater Tokyo briefs, found %', enhanced_count;
   end if;
 
+  select count(*) into chapter_count
+  from public.content_products
+  where locale = 'en'
+    and content_type = 'investor_brief'
+    and is_active = true
+    and jsonb_array_length(payload -> 'chapters') >= 4;
+
+  if chapter_count <> 28 then
+    raise exception 'expected all 28 investor briefs to have four analysis chapters, found %', chapter_count;
+  end if;
+
+  if exists (
+    select 1
+    from public.content_products as product
+    cross join lateral jsonb_array_elements(product.payload -> 'chapters') as chapter(value)
+    cross join lateral jsonb_array_elements_text(chapter.value -> 'sourceIds') as source_id(value)
+    where product.locale = 'en'
+      and product.content_type = 'investor_brief'
+      and not exists (
+        select 1 from jsonb_array_elements(product.payload -> 'sources') as source
+        where source ->> 'id' = source_id.value
+      )
+  ) then
+    raise exception 'an investor analysis chapter references an unknown source';
+  end if;
+
+  if exists (
+    select 1 from public.content_products
+    where locale = 'en'
+      and content_type = 'investor_brief'
+      and payload::text like '%20260131itiran_eng.pdf%'
+  ) then
+    raise exception 'retired Kyoto lodging PDF URL remains in investor content';
+  end if;
+
   if to_regprocedure('public.build_investor_metro_payload(jsonb)') is not null then
     raise exception 'temporary investor metro payload builder was not removed';
   end if;
@@ -964,7 +1008,7 @@ $$;
 `,
     "Foreign investor pSEO catalog verification",
   )
-  return "Foreign investor pSEO catalog: verified 28 sourced briefs, 16 enhanced Greater Tokyo briefs, and service-role isolation"
+  return "Foreign investor pSEO catalog: verified 28 four-chapter sourced briefs, 16 market datasets, durable Kyoto source, and service-role isolation"
 }
 
 async function applyFormQualifiedLeadFactoryMigration(envs) {
@@ -1878,6 +1922,7 @@ async function main() {
     console.log(await applyContentCommerceMigration(envs))
     console.log(await applyForeignInvestorPseoMigration(envs))
     console.log(await applyGreaterTokyoInvestorMigrations(envs))
+    console.log(await applyInvestorContentQualityMigration(envs))
     console.log(await verifyForeignInvestorPseoCatalog(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
