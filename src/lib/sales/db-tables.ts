@@ -140,6 +140,11 @@ export const DB_TABLES = {
   VIDEO_FACTORY_SHOT_REVISIONS: "video_factory_shot_revisions",
   VIDEO_FACTORY_QUALITY_METRICS: "video_factory_quality_metrics",
 
+  // ── Video subscription direct acquisition ──
+  VIDEO_GROWTH_CAMPAIGNS: "video_growth_campaigns",
+  VIDEO_GROWTH_VARIANTS: "video_growth_variants",
+  VIDEO_GROWTH_EVENTS: "video_growth_events",
+
   // ── Pipeline Metrics (migration_066) ──
   SALES_PIPELINE_METRICS: "sales_pipeline_metrics",
 
