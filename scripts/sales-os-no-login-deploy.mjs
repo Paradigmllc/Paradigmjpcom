@@ -1122,6 +1122,10 @@ async function applySalesOptionalColumnRepairMigration(envs) {
   return applySqlMigration(envs, "migration_054_sales_cloud_optional_column_repair.sql", "Sales optional column repair migration")
 }
 
+async function applyQuoteRecoveryValidationMigration(envs) {
+  return applySqlMigration(envs, "migration_059_quote_recovery_validation.sql", "Quote Recovery validation migration")
+}
+
 async function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) return applyContentTemplatesThroughPostgres(envs)
@@ -1666,6 +1670,7 @@ async function main() {
     console.log(await applyPassiveInventorySegmentsMigration(envs))
     console.log(await applySalesRaceConditionGuardsMigration(envs))
     console.log(await applySalesOptionalColumnRepairMigration(envs))
+    console.log(await applyQuoteRecoveryValidationMigration(envs))
     // Keep the latest claim contract last: older compatibility migrations also
     // define this RPC and can otherwise restore a stale no-retry function.
     console.log(await applyLeadSourceProductEvidenceRetryMigration(envs))
@@ -1698,6 +1703,7 @@ async function main() {
 
   const smokeTargets = [
     { url: "https://paradigmjp.com/api/ready" },
+    { url: "https://paradigmjp.com/ja/quote-recovery", markers: ["見積を出した後", "無料でCSV診断する"] },
     { url: "https://paradigmjp.com/ja/pet-life-movie" },
     { url: "https://paradigmjp.com/ja/admin/shopify" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
