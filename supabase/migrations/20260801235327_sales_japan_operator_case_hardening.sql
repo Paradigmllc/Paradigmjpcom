@@ -1,6 +1,8 @@
 -- Harden the Japan operator audit boundary and repair Wave 1 aliases discovered
 -- by production read-back. This migration is idempotent and safe to replay.
 
+SELECT set_config('app.japan_operator_mutation', 'rpc', true);
+
 REVOKE ALL ON TABLE public.sales_japan_operator_cases FROM service_role;
 REVOKE ALL ON TABLE public.sales_japan_operator_events FROM service_role;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.sales_japan_operator_cases TO service_role;
@@ -126,7 +128,7 @@ SELECT
     )
   )
 FROM wave_one
-ON CONFLICT (company_id) DO NOTHING;
+ON CONFLICT (company_id, engagement_no) DO NOTHING;
 
 WITH wave_one_aliases (aliases, domains) AS (
   VALUES
@@ -153,6 +155,10 @@ INSERT INTO public.sales_japan_operator_events (
   from_stage,
   to_stage,
   actor,
+  actor_key,
+  actor_email,
+  actor_role,
+  auth_source,
   note,
   detail,
   idempotency_key
@@ -163,6 +169,10 @@ SELECT
   NULL,
   operator_case.stage,
   'RevenueOS migration',
+  'migration:revenueos',
+  NULL,
+  'system',
+  'migration',
   'Evidence-backed Wave 1 case initialized; no external message was sent.',
   jsonb_build_object('external_messages_sent', 0, 'offer_code', operator_case.offer_code),
   'japan-operator-wave1:' || operator_case.company_id::text

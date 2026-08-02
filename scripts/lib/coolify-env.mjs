@@ -191,9 +191,9 @@ export function getCoolifyAuth() {
     }
   }
   const reference = findCoolifyFromClaudeReferences()
-  if (reference) return reference
+  if (reference) return { ...reference, baseUrl: explicitUrl || DEFAULT_COOLIFY_URL }
   const currentMcp = findCoolifyFromCurrentMcp()
-  if (currentMcp) return currentMcp
+  if (currentMcp) return { ...currentMcp, baseUrl: explicitUrl || DEFAULT_COOLIFY_URL }
   const keychain = findCoolifyFromKeychain()
   if (keychain) return keychain
   if (token) {
@@ -203,26 +203,45 @@ export function getCoolifyAuth() {
     }
   }
   const backup = findCoolifyFromMcpBackup()
-  if (backup) return backup
+  if (backup) return { ...backup, baseUrl: explicitUrl || DEFAULT_COOLIFY_URL }
   return null
 }
 
 export async function coolifyRequest(pathname, options = {}) {
   const auth = getCoolifyAuth()
   if (!auth) throw new Error("COOLIFY_API_TOKEN is not configured")
-  const res = await fetch(`${auth.baseUrl}${pathname}`, {
-    ...options,
-    signal: options.signal ?? AbortSignal.timeout(30_000),
-    headers: {
-      Authorization: `Bearer ${auth.token}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  })
-  const text = await res.text()
-  const data = text ? JSON.parse(text) : null
-  if (!res.ok) throw new Error(`Coolify API HTTP ${res.status}`)
-  return data
+  const method = String(options.method || "GET").toUpperCase()
+  const attempts = method === "GET" ? 3 : 1
+  let lastError = null
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const res = await fetch(`${auth.baseUrl}${pathname}`, {
+        ...options,
+        signal: options.signal ?? AbortSignal.timeout(30_000),
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
+      })
+      const text = await res.text()
+      if (!res.ok) {
+        const error = new Error(`Coolify API HTTP ${res.status}`)
+        if (attempt < attempts && (res.status === 429 || res.status >= 500)) {
+          lastError = error
+          await new Promise((resolve) => setTimeout(resolve, attempt * 750))
+          continue
+        }
+        throw error
+      }
+      return text ? JSON.parse(text) : null
+    } catch (error) {
+      lastError = error
+      if (attempt >= attempts) break
+      await new Promise((resolve) => setTimeout(resolve, attempt * 750))
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Coolify API request failed")
 }
 
 export async function readCoolifyApplicationEnvs(appUuid = envValue("PARADIGM_APP_UUID", DEFAULT_APP_UUID)) {

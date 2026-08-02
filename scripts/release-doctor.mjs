@@ -30,6 +30,7 @@ const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const failures = []
+let protectedAppHostsSnapshot = null
 
 function section(title) {
   console.log(`\n[release-doctor] ${title}`)
@@ -287,6 +288,12 @@ function checkStaticReleaseRules() {
   const operatorHardeningMigration = fs.existsSync(operatorHardeningMigrationPath)
     ? fs.readFileSync(operatorHardeningMigrationPath, "utf8")
     : ""
+  const operatorOperationsPaths = [
+    "supabase/migrations/20260802015455_japan_operator_operations_os.sql",
+    "supabase/migrations/20260802015712_japan_operator_commercial_os.sql",
+    "supabase/migrations/20260802015715_japan_operator_delivery_os.sql",
+  ]
+  const operatorOperations = operatorOperationsPaths.map((file) => fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "").join("\n")
   const operatorCaseMarkers = [
     "sales_japan_operator_cases",
     "sales_japan_operator_events",
@@ -305,17 +312,28 @@ function checkStaticReleaseRules() {
     "DONGJIN BEDDING Co., Ltd. / Little Archive",
     "external_messages_sent', 0",
   ]
+  const operatorOperationsMarkers = [
+    "sales_contact_suppressions", "sales_japan_operator_evidence", "sales_japan_operator_outbound_authorizations",
+    "sales_apply_japan_operator_action_v2", "sales_check_outbound_authorization", "sales_japan_operator_source_links",
+    "sales_japan_operator_contract_links", "sales_japan_operator_invoices", "sales_japan_operator_skus",
+    "sales_japan_operator_deliverables", "sales_japan_operator_finance_periods", "sales_japan_operator_operational_records",
+    "sales_japan_operator_incidents", "sales_japan_operator_kpi_periods", "sales_japan_operator_offboarding",
+    "sales_japan_operator_outbox", "FORCE ROW LEVEL SECURITY",
+  ]
   if (
     operatorCaseMarkers.every((marker) => operatorCasesMigration.includes(marker)) &&
     operatorHardeningMarkers.every((marker) => operatorHardeningMigration.includes(marker)) &&
+    operatorOperationsMarkers.every((marker) => operatorOperations.includes(marker)) &&
     noLoginDeploy.includes("20260801224308_sales_japan_operator_cases.sql") &&
     noLoginDeploy.includes("applyJapanOperatorCasesMigration") &&
     noLoginDeploy.includes("20260801235327_sales_japan_operator_case_hardening.sql") &&
-    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration")
+    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration") &&
+    operatorOperationsPaths.every((file) => noLoginDeploy.includes(file.split("/").pop())) &&
+    noLoginDeploy.includes("applyJapanOperatorOperationsOsMigrations")
   ) {
-    pass("Japan market operator cases have atomic audit actions, RLS and release wiring")
+    pass("Japan market operator OS has atomic audit, outbound suppression, evidence, commercial and delivery wiring")
   } else {
-    fail("Japan market operator cases require atomic audit actions, RLS and release wiring")
+    fail("Japan market operator OS requires complete P0-P2 migration and release wiring")
   }
 
   const petMovieMigrationPath = "supabase/migrations/20260801213954_pet_life_movie_mvp.sql"
@@ -1529,6 +1547,10 @@ for name in ("paradigmhp-origin-alias-http", "paradigmhp-origin-alias-https"):
 if not aliases.issubset(configured_aliases):
     raise RuntimeError("A Docker app alias bypasses the Cloudflare middleware")
 
+all_hosts = {"paradigmjp.com", "www.paradigmjp.com", "keystatic.paradigmjp.com"} | docker_hosts
+if ${POST_DEPLOY ? "True" : "False"}:
+    all_hosts.add("demo.paradigmjp.com")
+print("HOSTS_JSON " + json.dumps(sorted(all_hosts)))
 print(f"OK origin-lock-current aliases={len(aliases)} ranges={len(ranges)}")
 PY
 `
@@ -1545,6 +1567,17 @@ PY
   if (result.status !== 0 || result.error) {
     fail(`Traefik paradigmhp-svc route drift detected; run npm run release:prod, which refreshes it automatically`)
     return
+  }
+  const hostsLine = output.split(/\r?\n/).find((line) => line.startsWith("HOSTS_JSON "))
+  if (hostsLine) {
+    try {
+      const parsed = JSON.parse(hostsLine.slice("HOSTS_JSON ".length))
+      if (Array.isArray(parsed) && parsed.length >= 3 && parsed.every((value) => typeof value === "string")) {
+        protectedAppHostsSnapshot = [...new Set(parsed)]
+      }
+    } catch (error) {
+      warn(`protected app host snapshot parse failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
   pass("manual Traefik route points at the latest app container")
 }
@@ -1564,6 +1597,7 @@ async function resolveOriginAddress() {
 }
 
 function discoverProtectedAppHosts() {
+  if (protectedAppHostsSnapshot) return protectedAppHostsSnapshot
   const script = `
 set -euo pipefail
 container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"

@@ -3,6 +3,7 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { runJapanOperatorAutomation } from "@/lib/sales/japan-operator-automation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -17,6 +18,10 @@ export async function POST(req: NextRequest) {
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
   try {
+    const operatorAutomation = await runJapanOperatorAutomation().catch((error) => {
+      console.error("[daily-report] Japan operator automation failed:", error)
+      return null
+    })
     const now = new Date()
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60_000).toISOString()
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60_000).toISOString()
@@ -85,6 +90,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       report: { newToday: newToday ?? 0, enrichedToday: enrichedToday ?? 0, reportReady: reportReady ?? 0, pipelineToday: pipelineToday ?? 0, jobsQueued: jobsQueued ?? 0 },
+      operatorAutomation,
       slackSent: true,
     })
   } catch (e) {
