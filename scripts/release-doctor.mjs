@@ -345,6 +345,10 @@ function checkStaticReleaseRules() {
   const petMovieMarketMigration = fs.existsSync(petMovieMarketMigrationPath)
     ? fs.readFileSync(petMovieMarketMigrationPath, "utf8")
     : ""
+  const petMovieGrowthMigrationPath = "supabase/migrations/20260802201649_pet_life_movie_global_growth.sql"
+  const petMovieGrowthMigration = fs.existsSync(petMovieGrowthMigrationPath)
+    ? fs.readFileSync(petMovieGrowthMigrationPath, "utf8")
+    : ""
   const petMovieRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
   const petMovieDbVerifier = fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
   const petMovieMarkers = [
@@ -364,11 +368,19 @@ function checkStaticReleaseRules() {
     noLoginDeploy.includes("applyPetLifeMovieMigration") &&
     noLoginDeploy.includes("20260802020742_pet_life_movie_market_ready.sql") &&
     noLoginDeploy.includes("applyPetLifeMovieMarketReadyMigration") &&
+    noLoginDeploy.includes("20260802201649_pet_life_movie_global_growth.sql") &&
+    noLoginDeploy.includes("applyPetLifeMovieGlobalGrowthMigration") &&
     petMovieRunMigrations.includes("20260801213954_pet_life_movie_mvp.sql") &&
     petMovieRunMigrations.includes("20260802020742_pet_life_movie_market_ready.sql") &&
+    petMovieRunMigrations.includes("20260802201649_pet_life_movie_global_growth.sql") &&
     petMovieMarketMigration.includes("pet_movie_deliverables") &&
     petMovieMarketMigration.includes("force row level security") &&
     petMovieMarketMigration.includes("to service_role") &&
+    ["pet_movie_marketing_campaigns", "pet_movie_marketing_runs", "pet_movie_marketing_posts", "pet_movie_marketing_events"].every((marker) => (
+      petMovieGrowthMigration.includes(marker) && petMovieDbVerifier.includes(marker)
+    )) &&
+    petMovieGrowthMigration.includes("force row level security") &&
+    petMovieGrowthMigration.includes("to service_role") &&
     petMovieMarkers.slice(0, 5).every((marker) => petMovieDbVerifier.includes(marker))
   ) {
     pass("Pet Life Movie persistence has RLS, service-role isolation, migration execution, and DB verification wiring")

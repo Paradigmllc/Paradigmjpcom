@@ -37,6 +37,7 @@ let preferDbSshChannel = false
 const cachedSupabaseDbContainers = new Map()
 const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const APPLY_SHOPIFY_ONLY = process.argv.includes("--apply-shopify-only")
+const APPLY_PET_GROWTH_ONLY = process.argv.includes("--apply-pet-growth-only")
 
 const PRODUCTS = [
   {
@@ -605,6 +606,14 @@ async function applyPetLifeMovieMarketReadyMigration(envs) {
   )
 }
 
+async function applyPetLifeMovieGlobalGrowthMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802201649_pet_life_movie_global_growth.sql",
+    "Pet Life Movie global growth migration",
+  )
+}
+
 async function applyPetLifeMovieCommercialQualityMigration(envs) {
   return applySqlMigration(
     envs,
@@ -627,8 +636,19 @@ begin
   if to_regclass('public.pet_movie_deliverables') is null then
     raise exception 'pet_movie_deliverables is missing';
   end if;
+  if to_regclass('public.pet_movie_marketing_campaigns') is null
+    or to_regclass('public.pet_movie_marketing_runs') is null
+    or to_regclass('public.pet_movie_marketing_posts') is null
+    or to_regclass('public.pet_movie_marketing_events') is null then
+    raise exception 'Pet Life Movie marketing tables are missing';
+  end if;
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
+  end if;
+  if not has_table_privilege('service_role', 'public.pet_movie_marketing_campaigns', 'SELECT')
+    or has_table_privilege('anon', 'public.pet_movie_marketing_campaigns', 'SELECT')
+    or has_table_privilege('authenticated', 'public.pet_movie_marketing_campaigns', 'SELECT') then
+    raise exception 'Pet Life Movie marketing table privileges are invalid';
   end if;
   if not exists (
     select 1 from information_schema.columns
@@ -653,6 +673,10 @@ $$;
     "pet_movie_deliverables?select=id&limit=1",
     "pet_movie_projects?select=id,terms_version,terms_accepted_at&limit=1",
     "pet_movie_contributors?select=id,memories,consent_confirmed&limit=1",
+    "pet_movie_marketing_campaigns?select=id,campaign_key,status&limit=1",
+    "pet_movie_marketing_runs?select=id,run_key,status&limit=1",
+    "pet_movie_marketing_posts?select=id,post_key,status&limit=1",
+    "pet_movie_marketing_events?select=id,event_name&limit=1",
   ]) {
     const response = await fetch(`${url}/rest/v1/${path}`, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
@@ -1780,6 +1804,13 @@ async function main() {
   }
 
   const envs = await readProductionEnv()
+  if (APPLY_PET_GROWTH_ONLY) {
+    const publicDataApiUrl = envValue("PARADIGM_SUPABASE_PUBLIC_URL")
+    const targetEnvs = publicDataApiUrl ? { ...envs, SALES_SUPABASE_URL: publicDataApiUrl } : envs
+    console.log(await applyPetLifeMovieGlobalGrowthMigration(targetEnvs))
+    console.log(await verifyPetLifeMovieSchema(targetEnvs))
+    return
+  }
   console.log("Coolify API: connected")
 
   // Auto-ensure non-secret defaults are set in Coolify.
@@ -1824,6 +1855,7 @@ async function main() {
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
     console.log(await applyPetLifeMovieMigration(envs))
     console.log(await applyPetLifeMovieMarketReadyMigration(envs))
+    console.log(await applyPetLifeMovieGlobalGrowthMigration(envs))
     console.log(await applyPetLifeMovieCommercialQualityMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
