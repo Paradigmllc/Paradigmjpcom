@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
-import { ArrowDown, Check, Clock3, DatabaseZap, Gauge, ShieldCheck } from "lucide-react"
+import Link from "next/link"
+import { ArrowDown, Check, Clock3, DatabaseZap, Gauge } from "lucide-react"
 import { QuoteRecoveryDiagnostic } from "@/components/quote-recovery/QuoteRecoveryDiagnostic"
 import { pageAlternates } from "@/lib/page-metadata"
 
@@ -26,7 +27,7 @@ export default function QuoteRecoveryPage() {
             <p className="mt-7 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">Excelや基幹システムはそのまま。見積CSVから、放置金額・回収優先順位・次に連絡すべき案件だけを可視化します。</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <a href="#diagnostic" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-violet-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500/30">無料でCSV診断する<ArrowDown aria-hidden="true" /></a>
-              <span className="inline-flex min-h-12 items-center justify-center gap-2 px-4 text-xs font-semibold text-slate-500"><ShieldCheck className="size-4 text-emerald-600" aria-hidden="true" />元データは保存しません</span>
+              <Link href="/ja/quote-recovery/login" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-violet-300 hover:text-violet-700">ログイン / 契約</Link>
             </div>
           </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_30px_80px_-35px_rgba(15,23,42,0.4)] sm:p-7">
