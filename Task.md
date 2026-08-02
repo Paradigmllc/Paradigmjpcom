@@ -20,6 +20,17 @@
 - Production migration `20260801213954_pet_life_movie_mvp.sql` is applied. All five tables were read back with RLS and FORCE RLS enabled plus one service-role policy each. Runtime access uses the dedicated Sales Supabase client; the migration runner, DB verifier, release doctor, and regression test cover the schema.
 - Live verification passed: `/ja/pet-life-movie` HTTP 200; anonymous project creation HTTP 201; five private R2 uploads; five factual storyboard scenes; preview generation; unlisted share HTTP 200. Verification objects and rows were deleted and read back at zero. Paid render remains intentionally disabled until a GPU renderer URL and all three Stripe Price IDs are configured.
 
+## CURRENT STATUS - 2026-08-02 Content API + x402 Wave 1
+
+- Added a public, CORS-enabled content catalog and full article delivery in JSON or Markdown under `/api/v1/content` and `/api/v1/content/public/[slug]`.
+- Added three bilingual machine-readable decision products for Japan market entry, asset evaluation, and supplier qualification. Each product is priced at 0.25 USDC per request through x402 v2 on Base.
+- Added the paid `/api/v1/content/premium/[slug]` route with Bazaar discovery metadata, payment-required/settlement headers, access journaling, rate limiting, privacy-preserving client hashes, and DB bell + Slack sale notifications.
+- Added `content_products` and `content_access_events` with forced RLS, explicit service-role-only grants, constraints, indexes, and six seeded product rows. The migration is wired into the canonical production release and database verification paths.
+- Added bilingual `/[locale]/japan-opportunities/api` sales/documentation pages with loading, empty, error, pricing, endpoint, protocol-flow, and trust-boundary states. The Japan Opportunities hub now links to this distribution channel.
+- x402 is intentionally fail-closed until `X402_PAY_TO_ADDRESS`, `CDP_API_KEY_ID`, and `CDP_API_KEY_SECRET` are configured through approved runtime secret storage. Free APIs remain available if settlement is unavailable; no payment signature or raw client IP is persisted.
+- Verification passed: Content Commerce Vitest 7/7, changed-scope ESLint warning 0, TypeScript, local release-doctor, diff/unsafe-pattern checks, and the full Next.js production build with all 540 static pages. Built-server HTTP checks passed for catalog/article JSON/article Markdown/404/fail-closed premium/CORS preflight and both locale documentation pages.
+- Active handoff: publish/merge the PR, run the canonical production release, verify the migrated catalog and documentation live, then enable and execute one real 0.25 USDC x402 purchase after the receiving address and CDP facilitator credentials are approved.
+
 ## CURRENT STATUS — 2026-08-02 Japan market operator Wave 1
 
 - External Japan Market Operatorを12段階（証拠確認→人間承認→許可送信→有償検証→Launch/Operator契約→運用中）の案件ワークフローへ具体化した。各段階にentry gate、担当、SLA、next action、期限、revision競合防止、監査eventを持たせる。

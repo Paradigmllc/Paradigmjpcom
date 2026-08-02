@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { ArrowRight, CheckCircle2 } from "lucide-react"
+import { ArrowRight, CheckCircle2, Coins } from "lucide-react"
 import FadeIn from "@/components/aesop/FadeIn"
 import { OpportunityBrandCard } from "@/components/opportunities/OpportunityBrandCard"
 import { Link } from "@/i18n/routing"
@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function JapanOpportunitiesPage({ params }: Props) {
   const { locale } = await params
+  const japanese = locale === "ja"
   const copy = getOpportunityHubCopy(locale)
   const brands = getOpportunityBrands(locale)
 
@@ -53,6 +54,25 @@ export default async function JapanOpportunitiesPage({ params }: Props) {
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {brands.map((brand, index) => <OpportunityBrandCard key={brand.slug} brand={brand} cta={copy.cardCta} index={index} />)}
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-paradigm-line px-6 py-16 md:px-10 md:py-20">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 rounded-[2rem] border border-paradigm-line bg-paradigm-paper-card/80 p-8 md:p-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 text-paradigm-accent"><Coins size={22} /><p className="paradigm-eyebrow">CONTENT API + x402</p></div>
+            <h2 className="mt-4 font-display text-3xl font-semibold tracking-[-0.03em] text-paradigm-ink md:text-4xl">
+              {japanese ? "コンテンツを、人だけでなくソフトウェアにも販売する" : "Sell Japan intelligence to software, not only people"}
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-paradigm-ink-soft">
+              {japanese
+                ? "公開記事は無料APIで配信し、構造化した意思決定データはx402で1リクエストずつ購入できます。"
+                : "Public articles stay free through the Content API, while structured decision data can be purchased per request with x402."}
+            </p>
+          </div>
+          <Link href="/japan-opportunities/api" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-paradigm-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-paradigm-paper transition hover:bg-paradigm-accent">
+            {japanese ? "API販売モデルを見る" : "Explore Content Commerce"}<ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 

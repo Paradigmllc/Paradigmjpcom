@@ -739,6 +739,10 @@ async function applyJapanOperatorCaseHardeningMigration(envs) {
   )
 }
 
+async function applyContentCommerceMigration(envs) {
+  return applySqlMigration(envs, "20260801231006_content_commerce.sql", "Content API and x402 commerce migration")
+}
+
 async function applyFormQualifiedLeadFactoryMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1627,6 +1631,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanOperatorCasesMigration(envs))
     console.log(await applyJapanOperatorCaseHardeningMigration(envs))
+    console.log(await applyContentCommerceMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyInitialFormDraftFactoryMigration(envs))

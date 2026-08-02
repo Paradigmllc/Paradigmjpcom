@@ -25,6 +25,10 @@ export const DB_TABLES = {
   // NOTE: CMS_CONTENT_BLOCKS has no migration in this repo. Managed by Appexxme (separate project).
   CMS_CONTENT_BLOCKS: "cms_content_blocks",
 
+  // ── Content commerce (x402 + public Content API) ──
+  CONTENT_PRODUCTS: "content_products",
+  CONTENT_ACCESS_EVENTS: "content_access_events",
+
   // ── Sales OS Core (migration_003) ──
   SALES_COMPANIES: "sales_companies",
   SALES_CUSTOMERS: "sales_customers",

@@ -123,6 +123,7 @@ if (!buildArgs.includes("--webpack")) {
 }
 const nextStatus = await runWithHeartbeat(localBin("next"), buildArgs, {
   env: {
+    NEXT_BUILD_BUNDLER: buildArgs.includes("--webpack") ? "webpack" : "turbo",
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",
     PAYLOAD_DISABLE_DATABASE_DURING_BUILD: "1",
     DATABASE_URI: process.env.DATABASE_URI || "postgresql://payload:payload@127.0.0.1:1/payload",
@@ -131,11 +132,17 @@ const nextStatus = await runWithHeartbeat(localBin("next"), buildArgs, {
 })
 if (nextStatus !== 0) process.exit(nextStatus)
 
-// Copy content/ into standalone output for Keystatic local storage
+// Copy content/ into standalone output for Keystatic local storage. Windows
+// builds use regular output by default because Next.js can hold its own
+// required-server-files.js open while assembling standalone output.
+const shouldBuildStandalone = process.env.NEXT_BUILD_STANDALONE === "1"
+  || (process.env.NEXT_BUILD_STANDALONE !== "0" && process.platform !== "win32")
 const standaloneDir = path.join(process.cwd(), ".next", "standalone")
 const contentSrc = path.join(process.cwd(), "content")
 const contentDst = path.join(standaloneDir, "content")
-if (fs.existsSync(contentSrc)) {
+if (shouldBuildStandalone && fs.existsSync(contentSrc)) {
   fs.cpSync(contentSrc, contentDst, { recursive: true })
   console.log("[build] content/ copied to standalone output")
+} else if (!shouldBuildStandalone) {
+  console.log("[build] standalone packaging skipped on Windows; Linux CI and production retain standalone output")
 }
