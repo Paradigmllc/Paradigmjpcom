@@ -322,6 +322,32 @@ function checkStaticReleaseRules() {
     fail("Video Factory engine catalog/events require RLS and release migration wiring")
   }
 
+  const studioMigrationPath = "supabase/migrations/20260802093000_video_factory_commercial_studio.sql"
+  const studioMigration = fs.existsSync(studioMigrationPath)
+    ? fs.readFileSync(studioMigrationPath, "utf8")
+    : ""
+  const studioSecurityMarkers = [
+    "video_factory_brand_kits",
+    "video_factory_creative_templates",
+    "video_factory_studio_projects",
+    "video_factory_shot_revisions",
+    "video_factory_quality_metrics",
+    "enable row level security",
+    "force row level security",
+    "revoke all on table public.video_factory_brand_kits from anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    studioMigration
+    && studioSecurityMarkers.every((marker) => studioMigration.toLowerCase().includes(marker))
+    && noLoginDeploy.includes("20260802093000_video_factory_commercial_studio.sql")
+    && noLoginDeploy.includes("applyVideoFactoryCommercialStudioMigration")
+  ) {
+    pass("Video Factory commercial Studio data has server-only RLS and release wiring")
+  } else {
+    fail("Video Factory commercial Studio requires RLS and release migration wiring")
+  }
+
   const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
   const projectionMigration = fs.existsSync(projectionMigrationPath)
     ? fs.readFileSync(projectionMigrationPath, "utf8")

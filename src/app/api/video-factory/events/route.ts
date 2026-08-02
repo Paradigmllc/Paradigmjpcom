@@ -20,6 +20,9 @@ const eventSchema = z.object({
     "profile_progress",
     "profile_completed",
     "profile_failed",
+    "studio_project_created",
+    "studio_revision_created",
+    "studio_qa_completed",
   ]),
   title: z.string().trim().min(1).max(160),
   message: z.string().trim().min(1).max(2_000),
@@ -32,6 +35,34 @@ const eventSchema = z.object({
   state: z.string().trim().min(1).max(80).nullable().optional(),
   progress: z.number().int().min(0).max(100).nullable().optional(),
   error_message: z.string().trim().min(1).max(2_000).nullable().optional(),
+  payload: z.record(z.string(), z.unknown()).default({}),
+}).strict()
+
+const studioProjectSchema = z.object({
+  project_name: z.string().trim().min(3).max(120),
+  template_id: z.string().regex(/^(auto|[a-z0-9][a-z0-9-]{2,79})$/),
+  brand: z.object({
+    kit_id: z.string().regex(/^[a-z0-9][a-z0-9-]{2,79}$/),
+    name: z.string().trim().min(1).max(200),
+  }).passthrough(),
+  brief: z.record(z.string(), z.unknown()),
+  manifest: z.record(z.string(), z.unknown()),
+}).strict()
+
+const studioRevisionSchema = z.object({
+  id: z.string().uuid(),
+  project_id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,71}$/),
+  shot_id: z.string().regex(/^shot-[0-9]{3}$/),
+  language: z.string().regex(/^[a-z]{2}(?:-[A-Z]{2})?$/),
+  revision: z.number().int().positive(),
+  patch: z.record(z.string(), z.unknown()),
+  reviewer: z.string().trim().min(2).max(200),
+  created_at: z.string().datetime({ offset: true }),
+}).strict()
+
+const studioQaSchema = z.object({
+  deliverable_name: z.string().trim().min(1).max(80),
+  qa: z.object({ passed: z.boolean() }).passthrough(),
 }).strict()
 
 function internalApiKey(): string | null {
@@ -110,13 +141,86 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
   }
+  if (parsed.event_type.startsWith("studio_")) {
+    if (!parsed.project_id) {
+      return NextResponse.json({ ok: false, error: "Studio project ID is required" }, { status: 422 })
+    }
+    const database = getServiceSalesSupabase()
+    if (!database) {
+      console.error("[video-factory-events] sales Supabase is not configured")
+      return NextResponse.json({ ok: false, error: "Database unavailable" }, { status: 503 })
+    }
+    let databaseError: { message: string } | null = null
+    try {
+      if (parsed.event_type === "studio_project_created") {
+        const payload = studioProjectSchema.parse(parsed.payload)
+        const brandResult = await database
+          .from(DB_TABLES.VIDEO_FACTORY_BRAND_KITS)
+          .upsert({
+            id: payload.brand.kit_id,
+            name: payload.brand.name,
+            brand: payload.brand,
+            updated_at: parsed.created_at,
+          }, { onConflict: "id" })
+        databaseError = brandResult.error
+        if (!databaseError) {
+          const projectResult = await database
+            .from(DB_TABLES.VIDEO_FACTORY_STUDIO_PROJECTS)
+            .upsert({
+              project_id: parsed.project_id,
+              project_name: payload.project_name,
+              template_id: payload.template_id,
+              brand_kit_id: payload.brand.kit_id,
+              brief: payload.brief,
+              manifest: payload.manifest,
+              status: parsed.state ?? "production",
+              updated_at: parsed.created_at,
+            }, { onConflict: "project_id" })
+          databaseError = projectResult.error
+        }
+      } else if (parsed.event_type === "studio_revision_created") {
+        const payload = studioRevisionSchema.parse(parsed.payload)
+        const result = await database
+          .from(DB_TABLES.VIDEO_FACTORY_SHOT_REVISIONS)
+          .insert(payload)
+        databaseError = result.error
+      } else {
+        const payload = studioQaSchema.parse(parsed.payload)
+        const result = await database
+          .from(DB_TABLES.VIDEO_FACTORY_QUALITY_METRICS)
+          .insert({
+            id: parsed.event_id,
+            project_id: parsed.project_id,
+            deliverable_name: payload.deliverable_name,
+            passed: payload.qa.passed,
+            metrics: payload.qa,
+            created_at: parsed.created_at,
+          })
+        databaseError = result.error
+      }
+    } catch (error) {
+      console.error("[video-factory-events] invalid studio event payload", error)
+      return NextResponse.json({ ok: false, error: "Invalid studio event payload" }, { status: 422 })
+    }
+    if (databaseError) {
+      console.error("[video-factory-events] studio persistence failed", databaseError)
+      return NextResponse.json(
+        { ok: false, error: "Studio persistence failed" },
+        { status: 502 },
+      )
+    }
+  }
 
   const isProfileEvent = parsed.event_type.startsWith("profile_")
   const isErrorEvent = parsed.event_type === "gpu_error" || parsed.event_type === "profile_failed"
   const notification = await notifyBothChannels(text, {
     title: parsed.title,
     message: parsed.message,
-    link: isProfileEvent ? "/video-factory-console#engines" : "/video-factory-console#gpu",
+    link: parsed.event_type.startsWith("studio_")
+      ? "/video-factory-console#projects"
+      : isProfileEvent
+        ? "/video-factory-console#engines"
+        : "/video-factory-console#gpu",
     type: `video_factory_${parsed.event_type}`,
     priority: isErrorEvent ? 95 : 70,
     idempotencyKey: parsed.event_id,

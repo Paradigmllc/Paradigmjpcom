@@ -150,6 +150,7 @@ async function loadProjectDetail(projectId) {
         ? '<div class="preview-wrap"><video id="project-preview" controls playsinline></video></div>'
         : '<div class="empty compact">プレビュー動画はまだありません。</div>'}
       ${reviewControls(status)}
+      ${window.studioProjectToolsHtml ? window.studioProjectToolsHtml(detail) : ""}
       <div class="artifact-list">
         <div class="panel-heading" style="padding:8px 0 14px;border:0"><div><p class="eyebrow">ARTIFACTS</p><h2>成果物・証跡</h2></div></div>
         ${artifacts.length
@@ -166,6 +167,7 @@ async function loadProjectDetail(projectId) {
       })
     })
     wireProjectActions()
+    if (window.wireStudioProjectTools) window.wireStudioProjectTools(detail)
   } catch (error) {
     console.error("[video-factory-console] detail failed", error)
     target.innerHTML = `<div class="empty tall"><strong>案件を表示できません</strong><p>${escapeHtml(error.message)}</p></div>`

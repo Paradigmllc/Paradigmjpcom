@@ -36,7 +36,11 @@ def test_console_static_app_and_runtime_secret_masking(
     assert "console-projects.js" in page.text
     assert "console-runtime.js" in page.text
     assert "console-engine-catalog.js" in page.text
+    assert "console-studio.js" in page.text
     assert "console-responsive.css" in page.text
+    assert 'id="creative-template"' in page.text
+    assert 'id="brand-kit-id"' in page.text
+    assert 'id="narration-path"' in page.text
     assert 'id="oss-worker-url"' in page.text
     assert 'id="oss-worker-api-key"' in page.text
     lifecycle_script = client.get("/console/console-gpu-lifecycle.js")
@@ -48,6 +52,11 @@ def test_console_static_app_and_runtime_secret_masking(
     assert "catch {" not in catalog_script.text
     assert "setInterval" not in catalog_script.text
     assert 'target="_blank" rel="noopener noreferrer"' in catalog_script.text
+    studio_script = client.get("/console/console-studio.js")
+    assert studio_script.status_code == 200
+    assert "catch {" not in studio_script.text
+    assert "setInterval" not in studio_script.text
+    assert "保存して再生成" in studio_script.text
     for asset in ("console-projects.js", "console-runtime.js"):
         response = client.get(f"/console/{asset}")
         assert response.status_code == 200

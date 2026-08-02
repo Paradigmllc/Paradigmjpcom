@@ -60,6 +60,9 @@ const ALL_TABLES = [
   "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_initial_form_drafts", "sales_report_factory_state",
   // Video
   "sales_video_jobs", "video_factory_engine_profiles", "video_factory_engine_events",
+  "video_factory_brand_kits", "video_factory_creative_templates",
+  "video_factory_studio_projects", "video_factory_shot_revisions",
+  "video_factory_quality_metrics",
   // Platform Health
   "sales_platform_health_snapshots",
   // Infrastructure
@@ -389,6 +392,11 @@ function printSummaryAndExit(ok, missing, errored) {
         "public_japan_entry_checks": "supabase/migrations/migration_072_public_japan_entry_checks.sql",
         "video_factory_engine_profiles": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_engine_events": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
+        "video_factory_brand_kits": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_creative_templates": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_studio_projects": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_shot_revisions": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_quality_metrics": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
         "manual_japan_entry_batches": "supabase/migrations/20260720233215_manual_work_durable_batches.sql",
         "manual_japan_entry_batch_items": "supabase/migrations/20260720233215_manual_work_durable_batches.sql",
         "sales_lead_candidate_domains": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",

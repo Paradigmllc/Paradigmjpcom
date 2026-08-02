@@ -16,9 +16,11 @@ from .finalization import finalize_project
 from .gpu_lifecycle import ensure_gpu_ready, release_gpu_if_idle, run_lifecycle
 from .gpu_lifecycle_state import GpuLease, acquire_gpu_lease
 from .io import load_brief, write_json, write_model
+from .media import finish_master_media
 from .models import (
     ClientBrief,
     DeliverableSpec,
+    EngineOutput,
     PipelineResult,
     ReviewStage,
     ReviewStatus,
@@ -33,8 +35,9 @@ from .review import approve_review, create_pending_review
 from .router import route_manifest
 from .settings import Settings
 from .state import initialize_project_state, transition_project_state
+from .studio_events import emit_studio_project_started, emit_studio_qa_completed
 from .validation import validate_brief
-from .workspace import ProjectWorkspace
+from .workspace import ProjectWorkspace, slugify
 
 
 def _resolve_service_root() -> Path:
@@ -150,6 +153,7 @@ def _production_flow_impl(
     auto_approve: bool = False,
     reviewer: str = "Automated test fixture",
     delivery_target: str = "local",
+    rerender_shot_ids: set[str] | None = None,
 ) -> PipelineResult:
     workspace = ProjectWorkspace.create(settings.workspace, manifest.project_id)
 
@@ -162,6 +166,7 @@ def _production_flow_impl(
         manifest.project_id,
         dry_run=dry_run,
     )
+    emit_studio_project_started(settings, brief, manifest, dry_run=dry_run)
 
     registry = AdapterRegistry(settings, SERVICE_ROOT)
     outputs_by_deliverable: dict[str, list[dict[str, object]]] = {}
@@ -184,7 +189,26 @@ def _production_flow_impl(
         for shot in shots:
             if shot.engine is None:
                 raise RuntimeError(f"Shot was not routed: {deliverable.name}/{shot.id}")
-            outputs.append(registry.get(shot.engine).run(shot, context))
+            adapter = registry.get(shot.engine)
+            cached_path = adapter.output_path(shot, context)
+            if (
+                rerender_shot_ids is not None
+                and shot.id not in rerender_shot_ids
+                and cached_path.is_file()
+            ):
+                outputs.append(
+                    EngineOutput(
+                        shot_id=shot.id,
+                        engine=shot.engine,
+                        status="dry_run" if dry_run else "completed",
+                        media_path=str(cached_path),
+                        provenance={"cache": "existing-shot"},
+                        warnings=[],
+                        elapsed_seconds=0,
+                    )
+                )
+            else:
+                outputs.append(adapter.run(shot, context))
         outputs_by_deliverable[deliverable.name] = [
             output.model_dump(mode="json") for output in outputs
         ]
@@ -212,7 +236,26 @@ def _production_flow_impl(
             service_root=SERVICE_ROOT,
             dry_run=dry_run,
         )
-        qa = run_technical_qa(master_path, deliverable, manifest.duration_seconds)
+        captions_path = (
+            workspace.master / "captions.vtt"
+            if is_primary
+            else workspace.master / f"captions-{deliverable.name}.vtt"
+        )
+        caption_file = finish_master_media(
+            master_path,
+            manifest,
+            shots,
+            captions_path=captions_path,
+        )
+        qa = run_technical_qa(
+            master_path,
+            deliverable,
+            manifest.duration_seconds,
+            audio_required=bool(
+                manifest.audio.narration_path or manifest.audio.music_path
+            ),
+            captions_path=caption_file,
+        )
         qa_path = (
             workspace.qa / "technical-qa.json"
             if is_primary
@@ -222,6 +265,7 @@ def _production_flow_impl(
         master_paths[deliverable.name] = str(master_path)
         qa_paths[deliverable.name] = str(qa_path)
         all_qa_passed = all_qa_passed and qa.passed
+        emit_studio_qa_completed(settings, manifest, deliverable, qa)
 
     write_json(workspace.root / "engine-outputs.json", outputs_by_deliverable)
     write_json(workspace.qa / "index.json", qa_paths)
@@ -337,12 +381,21 @@ def production_flow(
     reviewer: str = "Automated test fixture",
     delivery_target: str = "local",
     lifecycle_run_id: str | None = None,
+    manifest_path: str | None = None,
+    rerender_shot_ids: list[str] | None = None,
 ) -> PipelineResult:
     settings = Settings.from_env()
     brief, validation_report = validate_task(brief_path)
-    manifest = plan_task(brief, settings, planner_provider)
-    manifest = route_task(manifest, settings, dry_run)
-    if dry_run:
+    if manifest_path:
+        manifest = ShotManifest.model_validate_json(
+            Path(manifest_path).read_text(encoding="utf-8")
+        )
+        if manifest.project_id != slugify(brief.project_name):
+            raise ValueError("Manifest project does not match the persisted brief")
+    else:
+        manifest = plan_task(brief, settings, planner_provider)
+        manifest = route_task(manifest, settings, dry_run)
+    if dry_run and not manifest_path:
         manifest = _dry_run_manifest(manifest)
     profile_catalog = load_engine_profile_catalog(settings.engine_profile_catalog_path)
     requires_managed_gpu = not dry_run and manifest_requires_managed_gpu(
@@ -401,6 +454,7 @@ def production_flow(
                 auto_approve=auto_approve,
                 reviewer=reviewer,
                 delivery_target=delivery_target,
+                rerender_shot_ids=set(rerender_shot_ids) if rerender_shot_ids else None,
             )
         except Exception as error:
             if not dry_run:

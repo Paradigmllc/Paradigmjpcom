@@ -4,6 +4,8 @@ import { NextRequest } from "next/server"
 const mocks = vi.hoisted(() => ({
   notifyBothChannels: vi.fn(),
   insertEngineEvent: vi.fn(),
+  insertStudioRecord: vi.fn(),
+  upsertStudioRecord: vi.fn(),
 }))
 
 vi.mock("@/lib/notify", () => ({
@@ -12,7 +14,12 @@ vi.mock("@/lib/notify", () => ({
 
 vi.mock("@/lib/supabase", () => ({
   getServiceSalesSupabase: () => ({
-    from: () => ({ insert: mocks.insertEngineEvent }),
+    from: (table: string) => ({
+      insert: table === "video_factory_engine_events"
+        ? mocks.insertEngineEvent
+        : mocks.insertStudioRecord,
+      upsert: mocks.upsertStudioRecord,
+    }),
   }),
 }))
 
@@ -34,7 +41,11 @@ describe("Video Factory operator events", () => {
     vi.stubEnv("VIDEO_FACTORY_INTERNAL_API_KEY", "factory-secret")
     mocks.notifyBothChannels.mockReset()
     mocks.insertEngineEvent.mockReset()
+    mocks.insertStudioRecord.mockReset()
+    mocks.upsertStudioRecord.mockReset()
     mocks.insertEngineEvent.mockResolvedValue({ error: null })
+    mocks.insertStudioRecord.mockResolvedValue({ error: null })
+    mocks.upsertStudioRecord.mockResolvedValue({ error: null })
     mocks.notifyBothChannels.mockResolvedValue({
       ok: true,
       slack: { ok: true },
@@ -131,6 +142,56 @@ describe("Video Factory operator events", () => {
     expect(mocks.notifyBothChannels).toHaveBeenCalledWith(
       expect.stringContaining("profile ltx-video"),
       expect.objectContaining({ type: "video_factory_profile_progress" }),
+    )
+  })
+
+  it("persists commercial Studio projects and Brand Kits before notifying", async () => {
+    const studioEvent = {
+      ...event,
+      event_type: "studio_project_created",
+      title: "Studio案件を制作開始",
+      message: "Commercial Launch の商用制作を開始しました。",
+      project_id: "commercial-launch",
+      state: "production",
+      progress: 0,
+      instance_id: null,
+      run_id: null,
+      hourly_price: null,
+      payload: {
+        project_name: "Commercial Launch",
+        template_id: "auto",
+        brand: { kit_id: "commercial-brand", name: "Commercial" },
+        brief: { objective: "Launch a commercial video" },
+        manifest: { project_id: "commercial-launch", shots: [] },
+      },
+    }
+    const response = await POST(new NextRequest(
+      "https://www.paradigmjp.com/api/video-factory/events",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": "factory-secret",
+        },
+        body: JSON.stringify(studioEvent),
+      },
+    ))
+
+    expect(response.status).toBe(200)
+    expect(mocks.upsertStudioRecord).toHaveBeenCalledTimes(2)
+    expect(mocks.upsertStudioRecord).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        project_id: "commercial-launch",
+        brand_kit_id: "commercial-brand",
+      }),
+      { onConflict: "project_id" },
+    )
+    expect(mocks.notifyBothChannels).toHaveBeenCalledWith(
+      expect.stringContaining("Commercial Launch"),
+      expect.objectContaining({
+        link: "/video-factory-console#projects",
+        type: "video_factory_studio_project_created",
+      }),
     )
   })
 })

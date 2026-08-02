@@ -86,6 +86,8 @@
     }, 500)
   }
 
+  window.watchVideoFactoryRun = pollRun
+
   document.addEventListener("DOMContentLoaded", () => {
     const activeRun = sessionStorage.getItem(activeRunKey)
     if (activeRun) void pollRun(activeRun)

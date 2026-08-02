@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from .creative_templates import creative_template, template_for_shot
 from .io import model_sha256
 from .models import ClientBrief, LocalizationSpec, Shot, ShotKind, ShotManifest
 from .settings import Settings
@@ -178,6 +179,12 @@ def deterministic_plan(brief: ClientBrief) -> ShotManifest:
         if brief.requested_shot_kinds:
             requested_index = min(index - 1, len(brief.requested_shot_kinds) - 1)
             kind = brief.requested_shot_kinds[requested_index]
+        template_id = (
+            brief.template_id
+            if brief.template_id != "auto"
+            else template_for_shot(kind, order=index, total=len(segments))
+        )
+        creative_template(template_id)
         shots.append(
             Shot(
                 id=f"shot-{index:03d}",
@@ -189,6 +196,7 @@ def deterministic_plan(brief: ClientBrief) -> ShotManifest:
                 language=language,
                 headline=(brief.objective if index == 1 else title)[:180],
                 body=body,
+                template_id=template_id,
                 source_assets=brief.source_assets,
                 metadata={
                     "platforms": brief.platforms,
@@ -223,6 +231,8 @@ def deterministic_plan(brief: ClientBrief) -> ShotManifest:
         primary_deliverable=primary,
         deliverables=brief.deliverables,
         brand=brief.brand,
+        template_id=brief.template_id,
+        audio=brief.audio,
         rights=brief.rights,
         approver=brief.approver,
         shots=shots,

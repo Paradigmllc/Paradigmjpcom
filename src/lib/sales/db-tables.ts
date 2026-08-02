@@ -111,6 +111,11 @@ export const DB_TABLES = {
   // ── Video Factory audited OSS engine catalog ──
   VIDEO_FACTORY_ENGINE_PROFILES: "video_factory_engine_profiles",
   VIDEO_FACTORY_ENGINE_EVENTS: "video_factory_engine_events",
+  VIDEO_FACTORY_BRAND_KITS: "video_factory_brand_kits",
+  VIDEO_FACTORY_CREATIVE_TEMPLATES: "video_factory_creative_templates",
+  VIDEO_FACTORY_STUDIO_PROJECTS: "video_factory_studio_projects",
+  VIDEO_FACTORY_SHOT_REVISIONS: "video_factory_shot_revisions",
+  VIDEO_FACTORY_QUALITY_METRICS: "video_factory_quality_metrics",
 
   // ── Pipeline Metrics (migration_066) ──
   SALES_PIPELINE_METRICS: "sales_pipeline_metrics",
