@@ -28,6 +28,20 @@ const REQUIRED_SHOPIFY_SCOPES = [
   "read_locations",
 ] as const
 
+const IMPLIED_SHOPIFY_SCOPES = {
+  write_products: ["read_products"],
+  write_inventory: ["read_inventory"],
+} as const satisfies Partial<Record<(typeof REQUIRED_SHOPIFY_SCOPES)[number], readonly string[]>>
+
+export function missingShopifyAdminScopes(grantedScopes: Iterable<string>): string[] {
+  const effectiveScopes = new Set(grantedScopes)
+  for (const [grantedScope, impliedScopes] of Object.entries(IMPLIED_SHOPIFY_SCOPES)) {
+    if (!effectiveScopes.has(grantedScope)) continue
+    for (const impliedScope of impliedScopes) effectiveScopes.add(impliedScope)
+  }
+  return REQUIRED_SHOPIFY_SCOPES.filter((scope) => !effectiveScopes.has(scope))
+}
+
 function requiredEnv(name: string): string {
   const value = process.env[name]?.trim()
   if (!value) throw new Error(`${name} が設定されていません`)
@@ -77,7 +91,7 @@ async function shopifyAccessToken(domain: string): Promise<string> {
   if (!token || !Number.isFinite(expiresIn) || expiresIn <= 0) {
     throw new Error("Shopifyアクセストークンまたは有効期限が応答にありません")
   }
-  const missingScopes = REQUIRED_SHOPIFY_SCOPES.filter((scope) => !grantedScopes.has(scope))
+  const missingScopes = missingShopifyAdminScopes(grantedScopes)
   if (missingScopes.length > 0) throw new Error(`Shopify API権限が不足しています: ${missingScopes.join(", ")}`)
   cachedAccessToken = { token, expiresAt: Date.now() + expiresIn * 1_000 }
   return token

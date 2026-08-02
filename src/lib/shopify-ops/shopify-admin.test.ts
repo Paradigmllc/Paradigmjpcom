@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { isShopifyAdminConfigured } from "./shopify-admin"
+import { isShopifyAdminConfigured, missingShopifyAdminScopes } from "./shopify-admin"
 
 const ORIGINAL_ENV = { ...process.env }
 
@@ -24,5 +24,21 @@ describe("Shopify Admin authentication readiness", () => {
     delete process.env.SHOPIFY_CLIENT_SECRET
     delete process.env.SHOPIFY_ADMIN_ACCESS_TOKEN
     expect(isShopifyAdminConfigured()).toBe(false)
+  })
+
+  it("accepts read access implied by Shopify write scopes", () => {
+    expect(missingShopifyAdminScopes([
+      "write_products",
+      "write_inventory",
+      "read_locations",
+    ])).toEqual([])
+  })
+
+  it("reports scopes that are neither granted nor implied", () => {
+    expect(missingShopifyAdminScopes(["write_products"])).toEqual([
+      "read_inventory",
+      "write_inventory",
+      "read_locations",
+    ])
   })
 })
