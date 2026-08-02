@@ -1,20 +1,32 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 Foreign Investor pSEO + GEO
+
+- 海外投資家向け英語decision brief 12本を`content_products`のservice-role-only DB台帳へ追加した。不動産・宿泊・データセンター・再エネ・中小企業M&A・スタートアップ・FDI審査・会社設立を、一次情報、key facts、downside risks、decision gates、チェックリスト、FAQ、方法論、更新日で構造化する。
+- `/en/japan-opportunities/invest`、12詳細ページ、11の意味のあるA/B比較ページを実装した。任意比較はAPIで動的提供するが、distinct intentを持つcurated pair以外はnoindexとし、scaled content abuseを防ぐ。
+- 各詳細ページへ、固有チェックリスト・判断ゲート・リスクから即時計算するEvidence Readiness Toolを実装した。入力はブラウザ内のみで、投資リターン予測として扱わない。
+- JSON/Markdown API、比較API、pSEO factory manifest、汎用Content API統合、CORS、rate limit、DBアクセス監査を実装した。12テーマ×47都道府県×5投資家タイプ×12言語と地域比較で189,504候補をモデル化し、一次情報・固有意図・動的ツール・canonical・人手翻訳レビューを通過したものだけ公開可能にする。
+- SEO/GEOは英語canonical、非英語からの恒久redirect、index/noindex gate、Article/CollectionPage/Breadcrumb JSON-LD、DB駆動sitemap、robotsのOAI-SearchBot/ChatGPT-User許可、`llms.txt`、一次情報citationを実装した。
+- migration `20260802043347_foreign_investor_pseo.sql`は12シード、content type制約、検索index、RLS最小権限を含む。release scriptはmigration、12件・品質契約・anon/authenticated SELECT拒否、本番ページ/API/factory/llms/sitemap fingerprintを自動検証する。
+- ローカル検証はTypeScript 0件、ESLint 0警告、Vitest 9/9、品質guard 0エラー、Next.js production build 587 static pagesをpass。DB公開URLを落とさないため`sitemap.xml`はdynamic routeとして確認済み。release doctorはcommit前のdirty/untracked 2項目以外をpassした。
+
 ## CURRENT STATUS — 2026-08-02 Video Subscription Commercial Operations
 
-- Branch `codex/video-growth-commercial-ops` で、Direct Growthを商用実務ワークオーダーへ拡張。顧客・契約参照・請求状態・月次制作枠・優先度・言語・担当・開始日・納期・SLAをDB/API/GUIで一元管理する。
-- 契約、請求・入金、制作ブリーフ、ブランド素材、利用権、LP、計測の7項目を全てpassed/waivedにするまで案件レビューをDBで拒否する。法務は契約/権利、財務は請求、Delivery/Commercialは制作工程を更新できる。
-- 各動画はContent Revision単位の内部品質QAと顧客公開承認を必須化。依頼者と承認者を分離し、Admin自己承認は20文字以上の根拠を必須化。旧create/transition/update RPCのservice-role権限を外し、商用ガードを迂回できない。
-- 修正依頼、担当、期限、解決記録、日次成果、累計自動再計算、SLA/承認/修正/月次枠KPI、検索・工程絞込、Excel向けCSV（式注入対策）を追加。外部SNS投稿・メール送信機能は追加していない。
-- RLS/FORCE RLS/service-role最小権限の新規5テーブルと4 migrationをrelease wiring済み。local release doctor、ESLint、TypeScript、Vitest 11件、Next.js build 564ページ、Playwright PC/390×844を通過。
-- ACTIVE HANDOFF: commit/push/PR/CI/main merge後、migration適用、Coolify deploy、本番API/UI/RLS/ACL/公開ガード/CSV/post-deploy doctorをread-backして完了する。実顧客案件、外部投稿、メール送信は作成しない。
+- Direct Growthを、顧客・契約参照・請求状態・月次制作枠・優先度・言語・担当・開始日・納期・SLAをDB/API/GUIで一元管理する商用実務ワークオーダーへ拡張した。契約、請求・入金、制作ブリーフ、ブランド素材、利用権、LP、計測の7項目がpassed/waivedになるまで案件レビューをDBで拒否する。
+- 各動画はContent Revision単位の内部品質QAと顧客公開承認を必須化した。依頼者と承認者を分離し、Admin自己承認は20文字以上の根拠を要求する。旧create/transition/update RPCのservice-role実行権限を外し、商用ガードの迂回を防止した。
+- 修正依頼、担当、期限、解決記録、日次成果、累計自動再計算、SLA/承認/修正/月次枠KPI、検索・工程絞込、Excel向けCSV（式注入対策）を追加した。外部SNS投稿・メール送信機能は追加していない。
+- PR **#680**をmain `4f39e5ab`へsquash mergeし、CI 5/5、local release doctor、ESLint、TypeScript、Vitest 11件、Next.js build 564ページ、Playwright PC/390×844を通過した。本番deployment `x7ct7g60yj8d2ho5wln6xtpm`はfinishedで、対象main commitと一致する。
+- 本番へ4 migrationを適用し、新規5テーブルのRLS/FORCE RLS、video growth全8テーブルのservice-role限定policy、anon/authenticated権限0、旧3 RPC権限失効、新商用RPC限定権限、7項目・二段階承認・職務分離・公開ガードをread-backした。8テーブルは全て0件で、架空案件は作成していない。
+- 未認証API/CSV 401、認証API/CSV 200、UTF-8 BOM/no-store、管理画面PC/390×844のAPI 200・H1・管理者表示・CSV導線・横overflowなしを確認した。post-deploy doctorもpass。ACTIVE HANDOFF: 実顧客案件は、承認済みStudio案件を選び、契約/請求/素材/権利/LP/計測を確認してから登録する。外部投稿とメール送信は引き続き人間が実行する。
 
 ## CURRENT STATUS — 2026-08-02 Hana Creator Video Factory bridge
 
+- Production verified: PR #677/main `1b0b84b1`, Coolify deployment `bq6td1c4coh8kqaxfbbr7z3a`, and the full post-deploy release gate passed. Live dry-run accepted the same Hana UUID twice with one execution and `idempotent_replay`, completed in draft-review state, exposed the constrained artifact list, and left managed Vast.ai instance 46258780 `exited`.
+- Security response: the first env import accidentally created a malformed multiline Coolify value and appeared only in a failed build. The bridge and affected Hana automation/media secrets were rotated in approved storage and both runtimes before the successful deployment; the failed value is no longer valid.
 - 独立運用中のHana Creatorから、本番Video Factoryへ安全に制作ジョブを投入する専用machine-to-machine bridgeを追加した。Hana専用secret、承認済み参照画像、`hana-<job UUID>` project、生成shot、ローカル納品だけを許可する。
 - Hana job UUIDをVideo Factoryのrun IDとして永続化し、タイムアウト再送やworker再起動でも同じジョブを二重生成しない。既存のVast.ai管理GPU 46258780、1 GPU 1 job、商用ライセンス・workflow審査、完了/失敗時停止をそのまま再利用する。
 - bridgeはsubmit/status/artifact listと、Hana projectの画像・動画成果物だけを取得できるprivate file proxyを提供する。他project、brief、review JSON、未承認参照画像は拒否する。
-- Active handoff: Linux CI通過後にPRをmainへmergeし、`VIDEO_FACTORY_CREATOR_BRIDGE_SECRET`を本番Paradigm/Hanaのapproved secretへ同値設定する。まずdry-runでGPUが停止したまま冪等submit/status/artifact境界を確認し、その後だけproduction seriesを有効化する。
+- Active handoff: bridge rollout is complete. Keep the Hana runtime on dry-run and series disabled until commercially approved ComfyUI model/workflow profiles and SNS app credentials/audits are ready; activate one SFW canary series before any broader production run.
 
 ## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio + Direct Growth
 
@@ -173,18 +185,20 @@
 - 最新の稼働コンテナはmain **2a036780**（`d40eef47`を包含）でhealthy。Coolify deployment **uiu3j3imc8sq9zero80nnlhi**はfinished。Pet page/renderer ready、anonymous create 201、owner load 200、delete 200、deleted read-back 404を再確認し、検証projectは削除した。checkoutは引き続きfail-closed。
 - 市場投入gateを追加した。Pet変更時はclean `npm ci`、root audit、専用TypeScript、Vitest、対象ESLint、production buildをCIで必須検証する。ローカルではroot audit 0、Pet TypeScript、Vitest 9/9、対象ESLint、Next.js production build 564/564ページを通過した。
 - リポジトリ補助runtimeもhardeningし、Astroを7.1.6 / Node adapter 11.0.3へ更新してaudit 0・server build成功、outreach workerはStagehand 3.7.1 / Crawlee 3.17.0 / Playwright 1.62.1と安全なUndici 6.28.0へ更新してTypeScript・high以上0を確認した。上流Stagehandの`@ai-sdk/provider-utils`由来lowのみ継続監視する。
-- Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体とCloudflare API tokenは引き続きローテーション対象。
+- Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体もread/read:sensitive/write/deployの最小権限・365日失効へ交換し、新tokenのapplications/env API 200、approved secret store 2箇所の更新、旧token失効、remote一時secret削除を確認した。Cloudflare API tokenのみ引き続きローテーション対象。
 - 市場投入hardeningはPR **#676**をmain **b0a9eca1**へsquash merge済み。GitHub production run **30735560298**とCoolify deployment **q80cl9qe9wofsrkwoj440tf4**は成功し、対象commit一致、公開VaaS、埋め込みVideo Factoryを確認した。Pet本番smokeはpage 200、create 201、owner read 200、unauthorized 404、preview前checkout 409、delete 200、deleted read-back 404で、検証projectは削除済み。
+- 家族招待アップロードは既に本番実装済みのため、LPに残っていた「次回リリース」表現を日英西葡の4言語で実機能に合わせて修正した。Pet専用TypeScriptは通過。Stripe専用live key作成はStripe Dashboardのパスキー本人確認待ちで、決済設定はまだfail-closedのまま。
 - Pet paid renderはlive Stripe secret/webhook/3 Price IDsとResendが揃うまで無効。実購入・返金・納品証跡が市場公開前に必要。
 
 ## ACTIVE HANDOFF
 
+- Foreign Investor pSEO: `codex/foreign-investor-pseo`の検証、PR、canonical release、本番read-backを完了する。候補189,504件を一括index化せず、地域固有データと翻訳レビューが揃ったwaveだけを公開する。
 - Direct Growth: 実装、main merge、本番deployment、migration、RLS/ACL、API/UI/readiness、post-deploy doctorまで完了。外部投稿・メール送信controlは持たず、本番データ0件を維持した。
 - Direct Growth: 初回実運用は、最終承認済みの実在Studio案件を1件登録し、4媒体copyの人間レビュー、DBベル+Slack通知、将来日時、手動公開URL、成果指標を同一campaignで記録する。通知の本番mutation確認は架空データを作らず、この実案件で行う。
 - SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
 - Japan operator: production releaseとDB/API/UI/送信guardのread-backは完了。実運用はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を揃え、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後にsecretをapproved storeへ設定し、0.25 USDC実購入、settlement、paid delivery、hashed reference、DBベル、Slackを確認する。
-- Pet Life Movie: 手動Webhook secret 4種のローテーションは完了。市場公開前に承認済みCloudflare API tokenとCoolify API token本体をローテーションする。ローカル診断出力に露出した旧tokenは安全とみなさない。
+- Pet Life Movie: 手動Webhook secret 4種とCoolify API token本体のローテーションは完了。市場公開前にCloudflare API tokenを交換する。現tokenはactive・DNS read可能だがtoken管理権限を持たないため、Cloudflare Dashboardの認証済みsessionが必要。
 - Pet Life Movie: live Stripe secret/webhook/3 Price IDsとResendをapproved secret storeへ設定後、実購入・署名webhook・render・承認・納品・返金を一度通し、checkoutを有効化する。
 - Video Factoryは既存の承認済みGPUだけを使用し、既定で追加GPUを作成しない。
 
@@ -195,6 +209,7 @@
 - `/work` fast-first PR: #586 / main `aa8af979` / validation `30394597067` / release `30394964339` / deployment `j3srqefjxcuopbvjgr5mmrcc`
 - VaaS implementation PR: #573
 - VaaS production deployment: pending
+- Foreign Investor pSEO: PR **#681** / branch `codex/foreign-investor-pseo` / deploymentはrelease完了後に追記する。
 
 ## ACTIVE HANDOFF - 2026-08-02 Vertical SaaS direction
 
@@ -204,8 +219,7 @@
 - Stripe live products exist in the Paradigm LLC account: Quote Recovery Starter and Team with monthly JPY tax-inclusive prices. The dedicated production webhook endpoint is registered for Checkout, subscription lifecycle, and invoice paid/failed events.
 - Production DB migration `20260802020738_quote_recovery_commercial_saas.sql` is applied. All commercial tables have RLS, anon/authenticated grants are revoked, service-role policies and service-only RPC permissions are verified, and a transactional account/usage/RLS smoke test passed.
 - Verification passed: Next.js production build, TypeScript, Quote Recovery targeted ESLint with zero warnings, 11 unit tests, dependency audit with zero known vulnerabilities, and SQL functional/RLS verification.
-- Release gate: Stripe Price IDs and webhook signing secret are configured. The dedicated live Stripe Secret Key and Resend API key/sender domain are the two remaining runtime secrets. User authorization is complete; browser connection recovery is in progress. Linux validation run `30734493770` passed the production build.
-
+- Release gate: Stripe Price IDs, webhook signing secret, and a validated live account Secret Key are configured in Coolify. Resend sending-only API key and verified `send.paradigmjp.com` sender domain are configured; a production delivery test reached Gmail. The Stripe runtime is launch-ready, while replacement with a newly named Quote Recovery-only Dashboard key remains pending because Stripe presented an hCaptcha challenge in the fallback browser. Linux validation run `30738260726` passed.
 - Direct Growth: PR **#665** / main `f2339929` / feature deployment `ghen9whanscvtws0cqndwj5y` / latest live deployment `szv2lqpeybjf476rtqcu6djm`。
 - SERICIA Shopify storefront and BASE sync: PR **#657**、hardening PR **#675** / main `e9238314`（latest live `b0a9eca1`に包含）/ deployment `q80cl9qe9wofsrkwoj440tf4`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。

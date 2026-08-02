@@ -40,6 +40,11 @@ const INTERNAL_DISALLOW = [
   "/*/themes-showcase",
 ]
 
+const PUBLIC_CONTENT_API_ALLOW = [
+  "/api/v1/content",
+  "/api/v1/investor-briefs",
+]
+
 export default function robots(): MetadataRoute.Robots {
   const baseDisallow = [
     "/api/",
@@ -55,17 +60,18 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
+        allow: ["/", ...PUBLIC_CONTENT_API_ALLOW],
         disallow: baseDisallow,
       },
       // ─── GEO (AI 検索) クローラー優遇 ───
       // 引用されることが SEO 価値 → 明示的に許可しブロックは最小限
       // ただし /report/ /p/ は 1顧客1URL = 個人情報相当なので AI bot にも禁止
-      { userAgent: "GPTBot", allow: "/", disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
-      { userAgent: "OAI-SearchBot", allow: "/", disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
-      { userAgent: "PerplexityBot", allow: "/", disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
-      { userAgent: "ClaudeBot", allow: "/", disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
-      { userAgent: "Google-Extended", allow: "/", disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
+      { userAgent: "GPTBot", allow: ["/", ...PUBLIC_CONTENT_API_ALLOW], disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
+      { userAgent: "OAI-SearchBot", allow: ["/", ...PUBLIC_CONTENT_API_ALLOW], disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
+      { userAgent: "ChatGPT-User", allow: ["/", ...PUBLIC_CONTENT_API_ALLOW], disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
+      { userAgent: "PerplexityBot", allow: ["/", ...PUBLIC_CONTENT_API_ALLOW], disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
+      { userAgent: "ClaudeBot", allow: ["/", ...PUBLIC_CONTENT_API_ALLOW], disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
+      { userAgent: "Google-Extended", allow: ["/", ...PUBLIC_CONTENT_API_ALLOW], disallow: ["/api/", "/admin/", ...REPORT_DISALLOW, ...INTERNAL_DISALLOW] },
     ],
     sitemap: "https://paradigmjp.com/sitemap.xml",
     host: "https://paradigmjp.com",

@@ -23,6 +23,33 @@ test.describe("Japan opportunity brands", () => {
     expect(response.status()).toBe(400)
   })
 
+  test("publishes sourced investor briefs in HTML and the public API", async ({ page, request }) => {
+    const catalogResponse = await request.get("/api/v1/investor-briefs")
+    expect(catalogResponse.ok()).toBeTruthy()
+    const catalog = await catalogResponse.json() as { data: Array<{ slug: string }>; meta: { count: number } }
+    expect(catalog.meta.count).toBe(12)
+    expect(catalog.data.some((item) => item.slug === "japan-data-center-investment")).toBe(true)
+
+    await page.goto("/en/japan-opportunities/invest/japan-data-center-investment")
+    await expect(page.getByRole("heading", { level: 1, name: /Japan Data Center Investment/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Primary sources" })).toBeVisible()
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      "https://paradigmjp.com/en/japan-opportunities/invest/japan-data-center-investment",
+    )
+
+    await expect(page.getByRole("heading", { name: "Evidence readiness score" })).toBeVisible()
+
+    const factoryResponse = await request.get("/api/v1/investor-briefs/factory")
+    expect(factoryResponse.ok()).toBeTruthy()
+    const factory = await factoryResponse.json() as { data: { scale: { candidates: { total: number } } } }
+    expect(factory.data.scale.candidates.total).toBe(189_504)
+
+    await page.goto("/en/japan-opportunities/invest/compare/japan-data-center-investment-vs-japan-renewable-energy-investment")
+    await expect(page.getByRole("heading", { level: 1, name: /Data centers vs Renewable power/ })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Source ledgers" })).toBeVisible()
+  })
+
   test("keeps the fixed setup lane distinct from the external operator lane", async ({ page }) => {
     await page.goto("/en/japan-market-partner")
     await expect(page.getByText("This $15,000 fixed setup lane does not appoint Paradigm as a distributor")).toBeVisible()
