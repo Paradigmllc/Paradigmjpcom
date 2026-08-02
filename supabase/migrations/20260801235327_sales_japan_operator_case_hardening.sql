@@ -75,17 +75,17 @@ ON CONFLICT (domain) DO UPDATE
 SET meta = coalesce(public.sales_companies.meta, '{}'::jsonb) || excluded.meta,
     updated_at = now();
 
-WITH wave_one_aliases (canonical_key, priority, aliases) AS (
+WITH wave_one_aliases (canonical_key, priority, aliases, domains) AS (
   VALUES
-    ('chefclean', 1, ARRAY['chefclean', 'chefclean co., ltd.']::text[]),
-    ('holen', 2, ARRAY['holen', 'holen - thai souvenir design']::text[]),
+    ('chefclean', 1, ARRAY['chefclean', 'chefclean co., ltd.']::text[], ARRAY[]::text[]),
+    ('holen', 2, ARRAY['holen', 'holen - thai souvenir design']::text[], ARRAY[]::text[]),
     ('little_archive', 3, ARRAY[
       'little archive / dongjin bedding',
       'dongjin bedding co., ltd. / little archive',
       'dongjin bedding co., ltd.'
-    ]::text[]),
-    ('qurv', 4, ARRAY['qurv / f.r.p. industry', 'home - qurv']::text[]),
-    ('bfter', 5, ARRAY['b.fter / another day', 'another day / b.fter']::text[])
+    ]::text[], ARRAY['lovetinycosmos.com', 'en.lovetinycosmos.com']::text[]),
+    ('qurv', 4, ARRAY['qurv / f.r.p. industry', 'home - qurv']::text[], ARRAY[]::text[]),
+    ('bfter', 5, ARRAY['b.fter / another day', 'another day / b.fter']::text[], ARRAY[]::text[])
 ),
 wave_one AS (
   SELECT DISTINCT ON (aliases.canonical_key)
@@ -95,6 +95,7 @@ wave_one AS (
   FROM wave_one_aliases AS aliases
   JOIN public.sales_companies AS company
     ON lower(trim(company.company_name)) = ANY (aliases.aliases)
+    OR lower(trim(company.domain)) = ANY (aliases.domains)
   ORDER BY aliases.canonical_key, company.updated_at DESC, company.id
 )
 INSERT INTO public.sales_japan_operator_cases (
@@ -127,23 +128,24 @@ SELECT
 FROM wave_one
 ON CONFLICT (company_id) DO NOTHING;
 
-WITH wave_one_aliases (aliases) AS (
+WITH wave_one_aliases (aliases, domains) AS (
   VALUES
-    (ARRAY['chefclean', 'chefclean co., ltd.']::text[]),
-    (ARRAY['holen', 'holen - thai souvenir design']::text[]),
+    (ARRAY['chefclean', 'chefclean co., ltd.']::text[], ARRAY[]::text[]),
+    (ARRAY['holen', 'holen - thai souvenir design']::text[], ARRAY[]::text[]),
     (ARRAY[
       'little archive / dongjin bedding',
       'dongjin bedding co., ltd. / little archive',
       'dongjin bedding co., ltd.'
-    ]::text[]),
-    (ARRAY['qurv / f.r.p. industry', 'home - qurv']::text[]),
-    (ARRAY['b.fter / another day', 'another day / b.fter']::text[])
+    ]::text[], ARRAY['lovetinycosmos.com', 'en.lovetinycosmos.com']::text[]),
+    (ARRAY['qurv / f.r.p. industry', 'home - qurv']::text[], ARRAY[]::text[]),
+    (ARRAY['b.fter / another day', 'another day / b.fter']::text[], ARRAY[]::text[])
 ),
 wave_one AS (
   SELECT DISTINCT company.id
   FROM wave_one_aliases AS aliases
   JOIN public.sales_companies AS company
     ON lower(trim(company.company_name)) = ANY (aliases.aliases)
+    OR lower(trim(company.domain)) = ANY (aliases.domains)
 )
 INSERT INTO public.sales_japan_operator_events (
   case_id,
