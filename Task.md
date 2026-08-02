@@ -52,7 +52,8 @@
 - Added explicit unchecked consent, private management links, customer deletion, 30-day free/90-day paid retention, expiry enforcement, cleanup API, and R2 deletion support.
 - Added migration `20260802020742_pet_life_movie_market_ready.sql`: customer/payment state, one-active-render uniqueness, deliverables, FORCE RLS, Data API revocation, and service-role-only access. All canonical migration and release verifiers include it.
 - Verification passed: Next.js production build 552/552 pages, Pet TypeScript, changed-scope ESLint, Vitest 9/9, Python compile/Ruff, targeted pytest, and production-mode Playwright for the five-photo no-account preview flow.
-- Release handoff: merge and run the canonical deployment; apply/read back the migration; set the internal Video Factory URL and R2 lifecycle; configure live Stripe products/webhook and Resend only through authenticated control-plane access. Checkout remains disabled until every dependency is present, so customers cannot be charged prematurely.
+- Cloudflare API credentials were restored from the approved local SSOT into Coolify. R2 lifecycle rule `pet-life-movie-retention-90d` is enabled for prefix `pet-life-movie/`, read back at 90 days, and preserves the pre-existing bucket rule.
+- Release handoff: merge and run the canonical deployment; apply/read back the migration; verify the embedded internal Video Factory; configure live Stripe products/webhook and Resend only through authenticated control-plane access. Checkout remains disabled until every dependency is present, so customers cannot be charged prematurely.
 ## MONETIZATION DECISIONS
 
 - Wave 1 uses free content APIs for reach and pay-per-request decision packets for immediate machine-to-machine revenue testing.
