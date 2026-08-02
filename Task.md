@@ -1,5 +1,16 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 Shopify storefront implementation
+
+- Shopify Partner organization `Paradigm合同会社` is active under the approved company account. A collaborator request is unnecessary because the account already has direct access to `g2d5th-zr.myshopify.com`.
+- Verified direct access to Shopify Admin, Markets, products, content, analytics, apps, settings, and Online Store theme management. The live theme remains `Rise 15.5.0` and the storefront remains password protected.
+- Duplicated the live theme without modifying it and created the unpublished working theme `SERICA WoodMart OS2 - Development` (theme ID `144315482160`). Shopify CLI authentication is complete and the development theme is synchronized under `shopify/theme`.
+- Audited the supplied WoodMart v1.4 / Online Store 1 package. Theme Check reports 1,189 offenses (302 errors, 887 warnings), so it remains visual-reference-only and must never be uploaded or published unchanged.
+- Implemented the first Online Store 2 storefront slice: an editable international marketplace hero, service-promise strip, collection/category showcase, WoodMart-inspired global styling, sticky international header, dark footer, responsive product discovery grid, quick add, reduced-motion handling, and mobile horizontal category navigation.
+- Pushed the implementation only to unpublished theme `144315482160`. Theme Check passes with zero new findings; the remaining eight warnings are inherited from the untouched Rise 15.5.0 base.
+- Repaired the production-domain routing conflict in Cloudflare without changing API or mail records. `sericia.com` now resolves to Shopify `23.227.38.65` and `www.sericia.com` is a DNS-only CNAME to `shops.myshopify.com`. Cloudflare and Google public resolvers both return the Shopify records, and the Shopify response identifies development theme `144315482160`.
+- Active handoff: keep the current live Rise theme and storefront password in place. Next configure production photography and collection assignments, confirm English brand copy and store name, configure Shopify Markets/shipping/tax policies, then implement BASE product/price/inventory synchronization as a separate custom integration without paid-app dependency by default.
+
 ## CURRENT STATUS — 2026-08-02 Japan market operator Wave 1
 
 - Read the two shared strategy chats and converted the core model into an executable external Japan market operator offer.

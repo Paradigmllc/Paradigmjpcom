@@ -1,0 +1,129 @@
+{
+  "sections": {
+    "serica-hero": {
+      "type": "serica-marketplace-hero",
+      "settings": {
+        "eyebrow": "Independent Japan, delivered worldwide",
+        "heading": "Objects with a story.",
+        "text": "<p>Discover considered goods from independent Japanese makers, small studios, and local shops.</p>",
+        "primary_label": "Shop new arrivals",
+        "primary_link": "shopify://collections/all",
+        "secondary_label": "Explore collections",
+        "secondary_link": "shopify://collections",
+        "note": "Tracked international delivery from Japan"
+      }
+    },
+    "serica-promises": {
+      "type": "serica-value-strip",
+      "blocks": {
+        "worldwide": {
+          "type": "promise",
+          "settings": {
+            "icon": "globe",
+            "heading": "Worldwide delivery",
+            "text": "Tracked shipping from Japan"
+          }
+        },
+        "packed": {
+          "type": "promise",
+          "settings": {
+            "icon": "box",
+            "heading": "Carefully packed",
+            "text": "Handled by our Japan team"
+          }
+        },
+        "makers": {
+          "type": "promise",
+          "settings": {
+            "icon": "heart",
+            "heading": "Independent makers",
+            "text": "Small-batch goods with a story"
+          }
+        },
+        "secure": {
+          "type": "promise",
+          "settings": {
+            "icon": "shield",
+            "heading": "Secure checkout",
+            "text": "Protected international payments"
+          }
+        }
+      },
+      "block_order": ["worldwide", "packed", "makers", "secure"],
+      "settings": {
+        "accessibility_label": "Our service promises"
+      }
+    },
+    "serica-categories": {
+      "type": "serica-category-showcase",
+      "blocks": {
+        "tableware": {
+          "type": "category",
+          "settings": {
+            "kicker": "For the table",
+            "title": "Tableware",
+            "link": "shopify://collections"
+          }
+        },
+        "craft": {
+          "type": "category",
+          "settings": {
+            "kicker": "Made by hand",
+            "title": "Craft",
+            "link": "shopify://collections"
+          }
+        },
+        "living": {
+          "type": "category",
+          "settings": {
+            "kicker": "Everyday ritual",
+            "title": "Living",
+            "link": "shopify://collections"
+          }
+        },
+        "gifts": {
+          "type": "category",
+          "settings": {
+            "kicker": "Small discoveries",
+            "title": "Gifts",
+            "link": "shopify://collections"
+          }
+        }
+      },
+      "block_order": ["tableware", "craft", "living", "gifts"],
+      "settings": {
+        "eyebrow": "Explore by mood",
+        "heading": "A quieter kind of marketplace.",
+        "text": "<p>Useful, beautiful pieces selected for the rituals of everyday life.</p>"
+      }
+    },
+    "all-products": {
+      "type": "featured-collection",
+      "settings": {
+        "title": "New from Japan",
+        "heading_size": "h2",
+        "show_description": false,
+        "description_style": "subtitle",
+        "collection": "all",
+        "products_to_show": 12,
+        "columns_desktop": 4,
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "solid",
+        "enable_desktop_slider": false,
+        "color_scheme": "scheme-1",
+        "image_ratio": "adapt",
+        "image_shape": "default",
+        "show_secondary_image": true,
+        "show_vendor": true,
+        "show_rating": false,
+        "quick_add": "standard",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
+        "padding_top": 80,
+        "padding_bottom": 96
+      }
+    }
+  },
+  "order": ["serica-hero", "serica-promises", "serica-categories", "all-products"]
+}

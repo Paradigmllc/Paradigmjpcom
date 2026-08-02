@@ -1,0 +1,143 @@
+<section class="serica-category-showcase">
+  <div class="page-width">
+    <div class="serica-section-heading">
+      <div>
+        {%- if section.settings.eyebrow != blank -%}
+          <p class="serica-eyebrow">{{ section.settings.eyebrow | escape }}</p>
+        {%- endif -%}
+        <h2 class="serica-section-heading__title">{{ section.settings.heading | escape }}</h2>
+      </div>
+      {%- if section.settings.text != blank -%}
+        <div class="serica-section-heading__text rte">{{ section.settings.text }}</div>
+      {%- endif -%}
+    </div>
+
+    <div class="serica-category-showcase__grid">
+      {%- for block in section.blocks -%}
+        {%- liquid
+          assign collection = block.settings.collection
+          assign card_image = block.settings.image
+          if card_image == blank and collection != blank
+            assign card_image = collection.featured_image
+          endif
+          assign card_title = block.settings.title
+          if card_title == blank and collection != blank
+            assign card_title = collection.title
+          endif
+          if card_title == blank
+            assign card_title = 'Curated collection'
+          endif
+          assign card_link = block.settings.link
+          if card_link == blank and collection != blank
+            assign card_link = collection.url
+          endif
+          if card_link == blank
+            assign card_link = routes.collections_url
+          endif
+        -%}
+        <article class="serica-category-card" {{ block.shopify_attributes }}>
+          <div class="serica-category-card__media">
+            {%- if card_image != blank -%}
+              {{
+                card_image
+                | image_url: width: 1500
+                | image_tag:
+                  class: 'serica-category-card__image',
+                  widths: '450, 750, 1000, 1500',
+                  sizes: '(min-width: 990px) 50vw, 84vw',
+                  loading: 'lazy',
+                  alt: card_image.alt
+              }}
+            {%- else -%}
+              {{ 'collection-' | append: forloop.index | placeholder_svg_tag: 'placeholder-svg' }}
+            {%- endif -%}
+          </div>
+          <div class="serica-category-card__content">
+            <div>
+              <p class="serica-category-card__kicker">{{ block.settings.kicker | escape }}</p>
+              <h3 class="serica-category-card__title">{{ card_title | escape }}</h3>
+            </div>
+            <span class="serica-category-card__arrow" aria-hidden="true">&#8599;</span>
+          </div>
+          <a class="serica-category-card__link" href="{{ card_link }}">
+            <span class="visually-hidden">Explore {{ card_title | escape }}</span>
+          </a>
+        </article>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "SERICA category showcase",
+  "tag": "section",
+  "class": "section",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "text",
+      "id": "eyebrow",
+      "label": "Eyebrow",
+      "default": "Explore by mood"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "A quieter kind of marketplace."
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Useful, beautiful pieces selected for the rituals of everyday life.</p>"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "category",
+      "name": "Category",
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Custom image"
+        },
+        {
+          "type": "text",
+          "id": "kicker",
+          "label": "Kicker",
+          "default": "Discover"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Custom title"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Custom link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "SERICA category showcase",
+      "blocks": [
+        { "type": "category", "settings": { "kicker": "For the table", "title": "Tableware" } },
+        { "type": "category", "settings": { "kicker": "Made by hand", "title": "Craft" } },
+        { "type": "category", "settings": { "kicker": "Everyday ritual", "title": "Living" } },
+        { "type": "category", "settings": { "kicker": "Small discoveries", "title": "Gifts" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
