@@ -29,6 +29,8 @@ describe("Pet Life Movie production release wiring", () => {
     expect(migration).not.toContain("references auth.users")
     expect(deploy).toContain("applyPetLifeMovieMigration")
     expect(deploy).toContain("verifyPetLifeMovieSchema")
+    expect(deploy).toContain("isInternalDataApiUrl(url)")
+    expect(deploy).toContain("has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT')")
     expect(migrationRunner).toContain("20260801213954_pet_life_movie_mvp.sql")
     expect(dataAccess).toContain("getServiceSalesSupabase")
     expect(dataAccess).not.toContain("getServiceSupabase()")

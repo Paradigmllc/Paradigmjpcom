@@ -596,6 +596,25 @@ async function applyPetLifeMovieMigration(envs) {
 
 async function verifyPetLifeMovieSchema(envs) {
   const { url, key } = salesSupabase(envs)
+  if (isInternalDataApiUrl(url)) {
+    await applySqlMigrationThroughPostgres(
+      envs,
+      `
+do $$
+begin
+  if to_regclass('public.pet_movie_projects') is null then
+    raise exception 'pet_movie_projects is missing';
+  end if;
+  if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
+    raise exception 'service_role cannot read pet_movie_projects';
+  end if;
+end
+$$;
+`,
+      "Pet Life Movie schema verification",
+    )
+    return "Pet Life Movie schema: verified through Postgres service_role privileges"
+  }
   const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
     signal: AbortSignal.timeout(30_000),
