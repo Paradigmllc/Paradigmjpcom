@@ -58,6 +58,24 @@ export async function createCheckoutSession(
   }
 }
 
+export async function expireCheckoutSession(
+  sessionId: string,
+): Promise<StripeResponse<{ id: string; status: Stripe.Checkout.Session["status"] }>> {
+  try {
+    const existing = await getStripeClient().checkout.sessions.retrieve(sessionId)
+    if (existing.status === "complete") {
+      return { ok: true, data: { id: existing.id, status: existing.status } }
+    }
+    const session = existing.status === "open"
+      ? await getStripeClient().checkout.sessions.expire(sessionId)
+      : existing
+    return { ok: true, data: { id: session.id, status: session.status } }
+  } catch (error) {
+    console.error("[stripe] Checkout Session expiration failed", error)
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}
+
 export async function verifyStripeWebhook(
   rawBody: string,
   signature: string,

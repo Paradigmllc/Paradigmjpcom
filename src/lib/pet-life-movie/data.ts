@@ -77,6 +77,7 @@ export async function authorizePetMovieContributor(inviteToken: string): Promise
     .maybeSingle()
   if (projectError) throw new Error(`Contributor project lookup failed: ${projectError.message}`)
   const project = projectData as PetMovieProjectRow | null
+  if (!project || ["expired", "deleted"].includes(project.status) || new Date(project.expires_at).getTime() <= Date.now()) return null
   return project ? { contributorId: String(contributor.id), project } : null
 }
 

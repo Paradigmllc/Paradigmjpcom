@@ -67,6 +67,7 @@ function setView(name) {
     dashboard: "ダッシュボード",
     create: "新しい動画",
     projects: "制作案件",
+    readiness: "量産準備度",
     engines: "OSSエンジン",
     gpu: "GPU・接続設定",
   }
@@ -74,6 +75,7 @@ function setView(name) {
   history.replaceState(null, "", `#${name}`)
   if (name === "projects") void loadProjects()
   if (name === "create" && window.loadStudioTemplates) void window.loadStudioTemplates()
+  if (name === "readiness" && window.loadStudioReadiness) void window.loadStudioReadiness()
   if (name === "engines" && window.loadEngineCatalog) void window.loadEngineCatalog()
   if (name === "gpu") void loadRuntimeAndGpu()
 }
@@ -199,6 +201,7 @@ async function loadBootstrap() {
   if (window.renderEngineCatalogFromBootstrap) {
     window.renderEngineCatalogFromBootstrap(body.engine_catalog)
   }
+  if (window.loadStudioReadiness) void window.loadStudioReadiness()
   await loadProjects(true)
   if (!state.projectPoll) {
     state.projectPoll = setInterval(
@@ -268,125 +271,8 @@ async function loadProjects(quiet = false) {
   }
 }
 
-function selectedValues(container) {
-  return $$('input[type="checkbox"]:checked', container).map((item) => item.value)
-}
-
-function lines(value) {
-  return [...new Set(
-    String(value).split(/\r?\n/).map((item) => item.trim()).filter(Boolean),
-  )]
-}
-
-function commaValues(value) {
-  return [...new Set(
-    String(value).split(/[,、]/).map((item) => item.trim()).filter(Boolean),
-  )]
-}
-
-function dimensions(ratio) {
-  return {
-    "16:9": [1920, 1080],
-    "9:16": [1080, 1920],
-    "1:1": [1080, 1080],
-    "4:5": [1080, 1350],
-  }[ratio]
-}
-
 function syncColor(source, target) {
   $(target).value = $(source).value.toUpperCase()
-}
-
-function updateDeliverableSummary() {
-  const languages = commaValues($("#languages").value)
-    .map((item) => item.toLowerCase())
-  const ratios = selectedValues($("#ratios"))
-  const count = languages.length * ratios.length
-  $("#deliverable-summary").innerHTML = `
-    <strong>${count || 0}点を生成</strong><br>
-    ${escapeHtml(languages.join(" / ") || "言語未選択")} ×
-    ${escapeHtml(ratios.join(" / ") || "比率未選択")}`
-}
-
-function buildBrief() {
-  const languages = commaValues($("#languages").value)
-    .map((item) => item.toLowerCase())
-  const ratios = selectedValues($("#ratios"))
-  if (!languages.length || !ratios.length) {
-    throw new Error("言語とアスペクト比を1件以上選択してください")
-  }
-  const objective = $("#objective").value.trim()
-  const cta = $("#cta").value.trim()
-  const deliverables = []
-  for (const language of languages) {
-    for (const ratio of ratios) {
-      const [width, height] = dimensions(ratio)
-      deliverables.push({
-        name: `${language}-${ratio.replace(":", "x")}`.toLowerCase(),
-        language,
-        aspect_ratio: ratio,
-        width,
-        height,
-        fps: 30,
-        format: "mp4",
-      })
-    }
-  }
-  const localizations = {}
-  for (const language of languages.slice(1)) {
-    localizations[language] = {
-      objective: `Localized ${language} version: ${objective}`,
-      cta,
-      segment_overrides: {},
-      reviewer: $("#approver-name").value.trim(),
-    }
-  }
-  const likeness = $("#rights-likeness").checked
-    ? "granted"
-    : "not_applicable"
-  const voice = $("#rights-voice").checked
-    ? "granted"
-    : "not_applicable"
-  return {
-    project_name: $("#project-name").value.trim(),
-    objective,
-    audience: $("#audience").value.trim(),
-    platforms: commaValues($("#platforms").value),
-    duration_seconds: Number($("#duration").value),
-    languages,
-    brand: {
-      name: $("#brand-name").value.trim(),
-      primary_color: $("#primary-color-text").value.trim().toUpperCase(),
-      accent_color: $("#accent-color-text").value.trim().toUpperCase(),
-      text_color: "#FFFFFF",
-      font_family: $("#font-family").value.trim() || "Inter",
-      logo_path: lines($("#source-assets").value)
-        .find((item) => /logo/i.test(item)) || null,
-      ...(window.studioBrandFields ? window.studioBrandFields() : {}),
-    },
-    ...(window.studioBriefFields ? window.studioBriefFields() : {}),
-    source_assets: lines($("#source-assets").value),
-    reference_urls: lines($("#reference-urls").value),
-    rights: {
-      source_assets_cleared: $("#rights-assets").checked,
-      ai_generation_allowed: $("#rights-ai").checked,
-      likeness_consent: likeness,
-      voice_consent: voice,
-      claims_approved_by_client: $("#rights-claims").checked,
-      notes: "Declared in the Video Factory GUI.",
-    },
-    approver: {
-      name: $("#approver-name").value.trim(),
-      email: $("#approver-email").value.trim(),
-    },
-    deliverables,
-    localizations,
-    requested_shot_kinds: selectedValues($("#shot-kinds")),
-    engine_profile_overrides: window.selectedEngineProfileOverrides
-      ? window.selectedEngineProfileOverrides()
-      : {},
-    notes: `${$("#notes").value.trim()}\nCTA: ${cta}`.trim(),
-  }
 }
 
 async function submitVideo(event) {
@@ -399,7 +285,8 @@ async function submitVideo(event) {
   button.disabled = true
   button.textContent = "検証・投入中…"
   try {
-    const brief = buildBrief()
+    if (!window.buildStudioBrief) throw new Error("Studio brief builder is unavailable")
+    const brief = window.buildStudioBrief()
     const validation = await api("/v1/briefs/validate", {
       method: "POST",
       body: JSON.stringify(brief),
@@ -411,6 +298,13 @@ async function submitVideo(event) {
       throw new Error(messages.join(" / ") || "ブリーフに不足があります")
     }
     const mode = $('input[name="run-mode"]:checked').value
+    const preflight = window.preflightStudioBrief
+      ? await window.preflightStudioBrief(brief)
+      : null
+    if (mode === "production" && preflight && !preflight.production_allowed) {
+      toast(preflight.blockers.join(" / ") || "本番制作の準備条件を満たしていません", "warn")
+      return
+    }
     const request = {
       brief,
       dry_run: mode === "preview",
@@ -461,8 +355,8 @@ function wireEvents() {
   })
   $("#refresh-projects").addEventListener("click", () => void loadProjects())
   $("#video-form").addEventListener("submit", submitVideo)
-  $("#languages").addEventListener("input", updateDeliverableSummary)
-  $("#ratios").addEventListener("change", updateDeliverableSummary)
+  $("#languages").addEventListener("input", () => window.updateStudioDeliverableSummary?.())
+  $("#ratios").addEventListener("change", () => window.updateStudioDeliverableSummary?.())
   $("#primary-color").addEventListener("input", () => {
     syncColor("#primary-color", "#primary-color-text")
   })
@@ -482,9 +376,9 @@ function wireEvents() {
 
 async function init() {
   wireEvents()
-  updateDeliverableSummary()
+  if (window.updateStudioDeliverableSummary) window.updateStudioDeliverableSummary()
   const initialView = location.hash.replace("#", "") || "dashboard"
-  setView(["dashboard", "create", "projects", "engines", "gpu"].includes(initialView)
+  setView(["dashboard", "create", "projects", "readiness", "engines", "gpu"].includes(initialView)
     ? initialView
     : "dashboard")
   $("#factory-api-key").value = state.apiKey

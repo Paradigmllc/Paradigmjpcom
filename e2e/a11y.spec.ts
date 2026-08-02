@@ -36,6 +36,8 @@ const ROUTES = [
   "/ja/blog",
   "/ja/privacy",
   "/ja/legal",
+  "/ja/pet-life-movie",
+  "/ja/pet-life-movie/terms",
   "/en",
   "/en/about",
   "/en/pricing",
@@ -45,6 +47,12 @@ const ROUTES = [
   "/en/blog",
   "/en/privacy",
   "/en/legal",
+  "/en/pet-life-movie",
+  "/en/pet-life-movie/terms",
+  "/es/pet-life-movie",
+  "/es/pet-life-movie/terms",
+  "/pt/pet-life-movie",
+  "/pt/pet-life-movie/terms",
   "/en/report/demo/japan_entry",
 ]
 

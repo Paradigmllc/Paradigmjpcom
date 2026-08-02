@@ -72,7 +72,7 @@ const ALL_TABLES = [
   "sales_video_jobs", "video_factory_engine_profiles", "video_factory_engine_events",
   "video_factory_brand_kits", "video_factory_creative_templates",
   "video_factory_studio_projects", "video_factory_shot_revisions",
-  "video_factory_quality_metrics",
+  "video_factory_quality_metrics", "video_factory_studio_readiness_snapshots",
   // Platform Health
   "sales_platform_health_snapshots",
   // Infrastructure
@@ -429,6 +429,7 @@ function printSummaryAndExit(ok, missing, errored) {
         "video_factory_studio_projects": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
         "video_factory_shot_revisions": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
         "video_factory_quality_metrics": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",
+        "video_factory_studio_readiness_snapshots": "supabase/migrations/20260802203000_video_factory_studio_scale_readiness.sql",
         "video_growth_campaigns": "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql",
         "video_growth_variants": "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql",
         "video_growth_events": "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql",

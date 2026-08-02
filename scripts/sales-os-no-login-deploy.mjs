@@ -605,6 +605,14 @@ async function applyPetLifeMovieMarketReadyMigration(envs) {
   )
 }
 
+async function applyPetLifeMovieCommercialQualityMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802210000_pet_life_movie_commercial_quality.sql",
+    "Pet Life Movie commercial-quality migration",
+  )
+}
+
 async function verifyPetLifeMovieSchema(envs) {
   const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) {
@@ -622,6 +630,18 @@ begin
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
   end if;
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pet_movie_projects' and column_name = 'terms_accepted_at'
+  ) then
+    raise exception 'pet_movie_projects.terms_accepted_at is missing';
+  end if;
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pet_movie_contributors' and column_name = 'memories'
+  ) then
+    raise exception 'pet_movie_contributors.memories is missing';
+  end if;
 end
 $$;
 `,
@@ -629,13 +649,19 @@ $$;
     )
     return "Pet Life Movie schema: verified through Postgres service_role privileges"
   }
-  const response = await fetch(`${url}/rest/v1/pet_movie_deliverables?select=id&limit=1`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` },
-    signal: AbortSignal.timeout(30_000),
-  })
-  if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(`Pet Life Movie schema verification failed: HTTP ${response.status} ${detail.slice(0, 180)}`)
+  for (const path of [
+    "pet_movie_deliverables?select=id&limit=1",
+    "pet_movie_projects?select=id,terms_version,terms_accepted_at&limit=1",
+    "pet_movie_contributors?select=id,memories,consent_confirmed&limit=1",
+  ]) {
+    const response = await fetch(`${url}/rest/v1/${path}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(30_000),
+    })
+    if (!response.ok) {
+      const detail = await response.text()
+      throw new Error(`Pet Life Movie schema verification failed: HTTP ${response.status} ${detail.slice(0, 180)}`)
+    }
   }
   return "Pet Life Movie schema: verified through service role"
 }
@@ -693,6 +719,14 @@ async function applyVideoFactoryStudioLeastPrivilegeMigration(envs) {
     envs,
     "20260802113000_video_factory_studio_least_privilege.sql",
     "Video Factory Studio least-privilege migration",
+  )
+}
+
+async function applyVideoFactoryStudioScaleReadinessMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802203000_video_factory_studio_scale_readiness.sql",
+    "Video Factory Studio scale readiness migration",
   )
 }
 
@@ -1750,6 +1784,7 @@ async function main() {
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
     console.log(await applyPetLifeMovieMigration(envs))
     console.log(await applyPetLifeMovieMarketReadyMigration(envs))
+    console.log(await applyPetLifeMovieCommercialQualityMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
@@ -1812,6 +1847,7 @@ async function main() {
     console.log(await applyVideoFactoryOssExecutionTargetsMigration(envs))
     console.log(await applyVideoFactoryCommercialStudioMigration(envs))
     console.log(await applyVideoFactoryStudioLeastPrivilegeMigration(envs))
+    console.log(await applyVideoFactoryStudioScaleReadinessMigration(envs))
     console.log(await applyVideoGrowthDirectAcquisitionMigration(envs))
     console.log(await applyVideoGrowthCommercialSchemaMigration(envs))
     console.log(await applyVideoGrowthCommercialIntakeMigration(envs))

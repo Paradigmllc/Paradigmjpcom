@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 import { authorizePetMovieContributor, listPetMovieAssets, PET_MOVIE_TABLES, recordPetMovieEvent, requirePetMovieDatabase } from "@/lib/pet-life-movie/data"
 import { petMovieErrorResponse, siteBaseUrl } from "@/lib/pet-life-movie/http"
 import { buildFactualStoryboard } from "@/lib/pet-life-movie/storyboard"
-import { confirmPetMovieUploadsSchema, parseJsonBody, petMovieUploadSchema } from "@/lib/pet-life-movie/schema"
-import { createR2SignedUploads, sanitizeR2ObjectName } from "@/lib/sales/r2-storage"
+import { confirmPetMovieUploadsSchema, parseJsonBody, petMovieContributionUploadSchema } from "@/lib/pet-life-movie/schema"
+import { createR2SignedUploads, deleteR2Objects, sanitizeR2ObjectName, verifyPrivateR2ImageObjects } from "@/lib/sales/r2-storage"
 import { notifyBothChannels } from "@/lib/notify"
 
 export const runtime = "nodejs"
@@ -15,7 +15,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   try {
     const authorized = await authorizePetMovieContributor(token)
     if (!authorized) return NextResponse.json({ ok: false, error: "Invite is invalid or expired." }, { status: 404 })
-    const input = petMovieUploadSchema.parse(await parseJsonBody(request))
+    const input = petMovieContributionUploadSchema.parse(await parseJsonBody(request))
     const existing = await listPetMovieAssets(authorized.project.id)
     if (existing.length + input.files.length > 20) return NextResponse.json({ ok: false, error: "This project already has the maximum of 20 photos." }, { status: 400 })
     const rows = input.files.map((file, index) => {
@@ -34,6 +34,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       }
     })
     const db = requirePetMovieDatabase()
+    const { error: contributorUpdateError } = await db.from(PET_MOVIE_TABLES.CONTRIBUTORS).update({
+      memories: input.memories,
+      consent_confirmed: input.consentConfirmed,
+    }).eq("id", authorized.contributorId)
+    if (contributorUpdateError) throw new Error(`Contribution consent save failed: ${contributorUpdateError.message}`)
     const { error: insertError } = await db.from(PET_MOVIE_TABLES.ASSETS).insert(rows)
     if (insertError) throw new Error(`Contribution reservation failed: ${insertError.message}`)
     try {
@@ -56,6 +61,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
     if (!authorized) return NextResponse.json({ ok: false, error: "Invite is invalid or expired." }, { status: 404 })
     const input = confirmPetMovieUploadsSchema.parse(await parseJsonBody(request))
     const db = requirePetMovieDatabase()
+    const { data: reserved, error: reservedError } = await db.from(PET_MOVIE_TABLES.ASSETS)
+      .select("id, object_key, mime_type, size_bytes")
+      .eq("project_id", authorized.project.id)
+      .eq("contributor_id", authorized.contributorId)
+      .eq("upload_status", "pending")
+      .in("id", input.assetIds)
+    if (reservedError) throw new Error(`Contribution reservations could not be loaded: ${reservedError.message}`)
+    if ((reserved ?? []).length !== input.assetIds.length) {
+      return NextResponse.json({ ok: false, error: "One or more photo reservations are invalid." }, { status: 409 })
+    }
+    try {
+      await verifyPrivateR2ImageObjects((reserved ?? []).map((asset) => ({
+        objectKey: String(asset.object_key),
+        contentType: String(asset.mime_type),
+        sizeBytes: Number(asset.size_bytes),
+      })))
+    } catch (error) {
+      const objectKeys = (reserved ?? []).map((asset) => String(asset.object_key))
+      try {
+        await deleteR2Objects(objectKeys)
+      } catch (cleanupError) {
+        console.error("[pet-life-movie] invalid contribution R2 cleanup failed", cleanupError)
+      }
+      const { error: cleanupError } = await db.from(PET_MOVIE_TABLES.ASSETS).delete().in("id", input.assetIds)
+      if (cleanupError) console.error("[pet-life-movie] invalid contribution row cleanup failed", cleanupError.message)
+      throw error
+    }
     const { data, error } = await db.from(PET_MOVIE_TABLES.ASSETS)
       .update({ upload_status: "uploaded" })
       .eq("project_id", authorized.project.id)
@@ -64,8 +96,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
       .select("id")
     if (error) throw new Error(`Contribution confirmation failed: ${error.message}`)
     if ((data ?? []).length !== input.assetIds.length) return NextResponse.json({ ok: false, error: "Photo ownership check failed." }, { status: 403 })
-    const assets = await listPetMovieAssets(authorized.project.id, true)
-    const storyboard = buildFactualStoryboard(authorized.project, assets)
+    const [assets, contributorMemoryResult] = await Promise.all([
+      listPetMovieAssets(authorized.project.id, true),
+      db.from(PET_MOVIE_TABLES.CONTRIBUTORS)
+        .select("memories")
+        .eq("project_id", authorized.project.id)
+        .eq("consent_confirmed", true)
+        .neq("status", "revoked"),
+    ])
+    if (contributorMemoryResult.error) throw new Error(`Family memories could not be loaded: ${contributorMemoryResult.error.message}`)
+    const contributedMemories = (contributorMemoryResult.data ?? []).flatMap((row) =>
+      Array.isArray(row.memories) ? row.memories.filter((memory): memory is string => typeof memory === "string") : [],
+    )
+    const storyboard = buildFactualStoryboard({
+      ...authorized.project,
+      memories: [...authorized.project.memories, ...contributedMemories],
+    }, assets)
     const previewUrl = `${siteBaseUrl()}/${authorized.project.locale}/pet-life-movie/memories/${authorized.project.share_slug}`
     const [{ error: projectError }, { error: contributorError }] = await Promise.all([
       db.from(PET_MOVIE_TABLES.PROJECTS).update({ storyboard, status: "preview_ready", preview_url: previewUrl }).eq("id", authorized.project.id),

@@ -10,7 +10,9 @@ function requesterIp(request: Request): string | null {
 }
 
 function ipHash(ip: string): string {
-  const salt = process.env.PET_MOVIE_RATE_LIMIT_SALT?.trim() || "pet-life-movie-rate-limit-v1"
+  const salt = process.env.PET_MOVIE_RATE_LIMIT_SALT?.trim()
+    ?? process.env.ADMIN_SCRIPT_SECRET?.trim()
+  if (!salt) throw new Error("PET_MOVIE_RATE_LIMIT_SALT is not configured")
   return createHash("sha256").update(`${salt}:${ip}`, "utf8").digest("hex")
 }
 

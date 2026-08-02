@@ -13,7 +13,15 @@
           alt: section.settings.image.alt
       }}
     {%- else -%}
-      <div class="serica-marketplace-hero__fallback" aria-hidden="true"></div>
+      <img
+        class="serica-marketplace-hero__image"
+        src="{{ 'sericia-marketplace-hero.webp' | asset_url }}"
+        width="1763"
+        height="892"
+        loading="eager"
+        fetchpriority="high"
+        alt="Handcrafted Japanese ceramics, indigo textile, hinoki tray, and brass incense holder"
+      >
     {%- endif -%}
   </div>
 

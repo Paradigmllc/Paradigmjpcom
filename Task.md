@@ -1,5 +1,21 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 SERICIA global storefront launch gate
+
+- Shopify production readiness was audited against the live store. The store is on Basic, `sericia.com` is the SSL-enabled primary domain, JPY is the only presentment currency, taxes are included, and shipping zones currently cover Japan plus 27 international destinations. Shopify Payments and PayPal both remain incomplete.
+- Shopify and BASE each contain exactly 0 products. The existing Tableware, Craft, Living, and Gifts collections therefore remain empty. No placeholder merchandise, fabricated inventory, or unfulfillable listing was published.
+- The OS 2.0 draft theme `SERICIA WoodMart OS2 - Development` (theme 144315482160) now includes an original SERICIA Japanese-craft hero image optimized to WebP, improved Liquid/theme-check hygiene, and the existing English global-marketplace navigation, service promises, category grid, and responsive product sections. The updated theme was pushed successfully but intentionally remains unpublished behind the storefront password.
+- Verification: Shopify CLI remote upload succeeded; theme JSON parsed; Theme Check inspected 172 files with 0 errors and 2 inherited/benign warnings (`offset: continue` and an orphaned Dawn quick-order snippet); desktop and 375x791 mobile previews show the hero, navigation, copy, and CTAs without clipping.
+- ACTIVE HANDOFF: launch is blocked only by truthful commercial inputs that cannot be invented: at least one real product with images, price, stock, origin/HS data and fulfillment terms; and Shopify Payments onboarding data including the legal representative and payout bank account. After those exist, run the prepared BASE-to-Shopify DRAFT sync or import, validate checkout/shipping/tax/policies, publish theme 144315482160, remove the storefront password, and execute JP/US/EU test checkouts.
+
+## CURRENT STATUS — 2026-08-02 Video Factory Studio Scale Readiness
+
+- 既存Studioの実行環境・5テンプレート・10表現種・技術QA・承認ゲート・キュー容量を実測する量産準備度を追加した。現行構成は76/100、Ready 5、Conditional 3、Blocked 2、安全並列1件として表示し、見た目の品質は自動採点せずドラフト/最終の人間レビューを維持する。
+- 本番制作前のpreflightをGUIとAPIの両方に追加した。人物アニメーション/リップシンクの未対応runtimeをキュー投入前に409で停止し、明示指定された生成動画・3D・技術図解を代替表現へ黙って差し替えない。自動Plannerの代替レーンはConditionalとして警告付きで利用できる。
+- 準備度snapshotは新規append-onlyテーブルへ保存し、RLS/FORCE RLS、service-roleのSELECT/INSERT限定、DBベル+Slack通知、release migration、DB table verificationを接続した。
+- ローカル検証はRuff、対象mypy、Python 13 tests、Vitest 3 tests、TypeScript、対象ESLint、Node syntax、diff checkを通過した。Chrome desktop/mobileでは10 capability、preflight停止、横overflowなし、console error 0を確認した。
+- ACTIVE HANDOFF: 実装は `codex/video-studio-scale-readiness` でリリース待ち。PR/CI/merge後にmigration適用、本番Studio readiness同期、DB/RLS read-back、公開console/ready、post-deploy doctorまで確認する。
+
 ## CURRENT STATUS — 2026-08-02 Foreign Investor pSEO + GEO
 
 - 海外投資家向け英語decision brief 12本を`content_products`のservice-role-only DB台帳へ追加した。不動産・宿泊・データセンター・再エネ・中小企業M&A・スタートアップ・FDI審査・会社設立を、一次情報、key facts、downside risks、decision gates、チェックリスト、FAQ、方法論、更新日で構造化する。
@@ -180,15 +196,14 @@
 ## CURRENT STATUS — 2026-08-02 Content API + Pet Life Movie
 
 - Content APIは公開CORS catalog、全文JSON/Markdown、3つの有料decision packetを日英配信する。PR #659、fix #660-#662、deployment `lbxrxhx5vpcyvpolyzusi8qe`はhealthy。x402は財務承認までHTTP 503でfail-closed、無料APIは継続する。
-- Pet Life Movieは公式Stripe、署名webhook、冪等checkout/render、返金、Resend、承認gate、private R2納品、削除、30/90日retentionを実装。本番migration/RLS、release **30730953842**、deployment **sdldvalovxfxubub7z13edbn**、公開smokeを確認済み。
-- Dependency security gateはPR **#669** / main **d40eef47**へ反映済み。Next.js `16.2.12`、Sharp `0.35.3`（Next.js配下もdedupe）、full `npm audit` 0 vulnerabilities、552/552 production build、Pet TypeScript/Vitest 9/9、Linux validation run **30732125162**を通過した。
-- 最新の稼働コンテナはmain **2a036780**（`d40eef47`を包含）でhealthy。Coolify deployment **uiu3j3imc8sq9zero80nnlhi**はfinished。Pet page/renderer ready、anonymous create 201、owner load 200、delete 200、deleted read-back 404を再確認し、検証projectは削除した。checkoutは引き続きfail-closed。
-- 市場投入gateを追加した。Pet変更時はclean `npm ci`、root audit、専用TypeScript、Vitest、対象ESLint、production buildをCIで必須検証する。ローカルではroot audit 0、Pet TypeScript、Vitest 9/9、対象ESLint、Next.js production build 564/564ページを通過した。
-- リポジトリ補助runtimeもhardeningし、Astroを7.1.6 / Node adapter 11.0.3へ更新してaudit 0・server build成功、outreach workerはStagehand 3.7.1 / Crawlee 3.17.0 / Playwright 1.62.1と安全なUndici 6.28.0へ更新してTypeScript・high以上0を確認した。上流Stagehandの`@ai-sdk/provider-utils`由来lowのみ継続監視する。
-- Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体もread/read:sensitive/write/deployの最小権限・365日失効へ交換し、新tokenのapplications/env API 200、approved secret store 2箇所の更新、旧token失効、remote一時secret削除を確認した。Cloudflare API tokenのみ引き続きローテーション対象。
-- 市場投入hardeningはPR **#676**をmain **b0a9eca1**へsquash merge済み。GitHub production run **30735560298**とCoolify deployment **q80cl9qe9wofsrkwoj440tf4**は成功し、対象commit一致、公開VaaS、埋め込みVideo Factoryを確認した。Pet本番smokeはpage 200、create 201、owner read 200、unauthorized 404、preview前checkout 409、delete 200、deleted read-back 404で、検証projectは削除済み。
-- 家族招待アップロードは既に本番実装済みのため、LPに残っていた「次回リリース」表現を日英西葡の4言語で実機能に合わせて修正した。Pet専用TypeScriptは通過。Stripe専用live key作成はStripe Dashboardのパスキー本人確認待ちで、決済設定はまだfail-closedのまま。
-- Pet paid renderはlive Stripe secret/webhook/3 Price IDsとResendが揃うまで無効。実購入・返金・納品証跡が市場公開前に必要。
+- Pet Life Movieの商用品質引上げをPR **#689**、Checkout再試行/削除hardeningをPR **#691**でmainへmergeした。日英西葡LPへ注文前の価格・支払方法/時期・納期・保存期間・取消し/不具合/返金・サポート・FAQを表示し、商品固有の提供条件、sitemap、構造化データ、再開導線を追加した。
+- 家族招待は写真だけでなく実在する思い出と明示的な権利同意を保存し、全員分をstoryboardへ反映する。owner/contributor uploadはR2のsize・Content-Type・magic bytesを確認し、偽装ファイルを削除する。期限切れ招待、20件超の招待、旧render callbackによる承認迂回を拒否する。
+- Checkoutは提供条件version/同意時刻をDB保存し、再試行ごとに固有のStripe idempotency keyを使う。既存open sessionとDB保存失敗時の新sessionを失効し、顧客削除前にもpending sessionを閉じる。500系APIは内部例外を返さず相関IDだけを返す。専用rate-limit saltをCoolifyへ生成・設定・read-back済み。
+- ローカル/CIはPet TypeScript、対象ESLint、Vitest **19/19**、Next.js production build **636/636**、PR #691 CI **3分59秒**、現行本番Pet Playwright **10/10**、日英西葡LP/規約WCAG 2.2 AA **8/8**、実iPhone profile、desktop/mobile overflow、`npm audit --omit=dev` 0 vulnerabilitiesを通過した。全体Vitestは今回変更外4 files / 17 testsのみ不一致で **1448 tests pass**。
+- migration `20260802210000_pet_life_movie_commercial_quality.sql`を本番適用し、同意/家族memory列、check constraint、Pet全6 tableのRLS+FORCE RLS、anon/authenticated grant 0をread-backした。最新main **4f9917a2**（#691の **2653ca71** を包含）をdeployment **z8wcfljvb23ths9tryzn7e67**で反映し、container `n8i2sjiqvr2d8hrzppop2m2i-105318095593`はhealthy。
+- 本番no-charge E2Eはowner 5枚→storyboard→preview→家族1枚+memory/権利同意→storyboard反映→live Mini $19 Checkoutを同一planで2回作成まで完走した。sessionは別ID、1件目expired/2件目open、双方livemode・USD 1900・unpaid。顧客削除後は双方expired、R2 object 0、project/assets/contributors DB row 0を確認し、金銭移動は発生していない。
+- Coolify cloneを公開HTTPSへ変更してappの秘密鍵参照を解除し、旧GitHub deploy key・旧host authorized key・旧Coolify private keyを全失効した。新host専用鍵へ分離し、新deployment logのprivate-key候補0、一時検証token 0をread-backした。Docker未使用cache/imageを整理し、host diskは88%/空き19GBから68%/空き47GBへ回復した。
+- ACTIVE HANDOFF: 課金以外の商用SaaS/LP/API/DB/R2/家族共同編集/削除/アクセシビリティ/本番運用は完了。残りは明示的な金融承認を伴う実購入→render→人間承認→納品→返金の一回限りの証跡作成。Cloudflare API token交換はtoken管理権限不足の既存control-plane blockerとして製品品質から分離する。
 
 ## ACTIVE HANDOFF
 
@@ -198,8 +213,8 @@
 - SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
 - Japan operator: production releaseとDB/API/UI/送信guardのread-backは完了。実運用はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を揃え、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後にsecretをapproved storeへ設定し、0.25 USDC実購入、settlement、paid delivery、hashed reference、DBベル、Slackを確認する。
-- Pet Life Movie: 手動Webhook secret 4種とCoolify API token本体のローテーションは完了。市場公開前にCloudflare API tokenを交換する。現tokenはactive・DNS read可能だがtoken管理権限を持たないため、Cloudflare Dashboardの認証済みsessionが必要。
-- Pet Life Movie: live Stripe secret/webhook/3 Price IDsとResendをapproved secret storeへ設定後、実購入・署名webhook・render・承認・納品・返金を一度通し、checkoutを有効化する。
+- Pet Life Movie: Coolify API tokenは最小権限へ交換し、検証用一時root tokenとremote secret fileも削除・DB残数0を確認した。Cloudflare API tokenはactive・DNS read可能だがtoken管理権限がなく、交換だけが未完了。認証済みDashboard sessionを確保でき次第API tokenを交換する。
+- Pet Life Movie: PR #689/#691、production migration、最新main deployment、owner+family no-charge E2E、再Checkout、削除時Session失効、R2/DB完全削除、鍵分離/失効まで完了。残りは明示的な金融承認を伴う実購入→render→承認→納品→返金の一回限りの証跡作成であり、通常checkout自体は本番有効。
 - Video Factoryは既存の承認済みGPUだけを使用し、既定で追加GPUを作成しない。
 
 ## RELEASE REFERENCES
@@ -219,10 +234,12 @@
 - Stripe live products exist in the Paradigm LLC account: Quote Recovery Starter and Team with monthly JPY tax-inclusive prices. The dedicated production webhook endpoint is registered for Checkout, subscription lifecycle, and invoice paid/failed events.
 - Production DB migration `20260802020738_quote_recovery_commercial_saas.sql` is applied. All commercial tables have RLS, anon/authenticated grants are revoked, service-role policies and service-only RPC permissions are verified, and a transactional account/usage/RLS smoke test passed.
 - Verification passed: Next.js production build, TypeScript, Quote Recovery targeted ESLint with zero warnings, 11 unit tests, dependency audit with zero known vulnerabilities, and SQL functional/RLS verification.
-- Release gate: Stripe Price IDs, webhook signing secret, and a validated live account Secret Key are configured in Coolify. Resend sending-only API key and verified `send.paradigmjp.com` sender domain are configured; a production delivery test reached Gmail. The Stripe runtime is launch-ready, while replacement with a newly named Quote Recovery-only Dashboard key remains pending because Stripe presented an hCaptcha challenge in the fallback browser. Linux validation run `30738260726` passed.
+- Production release: PR **#674** was squash-merged as main `09a4ad54`; Coolify deployments `jvaaog0t32bof529vr43ae3h` and `h58uru737wd0nn4hxhp3hhby` finished. The current healthy main container `7d2bf24f` contains Quote Recovery, and the latest post-deploy doctor passed.
+- Live verification: public landing/login/reset pages returned 200; signup returned 201; unauthenticated Checkout was rejected; authenticated Starter Checkout created a `cs_live_` session; the open session was expired without payment. Signed webhook acceptance and duplicate-event handling returned 200, password-reset mail reached Gmail from verified `send.paradigmjp.com`, all 15 Quote Recovery tables had RLS enabled, and all smoke user/audit/webhook data was removed.
+- Runtime secrets: live Stripe Price IDs, webhook signing secret, a validated live account Secret Key, Resend sending-only API key, and the verified sender domain are configured in Coolify. Stripe billing is launch-ready. Replacement with a newly named Quote Recovery-only Dashboard key remains pending only because Stripe presented an hCaptcha challenge in the fallback browser.
 - Direct Growth: PR **#665** / main `f2339929` / feature deployment `ghen9whanscvtws0cqndwj5y` / latest live deployment `szv2lqpeybjf476rtqcu6djm`。
 - SERICIA Shopify storefront and BASE sync: PR **#657**、hardening PR **#675** / main `e9238314`（latest live `b0a9eca1`に包含）/ deployment `q80cl9qe9wofsrkwoj440tf4`。
 - Japan operator OS: PR **#666** / main `cf105607` / GitHub run `30731931603` / Coolify deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Content API: PR **#659**、fixes **#660-#662**、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
-- Pet Life Movie: PR **#664** / **#669** / **#676**、validation **30732125162**、production run **30735560298**、main **b0a9eca1**、deployment `q80cl9qe9wofsrkwoj440tf4`。
+- Pet Life Movie: PR **#664** / **#669** / **#676** / **#689** / **#691**、commercial main **2653ca71**（latest **4f9917a2**に包含）、deployment **z8wcfljvb23ths9tryzn7e67**、container `n8i2sjiqvr2d8hrzppop2m2i-105318095593`。
 - Previous detailed archive: `docs/handoff-archive/2026-08-02-pre-content-api-task.md`。

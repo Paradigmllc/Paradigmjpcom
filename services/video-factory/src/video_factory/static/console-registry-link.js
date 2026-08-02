@@ -5,6 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
   link.className = "nav-item"
   link.href = "/console/registry.html"
   link.dataset.registryLink = "true"
-  link.innerHTML = "<span>05</span>Models &amp; Workflows"
+  link.innerHTML = "<span>07</span>Models &amp; Workflows"
   nav.append(link)
 })
