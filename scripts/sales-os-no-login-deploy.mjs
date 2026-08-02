@@ -920,7 +920,7 @@ begin
     and payload ? 'marketEvidence'
     and payload ? 'coveredMarkets'
     and jsonb_array_length(payload -> 'chapters') >= 4
-    and jsonb_array_length(payload -> 'coveredMarkets') >= 3
+    and jsonb_array_length(payload -> 'coveredMarkets') >= 2
     and jsonb_array_length(payload #> '{marketEvidence,points}') >= 2;
 
   if enhanced_count <> 16 then
