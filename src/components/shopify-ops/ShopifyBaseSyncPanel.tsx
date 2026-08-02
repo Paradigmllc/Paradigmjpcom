@@ -83,6 +83,18 @@ export function ShopifyBaseSyncPanel({ status, locale, submit }: { status: BaseS
               </button>
             </form>
           </div>
+          <div className={`mt-4 rounded-xl border p-4 ${status.readyToSync ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-bold text-zinc-900">{status.automationIntervalMinutes}分ごとの在庫・商品差分同期</p>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${status.readyToSync ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                {status.readyToSync ? "自動運転" : "安全停止中"}
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-zinc-600">通常の変更だけを自動反映します。0件・商品数の急減/異常増加・接続切れでは停止して通知し、商品削除と自動公開は行いません。</p>
+            {status.lastScheduledRun && (
+              <p className="mt-2 text-xs font-semibold text-zinc-700">最終自動実行 {dateTime(status.lastScheduledRun.startedAt)} · {statusLabel(status.lastScheduledRun.status)}</p>
+            )}
+          </div>
           {status.lastRun && (
             <p className={`mt-4 rounded-xl p-3 text-xs font-semibold ${statusTone(status.lastRun.status)}`} aria-live="polite">
               最終実行 {dateTime(status.lastRun.startedAt)} · {statusLabel(status.lastRun.status)} · 取得 {status.lastRun.sourceCount} / 新規 {status.lastRun.createdCount} / 更新 {status.lastRun.updatedCount} / 失敗 {status.lastRun.failedCount}
@@ -123,7 +135,7 @@ export function ShopifyBaseSyncPanel({ status, locale, submit }: { status: BaseS
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-zinc-950">同期履歴</h2><a href="https://docs.thebase.in/api/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-violet-600">BASE API仕様 <ExternalLink className="h-3 w-3" /></a></div>
         {status.recentRuns.length === 0 ? <p className="mt-4 text-sm text-zinc-500">まだ同期履歴がありません。</p> : (
-          <div className="mt-4 space-y-2">{status.recentRuns.map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3 text-xs"><span className="font-semibold text-zinc-700">{dateTime(run.startedAt)} · {run.mode === "dry_run" ? "dry-run" : "本同期"}</span><span className={`rounded-full px-2 py-1 font-bold ${statusTone(run.status)}`}>{statusLabel(run.status)} · {run.sourceCount}件</span></div>)}</div>
+          <div className="mt-4 space-y-2">{status.recentRuns.map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3 text-xs"><span className="font-semibold text-zinc-700">{dateTime(run.startedAt)} · {run.triggeredBy === "scheduled" ? "自動" : "手動"} · {run.mode === "dry_run" ? "dry-run" : "本同期"}</span><span className={`rounded-full px-2 py-1 font-bold ${statusTone(run.status)}`}>{statusLabel(run.status)} · {run.sourceCount}件</span></div>)}</div>
         )}
       </section>
     </div>

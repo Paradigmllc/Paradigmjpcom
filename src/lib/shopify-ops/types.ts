@@ -160,6 +160,7 @@ export type BaseSyncRun = {
   id: string
   mode: BaseSyncMode
   status: BaseSyncRunStatus
+  triggeredBy: "manual" | "scheduled"
   sourceCount: number
   createdCount: number
   updatedCount: number
@@ -192,6 +193,16 @@ export type BaseSyncStatus = {
   recentRuns: BaseSyncRun[]
   linkedProductCount: number
   previewItems: BaseSyncPreviewItem[]
+  scheduledAutomationEnabled: boolean
+  automationIntervalMinutes: number
+  lastScheduledRun: BaseSyncRun | null
+}
+
+export type BaseSyncAutomationResult = {
+  status: "succeeded" | "failed" | "blocked"
+  reason: string | null
+  run: BaseSyncRun
+  notifyOperator: boolean
 }
 
 export type ShopifyOpsTotals = {
