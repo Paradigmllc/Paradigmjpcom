@@ -597,6 +597,14 @@ async function applyPetLifeMovieMigration(envs) {
   return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
 }
 
+async function applyPetLifeMovieMarketReadyMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802020742_pet_life_movie_market_ready.sql",
+    "Pet Life Movie market-ready migration",
+  )
+}
+
 async function verifyPetLifeMovieSchema(envs) {
   const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) {
@@ -608,6 +616,9 @@ begin
   if to_regclass('public.pet_movie_projects') is null then
     raise exception 'pet_movie_projects is missing';
   end if;
+  if to_regclass('public.pet_movie_deliverables') is null then
+    raise exception 'pet_movie_deliverables is missing';
+  end if;
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
   end if;
@@ -618,7 +629,7 @@ $$;
     )
     return "Pet Life Movie schema: verified through Postgres service_role privileges"
   }
-  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+  const response = await fetch(`${url}/rest/v1/pet_movie_deliverables?select=id&limit=1`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
     signal: AbortSignal.timeout(30_000),
   })
@@ -763,6 +774,19 @@ async function applyJapanOperatorCaseHardeningMigration(envs) {
     "20260801235327_sales_japan_operator_case_hardening.sql",
     "Japan market operator append-only audit and Wave 1 alias hardening",
   )
+}
+
+async function applyJapanOperatorOperationsOsMigrations(envs) {
+  const migrations = [
+    ["20260802015455_japan_operator_operations_os.sql", "Japan operator identity, evidence and outbound controls"],
+    ["20260802015712_japan_operator_commercial_os.sql", "Japan operator sourcing, contracts, payments and SKU controls"],
+    ["20260802015715_japan_operator_delivery_os.sql", "Japan operator finance, delivery, KPI and outbox controls"],
+  ]
+  const results = []
+  for (const [file, label] of migrations) {
+    results.push(await applySqlMigration(envs, file, label))
+  }
+  return results.join("\n")
 }
 
 async function applyContentCommerceMigration(envs) {
@@ -1645,6 +1669,7 @@ async function main() {
     console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
     console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await applyPetLifeMovieMarketReadyMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
@@ -1662,6 +1687,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanOperatorCasesMigration(envs))
     console.log(await applyJapanOperatorCaseHardeningMigration(envs))
+    console.log(await applyJapanOperatorOperationsOsMigrations(envs))
     console.log(await applyContentCommerceMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))

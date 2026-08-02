@@ -35,6 +35,8 @@ interface StripeEvent {
       subscription?: string
       status?: string
       payment_status?: string
+      customer_details?: { email?: string | null } | null
+      payment_intent?: string | { id: string } | null
       current_period_end?: number
       metadata?: Record<string, string>
       amount_total?: number
@@ -93,6 +95,8 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed": {
         const { handlePetMovieCheckoutCompleted } = await import("@/lib/pet-life-movie/render")
         if (await handlePetMovieCheckoutCompleted(obj)) break
+        const { recordJapanOperatorStripePayment } = await import("@/lib/sales/japan-operator-stripe")
+        if ((await recordJapanOperatorStripePayment(event.type, obj, rawBody)).handled) break
         // 新規顧客作成
         const plan = obj.metadata?.plan ?? ""
         const isWl = plan.startsWith("agency")
@@ -110,7 +114,20 @@ export async function POST(req: NextRequest) {
       }
       case "checkout.session.async_payment_succeeded": {
         const { handlePetMovieCheckoutCompleted } = await import("@/lib/pet-life-movie/render")
-        await handlePetMovieCheckoutCompleted(obj)
+        if (await handlePetMovieCheckoutCompleted(obj)) break
+        const { recordJapanOperatorStripePayment } = await import("@/lib/sales/japan-operator-stripe")
+        await recordJapanOperatorStripePayment(event.type, obj, rawBody)
+        break
+      }
+      case "checkout.session.async_payment_failed":
+      case "checkout.session.expired": {
+        const { handlePetMovieCheckoutFailed } = await import("@/lib/pet-life-movie/render")
+        await handlePetMovieCheckoutFailed(obj, event.type.endsWith("expired") ? "expired" : "failed")
+        break
+      }
+      case "charge.refunded": {
+        const { handlePetMovieRefund } = await import("@/lib/pet-life-movie/render")
+        await handlePetMovieRefund(obj)
         break
       }
       case "customer.subscription.updated": {

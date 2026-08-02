@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Download, Film, Heart, PawPrint, Sparkles } from "lucide-react"
 import PetMoviePreview from "@/components/pet-life-movie/PetMoviePreview"
+import PetMovieOwnerControls from "@/components/pet-life-movie/PetMovieOwnerControls"
 import { loadSharedPetMovie } from "@/lib/pet-life-movie/share"
 
 interface Props {
@@ -25,11 +26,13 @@ export default async function SharedPetMoviePage({ params, searchParams }: Props
   const [{ locale, slug }, query] = await Promise.all([params, searchParams])
   const shared = await loadSharedPetMovie(slug)
   if (!shared?.project.storyboard) notFound()
-  const { project, assetUrls } = shared
+  const { project, assetUrls, deliverables } = shared
   const storyboard = project.storyboard
   if (!storyboard) notFound()
   const paymentMessage = query.payment === "success"
-    ? "Payment received. Your full film is now entering the identity-safe render queue."
+    ? project.payment_status === "paid"
+      ? "Payment confirmed. Your full film is now entering production and human review."
+      : "Checkout completed. We are securely confirming your payment; this page will update after confirmation."
     : query.payment === "cancelled"
       ? "Checkout was cancelled. Your preview is still safe here."
       : null
@@ -44,11 +47,12 @@ export default async function SharedPetMoviePage({ params, searchParams }: Props
             <h1 className="font-display text-5xl leading-tight md:text-7xl">{storyboard.title}</h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-white/65">{storyboard.closing}</p>
             <div className="mt-8 flex flex-wrap gap-3 text-xs text-white/60"><span className="rounded-full border border-white/10 px-3 py-2">{storyboard.scenes.length} scenes</span><span className="rounded-full border border-white/10 px-3 py-2">Factual captions only</span><span className="rounded-full border border-white/10 px-3 py-2">Identity protected</span></div>
-            {project.status === "delivered" && project.delivery_url ? (
-              <a href={project.delivery_url} target="_blank" rel="noopener noreferrer" className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black"><Download className="h-4 w-4" aria-hidden="true" />Download full film</a>
+            {project.status === "delivered" && deliverables.length > 0 ? (
+              <div className="mt-9 flex flex-wrap gap-3">{deliverables.map((item) => <a key={item.name} href={item.downloadUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black"><Download className="h-4 w-4" aria-hidden="true" />{item.name}</a>)}</div>
             ) : (
               <div className="mt-9 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70"><Film className="h-5 w-5 text-violet-400" aria-hidden="true" />{project.payment_status === "paid" ? "The full film is rendering." : "This is the free private preview."}</div>
             )}
+            <PetMovieOwnerControls projectId={project.id} locale={locale} expiresAt={project.expires_at} />
           </div>
         </div>
         <div className="mt-20 flex flex-col items-center rounded-3xl border border-white/10 bg-white/5 px-6 py-12 text-center"><Heart className="mb-5 h-8 w-8 text-rose-400" aria-hidden="true" /><h2 className="font-display text-3xl">Have a story like this?</h2><p className="mt-3 max-w-lg text-sm leading-6 text-white/60">Create a private preview from your own dog or cat photos. No account needed.</p><Link href={`/${locale}/pet-life-movie#create`} className="mt-7 inline-flex items-center gap-2 rounded-full bg-violet-500 px-6 py-3 text-sm font-semibold text-white hover:bg-violet-400"><Sparkles className="h-4 w-4" aria-hidden="true" />Create yours</Link></div>

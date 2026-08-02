@@ -7,6 +7,8 @@ export type AdminAuthResult = {
   ok: boolean
   source: AdminAuthSource
   userEmail: string | null
+  userId?: string | null
+  userRole?: string | null
 }
 
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
@@ -71,6 +73,12 @@ function userEmailFromUnknown(user: unknown): string | null {
   return typeof email === "string" && email.length > 0 ? email : null
 }
 
+function userFieldFromUnknown(user: unknown, field: "id" | "role"): string | null {
+  if (!user || typeof user !== "object" || !(field in user)) return null
+  const value = (user as Record<string, unknown>)[field]
+  return typeof value === "string" && value.length > 0 ? value : null
+}
+
 export function authorizeWebhookRequest(headers: Headers): AdminAuthResult {
   const expected = process.env.TRIGGER_WEBHOOK_SECRET
   const received = headers.get("x-webhook-secret")
@@ -121,6 +129,8 @@ export async function authorizePayloadAdminRequest(input: {
         ok: true,
         source: "payload",
         userEmail: userEmailFromUnknown(user),
+        userId: userFieldFromUnknown(user, "id"),
+        userRole: userFieldFromUnknown(user, "role"),
       }
     }
   } catch (e) {
