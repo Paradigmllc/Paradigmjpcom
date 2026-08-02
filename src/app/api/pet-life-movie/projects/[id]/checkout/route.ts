@@ -6,6 +6,7 @@ import { petMovieErrorResponse, siteBaseUrl } from "@/lib/pet-life-movie/http"
 import { parseJsonBody, petMovieCheckoutSchema } from "@/lib/pet-life-movie/schema"
 import { getPetMovieMarketReadiness } from "@/lib/pet-life-movie/readiness"
 import { PET_MOVIE_TERMS_VERSION } from "@/lib/pet-life-movie/commercial"
+import { createPetMovieCheckoutIdempotencyKey } from "@/lib/pet-life-movie/checkout"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -33,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!priceId) return NextResponse.json({ ok: false, error: `Stripe price is not configured for ${input.plan}.` }, { status: 503 })
     if (project.stripe_checkout_session_id) {
       const expired = await expireCheckoutSession(project.stripe_checkout_session_id)
-      if (!expired.ok) {
+      if (!expired.ok || expired.data?.status === "complete") {
         console.error("[pet-life-movie] previous checkout could not be closed", expired.error)
         return NextResponse.json({ ok: false, error: "The previous checkout is complete or still processing. Refresh the page before trying again." }, { status: 409 })
       }
@@ -46,7 +47,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       cancelUrl: `${baseUrl}/${project.locale}/pet-life-movie/memories/${project.share_slug}?payment=cancelled`,
       mode: "payment",
       metadata: { product: "pet_life_movie", project_id: project.id, plan: input.plan, locale: project.locale },
-      idempotencyKey: `pet-movie-checkout-${project.id}-${input.plan}-${Math.floor(Date.now() / 1_800_000)}`,
+      idempotencyKey: createPetMovieCheckoutIdempotencyKey(project.id, input.plan),
     })
     if (!checkout.ok || !checkout.data) throw new Error(checkout.error ?? "Stripe checkout failed")
     const db = requirePetMovieDatabase()

@@ -14,6 +14,8 @@ describe("Pet Life Movie production release wiring", () => {
     const migrationRunner = read("scripts/run-migrations.sh")
     const dbVerifier = read("scripts/verify-db-tables.mjs")
     const dataAccess = read("src/lib/pet-life-movie/data.ts")
+    const checkoutRoute = read("src/app/api/pet-life-movie/projects/[id]/checkout/route.ts")
+    const retention = read("src/lib/pet-life-movie/retention.ts")
 
     for (const table of [
       "pet_movie_projects",
@@ -47,5 +49,8 @@ describe("Pet Life Movie production release wiring", () => {
     expect(migrationRunner).toContain("20260802210000_pet_life_movie_commercial_quality.sql")
     expect(dataAccess).toContain("getServiceSalesSupabase")
     expect(dataAccess).not.toContain("getServiceSupabase()")
+    expect(checkoutRoute).toContain("createPetMovieCheckoutIdempotencyKey")
+    expect(checkoutRoute).not.toContain("Math.floor(Date.now() / 1_800_000)")
+    expect(retention).toContain("expireCheckoutSession(checkoutSessionId)")
   })
 })

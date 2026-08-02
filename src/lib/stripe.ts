@@ -64,7 +64,7 @@ export async function expireCheckoutSession(
   try {
     const existing = await getStripeClient().checkout.sessions.retrieve(sessionId)
     if (existing.status === "complete") {
-      return { ok: false, error: "Checkout payment is already complete or processing." }
+      return { ok: true, data: { id: existing.id, status: existing.status } }
     }
     const session = existing.status === "open"
       ? await getStripeClient().checkout.sessions.expire(sessionId)
