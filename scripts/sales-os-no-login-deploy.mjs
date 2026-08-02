@@ -801,6 +801,56 @@ async function applyContentCommerceMigration(envs) {
   return applySqlMigration(envs, "20260801231006_content_commerce.sql", "Content API and x402 commerce migration")
 }
 
+async function applyForeignInvestorPseoMigration(envs) {
+  return applySqlMigration(envs, "20260802043347_foreign_investor_pseo.sql", "Foreign investor pSEO migration")
+}
+
+async function verifyForeignInvestorPseoCatalog(envs) {
+  await applySqlMigrationThroughPostgres(
+    envs,
+    `
+do $$
+declare
+  published_count integer;
+begin
+  select count(*) into published_count
+  from public.content_products
+  where locale = 'en'
+    and content_type = 'investor_brief'
+    and access_model = 'free'
+    and is_active = true;
+
+  if published_count <> 12 then
+    raise exception 'expected 12 published investor briefs, found %', published_count;
+  end if;
+
+  if exists (
+    select 1
+    from public.content_products
+    where locale = 'en'
+      and content_type = 'investor_brief'
+      and (
+        jsonb_array_length(payload -> 'keyFacts') < 3
+        or jsonb_array_length(payload -> 'risks') < 3
+        or jsonb_array_length(payload -> 'decisionGates') < 3
+        or jsonb_array_length(payload -> 'sources') < 2
+      )
+  ) then
+    raise exception 'investor brief evidence contract is incomplete';
+  end if;
+
+  if has_table_privilege('anon', 'public.content_products', 'SELECT')
+    or has_table_privilege('authenticated', 'public.content_products', 'SELECT') then
+    raise exception 'content_products must remain service-role-only';
+  end if;
+end
+$$;
+`,
+    "Foreign investor pSEO catalog verification",
+  )
+  return "Foreign investor pSEO catalog: verified 12 sourced briefs and service-role isolation"
+}
+
 async function applyFormQualifiedLeadFactoryMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1697,6 +1747,8 @@ async function main() {
     console.log(await applyJapanOperatorCaseHardeningMigration(envs))
     console.log(await applyJapanOperatorOperationsOsMigrations(envs))
     console.log(await applyContentCommerceMigration(envs))
+    console.log(await applyForeignInvestorPseoMigration(envs))
+    console.log(await verifyForeignInvestorPseoCatalog(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyInitialFormDraftFactoryMigration(envs))
@@ -1827,6 +1879,13 @@ async function main() {
     { url: "https://paradigmjp.com/en/faq", markers: ["$15,000", "Which payment methods can we use?", "full setup fee is refunded"] },
     { url: "https://paradigmjp.com/en/works" },
     { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?", "The Source Pack That Keeps a Japan Launch Moving"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest", markers: ["Twelve distinct decisions", "Compare opportunity types", "Browse 12 briefs"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest/japan-data-center-investment", markers: ["Japan Data Center Investment", "Evidence readiness score", "Primary sources"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest/compare/japan-data-center-investment-vs-japan-renewable-energy-investment", markers: ["Data centers", "Renewable power", "Source ledgers"] },
+    { url: "https://paradigmjp.com/api/v1/investor-briefs", markers: ["japan-data-center-investment", "\"count\":12"] },
+    { url: "https://paradigmjp.com/api/v1/investor-briefs/factory", markers: ["\"total\":189504", "indexableOnlyAfterQualityGate"] },
+    { url: "https://paradigmjp.com/llms.txt", markers: ["Japan Investor Briefs", "pSEO factory manifest"] },
+    { url: "https://paradigmjp.com/sitemap.xml", markers: ["japan-data-center-investment", "japan-renewable-energy-investment"] },
     { url: "https://paradigmjp.com/en/privacy" },
     { url: "https://paradigmjp.com/en/legal", markers: ["$15,000", "Wise", "100% of the USD 15,000 setup fee is refunded"] },
     { url: "https://paradigmjp.com/en/terms", markers: ["Terms of Service", "$15,000", "14 business days"] },

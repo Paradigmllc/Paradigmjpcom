@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 Foreign Investor pSEO + GEO
+
+- 海外投資家向け英語decision brief 12本を`content_products`のservice-role-only DB台帳へ追加した。不動産・宿泊・データセンター・再エネ・中小企業M&A・スタートアップ・FDI審査・会社設立を、一次情報、key facts、downside risks、decision gates、チェックリスト、FAQ、方法論、更新日で構造化する。
+- `/en/japan-opportunities/invest`、12詳細ページ、11の意味のあるA/B比較ページを実装した。任意比較はAPIで動的提供するが、distinct intentを持つcurated pair以外はnoindexとし、scaled content abuseを防ぐ。
+- 各詳細ページへ、固有チェックリスト・判断ゲート・リスクから即時計算するEvidence Readiness Toolを実装した。入力はブラウザ内のみで、投資リターン予測として扱わない。
+- JSON/Markdown API、比較API、pSEO factory manifest、汎用Content API統合、CORS、rate limit、DBアクセス監査を実装した。12テーマ×47都道府県×5投資家タイプ×12言語と地域比較で189,504候補をモデル化し、一次情報・固有意図・動的ツール・canonical・人手翻訳レビューを通過したものだけ公開可能にする。
+- SEO/GEOは英語canonical、非英語からの恒久redirect、index/noindex gate、Article/CollectionPage/Breadcrumb JSON-LD、DB駆動sitemap、robotsのOAI-SearchBot/ChatGPT-User許可、`llms.txt`、一次情報citationを実装した。
+- migration `20260802043347_foreign_investor_pseo.sql`は12シード、content type制約、検索index、RLS最小権限を含む。release scriptはmigration、12件・品質契約・anon/authenticated SELECT拒否、本番ページ/API/factory/llms/sitemap fingerprintを自動検証する。
+- ローカル検証はTypeScript 0件、ESLint 0警告、Vitest 9/9、品質guard 0エラー、Next.js production build 587 static pagesをpass。DB公開URLを落とさないため`sitemap.xml`はdynamic routeとして確認済み。release doctorはcommit前のdirty/untracked 2項目以外をpassした。
+
 ## CURRENT STATUS — 2026-08-02 Video Factory Commercial Studio + Direct Growth
 
 - Commercial Studioは5テンプレート、拡張Brand Kit、音声/BGM/字幕、Storyboard差分再生成を本番提供済み。PR **#654**、deployment **d6u37wcjeje7wqq7i8o3qfdl**、5テーブルのRLS/FORCE RLS/最小権限を確認済み。
@@ -33,6 +43,7 @@
 
 ## ACTIVE HANDOFF
 
+- Foreign Investor pSEO: `codex/foreign-investor-pseo`の検証、PR、canonical release、本番read-backを完了する。候補189,504件を一括index化せず、地域固有データと翻訳レビューが揃ったwaveだけを公開する。
 - Direct Growth: PR **#665**をmainへsquash mergeし、canonical releaseでmigrationを適用する。3テーブルのRLS/FORCE RLS、anon/authenticated grant 0、service-role policy/RPCをread-backする。
 - Direct Growth: 本番管理画面の認証redirect、API未認証401/認証200、4媒体、外部送信controlなし、DBベル+Slackを確認する。架空キャンペーンや外部投稿は作成しない。
 - SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
@@ -44,6 +55,7 @@
 
 ## RELEASE REFERENCES
 
+- Foreign Investor pSEO: branch `codex/foreign-investor-pseo` / PR・deploymentはrelease完了後に追記する。
 - Direct Growth: PR **#665** / branch `feat/video-direct-growth`。
 - SERICIA Shopify storefront and BASE sync: PR **#657** / main `ad3e6d2b` / deployment `p4vhvcggml1qcnqt22u5wv3e`。
 - Japan operator OS: PR **#666** / main **cf105607**。

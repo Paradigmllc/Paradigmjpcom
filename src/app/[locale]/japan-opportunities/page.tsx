@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { ArrowRight, CheckCircle2, Coins } from "lucide-react"
+import { ArrowRight, BookOpenCheck, CheckCircle2, Coins } from "lucide-react"
 import FadeIn from "@/components/aesop/FadeIn"
 import { OpportunityBrandCard } from "@/components/opportunities/OpportunityBrandCard"
 import { Link } from "@/i18n/routing"
@@ -54,6 +54,25 @@ export default async function JapanOpportunitiesPage({ params }: Props) {
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {brands.map((brand, index) => <OpportunityBrandCard key={brand.slug} brand={brand} cta={copy.cardCta} index={index} />)}
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-paradigm-line px-6 py-16 md:px-10 md:py-20">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 rounded-[2rem] border border-paradigm-accent/25 bg-paradigm-accent/10 p-8 md:p-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 text-paradigm-accent"><BookOpenCheck size={22} aria-hidden="true" /><p className="paradigm-eyebrow">INVESTOR pSEO LIBRARY</p></div>
+            <h2 className="mt-4 font-display text-3xl font-semibold tracking-[-0.03em] text-paradigm-ink md:text-4xl">
+              {japanese ? "海外投資家向けの判断コンテンツを量産する" : "Research Japan investments by decision, not keyword"}
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-paradigm-ink-soft">
+              {japanese
+                ? "不動産、宿泊、インフラ、M&A、スタートアップを対象に、一次情報・リスク・デューデリジェンス項目を備えた英語ブリーフを継続公開します。"
+                : "Explore sourced English briefs across real estate, hospitality, infrastructure, M&A and startups. Every page includes official evidence, downside risks and diligence gates."}
+            </p>
+          </div>
+          <Link href="/japan-opportunities/invest" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-paradigm-ink px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-paradigm-paper transition hover:bg-paradigm-accent">
+            {japanese ? "英語ブリーフを見る" : "Browse investor briefs"}<ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </div>
       </section>
 

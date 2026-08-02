@@ -158,6 +158,7 @@ export async function listPremiumProducts(locale: ContentLocale): Promise<Conten
     .from(DB_TABLES.CONTENT_PRODUCTS)
     .select("id,slug,locale,title,summary,content_type,access_model,price_usdc,network,preview,source_url,license,version,published_at,updated_at")
     .eq("locale", locale)
+    .eq("access_model", "x402")
     .eq("is_active", true)
     .order("published_at", { ascending: false })
 

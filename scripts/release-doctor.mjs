@@ -397,6 +397,40 @@ function checkStaticReleaseRules() {
     fail("Content commerce requires service-role-only RLS and release migration wiring")
   }
 
+  const foreignInvestorPseoMigrationPath = "supabase/migrations/20260802043347_foreign_investor_pseo.sql"
+  const foreignInvestorPseoMigration = fs.existsSync(foreignInvestorPseoMigrationPath)
+    ? fs.readFileSync(foreignInvestorPseoMigrationPath, "utf8")
+    : ""
+  const foreignInvestorPseoMarkers = [
+    "investor_brief",
+    "jsonb_to_recordset",
+    "buying-property-in-japan-as-a-foreigner",
+    "japan-data-center-investment",
+    "japan-foreign-direct-investment-screening",
+    "Paradigm API Terms",
+  ]
+  const investorComparisonPath = "src/lib/investor-briefs/comparisons.ts"
+  const investorComparisonSource = fs.existsSync(investorComparisonPath)
+    ? fs.readFileSync(investorComparisonPath, "utf8")
+    : ""
+  const investorScalePath = "src/lib/investor-briefs/pseo-scale.ts"
+  const investorScaleSource = fs.existsSync(investorScalePath)
+    ? fs.readFileSync(investorScalePath, "utf8")
+    : ""
+  if (
+    foreignInvestorPseoMarkers.every((marker) => foreignInvestorPseoMigration.includes(marker))
+    && noLoginDeploy.includes("20260802043347_foreign_investor_pseo.sql")
+    && noLoginDeploy.includes("applyForeignInvestorPseoMigration")
+    && noLoginDeploy.includes("verifyForeignInvestorPseoCatalog")
+    && noLoginDeploy.includes("investor-briefs/factory")
+    && investorComparisonSource.includes("CURATED_INVESTOR_COMPARISONS")
+    && investorScaleSource.includes("indexableOnlyAfterQualityGate")
+  ) {
+    pass("Foreign investor pSEO has sourced DB seed, quality-gated comparison scale, canonical migration execution, and production verification wiring")
+  } else {
+    fail("Foreign investor pSEO requires sourced data, quality-gated scale, canonical migration execution, and production verification wiring")
+  }
+
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
   const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
     ? fs.readFileSync(engineProfilesMigrationPath, "utf8")
