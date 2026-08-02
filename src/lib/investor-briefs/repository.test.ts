@@ -186,6 +186,7 @@ describe("investor brief content contract", () => {
         downside: expect.any(String),
       })
       expect(profile.coveredMarkets).toEqual(expect.arrayContaining([expect.any(String)]))
+      expect((profile.coveredMarkets as unknown[]).length).toBeGreaterThanOrEqual(2)
       expect((profile.evidencePoints as unknown[]).length).toBeGreaterThanOrEqual(2)
     }
     for (const migrationFile of migrationFiles) {
