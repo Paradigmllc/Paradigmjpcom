@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 SERICIA global storefront launch gate
+
+- Shopify production readiness was audited against the live store. The store is on Basic, `sericia.com` is the SSL-enabled primary domain, JPY is the only presentment currency, taxes are included, and shipping zones currently cover Japan plus 27 international destinations. Shopify Payments and PayPal both remain incomplete.
+- Shopify and BASE each contain exactly 0 products. The existing Tableware, Craft, Living, and Gifts collections therefore remain empty. No placeholder merchandise, fabricated inventory, or unfulfillable listing was published.
+- The OS 2.0 draft theme `SERICIA WoodMart OS2 - Development` (theme 144315482160) now includes an original SERICIA Japanese-craft hero image optimized to WebP, improved Liquid/theme-check hygiene, and the existing English global-marketplace navigation, service promises, category grid, and responsive product sections. The updated theme was pushed successfully but intentionally remains unpublished behind the storefront password.
+- Verification: Shopify CLI remote upload succeeded; theme JSON parsed; Theme Check inspected 172 files with 0 errors and 2 inherited/benign warnings (`offset: continue` and an orphaned Dawn quick-order snippet); desktop and 375x791 mobile previews show the hero, navigation, copy, and CTAs without clipping.
+- ACTIVE HANDOFF: launch is blocked only by truthful commercial inputs that cannot be invented: at least one real product with images, price, stock, origin/HS data and fulfillment terms; and Shopify Payments onboarding data including the legal representative and payout bank account. After those exist, run the prepared BASE-to-Shopify DRAFT sync or import, validate checkout/shipping/tax/policies, publish theme 144315482160, remove the storefront password, and execute JP/US/EU test checkouts.
+
 ## CURRENT STATUS — 2026-08-02 Video Factory Studio Scale Readiness
 
 - 既存Studioの実行環境・5テンプレート・10表現種・技術QA・承認ゲート・キュー容量を実測する量産準備度を追加した。現行構成は76/100、Ready 5、Conditional 3、Blocked 2、安全並列1件として表示し、見た目の品質は自動採点せずドラフト/最終の人間レビューを維持する。
