@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -80,6 +81,36 @@ def test_readiness_reports_real_routes_and_scale_gaps(
         "draft_creative_review",
         "final_delivery_approval",
     ]
+
+
+def test_readiness_resolves_routing_beside_runtime_catalog(
+    deterministic_runtime: Settings,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    config_root = tmp_path / "installed-runtime" / "config"
+    catalog_path = config_root / "engine-profiles.yaml"
+    captured: dict[str, Path] = {}
+
+    def load_runtime_routing(path: Path) -> dict[str, object]:
+        captured["path"] = path
+        return {
+            "rules": {
+                kind.value: {"primary": "hyperframes", "fallbacks": ["ffmpeg"]}
+                for kind in ShotKind
+            }
+        }
+
+    monkeypatch.setattr(studio_readiness, "load_routing_config", load_runtime_routing)
+    runtime = replace(
+        deterministic_runtime,
+        engine_profile_catalog_path=catalog_path,
+    )
+
+    snapshot = build_studio_readiness(runtime)
+
+    assert len(snapshot.capabilities) == 10
+    assert captured["path"] == config_root / "engine-routing.yaml"
 
 
 def test_preflight_allows_audited_fallback_but_blocks_missing_people_runtime(
