@@ -192,7 +192,7 @@
 
 ## ACTIVE HANDOFF
 
-- Foreign Investor pSEO: `codex/foreign-investor-pseo`の検証、PR、canonical release、本番read-backを完了する。候補189,504件を一括index化せず、地域固有データと翻訳レビューが揃ったwaveだけを公開する。
+- Foreign Investor pSEO: PR #681・main `e051aad6`・本番deployment `b55som0oubhi93mqaohwd0f8`・12件のDB品質/RLS read-backまで完了。候補189,504件を一括index化せず、地域固有データと翻訳レビューが揃ったwaveだけを公開する。
 - Direct Growth: 実装、main merge、本番deployment、migration、RLS/ACL、API/UI/readiness、post-deploy doctorまで完了。外部投稿・メール送信controlは持たず、本番データ0件を維持した。
 - Direct Growth: 初回実運用は、最終承認済みの実在Studio案件を1件登録し、4媒体copyの人間レビュー、DBベル+Slack通知、将来日時、手動公開URL、成果指標を同一campaignで記録する。通知の本番mutation確認は架空データを作らず、この実案件で行う。
 - SERICIA: Shopify接続、本番のBASE fail-closed表示、draft theme previewを確認済み。BASE API app取得後にOAuth・dry-run・draft同期・価格/在庫read-backを完了する。
@@ -209,7 +209,7 @@
 - `/work` fast-first PR: #586 / main `aa8af979` / validation `30394597067` / release `30394964339` / deployment `j3srqefjxcuopbvjgr5mmrcc`
 - VaaS implementation PR: #573
 - VaaS production deployment: pending
-- Foreign Investor pSEO: PR **#681** / branch `codex/foreign-investor-pseo` / deploymentはrelease完了後に追記する。
+- Foreign Investor pSEO: PR **#681** / main `e051aad6` / deployment `b55som0oubhi93mqaohwd0f8` / follow-up release hardening branch `codex/foreign-investor-pseo-release`。
 
 ## ACTIVE HANDOFF - 2026-08-02 Vertical SaaS direction
 
