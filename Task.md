@@ -53,7 +53,10 @@
 - Added migration `20260802020742_pet_life_movie_market_ready.sql`: customer/payment state, one-active-render uniqueness, deliverables, FORCE RLS, Data API revocation, and service-role-only access. All canonical migration and release verifiers include it.
 - Verification passed: Next.js production build 552/552 pages, Pet TypeScript, changed-scope ESLint, Vitest 9/9, Python compile/Ruff, targeted pytest, and production-mode Playwright for the five-photo no-account preview flow.
 - Cloudflare API credentials were restored from the approved local SSOT into Coolify. R2 lifecycle rule `pet-life-movie-retention-90d` is enabled for prefix `pet-life-movie/`, read back at 90 days, and preserves the pre-existing bucket rule.
-- Release handoff: merge and run the canonical deployment; apply/read back the migration; verify the embedded internal Video Factory; configure live Stripe products/webhook and Resend only through authenticated control-plane access. Checkout remains disabled until every dependency is present, so customers cannot be charged prematurely.
+- PR **#664** was squash-merged to main **7eb0f92f**. GitHub release **30730953842** completed Coolify deployment **sdldvalovxfxubub7z13edbn** and passed the public VaaS plus embedded Video Factory verification.
+- Production migration `20260802020742_pet_life_movie_market_ready.sql` is applied. `pet_movie_deliverables` was read back with RLS/FORCE RLS, anon/authenticated grants 0, one service-role policy, nine columns, and the one-active-render index.
+- Live smoke passed: public Pet page HTTP 200 with the new FFmpeg copy, Video Factory ready HTTP 200/true, anonymous project creation HTTP 201, owner load HTTP 200, deletion HTTP 200, and cleanup read-back HTTP 404. Production HTML reports `checkoutEnabled:false`.
+
 ## MONETIZATION DECISIONS
 
 - Wave 1 uses free content APIs for reach and pay-per-request decision packets for immediate machine-to-machine revenue testing.
@@ -66,7 +69,8 @@
 - Financial authorization required before accepting payment: approve the USDC receiving address and CDP facilitator identity. After approval, configure `X402_PAY_TO_ADDRESS`, `CDP_API_KEY_ID`, and `CDP_API_KEY_SECRET` programmatically and execute one real 0.25 USDC end-to-end purchase.
 - After activation, verify HTTP 402 discovery metadata, payment settlement, paid JSON delivery, hashed payment reference persistence, DB bell, and Slack notification.
 - Preserve the free catalog/article lane even after paid settlement is enabled.
-- Pet Life Movie paid render remains disabled until the GPU renderer URL and all three Stripe Price IDs are configured.
+- Pet Life Movie paid render remains disabled until live Stripe secret/webhook/three Price IDs and Resend are present. The embedded renderer is healthy, but one real paid purchase/refund/delivery proof is still required before launch.
+- Rotate the approved Cloudflare API token before market launch because it was exposed in a local diagnostic output. Coolify now has one corrected value per Cloudflare key and R2 lifecycle read-back passed, but the exposed credential must not be treated as safe.
 - Japan operator external outreach remains at zero; human approval is required before any send.
 - Video Factory may use only the existing approved GPU instance when an actual production render requires it; do not create an additional GPU by default.
 
