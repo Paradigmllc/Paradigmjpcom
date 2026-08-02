@@ -913,6 +913,14 @@ async function applyInvestorContentQualityMigration(envs) {
   )
 }
 
+async function applyInvestorContentUniquenessMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802222332_diversify_greater_tokyo_investor_analysis.sql",
+    "Greater Tokyo investor analysis uniqueness and depth",
+  )
+}
+
 async function verifyForeignInvestorPseoCatalog(envs) {
   await applySqlMigrationThroughPostgres(
     envs,
@@ -922,6 +930,9 @@ declare
   published_count integer;
   enhanced_count integer;
   chapter_count integer;
+  paragraph_count integer;
+  unique_chapter_title_count integer;
+  unique_paragraph_count integer;
 begin
   select count(*) into published_count
   from public.content_products
@@ -979,6 +990,57 @@ begin
     select 1
     from public.content_products as product
     cross join lateral jsonb_array_elements(product.payload -> 'chapters') as chapter(value)
+    where product.locale = 'en'
+      and product.content_type = 'investor_brief'
+      and product.is_active = true
+      and product.payload ? 'marketEvidence'
+      and jsonb_array_length(chapter.value -> 'paragraphs') <> 3
+  ) then
+    raise exception 'a Greater Tokyo analysis chapter does not contain three region-specific paragraphs';
+  end if;
+
+  select count(*), count(distinct chapter.value ->> 'title')
+  into chapter_count, unique_chapter_title_count
+  from public.content_products as product
+  cross join lateral jsonb_array_elements(product.payload -> 'chapters') as chapter(value)
+  where product.locale = 'en'
+    and product.content_type = 'investor_brief'
+    and product.is_active = true;
+
+  if chapter_count <> 112 or unique_chapter_title_count <> chapter_count then
+    raise exception 'investor chapter title uniqueness failed: % unique of %', unique_chapter_title_count, chapter_count;
+  end if;
+
+  select count(*), count(distinct paragraph.value)
+  into paragraph_count, unique_paragraph_count
+  from public.content_products as product
+  cross join lateral jsonb_array_elements(product.payload -> 'chapters') as chapter(value)
+  cross join lateral jsonb_array_elements_text(chapter.value -> 'paragraphs') as paragraph(value)
+  where product.locale = 'en'
+    and product.content_type = 'investor_brief'
+    and product.is_active = true;
+
+  if paragraph_count <> 288 or unique_paragraph_count <> paragraph_count then
+    raise exception 'investor paragraph uniqueness failed: % unique of %', unique_paragraph_count, paragraph_count;
+  end if;
+
+  if exists (
+    select 1
+    from public.content_products as product
+    cross join lateral jsonb_array_elements(product.payload -> 'chapters') as chapter(value)
+    cross join lateral jsonb_array_elements_text(chapter.value -> 'paragraphs') as paragraph(value)
+    where product.locale = 'en'
+      and product.content_type = 'investor_brief'
+      and product.is_active = true
+      and length(paragraph.value) < 400
+  ) then
+    raise exception 'investor analysis contains a paragraph shorter than 400 characters';
+  end if;
+
+  if exists (
+    select 1
+    from public.content_products as product
+    cross join lateral jsonb_array_elements(product.payload -> 'chapters') as chapter(value)
     cross join lateral jsonb_array_elements_text(chapter.value -> 'sourceIds') as source_id(value)
     where product.locale = 'en'
       and product.content_type = 'investor_brief'
@@ -1012,7 +1074,7 @@ $$;
 `,
     "Foreign investor pSEO catalog verification",
   )
-  return "Foreign investor pSEO catalog: verified 28 four-chapter sourced briefs, 16 market datasets, durable Kyoto source, and service-role isolation"
+  return "Foreign investor pSEO catalog: verified 28 sourced briefs, 112 unique chapter titles, 288 unique substantial paragraphs, 16 market datasets, durable Kyoto source, and service-role isolation"
 }
 
 async function applyFormQualifiedLeadFactoryMigration(envs) {
@@ -1929,6 +1991,7 @@ async function main() {
     console.log(await applyForeignInvestorPseoMigration(envs))
     console.log(await applyGreaterTokyoInvestorMigrations(envs))
     console.log(await applyInvestorContentQualityMigration(envs))
+    console.log(await applyInvestorContentUniquenessMigration(envs))
     console.log(await verifyForeignInvestorPseoCatalog(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))

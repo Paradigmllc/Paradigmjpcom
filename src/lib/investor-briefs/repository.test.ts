@@ -200,7 +200,7 @@ describe("investor brief content contract", () => {
       const sourceIds = new Set(parsed.data.sources.map((source) => source.id))
       for (const chapter of parsed.data.chapters ?? []) {
         expect(chapter.paragraphs).toHaveLength(2)
-        expect(chapter.paragraphs.every((paragraph) => paragraph.length >= 300)).toBe(true)
+        expect(chapter.paragraphs.every((paragraph) => paragraph.length >= 400)).toBe(true)
         expect(chapter.sourceIds.every((sourceId) => sourceIds.has(sourceId))).toBe(true)
       }
       expect(investorBriefReadableWordCount({
@@ -213,6 +213,20 @@ describe("investor brief content contract", () => {
     expect(expansionMigration).toContain("https://minpakuportal.city.kyoto.lg.jp/list/list1")
     expect(expansionMatch?.[1]).not.toContain("20260131itiran_eng.pdf")
     expect(expansionMigration).toContain("retired Kyoto lodging PDF URL remains in investor content")
+  })
+
+  it("fails closed when Greater Tokyo analysis is duplicated or too short", () => {
+    const uniquenessMigration = fs.readFileSync(
+      path.join(process.cwd(), "supabase/migrations/20260802222332_diversify_greater_tokyo_investor_analysis.sql"),
+      "utf8",
+    )
+
+    expect(uniquenessMigration).toContain("expected 16 diversified Greater Tokyo briefs")
+    expect(uniquenessMigration).toContain("investor chapter titles are not unique")
+    expect(uniquenessMigration).toContain("investor paragraphs are not unique")
+    expect(uniquenessMigration).toContain("length(paragraph.value) < 400")
+    expect(uniquenessMigration).toContain("investor analysis chapter references an unknown source")
+    expect(uniquenessMigration).toContain("paragraph_count <> 288")
   })
 
   it("counts rendered prose instead of serialized payload keys", () => {
