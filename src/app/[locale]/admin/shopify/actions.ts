@@ -11,12 +11,14 @@ import {
   upsertShopifyOpsDailyMetric,
 } from "@/lib/shopify-ops/repository"
 import { runBaseToShopifySync } from "@/lib/shopify-ops/base-sync-service"
+import { runDailySocialPipeline, tokyoDateString } from "@/lib/shopify-ops/social-pipeline"
 import {
   createContentSchema,
   dailyMetricSchema,
   updateContentStatusSchema,
   updateProductSchema,
   baseSyncSchema,
+  socialRunSchema,
 } from "@/lib/shopify-ops/schemas"
 
 export type ShopifyOpsActionResult = { ok: true; message: string } | { ok: false; error: string }
@@ -150,6 +152,28 @@ export async function runBaseSyncAction(formData: FormData): Promise<ShopifyOpsA
       : { ok: true, message }
   } catch (error) {
     console.error("[shopify-ops-action] BASE sync failed:", error)
+    return { ok: false, error: errorMessage(error) }
+  }
+}
+
+export async function runSocialPipelineAction(formData: FormData): Promise<ShopifyOpsActionResult> {
+  try {
+    await requireAdmin()
+    const input = socialRunSchema.parse(formObject(formData))
+    const run = await runDailySocialPipeline(input.runDate || tokyoDateString())
+    const message = run.status === "blocked"
+      ? `SNS日次準備を停止: ${run.blockedReason}`
+      : `SNS日次準備: ${run.generatedPostCount}件生成 / ${run.publishedPostCount}件公開 / ${run.failedPostCount}件失敗`
+    const notification = await notifyBothChannels(`SERICIA ${message}`, {
+      title: "SERICIA SNS日次パイプライン", message, link: "/ja/admin/shopify", type: "shopify_social_daily_run",
+      region: "global", priority: run.status === "failed" ? 95 : run.status === "blocked" ? 70 : 60,
+      idempotencyKey: `shopify-social:${run.runDate}:${run.status}`,
+    })
+    if (!notification.ok) console.error("[shopify-ops-action] social notification incomplete:", notification)
+    revalidatePath(`/${localeFrom(formData)}/admin/shopify`)
+    return run.status === "failed" ? { ok: false, error: message } : { ok: true, message }
+  } catch (error) {
+    console.error("[shopify-ops-action] social pipeline failed:", error)
     return { ok: false, error: errorMessage(error) }
   }
 }

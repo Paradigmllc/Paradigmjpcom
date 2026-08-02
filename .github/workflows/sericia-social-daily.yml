@@ -1,0 +1,30 @@
+name: SERICIA social daily pipeline
+
+on:
+  schedule:
+    # Draft generation at 09:10 JST, then delivery passes for US/EU time zones.
+    - cron: "10 0,9,17 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sericia-social-daily
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Generate and deliver eligible SERICIA posts
+        env:
+          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
+        run: |
+          test -n "$WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
+            --header "Content-Type: application/json" \
+            https://paradigmjp.com/api/shopify-ops/social/daily

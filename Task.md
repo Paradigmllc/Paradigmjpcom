@@ -5,8 +5,10 @@
 - Shopify production readiness was audited against the live store. The store is on Basic, `sericia.com` is the SSL-enabled primary domain, JPY is the only presentment currency, taxes are included, and shipping zones currently cover Japan plus 27 international destinations. Shopify Payments and PayPal both remain incomplete.
 - Shopify and BASE each contain exactly 0 products. The existing Tableware, Craft, Living, and Gifts collections therefore remain empty. No placeholder merchandise, fabricated inventory, or unfulfillable listing was published.
 - The OS 2.0 draft theme `SERICIA WoodMart OS2 - Development` (theme 144315482160) now includes an original SERICIA Japanese-craft hero image optimized to WebP, improved Liquid/theme-check hygiene, and the existing English global-marketplace navigation, service promises, category grid, and responsive product sections. The updated theme was pushed successfully but intentionally remains unpublished behind the storefront password.
-- Verification: Shopify CLI remote upload succeeded; theme JSON parsed; Theme Check inspected 172 files with 0 errors and 2 inherited/benign warnings (`offset: continue` and an orphaned Dawn quick-order snippet); desktop and 375x791 mobile previews show the hero, navigation, copy, and CTAs without clipping.
-- ACTIVE HANDOFF: launch is blocked only by truthful commercial inputs that cannot be invented: at least one real product with images, price, stock, origin/HS data and fulfillment terms; and Shopify Payments onboarding data including the legal representative and payout bank account. After those exist, run the prepared BASE-to-Shopify DRAFT sync or import, validate checkout/shipping/tax/policies, publish theme 144315482160, remove the storefront password, and execute JP/US/EU test checkouts.
+- 商品運用OSへ14項目の公開ゲートを追加した。在庫、現物、仕入先、画像利用権、原産国、HSコード、輸出表示、梱包・出荷テスト、Shopify商品URLが揃わない商品からはSNS投稿を生成しない。
+- Instagram/Pinterest向け英語投稿を日次生成し、自動承認ポリシー、時差別予約、公開、3回再試行、失敗履歴、DBベル+Slack通知を一元化した。接続前も下書き生成は継続し、TikTok/YouTubeはアプリ審査・監査完了まで直接公開しない。GitHub Actionsは1日3回、認証付き日次APIを呼ぶ。
+- Verification: Shopify CLI remote upload succeeded; Theme Check 0 errors; SNS実装はTypeScript 0件、対象ESLint 0警告、Vitest 4 files / 15 tests、品質ガード0エラー、Next.js production build 636 pagesを通過した。
+- ACTIVE HANDOFF: コードはリリース準備完了。事業公開は、実在商品（画像・価格・在庫・原産国/HS・出荷条件）、Shopify Paymentsの代表者/入金口座、Instagram/Pinterest Business認証が揃うまでfail-closedを維持する。入力後はBASE→Shopify DRAFT同期、SNS canary、checkout/配送/税/ポリシー検証、テーマ公開、password解除、JP/US/EUテスト注文の順で実行する。
 
 ## CURRENT STATUS — 2026-08-02 Video Factory Studio Scale Readiness
 

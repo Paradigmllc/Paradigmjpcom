@@ -12,6 +12,7 @@ import {
   updateProductAction,
   upsertDailyMetricAction,
   runBaseSyncAction,
+  runSocialPipelineAction,
 } from "@/app/[locale]/admin/shopify/actions"
 import type { ShopifyOpsActionResult } from "@/app/[locale]/admin/shopify/actions"
 import type { ShopifyOpsDashboard } from "@/lib/shopify-ops/types"
@@ -67,7 +68,7 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
       : activeTab === "sync"
         ? <ShopifyBaseSyncPanel status={dashboard.baseSync} locale={locale} submit={submit(runBaseSyncAction)} />
       : activeTab === "content"
-        ? <ShopifyContentPanel items={dashboard.contentItems} products={dashboard.products} locale={locale} create={submit(createContentAction)} updateStatus={submit(updateContentStatusAction)} />
+        ? <ShopifyContentPanel items={dashboard.contentItems} products={dashboard.products} automation={dashboard.socialAutomation} locale={locale} create={submit(createContentAction)} updateStatus={submit(updateContentStatusAction)} runDaily={submit(runSocialPipelineAction)} />
         : <ShopifyMetricsPanel dashboard={dashboard} locale={locale} submit={submit(upsertDailyMetricAction)} />
 
   return (
