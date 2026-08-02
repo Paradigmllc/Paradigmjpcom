@@ -52,6 +52,7 @@
 - Added explicit unchecked consent, private management links, customer deletion, 30-day free/90-day paid retention, expiry enforcement, cleanup API, and R2 deletion support.
 - Added migration `20260802020742_pet_life_movie_market_ready.sql`: customer/payment state, one-active-render uniqueness, deliverables, FORCE RLS, Data API revocation, and service-role-only access. All canonical migration and release verifiers include it.
 - Verification passed: Next.js production build 552/552 pages, Pet TypeScript, changed-scope ESLint, Vitest 9/9, Python compile/Ruff, targeted pytest, and production-mode Playwright for the five-photo no-account preview flow.
+- Production dependency gate is clear locally: Next.js `16.2.12`, Sharp `0.35.3` (including the nested Next.js dependency), full `npm audit` reports 0 vulnerabilities, and the 552/552 production build plus Pet TypeScript/Vitest checks pass.
 - Cloudflare API credentials were restored from the approved local SSOT into Coolify. R2 lifecycle rule `pet-life-movie-retention-90d` is enabled for prefix `pet-life-movie/`, read back at 90 days, and preserves the pre-existing bucket rule.
 - PR **#664** was squash-merged to main **7eb0f92f**. GitHub release **30730953842** completed Coolify deployment **sdldvalovxfxubub7z13edbn** and passed the public VaaS plus embedded Video Factory verification.
 - Production migration `20260802020742_pet_life_movie_market_ready.sql` is applied. `pet_movie_deliverables` was read back with RLS/FORCE RLS, anon/authenticated grants 0, one service-role policy, nine columns, and the one-active-render index.
@@ -70,6 +71,7 @@
 - After activation, verify HTTP 402 discovery metadata, payment settlement, paid JSON delivery, hashed payment reference persistence, DB bell, and Slack notification.
 - Preserve the free catalog/article lane even after paid settlement is enabled.
 - Pet Life Movie paid render remains disabled until live Stripe secret/webhook/three Price IDs and Resend are present. The embedded renderer is healthy, but one real paid purchase/refund/delivery proof is still required before launch.
+- Merge and release the Pet dependency security gate, then repeat the public readiness and anonymous create/load/delete smoke against the exact deployed commit.
 - Rotate the approved Cloudflare API token before market launch because it was exposed in a local diagnostic output. Coolify now has one corrected value per Cloudflare key and R2 lifecycle read-back passed, but the exposed credential must not be treated as safe.
 - Japan operator external outreach remains at zero; human approval is required before any send.
 - Video Factory may use only the existing approved GPU instance when an actual production render requires it; do not create an additional GPU by default.
