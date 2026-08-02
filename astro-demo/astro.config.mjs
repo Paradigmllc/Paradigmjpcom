@@ -11,6 +11,10 @@ export default defineConfig({
   }),
   integrations: [icon(), react()],
   vite: {
+    css: {
+      // Keep this standalone demo independent from the parent Next.js PostCSS config.
+      postcss: { plugins: [] },
+    },
     plugins: [tailwindcss()],
   },
 })
