@@ -36,7 +36,7 @@ create policy video_factory_studio_readiness_service_select
   on public.video_factory_studio_readiness_snapshots
   for select
   to service_role
-  using ((select auth.role()) = 'service_role');
+  using (true);
 
 drop policy if exists video_factory_studio_readiness_service_insert
   on public.video_factory_studio_readiness_snapshots;
@@ -44,7 +44,7 @@ create policy video_factory_studio_readiness_service_insert
   on public.video_factory_studio_readiness_snapshots
   for insert
   to service_role
-  with check ((select auth.role()) = 'service_role');
+  with check (true);
 
 comment on table public.video_factory_studio_readiness_snapshots is
   'Append-only evidence of Video Factory capability, quality gates, and safe scale capacity.';
