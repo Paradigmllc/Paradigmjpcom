@@ -34,7 +34,7 @@ export default async function SharedPetMoviePage({ params, searchParams }: Props
       ? "Checkout was cancelled. Your preview is still safe here."
       : null
   return (
-    <main className="min-h-screen bg-[#0d0b12] px-5 pb-20 pt-28 text-white md:px-8">
+    <main className="min-h-dvh bg-[#0d0b12] px-5 pb-20 pt-28 text-white md:px-8">
       <div className="mx-auto max-w-6xl">
         {paymentMessage && <div className="mx-auto mb-8 max-w-2xl rounded-2xl border border-violet-400/30 bg-violet-400/10 p-4 text-center text-sm text-violet-100">{paymentMessage}</div>}
         <div className="grid items-center gap-12 lg:grid-cols-[.8fr_1.2fr]">

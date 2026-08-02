@@ -6,7 +6,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.pet_movie_projects (
   id uuid primary key default gen_random_uuid(),
-  owner_user_id uuid references auth.users(id) on delete set null,
+  owner_user_id uuid,
   access_token_hash text not null unique,
   share_slug text not null unique,
   pet_name text not null check (char_length(pet_name) between 1 and 80),
@@ -122,6 +122,11 @@ alter table public.pet_movie_contributors enable row level security;
 alter table public.pet_movie_assets enable row level security;
 alter table public.pet_movie_jobs enable row level security;
 alter table public.pet_movie_events enable row level security;
+alter table public.pet_movie_projects force row level security;
+alter table public.pet_movie_contributors force row level security;
+alter table public.pet_movie_assets force row level security;
+alter table public.pet_movie_jobs force row level security;
+alter table public.pet_movie_events force row level security;
 
 revoke all on public.pet_movie_projects from public, anon, authenticated;
 revoke all on public.pet_movie_contributors from public, anon, authenticated;

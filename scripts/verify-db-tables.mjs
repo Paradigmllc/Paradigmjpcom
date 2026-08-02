@@ -59,6 +59,8 @@ const ALL_TABLES = [
   // Japan Readiness
   "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_initial_form_drafts", "sales_report_factory_state",
   "sales_japan_operator_cases", "sales_japan_operator_events",
+  // Pet Life Movie
+  "pet_movie_projects", "pet_movie_contributors", "pet_movie_assets", "pet_movie_jobs", "pet_movie_events",
   // Video
   "sales_video_jobs", "video_factory_engine_profiles", "video_factory_engine_events",
   // Platform Health
