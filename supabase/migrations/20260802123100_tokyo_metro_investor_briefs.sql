@@ -230,14 +230,15 @@ INSERT INTO public.content_products (
   preview, payload, source_url, license, version, is_active, published_at, updated_at
 )
 SELECT
-  slug, 'en', title, summary, 'investor_brief', 'free', NULL, NULL, preview, payload,
+  slug, 'en', title, summary, 'investor_brief', 'free', 0, 'eip155:8453', preview, payload,
   'https://paradigmjp.com/en/japan-opportunities/invest/' || slug,
   'Paradigm API Terms; attribution required. Not investment, legal, tax, brokerage or financial advice.',
   1, true, '2026-08-02T00:00:00Z'::timestamptz, now()
 FROM records
 ON CONFLICT (slug, locale) DO UPDATE SET
   title = EXCLUDED.title, summary = EXCLUDED.summary, content_type = EXCLUDED.content_type,
-  access_model = EXCLUDED.access_model, preview = EXCLUDED.preview, payload = EXCLUDED.payload,
+  access_model = EXCLUDED.access_model, price_usdc = EXCLUDED.price_usdc, network = EXCLUDED.network,
+  preview = EXCLUDED.preview, payload = EXCLUDED.payload,
   source_url = EXCLUDED.source_url, license = EXCLUDED.license, version = EXCLUDED.version,
   is_active = EXCLUDED.is_active, published_at = EXCLUDED.published_at, updated_at = now();
 

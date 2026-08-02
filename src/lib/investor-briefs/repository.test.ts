@@ -164,8 +164,12 @@ describe("investor brief content contract", () => {
   })
 
   it("ships sixteen distinct, evidence-rich Greater Tokyo market profiles", () => {
-    const tokyo = extractMetroProfiles("supabase/migrations/20260802123100_tokyo_metro_investor_briefs.sql")
-    const ring = extractMetroProfiles("supabase/migrations/20260802123200_greater_tokyo_ring_investor_briefs.sql")
+    const migrationFiles = [
+      "supabase/migrations/20260802123100_tokyo_metro_investor_briefs.sql",
+      "supabase/migrations/20260802123200_greater_tokyo_ring_investor_briefs.sql",
+    ]
+    const tokyo = extractMetroProfiles(migrationFiles[0])
+    const ring = extractMetroProfiles(migrationFiles[1])
     const profiles = [...tokyo, ...ring]
 
     expect(tokyo).toHaveLength(10)
@@ -183,6 +187,12 @@ describe("investor brief content contract", () => {
       })
       expect(profile.coveredMarkets).toEqual(expect.arrayContaining([expect.any(String)]))
       expect((profile.evidencePoints as unknown[]).length).toBeGreaterThanOrEqual(2)
+    }
+    for (const migrationFile of migrationFiles) {
+      const migration = fs.readFileSync(path.join(process.cwd(), migrationFile), "utf8")
+      expect(migration).toContain("'investor_brief', 'free', 0, 'eip155:8453'")
+      expect(migration).toContain("price_usdc = EXCLUDED.price_usdc")
+      expect(migration).not.toContain("'investor_brief', 'free', NULL, NULL")
     }
   })
 
