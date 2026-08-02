@@ -4,6 +4,7 @@ import {
   getBlogLocaleRedirect,
   getEnglishLegacyOfferRedirect,
   getJapaneseLegacyOfferRedirect,
+  isMarketingLocale,
   isNonIndexablePath,
 } from "@/lib/marketing-routing";
 
@@ -77,6 +78,19 @@ export function proxy(request: NextRequest) {
   // meta refresh from the page component).
   if (pathname === "/ja/package") {
     return NextResponse.redirect(new URL(`/ja/services${request.nextUrl.search}`, request.url), 308)
+  }
+
+  // Investor briefs are editorially maintained in English. Redirect before
+  // rendering so crawlers receive a real permanent response instead of the
+  // 200 + streamed meta refresh produced by a Server Component redirect.
+  const investorBriefLocalePath = pathname.match(/^\/([^/]+)(\/japan-opportunities\/invest(?:\/.*)?)$/)
+  if (investorBriefLocalePath) {
+    const [, locale, suffix] = investorBriefLocalePath
+    if (locale !== "en" && isMarketingLocale(locale)) {
+      const destination = request.nextUrl.clone()
+      destination.pathname = `/en${suffix}`
+      return NextResponse.redirect(destination, 308)
+    }
   }
 
   const blogLocaleRedirect = getBlogLocaleRedirect(request.nextUrl)

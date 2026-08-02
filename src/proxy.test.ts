@@ -58,3 +58,29 @@ describe("demo subdomain", () => {
     expect(response.headers.get("location")).toBe("https://demo.paradigmjp.com/example/contact")
   })
 })
+
+describe("investor brief locale canonicalization", () => {
+  it("permanently redirects the non-English collection to English", () => {
+    const response = proxy(new NextRequest("https://paradigmjp.com/ja/japan-opportunities/invest"))
+
+    expect(response.status).toBe(308)
+    expect(response.headers.get("location")).toBe("https://paradigmjp.com/en/japan-opportunities/invest")
+  })
+
+  it("preserves detail paths and query parameters", () => {
+    const response = proxy(new NextRequest(
+      "https://paradigmjp.com/de/japan-opportunities/invest/japan-data-center-investment?utm_source=partner",
+    ))
+
+    expect(response.status).toBe(308)
+    expect(response.headers.get("location")).toBe(
+      "https://paradigmjp.com/en/japan-opportunities/invest/japan-data-center-investment?utm_source=partner",
+    )
+  })
+
+  it("leaves the English canonical route untouched", () => {
+    const response = proxy(new NextRequest("https://paradigmjp.com/en/japan-opportunities/invest"))
+
+    expect(response.headers.get("x-middleware-next")).toBe("1")
+  })
+})
