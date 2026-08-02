@@ -3,7 +3,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchAllBaseItems, isBaseAppConfigured, isBaseShopConnected } from "./base-client"
 import { buildShopifyProductSetInput, normalizeBaseItem, type NormalizedBaseProduct, type SericiaCollectionHandle } from "./base-sync"
 import { ensureShopifyCollection, getShopifyLocationId, isShopifyAdminConfigured, upsertShopifyProduct } from "./shopify-admin"
-import type { BaseSyncMode, BaseSyncPreviewItem, BaseSyncRun, BaseSyncStatus } from "./types"
+import type { BaseSyncMode, BaseSyncPreviewItem, BaseSyncRun, BaseSyncRunStatus, BaseSyncStatus } from "./types"
 
 type DbRow = Record<string, unknown>
 
@@ -12,6 +12,15 @@ const COLLECTIONS: Record<SericiaCollectionHandle, string> = {
   craft: "Craft",
   living: "Living",
   gifts: "Gifts",
+}
+
+export const BASE_SYNC_AUTOMATION_INTERVAL_MINUTES = 30
+
+type BaseSyncTrigger = BaseSyncRun["triggeredBy"]
+
+type RunOptions = {
+  triggeredBy?: BaseSyncTrigger
+  products?: NormalizedBaseProduct[]
 }
 
 function requireDatabase() {
@@ -34,10 +43,12 @@ function nullableStringFrom(value: unknown): string | null {
 }
 
 function runFromRow(row: DbRow): BaseSyncRun {
+  const summary = row.summary && typeof row.summary === "object" ? row.summary as Record<string, unknown> : {}
   return {
     id: stringFrom(row.id),
     mode: row.mode as BaseSyncRun["mode"],
     status: row.status as BaseSyncRun["status"],
+    triggeredBy: summary.triggeredBy === "scheduled" ? "scheduled" : "manual",
     sourceCount: numberFrom(row.source_count),
     createdCount: numberFrom(row.created_count),
     updatedCount: numberFrom(row.updated_count),
@@ -81,6 +92,9 @@ export async function getBaseSyncStatus(): Promise<BaseSyncStatus> {
     recentRuns,
     linkedProductCount: linksResult.count ?? 0,
     previewItems: previewFromSummary(lastSummary),
+    scheduledAutomationEnabled: true,
+    automationIntervalMinutes: BASE_SYNC_AUTOMATION_INTERVAL_MINUTES,
+    lastScheduledRun: recentRuns.find((run) => run.triggeredBy === "scheduled") ?? null,
   }
 }
 
@@ -121,17 +135,57 @@ function preview(products: NormalizedBaseProduct[]): BaseSyncPreviewItem[] {
   }))
 }
 
-export async function runBaseToShopifySync(mode: BaseSyncMode): Promise<BaseSyncRun> {
+async function readRun(id: string): Promise<BaseSyncRun> {
+  const database = requireDatabase()
+  const { data, error } = await database.from(DB_TABLES.SHOPIFY_BASE_SYNC_RUNS).select("*").eq("id", id).single()
+  if (error) throw new Error(`BASE同期結果の取得に失敗しました: ${error.message}`)
+  return runFromRow(data as DbRow)
+}
+
+export async function recordScheduledBaseSyncOutcome(
+  status: Extract<BaseSyncRunStatus, "blocked" | "failed">,
+  reason: string,
+  products: NormalizedBaseProduct[] = [],
+): Promise<BaseSyncRun> {
+  const runId = await createRun("apply")
+  await updateRun(runId, {
+    status,
+    source_count: products.length,
+    failed_count: status === "failed" ? 1 : 0,
+    error_message: reason,
+    summary: { triggeredBy: "scheduled", previewItems: preview(products), safetyStopped: true },
+  })
+  return readRun(runId)
+}
+
+function sourceSnapshot(product: NormalizedBaseProduct): Record<string, unknown> {
+  return {
+    title: product.title,
+    priceJpy: product.priceJpy,
+    inventory: product.inventory,
+    collectionHandle: product.collectionHandle,
+    modifiedAt: product.modifiedAt,
+  }
+}
+
+function snapshotsMatch(existing: unknown, next: Record<string, unknown>): boolean {
+  if (!existing || typeof existing !== "object") return false
+  const current = existing as Record<string, unknown>
+  return Object.entries(next).every(([key, value]) => current[key] === value)
+}
+
+export async function runBaseToShopifySync(mode: BaseSyncMode, options: RunOptions = {}): Promise<BaseSyncRun> {
+  const triggeredBy = options.triggeredBy ?? "manual"
   const runId = await createRun(mode)
   try {
-    const products = (await fetchAllBaseItems()).map(normalizeBaseItem)
+    const products = options.products ?? (await fetchAllBaseItems()).map(normalizeBaseItem)
     const previewItems = preview(products)
     if (mode === "dry_run") {
       await updateRun(runId, {
         status: "succeeded",
         source_count: products.length,
         skipped_count: products.filter((product) => !product.visibleInBase).length,
-        summary: { previewItems },
+        summary: { triggeredBy, previewItems },
       })
     } else {
       if (!isShopifyAdminConfigured()) throw new Error("Shopify Admin APIが未設定です")
@@ -141,17 +195,24 @@ export async function runBaseToShopifySync(mode: BaseSyncMode): Promise<BaseSync
       const collectionIds = Object.fromEntries(collectionEntries) as Record<SericiaCollectionHandle, string>
       const baseIds = products.map((product) => product.baseItemId)
       const existingResult = baseIds.length > 0
-        ? await database.from(DB_TABLES.SHOPIFY_BASE_PRODUCT_LINKS).select("base_item_id").in("base_item_id", baseIds)
+        ? await database.from(DB_TABLES.SHOPIFY_BASE_PRODUCT_LINKS).select("base_item_id,source_snapshot").in("base_item_id", baseIds)
         : { data: [], error: null }
       if (existingResult.error) throw new Error(`BASE商品リンクの取得に失敗しました: ${existingResult.error.message}`)
       const existingIds = new Set(((existingResult.data ?? []) as DbRow[]).map((row) => numberFrom(row.base_item_id)))
+      const existingSnapshots = new Map(((existingResult.data ?? []) as DbRow[]).map((row) => [numberFrom(row.base_item_id), row.source_snapshot]))
       let createdCount = 0
       let updatedCount = 0
+      let skippedCount = 0
       let failedCount = 0
       const errors: Array<{ baseItemId: number; message: string }> = []
 
       for (const product of products) {
         try {
+          const nextSnapshot = sourceSnapshot(product)
+          if (snapshotsMatch(existingSnapshots.get(product.baseItemId), nextSnapshot)) {
+            skippedCount += 1
+            continue
+          }
           const handle = `base-${product.baseItemId}`
           const input = buildShopifyProductSetInput(product, locationId, collectionIds[product.collectionHandle])
           const shopifyProduct = await upsertShopifyProduct(input, handle)
@@ -167,13 +228,7 @@ export async function runBaseToShopifySync(mode: BaseSyncMode): Promise<BaseSync
             shopify_product_id: shopifyProduct.id,
             shopify_handle: shopifyProduct.handle,
             variant_map: variantMap,
-            source_snapshot: {
-              title: product.title,
-              priceJpy: product.priceJpy,
-              inventory: product.inventory,
-              collectionHandle: product.collectionHandle,
-              modifiedAt: product.modifiedAt,
-            },
+            source_snapshot: nextSnapshot,
             last_synced_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           }, { onConflict: "base_item_id" })
@@ -191,8 +246,9 @@ export async function runBaseToShopifySync(mode: BaseSyncMode): Promise<BaseSync
         source_count: products.length,
         created_count: createdCount,
         updated_count: updatedCount,
+        skipped_count: skippedCount,
         failed_count: failedCount,
-        summary: { previewItems, errors: errors.slice(0, 50) },
+        summary: { triggeredBy, previewItems, errors: errors.slice(0, 50) },
         error_message: failedCount > 0 ? `${failedCount}件の商品同期に失敗しました` : null,
       })
     }
@@ -206,8 +262,5 @@ export async function runBaseToShopifySync(mode: BaseSyncMode): Promise<BaseSync
     throw error
   }
 
-  const database = requireDatabase()
-  const { data, error } = await database.from(DB_TABLES.SHOPIFY_BASE_SYNC_RUNS).select("*").eq("id", runId).single()
-  if (error) throw new Error(`BASE同期結果の取得に失敗しました: ${error.message}`)
-  return runFromRow(data as DbRow)
+  return readRun(runId)
 }
