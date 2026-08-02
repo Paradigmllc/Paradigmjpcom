@@ -20,6 +20,8 @@ const ALL_TABLES = [
   // CMS
   "cms_posts", "cms_services", "cms_pricing", "cms_faqs", "cms_works",
   "cms_settings", "cms_media", "cms_content_blocks",
+  // Content commerce
+  "content_products", "content_access_events",
   // Sales OS Core
   "sales_companies", "sales_customers", "sales_deliveries", "sales_templates", "sales_campaigns",
   // Contracts & KPI
@@ -395,6 +397,8 @@ function printSummaryAndExit(ok, missing, errored) {
         "public_japan_entry_checks": "supabase/migrations/migration_072_public_japan_entry_checks.sql",
         "sales_japan_operator_cases": "supabase/migrations/20260801224308_sales_japan_operator_cases.sql",
         "sales_japan_operator_events": "supabase/migrations/20260801224308_sales_japan_operator_cases.sql",
+        "content_products": "supabase/migrations/20260801231006_content_commerce.sql",
+        "content_access_events": "supabase/migrations/20260801231006_content_commerce.sql",
         "video_factory_engine_profiles": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_engine_events": "supabase/migrations/20260801091559_video_factory_engine_profiles.sql",
         "video_factory_brand_kits": "supabase/migrations/20260802093000_video_factory_commercial_studio.sql",

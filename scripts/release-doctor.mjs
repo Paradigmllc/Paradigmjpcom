@@ -347,6 +347,28 @@ function checkStaticReleaseRules() {
     fail("Pet Life Movie persistence requires RLS, service-role isolation, migration execution, and DB verification wiring")
   }
 
+  const contentCommerceMigrationPath = "supabase/migrations/20260801231006_content_commerce.sql"
+  const contentCommerceMigration = fs.existsSync(contentCommerceMigrationPath)
+    ? fs.readFileSync(contentCommerceMigrationPath, "utf8")
+    : ""
+  const contentCommerceSecurityMarkers = [
+    "content_products",
+    "content_access_events",
+    "ENABLE ROW LEVEL SECURITY",
+    "REVOKE ALL ON public.content_products FROM PUBLIC, anon, authenticated",
+    "REVOKE ALL ON public.content_access_events FROM PUBLIC, anon, authenticated",
+    "TO service_role",
+  ]
+  if (
+    contentCommerceSecurityMarkers.every((marker) => contentCommerceMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801231006_content_commerce.sql") &&
+    noLoginDeploy.includes("applyContentCommerceMigration")
+  ) {
+    pass("Content API products and x402 access events have RLS and release migration wiring")
+  } else {
+    fail("Content commerce requires service-role-only RLS and release migration wiring")
+  }
+
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
   const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
     ? fs.readFileSync(engineProfilesMigrationPath, "utf8")

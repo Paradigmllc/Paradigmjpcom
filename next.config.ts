@@ -7,9 +7,14 @@ import { buildSecurityHeaders } from "./src/lib/security-headers"
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 const isWebpackBuild = process.env.NEXT_BUILD_BUNDLER === "webpack"
+const shouldBuildStandalone = process.env.NEXT_BUILD_STANDALONE === "1"
+  || (process.env.NEXT_BUILD_STANDALONE !== "0" && process.platform !== "win32")
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Next.js can repeatedly fail its final standalone copy with EBUSY on
+  // Windows. Linux CI/Coolify still build the deployable standalone output;
+  // local Windows builds validate the same app with the regular Node output.
+  output: shouldBuildStandalone ? "standalone" : undefined,
   poweredByHeader: false,
   staticPageGenerationTimeout: 180,
   // Pin Turbopack workspace root to this directory so worktree node_modules
@@ -20,7 +25,17 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
-  serverExternalPackages: isWebpackBuild ? ["pino", "playwright", "playwright-core"] : [],
+  serverExternalPackages: isWebpackBuild
+    ? [
+        "pino",
+        "playwright",
+        "playwright-core",
+        "@coinbase/cdp-sdk",
+        "@x402/core",
+        "@x402/evm",
+        "@x402/extensions",
+      ]
+    : [],
   // 2026-05-03: @paradigmllc/blocks は TypeScript ソース直配布 (no build step)
   // Appexxme と同一 Block 実装を共有するため transpile 必須。
   transpilePackages: ["@paradigmllc/blocks"],

@@ -33,6 +33,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",
     "@aws-sdk/s3-request-presigner": "^3.1057.0",
+    "@coinbase/cdp-sdk": "1.54.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -60,6 +61,10 @@
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "@tanstack/react-query": "^5.96.0",
+    "@x402/core": "2.20.0",
+    "@x402/evm": "2.20.0",
+    "@x402/extensions": "2.20.0",
+    "@x402/next": "2.20.0",
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -130,6 +135,7 @@
     "@opentelemetry/otlp-exporter-base": "^0.219.0",
     "@opentelemetry/otlp-transformer": "^0.219.0",
     "hono": "^4.12.26",
-    "undici": "7.28.0"
+    "undici": "7.28.0",
+    "axios": "1.18.1"
   }
 }
