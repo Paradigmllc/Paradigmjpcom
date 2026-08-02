@@ -62,7 +62,7 @@
           "settings": {
             "kicker": "For the table",
             "title": "Tableware",
-            "link": "shopify://collections"
+            "link": "shopify://collections/tableware"
           }
         },
         "craft": {
@@ -70,7 +70,7 @@
           "settings": {
             "kicker": "Made by hand",
             "title": "Craft",
-            "link": "shopify://collections"
+            "link": "shopify://collections/craft"
           }
         },
         "living": {
@@ -78,7 +78,7 @@
           "settings": {
             "kicker": "Everyday ritual",
             "title": "Living",
-            "link": "shopify://collections"
+            "link": "shopify://collections/living"
           }
         },
         "gifts": {
@@ -86,7 +86,7 @@
           "settings": {
             "kicker": "Small discoveries",
             "title": "Gifts",
-            "link": "shopify://collections"
+            "link": "shopify://collections/gifts"
           }
         }
       },
