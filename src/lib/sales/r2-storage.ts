@@ -27,6 +27,12 @@ export interface R2SignedDownload {
   expiresInSeconds: number
 }
 
+export interface R2ImageVerificationRequest {
+  objectKey: string
+  contentType: string
+  sizeBytes: number
+}
+
 import { optionalEnv } from "./japan-readiness-utils"
 
 export function getR2StorageConfig(): R2StorageConfig {
@@ -133,6 +139,39 @@ export async function createR2SignedDownloads(
       { expiresIn: ttl },
     )
     return { objectKey, downloadUrl, expiresInSeconds: ttl }
+  }))
+}
+
+export function matchesR2ImageSignature(contentType: string, bytes: Uint8Array): boolean {
+  if (contentType === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+  if (contentType === "image/png") return bytes.length >= 8 && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((value, index) => bytes[index] === value)
+  const ascii = (start: number, length: number) => String.fromCharCode(...bytes.slice(start, start + length))
+  if (contentType === "image/webp") return bytes.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 4) === "WEBP"
+  if (contentType === "image/heic" || contentType === "image/heif") {
+    if (bytes.length < 12 || ascii(4, 4) !== "ftyp") return false
+    return ["heic", "heix", "hevc", "hevx", "mif1", "msf1"].includes(ascii(8, 4))
+  }
+  return false
+}
+
+export async function verifyPrivateR2ImageObjects(requests: R2ImageVerificationRequest[]): Promise<void> {
+  const config = getR2StorageConfig()
+  if (!config.ready || !config.bucket) throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
+  const bucket = config.bucket
+  const client = await createR2Client()
+  const { GetObjectCommand, HeadObjectCommand } = await import("@aws-sdk/client-s3")
+  await Promise.all(requests.map(async (request) => {
+    const objectKey = sanitizeR2ObjectName(request.objectKey)
+    if (!objectKey) throw new Error("R2 object key is empty")
+    const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: objectKey }))
+    const actualType = head.ContentType?.split(";", 1)[0]?.trim().toLowerCase()
+    if (head.ContentLength !== request.sizeBytes) throw new Error("Uploaded photo size does not match the reserved file")
+    if (actualType !== request.contentType) throw new Error("Uploaded photo type does not match the reserved file")
+    const sample = await client.send(new GetObjectCommand({ Bucket: bucket, Key: objectKey, Range: "bytes=0-31" }))
+    const bytes = await sample.Body?.transformToByteArray()
+    if (!bytes || !matchesR2ImageSignature(request.contentType, bytes)) {
+      throw new Error("Uploaded file content is not a supported image")
+    }
   }))
 }
 

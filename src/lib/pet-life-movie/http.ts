@@ -1,19 +1,22 @@
+import { randomUUID } from "node:crypto"
 import { NextResponse } from "next/server"
 import { ZodError } from "zod"
 
 export function petMovieErrorResponse(error: unknown, context: string): NextResponse {
-  console.error(`[pet-life-movie] ${context}`, error)
   if (error instanceof ZodError) {
+    console.warn(`[pet-life-movie] ${context}: invalid request`, error.issues)
     return NextResponse.json(
-      { ok: false, error: "入力内容を確認してください。", issues: error.issues },
+      { ok: false, error: "入力内容を確認してください。" },
       { status: 400 },
     )
   }
   if (error instanceof Error && error.message === "INVALID_JSON") {
     return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 })
   }
+  const errorId = randomUUID()
+  console.error(`[pet-life-movie] ${context} (${errorId})`, error)
   return NextResponse.json(
-    { ok: false, error: error instanceof Error ? error.message : "Unexpected error" },
+    { ok: false, error: "Service temporarily unavailable. Please try again.", errorId },
     { status: 500 },
   )
 }

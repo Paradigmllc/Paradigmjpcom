@@ -20,6 +20,7 @@ export function getPetMovieMarketReadiness(): PetMovieMarketReadiness {
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
     "RESEND_API_KEY",
+    "PET_MOVIE_RATE_LIMIT_SALT",
     ...PLAN_PRICE_ENVS,
   ]
   const missing = required.filter((name) => !configured(name))

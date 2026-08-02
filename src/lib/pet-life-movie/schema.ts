@@ -25,12 +25,19 @@ export const petMovieUploadSchema = z.object({
 })
 
 export const confirmPetMovieUploadsSchema = z.object({
-  assetIds: z.array(z.string().uuid()).min(1).max(20),
+  assetIds: z.array(z.string().uuid()).min(1).max(20)
+    .refine((items) => new Set(items).size === items.length, "Asset IDs must be unique"),
+})
+
+export const petMovieContributionUploadSchema = petMovieUploadSchema.extend({
+  memories: z.array(z.string().trim().min(1).max(300)).min(1).max(3),
+  consentConfirmed: z.boolean().refine((value) => value, "Photo contribution consent is required"),
 })
 
 export const petMovieCheckoutSchema = z.object({
   plan: z.enum(["mini", "story", "cinema"]),
   email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  termsAccepted: z.boolean().refine((value) => value, "Purchase terms must be accepted"),
 })
 
 export const petMovieInviteSchema = z.object({

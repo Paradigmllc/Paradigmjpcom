@@ -180,16 +180,12 @@
 ## CURRENT STATUS — 2026-08-02 Content API + Pet Life Movie
 
 - Content APIは公開CORS catalog、全文JSON/Markdown、3つの有料decision packetを日英配信する。PR #659、fix #660-#662、deployment `lbxrxhx5vpcyvpolyzusi8qe`はhealthy。x402は財務承認までHTTP 503でfail-closed、無料APIは継続する。
-- Pet Life Movieは公式Stripe、署名webhook、冪等checkout/render、返金、Resend、承認gate、private R2納品、削除、30/90日retentionを実装。本番migration/RLS、release **30730953842**、deployment **sdldvalovxfxubub7z13edbn**、公開smokeを確認済み。
-- Dependency security gateはPR **#669** / main **d40eef47**へ反映済み。Next.js `16.2.12`、Sharp `0.35.3`（Next.js配下もdedupe）、full `npm audit` 0 vulnerabilities、552/552 production build、Pet TypeScript/Vitest 9/9、Linux validation run **30732125162**を通過した。
-- 最新の稼働コンテナはmain **7d2bf24f**（Pet launch copy修正 **723bf521** と決済環境反映 **09a4ad54** を包含）でhealthy。GitHub production run **30740082490**、`/api/ready` 200、日英西葡LP 200、checkout表示、旧「次回リリース」文言の不在をread-backした。
-- 市場投入gateを追加した。Pet変更時はclean `npm ci`、root audit、専用TypeScript、Vitest、対象ESLint、production buildをCIで必須検証する。ローカルではroot audit 0、Pet TypeScript、Vitest 9/9、対象ESLint、Next.js production build 564/564ページを通過した。
-- リポジトリ補助runtimeもhardeningし、Astroを7.1.6 / Node adapter 11.0.3へ更新してaudit 0・server build成功、outreach workerはStagehand 3.7.1 / Crawlee 3.17.0 / Playwright 1.62.1と安全なUndici 6.28.0へ更新してTypeScript・high以上0を確認した。上流Stagehandの`@ai-sdk/provider-utils`由来lowのみ継続監視する。
-- Coolifyの自動デプロイは無効をread-backし、診断出力に露出した手動Webhook secret 4種をAPI経由でローテーションして全4種の更新一致を確認した。Coolify API token本体もread/read:sensitive/write/deployの最小権限・365日失効へ交換し、新tokenのapplications/env API 200、approved secret store 2箇所の更新、旧token失効、remote一時secret削除を確認した。Cloudflare API tokenのみ引き続きローテーション対象。
-- 市場投入hardeningはPR **#676**をmain **b0a9eca1**へsquash merge済み。GitHub production run **30735560298**とCoolify deployment **q80cl9qe9wofsrkwoj440tf4**は成功し、対象commit一致、公開VaaS、埋め込みVideo Factoryを確認した。Pet本番smokeはpage 200、create 201、owner read 200、unauthorized 404、preview前checkout 409、delete 200、deleted read-back 404で、検証projectは削除済み。
-- 家族招待アップロードは既に本番実装済みのため、LPに残っていた「次回リリース」表現を日英西葡の4言語で実機能に合わせて修正した。PR **#684**をmain **723bf521**へsquash mergeし、Pet専用TypeScript、Vitest 9/9、Next.js production build 564/564を通過した。
-- Paradigm LLCのStripe live accountでcharges/payouts有効をread-backし、Mini $19 / Story $39 / Cinema $79のone-time Price、7 eventの署名Webhook、Resend、検証済み送信元`send.paradigmjp.com`を本番設定した。全8環境変数の一致、Resend safe test sink受理、署名付き副作用なしWebhook 200を確認した。
-- 金銭移動なしの本番E2Eでproject作成、R2へ5枚upload、storyboard 5 scene、preview、Stripe live Checkout Session（Mini / USD 19）、Stripe API metadata・金額・livemode read-back、Session expire、project/R2削除、削除後404まで成功した。Stripe生成の`checkout.session.expired`も本番Webhookへ配送完了し、`pending_webhooks=0`を確認した。checkoutは有効。実課金・render・承認・納品・返金の金融E2Eは未実施で、実売上を発生させる明示承認後に一度だけ通す。
+- Pet Life Movieの商用品質引上げを`codex/pet-life-movie-commercial-perfect`で実装した。日英西葡LPへ注文前の価格・支払方法/時期・納期・保存期間・取消し/不具合/返金・サポート・FAQを表示し、商品固有の提供条件、sitemap、構造化データ、再開導線を追加した。
+- 家族招待は写真だけでなく実在する思い出と明示的な権利同意を保存し、全員分をstoryboardへ反映する。owner/contributor uploadはR2のsize・Content-Type・magic bytesを確認し、偽装ファイルを削除する。期限切れ招待、20件超の招待、旧render callbackによる承認迂回を拒否する。
+- Checkoutは提供条件version/同意時刻をDB保存し、既存open sessionを失効して二重セッションを防ぐ。DB保存失敗時も新sessionを自動失効する。500系APIは内部例外を返さず相関IDだけを返す。専用rate-limit saltをCoolifyへ生成・設定・read-back済み。
+- ローカルはPet TypeScript、対象ESLint、Vitest **17/17**、Next.js production build **636/636**、Pet Playwright **10/10**、日英西葡LP/規約WCAG 2.2 AA **8/8**、実iPhone profile、desktop/mobile overflow、`npm audit --omit=dev` 0 vulnerabilitiesを通過した。全体Vitestは今回変更外4 files / 17 testsのみ不一致で **1448 tests pass**。
+- Stripe liveのMini $19 / Story $39 / Cinema $79、署名Webhook、Resendは設定済み。過去の金銭移動なし本番E2Eはproject→private R2→preview→live Checkout作成/失効→webhook→全削除まで成功済み。実課金・render・承認・納品・返金の金融E2Eは明示承認まで未実施のまま維持する。
+- ACTIVE HANDOFF: 商用品質PRをmainへmergeし、migration、production deploy、日英西葡LP/提供条件、no-charge owner+family upload、checkout session失効、RLS/列、削除を本番read-backする。Cloudflare API token交換はtoken管理権限不足の既存blockerとして分離する。
 
 ## ACTIVE HANDOFF
 

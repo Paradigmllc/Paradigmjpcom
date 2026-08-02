@@ -1,7 +1,57 @@
-import { expect, test } from "@playwright/test"
+import { devices, expect, test } from "@playwright/test"
 
 const projectId = "00000000-0000-4000-8000-000000000001"
 const assetIds = Array.from({ length: 5 }, (_, index) => `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`)
+
+const commercialCopy = {
+  ja: "支払方法・時期",
+  en: "Payment method and timing",
+  es: "Método y momento del pago",
+  pt: "Método e momento do pagamento",
+} as const
+
+for (const locale of Object.keys(commercialCopy) as Array<keyof typeof commercialCopy>) {
+  for (const viewport of [
+    { name: "desktop", width: 1440, height: 900 },
+    { name: "mobile", width: 390, height: 844 },
+  ] as const) {
+    test(`${locale} commercial page is stable on ${viewport.name}`, async ({ page }) => {
+      const errors: string[] = []
+      page.on("pageerror", (error) => errors.push(error.message))
+      await page.setViewportSize(viewport)
+      const response = await page.goto(`/${locale}/pet-life-movie`, { waitUntil: "domcontentloaded" })
+      expect(response?.status()).toBe(200)
+      await expect(page.getByText(commercialCopy[locale], { exact: false }).first()).toBeVisible()
+      await expect(page.getByText("$19").first()).toBeVisible()
+      await expect(page.getByRole("link", { name: /Pet Life Movie|Condiciones|Termos/ }).first()).toBeVisible()
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+      expect(errors).toEqual([])
+    })
+  }
+}
+
+test("real iPhone profile loads the complete styled experience", async ({ browser }) => {
+  const context = await browser.newContext({
+    ...devices["iPhone 13"],
+    baseURL: process.env.E2E_BASE_URL ?? "https://paradigmjp.com",
+  })
+  const page = await context.newPage()
+  const failedAssets: string[] = []
+  page.on("response", (response) => {
+    if (response.status() >= 400 && response.request().resourceType() === "stylesheet") failedAssets.push(`${response.status()} ${response.url()}`)
+  })
+  const response = await page.goto("/ja/pet-life-movie", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole("heading", { name: "写真を、家族の物語に。" })).toBeVisible()
+  expect(await page.evaluate(() => document.styleSheets.length)).toBeGreaterThan(0)
+  expect(await page.evaluate(() => Number.parseFloat(getComputedStyle(document.querySelector("h1")!).fontSize))).toBeGreaterThan(30)
+  const pipeline = page.getByText("透明なOSSパイプライン")
+  await pipeline.scrollIntoViewIfNeeded()
+  await expect(pipeline).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true)
+  expect(failedAssets).toEqual([])
+  await context.close()
+})
 
 test("creates a no-account Pet Life Movie preview", async ({ page }) => {
   test.setTimeout(60_000)
@@ -36,6 +86,11 @@ test("creates a no-account Pet Life Movie preview", async ({ page }) => {
 
   await page.goto("/ja/pet-life-movie")
   await expect(page.getByRole("heading", { name: "写真を、家族の物語に。" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "注文前に、すべて明確に。" })).toBeVisible()
+  await expect(page.getByText("$19").first()).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth))
+  await page.getByRole("button", { name: "無料プレビューを生成" }).click()
+  await expect(page.getByText("未入力または確認が必要な項目があります").first()).toBeVisible()
   await page.getByLabel("ペットのお名前").fill("Mugi")
   await page.getByLabel("一緒に過ごした時間").fill("12年間")
   await page.getByPlaceholder("1.").fill("川沿いの散歩")
@@ -50,5 +105,7 @@ test("creates a no-account Pet Life Movie preview", async ({ page }) => {
   await createButton.press("Enter")
   await expect(page.getByText("Mugiとの大切な時間")).toBeVisible()
   await expect(page.getByRole("heading", { name: "透かしなしの本編をつくる" })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Storyを選ぶ|有料レンダリング準備中|Choose Story|Paid render coming soon/ }).first()).toBeVisible()
+  await expect(page.getByText("$39").first()).toBeVisible()
+  await expect(page.getByRole("button", { name: /Storyを選ぶ|有料レンダリング準備中/ }).first()).toBeVisible()
+  await expect(page.getByText(/一回払い・5営業日以内/)).toBeVisible()
 })
