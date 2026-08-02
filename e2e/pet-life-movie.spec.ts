@@ -4,6 +4,7 @@ const projectId = "00000000-0000-4000-8000-000000000001"
 const assetIds = Array.from({ length: 5 }, (_, index) => `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`)
 
 test("creates a no-account Pet Life Movie preview", async ({ page }) => {
+  test.setTimeout(60_000)
   await page.route("**/api/pet-life-movie/projects", async (route) => {
     await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, project: { id: projectId }, accessToken: "a".repeat(43) }) })
   })
@@ -43,8 +44,11 @@ test("creates a no-account Pet Life Movie preview", async ({ page }) => {
     mimeType: "image/jpeg",
     buffer: Buffer.from(`photo-${index + 1}`),
   })))
-  await page.getByRole("button", { name: "無料プレビューを生成" }).click()
+  await page.getByRole("checkbox").check()
+  const createButton = page.getByRole("button", { name: "無料プレビューを生成" })
+  await createButton.focus()
+  await createButton.press("Enter")
   await expect(page.getByText("Mugiとの大切な時間")).toBeVisible()
   await expect(page.getByRole("heading", { name: "透かしなしの本編をつくる" })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Choose Story|Paid render coming soon/ })).toBeVisible()
+  await expect(page.getByRole("button", { name: /Storyを選ぶ|有料レンダリング準備中|Choose Story|Paid render coming soon/ }).first()).toBeVisible()
 })

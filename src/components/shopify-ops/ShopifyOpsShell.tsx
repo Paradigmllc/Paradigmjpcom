@@ -4,13 +4,14 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { BarChart3, Boxes, LayoutDashboard, LoaderCircle, Store, Video } from "lucide-react"
+import { BarChart3, Boxes, LayoutDashboard, LoaderCircle, RefreshCw, Store, Video } from "lucide-react"
 import { Toaster, toast } from "sonner"
 import {
   createContentAction,
   updateContentStatusAction,
   updateProductAction,
   upsertDailyMetricAction,
+  runBaseSyncAction,
 } from "@/app/[locale]/admin/shopify/actions"
 import type { ShopifyOpsActionResult } from "@/app/[locale]/admin/shopify/actions"
 import type { ShopifyOpsDashboard } from "@/lib/shopify-ops/types"
@@ -18,14 +19,16 @@ import { ShopifyOverview } from "./ShopifyOverview"
 import { ShopifyProductsPanel } from "./ShopifyProductsPanel"
 import { ShopifyContentPanel } from "./ShopifyContentPanel"
 import { ShopifyMetricsPanel } from "./ShopifyMetricsPanel"
+import { ShopifyBaseSyncPanel } from "./ShopifyBaseSyncPanel"
 
-type TabId = "overview" | "products" | "content" | "metrics"
+type TabId = "overview" | "products" | "sync" | "content" | "metrics"
 type Action = (formData: FormData) => Promise<ShopifyOpsActionResult>
 type SubmitAction = (formData: FormData) => Promise<void>
 
 const tabs = [
   { id: "overview" as const, label: "全体", icon: LayoutDashboard },
   { id: "products" as const, label: "商品", icon: Boxes },
+  { id: "sync" as const, label: "BASE同期", icon: RefreshCw },
   { id: "content" as const, label: "コンテンツ", icon: Video },
   { id: "metrics" as const, label: "KPI", icon: BarChart3 },
 ]
@@ -61,6 +64,8 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
     ? <ShopifyOverview dashboard={dashboard} />
     : activeTab === "products"
       ? <ShopifyProductsPanel products={dashboard.products} locale={locale} submit={submit(updateProductAction)} />
+      : activeTab === "sync"
+        ? <ShopifyBaseSyncPanel status={dashboard.baseSync} locale={locale} submit={submit(runBaseSyncAction)} />
       : activeTab === "content"
         ? <ShopifyContentPanel items={dashboard.contentItems} products={dashboard.products} locale={locale} create={submit(createContentAction)} updateStatus={submit(updateContentStatusAction)} />
         : <ShopifyMetricsPanel dashboard={dashboard} locale={locale} submit={submit(upsertDailyMetricAction)} />

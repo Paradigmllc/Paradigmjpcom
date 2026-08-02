@@ -377,13 +377,18 @@ notify pgrst, 'reload schema';
 }
 
 async function applySqlMigration(envs, fileName, label) {
-  const { url, key } = salesSupabase(envs)
   const sqlPath = [
     path.join(process.cwd(), "supabase", fileName),
     path.join(process.cwd(), "supabase", "migrations", fileName),
   ].find((candidate) => fs.existsSync(candidate))
   if (!sqlPath) return `${label}: local SQL file missing`
   const sql = fs.readFileSync(sqlPath, "utf8")
+  const hasSupabaseApiCredentials = Boolean(
+    (envs.NEXT_PUBLIC_SUPABASE_URL || envs.SALES_SUPABASE_URL)
+      && (envs.SUPABASE_SERVICE_ROLE_KEY || envs.SALES_SUPABASE_SERVICE_ROLE_KEY),
+  )
+  if (!hasSupabaseApiCredentials) return applySqlMigrationThroughHost(sql, label)
+  const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) return applySqlMigrationThroughPostgres(envs, sql, label)
   let res
   try {
@@ -592,6 +597,14 @@ async function applyPetLifeMovieMigration(envs) {
   return applySqlMigration(envs, "20260801213954_pet_life_movie_mvp.sql", "Pet Life Movie MVP migration")
 }
 
+async function applyPetLifeMovieMarketReadyMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802020742_pet_life_movie_market_ready.sql",
+    "Pet Life Movie market-ready migration",
+  )
+}
+
 async function verifyPetLifeMovieSchema(envs) {
   const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) {
@@ -603,6 +616,9 @@ begin
   if to_regclass('public.pet_movie_projects') is null then
     raise exception 'pet_movie_projects is missing';
   end if;
+  if to_regclass('public.pet_movie_deliverables') is null then
+    raise exception 'pet_movie_deliverables is missing';
+  end if;
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
   end if;
@@ -613,7 +629,7 @@ $$;
     )
     return "Pet Life Movie schema: verified through Postgres service_role privileges"
   }
-  const response = await fetch(`${url}/rest/v1/pet_movie_projects?select=id&limit=1`, {
+  const response = await fetch(`${url}/rest/v1/pet_movie_deliverables?select=id&limit=1`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
     signal: AbortSignal.timeout(30_000),
   })
@@ -680,6 +696,30 @@ async function applyVideoFactoryStudioLeastPrivilegeMigration(envs) {
   )
 }
 
+async function applyVideoGrowthDirectAcquisitionMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260802132000_video_growth_direct_acquisition.sql",
+    "Video subscription direct acquisition migration",
+  )
+}
+
+async function applyVideoGrowthCommercialSchemaMigration(envs) {
+  return applySqlMigration(envs, "20260802190000_video_growth_commercial_schema.sql", "Video growth commercial schema migration")
+}
+
+async function applyVideoGrowthCommercialIntakeMigration(envs) {
+  return applySqlMigration(envs, "20260802190100_video_growth_commercial_intake.sql", "Video growth commercial intake migration")
+}
+
+async function applyVideoGrowthCommercialQualityMigration(envs) {
+  return applySqlMigration(envs, "20260802190200_video_growth_commercial_quality.sql", "Video growth commercial quality migration")
+}
+
+async function applyVideoGrowthCommercialGuardsMigration(envs) {
+  return applySqlMigration(envs, "20260802190300_video_growth_commercial_guards.sql", "Video growth commercial guards migration")
+}
+
 async function applyCrmFieldMasterMigration(envs) {
   return applySqlMigration(envs, "migration_029_sales_crm_field_master.sql", "CRM field master migration")
 }
@@ -702,6 +742,14 @@ async function applySalesProductsSchemaMigration(envs) {
 
 async function applyShopifyOpsMigration(envs) {
   return applySqlMigration(envs, "20260801212630_shopify_ops.sql", "Tiny Shops Shopify operations migration")
+}
+
+async function applyShopifyBaseSyncMigration(envs) {
+  return applySqlMigration(envs, "20260802153000_shopify_base_sync.sql", "SERICIA BASE to Shopify sync migration")
+}
+
+async function applyShopifyBaseSyncHardeningMigration(envs) {
+  return applySqlMigration(envs, "20260802160000_shopify_base_sync_hardening.sql", "SERICIA BASE sync hardening migration")
 }
 
 async function applyReleaseTableParityMigration(envs) {
@@ -754,6 +802,19 @@ async function applyJapanOperatorCaseHardeningMigration(envs) {
     "20260801235327_sales_japan_operator_case_hardening.sql",
     "Japan market operator append-only audit and Wave 1 alias hardening",
   )
+}
+
+async function applyJapanOperatorOperationsOsMigrations(envs) {
+  const migrations = [
+    ["20260802015455_japan_operator_operations_os.sql", "Japan operator identity, evidence and outbound controls"],
+    ["20260802015712_japan_operator_commercial_os.sql", "Japan operator sourcing, contracts, payments and SKU controls"],
+    ["20260802015715_japan_operator_delivery_os.sql", "Japan operator finance, delivery, KPI and outbox controls"],
+  ]
+  const results = []
+  for (const [file, label] of migrations) {
+    results.push(await applySqlMigration(envs, file, label))
+  }
+  return results.join("\n")
 }
 
 async function applyContentCommerceMigration(envs) {
@@ -1588,18 +1649,23 @@ async function reconcileManualWorkV4Artifacts(envs) {
 
 async function main() {
   console.log("Sales OS no-login deploy")
-  const envs = await readProductionEnv()
-  console.log("Coolify API: connected")
-
   if (APPLY_SHOPIFY_ONLY) {
-    console.log(await applyShopifyOpsMigration(envs))
+    console.log(await applyShopifyOpsMigration({}))
+    console.log(await applyShopifyBaseSyncMigration({}))
+    console.log(await applyShopifyBaseSyncHardeningMigration({}))
     return
   }
+
+  const envs = await readProductionEnv()
+  console.log("Coolify API: connected")
 
   // Auto-ensure non-secret defaults are set in Coolify.
   // Secret values must already exist in the approved runtime secret store.
   const { ensureCoolifyEnvs, updateCoolifyEnvs } = await import("./lib/coolify-env.mjs")
   const requiredNonSecretEnvs = {
+    SHOPIFY_STORE_DOMAIN: "g2d5th-zr.myshopify.com",
+    SHOPIFY_API_VERSION: "2026-07",
+    BASE_OAUTH_REDIRECT_URI: "https://paradigmjp.com/api/shopify-ops/base/callback",
     ...(/^(1|true|yes)$/i.test(String(envs.CLOUDFLARE_ORIGIN_LOCKED || "").trim())
       ? { TRUSTED_PROXY_MODE: "cloudflare" }
       : {}),
@@ -1626,11 +1692,14 @@ async function main() {
 
   if (!DRY) {
     console.log(await applyShopifyOpsMigration(envs))
+    console.log(await applyShopifyBaseSyncMigration(envs))
+    console.log(await applyShopifyBaseSyncHardeningMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applyPayloadPagesPricingVersionsMigration(envs))
     console.log(await applyPetLifeMovieMigration(envs))
+    console.log(await applyPetLifeMovieMarketReadyMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
@@ -1648,6 +1717,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanOperatorCasesMigration(envs))
     console.log(await applyJapanOperatorCaseHardeningMigration(envs))
+    console.log(await applyJapanOperatorOperationsOsMigrations(envs))
     console.log(await applyContentCommerceMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
@@ -1690,6 +1760,11 @@ async function main() {
     console.log(await applyVideoFactoryOssExecutionTargetsMigration(envs))
     console.log(await applyVideoFactoryCommercialStudioMigration(envs))
     console.log(await applyVideoFactoryStudioLeastPrivilegeMigration(envs))
+    console.log(await applyVideoGrowthDirectAcquisitionMigration(envs))
+    console.log(await applyVideoGrowthCommercialSchemaMigration(envs))
+    console.log(await applyVideoGrowthCommercialIntakeMigration(envs))
+    console.log(await applyVideoGrowthCommercialQualityMigration(envs))
+    console.log(await applyVideoGrowthCommercialGuardsMigration(envs))
     console.log(await applyCrmFieldMasterMigration(envs))
     console.log(await applySourceTechMetricsMigration(envs))
     console.log(await applyMonthlyLeadBatchMigration(envs))

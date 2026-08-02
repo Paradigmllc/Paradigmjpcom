@@ -11,6 +11,16 @@ on:
       - src/app/console/**
       - src/app/v1/**
       - src/lib/video-factory-internal-proxy.ts
+      - "src/app/[locale]/admin/video-growth/**"
+      - src/app/api/sales/video-growth/**
+      - src/components/video-growth/**
+      - src/lib/video-growth/**
+      - e2e/video-growth.spec.ts
+      - supabase/migrations/20260802132000_video_growth_direct_acquisition.sql
+      - supabase/migrations/2026080219*_video_growth_commercial_*.sql
+      - scripts/release-doctor.mjs
+      - scripts/sales-os-no-login-deploy.mjs
+      - scripts/verify-db-tables.mjs
       - .agents/skills/paradigm-video-producer/**
       - .codex/config.toml
       - .github/workflows/video-factory-ci.yml
@@ -27,6 +37,16 @@ on:
       - src/app/console/**
       - src/app/v1/**
       - src/lib/video-factory-internal-proxy.ts
+      - "src/app/[locale]/admin/video-growth/**"
+      - src/app/api/sales/video-growth/**
+      - src/components/video-growth/**
+      - src/lib/video-growth/**
+      - e2e/video-growth.spec.ts
+      - supabase/migrations/20260802132000_video_growth_direct_acquisition.sql
+      - supabase/migrations/2026080219*_video_growth_commercial_*.sql
+      - scripts/release-doctor.mjs
+      - scripts/sales-os-no-login-deploy.mjs
+      - scripts/verify-db-tables.mjs
       - .agents/skills/paradigm-video-producer/**
       - .codex/config.toml
       - .github/workflows/video-factory-ci.yml
@@ -38,6 +58,45 @@ permissions:
   contents: read
 
 jobs:
+  direct-growth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Direct-growth unit and API tests
+        run: >-
+          npm exec -- vitest run
+          src/lib/video-growth/workflow.test.ts
+          src/lib/video-growth/export.test.ts
+          src/app/api/sales/video-growth/route.test.ts
+          --pool=threads
+          --maxWorkers=1
+      - name: TypeScript
+        run: npm exec -- tsc --noEmit
+      - name: Lint direct-growth implementation
+        run: >-
+          npm exec -- eslint
+          'src/app/[locale]/admin/video-growth/page.tsx'
+          'src/app/[locale]/admin/video-growth/loading.tsx'
+          'src/app/[locale]/admin/video-growth/error.tsx'
+          src/app/api/sales/video-growth/route.ts
+          src/components/admin/BeforeDashboard.tsx
+          src/components/video-growth
+          src/lib/sales/db-tables.ts
+          src/lib/video-growth
+          scripts/release-doctor.mjs
+          scripts/sales-os-no-login-deploy.mjs
+          scripts/verify-db-tables.mjs
+          --max-warnings=0
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30

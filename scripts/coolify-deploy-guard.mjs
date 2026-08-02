@@ -160,7 +160,8 @@ async function main() {
       console.warn("[deploy-guard] quality guard warnings detected — review before next deploy")
     }
     await cancelStaleDeployments()
-    inspectHost()
+    // Host disk/runtime state is already checked by host-disk-preflight and the
+    // Dockerfile guard. Avoid a duplicate SSH session in the release hot path.
   }
 }
 

@@ -15,6 +15,7 @@ import { evaluateOutreachReadiness } from "./readiness"
 import { detectCmsType } from "./cms-form-templates"
 import { fetchCandidates } from "./candidate-selection"
 import { syncOutreachDraftToTwenty } from "./draft-sync"
+import { blockUnauthorizedOutbound } from "./outbound-submit-guard"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -329,6 +330,9 @@ async function processOneInner(
 
   const cmsType = detectCmsType(html)
   const cachedParsed = readCachedForm(company, formUrl)
+
+  const blocked = await blockUnauthorizedOutbound({ company, formUrl, message: msg, classification: classification.classification, dryRun: opts.dryRun, pipelineRunId: opts.pipelineRunId })
+  if (blocked) return blocked
 
   const submit = await provider.submitForm({
     formUrl,

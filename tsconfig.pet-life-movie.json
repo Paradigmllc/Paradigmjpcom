@@ -4,6 +4,7 @@
     "noEmit": true,
     "incremental": false,
     "allowJs": false,
+    "types": ["node", "react", "react-dom"],
     "plugins": []
   },
   "include": [

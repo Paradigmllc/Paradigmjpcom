@@ -137,6 +137,18 @@ export async function createR2SignedDownloads(
 }
 
 export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, contentType: string): Promise<string> {
+  const key = await uploadPrivateToR2(objectKey, body, contentType)
+  const config = getR2StorageConfig()
+  const pub = publicUrlFor(config.publicBaseUrl, key)
+  if (!pub) throw new Error("R2 public base URL is not configured")
+  return pub
+}
+
+export async function uploadPrivateToR2(
+  objectKey: string,
+  body: Buffer | Uint8Array,
+  contentType: string,
+): Promise<string> {
   const config = getR2StorageConfig()
   if (!config.ready || !config.bucket) {
     throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
@@ -163,11 +175,27 @@ export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, c
     })
     throw error
   }
-  const pub = publicUrlFor(config.publicBaseUrl, key)
-  if (!pub) {
-    throw new Error("R2 public base URL is not configured")
+  return key
+}
+
+export async function deleteR2Objects(objectKeys: string[]): Promise<void> {
+  if (objectKeys.length === 0) return
+  const config = getR2StorageConfig()
+  if (!config.ready || !config.bucket) throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
+  const keys = [...new Set(objectKeys.map(sanitizeR2ObjectName).filter(Boolean))]
+  if (keys.length === 0) return
+  const client = await createR2Client()
+  const { DeleteObjectsCommand } = await import("@aws-sdk/client-s3")
+  for (let index = 0; index < keys.length; index += 1_000) {
+    const batch = keys.slice(index, index + 1_000)
+    const result = await client.send(new DeleteObjectsCommand({
+      Bucket: config.bucket,
+      Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+    }))
+    if (result.Errors?.length) {
+      throw new Error(`R2 deletion failed for ${result.Errors.map((item) => item.Key).filter(Boolean).join(", ")}`)
+    }
   }
-  return pub
 }
 
 export async function checkR2StorageHealth(): Promise<{ ok: boolean; label: string }> {

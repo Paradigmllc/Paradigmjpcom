@@ -4,8 +4,10 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from video_factory import local_jobs
 from video_factory.api import app
 from video_factory.io import load_data
+from video_factory.models import PipelineResult
 
 
 def test_api_key_and_two_gate_review_delivery(tmp_path: Path, monkeypatch) -> None:
@@ -99,6 +101,42 @@ def test_sync_production_is_rejected(tmp_path: Path, monkeypatch) -> None:
         json={"brief": brief, "dry_run": False},
     )
     assert response.status_code == 409
+
+
+def test_async_run_request_id_is_idempotent(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_QUEUE_BACKEND", "local")
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "test-secret")
+    brief = load_data(Path(__file__).parents[1] / "examples/briefs/saas-launch.yaml")
+
+    def fake_flow(**_kwargs) -> PipelineResult:
+        return PipelineResult(
+            project_id="hana-idempotent",
+            status="draft_review_required",
+            workspace=str(workspace / "projects" / "hana-idempotent"),
+            manifest_path=str(workspace / "projects" / "hana-idempotent" / "manifest.json"),
+        )
+
+    monkeypatch.setattr(local_jobs, "production_flow", fake_flow)
+    client = TestClient(app)
+    request_id = "c735ae9c-6f99-4d6a-9cdb-ce63c75ef31f"
+    payload = {"brief": brief, "request_id": request_id, "dry_run": True}
+    headers = {"X-Api-Key": "test-secret"}
+
+    first = client.post("/v1/runs", json=payload, headers=headers)
+    replay = client.post("/v1/runs", json=payload, headers=headers)
+
+    assert first.status_code == 200
+    assert replay.status_code == 200
+    assert first.json()["run_id"] == request_id
+    assert replay.json() == {
+        "accepted": True,
+        "run_id": request_id,
+        "backend": "local",
+        "idempotent_replay": True,
+    }
+    assert len(list((workspace / "inbox").glob("*.json"))) == 1
 
 
 def test_production_api_fails_closed_without_any_internal_key(

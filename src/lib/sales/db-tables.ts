@@ -110,6 +110,23 @@ export const DB_TABLES = {
   SALES_REPORT_FACTORY_STATE: "sales_report_factory_state",
   SALES_JAPAN_OPERATOR_CASES: "sales_japan_operator_cases",
   SALES_JAPAN_OPERATOR_EVENTS: "sales_japan_operator_events",
+  SALES_JAPAN_OPERATOR_ROLE_ASSIGNMENTS: "sales_japan_operator_role_assignments",
+  SALES_JAPAN_OPERATOR_EVIDENCE: "sales_japan_operator_evidence",
+  SALES_JAPAN_OPERATOR_APPROVALS: "sales_japan_operator_approvals",
+  SALES_JAPAN_OPERATOR_OUTBOUND_AUTHORIZATIONS: "sales_japan_operator_outbound_authorizations",
+  SALES_CONTACT_SUPPRESSIONS: "sales_contact_suppressions",
+  SALES_JAPAN_OPERATOR_SOURCE_LINKS: "sales_japan_operator_source_links",
+  SALES_JAPAN_OPERATOR_CONTRACT_LINKS: "sales_japan_operator_contract_links",
+  SALES_JAPAN_OPERATOR_INVOICES: "sales_japan_operator_invoices",
+  SALES_JAPAN_OPERATOR_SKUS: "sales_japan_operator_skus",
+  SALES_JAPAN_OPERATOR_DELIVERABLES: "sales_japan_operator_deliverables",
+  SALES_JAPAN_OPERATOR_FINANCE_PERIODS: "sales_japan_operator_finance_periods",
+  SALES_JAPAN_OPERATOR_FINANCE_LINES: "sales_japan_operator_finance_lines",
+  SALES_JAPAN_OPERATOR_OPERATIONAL_RECORDS: "sales_japan_operator_operational_records",
+  SALES_JAPAN_OPERATOR_INCIDENTS: "sales_japan_operator_incidents",
+  SALES_JAPAN_OPERATOR_KPI_PERIODS: "sales_japan_operator_kpi_periods",
+  SALES_JAPAN_OPERATOR_OFFBOARDING: "sales_japan_operator_offboarding",
+  SALES_JAPAN_OPERATOR_OUTBOX: "sales_japan_operator_outbox",
 
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",
@@ -122,6 +139,16 @@ export const DB_TABLES = {
   VIDEO_FACTORY_STUDIO_PROJECTS: "video_factory_studio_projects",
   VIDEO_FACTORY_SHOT_REVISIONS: "video_factory_shot_revisions",
   VIDEO_FACTORY_QUALITY_METRICS: "video_factory_quality_metrics",
+
+  // ── Video subscription direct acquisition ──
+  VIDEO_GROWTH_CAMPAIGNS: "video_growth_campaigns",
+  VIDEO_GROWTH_VARIANTS: "video_growth_variants",
+  VIDEO_GROWTH_EVENTS: "video_growth_events",
+  VIDEO_GROWTH_WORK_ORDERS: "video_growth_work_orders",
+  VIDEO_GROWTH_READINESS_CHECKS: "video_growth_readiness_checks",
+  VIDEO_GROWTH_APPROVALS: "video_growth_approvals",
+  VIDEO_GROWTH_REVISION_REQUESTS: "video_growth_revision_requests",
+  VIDEO_GROWTH_DAILY_METRICS: "video_growth_daily_metrics",
 
   // ── Pipeline Metrics (migration_066) ──
   SALES_PIPELINE_METRICS: "sales_pipeline_metrics",
@@ -155,6 +182,9 @@ export const DB_TABLES = {
   SHOPIFY_OPS_PRODUCTS: "shopify_ops_products",
   SHOPIFY_OPS_CONTENT_ITEMS: "shopify_ops_content_items",
   SHOPIFY_OPS_DAILY_METRICS: "shopify_ops_daily_metrics",
+  SHOPIFY_BASE_OAUTH: "shopify_base_oauth",
+  SHOPIFY_BASE_PRODUCT_LINKS: "shopify_base_product_links",
+  SHOPIFY_BASE_SYNC_RUNS: "shopify_base_sync_runs",
 
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",

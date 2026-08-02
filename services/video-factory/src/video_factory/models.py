@@ -258,6 +258,7 @@ class ShotManifest(BaseModel):
     shots: list[Shot]
     localized_shots: dict[str, list[Shot]] = Field(default_factory=dict)
     requires_human_review: bool = True
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def duration_matches(self) -> ShotManifest:

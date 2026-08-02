@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from .gpu_lifecycle import run_lifecycle
-from .models import ClientBrief, DeliverableSpec, QaReport, ShotManifest
+from .models import ClientBrief, DeliverableSpec, DeliveryRecord, QaReport, ShotManifest
 from .operator_events import emit_operator_event
 from .settings import Settings
 
@@ -51,6 +53,42 @@ def emit_studio_qa_completed(
             payload={
                 "deliverable_name": deliverable.name,
                 "qa": qa.model_dump(mode="json"),
+            },
+        )
+    )
+
+
+def emit_studio_project_delivered(
+    settings: Settings,
+    manifest: ShotManifest,
+    record: DeliveryRecord,
+) -> None:
+    pet_project_id = manifest.metadata.get("pet_movie_project_id")
+    pet_job_id = manifest.metadata.get("pet_movie_job_id")
+    if not pet_project_id or not pet_job_id:
+        return
+    run_lifecycle(
+        emit_operator_event(
+            settings,
+            event_type="studio_project_delivered",
+            title="Pet Life Movie delivery approved",
+            message=f"{manifest.project_name} passed both human approval gates.",
+            project_id=manifest.project_id,
+            state="delivered",
+            progress=100,
+            payload={
+                "pet_movie_project_id": pet_project_id,
+                "pet_movie_job_id": pet_job_id,
+                "reviewer": record.reviewer,
+                "items": [
+                    {
+                        "name": item.name,
+                        "artifact_path": f"deliverables/{item.name}{Path(item.local_path).suffix}",
+                        "sha256": item.sha256,
+                        "size_bytes": Path(item.local_path).stat().st_size,
+                    }
+                    for item in record.items
+                ],
             },
         )
     )

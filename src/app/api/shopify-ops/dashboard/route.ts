@@ -8,11 +8,13 @@ import {
   updateShopifyOpsProduct,
   upsertShopifyOpsDailyMetric,
 } from "@/lib/shopify-ops/repository"
+import { runBaseToShopifySync } from "@/lib/shopify-ops/base-sync-service"
 import {
   createContentSchema,
   dailyMetricSchema,
   updateContentStatusSchema,
   updateProductSchema,
+  baseSyncSchema,
 } from "@/lib/shopify-ops/schemas"
 
 export const runtime = "nodejs"
@@ -64,6 +66,10 @@ export async function POST(request: NextRequest) {
     } else if (action === "upsert_daily_metric") {
       result = await upsertShopifyOpsDailyMetric(dailyMetricSchema.parse(body))
       message = "日次KPIを保存しました"
+    } else if (action === "run_base_sync") {
+      const input = baseSyncSchema.parse(body)
+      result = await runBaseToShopifySync(input.mode)
+      message = input.mode === "dry_run" ? "BASE同期dry-runを実行しました" : "BASEからShopifyへ商品を同期しました"
     } else {
       return NextResponse.json({ ok: false, error: "Unknown action" }, { status: 400 })
     }

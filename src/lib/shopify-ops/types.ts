@@ -94,6 +94,47 @@ export type ShopifyOpsDailyMetric = {
   notes: string | null
 }
 
+export type BaseSyncRunStatus = "running" | "succeeded" | "failed" | "blocked"
+export type BaseSyncMode = "dry_run" | "apply"
+
+export type BaseSyncRun = {
+  id: string
+  mode: BaseSyncMode
+  status: BaseSyncRunStatus
+  sourceCount: number
+  createdCount: number
+  updatedCount: number
+  skippedCount: number
+  failedCount: number
+  errorMessage: string | null
+  startedAt: string
+  completedAt: string | null
+}
+
+export type BaseSyncPreviewItem = {
+  baseItemId: number
+  title: string
+  sku: string
+  priceJpy: number
+  inventory: number
+  imageCount: number
+  variationCount: number
+  collectionHandle: "tableware" | "craft" | "living" | "gifts"
+  visibleInBase: boolean
+}
+
+export type BaseSyncStatus = {
+  baseAppConfigured: boolean
+  baseShopConnected: boolean
+  shopifyConfigured: boolean
+  syncRunning: boolean
+  readyToSync: boolean
+  lastRun: BaseSyncRun | null
+  recentRuns: BaseSyncRun[]
+  linkedProductCount: number
+  previewItems: BaseSyncPreviewItem[]
+}
+
 export type ShopifyOpsTotals = {
   sessions: number
   videoViews: number
@@ -124,6 +165,7 @@ export type ShopifyOpsDashboard = {
   products: ShopifyOpsProduct[]
   contentItems: ShopifyOpsContentItem[]
   dailyMetrics: ShopifyOpsDailyMetric[]
+  baseSync: BaseSyncStatus
   totals30d: ShopifyOpsTotals
   launchReadiness: LaunchReadinessItem[]
   goals: {

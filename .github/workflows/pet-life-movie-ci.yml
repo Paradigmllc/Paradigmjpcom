@@ -1,0 +1,55 @@
+name: Pet Life Movie market readiness
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.pet-life-movie.json"
+      - "src/app/[locale]/pet-life-movie/**"
+      - "src/app/api/pet-life-movie/**"
+      - "src/app/api/internal/pet-life-movie/**"
+      - "src/app/api/stripe/webhook/route.ts"
+      - "src/components/pet-life-movie/**"
+      - "src/lib/pet-life-movie/**"
+      - "src/lib/sales/r2-storage.ts"
+      - "supabase/migrations/*pet_life_movie*.sql"
+      - "scripts/sales-os-no-login-deploy.mjs"
+      - "scripts/verify-db-tables.mjs"
+      - ".github/workflows/pet-life-movie-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pet-life-movie-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit
+      - run: npm run typecheck:pet-life-movie
+      - run: npm exec -- vitest run src/lib/pet-life-movie
+      - name: Lint Pet Life Movie implementation
+        run: >-
+          npm exec -- eslint
+          'src/app/[locale]/pet-life-movie'
+          src/app/api/pet-life-movie
+          src/app/api/internal/pet-life-movie
+          src/components/pet-life-movie
+          src/lib/pet-life-movie
+          --max-warnings=0
+      - run: npm run build

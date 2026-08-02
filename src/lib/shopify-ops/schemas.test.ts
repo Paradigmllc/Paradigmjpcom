@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createContentSchema, dailyMetricSchema, updateProductSchema } from "./schemas"
+import { baseSyncSchema, createContentSchema, dailyMetricSchema, updateProductSchema } from "./schemas"
 
 describe("Shopify operations schemas", () => {
   it("coerces product form values", () => {
@@ -37,5 +37,10 @@ describe("Shopify operations schemas", () => {
 
   it("requires a meaningful content hook", () => {
     expect(createContentSchema.safeParse({ platform: "tiktok", contentType: "discovery", hook: "short", locale: "en" }).success).toBe(false)
+  })
+
+  it("only accepts explicit BASE sync modes", () => {
+    expect(baseSyncSchema.parse({ mode: "dry_run" })).toEqual({ mode: "dry_run" })
+    expect(baseSyncSchema.safeParse({ mode: "publish" }).success).toBe(false)
   })
 })

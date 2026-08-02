@@ -1,10 +1,21 @@
 -- RevenueOS case control for the external Japan market operator offer.
 -- External sending remains outside this schema and always requires a human action.
 
+SELECT set_config('app.japan_operator_mutation', 'rpc', true);
+
 CREATE TABLE IF NOT EXISTS public.sales_japan_operator_cases (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id uuid NOT NULL UNIQUE REFERENCES public.sales_companies(id) ON DELETE CASCADE,
+  company_id uuid NOT NULL REFERENCES public.sales_companies(id) ON DELETE CASCADE,
+  engagement_no integer NOT NULL DEFAULT 1,
   offer_code text NOT NULL DEFAULT 'standard_operator_v1',
+  offer_version text NOT NULL DEFAULT '2026-08-02',
+  offer_snapshot jsonb NOT NULL DEFAULT jsonb_build_object(
+    'offer_code', 'standard_operator_v1', 'currency', 'USD',
+    'validation_fee', 5000, 'launch_total_fee', 20000,
+    'monthly_retainer', 2500, 'revenue_share_percent', 10,
+    'validation_credit_days', 30
+  ),
+  currency text NOT NULL DEFAULT 'USD',
   stage text NOT NULL DEFAULT 'prospect_intake',
   status text NOT NULL DEFAULT 'active',
   owner text,
@@ -40,6 +51,17 @@ CREATE TABLE IF NOT EXISTS public.sales_japan_operator_cases (
   )
 );
 
+ALTER TABLE public.sales_japan_operator_cases
+  ADD COLUMN IF NOT EXISTS engagement_no integer NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS offer_version text NOT NULL DEFAULT '2026-08-02',
+  ADD COLUMN IF NOT EXISTS offer_snapshot jsonb NOT NULL DEFAULT jsonb_build_object(
+    'offer_code', 'standard_operator_v1', 'currency', 'USD',
+    'validation_fee', 5000, 'launch_total_fee', 20000,
+    'monthly_retainer', 2500, 'revenue_share_percent', 10,
+    'validation_credit_days', 30
+  ),
+  ADD COLUMN IF NOT EXISTS currency text NOT NULL DEFAULT 'USD';
+
 CREATE TABLE IF NOT EXISTS public.sales_japan_operator_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   case_id uuid NOT NULL REFERENCES public.sales_japan_operator_cases(id) ON DELETE CASCADE,
@@ -47,6 +69,10 @@ CREATE TABLE IF NOT EXISTS public.sales_japan_operator_events (
   from_stage text,
   to_stage text,
   actor text NOT NULL,
+  actor_key text NOT NULL,
+  actor_email text,
+  actor_role text NOT NULL,
+  auth_source text NOT NULL,
   note text NOT NULL,
   detail jsonb NOT NULL DEFAULT '{}'::jsonb,
   idempotency_key text UNIQUE,
@@ -59,12 +85,29 @@ CREATE TABLE IF NOT EXISTS public.sales_japan_operator_events (
   CONSTRAINT sales_japan_operator_events_detail_check CHECK (jsonb_typeof(detail) = 'object')
 );
 
+ALTER TABLE public.sales_japan_operator_events
+  ADD COLUMN IF NOT EXISTS actor_key text,
+  ADD COLUMN IF NOT EXISTS actor_email text,
+  ADD COLUMN IF NOT EXISTS actor_role text,
+  ADD COLUMN IF NOT EXISTS auth_source text;
+UPDATE public.sales_japan_operator_events
+SET actor_key = coalesce(actor_key, actor),
+    actor_role = coalesce(actor_role, 'system'),
+    auth_source = coalesce(auth_source, 'migration')
+WHERE actor_key IS NULL OR actor_role IS NULL OR auth_source IS NULL;
+ALTER TABLE public.sales_japan_operator_events
+  ALTER COLUMN actor_key SET NOT NULL,
+  ALTER COLUMN actor_role SET NOT NULL,
+  ALTER COLUMN auth_source SET NOT NULL;
+
 CREATE INDEX IF NOT EXISTS sales_japan_operator_cases_stage_due_idx
   ON public.sales_japan_operator_cases(status, stage, next_action_due_at);
 CREATE INDEX IF NOT EXISTS sales_japan_operator_cases_owner_idx
   ON public.sales_japan_operator_cases(owner, updated_at DESC);
 CREATE INDEX IF NOT EXISTS sales_japan_operator_events_case_created_idx
   ON public.sales_japan_operator_events(case_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS sales_japan_operator_cases_company_engagement_uidx
+  ON public.sales_japan_operator_cases(company_id, engagement_no);
 
 ALTER TABLE public.sales_japan_operator_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_japan_operator_cases FORCE ROW LEVEL SECURITY;
@@ -178,13 +221,17 @@ BEGIN
   END IF;
 
   INSERT INTO public.sales_japan_operator_events (
-    case_id, action, from_stage, to_stage, actor, note, detail
+    case_id, action, from_stage, to_stage, actor, actor_key, actor_email, actor_role, auth_source, note, detail
   ) VALUES (
     p_case_id,
     p_action,
     current_case.stage,
     updated_case.stage,
     trim(p_actor),
+    trim(p_actor),
+    NULL,
+    'system',
+    'legacy_rpc',
     trim(p_note),
     jsonb_build_object(
       'before_revision', current_case.revision,
@@ -240,13 +287,17 @@ BEGIN
   RETURNING * INTO created_case;
 
   INSERT INTO public.sales_japan_operator_events (
-    case_id, action, from_stage, to_stage, actor, note, detail
+    case_id, action, from_stage, to_stage, actor, actor_key, actor_email, actor_role, auth_source, note, detail
   ) VALUES (
     created_case.id,
     'case_created',
     NULL,
     created_case.stage,
     trim(p_actor),
+    trim(p_actor),
+    NULL,
+    'system',
+    'legacy_rpc',
     trim(p_note),
     jsonb_build_object('offer_code', created_case.offer_code, 'external_messages_sent', 0)
   );
@@ -299,10 +350,10 @@ SELECT
     )
   )
 FROM wave_one
-ON CONFLICT (company_id) DO NOTHING;
+ON CONFLICT (company_id, engagement_no) DO NOTHING;
 
 INSERT INTO public.sales_japan_operator_events (
-  case_id, action, from_stage, to_stage, actor, note, detail, idempotency_key
+  case_id, action, from_stage, to_stage, actor, actor_key, actor_email, actor_role, auth_source, note, detail, idempotency_key
 )
 SELECT
   operator_case.id,
@@ -310,6 +361,10 @@ SELECT
   NULL,
   operator_case.stage,
   'RevenueOS migration',
+  'migration:revenueos',
+  NULL,
+  'system',
+  'migration',
   'Evidence-backed Wave 1 case initialized; no external message was sent.',
   jsonb_build_object('external_messages_sent', 0, 'offer_code', operator_case.offer_code),
   'japan-operator-wave1:' || operator_case.company_id::text

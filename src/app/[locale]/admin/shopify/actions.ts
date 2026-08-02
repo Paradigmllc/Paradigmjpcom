@@ -10,11 +10,13 @@ import {
   updateShopifyOpsProduct,
   upsertShopifyOpsDailyMetric,
 } from "@/lib/shopify-ops/repository"
+import { runBaseToShopifySync } from "@/lib/shopify-ops/base-sync-service"
 import {
   createContentSchema,
   dailyMetricSchema,
   updateContentStatusSchema,
   updateProductSchema,
+  baseSyncSchema,
 } from "@/lib/shopify-ops/schemas"
 
 export type ShopifyOpsActionResult = { ok: true; message: string } | { ok: false; error: string }
@@ -122,6 +124,32 @@ export async function upsertDailyMetricAction(formData: FormData): Promise<Shopi
     return { ok: true, message: `${metric.metricDate}のKPIを保存しました` }
   } catch (error) {
     console.error("[shopify-ops-action] metric upsert failed:", error)
+    return { ok: false, error: errorMessage(error) }
+  }
+}
+
+export async function runBaseSyncAction(formData: FormData): Promise<ShopifyOpsActionResult> {
+  try {
+    await requireAdmin()
+    const input = baseSyncSchema.parse(formObject(formData))
+    const run = await runBaseToShopifySync(input.mode)
+    const modeLabel = input.mode === "dry_run" ? "dry-run" : "本同期"
+    const message = `${modeLabel}: BASE ${run.sourceCount}件 / 新規 ${run.createdCount}件 / 更新 ${run.updatedCount}件 / 失敗 ${run.failedCount}件`
+    const notification = await notifyBothChannels(`SERICIA BASE同期 ${message}`, {
+      title: "SERICIA BASE同期",
+      message,
+      link: "/ja/admin/shopify",
+      type: "shopify_base_sync",
+      region: "global",
+      priority: run.failedCount > 0 ? 90 : 70,
+    })
+    if (!notification.ok) console.error("[shopify-ops-action] BASE sync notification incomplete:", notification)
+    revalidatePath(`/${localeFrom(formData)}/admin/shopify`)
+    return run.failedCount > 0
+      ? { ok: false, error: message }
+      : { ok: true, message }
+  } catch (error) {
+    console.error("[shopify-ops-action] BASE sync failed:", error)
     return { ok: false, error: errorMessage(error) }
   }
 }

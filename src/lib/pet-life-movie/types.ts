@@ -36,6 +36,11 @@ export interface PetMovieProjectRow {
   plan: PetMoviePlan | null
   payment_status: "unpaid" | "pending" | "paid" | "refunded" | "failed"
   stripe_checkout_session_id: string | null
+  stripe_payment_intent_id: string | null
+  customer_email: string | null
+  paid_at: string | null
+  refunded_at: string | null
+  deleted_at: string | null
   storyboard: PetMovieStoryboard | null
   preview_url: string | null
   delivery_url: string | null
@@ -44,6 +49,18 @@ export interface PetMovieProjectRow {
   expires_at: string
   created_at: string
   updated_at: string
+}
+
+export interface PetMovieDeliverableRow {
+  id: string
+  project_id: string
+  job_id: string
+  name: string
+  object_key: string
+  mime_type: "video/mp4" | "video/webm"
+  size_bytes: number
+  sha256: string
+  created_at: string
 }
 
 export interface PetMovieAssetRow {

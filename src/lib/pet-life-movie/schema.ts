@@ -7,8 +7,12 @@ export const createPetMovieProjectSchema = z.object({
   locale: z.enum(["ja", "en", "es", "pt"]),
   mood: z.enum(["warm", "playful", "cinematic", "gentle"]),
   timeTogether: z.string().trim().max(120),
-  memories: z.array(z.string().trim().min(1).max(300)).min(1).max(3),
-  consentConfirmed: z.literal(true),
+  memories: z.array(z.string().trim().max(300))
+    .min(1)
+    .max(3)
+    .transform((items) => items.filter(Boolean))
+    .refine((items) => items.length > 0, "At least one memory is required"),
+  consentConfirmed: z.boolean().refine((value) => value, "Photo and AI-assisted creation consent is required"),
 })
 
 export const petMovieUploadSchema = z.object({
@@ -26,7 +30,7 @@ export const confirmPetMovieUploadsSchema = z.object({
 
 export const petMovieCheckoutSchema = z.object({
   plan: z.enum(["mini", "story", "cinema"]),
-  email: z.string().email().max(254).optional(),
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
 })
 
 export const petMovieInviteSchema = z.object({

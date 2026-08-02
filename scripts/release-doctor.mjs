@@ -30,6 +30,7 @@ const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const failures = []
+let protectedAppHostsSnapshot = null
 
 function section(title) {
   console.log(`\n[release-doctor] ${title}`)
@@ -287,6 +288,12 @@ function checkStaticReleaseRules() {
   const operatorHardeningMigration = fs.existsSync(operatorHardeningMigrationPath)
     ? fs.readFileSync(operatorHardeningMigrationPath, "utf8")
     : ""
+  const operatorOperationsPaths = [
+    "supabase/migrations/20260802015455_japan_operator_operations_os.sql",
+    "supabase/migrations/20260802015712_japan_operator_commercial_os.sql",
+    "supabase/migrations/20260802015715_japan_operator_delivery_os.sql",
+  ]
+  const operatorOperations = operatorOperationsPaths.map((file) => fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "").join("\n")
   const operatorCaseMarkers = [
     "sales_japan_operator_cases",
     "sales_japan_operator_events",
@@ -305,22 +312,37 @@ function checkStaticReleaseRules() {
     "DONGJIN BEDDING Co., Ltd. / Little Archive",
     "external_messages_sent', 0",
   ]
+  const operatorOperationsMarkers = [
+    "sales_contact_suppressions", "sales_japan_operator_evidence", "sales_japan_operator_outbound_authorizations",
+    "sales_apply_japan_operator_action_v2", "sales_check_outbound_authorization", "sales_japan_operator_source_links",
+    "sales_japan_operator_contract_links", "sales_japan_operator_invoices", "sales_japan_operator_skus",
+    "sales_japan_operator_deliverables", "sales_japan_operator_finance_periods", "sales_japan_operator_operational_records",
+    "sales_japan_operator_incidents", "sales_japan_operator_kpi_periods", "sales_japan_operator_offboarding",
+    "sales_japan_operator_outbox", "FORCE ROW LEVEL SECURITY",
+  ]
   if (
     operatorCaseMarkers.every((marker) => operatorCasesMigration.includes(marker)) &&
     operatorHardeningMarkers.every((marker) => operatorHardeningMigration.includes(marker)) &&
+    operatorOperationsMarkers.every((marker) => operatorOperations.includes(marker)) &&
     noLoginDeploy.includes("20260801224308_sales_japan_operator_cases.sql") &&
     noLoginDeploy.includes("applyJapanOperatorCasesMigration") &&
     noLoginDeploy.includes("20260801235327_sales_japan_operator_case_hardening.sql") &&
-    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration")
+    noLoginDeploy.includes("applyJapanOperatorCaseHardeningMigration") &&
+    operatorOperationsPaths.every((file) => noLoginDeploy.includes(file.split("/").pop())) &&
+    noLoginDeploy.includes("applyJapanOperatorOperationsOsMigrations")
   ) {
-    pass("Japan market operator cases have atomic audit actions, RLS and release wiring")
+    pass("Japan market operator OS has atomic audit, outbound suppression, evidence, commercial and delivery wiring")
   } else {
-    fail("Japan market operator cases require atomic audit actions, RLS and release wiring")
+    fail("Japan market operator OS requires complete P0-P2 migration and release wiring")
   }
 
   const petMovieMigrationPath = "supabase/migrations/20260801213954_pet_life_movie_mvp.sql"
   const petMovieMigration = fs.existsSync(petMovieMigrationPath)
     ? fs.readFileSync(petMovieMigrationPath, "utf8")
+    : ""
+  const petMovieMarketMigrationPath = "supabase/migrations/20260802020742_pet_life_movie_market_ready.sql"
+  const petMovieMarketMigration = fs.existsSync(petMovieMarketMigrationPath)
+    ? fs.readFileSync(petMovieMarketMigrationPath, "utf8")
     : ""
   const petMovieRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
   const petMovieDbVerifier = fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
@@ -339,7 +361,13 @@ function checkStaticReleaseRules() {
     petMovieMarkers.every((marker) => petMovieMigration.includes(marker)) &&
     noLoginDeploy.includes("20260801213954_pet_life_movie_mvp.sql") &&
     noLoginDeploy.includes("applyPetLifeMovieMigration") &&
+    noLoginDeploy.includes("20260802020742_pet_life_movie_market_ready.sql") &&
+    noLoginDeploy.includes("applyPetLifeMovieMarketReadyMigration") &&
     petMovieRunMigrations.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    petMovieRunMigrations.includes("20260802020742_pet_life_movie_market_ready.sql") &&
+    petMovieMarketMigration.includes("pet_movie_deliverables") &&
+    petMovieMarketMigration.includes("force row level security") &&
+    petMovieMarketMigration.includes("to service_role") &&
     petMovieMarkers.slice(0, 5).every((marker) => petMovieDbVerifier.includes(marker))
   ) {
     pass("Pet Life Movie persistence has RLS, service-role isolation, migration execution, and DB verification wiring")
@@ -445,6 +473,77 @@ function checkStaticReleaseRules() {
     pass("Video Factory commercial Studio data has server-only RLS and release wiring")
   } else {
     fail("Video Factory commercial Studio requires RLS and release migration wiring")
+  }
+
+  const videoGrowthMigrationPath = "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql"
+  const videoGrowthMigration = fs.existsSync(videoGrowthMigrationPath)
+    ? fs.readFileSync(videoGrowthMigrationPath, "utf8")
+    : ""
+  const videoGrowthMarkers = [
+    "video_growth_campaigns",
+    "video_growth_variants",
+    "video_growth_events",
+    "force row level security",
+    "from public, anon, authenticated, service_role",
+    "video_growth_create_campaign",
+    "video_growth_transition_campaign",
+    "video_growth_update_variant",
+    "human approval is required before scheduling",
+    "external_messages_sent",
+  ]
+  if (
+    videoGrowthMigration
+    && videoGrowthMarkers.every((marker) => videoGrowthMigration.toLowerCase().includes(marker))
+    && noLoginDeploy.includes("20260802132000_video_growth_direct_acquisition.sql")
+    && noLoginDeploy.includes("applyVideoGrowthDirectAcquisitionMigration")
+  ) {
+    pass("Video subscription direct acquisition has approval gates, RLS and release wiring")
+  } else {
+    fail("Video subscription direct acquisition requires approval gates, RLS and release wiring")
+  }
+
+  const videoGrowthCommercialPaths = [
+    "supabase/migrations/20260802190000_video_growth_commercial_schema.sql",
+    "supabase/migrations/20260802190100_video_growth_commercial_intake.sql",
+    "supabase/migrations/20260802190200_video_growth_commercial_quality.sql",
+    "supabase/migrations/20260802190300_video_growth_commercial_guards.sql",
+  ]
+  const videoGrowthCommercial = videoGrowthCommercialPaths
+    .map((migrationPath) => fs.existsSync(migrationPath) ? fs.readFileSync(migrationPath, "utf8") : "")
+    .join("\n")
+    .toLowerCase()
+  const videoGrowthRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
+  const videoGrowthApi = fs.readFileSync("src/app/api/sales/video-growth/route.ts", "utf8")
+  const videoGrowthExport = fs.readFileSync("src/lib/video-growth/export.ts", "utf8")
+  const videoGrowthCommercialMarkers = [
+    "video_growth_work_orders", "video_growth_readiness_checks", "video_growth_approvals",
+    "video_growth_revision_requests", "video_growth_daily_metrics", "content_revision",
+    "force row level security", "from public, anon, authenticated, service_role",
+    "video_growth_create_commercial_campaign", "video_growth_manage_approval",
+    "video_growth_manage_revision", "video_growth_record_daily_metrics", "video_growth_update_billing_status",
+    "internal quality and client release approval are required before publication",
+    "requester and approver must be different", "external_messages_sent",
+    "revoke all on function public.video_growth_create_campaign", "from service_role",
+  ]
+  const videoGrowthCommercialFunctions = [
+    "applyVideoGrowthCommercialSchemaMigration", "applyVideoGrowthCommercialIntakeMigration",
+    "applyVideoGrowthCommercialQualityMigration", "applyVideoGrowthCommercialGuardsMigration",
+  ]
+  if (
+    videoGrowthCommercialPaths.every((migrationPath) => fs.existsSync(migrationPath))
+    && videoGrowthCommercialMarkers.every((marker) => videoGrowthCommercial.includes(marker))
+    && videoGrowthCommercialPaths.every((migrationPath) => noLoginDeploy.includes(migrationPath.split("/").at(-1)))
+    && videoGrowthCommercialPaths.every((migrationPath) => videoGrowthRunMigrations.includes(migrationPath.split("/").at(-1)))
+    && videoGrowthCommercialFunctions.every((functionName) => noLoginDeploy.includes(functionName))
+    && videoGrowthApi.includes("authorizeSalesApiRequest")
+    && videoGrowthApi.includes("READ_ROLES")
+    && !videoGrowthApi.includes("isSalesApiAuthorized")
+    && videoGrowthExport.includes("videoGrowthDashboardToCsv")
+    && videoGrowthExport.includes("if (/^[=+\\-@]/.test(text))")
+  ) {
+    pass("Video subscription commercial operations have intake, SLA, dual approval, revision, metrics, RLS and release wiring")
+  } else {
+    fail("Video subscription commercial operations require complete workflow guards and release wiring")
   }
 
   const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
@@ -1529,6 +1628,10 @@ for name in ("paradigmhp-origin-alias-http", "paradigmhp-origin-alias-https"):
 if not aliases.issubset(configured_aliases):
     raise RuntimeError("A Docker app alias bypasses the Cloudflare middleware")
 
+all_hosts = {"paradigmjp.com", "www.paradigmjp.com", "keystatic.paradigmjp.com"} | docker_hosts
+if ${POST_DEPLOY ? "True" : "False"}:
+    all_hosts.add("demo.paradigmjp.com")
+print("HOSTS_JSON " + json.dumps(sorted(all_hosts)))
 print(f"OK origin-lock-current aliases={len(aliases)} ranges={len(ranges)}")
 PY
 `
@@ -1545,6 +1648,17 @@ PY
   if (result.status !== 0 || result.error) {
     fail(`Traefik paradigmhp-svc route drift detected; run npm run release:prod, which refreshes it automatically`)
     return
+  }
+  const hostsLine = output.split(/\r?\n/).find((line) => line.startsWith("HOSTS_JSON "))
+  if (hostsLine) {
+    try {
+      const parsed = JSON.parse(hostsLine.slice("HOSTS_JSON ".length))
+      if (Array.isArray(parsed) && parsed.length >= 3 && parsed.every((value) => typeof value === "string")) {
+        protectedAppHostsSnapshot = [...new Set(parsed)]
+      }
+    } catch (error) {
+      warn(`protected app host snapshot parse failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
   pass("manual Traefik route points at the latest app container")
 }
@@ -1564,6 +1678,7 @@ async function resolveOriginAddress() {
 }
 
 function discoverProtectedAppHosts() {
+  if (protectedAppHostsSnapshot) return protectedAppHostsSnapshot
   const script = `
 set -euo pipefail
 container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"

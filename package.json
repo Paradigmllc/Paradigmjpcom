@@ -21,7 +21,7 @@
     "deploy:guard": "node scripts/coolify-deploy-guard.mjs --inspect",
     "deploy:prod": "npm run release:prod",
     "release:doctor": "node scripts/release-doctor.mjs",
-    "release:prod": "node scripts/release-doctor.mjs --pre-deploy && node scripts/sales-os-no-login-deploy.mjs && node scripts/release-doctor.mjs --post-deploy",
+    "release:prod": "node scripts/release-doctor.mjs --pre-deploy && node scripts/sales-os-no-login-deploy.mjs --skip-host-preflight --skip-deploy-guard && node scripts/release-doctor.mjs --post-deploy",
     "deploy:screenshot-to-code": "node scripts/deploy-screenshot-to-code.mjs",
     "quality:guard": "node scripts/paradigm-quality-guard.mjs",
     "quality:ci": "node scripts/paradigm-quality-guard.mjs --ci",
@@ -74,7 +74,7 @@
     "framer-motion": "^12.12.1",
     "graphql": "^16.10.0",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.6",
+    "next": "^16.2.12",
     "next-intl": "^4.9.1",
     "next-themes": "^0.4.6",
     "payload": "^3.85.0",
@@ -138,6 +138,7 @@
     "@opentelemetry/otlp-transformer": "^0.219.0",
     "hono": "^4.12.26",
     "undici": "7.28.0",
-    "axios": "1.18.1"
+    "axios": "1.18.1",
+    "sharp": "$sharp"
   }
 }

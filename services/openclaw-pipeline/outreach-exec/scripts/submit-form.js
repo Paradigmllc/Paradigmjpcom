@@ -94,6 +94,28 @@ function markSubmitted(domain) {
   lastSubmit.set(domain, Date.now());
 }
 
+async function authorizeLiveOutbound({ companyId, recipient, message }) {
+  const baseUrl = process.env.SALES_OS_BASE_URL || process.env.PUBLIC_BASE_URL;
+  const secret = process.env.TRIGGER_WEBHOOK_SECRET;
+  if (!companyId) return { allowed: false, reason: 'company_id_required' };
+  if (!baseUrl || !secret) return { allowed: false, reason: 'central_guard_not_configured' };
+  try {
+    const response = await fetch(`${baseUrl.replace(/\/$/, '')}/api/sales/outreach/guard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-webhook-secret': secret },
+      body: JSON.stringify({ companyId, channel: 'contact_form', recipient, message, dryRun: false }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const payload = await response.json();
+    return response.ok && payload.guard?.allowed === true
+      ? { allowed: true, reason: payload.guard.reason }
+      : { allowed: false, reason: payload.guard?.reason || payload.error || `guard_http_${response.status}` };
+  } catch (error) {
+    console.error(`  Central outbound guard failed: ${error.message}`);
+    return { allowed: false, reason: 'central_guard_unavailable' };
+  }
+}
+
 // ── Form Discovery ──────────────────────────────────────────────────
 
 const FORM_PATHS = ['/contact', '/contact-us', '/inquiry', '/お問い合わせ', '/form', '/contact/form'];
@@ -117,7 +139,9 @@ async function discoverForm(page, domain) {
     if (formCount > 0) {
       return { url: `https://${domain}`, formCount, inputCount: await page.locator('input:visible').count(), textareaCount: await page.locator('textarea:visible').count() };
     }
-  } catch {}
+  } catch (error) {
+    console.warn(`  Homepage form discovery failed for ${domain}: ${error.message}`);
+  }
   return null;
 }
 
@@ -173,7 +197,9 @@ async function fillForm(page, message) {
       try {
         await el.fill(value);
         filled++;
-      } catch {}
+      } catch (error) {
+        console.warn(`  Field fill skipped: ${error.message}`);
+      }
     }
   }
   return filled;
@@ -193,7 +219,7 @@ async function submitAndVerify(page) {
   for (const sel of submitSelectors) {
     const btn = page.locator(sel).first();
     if (await btn.isVisible().catch(() => false)) {
-      await btn.click().catch(() => {});
+      await btn.click().catch((error) => console.warn(`  Submit click failed: ${error.message}`));
       clicked = true;
       break;
     }
@@ -202,7 +228,7 @@ async function submitAndVerify(page) {
     // Last resort: press Enter on any visible input
     const firstInput = page.locator('input:visible').first();
     if (await firstInput.isVisible().catch(() => false)) {
-      await firstInput.press('Enter').catch(() => {});
+      await firstInput.press('Enter').catch((error) => console.warn(`  Enter submit failed: ${error.message}`));
       clicked = true;
     }
   }
@@ -247,11 +273,17 @@ async function submitForm({ url, domain, message, companyId, dryRun }) {
     if (robots.includes('Disallow: /contact') || robots.includes('Disallow: /form')) {
       return { success: false, reason: 'robots_disallowed' };
     }
-  } catch {}
+  } catch (error) {
+    console.warn(`  robots.txt check failed for ${targetDomain}: ${error.message}`);
+  }
 
   if (dryRun) {
     console.log(`[DRY RUN] Would submit to ${url || domain}`);
     return { success: true, dryRun: true };
+  }
+
+  if (!companyId) {
+    return { success: false, reason: 'company_id_required_for_live_submit' };
   }
 
   console.log(`🚀 Submitting to ${targetDomain}...`);
@@ -274,6 +306,13 @@ async function submitForm({ url, domain, message, companyId, dryRun }) {
       result = { success: false, reason: 'no_form_found' };
     } else {
       console.log(`  📝 Form found: ${form.url} (${form.inputCount} inputs)`);
+
+      const outboundGuard = await authorizeLiveOutbound({ companyId, recipient: form.url, message: message.body });
+      if (!outboundGuard.allowed) {
+        result = { success: false, reason: `outbound_blocked:${outboundGuard.reason}` };
+        console.error(`  Live submit blocked: ${outboundGuard.reason}`);
+        return result;
+      }
 
       // Fill
       const filled = await fillForm(page, message);
