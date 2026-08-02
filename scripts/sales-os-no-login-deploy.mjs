@@ -704,6 +704,22 @@ async function applyVideoGrowthDirectAcquisitionMigration(envs) {
   )
 }
 
+async function applyVideoGrowthCommercialSchemaMigration(envs) {
+  return applySqlMigration(envs, "20260802190000_video_growth_commercial_schema.sql", "Video growth commercial schema migration")
+}
+
+async function applyVideoGrowthCommercialIntakeMigration(envs) {
+  return applySqlMigration(envs, "20260802190100_video_growth_commercial_intake.sql", "Video growth commercial intake migration")
+}
+
+async function applyVideoGrowthCommercialQualityMigration(envs) {
+  return applySqlMigration(envs, "20260802190200_video_growth_commercial_quality.sql", "Video growth commercial quality migration")
+}
+
+async function applyVideoGrowthCommercialGuardsMigration(envs) {
+  return applySqlMigration(envs, "20260802190300_video_growth_commercial_guards.sql", "Video growth commercial guards migration")
+}
+
 async function applyCrmFieldMasterMigration(envs) {
   return applySqlMigration(envs, "migration_029_sales_crm_field_master.sql", "CRM field master migration")
 }
@@ -1745,6 +1761,10 @@ async function main() {
     console.log(await applyVideoFactoryCommercialStudioMigration(envs))
     console.log(await applyVideoFactoryStudioLeastPrivilegeMigration(envs))
     console.log(await applyVideoGrowthDirectAcquisitionMigration(envs))
+    console.log(await applyVideoGrowthCommercialSchemaMigration(envs))
+    console.log(await applyVideoGrowthCommercialIntakeMigration(envs))
+    console.log(await applyVideoGrowthCommercialQualityMigration(envs))
+    console.log(await applyVideoGrowthCommercialGuardsMigration(envs))
     console.log(await applyCrmFieldMasterMigration(envs))
     console.log(await applySourceTechMetricsMigration(envs))
     console.log(await applyMonthlyLeadBatchMigration(envs))
