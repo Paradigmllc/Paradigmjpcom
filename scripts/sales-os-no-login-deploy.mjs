@@ -377,13 +377,18 @@ notify pgrst, 'reload schema';
 }
 
 async function applySqlMigration(envs, fileName, label) {
-  const { url, key } = salesSupabase(envs)
   const sqlPath = [
     path.join(process.cwd(), "supabase", fileName),
     path.join(process.cwd(), "supabase", "migrations", fileName),
   ].find((candidate) => fs.existsSync(candidate))
   if (!sqlPath) return `${label}: local SQL file missing`
   const sql = fs.readFileSync(sqlPath, "utf8")
+  const hasSupabaseApiCredentials = Boolean(
+    (envs.NEXT_PUBLIC_SUPABASE_URL || envs.SALES_SUPABASE_URL)
+      && (envs.SUPABASE_SERVICE_ROLE_KEY || envs.SALES_SUPABASE_SERVICE_ROLE_KEY),
+  )
+  if (!hasSupabaseApiCredentials) return applySqlMigrationThroughHost(sql, label)
+  const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) return applySqlMigrationThroughPostgres(envs, sql, label)
   let res
   try {
@@ -713,6 +718,10 @@ async function applySalesProductsSchemaMigration(envs) {
 
 async function applyShopifyOpsMigration(envs) {
   return applySqlMigration(envs, "20260801212630_shopify_ops.sql", "Tiny Shops Shopify operations migration")
+}
+
+async function applyShopifyBaseSyncMigration(envs) {
+  return applySqlMigration(envs, "20260802153000_shopify_base_sync.sql", "SERICIA BASE to Shopify sync migration")
 }
 
 async function applyReleaseTableParityMigration(envs) {
@@ -1612,18 +1621,22 @@ async function reconcileManualWorkV4Artifacts(envs) {
 
 async function main() {
   console.log("Sales OS no-login deploy")
-  const envs = await readProductionEnv()
-  console.log("Coolify API: connected")
-
   if (APPLY_SHOPIFY_ONLY) {
-    console.log(await applyShopifyOpsMigration(envs))
+    console.log(await applyShopifyOpsMigration({}))
+    console.log(await applyShopifyBaseSyncMigration({}))
     return
   }
+
+  const envs = await readProductionEnv()
+  console.log("Coolify API: connected")
 
   // Auto-ensure non-secret defaults are set in Coolify.
   // Secret values must already exist in the approved runtime secret store.
   const { ensureCoolifyEnvs, updateCoolifyEnvs } = await import("./lib/coolify-env.mjs")
   const requiredNonSecretEnvs = {
+    SHOPIFY_STORE_DOMAIN: "g2d5th-zr.myshopify.com",
+    SHOPIFY_API_VERSION: "2026-07",
+    BASE_OAUTH_REDIRECT_URI: "https://paradigmjp.com/api/shopify-ops/base/callback",
     ...(/^(1|true|yes)$/i.test(String(envs.CLOUDFLARE_ORIGIN_LOCKED || "").trim())
       ? { TRUSTED_PROXY_MODE: "cloudflare" }
       : {}),
@@ -1650,6 +1663,7 @@ async function main() {
 
   if (!DRY) {
     console.log(await applyShopifyOpsMigration(envs))
+    console.log(await applyShopifyBaseSyncMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))

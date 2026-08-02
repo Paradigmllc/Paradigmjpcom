@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-02 SERICIA Shopify storefront
+
+- Shopify Admin、独自ドメイン、`Tableware` / `Craft` / `Living` / `Gifts` collectionを設定済み。未公開テーマ `SERICIA WoodMart OS2 - Development`（ID `144315482160`）にOS2 storefrontを反映し、公開Riseテーマとpassword保護は変更していない。
+- merchant app `SERICIA BASE Sync` は商品・在庫・locationの最小5 scopeでinstall済み。Shopify client credentialsをapproved referenceとCoolifyへ安全に反映し、24時間token exchange、5 scope、active locationをAdmin APIでread-backした。
+- BASE OAuth、暗号化token保存、pagination、draft-only `productSet` upsert、在庫同期、dry-run/apply UI、履歴、エラー可視化、通知、service-role-only RLSを実装し、production migration `20260802153000_shopify_base_sync.sql` を適用済み。自動公開と自動削除は無効。
+- PR #657は最新mainを統合中。merge後にcanonical releaseと本番Shopify接続表示を確認する。BASE Developersは未ログインのためclient ID/secret未取得で、BASE OAuth・dry-run・実商品同期のみ保留する。
+- 商品重量、配送service、対象国、税務登録が確定するまで、Japan以外のMarkets、配送料、税登録は変更しない。
+
 ## CURRENT STATUS — 2026-08-02 Japan Market Operator Operations OS
 
 - Wave 1案件ボードを、候補収集から契約・請求・SKU・成果物・変更管理・月次精算・KPI・インシデント・終了処理まで扱う実務OSへ拡張した。再契約はengagement単位で分離し、offer snapshotは不変で保持する。
@@ -28,6 +36,7 @@
 
 ## ACTIVE HANDOFF
 
+- SERICIA: PR #657をmerge・canonical releaseし、本番管理画面のShopify接続、未接続BASE表示、テーマpreviewをread-backする。BASE Developersログイン後にAPI appを作成し、OAuth・dry-run・draft同期・価格/在庫read-backを完了する。
 - Japan operator: PR #666のCI成功後にmergeし、canonical release、DB RLS/権限/RPC、認証API、管理画面fingerprint、dry-run許可、未承認live送信拒否を本番read-backする。検証中も外部送信しない。
 - Japan operator運用開始時はCHEFCLEAN→HOLENの順に証跡・memo・人間承認を完了し、別担当者が完全一致の一回限り許可を承認する。中央guardを迂回せず、同じ案件IDへ全記録を保存する。
 - x402: 財務承認後に必要環境変数を承認済みsecret storeへ設定し、0.25 USDCの実購入、settlement、paid delivery、hashed payment reference、DB bell、Slackを確認する。
@@ -36,6 +45,7 @@
 
 ## RELEASE REFERENCES
 
+- SERICIA Shopify storefront and BASE sync: PR #657。
 - Japan operator OS: PR #666。
 - Content API: PR #659、release fixes #660/#661/#662、deployment `lbxrxhx5vpcyvpolyzusi8qe`。
 - Pet Life Movie: PR #664、GitHub release `30730953842`、deployment `sdldvalovxfxubub7z13edbn`。

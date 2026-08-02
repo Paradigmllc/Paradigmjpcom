@@ -172,6 +172,9 @@ export const DB_TABLES = {
   SHOPIFY_OPS_PRODUCTS: "shopify_ops_products",
   SHOPIFY_OPS_CONTENT_ITEMS: "shopify_ops_content_items",
   SHOPIFY_OPS_DAILY_METRICS: "shopify_ops_daily_metrics",
+  SHOPIFY_BASE_OAUTH: "shopify_base_oauth",
+  SHOPIFY_BASE_PRODUCT_LINKS: "shopify_base_product_links",
+  SHOPIFY_BASE_SYNC_RUNS: "shopify_base_sync_runs",
 
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
