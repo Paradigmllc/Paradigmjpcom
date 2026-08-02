@@ -118,7 +118,6 @@ export async function executePetMovieRenderJob(jobId: string, projectId: string)
       storyboard: project.storyboard,
       inputs: assets.map((asset, index) => ({ assetId: asset.id, url: inputs[index].downloadUrl })),
       pipeline: buildPipelineManifest(),
-      callbackUrl: `${siteBaseUrl()}/api/pet-life-movie/render/callback`,
       safety: { factualOnly: true, voiceCloning: false, preservePetIdentity: true },
     }),
   })

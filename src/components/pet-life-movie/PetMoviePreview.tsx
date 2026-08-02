@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { AnimatePresence, motion } from "framer-motion"
-import { PawPrint } from "lucide-react"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { Pause, PawPrint, Play } from "lucide-react"
 import type { PetMovieStoryboard } from "@/lib/pet-life-movie/types"
 
 interface Props {
@@ -15,18 +15,26 @@ interface Props {
 
 export default function PetMoviePreview({ storyboard, assetUrls, watermark = true, className = "" }: Props) {
   const [sceneIndex, setSceneIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const reducedMotion = useReducedMotion()
   const scene = storyboard.scenes[sceneIndex]
+  const labels = {
+    ja: { empty: "シーンがありません", play: "プレビューを再生", pause: "プレビューを一時停止", scene: "シーン" },
+    en: { empty: "No scenes", play: "Play preview", pause: "Pause preview", scene: "Scene" },
+    es: { empty: "No hay escenas", play: "Reproducir vista previa", pause: "Pausar vista previa", scene: "Escena" },
+    pt: { empty: "Não há cenas", play: "Reproduzir prévia", pause: "Pausar prévia", scene: "Cena" },
+  }[storyboard.locale]
 
   useEffect(() => {
-    if (storyboard.scenes.length < 2) return
+    if (storyboard.scenes.length < 2 || paused || reducedMotion) return
     const timer = window.setInterval(() => {
       setSceneIndex((current) => (current + 1) % storyboard.scenes.length)
     }, Math.max(1, scene?.durationSeconds ?? 2) * 1000)
     return () => window.clearInterval(timer)
-  }, [scene?.durationSeconds, storyboard.scenes.length])
+  }, [paused, reducedMotion, scene?.durationSeconds, storyboard.scenes.length])
 
   if (!scene) {
-    return <div className={`grid aspect-[9/16] place-items-center bg-paradigm-paper-deep text-paradigm-ink-mute ${className}`}>No scenes</div>
+    return <div className={`grid aspect-[9/16] place-items-center bg-paradigm-paper-deep text-paradigm-ink-mute ${className}`}>{labels.empty}</div>
   }
   const src = assetUrls[scene.assetId]
   const imageMotion = scene.motion === "pan_left"
@@ -47,7 +55,7 @@ export default function PetMoviePreview({ storyboard, assetUrls, watermark = tru
           transition={{ duration: 0.55 }}
         >
           {src ? (
-            <motion.div className="absolute inset-0" animate={imageMotion} transition={{ duration: scene.durationSeconds, ease: "easeInOut" }}>
+            <motion.div className="absolute inset-0" animate={paused || reducedMotion ? undefined : imageMotion} transition={{ duration: scene.durationSeconds, ease: "easeInOut" }}>
               <Image src={src} alt={`${storyboard.title} - ${scene.caption}`} fill sizes="(max-width: 768px) 92vw, 380px" className="object-cover" unoptimized />
             </motion.div>
           ) : (
@@ -69,7 +77,8 @@ export default function PetMoviePreview({ storyboard, assetUrls, watermark = tru
           <PawPrint className="h-3 w-3" aria-hidden="true" /> Pet Life Movie preview
         </div>
       )}
-      <div className="absolute inset-x-5 top-16 flex gap-1" aria-label={`Scene ${sceneIndex + 1} of ${storyboard.scenes.length}`}>
+      {storyboard.scenes.length > 1 && <button type="button" onClick={() => setPaused((value) => !value)} className="absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label={paused ? labels.play : labels.pause}>{paused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}</button>}
+      <div className="absolute inset-x-5 top-16 flex gap-1" aria-label={`${labels.scene} ${sceneIndex + 1} / ${storyboard.scenes.length}`}>
         {storyboard.scenes.map((item, index) => (
           <span key={item.id} className={`h-0.5 flex-1 rounded-full ${index <= sceneIndex ? "bg-white" : "bg-white/30"}`} />
         ))}

@@ -4,7 +4,7 @@ import { readProjectToken } from "@/lib/pet-life-movie/auth"
 import { authorizePetMovieProject, listPetMovieAssets, PET_MOVIE_TABLES, recordPetMovieEvent, requirePetMovieDatabase } from "@/lib/pet-life-movie/data"
 import { petMovieErrorResponse } from "@/lib/pet-life-movie/http"
 import { confirmPetMovieUploadsSchema, parseJsonBody, petMovieUploadSchema } from "@/lib/pet-life-movie/schema"
-import { createR2SignedUploads, sanitizeR2ObjectName } from "@/lib/sales/r2-storage"
+import { createR2SignedUploads, deleteR2Objects, sanitizeR2ObjectName, verifyPrivateR2ImageObjects } from "@/lib/sales/r2-storage"
 import { notifyBothChannels } from "@/lib/notify"
 
 export const runtime = "nodejs"
@@ -60,9 +60,37 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!project) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 })
     const input = confirmPetMovieUploadsSchema.parse(await parseJsonBody(request))
     const db = requirePetMovieDatabase()
+    const { data: reserved, error: reservedError } = await db.from(PET_MOVIE_TABLES.ASSETS)
+      .select("id, object_key, mime_type, size_bytes")
+      .eq("project_id", project.id)
+      .is("contributor_id", null)
+      .eq("upload_status", "pending")
+      .in("id", input.assetIds)
+    if (reservedError) throw new Error(`Could not load reserved photo uploads: ${reservedError.message}`)
+    if ((reserved ?? []).length !== input.assetIds.length) {
+      return NextResponse.json({ ok: false, error: "One or more photo reservations are invalid." }, { status: 409 })
+    }
+    try {
+      await verifyPrivateR2ImageObjects((reserved ?? []).map((asset) => ({
+        objectKey: String(asset.object_key),
+        contentType: String(asset.mime_type),
+        sizeBytes: Number(asset.size_bytes),
+      })))
+    } catch (error) {
+      const objectKeys = (reserved ?? []).map((asset) => String(asset.object_key))
+      try {
+        await deleteR2Objects(objectKeys)
+      } catch (cleanupError) {
+        console.error("[pet-life-movie] invalid owner upload R2 cleanup failed", cleanupError)
+      }
+      const { error: cleanupError } = await db.from(PET_MOVIE_TABLES.ASSETS).delete().in("id", input.assetIds)
+      if (cleanupError) console.error("[pet-life-movie] invalid owner upload row cleanup failed", cleanupError.message)
+      throw error
+    }
     const { data, error } = await db.from(PET_MOVIE_TABLES.ASSETS)
       .update({ upload_status: "uploaded" })
       .eq("project_id", project.id)
+      .is("contributor_id", null)
       .in("id", input.assetIds)
       .select("id")
     if (error) throw new Error(`Could not confirm photo uploads: ${error.message}`)

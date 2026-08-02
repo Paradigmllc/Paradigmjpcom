@@ -62,6 +62,18 @@ const STATIC_ROUTES: StaticRoute[] = [
     locales: DUAL_SERVICE,
   },
   {
+    path: "/pet-life-movie",
+    changeFrequency: "weekly",
+    priority: 0.95,
+    locales: ["ja", "en", "es", "pt"] as const,
+  },
+  {
+    path: "/pet-life-movie/terms",
+    changeFrequency: "yearly",
+    priority: 0.4,
+    locales: ["ja", "en", "es", "pt"] as const,
+  },
+  {
     path: "/services/web",
     changeFrequency: "monthly",
     priority: 0.8,

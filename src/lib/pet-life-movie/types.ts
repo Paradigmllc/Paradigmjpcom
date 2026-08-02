@@ -40,6 +40,8 @@ export interface PetMovieProjectRow {
   customer_email: string | null
   paid_at: string | null
   refunded_at: string | null
+  terms_version: string | null
+  terms_accepted_at: string | null
   deleted_at: string | null
   storyboard: PetMovieStoryboard | null
   preview_url: string | null

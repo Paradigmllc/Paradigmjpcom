@@ -16,6 +16,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const input = petMovieInviteSchema.parse(await parseJsonBody(request))
     const inviteToken = createPetMovieSecret()
     const db = requirePetMovieDatabase()
+    const { count, error: countError } = await db.from(PET_MOVIE_TABLES.CONTRIBUTORS)
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", project.id)
+      .in("status", ["invited", "accepted"])
+    if (countError) throw new Error(`Invite limit check failed: ${countError.message}`)
+    if ((count ?? 0) >= 20) return NextResponse.json({ ok: false, error: "This project already has 20 active family invitations." }, { status: 409 })
     const { error } = await db.from(PET_MOVIE_TABLES.CONTRIBUTORS).insert({
       project_id: project.id,
       invite_token_hash: hashPetMovieSecret(inviteToken),

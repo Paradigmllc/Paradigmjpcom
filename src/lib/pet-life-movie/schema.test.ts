@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { createPetMovieProjectSchema, petMovieCheckoutSchema, petMovieUploadSchema } from "./schema"
+import { createPetMovieProjectSchema, petMovieCheckoutSchema, petMovieContributionUploadSchema, petMovieUploadSchema } from "./schema"
 
 describe("Pet Life Movie input validation", () => {
   it("accepts the no-account MVP project shape", () => {
@@ -22,9 +22,16 @@ describe("Pet Life Movie input validation", () => {
   })
 
   it("requires and normalizes the delivery email before checkout", () => {
-    expect(petMovieCheckoutSchema.parse({ plan: "story", email: " Owner@Example.COM " }).email)
+    expect(petMovieCheckoutSchema.parse({ plan: "story", email: " Owner@Example.COM ", termsAccepted: true }).email)
       .toBe("owner@example.com")
-    expect(() => petMovieCheckoutSchema.parse({ plan: "story" })).toThrow()
+    expect(() => petMovieCheckoutSchema.parse({ plan: "story", email: "owner@example.com", termsAccepted: false })).toThrow()
+  })
+
+  it("requires a real family memory and explicit contribution consent", () => {
+    const files = [{ name: "family.jpg", type: "image/jpeg" as const, size: 1200 }]
+    expect(() => petMovieContributionUploadSchema.parse({ files, memories: [], consentConfirmed: true })).toThrow()
+    expect(() => petMovieContributionUploadSchema.parse({ files, memories: ["Morning walks"], consentConfirmed: false })).toThrow()
+    expect(petMovieContributionUploadSchema.parse({ files, memories: ["Morning walks"], consentConfirmed: true }).memories).toEqual(["Morning walks"])
   })
 })
 
