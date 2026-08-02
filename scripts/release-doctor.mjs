@@ -318,6 +318,35 @@ function checkStaticReleaseRules() {
     fail("Japan market operator cases require atomic audit actions, RLS and release wiring")
   }
 
+  const petMovieMigrationPath = "supabase/migrations/20260801213954_pet_life_movie_mvp.sql"
+  const petMovieMigration = fs.existsSync(petMovieMigrationPath)
+    ? fs.readFileSync(petMovieMigrationPath, "utf8")
+    : ""
+  const petMovieRunMigrations = fs.readFileSync("scripts/run-migrations.sh", "utf8")
+  const petMovieDbVerifier = fs.readFileSync("scripts/verify-db-tables.mjs", "utf8")
+  const petMovieMarkers = [
+    "pet_movie_projects",
+    "pet_movie_contributors",
+    "pet_movie_assets",
+    "pet_movie_jobs",
+    "pet_movie_events",
+    "enable row level security",
+    "force row level security",
+    "from public, anon, authenticated",
+    "to service_role",
+  ]
+  if (
+    petMovieMarkers.every((marker) => petMovieMigration.includes(marker)) &&
+    noLoginDeploy.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    noLoginDeploy.includes("applyPetLifeMovieMigration") &&
+    petMovieRunMigrations.includes("20260801213954_pet_life_movie_mvp.sql") &&
+    petMovieMarkers.slice(0, 5).every((marker) => petMovieDbVerifier.includes(marker))
+  ) {
+    pass("Pet Life Movie persistence has RLS, service-role isolation, migration execution, and DB verification wiring")
+  } else {
+    fail("Pet Life Movie persistence requires RLS, service-role isolation, migration execution, and DB verification wiring")
+  }
+
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"
   const engineProfilesMigration = fs.existsSync(engineProfilesMigrationPath)
     ? fs.readFileSync(engineProfilesMigrationPath, "utf8")

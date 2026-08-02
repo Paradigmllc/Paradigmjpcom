@@ -1,4 +1,4 @@
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { petMovieSecretsMatch } from "./auth"
 import { hashPetMovieSecret } from "./auth"
 import type { PetMovieAssetRow, PetMovieProjectRow } from "./types"
@@ -12,7 +12,7 @@ export const PET_MOVIE_TABLES = {
 } as const
 
 export function requirePetMovieDatabase() {
-  const client = getServiceSupabase()
+  const client = getServiceSalesSupabase()
   if (!client) throw new Error("Pet Life Movie database is not configured")
   return client
 }
