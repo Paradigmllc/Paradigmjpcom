@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 
+import video_factory.pet_movie_api as pet_movie_api
 from video_factory.pet_movie_api import PET_MOVIE_VISUALS, PetMovieRenderRequest
 from video_factory.pet_movie_contract import (
     allowed_pet_movie_download_url,
@@ -95,3 +99,37 @@ def test_pet_gpu_workflow_starts_disabled_until_exact_runtime_binding() -> None:
     assert {"source_assets_cleared", "ai_generation_allowed"}.issubset(
         contract.required_rights
     )
+
+
+def test_internal_qa_can_validate_bound_gpu_while_checkout_stays_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract = SimpleNamespace(
+        id="pet-memory-i2v",
+        enabled=True,
+        approval=WorkflowApproval.APPROVED_BOUND,
+        media_kind="video",
+        required_rights={"source_assets_cleared", "ai_generation_allowed"},
+        model_bindings={"approved-model-slot": "approved.safetensors"},
+    )
+    monkeypatch.setenv("PET_MOVIE_GPU_RENDER_ENABLED", "false")
+    monkeypatch.setenv("PET_MOVIE_GPU_WORKFLOW_ID", "pet-memory-i2v")
+    monkeypatch.setattr(
+        pet_movie_api,
+        "load_workflow_registry",
+        lambda _path: SimpleNamespace(get=lambda _workflow_id: contract),
+    )
+    monkeypatch.setattr(
+        pet_movie_api,
+        "assert_model_bindings_approved",
+        lambda *_args, **_kwargs: None,
+    )
+    settings = SimpleNamespace(
+        comfyui_workflow_registry="registry.yaml",
+        model_registry_path="models.yaml",
+        production_region="JP",
+    )
+
+    assert pet_movie_api._pet_gpu_workflow(settings, "internal_qa") == "pet-memory-i2v"
+    with pytest.raises(HTTPException, match="paid slideshow fallback is forbidden"):
+        pet_movie_api._pet_gpu_workflow(settings, "customer_paid")
