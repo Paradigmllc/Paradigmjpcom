@@ -82,6 +82,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/content ./content
 COPY --chown=nextjs:nodejs services/openclaw-pipeline ./openclaw-pipeline
+COPY --chown=nextjs:nodejs scripts/apply-investor-scenario-runtime-migration.mjs ./scripts/apply-investor-scenario-runtime-migration.mjs
+COPY --chown=nextjs:nodejs supabase/migrations/20260803013000_investor_metro_scenarios.sql ./supabase/migrations/20260803013000_investor_metro_scenarios.sql
 
 COPY services/video-factory /opt/video-factory
 RUN python3 -m venv /opt/video-factory/.venv \

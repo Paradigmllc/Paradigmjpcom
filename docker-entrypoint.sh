@@ -192,6 +192,9 @@ stop_all() {
 }
 trap stop_all EXIT INT TERM
 
+echo "[runtime] applying and verifying Greater Tokyo investor scenarios"
+node /app/scripts/apply-investor-scenario-runtime-migration.mjs
+
 start_video_factory
 cd /app
 echo "[runtime] starting Paradigm Next.js on 0.0.0.0:${PORT:-3000}"
