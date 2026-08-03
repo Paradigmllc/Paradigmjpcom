@@ -26,7 +26,7 @@
 
     <meta
       name="description"
-      content="{{ page_description | default: shop.description | default: 'Contemporary Japanese craft and everyday design, selected with context for the world.' | escape }}"
+      content="{{ page_description | default: shop.description | default: 'A global luxury edit of exceptional objects, selected for material, proportion, and lasting presence.' | escape }}"
     >
 
     {%- unless settings.sericia_search_indexing_ready -%}
@@ -114,12 +114,12 @@
       }
 
       :root {
-        --font-body-family: {% if settings.sericia_use_system_fonts %}-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif{% else %}{{ settings.type_body_font.family }}, {{ settings.type_body_font.fallback_families }}{% endif %};
+        --font-body-family: {% if settings.sericia_use_system_fonts %}"Noto Sans", "Noto Sans JP", Arial, sans-serif{% else %}{{ settings.type_body_font.family }}, "Noto Sans", "Noto Sans JP", {{ settings.type_body_font.fallback_families }}{% endif %};
         --font-body-style: {% if settings.sericia_use_system_fonts %}normal{% else %}{{ settings.type_body_font.style }}{% endif %};
         --font-body-weight: {% if settings.sericia_use_system_fonts %}400{% else %}{{ settings.type_body_font.weight }}{% endif %};
         --font-body-weight-bold: {{ settings.type_body_font.weight | plus: 300 | at_most: 1000 }};
 
-        --font-heading-family: {% if settings.sericia_use_system_fonts %}Georgia, "Times New Roman", serif{% else %}{{ settings.type_header_font.family }}, {{ settings.type_header_font.fallback_families }}{% endif %};
+        --font-heading-family: {% if settings.sericia_use_system_fonts %}"Noto Sans", "Noto Sans JP", Arial, sans-serif{% else %}{{ settings.type_header_font.family }}, "Noto Sans", "Noto Sans JP", {{ settings.type_header_font.fallback_families }}{% endif %};
         --font-heading-style: {% if settings.sericia_use_system_fonts %}normal{% else %}{{ settings.type_header_font.style }}{% endif %};
         --font-heading-weight: {% if settings.sericia_use_system_fonts %}400{% else %}{{ settings.type_header_font.weight }}{% endif %};
 
