@@ -65,7 +65,7 @@ async function main() {
       ), paragraphs AS (
         SELECT paragraph.value #>> '{}' AS body
         FROM sections
-        CROSS JOIN LATERAL jsonb_array_elements(section.value -> 'paragraphs') AS paragraph(value)
+        CROSS JOIN LATERAL jsonb_array_elements(sections.value -> 'paragraphs') AS paragraph(value)
       )
       SELECT
         (SELECT count(*)::integer FROM public.investor_metro_scenarios WHERE is_indexable = true) AS scenario_count,
