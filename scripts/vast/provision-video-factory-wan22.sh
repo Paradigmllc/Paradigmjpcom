@@ -259,8 +259,16 @@ def pet_memory_workflow_payload() -> dict:
         "inputs": {"image": "{{source_image}}"},
     }
     workflow["7"]["inputs"]["start_image"] = ["12", 0]
-    workflow["7"]["inputs"]["length"] = 97
-    workflow["8"]["inputs"]["denoise"] = 0.58
+    # Generate a native vertical intermediate that fits a managed 24 GB GPU.
+    # Final 1080p delivery remains the compositor's responsibility; asking Wan
+    # to diffuse every delivery pixel made one restrained shot exceed the QA
+    # latency budget and increased identity drift without adding useful detail.
+    workflow["7"]["inputs"].update({"width": 576, "height": 1024, "length": 73})
+    # Keep the official Wan 2.2 TI2V sampler contract. Partial denoising made
+    # the supplied subject disappear after the opening frame even when that
+    # first frame looked plausible; latency is controlled by native resolution
+    # and frame count instead of weakening the diffusion schedule.
+    workflow["8"]["inputs"].update({"steps": 20, "cfg": 5.0, "denoise": 1.0})
     workflow["11"]["inputs"]["filename_prefix"] = "video/PetLifeMovieWan22"
     return workflow
 
