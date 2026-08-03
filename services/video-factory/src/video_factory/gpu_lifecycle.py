@@ -131,7 +131,11 @@ async def ensure_gpu_ready(
             error=None,
         )
     try:
-        with lifecycle_lock(settings):
+        async with lifecycle_lock(
+            settings,
+            timeout_seconds=settings.gpu_start_timeout_seconds,
+            poll_seconds=settings.gpu_poll_seconds,
+        ):
             instances = await _instances(settings)
             instance = find_managed_instance(settings, instances)
             managed_id = instance_id(instance)
@@ -277,7 +281,11 @@ async def release_gpu_if_idle(
             error=None,
         )
     try:
-        with lifecycle_lock(settings):
+        async with lifecycle_lock(
+            settings,
+            timeout_seconds=settings.gpu_stop_timeout_seconds,
+            poll_seconds=settings.gpu_poll_seconds,
+        ):
             active, unreadable = active_local_runs(
                 settings,
                 exclude_run_id=completed_run_id,
