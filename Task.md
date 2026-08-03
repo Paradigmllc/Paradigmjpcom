@@ -26,7 +26,9 @@
 - Completed daily operations UX with pre-import CSV review, recognized-column and rejection summaries, searchable/filterable/sortable/paginated quote views, mobile cards, CSV export, quote owner/status/next-action editing, activity timeline, notification read state, and real invitation email delivery with escaped HTML.
 - Added authenticated tenant-scoped activity and notification APIs, invitation delivery auditing, regression tests, and native-fallback contract links. Existing tenant isolation, RLS, billing, plan limits, and audit controls remain intact.
 - Verification passed on the clean `codex/quote-recovery-v1-completion` worktree: `npm ci` (0 vulnerabilities), TypeScript, targeted ESLint with zero warnings, 13 unit tests, full 648-page Next.js production build, and 8/8 desktop/mobile Chromium/WebKit Quote Recovery E2E tests. Desktop and 390px full-page visual inspection passed.
-- ACTIVE HANDOFF: commit and push the branch, open/merge the PR after CI, release through the canonical production path, and verify the live LP/login/contract CTA plus authenticated API guards. A real paid Checkout remains authorization-bound and must not be completed with an unapproved card.
+- Production release completed through PR **#718** (main `b8dbb060`, included in deployed exact-main `9b660a4d`), GitHub run **30773696834**, and Coolify deployment **u5pqb9z5zm1vbrk3ixso633n**. The post-deploy release doctor passed.
+- Live HTTPS verification passed 8/8 desktop/mobile Chromium/WebKit checks: complete LP content, responsive layout, signup page without the former error boundary, and pricing CTA navigation. The new LP fingerprint and product shell are present; Checkout, activity, and notification endpoints reject unauthenticated requests with 401 after the origin guard.
+- ACTIVE HANDOFF: no remaining code or release task in this commercial-completion scope. Future launch operations are the planned dedicated domain change and, only with explicit payment authorization, one real paid Checkout-to-webhook-to-portal acceptance transaction; do not charge an unapproved card.
 
 ## CURRENT STATUS - 2026-08-03 Investor content uniqueness and depth
 
