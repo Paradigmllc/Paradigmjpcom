@@ -7,6 +7,7 @@ import {
 import type { MarketingLocale } from "@/lib/marketing-routing"
 import { listCuratedComparisonSummaries } from "@/lib/investor-briefs/comparisons"
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
+import { listInvestorScenarios } from "@/lib/investor-scenarios/repository"
 
 const BASE = "https://paradigmjp.com"
 
@@ -122,6 +123,7 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/japan-opportunities", changeFrequency: "weekly", priority: 0.9, locales: DUAL_SERVICE },
   { path: "/japan-opportunities/invest", changeFrequency: "weekly", priority: 0.9, locales: ENGLISH_ONLY },
   { path: "/japan-opportunities/invest/compare", changeFrequency: "weekly", priority: 0.8, locales: ENGLISH_ONLY },
+  { path: "/japan-opportunities/invest/markets", changeFrequency: "weekly", priority: 0.85, locales: ENGLISH_ONLY },
   { path: "/japan-opportunities/capital-in-japan", changeFrequency: "weekly", priority: 0.8, locales: DUAL_SERVICE },
   { path: "/japan-opportunities/enter-and-operate-japan", changeFrequency: "weekly", priority: 0.9, locales: DUAL_SERVICE },
   { path: "/japan-opportunities/source-from-japan", changeFrequency: "weekly", priority: 0.9, locales: DUAL_SERVICE },
@@ -228,8 +230,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let investorBriefPages: MetadataRoute.Sitemap = []
   let investorComparisonPages: MetadataRoute.Sitemap = []
+  let investorScenarioPages: MetadataRoute.Sitemap = []
+  let investorMarketHubPages: MetadataRoute.Sitemap = []
   try {
-    const investorBriefs = await listInvestorBriefs()
+    const [investorBriefs, investorScenarios] = await Promise.all([
+      listInvestorBriefs(),
+      listInvestorScenarios({ limit: 1_000 }),
+    ])
     investorBriefPages = investorBriefs.map((brief) => ({
       url: `${BASE}${brief.pageUrl}`,
       lastModified: new Date(brief.updatedAt),
@@ -257,9 +264,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       },
     }))
+    investorScenarioPages = investorScenarios.items.map((scenario) => ({
+      url: `${BASE}${scenario.pageUrl}`,
+      lastModified: new Date(scenario.updatedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+      alternates: { languages: { en: `${BASE}${scenario.pageUrl}`, "x-default": `${BASE}${scenario.pageUrl}` } },
+    }))
+    const latestByMarket = new Map<string, Date>()
+    for (const scenario of investorScenarios.items) {
+      const updatedAt = new Date(scenario.updatedAt)
+      const current = latestByMarket.get(scenario.marketSlug)
+      if (!current || current < updatedAt) latestByMarket.set(scenario.marketSlug, updatedAt)
+    }
+    investorMarketHubPages = [...latestByMarket].map(([marketSlug, updatedAt]) => {
+      const path = `/en/japan-opportunities/invest/markets/${marketSlug}`
+      return {
+        url: `${BASE}${path}`,
+        lastModified: updatedAt,
+        changeFrequency: "monthly" as const,
+        priority: 0.75,
+        alternates: { languages: { en: `${BASE}${path}`, "x-default": `${BASE}${path}` } },
+      }
+    })
   } catch (error) {
-    console.error("[sitemap] investor brief URLs could not be loaded:", error)
+    console.error("[sitemap] investor content URLs could not be loaded:", error)
   }
 
-  return [...staticPages, ...investorBriefPages, ...investorComparisonPages, ...blogPages]
+  return [...staticPages, ...investorBriefPages, ...investorComparisonPages, ...investorMarketHubPages, ...investorScenarioPages, ...blogPages]
 }

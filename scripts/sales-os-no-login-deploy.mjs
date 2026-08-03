@@ -938,6 +938,14 @@ async function applyInvestorContentUniquenessMigration(envs) {
   )
 }
 
+async function applyInvestorMetroScenarioMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260803013000_investor_metro_scenarios.sql",
+    "Greater Tokyo market, strategy and investor-profile scenarios",
+  )
+}
+
 async function verifyForeignInvestorPseoCatalog(envs) {
   await applySqlMigrationThroughPostgres(
     envs,
@@ -950,6 +958,7 @@ declare
   paragraph_count integer;
   unique_chapter_title_count integer;
   unique_paragraph_count integer;
+  scenario_count integer;
 begin
   select count(*) into published_count
   from public.content_products
@@ -1086,12 +1095,32 @@ begin
     or has_table_privilege('authenticated', 'public.content_products', 'SELECT') then
     raise exception 'content_products must remain service-role-only';
   end if;
+
+  select count(*) into scenario_count
+  from public.investor_metro_scenarios
+  where locale = 'en'
+    and is_indexable = true
+    and quality_score >= 90
+    and source_count >= 2;
+
+  if scenario_count <> 320 then
+    raise exception 'expected 320 quality-gated investor scenarios, found %', scenario_count;
+  end if;
+
+  if not (select relrowsecurity and relforcerowsecurity from pg_class where oid = 'public.investor_metro_scenarios'::regclass) then
+    raise exception 'investor_metro_scenarios must have RLS and FORCE RLS';
+  end if;
+
+  if has_table_privilege('anon', 'public.investor_metro_scenarios', 'SELECT')
+    or has_table_privilege('authenticated', 'public.investor_metro_scenarios', 'SELECT') then
+    raise exception 'investor_metro_scenarios must remain service-role-only';
+  end if;
 end
 $$;
 `,
     "Foreign investor pSEO catalog verification",
   )
-  return "Foreign investor pSEO catalog: verified 28 sourced briefs, 112 unique chapter titles, 288 unique substantial paragraphs, 16 market datasets, durable Kyoto source, and service-role isolation"
+  return "Foreign investor pSEO catalog: verified 28 sourced briefs, 320 quality-gated metro scenarios, unique substantial analysis, 16 market datasets, durable sources, and service-role isolation"
 }
 
 async function applyFormQualifiedLeadFactoryMigration(envs) {
@@ -2064,6 +2093,7 @@ async function main() {
     console.log(await applyGreaterTokyoInvestorMigrations(envs))
     console.log(await applyInvestorContentQualityMigration(envs))
     console.log(await applyInvestorContentUniquenessMigration(envs))
+    console.log(await applyInvestorMetroScenarioMigration(envs))
     console.log(await verifyForeignInvestorPseoCatalog(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
@@ -2208,8 +2238,11 @@ async function main() {
     { url: "https://paradigmjp.com/en/japan-opportunities/invest", markers: ["28 distinct decisions", "Greater Tokyo cluster covers all 23 wards", "Browse 28 briefs"] },
     { url: "https://paradigmjp.com/en/japan-opportunities/invest/yokohama-real-estate-investment", markers: ["Yokohama Real Estate Investment", "Compare the covered submarkets", "Stress the operating assumptions"] },
     { url: "https://paradigmjp.com/en/japan-opportunities/invest/compare/japan-data-center-investment-vs-japan-renewable-energy-investment", markers: ["Data centers", "Renewable power", "Source ledgers"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest/markets", markers: ["320 published scenarios", "Browse 16 markets", "Scenario API"] },
+    { url: "https://paradigmjp.com/en/japan-opportunities/invest/markets/yokohama/multifamily-income/family-office", markers: ["Yokohama", "Multifamily income", "Family office", "Link income, debt and exit stress"] },
     { url: "https://paradigmjp.com/api/v1/investor-briefs", markers: ["yokohama-real-estate-investment", "\"count\":28"] },
-    { url: "https://paradigmjp.com/api/v1/investor-briefs/factory", markers: ["\"total\":195264", "greaterTokyoStrategyProfileLocale", "indexableOnlyAfterQualityGate"] },
+    { url: "https://paradigmjp.com/api/v1/investor-scenarios?market=yokohama&limit=100", markers: ["\"total\":20", "family-office", "multifamily-income"] },
+    { url: "https://paradigmjp.com/api/v1/investor-briefs/factory", markers: ["\"total\":195264", "\"qualityGatedMetroScenarios\":320", "indexableOnlyAfterQualityGate"] },
     { url: "https://paradigmjp.com/llms.txt", markers: ["Japan Investor Briefs", "pSEO factory manifest"] },
     { url: "https://paradigmjp.com/sitemap.xml", markers: ["japan-data-center-investment", "yokohama-real-estate-investment", "kashiwa-nagareyama-narita-real-estate-investment"] },
     { url: "https://paradigmjp.com/en/privacy" },

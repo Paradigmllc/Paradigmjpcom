@@ -28,6 +28,7 @@ export const DB_TABLES = {
   // ── Content commerce (x402 + public Content API) ──
   CONTENT_PRODUCTS: "content_products",
   CONTENT_ACCESS_EVENTS: "content_access_events",
+  INVESTOR_METRO_SCENARIOS: "investor_metro_scenarios",
 
   // ── Sales OS Core (migration_003) ──
   SALES_COMPANIES: "sales_companies",

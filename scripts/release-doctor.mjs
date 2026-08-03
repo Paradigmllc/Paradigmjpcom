@@ -476,6 +476,18 @@ function checkStaticReleaseRules() {
   const metroInvestorUniqueness = fs.existsSync(metroInvestorUniquenessPath)
     ? fs.readFileSync(metroInvestorUniquenessPath, "utf8")
     : ""
+  const metroScenarioMigrationPath = "supabase/migrations/20260803013000_investor_metro_scenarios.sql"
+  const metroScenarioMigration = fs.existsSync(metroScenarioMigrationPath)
+    ? fs.readFileSync(metroScenarioMigrationPath, "utf8")
+    : ""
+  const metroScenarioRepositoryPath = "src/lib/investor-scenarios/repository.ts"
+  const metroScenarioRepository = fs.existsSync(metroScenarioRepositoryPath)
+    ? fs.readFileSync(metroScenarioRepositoryPath, "utf8")
+    : ""
+  const metroScenarioPagePath = "src/app/[locale]/japan-opportunities/invest/markets/[market]/[strategy]/[profile]/page.tsx"
+  const metroScenarioPage = fs.existsSync(metroScenarioPagePath)
+    ? fs.readFileSync(metroScenarioPagePath, "utf8")
+    : ""
   const investorComparisonPath = "src/lib/investor-briefs/comparisons.ts"
   const investorComparisonSource = fs.existsSync(investorComparisonPath)
     ? fs.readFileSync(investorComparisonPath, "utf8")
@@ -502,6 +514,8 @@ function checkStaticReleaseRules() {
     && noLoginDeploy.includes("applyInvestorContentQualityMigration")
     && noLoginDeploy.includes(path.basename(metroInvestorUniquenessPath))
     && noLoginDeploy.includes("applyInvestorContentUniquenessMigration")
+    && noLoginDeploy.includes(path.basename(metroScenarioMigrationPath))
+    && noLoginDeploy.includes("applyInvestorMetroScenarioMigration")
     && noLoginDeploy.includes("verifyForeignInvestorPseoCatalog")
     && noLoginDeploy.includes("investor-briefs/factory")
     && investorComparisonSource.includes("CURATED_INVESTOR_COMPARISONS")
@@ -517,14 +531,26 @@ function checkStaticReleaseRules() {
     && metroInvestorUniqueness.includes("investor chapter titles are not unique")
     && metroInvestorUniqueness.includes("investor paragraphs are not unique")
     && metroInvestorUniqueness.includes("length(paragraph.value) < 400")
+    && metroScenarioMigration.includes("expected 320 indexable scenarios across 16 markets")
+    && metroScenarioMigration.includes("scenario analysis paragraphs are not unique")
+    && metroScenarioMigration.includes("length(paragraph.value) < 500")
+    && metroScenarioMigration.includes("FORCE ROW LEVEL SECURITY")
+    && metroScenarioRepository.includes("investorScenarioReadableWordCount")
+    && metroScenarioRepository.includes("investorScenarioToMarkdown")
+    && metroScenarioPage.includes("includedInDataCatalog")
+    && metroScenarioPage.includes("buildFAQSchema")
+    && metroScenarioPage.includes("/opengraph-image")
     && petMovieRunMigrations.includes("20260802043347_foreign_investor_pseo.sql")
     && greaterTokyoMigrationPaths.every((migrationPath) => petMovieRunMigrations.includes(path.basename(migrationPath)))
     && petMovieRunMigrations.includes(path.basename(legacyInvestorExpansionPath))
     && petMovieRunMigrations.includes(path.basename(metroInvestorUniquenessPath))
+    && petMovieRunMigrations.includes(path.basename(metroScenarioMigrationPath))
     && petMovieRunMigrations.indexOf("20260802123300_investor_metro_payload_builder_cleanup.sql")
       < petMovieRunMigrations.indexOf(path.basename(legacyInvestorExpansionPath))
     && petMovieRunMigrations.indexOf(path.basename(legacyInvestorExpansionPath))
       < petMovieRunMigrations.indexOf(path.basename(metroInvestorUniquenessPath))
+    && petMovieRunMigrations.indexOf(path.basename(metroInvestorUniquenessPath))
+      < petMovieRunMigrations.indexOf(path.basename(metroScenarioMigrationPath))
     && investorPageSource.includes("investorBriefReadableWordCount")
     && investorPageSource.includes("text/markdown")
     && investorPageSource.includes("includedInDataCatalog")
@@ -533,9 +559,9 @@ function checkStaticReleaseRules() {
     && investorOgImageSource.includes('from "next/og"')
     && investorOgImageSource.includes("paletteFor(slug)")
   ) {
-    pass("Foreign investor pSEO has 28 sourced long-form briefs, unique substantial analysis, durable source links, dataset distributions, per-page social images, quality-gated scale, and production verification wiring")
+    pass("Foreign investor pSEO has 28 sourced long-form briefs, 320 quality-gated metro scenarios, unique substantial analysis, dataset/API distributions, per-page social images, and production verification wiring")
   } else {
-    fail("Foreign investor pSEO requires sourced long-form data, unique substantial analysis, durable sources, dataset/social metadata, quality-gated scale, and production verification wiring")
+    fail("Foreign investor pSEO requires sourced long-form data, 320 quality-gated metro scenarios, unique substantial analysis, durable sources, dataset/social metadata, and production verification wiring")
   }
 
   const engineProfilesMigrationPath = "supabase/migrations/20260801091559_video_factory_engine_profiles.sql"

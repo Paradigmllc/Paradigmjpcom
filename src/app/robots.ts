@@ -43,6 +43,7 @@ const INTERNAL_DISALLOW = [
 const PUBLIC_CONTENT_API_ALLOW = [
   "/api/v1/content",
   "/api/v1/investor-briefs",
+  "/api/v1/investor-scenarios",
 ]
 
 export default function robots(): MetadataRoute.Robots {

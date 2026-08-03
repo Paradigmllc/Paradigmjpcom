@@ -8,6 +8,15 @@
 - HyperFrames 0.7.87 lint/validate/inspect/check are clean; a 720x1280 H.264/AAC 24fps fixture rendered successfully. Pet TypeScript checks, 38 targeted Vitest tests, Python Ruff/compile checks, Windows-safe cutover tests, ESLint, quality guard, and the full Next production build pass.
 - ACTIVE HANDOFF: merge and deploy this branch, apply the QA migration, bind `pet-memory-i2v` against the already-approved Wan 2.2 artifacts on the existing managed RTX 3090, keep checkout disabled until an actual pet-photo QA MP4 passes the fidelity gate and human review, then enable `PET_MOVIE_GPU_RENDER_ENABLED=true` and verify live paid readiness. No customer charge or delivery is authorized for QA.
 
+## CURRENT STATUS - 2026-08-03 Greater Tokyo investor pSEO scenario atlas
+
+- Implemented a quality-gated investor decision atlas backed by `investor_metro_scenarios`: 16 Greater Tokyo markets × 4 locally suitable strategies × 5 investor profiles = 320 indexable, distinct-intent scenario pages. The migration fails closed unless all 320 scenarios, 1,280 unique analysis-section titles, 2,560 unique long-form paragraphs, valid source references, minimum depth and service-role-only access are present.
+- Added crawlable collection and market hubs plus canonical scenario pages with localized UI, Article/FAQ/Dataset structured data, scenario-specific metadata and social images, sourced evidence, risk/gate/checklist modules, related paths, and a client-side base/stress underwriting calculator.
+- Added JSON and Markdown distribution endpoints, catalog filtering/pagination, unified Content API inclusion, investor factory counts, sitemap discovery, robots coverage, and `llms.txt` documentation so the same evidence-backed content can be consumed by search engines, answer engines, agents, and paid/API workflows.
+- Added repository schema validation, thin-content rejection tests, migration/RLS/uniqueness contract tests, production E2E contracts, release-doctor checks, canonical migration ordering, production database read-backs and post-deploy smoke targets.
+- Local verification passes: explicit TypeScript check, targeted ESLint, 3/3 scenario repository tests, the repository quality guard, diff hygiene, and a complete Next.js production build covering all 660 static-generation jobs.
+- ACTIVE HANDOFF: merge the feature branch through PR checks, deploy exact main through the canonical no-login release path, and verify the live atlas, scenario JSON/Markdown APIs, 320-row database gate, sitemap coverage, structured data, calculator and desktop/mobile E2E before declaring production completion.
+
 ## CURRENT STATUS - 2026-08-03 SERICIA luxury storefront direction
 
 - Reworked the WoodMart OS 2 storefront from a craft-forward Japanese aesthetic into an international luxury concept-store direction using Noto Sans throughout, a black/ivory/champagne palette, restrained typography, sharp commerce controls, gallery-style category panels, and material-led editorial copy.

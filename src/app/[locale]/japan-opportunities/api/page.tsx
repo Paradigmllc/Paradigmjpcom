@@ -30,6 +30,8 @@ const ENDPOINTS = [
   { method: "GET", path: "/api/v1/investor-briefs/{slug}", note: "Free JSON / Markdown" },
   { method: "GET", path: "/api/v1/investor-briefs/compare?left={slug}&right={slug}", note: "Dynamic A/B comparison" },
   { method: "GET", path: "/api/v1/investor-briefs/factory", note: "pSEO scale and quality manifest" },
+  { method: "GET", path: "/api/v1/investor-scenarios?market={slug}&strategy={slug}&profile={slug}", note: "Filterable Greater Tokyo scenario catalog" },
+  { method: "GET", path: "/api/v1/investor-scenarios/{slug}", note: "Scenario JSON / Markdown" },
   { method: "GET", path: "/api/v1/content/public/{slug}?locale=en", note: "Free JSON / Markdown" },
   { method: "GET", path: "/api/v1/content/premium/{slug}?locale=en", note: "x402 / USDC" },
 ] as const
