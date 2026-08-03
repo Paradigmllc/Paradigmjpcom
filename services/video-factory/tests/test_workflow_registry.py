@@ -182,8 +182,10 @@ def test_default_merge_preserves_existing_reviews_and_only_appends_missing(
     )
     merged = load_workflow_registry(target_path)
 
-    assert len(added) == 10
-    assert len(merged.workflows) == 18
+    expected_added = len(defaults.workflows) - len(retained)
+    assert len(added) == expected_added
+    assert len(merged.workflows) == len(defaults.workflows)
+    assert any(workflow.id == "pet-memory-i2v" for workflow in merged.workflows)
     assert merged.workflows[:8] == before.workflows
     assert merge_workflow_registry_defaults(
         target_path=target_path,
