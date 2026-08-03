@@ -102,8 +102,14 @@ PET_MOVIE_VISUALS: dict[str, dict[str, object]] = {
 }
 
 
-def _pet_gpu_workflow(settings: Settings) -> str:
-    if os.getenv("PET_MOVIE_GPU_RENDER_ENABLED", "").strip().lower() != "true":
+def _pet_gpu_workflow(
+    settings: Settings,
+    mode: Literal["customer_paid", "internal_qa"],
+) -> str:
+    if (
+        mode == "customer_paid"
+        and os.getenv("PET_MOVIE_GPU_RENDER_ENABLED", "").strip().lower() != "true"
+    ):
         raise HTTPException(
             status_code=503,
             detail="Pet Movie GPU rendering is disabled; paid slideshow fallback is forbidden",
@@ -211,7 +217,7 @@ async def create_pet_movie_render(request: PetMovieRenderRequest) -> dict[str, o
     visual = PET_MOVIE_VISUALS[request.templateId]
     gpu_workflow: str | None = None
     if request.renderTier == "cinematic_gpu":
-        gpu_workflow = _pet_gpu_workflow(settings)
+        gpu_workflow = _pet_gpu_workflow(settings, request.mode)
     brief = ClientBrief.model_validate({
         "project_name": project_name,
         "objective": f"Create a factual, private memory film titled {request.storyboard.title}",
