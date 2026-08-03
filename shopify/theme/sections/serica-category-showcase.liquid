@@ -50,14 +50,7 @@
               }}
             {%- else -%}
               <div class="serica-category-card__fallback serica-category-card__fallback--{{ forloop.index }}" aria-hidden="true">
-                <span class="serica-category-card__monogram">
-                  {%- case forloop.index -%}
-                    {%- when 1 -%}器
-                    {%- when 2 -%}工
-                    {%- when 3 -%}暮
-                    {%- else -%}贈
-                  {%- endcase -%}
-                </span>
+                <span class="serica-category-card__monogram">0{{ forloop.index }}</span>
               </div>
             {%- endif -%}
           </div>
@@ -88,19 +81,19 @@
       "type": "text",
       "id": "eyebrow",
       "label": "Eyebrow",
-      "default": "Explore by mood"
+      "default": "The opening edit"
     },
     {
       "type": "text",
       "id": "heading",
       "label": "Heading",
-      "default": "A quieter kind of marketplace."
+      "default": "A study in material and form."
     },
     {
       "type": "richtext",
       "id": "text",
       "label": "Text",
-      "default": "<p>Useful, beautiful pieces selected for the rituals of everyday life.</p>"
+      "default": "<p>Exceptional objects selected with restraint, clarity, and an uncompromising eye for detail.</p>"
     }
   ],
   "blocks": [
@@ -142,9 +135,9 @@
       "name": "SERICIA category showcase",
       "blocks": [
         { "type": "category", "settings": { "kicker": "For the table", "title": "Tableware" } },
-        { "type": "category", "settings": { "kicker": "Made by hand", "title": "Craft" } },
-        { "type": "category", "settings": { "kicker": "Everyday ritual", "title": "Living" } },
-        { "type": "category", "settings": { "kicker": "Small discoveries", "title": "Gifts" } }
+        { "type": "category", "settings": { "kicker": "Limited objects", "title": "Objects & Editions" } },
+        { "type": "category", "settings": { "kicker": "Interior perspective", "title": "Interiors" } },
+        { "type": "category", "settings": { "kicker": "Considered gestures", "title": "Gifts with Presence" } }
       ]
     }
   ]

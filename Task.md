@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-03 SERICIA luxury storefront direction
+
+- Reworked the WoodMart OS 2 storefront from a craft-forward Japanese aesthetic into an international luxury concept-store direction using Noto Sans throughout, a black/ivory/champagne palette, restrained typography, sharp commerce controls, gallery-style category panels, and material-led editorial copy.
+- Replaced the pale craft hero with an original 2400x960 dark editorial still life featuring smoked glass, limestone, brushed metal, and charcoal textile. The generated asset is optimized to a 151 KB WebP and contains no logo, text, packaging, or fabricated product claim.
+- Removed Japanese monogram decoration and remaining encoding artifacts from custom sections. Updated the hero, service promises, category edit, editorial principles, announcement bar, preview banner, fallback metadata, and theme identity to `SERICIA WoodMart Luxe` 1.1.0.
+- Shopify Theme Check passes. The unpublished Shopify preview theme is `SERICIA WoodMart Luxury Preview` (ID `144336257072`). Live-render Lighthouse on mobile reports 81 performance, 97 accessibility, CLS 0, and 180 ms TBT; indexing remains intentionally disabled until the real catalog and checkout gates pass.
+- ACTIVE HANDOFF: merge the storefront branch after CI, publish theme `144336257072`, verify desktop/mobile on the password-free canonical URL, and keep preview/noindex safety active while the real Shopify catalog remains 0 and BASE/payments/checkout evidence is unavailable.
+
 ## CURRENT STATUS - 2026-08-03 SERICIA WoodMart OS 2 storefront release
 
 - Replaced the previously published Rise-derived storefront presentation with a custom SERICIA WoodMart OS 2 implementation. The purchased WoodMart 1.4 archive was audited as a 2018 legacy theme with 302 Theme Check errors / 1,189 total offenses, so its commerce structure was ported onto the current Shopify OS 2 foundation instead of publishing broken legacy Liquid.
