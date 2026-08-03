@@ -73,6 +73,7 @@ describe("Greater Tokyo investor scenario content contract", () => {
     expect(migration).toContain("expected 320 indexable scenarios across 16 markets")
     expect(migration).toContain("scenario analysis paragraphs are not unique")
     expect(migration).toContain("length(paragraph.value) < 500")
+    expect(migration.match(/market_preview ->> 'region', lower\(strategy_label\), lower\(profile_label\)/g)?.length).toBeGreaterThanOrEqual(8)
     expect(migration).toContain("FORCE ROW LEVEL SECURITY")
     expect(migration).toContain("REVOKE ALL ON public.investor_metro_scenarios FROM PUBLIC, anon, authenticated")
   })
