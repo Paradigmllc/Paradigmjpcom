@@ -1,8 +1,8 @@
 [
   {
     "name": "theme_info",
-    "theme_name": "SERICIA WoodMart OS2",
-    "theme_version": "1.0.0",
+    "theme_name": "SERICIA WoodMart Luxe",
+    "theme_version": "1.1.0",
     "theme_author": "Paradigm LLC",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
     "theme_support_url": "https://support.shopify.com/"
@@ -26,9 +26,9 @@
       {
         "type": "checkbox",
         "id": "sericia_use_system_fonts",
-        "label": "Use fast system fonts",
-        "info": "Avoids a large webfont download while preserving the SERICIA typography scale.",
-        "default": true
+        "label": "Use local Noto Sans fallback",
+        "info": "When disabled, Noto Sans is served from Shopify's font CDN. Enable only as a network fallback.",
+        "default": false
       }
     ]
   },
@@ -136,7 +136,7 @@
       {
         "type": "font_picker",
         "id": "type_header_font",
-        "default": "murecho_n4",
+        "default": "noto_sans_n4",
         "label": "t:settings_schema.typography.settings.type_header_font.label"
       },
       {
@@ -156,7 +156,7 @@
       {
         "type": "font_picker",
         "id": "type_body_font",
-        "default": "murecho_n4",
+        "default": "noto_sans_n4",
         "label": "t:settings_schema.typography.settings.type_body_font.label"
       },
       {
