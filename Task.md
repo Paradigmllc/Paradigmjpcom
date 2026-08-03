@@ -11,6 +11,15 @@
 - Commercial launch remains fail-closed because the real Shopify catalog is still 0. Real product detail, add-to-cart, payment, duties/shipping, and checkout E2E cannot be truthfully completed until verified BASE inventory and payment/shipping configuration exist. Search indexing remains disabled and the public preview banner states that products and checkout are not yet available.
 - ACTIVE HANDOFF: complete BASE Developers/OAuth connection and sync verified real inventory as DRAFT, finish the 14-point product evidence, configure Shopify Markets/payment/shipping/tax/returns, then execute desktop/mobile real-product checkout E2E. Only after every launch gate passes should preview mode and `noindex` be removed.
 
+## CURRENT STATUS - 2026-08-03 Quote Recovery commercial completion
+
+- Rebuilt Quote Recovery as a dedicated standalone SaaS surface: product-specific header/footer, complete conversion LP, persistent pricing, product preview, workflow, spreadsheet comparison, security, FAQ, final CTA, responsive mobile layout, and Japanese metadata.
+- Fixed the production login error boundary by moving the search-param client boundary into the login page with a server metadata layout; the production build now contains the correct client references and `/ja/quote-recovery/login?mode=signup` renders normally.
+- Completed daily operations UX with pre-import CSV review, recognized-column and rejection summaries, searchable/filterable/sortable/paginated quote views, mobile cards, CSV export, quote owner/status/next-action editing, activity timeline, notification read state, and real invitation email delivery with escaped HTML.
+- Added authenticated tenant-scoped activity and notification APIs, invitation delivery auditing, regression tests, and native-fallback contract links. Existing tenant isolation, RLS, billing, plan limits, and audit controls remain intact.
+- Verification passed on the clean `codex/quote-recovery-v1-completion` worktree: `npm ci` (0 vulnerabilities), TypeScript, targeted ESLint with zero warnings, 13 unit tests, full 648-page Next.js production build, and 8/8 desktop/mobile Chromium/WebKit Quote Recovery E2E tests. Desktop and 390px full-page visual inspection passed.
+- ACTIVE HANDOFF: commit and push the branch, open/merge the PR after CI, release through the canonical production path, and verify the live LP/login/contract CTA plus authenticated API guards. A real paid Checkout remains authorization-bound and must not be completed with an unapproved card.
+
 ## CURRENT STATUS - 2026-08-03 Investor content uniqueness and depth
 
 - Production audit confirmed the 28-brief quality gate and four sourced chapters on every brief, but also found shared chapter titles and boilerplate paragraphs across the 16 Greater Tokyo market pages. The content was indexable and data-rich, yet not strong enough to call complete.
