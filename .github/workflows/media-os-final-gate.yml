@@ -1,0 +1,170 @@
+name: Media OS Final Gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+concurrency:
+  group: media-os-final-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request' || github.head_ref == 'codex/japan-market-media-os'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin main --depth=1
+
+      - name: Verify implementation completeness and safety invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed < <(git diff --name-only origin/main...HEAD)
+          printf '%s\n' "${changed[@]}" > /tmp/changed-files.txt
+
+          # A workflow-only PR is never a valid implementation.
+          implementation_count=$(grep -Ev '^\.github/workflows/' /tmp/changed-files.txt | wc -l | tr -d ' ')
+          test "$implementation_count" -ge 12
+
+          # Require application, persistence, public UI, admin UI, and tests/release wiring.
+          grep -Eq '(^|/)(app|src/app)/.*(media|insight|work)' /tmp/changed-files.txt
+          grep -Eq 'supabase/migrations/.*\.sql$' /tmp/changed-files.txt
+          grep -Eq '(test|spec)\.(ts|tsx|js|mjs)$' /tmp/changed-files.txt
+          grep -Eq 'japan-market-insights' /tmp/changed-files.txt
+
+          files=$(grep -E '\.(ts|tsx|js|jsx|mjs|cjs|sql|md|yml|yaml)$' /tmp/changed-files.txt | tr '\n' ' ')
+          test -n "$files"
+
+          require_pattern() {
+            local pattern=$1 label=$2
+            if ! grep -ERiq --include='*.ts' --include='*.tsx' --include='*.js' --include='*.mjs' --include='*.sql' "$pattern" .; then
+              echo "Missing invariant: $label" >&2
+              exit 1
+            fi
+          }
+          require_pattern 'evidence(_id|Id| IDs?| reference)' 'stable evidence references'
+          require_pattern '(revision|expected_revision|expectedRevision)' 'optimistic concurrency revision'
+          require_pattern '(audit_log|auditLog|audit trail)' 'audit trail'
+          require_pattern '(approval|approved_at|approvedAt)' 'approval state'
+          require_pattern '(FOR UPDATE|SKIP LOCKED|advisory_xact_lock|atomic)' 'atomic concurrency control'
+          require_pattern '(turnstile|cf-turnstile-response)' 'Turnstile support'
+          require_pattern '(honeypot|website_url|company_website)' 'honeypot field'
+          require_pattern '(timingSafeEqual|timing_safe|crypto\.subtle\.verify|HMAC)' 'timing-safe signed instructions'
+          require_pattern '(consent|consented_at|consentedAt)' 'explicit lead consent'
+          require_pattern '(ip_hash|ipHash|privacy.*hash)' 'privacy-preserving IP hash'
+          require_pattern '(human[-_ ]controlled|external.*confirm|confirmed_external|publication_url)' 'human-controlled external publishing'
+          require_pattern '(quality_gate|qualityGate|unsupported.*claim|unknown.*evidence)' 'evidence-aware quality gates'
+
+          # Migrations using SECURITY DEFINER must pin search_path and may not grant unsafe public execution.
+          while IFS= read -r migration; do
+            if grep -Eqi 'SECURITY[[:space:]]+DEFINER' "$migration"; then
+              grep -Eqi 'SET[[:space:]]+search_path' "$migration"
+            fi
+            ! grep -Eqi 'GRANT[[:space:]]+ALL.*(anon|public)' "$migration"
+          done < <(grep -E 'supabase/migrations/.*\.sql$' /tmp/changed-files.txt)
+
+          # No unfinished markers in implementation files.
+          if grep -Eni '\b(TODO|FIXME|HACK|PLACEHOLDER|NOT IMPLEMENTED)\b' $files; then
+            echo 'Unfinished markers are not allowed in the release diff.' >&2
+            exit 1
+          fi
+
+          # Keep new production modules reviewable; generated files/migrations are exempt.
+          while IFS= read -r file; do
+            case "$file" in
+              *.test.*|*.spec.*|supabase/migrations/*|*generated*) continue ;;
+            esac
+            [ -f "$file" ] || continue
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 650 ]; then
+              echo "$file has $lines lines; split production responsibilities." >&2
+              exit 1
+            fi
+          done < /tmp/changed-files.txt
+
+      - uses: pnpm/action-setup@v4
+        if: hashFiles('pnpm-lock.yaml') != ''
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: ${{ hashFiles('pnpm-lock.yaml') != '' && 'pnpm' || hashFiles('yarn.lock') != '' && 'yarn' || 'npm' }}
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile
+          elif [ -f yarn.lock ]; then corepack enable && yarn install --immutable
+          else npm ci
+          fi
+
+      - name: Run repository quality gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/scripts.txt
+          const p = require('./package.json');
+          for (const name of Object.keys(p.scripts || {})) console.log(name);
+          NODE
+          run_script() {
+            local script=$1
+            grep -Fxq "$script" /tmp/scripts.txt || return 0
+            if [ -f pnpm-lock.yaml ]; then pnpm run "$script"
+            elif [ -f yarn.lock ]; then yarn "$script"
+            else npm run "$script"
+            fi
+          }
+          run_script lint
+          if grep -Fxq typecheck /tmp/scripts.txt; then run_script typecheck
+          elif grep -Fxq type-check /tmp/scripts.txt; then run_script type-check
+          elif grep -Fxq check-types /tmp/scripts.txt; then run_script check-types
+          fi
+          run_script test:unit
+          run_script test:api
+          # Avoid running the same aggregate suite twice when granular suites exist.
+          if ! grep -Eq '^test:(unit|api)$' /tmp/scripts.txt; then run_script test; fi
+          run_script build
+          git diff --check
+
+      - name: Verify no secrets are bundled into public client code
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -d .next/static ]; then
+            if grep -ERqi '(SUPABASE_SERVICE_ROLE_KEY|service_role_key|MEDIA_OS_SIGNING_SECRET|TURNSTILE_SECRET)' .next/static; then
+              echo 'A server-only secret identifier was found in a public client bundle.' >&2
+              exit 1
+            fi
+          fi
+
+  merge-after-verification:
+    if: github.event_name == 'pull_request' && github.head_ref == 'codex/japan-market-media-os'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Mark ready and squash merge the validated PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr ready "$PR_URL" 2>/dev/null || true
+          gh pr merge "$PR_URL" --squash --delete-branch
