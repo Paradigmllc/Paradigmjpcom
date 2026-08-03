@@ -105,6 +105,7 @@ def test_internal_qa_can_validate_bound_gpu_while_checkout_stays_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     contract = SimpleNamespace(
+        id="pet-memory-i2v",
         enabled=True,
         approval=WorkflowApproval.APPROVED_BOUND,
         media_kind="video",
