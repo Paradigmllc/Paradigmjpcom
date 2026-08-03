@@ -93,7 +93,7 @@ cat > "$BOOTSTRAP_ROOT/manifest-base.json" <<JSON
       "code_license": "Apache-2.0",
       "model_license": "Apache-2.0",
       "source_url": "$DIFFUSION_URL",
-      "approved_workflows": ["abstract-broll-t2v"],
+      "approved_workflows": ["abstract-broll-t2v", "pet-memory-i2v"],
       "notes": "Official ComfyUI-repackaged Wan 2.2 TI2V-5B weights from the model publisher's approved distribution."
     },
     {
@@ -104,7 +104,7 @@ cat > "$BOOTSTRAP_ROOT/manifest-base.json" <<JSON
       "code_license": "Apache-2.0",
       "model_license": "Apache-2.0",
       "source_url": "$TEXT_ENCODER_URL",
-      "approved_workflows": ["abstract-broll-t2v"],
+      "approved_workflows": ["abstract-broll-t2v", "pet-memory-i2v"],
       "notes": "Official ComfyUI-repackaged UMT5-XXL text encoder used by Wan workflows."
     },
     {
@@ -115,7 +115,7 @@ cat > "$BOOTSTRAP_ROOT/manifest-base.json" <<JSON
       "code_license": "Apache-2.0",
       "model_license": "Apache-2.0",
       "source_url": "$VAE_URL",
-      "approved_workflows": ["abstract-broll-t2v"],
+      "approved_workflows": ["abstract-broll-t2v", "pet-memory-i2v"],
       "notes": "Official ComfyUI-repackaged Wan 2.2 VAE."
     }
   ]
@@ -147,6 +147,7 @@ TLS_CERTIFICATE = Path(os.environ.get("COMFY_PROXY_TLS_CERT", "/etc/instance.crt
 TLS_PRIVATE_KEY = Path(os.environ.get("COMFY_PROXY_TLS_KEY", "/etc/instance.key"))
 
 REQUIRED_NODES = {
+    "LoadImage",
     "UNETLoader",
     "CLIPLoader",
     "VAELoader",
@@ -251,6 +252,19 @@ def workflow_payload() -> dict:
     }
 
 
+def pet_memory_workflow_payload() -> dict:
+    workflow = workflow_payload()
+    workflow["12"] = {
+        "class_type": "LoadImage",
+        "inputs": {"image": "{{source_image}}"},
+    }
+    workflow["7"]["inputs"]["start_image"] = ["12", 0]
+    workflow["7"]["inputs"]["length"] = 97
+    workflow["8"]["inputs"]["denoise"] = 0.58
+    workflow["11"]["inputs"]["filename_prefix"] = "video/PetLifeMovieWan22"
+    return workflow
+
+
 def status_payload() -> tuple[int, dict]:
     base = json.loads(MANIFEST_BASE.read_text(encoding="utf-8")) if MANIFEST_BASE.is_file() else {"models": []}
     try:
@@ -273,7 +287,15 @@ def status_payload() -> tuple[int, dict]:
                         "approved-text-encoder": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
                         "approved-video-vae": "wan2.2_vae.safetensors",
                     },
-                }
+                },
+                "pet-memory-i2v": {
+                    "workflow_json": pet_memory_workflow_payload(),
+                    "model_bindings": {
+                        "approved-video-checkpoint": "wan2.2_ti2v_5B_fp16.safetensors",
+                        "approved-text-encoder": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+                        "approved-video-vae": "wan2.2_vae.safetensors",
+                    },
+                },
             },
         }
         return 200, payload

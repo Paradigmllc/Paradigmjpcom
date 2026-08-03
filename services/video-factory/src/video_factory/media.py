@@ -97,6 +97,8 @@ def normalize_clip(
     width: int,
     height: int,
     fps: int,
+    fit: str = "contain",
+    loop_source: bool = True,
 ) -> Path:
     ffmpeg = _require("ffmpeg")
     source_path = Path(source)
@@ -104,11 +106,19 @@ def normalize_clip(
         raise MediaError(f"Source media does not exist: {source_path}")
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
-    filter_graph = (
-        f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
-        f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=0x0B1020,"
-        f"fps={fps},format=yuv420p"
+    if fit not in {"contain", "cover"}:
+        raise MediaError(f"Unsupported clip fit: {fit}")
+    geometry = (
+        f"scale={width}:{height}:force_original_aspect_ratio=increase,"
+        f"crop={width}:{height}"
+        if fit == "cover"
+        else (
+            f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
+            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=0x0B1020"
+        )
     )
+    hold = "" if loop_source else f",tpad=stop_mode=clone:stop_duration={duration_seconds}"
+    filter_graph = f"{geometry},fps={fps}{hold},format=yuv420p"
     has_audio = _has_audio_stream(source_path)
     command = [
         ffmpeg,
@@ -116,11 +126,10 @@ def normalize_clip(
         "-loglevel",
         "error",
         "-y",
-        "-stream_loop",
-        "-1",
-        "-i",
-        str(source_path),
     ]
+    if loop_source:
+        command.extend(["-stream_loop", "-1"])
+    command.extend(["-i", str(source_path)])
     if not has_audio:
         command.extend(
             [
@@ -134,6 +143,11 @@ def normalize_clip(
         [
             "-vf",
             filter_graph,
+            *(
+                ["-af", f"apad=pad_dur={duration_seconds}"]
+                if has_audio and not loop_source
+                else []
+            ),
             "-map",
             "0:v:0",
             "-map",
@@ -158,6 +172,51 @@ def normalize_clip(
     )
     run_command(command, timeout=600)
     return target
+
+
+def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
+    """Compare the source image with the generated clip's first frame.
+
+    This is a conservative structural guard, not a claim of biometric identity.
+    It catches changed markings, framing collapses and unrelated outputs before
+    creative review; low-scoring shots fall back to the supplied-photo edit.
+    """
+    ffmpeg = _require("ffmpeg")
+    source_path = Path(source)
+    generated_path = Path(generated)
+    if not source_path.is_file() or not generated_path.is_file():
+        raise MediaError("Source fidelity inputs do not exist")
+    completed = run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-i",
+            str(source_path),
+            "-i",
+            str(generated_path),
+            "-filter_complex",
+            (
+                "[0:v]scale=512:512:force_original_aspect_ratio=increase,"
+                "crop=512:512,format=yuv420p[reference];"
+                "[1:v]select='eq(n,0)',scale=512:512:force_original_aspect_ratio=increase,"
+                "crop=512:512,format=yuv420p[candidate];"
+                "[reference][candidate]ssim"
+            ),
+            "-frames:v",
+            "1",
+            "-f",
+            "null",
+            "-",
+        ],
+        timeout=180,
+    )
+    match = re.search(r"All:([0-9]+(?:\.[0-9]+)?)", completed.stderr)
+    if not match:
+        raise MediaError("FFmpeg did not report a source fidelity score")
+    score = float(match.group(1))
+    if not 0 <= score <= 1:
+        raise MediaError("Source fidelity score is outside the valid range")
+    return score
 
 
 def assemble_clips(
@@ -222,7 +281,8 @@ def write_caption_vtt(shots: list[Shot], output: str | Path) -> Path:
     cues = ["WEBVTT", ""]
     for index, shot in enumerate(shots, start=1):
         end = position + shot.duration_seconds
-        text = "\n".join(part for part in (shot.headline.strip(), shot.body.strip()) if part)
+        text_parts = [part for part in (shot.headline.strip(), shot.body.strip()) if part]
+        text = "\n".join(dict.fromkeys(text_parts))
         cues.extend(
             [
                 str(index),

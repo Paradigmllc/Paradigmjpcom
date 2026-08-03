@@ -10,7 +10,7 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import pg from "pg"
 import {
   DEFAULT_APP_UUID,
@@ -622,6 +622,14 @@ async function applyPetLifeMovieCommercialQualityMigration(envs) {
   )
 }
 
+async function applyPetLifeMovieQaRenderMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260803113000_pet_movie_qa_renders.sql",
+    "Pet Life Movie isolated QA render migration",
+  )
+}
+
 async function verifyPetLifeMovieSchema(envs) {
   const { url, key } = salesSupabase(envs)
   if (isInternalDataApiUrl(url)) {
@@ -636,6 +644,9 @@ begin
   if to_regclass('public.pet_movie_deliverables') is null then
     raise exception 'pet_movie_deliverables is missing';
   end if;
+  if to_regclass('public.pet_movie_qa_renders') is null then
+    raise exception 'pet_movie_qa_renders is missing';
+  end if;
   if to_regclass('public.pet_movie_marketing_campaigns') is null
     or to_regclass('public.pet_movie_marketing_runs') is null
     or to_regclass('public.pet_movie_marketing_posts') is null
@@ -644,6 +655,11 @@ begin
   end if;
   if not has_table_privilege('service_role', 'public.pet_movie_projects', 'SELECT') then
     raise exception 'service_role cannot read pet_movie_projects';
+  end if;
+  if not has_table_privilege('service_role', 'public.pet_movie_qa_renders', 'SELECT')
+    or has_table_privilege('anon', 'public.pet_movie_qa_renders', 'SELECT')
+    or has_table_privilege('authenticated', 'public.pet_movie_qa_renders', 'SELECT') then
+    raise exception 'Pet Life Movie QA render table privileges are invalid';
   end if;
   if not has_table_privilege('service_role', 'public.pet_movie_marketing_campaigns', 'SELECT')
     or has_table_privilege('anon', 'public.pet_movie_marketing_campaigns', 'SELECT')
@@ -671,6 +687,7 @@ $$;
   }
   for (const path of [
     "pet_movie_deliverables?select=id&limit=1",
+    "pet_movie_qa_renders?select=id,template_id,status&limit=1",
     "pet_movie_projects?select=id,terms_version,terms_accepted_at&limit=1",
     "pet_movie_contributors?select=id,memories,consent_confirmed&limit=1",
     "pet_movie_marketing_campaigns?select=id,campaign_key,status&limit=1",
@@ -1838,10 +1855,10 @@ PY
   runOriginLockHostScript("Manual Traefik origin lock prepare before deploy", script)
 }
 
-function refreshManualTraefikRoute() {
+function watchAndRefreshManualTraefikRoute() {
   if (DRY || SKIP_DEPLOY) {
     console.log("Manual Traefik route refresh: skipped")
-    return
+    return { promise: Promise.resolve(), cancel: () => {} }
   }
   const originLockHelper = readOriginLockHelper()
   const script = `
@@ -1850,28 +1867,82 @@ app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
 route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
 cache_file='/data/coolify/proxy/.paradigmjp-origin-lock-cidrs.json'
 if [ ! -f "$route_file" ]; then
-  echo "Manual Traefik route refresh: route file not found"
+  echo "Manual Traefik cutover watcher: route file not found"
   exit 1
 fi
-new_container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
-if [ -z "$new_container" ]; then
-  echo "Manual Traefik route refresh: app container not found"
-  exit 1
-fi
-new_ip="$(docker inspect "$new_container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
-if [ -z "$new_ip" ]; then
-  echo "Manual Traefik route refresh: app container has no coolify network IP"
+current_ip="$(python3 - "$route_file" <<'PY'
+import re
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    config = yaml.safe_load(handle)
+url = config["http"]["services"]["paradigmhp-svc"]["loadBalancer"]["servers"][0]["url"]
+match = re.fullmatch(r"https?://([^/:]+):3000", str(url))
+if not match:
+    raise SystemExit("Current Paradigm upstream is invalid")
+print(match.group(1))
+PY
+)"
+
+new_container=''
+new_ip=''
+for attempt in $(seq 1 600); do
+  candidate="$(
+    for container in $(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}'); do
+      health="$(docker inspect "$container" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}')"
+      [ "$health" = 'healthy' ] || continue
+      ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
+      [ -n "$ip" ] || continue
+      [ "$ip" != "$current_ip" ] || continue
+      curl -fsS --max-time 2 "http://$ip:3000/api/ready" >/dev/null 2>&1 || continue
+      created="$(docker inspect "$container" --format '{{.Created}}')"
+      printf '%s|%s|%s\n' "$created" "$container" "$ip"
+    done | sort -r | head -n1
+  )"
+  if [ -n "$candidate" ]; then
+    new_container="$(printf '%s' "$candidate" | cut -d'|' -f2)"
+    new_ip="$(printf '%s' "$candidate" | cut -d'|' -f3)"
+    break
+  fi
+  sleep 1
+done
+if [ -z "$new_container" ] || [ -z "$new_ip" ]; then
+  echo "Manual Traefik cutover watcher: no new healthy upstream appeared"
   exit 1
 fi
 python3 - --apply "$route_file" "$cache_file" "$app_uuid" "$new_container" "$new_ip" <<'PY'
 ${originLockHelper}
 PY
+curl -fsS --max-time 3 "http://$new_ip:3000/api/ready" >/dev/null
+echo "Manual Traefik cutover watcher: healthy upstream promoted atomically"
 for legacy_demo_container in astro-demo paradigm-demos; do
   docker rm -f "$legacy_demo_container" >/dev/null 2>&1 || true
 done
 echo "Legacy demo containers: stopped"
 `
-  runOriginLockHostScript("Manual Traefik atomic route refresh", script)
+  const child = spawn("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
+    cwd: process.cwd(),
+    env: process.env,
+    stdio: ["pipe", "pipe", "pipe"],
+  })
+  child.stdin.end(script)
+  let output = ""
+  child.stdout.on("data", (chunk) => { output += String(chunk) })
+  child.stderr.on("data", (chunk) => { output += String(chunk) })
+  const promise = new Promise((resolve, reject) => {
+    child.once("error", reject)
+    child.once("close", (code) => {
+      const trimmed = output.trim()
+      if (trimmed) console.log(trimmed)
+      if (code === 0) resolve()
+      else reject(new Error(`Manual Traefik cutover watcher failed: exit ${code ?? "unknown"}`))
+    })
+  })
+  return {
+    promise,
+    cancel: () => child.kill(),
+  }
 }
 
 async function refreshIntegrationStatus(envs) {
@@ -1998,6 +2069,7 @@ async function main() {
     console.log(await applyPetLifeMovieMarketReadyMigration(envs))
     console.log(await applyPetLifeMovieGlobalGrowthMigration(envs))
     console.log(await applyPetLifeMovieCommercialQualityMigration(envs))
+    console.log(await applyPetLifeMovieQaRenderMigration(envs))
     console.log(await verifyPetLifeMovieSchema(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
@@ -2105,8 +2177,13 @@ async function main() {
     prepareManualTraefikOriginLock()
     const uuid = await triggerDeploy()
     console.log(`Deployment queued: ${uuid}`)
-    await waitDeploy(uuid)
-    refreshManualTraefikRoute()
+    const cutover = watchAndRefreshManualTraefikRoute()
+    try {
+      await Promise.all([waitDeploy(uuid), cutover.promise])
+    } catch (error) {
+      cutover.cancel()
+      throw error
+    }
     // The application image runs compatibility migrations during startup.
     // Reassert the newest claim contract after the new container is healthy so
     // an older bundled function cannot silently remove product-evidence retries.

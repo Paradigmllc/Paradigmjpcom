@@ -65,8 +65,24 @@ def emit_studio_project_delivered(
 ) -> None:
     pet_project_id = manifest.metadata.get("pet_movie_project_id")
     pet_job_id = manifest.metadata.get("pet_movie_job_id")
-    if not pet_project_id or not pet_job_id:
+    pet_mode = manifest.metadata.get("pet_movie_mode", "customer_paid")
+    pet_qa_render_id = manifest.metadata.get("pet_movie_qa_render_id")
+    if pet_mode == "internal_qa" and not pet_qa_render_id:
         return
+    if pet_mode != "internal_qa" and (not pet_project_id or not pet_job_id):
+        return
+    pet_payload = (
+        {
+            "pet_movie_mode": "internal_qa",
+            "pet_movie_qa_render_id": pet_qa_render_id,
+        }
+        if pet_mode == "internal_qa"
+        else {
+            "pet_movie_mode": "customer_paid",
+            "pet_movie_project_id": pet_project_id,
+            "pet_movie_job_id": pet_job_id,
+        }
+    )
     run_lifecycle(
         emit_operator_event(
             settings,
@@ -77,8 +93,7 @@ def emit_studio_project_delivered(
             state="delivered",
             progress=100,
             payload={
-                "pet_movie_project_id": pet_project_id,
-                "pet_movie_job_id": pet_job_id,
+                **pet_payload,
                 "reviewer": record.reviewer,
                 "items": [
                     {

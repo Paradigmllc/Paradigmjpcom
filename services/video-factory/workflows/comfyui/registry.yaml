@@ -56,6 +56,18 @@ workflows:
     required_models: [approved-video-checkpoint]
     required_rights: [source_assets_cleared, ai_generation_allowed]
 
+  - id: pet-memory-i2v
+    version: "1.0"
+    purpose: Animate a consented family pet photo with restrained natural motion while preserving identity.
+    media_kind: video
+    approval: approved_contract
+    enabled: false
+    risk: restricted
+    required_nodes: [LoadImage, Wan22ImageToVideoLatent, SaveVideo]
+    required_models: [approved-video-checkpoint, approved-text-encoder, approved-video-vae]
+    required_rights: [source_assets_cleared, ai_generation_allowed]
+    notes: Bind only after the exact source-conditioned graph, model artifacts, and output fidelity gate are reviewed.
+
   - id: video-upscale
     version: "1.0"
     purpose: Upscale a generated or supplied clip after creative approval without changing claims or composition.

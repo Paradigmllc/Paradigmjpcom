@@ -96,6 +96,7 @@ def test_console_static_app_and_runtime_secret_masking(
             "comfyui_api_key": "comfy-secret",
             "oss_worker_base_url": "https://oss-worker.example.test",
             "oss_worker_api_key": "worker-secret-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "gpu_lifecycle_enabled": True,
         },
     )
     assert configured.status_code == 200
@@ -113,6 +114,19 @@ def test_console_static_app_and_runtime_secret_masking(
     lifecycle = client.get("/v1/gpu-lifecycle", headers=_headers())
     assert lifecycle.status_code == 200
     assert lifecycle.json()["lifecycle"]["phase"] == "not_checked"
+
+    monkeypatch.setattr(
+        console_api,
+        "ensure_gpu_ready",
+        AsyncMock(return_value={"phase": "ready", "managed_instance_id": 46258780}),
+    )
+    maintenance = client.post(
+        "/v1/gpu-lifecycle/prepare-maintenance",
+        headers=_headers(),
+    )
+    assert maintenance.status_code == 200
+    assert maintenance.json()["ok"] is True
+    console_api.ensure_gpu_ready.assert_awaited_once()
 
 
 def test_console_rejects_plain_http_comfyui_in_production(
@@ -358,6 +372,8 @@ def test_console_adopts_managed_vast_instance_without_exposing_proxy_key(
                 "ready": False,
                 "phase": "waiting-for-comfyui",
                 "detail": "ComfyUI is starting",
+                "models": [],
+                "workflows": {},
             }
 
     class ProxyClient:
@@ -391,6 +407,7 @@ def test_console_adopts_managed_vast_instance_without_exposing_proxy_key(
     assert "jupyter-secret" not in serialized
     assert response.json()["runtime"]["comfyui_api_key_configured"] is True
     assert response.json()["provisioning"]["phase"] == "waiting-for-comfyui"
+    assert response.json()["workflow_manifest"]["workflows"] == {}
     runtime = load_runtime_config(workspace)
     assert runtime.comfyui_base_url == "https://203.0.113.10:48189"
     assert runtime.comfyui_api_key == proxy_key

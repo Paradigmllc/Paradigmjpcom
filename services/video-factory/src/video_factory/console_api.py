@@ -18,7 +18,7 @@ from .console_models import (
 )
 from .doctor import doctor_report
 from .engine_profile_service import engine_catalog_payload
-from .gpu_lifecycle import gpu_lifecycle_status, release_gpu_if_idle
+from .gpu_lifecycle import ensure_gpu_ready, gpu_lifecycle_status, release_gpu_if_idle
 from .runtime_config import load_runtime_config, update_runtime_config
 from .settings import Settings
 from .vast import (
@@ -224,6 +224,28 @@ async def reconcile_gpu_lifecycle() -> dict[str, object]:
     return {"ok": state.get("phase") != "error", "lifecycle": state}
 
 
+@router.post(
+    "/v1/gpu-lifecycle/prepare-maintenance",
+    dependencies=[Depends(require_console_api_key)],
+)
+async def prepare_gpu_maintenance() -> dict[str, object]:
+    """Start only the configured managed GPU for authenticated registry maintenance."""
+    settings = Settings.from_env()
+    if not settings.gpu_lifecycle_enabled:
+        raise HTTPException(
+            status_code=409,
+            detail="Managed GPU lifecycle is not enabled.",
+        )
+    try:
+        state = await ensure_gpu_ready(
+            settings,
+            run_id="managed-workflow-maintenance",
+        )
+    except (OSError, RuntimeError, TimeoutError, ValueError, VastAPIError) as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    return {"ok": state.get("phase") == "ready", "lifecycle": state}
+
+
 @router.put("/v1/runtime", dependencies=[Depends(require_console_api_key)])
 def configure_runtime(request: RuntimeConfigRequest) -> dict[str, object]:
     settings = Settings.from_env()
@@ -386,6 +408,10 @@ async def adopt_vast_instance(instance_id: int) -> dict[str, object]:
             "phase": payload.get("phase"),
             "detail": payload.get("detail"),
             "missing_nodes": payload.get("missing_nodes", []),
+        },
+        "workflow_manifest": {
+            "models": payload.get("models", []),
+            "workflows": payload.get("workflows", {}),
         },
     }
 

@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from video_factory.media import create_placeholder_clip, write_caption_vtt
+from video_factory.media import (
+    create_placeholder_clip,
+    normalize_clip,
+    probe_media,
+    write_caption_vtt,
+)
 from video_factory.models import DeliverableSpec, Shot, ShotKind
 from video_factory.qa import run_technical_qa
 
@@ -53,6 +58,28 @@ def test_silent_clip_fails_when_supplied_audio_is_required(tmp_path: Path) -> No
     audio_check = next(check for check in report.checks if check.name == "audio-level")
     assert audio_check.passed is False
     assert audio_check.actual in {"silent", "-91.0 dBFS"}
+
+
+def test_generated_motion_holds_its_final_frame_instead_of_looping(tmp_path: Path) -> None:
+    source = create_placeholder_clip(
+        tmp_path / "generated.mp4",
+        duration_seconds=0.5,
+        width=320,
+        height=180,
+        fps=24,
+        label="generated",
+    )
+    output = normalize_clip(
+        source,
+        tmp_path / "held.mp4",
+        duration_seconds=1.5,
+        width=320,
+        height=180,
+        fps=24,
+        loop_source=False,
+    )
+
+    assert abs(probe_media(output).duration_seconds - 1.5) <= 0.05
 
 
 def test_caption_vtt_uses_shot_timing(tmp_path: Path) -> None:

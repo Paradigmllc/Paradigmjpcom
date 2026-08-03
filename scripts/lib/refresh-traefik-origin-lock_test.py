@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 import stat
 import tempfile
 import unittest
@@ -11,7 +10,6 @@ from pathlib import Path
 from unittest import mock
 
 import yaml
-
 
 HELPER_PATH = Path(__file__).with_name("refresh-traefik-origin-lock.py")
 SPEC = importlib.util.spec_from_file_location("refresh_traefik_origin_lock", HELPER_PATH)
@@ -108,7 +106,8 @@ class OriginLockReleaseTests(unittest.TestCase):
 
         self.assertTrue(result["origin_lock_prepared"])
         self.assertEqual(self.route_file.read_bytes(), original)
-        self.assertEqual(stat.S_IMODE(self.cache_file.stat().st_mode), 0o600)
+        if ORIGIN_LOCK.os.name != "nt":
+            self.assertEqual(stat.S_IMODE(self.cache_file.stat().st_mode), 0o600)
         self.assertEqual(
             ORIGIN_LOCK.load_cached_ranges(self.cache_file, now=self.now),
             (self.ipv4, self.ipv6),
@@ -130,6 +129,7 @@ class OriginLockReleaseTests(unittest.TestCase):
                 "app-container",
                 replacement_ip,
                 alias_discoverer=lambda _container: ["generated.example.test"],
+                readiness_validator=lambda _ip: None,
                 now=self.now + timedelta(minutes=5),
             )
 
@@ -160,7 +160,8 @@ class OriginLockReleaseTests(unittest.TestCase):
             self.assertEqual(router["middlewares"][0], ORIGIN_LOCK.MIDDLEWARE_NAME)
         backups = list(self.root.glob("paradigmjp.yml.bak-release-*-origin-lock"))
         self.assertEqual(len(backups), 1)
-        self.assertEqual(stat.S_IMODE(backups[0].stat().st_mode), 0o600)
+        if ORIGIN_LOCK.os.name != "nt":
+            self.assertEqual(stat.S_IMODE(backups[0].stat().st_mode), 0o600)
 
     def test_missing_route_and_stale_cache_are_fatal_without_mutation(self) -> None:
         original = self.route_file.read_bytes()
@@ -187,6 +188,7 @@ class OriginLockReleaseTests(unittest.TestCase):
                 "app-container",
                 "192.0.2.201",
                 alias_discoverer=lambda _container: [],
+                readiness_validator=lambda _ip: None,
                 now=self.now,
             )
         self.assertEqual(self.route_file.read_bytes(), original)
@@ -216,6 +218,7 @@ class OriginLockReleaseTests(unittest.TestCase):
             "app-container",
             "192.0.2.201",
             alias_discoverer=lambda _container: [],
+            readiness_validator=lambda _ip: None,
             now=self.now + timedelta(minutes=5),
         )
 
@@ -223,6 +226,27 @@ class OriginLockReleaseTests(unittest.TestCase):
         self.assertNotIn("astrodemo-http", updated["routers"])
         self.assertNotIn("astrodemo-https", updated["routers"])
         self.assertNotIn("astrodemo-svc", updated["services"])
+
+    def test_unready_replacement_never_mutates_live_route(self) -> None:
+        self.prepare()
+        original = self.route_file.read_bytes()
+
+        def reject(_ip: str) -> None:
+            raise RuntimeError("simulated replacement not ready")
+
+        with self.assertRaisesRegex(RuntimeError, "simulated replacement not ready"):
+            ORIGIN_LOCK.apply_cached_origin_lock(
+                self.route_file,
+                self.cache_file,
+                "app-uuid",
+                "app-container",
+                "192.0.2.201",
+                alias_discoverer=lambda _container: [],
+                readiness_validator=reject,
+                now=self.now + timedelta(minutes=5),
+            )
+
+        self.assertEqual(self.route_file.read_bytes(), original)
 
 
 if __name__ == "__main__":

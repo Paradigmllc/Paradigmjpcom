@@ -10,6 +10,7 @@ export const PET_MOVIE_TABLES = {
   JOBS: "pet_movie_jobs",
   EVENTS: "pet_movie_events",
   DELIVERABLES: "pet_movie_deliverables",
+  QA_RENDERS: "pet_movie_qa_renders",
   MARKETING_CAMPAIGNS: "pet_movie_marketing_campaigns",
   MARKETING_RUNS: "pet_movie_marketing_runs",
   MARKETING_POSTS: "pet_movie_marketing_posts",

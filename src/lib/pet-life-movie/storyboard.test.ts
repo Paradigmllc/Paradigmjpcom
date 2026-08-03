@@ -22,10 +22,11 @@ function project(): PetMovieProjectRow {
     stripe_payment_intent_id: null,
     customer_email: null,
     paid_at: null,
-  refunded_at: null,
-  terms_version: null,
-  terms_accepted_at: null,
-  deleted_at: null,
+    refunded_at: null,
+    ai_motion_consent_at: "2026-01-01T00:00:00.000Z",
+    terms_version: null,
+    terms_accepted_at: null,
+    deleted_at: null,
     storyboard: null,
     preview_url: null,
     delivery_url: null,
@@ -66,8 +67,17 @@ describe("buildFactualStoryboard", () => {
       "Always part of the family.",
     ])
     expect(result.factualOnly).toBe(true)
+    expect(result.version).toBe(2)
+    expect(result.templateId).toBe("warm-keepsake")
     expect(result.scenes).toHaveLength(6)
     expect(result.scenes.every((scene) => allowedFacts.has(scene.caption))).toBe(true)
+  })
+
+  it("selects a distinct production template from the requested mood", () => {
+    const playful = { ...project(), mood: "playful" as const }
+    const cinematic = { ...project(), mood: "cinematic" as const }
+    expect(buildFactualStoryboard(playful, assets(5)).templateId).toBe("playful-scrapbook")
+    expect(buildFactualStoryboard(cinematic, assets(5)).templateId).toBe("cinematic-tribute")
   })
 
   it("refuses to build a preview from fewer than five uploaded photos", () => {

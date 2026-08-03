@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import sys
 from pathlib import Path
 
@@ -8,7 +10,7 @@ import yaml
 from fastapi.testclient import TestClient
 
 import video_factory.engine_worker_api as engine_worker_api
-from video_factory.engine_worker_api import app
+from video_factory.engine_worker_api import WorkerRequest, _materialize_source_assets, app
 from video_factory.gpu_lifecycle import _assert_worker_profiles
 from video_factory.models import ClientBrief, MediaProbe, ShotKind
 from video_factory.planner import deterministic_plan
@@ -124,3 +126,38 @@ def test_gpu_preflight_requires_exact_profile_revision() -> None:
     _assert_worker_profiles(payload, (("framepack", revision),))
     with pytest.raises(ValueError, match="missing exact approved installations"):
         _assert_worker_profiles(payload, (("framepack", "b" * 40),))
+
+
+def test_protocol_v2_materializes_and_verifies_private_source_assets(
+    tmp_path: Path,
+    example_brief: ClientBrief,
+) -> None:
+    manifest = deterministic_plan(example_brief)
+    source = b"private-pet-image-fixture"
+    shot = manifest.shots[0].model_copy(
+        update={"kind": ShotKind.GENERATIVE, "source_assets": ["control-plane-only.image"]}
+    )
+    request = WorkerRequest.model_validate(
+        {
+            "protocol_version": 2,
+            "profile_id": "framepack",
+            "profile_revision": "a" * 40,
+            "shot": shot.model_dump(mode="json"),
+            "deliverable": manifest.primary_deliverable.model_dump(mode="json"),
+            "brand": manifest.brand.model_dump(mode="json"),
+            "rights": manifest.rights.model_dump(mode="json"),
+            "source_assets": [
+                {
+                    "name": "pet.image",
+                    "content_type": "image/jpeg",
+                    "sha256": hashlib.sha256(source).hexdigest(),
+                    "data_base64": base64.b64encode(source).decode("ascii"),
+                }
+            ],
+        }
+    )
+
+    materialized = _materialize_source_assets(request, tmp_path)
+    assert materialized.source_assets == []
+    assert len(materialized.shot.source_assets) == 1
+    assert Path(materialized.shot.source_assets[0]).read_bytes() == source

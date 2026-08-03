@@ -6,6 +6,8 @@ const names = [
   "STRIPE_WEBHOOK_SECRET",
   "RESEND_API_KEY",
   "PET_MOVIE_RATE_LIMIT_SALT",
+  "PET_MOVIE_GPU_WORKFLOW_ID",
+  "PET_MOVIE_GPU_RENDER_ENABLED",
   "STRIPE_PRICE_PET_MOVIE_MINI",
   "STRIPE_PRICE_PET_MOVIE_STORY",
   "STRIPE_PRICE_PET_MOVIE_CINEMA",
@@ -17,7 +19,7 @@ afterEach(() => names.forEach((name) => delete process.env[name]))
 describe("Pet Life Movie market readiness", () => {
   it("fails closed until payment, email, prices, and rendering are configured", () => {
     expect(getPetMovieMarketReadiness().checkoutEnabled).toBe(false)
-    for (const name of names) process.env[name] = "configured"
+    for (const name of names) process.env[name] = name === "PET_MOVIE_GPU_RENDER_ENABLED" ? "true" : "configured"
     expect(getPetMovieMarketReadiness()).toMatchObject({ checkoutEnabled: true, rendererEnabled: true, missing: [] })
   })
 })

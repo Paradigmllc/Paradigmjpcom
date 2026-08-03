@@ -164,19 +164,21 @@ async function registerBootstrapAssets(
   }
 
   const workflows = jsonRecord(manifest.workflows)
-  const workflow = jsonRecord(workflows?.["abstract-broll-t2v"])
-  if (!workflow?.workflow_json) {
-    throw new Error("Provisioned instance did not expose abstract-broll-t2v")
+  for (const workflowId of ["abstract-broll-t2v", "pet-memory-i2v"] as const) {
+    const workflow = jsonRecord(workflows?.[workflowId])
+    if (!workflow?.workflow_json) {
+      throw new Error(`Provisioned instance did not expose ${workflowId}`)
+    }
+    await factory(`/v1/registry/workflows/${workflowId}/bind`, {
+      method: "POST",
+      body: JSON.stringify({
+        workflow_json: workflow.workflow_json,
+        reviewed_by: "Owner-delegated official-source bootstrap",
+        model_bindings: workflow.model_bindings,
+        confirm_license_review: true,
+      }),
+    })
   }
-  await factory("/v1/registry/workflows/abstract-broll-t2v/bind", {
-    method: "POST",
-    body: JSON.stringify({
-      workflow_json: workflow.workflow_json,
-      reviewed_by: "Owner-delegated official-source bootstrap",
-      model_bindings: workflow.model_bindings,
-      confirm_license_review: true,
-    }),
-  })
   return manifest
 }
 

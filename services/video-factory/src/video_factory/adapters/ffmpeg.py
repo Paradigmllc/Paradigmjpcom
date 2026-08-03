@@ -32,6 +32,7 @@ class FFmpegAdapter(EngineAdapter):
                 width=context.deliverable.width,
                 height=context.deliverable.height,
                 fps=context.deliverable.fps,
+                fit="cover" if shot.metadata.get("pet_movie_template_id") else "contain",
             )
         return EngineOutput(
             shot_id=shot.id,

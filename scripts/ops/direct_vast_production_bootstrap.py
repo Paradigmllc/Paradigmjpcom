@@ -575,20 +575,23 @@ def register_assets(cookie: str, base_url: str, proxy_key: str, manifest: dict[s
                 "confirm_license_review": True,
             },
         )
-    workflow = manifest.get("workflows", {}).get("abstract-broll-t2v")
-    if not isinstance(workflow, dict) or not isinstance(workflow.get("workflow_json"), dict):
-        raise BootstrapError("ComfyUI manifest contains no abstract-broll-t2v workflow")
-    bound = public_json(
-        cookie,
-        "POST",
-        "/v1/registry/workflows/abstract-broll-t2v/bind",
-        {
-            "workflow_json": workflow["workflow_json"],
-            "reviewed_by": "Gracecom owner-delegated official-source bootstrap",
-            "model_bindings": workflow["model_bindings"],
-            "confirm_license_review": True,
-        },
-    )
+    bound: dict[str, Any] = {}
+    workflows = manifest.get("workflows", {})
+    for workflow_id in ("abstract-broll-t2v", "pet-memory-i2v"):
+        workflow = workflows.get(workflow_id) if isinstance(workflows, dict) else None
+        if not isinstance(workflow, dict) or not isinstance(workflow.get("workflow_json"), dict):
+            raise BootstrapError(f"ComfyUI manifest contains no {workflow_id} workflow")
+        bound[workflow_id] = public_json(
+            cookie,
+            "POST",
+            f"/v1/registry/workflows/{workflow_id}/bind",
+            {
+                "workflow_json": workflow["workflow_json"],
+                "reviewed_by": "Gracecom owner-delegated official-source bootstrap",
+                "model_bindings": workflow["model_bindings"],
+                "confirm_license_review": True,
+            },
+        )
     return bound
 
 
@@ -704,7 +707,7 @@ def run_full_factory_test(cookie: str) -> dict[str, Any]:
 def destroy_instance(api_key: str, instance_id: int) -> None:
     try:
         vast_json(api_key, "DELETE", f"/v0/instances/{instance_id}/")
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:  # noqa: BLE001 -- best-effort cleanup must not hide the original failure
         log(f"Failed to clean up Vast.ai instance {instance_id}: {error}")
 
 
@@ -763,16 +766,15 @@ def main() -> int:
         smoke = run_smoke(base_url, proxy_key, manifest)
         runtime = public_json(cookie, "GET", "/v1/runtime")
         registry = public_json(cookie, "GET", "/v1/registry")
-        workflow = next(
-            (
-                item
-                for item in registry.get("contracts", [])
-                if isinstance(item, dict) and item.get("id") == "abstract-broll-t2v"
-            ),
-            {},
-        )
-        if not workflow.get("enabled") or not workflow.get("workflow_valid"):
-            raise BootstrapError(f"abstract-broll-t2v is not operational: {workflow}")
+        workflows = {
+            str(item.get("id")): item
+            for item in registry.get("contracts", [])
+            if isinstance(item, dict)
+        }
+        for workflow_id in ("abstract-broll-t2v", "pet-memory-i2v"):
+            workflow = workflows.get(workflow_id, {})
+            if not workflow.get("enabled") or not workflow.get("workflow_valid"):
+                raise BootstrapError(f"{workflow_id} is not operational: {workflow}")
         factory_test = run_full_factory_test(cookie)
 
         evidence.update(
@@ -783,7 +785,10 @@ def main() -> int:
                     "comfyui_api_key_configured": runtime.get("effective_comfyui", {}).get("api_key_configured"),
                 },
                 "registry": {
-                    "workflow": workflow,
+                    "workflows": {
+                        workflow_id: workflows[workflow_id]
+                        for workflow_id in ("abstract-broll-t2v", "pet-memory-i2v")
+                    },
                     "model_count": len(registry.get("models", {}).get("items", []))
                     if isinstance(registry.get("models"), dict)
                     else None,
@@ -798,7 +803,7 @@ def main() -> int:
         EVIDENCE_PATH.write_text(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         log("Vast.ai, ComfyUI, approved workflow, real smoke render, and full Video Factory delivery all passed")
         return 0
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:
         evidence["error"] = str(error)
         evidence["failed_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         EVIDENCE_PATH.write_text(json.dumps(evidence, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
