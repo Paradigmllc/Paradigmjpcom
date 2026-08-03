@@ -1,4 +1,5 @@
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
+import { listInvestorScenarios } from "@/lib/investor-scenarios/repository"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -16,12 +17,14 @@ export async function GET() {
     "- [Japan Opportunities](https://paradigmjp.com/en/japan-opportunities): Three transaction desks for capital, market operation and sourcing.",
     "- [Japan Investor Briefs](https://paradigmjp.com/en/japan-opportunities/invest): Official-source-backed investment decision briefs.",
     "- [Japan Investment Comparisons](https://paradigmjp.com/en/japan-opportunities/invest/compare): Curated A/B evidence comparisons.",
+    "- [Greater Tokyo Decision Atlas](https://paradigmjp.com/en/japan-opportunities/invest/markets): Quality-gated market, property-strategy and investor-profile scenarios.",
     "- [Content API documentation](https://paradigmjp.com/en/japan-opportunities/api): Public and x402 content delivery documentation.",
     "",
     "## Machine-readable APIs",
     "",
     "- [Investor brief catalog](https://paradigmjp.com/api/v1/investor-briefs): Free JSON catalog.",
     "- [Investor comparison API](https://paradigmjp.com/api/v1/investor-briefs/compare): Compare two brief slugs as JSON.",
+    "- [Investor scenario API](https://paradigmjp.com/api/v1/investor-scenarios): Paginated and filterable Greater Tokyo scenario catalog with JSON and Markdown detail delivery.",
     "- [pSEO factory manifest](https://paradigmjp.com/api/v1/investor-briefs/factory): Candidate scale and indexation quality gates.",
     "- [Content catalog](https://paradigmjp.com/api/v1/content?locale=en): Free and x402 content products.",
   ]
@@ -37,6 +40,14 @@ export async function GET() {
   } catch (error) {
     console.error("[llms.txt] investor brief catalog could not be loaded:", error)
     lines.push("", "The live investor-brief index is temporarily unavailable; use the catalog API above.")
+  }
+
+  try {
+    const scenarios = await listInvestorScenarios({ limit: 1 })
+    lines.push("", "## Published Greater Tokyo scenarios", "", `${scenarios.total} quality-gated scenarios are available through the Decision Atlas and scenario API.`)
+  } catch (error) {
+    console.error("[llms.txt] investor scenario catalog could not be loaded:", error)
+    lines.push("", "The live investor-scenario count is temporarily unavailable; use the scenario API above.")
   }
 
   lines.push(

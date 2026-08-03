@@ -8,6 +8,7 @@ import {
   NATIONAL_INVESTMENT_THEME_COUNT,
 } from "@/lib/investor-briefs/pseo-scale"
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
+import { listInvestorScenarios } from "@/lib/investor-scenarios/repository"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const runtime = "nodejs"
@@ -30,7 +31,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const briefs = await listInvestorBriefs()
+    const [briefs, scenarios] = await Promise.all([
+      listInvestorBriefs(),
+      listInvestorScenarios({ limit: 1 }),
+    ])
     await recordContentAccess({
       locale: "en",
       accessChannel: "catalog",
@@ -38,7 +42,7 @@ export async function GET(request: NextRequest) {
       httpStatus: 200,
       clientIp: ip,
       userAgent: request.headers.get("user-agent"),
-      metadata: { contentType: "investor_pseo_factory", publishedBriefs: briefs.length },
+      metadata: { contentType: "investor_pseo_factory", publishedBriefs: briefs.length, publishedMetroScenarios: scenarios.total },
     })
     return NextResponse.json(
       {
@@ -48,12 +52,15 @@ export async function GET(request: NextRequest) {
           publication: {
             publishedBriefs: briefs.length,
             curatedIndexableComparisons: CURATED_INVESTOR_COMPARISONS.length,
+            qualityGatedMetroScenarios: scenarios.total,
+            totalIndexableInvestorPages: briefs.length + CURATED_INVESTOR_COMPARISONS.length + scenarios.total,
             candidatePagesAreNotPublishedPages: true,
           },
         },
         meta: { schemaVersion: "1.0", generatedAt: new Date().toISOString() },
         links: {
           briefs: "/api/v1/investor-briefs",
+          scenarios: "/api/v1/investor-scenarios",
           collection: "/en/japan-opportunities/invest",
         },
       },

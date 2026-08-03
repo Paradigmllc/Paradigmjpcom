@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
-import { ArrowRight, Database, Scale, ShieldCheck } from "lucide-react"
+import { ArrowRight, Database, MapPinned, Scale, ShieldCheck } from "lucide-react"
 import { permanentRedirect } from "next/navigation"
 import { InvestorBriefExplorer } from "@/components/opportunities/InvestorBriefExplorer"
 import JsonLd from "@/components/seo/JsonLd"
 import { Link } from "@/i18n/routing"
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
+import { listInvestorScenarios } from "@/lib/investor-scenarios/repository"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildBreadcrumbSchema, buildPageSchema } from "@/lib/seo/schemas"
 
@@ -42,7 +43,10 @@ export default async function InvestorBriefCollectionPage({ params }: Props) {
   const { locale } = await params
   if (locale !== "en") permanentRedirect(`/en${PATH}`)
 
-  const briefs = await listInvestorBriefs()
+  const [briefs, scenarios] = await Promise.all([
+    listInvestorBriefs(),
+    listInvestorScenarios({ limit: 1 }),
+  ])
   const collectionSchema = {
     ...buildPageSchema({
       type: "CollectionPage",
@@ -114,6 +118,17 @@ export default async function InvestorBriefCollectionPage({ params }: Props) {
               <p className="mt-3 text-sm text-paradigm-ink-soft">The research desk is reviewing the first evidence set. Published briefs will appear here automatically.</p>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="border-t border-paradigm-line px-6 py-16 md:px-10 md:py-20">
+        <div className="mx-auto grid max-w-6xl gap-8 rounded-3xl border border-paradigm-line bg-paradigm-paper-card p-8 md:grid-cols-[1fr_auto] md:items-center md:p-10">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-3 text-paradigm-accent"><MapPinned size={21} aria-hidden="true" /><p className="paradigm-eyebrow">GREATER TOKYO DECISION ATLAS</p></div>
+            <h2 className="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] text-paradigm-ink md:text-4xl">{scenarios.total} market × strategy × investor decisions</h2>
+            <p className="mt-4 text-sm leading-7 text-paradigm-ink-soft">Sixteen source-backed market boundaries are matched only to four locally suitable strategies, then tested against five foreign-investor mandates. Every page includes its own decision analysis, official evidence and editable stress model.</p>
+          </div>
+          <Link href="/japan-opportunities/invest/markets" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-paradigm-accent px-6 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-white hover:bg-paradigm-accent-soft">Browse scenarios<ArrowRight size={16} aria-hidden="true" /></Link>
         </div>
       </section>
 

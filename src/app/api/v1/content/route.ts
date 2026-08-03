@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { captureException } from "@/lib/error-monitor"
 import { listInvestorBriefs } from "@/lib/investor-briefs/repository"
+import { listInvestorScenarios } from "@/lib/investor-scenarios/repository"
 import {
   listPremiumProducts,
   listPublicArticles,
@@ -42,16 +43,18 @@ export async function GET(request: NextRequest) {
 
   const locale = normalizeContentLocale(request.nextUrl.searchParams.get("locale"))
   const requestedType = request.nextUrl.searchParams.get("type")
-  const [articleResult, premiumResult, investorResult] = await Promise.allSettled([
+  const [articleResult, premiumResult, investorResult, scenarioResult] = await Promise.allSettled([
     listPublicArticles(locale),
     listPremiumProducts(locale),
     locale === "en" ? listInvestorBriefs() : Promise.resolve([]),
+    locale === "en" ? listInvestorScenarios({ limit: 1_000 }) : Promise.resolve({ items: [], total: 0, limit: 1_000, offset: 0 }),
   ])
 
   const warnings: Array<{ code: string; message: string }> = []
   let articles: ContentCatalogItem[] = []
   let premium: ContentCatalogItem[] = []
   let investorBriefs: ContentCatalogItem[] = []
+  let investorScenarios: ContentCatalogItem[] = []
 
   if (articleResult.status === "fulfilled") {
     articles = articleResult.value
@@ -93,10 +96,35 @@ export async function GET(request: NextRequest) {
     warnings.push({ code: "INVESTOR_BRIEF_CATALOG_UNAVAILABLE", message: "Investor brief metadata is temporarily unavailable." })
   }
 
+  if (scenarioResult.status === "fulfilled") {
+    investorScenarios = scenarioResult.value.items.map((scenario) => ({
+      slug: scenario.slug,
+      locale: "en",
+      title: scenario.title,
+      summary: scenario.summary,
+      contentType: "investor_metro_scenario",
+      accessModel: "free",
+      price: null,
+      network: null,
+      preview: scenario.preview,
+      sourceUrl: `https://paradigmjp.com${scenario.pageUrl}`,
+      license: "Paradigm API Terms; attribution required. Not investment, legal, tax, brokerage or financial advice.",
+      version: 1,
+      publishedAt: scenario.publishedAt,
+      updatedAt: scenario.updatedAt,
+      endpoint: scenario.endpoint,
+    }))
+  } else {
+    console.error("[content-api] investor scenario catalog failed:", scenarioResult.reason)
+    await captureException(scenarioResult.reason, { source: "/api/v1/content", severity: "warning" })
+    warnings.push({ code: "INVESTOR_SCENARIO_CATALOG_UNAVAILABLE", message: "Investor scenario metadata is temporarily unavailable." })
+  }
+
   if (
     articleResult.status === "rejected"
     && premiumResult.status === "rejected"
     && investorResult.status === "rejected"
+    && scenarioResult.status === "rejected"
   ) {
     await recordContentAccess({
       locale,
@@ -113,7 +141,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const items = [...premium, ...investorBriefs, ...articles].filter((item) => matchesType(item, requestedType))
+  const items = [...premium, ...investorBriefs, ...investorScenarios, ...articles].filter((item) => matchesType(item, requestedType))
   const x402 = resolveX402Configuration()
   await recordContentAccess({
     locale,

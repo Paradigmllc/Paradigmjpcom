@@ -86,6 +86,32 @@ test.describe("Japan opportunity brands", () => {
     expect(structuredData.some((value) => value.includes('"@type":"FAQPage"'))).toBe(true)
   })
 
+  test("publishes quality-gated Greater Tokyo market and mandate scenarios", async ({ page, request }) => {
+    const catalogResponse = await request.get("/api/v1/investor-scenarios?market=yokohama&limit=100")
+    expect(catalogResponse.ok()).toBeTruthy()
+    const catalog = await catalogResponse.json() as { data: Array<{ slug: string }>; meta: { count: number; total: number } }
+    expect(catalog.meta.count).toBe(20)
+    expect(catalog.meta.total).toBe(20)
+    expect(catalog.data.some((item) => item.slug === "yokohama-multifamily-income-family-office")).toBe(true)
+
+    const markdownResponse = await request.get("/api/v1/investor-scenarios/yokohama-multifamily-income-family-office?format=markdown")
+    expect(markdownResponse.ok()).toBeTruthy()
+    expect(markdownResponse.headers()["content-type"]).toContain("text/markdown")
+    expect(await markdownResponse.text()).toContain("## Market evidence")
+
+    const path = "/en/japan-opportunities/invest/markets/yokohama/multifamily-income/family-office"
+    await page.goto(path)
+    await expect(page.getByRole("heading", { level: 1, name: /Yokohama.*Multifamily income.*Family office/i })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Link income, debt and exit stress" })).toBeVisible()
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://paradigmjp.com${path}`)
+    await page.getByLabel("Purchase price").fill("800")
+    await expect(page.getByLabel("Purchase price")).toHaveValue("800")
+    const structuredData = await page.locator('script[type="application/ld+json"]').allTextContents()
+    expect(structuredData.some((value) => value.includes('"@type":"Article"'))).toBe(true)
+    expect(structuredData.some((value) => value.includes('"@type":"Dataset"'))).toBe(true)
+    expect(structuredData.some((value) => value.includes('"@type":"FAQPage"'))).toBe(true)
+  })
+
   test("keeps the fixed setup lane distinct from the external operator lane", async ({ page }) => {
     await page.goto("/en/japan-market-partner")
     await expect(page.getByText("This $15,000 fixed setup lane does not appoint Paradigm as a distributor")).toBeVisible()
