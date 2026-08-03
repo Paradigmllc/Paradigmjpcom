@@ -93,7 +93,7 @@ def test_source_fidelity_rejects_a_clip_that_collapses_after_its_first_frame(
     ffmpeg = shutil.which("ffmpeg")
     if ffmpeg is None:
         pytest.skip("ffmpeg is unavailable")
-    source = tmp_path / "source.mp4"
+    source = tmp_path / "source.png"
     generated = tmp_path / "collapsed.mp4"
     run_command(
         [
@@ -105,11 +105,9 @@ def test_source_fidelity_rejects_a_clip_that_collapses_after_its_first_frame(
             "-f",
             "lavfi",
             "-i",
-            "color=c=0xC9A27A:s=320x180:r=24:d=1",
-            "-c:v",
-            "libx264",
-            "-pix_fmt",
-            "yuv420p",
+            "testsrc2=s=320x180:r=24:d=0.05",
+            "-frames:v",
+            "1",
             str(source),
         ],
         timeout=120,
@@ -121,10 +119,14 @@ def test_source_fidelity_rejects_a_clip_that_collapses_after_its_first_frame(
             "-loglevel",
             "error",
             "-y",
-            "-f",
-            "lavfi",
+            "-loop",
+            "1",
+            "-framerate",
+            "24",
+            "-t",
+            "0.2",
             "-i",
-            "color=c=0xC9A27A:s=320x180:r=24:d=0.2",
+            str(source),
             "-f",
             "lavfi",
             "-i",
@@ -143,6 +145,62 @@ def test_source_fidelity_rejects_a_clip_that_collapses_after_its_first_frame(
     )
 
     assert source_fidelity_score(source, generated) < 0.78
+
+
+def test_source_fidelity_allows_restrained_motion_without_scene_loss(
+    tmp_path: Path,
+) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        pytest.skip("ffmpeg is unavailable")
+    source = tmp_path / "source.png"
+    generated = tmp_path / "restrained-motion.mp4"
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=s=320x180:r=24:d=0.05",
+            "-frames:v",
+            "1",
+            str(source),
+        ],
+        timeout=120,
+    )
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-loop",
+            "1",
+            "-i",
+            str(source),
+            "-vf",
+            (
+                "zoompan=z='min(zoom+0.001,1.025)':"
+                "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+                "d=24:s=320x180:fps=24"
+            ),
+            "-t",
+            "1",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(generated),
+        ],
+        timeout=120,
+    )
+
+    assert source_fidelity_score(source, generated) >= 0.78
 
 
 def test_caption_vtt_uses_shot_timing(tmp_path: Path) -> None:
