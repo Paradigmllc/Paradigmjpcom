@@ -23,9 +23,15 @@ docs/refactor
 docs/knowledge
 docs/handoff-archive
 supabase
+!supabase/
+supabase/*
+!supabase/migrations/
+supabase/migrations/*
+!supabase/migrations/20260803013000_investor_metro_scenarios.sql
 # ─── Scripts: exclude dev/deploy scripts, keep build script only ───
 scripts/*
 !scripts/build-next.mjs
+!scripts/apply-investor-scenario-runtime-migration.mjs
 
 # ─── Agent config files (not used at runtime) ───
 .claude

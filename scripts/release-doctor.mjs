@@ -488,6 +488,15 @@ function checkStaticReleaseRules() {
   const metroScenarioPage = fs.existsSync(metroScenarioPagePath)
     ? fs.readFileSync(metroScenarioPagePath, "utf8")
     : ""
+  const metroScenarioRuntimePath = "scripts/apply-investor-scenario-runtime-migration.mjs"
+  const metroScenarioRuntime = fs.existsSync(metroScenarioRuntimePath)
+    ? fs.readFileSync(metroScenarioRuntimePath, "utf8")
+    : ""
+  const productionDockerfile = fs.existsSync("Dockerfile") ? fs.readFileSync("Dockerfile", "utf8") : ""
+  const productionDockerignore = fs.existsSync(".dockerignore") ? fs.readFileSync(".dockerignore", "utf8") : ""
+  const productionEntrypoint = fs.existsSync("docker-entrypoint.sh")
+    ? fs.readFileSync("docker-entrypoint.sh", "utf8")
+    : ""
   const investorComparisonPath = "src/lib/investor-briefs/comparisons.ts"
   const investorComparisonSource = fs.existsSync(investorComparisonPath)
     ? fs.readFileSync(investorComparisonPath, "utf8")
@@ -540,6 +549,17 @@ function checkStaticReleaseRules() {
     && metroScenarioPage.includes("includedInDataCatalog")
     && metroScenarioPage.includes("buildFAQSchema")
     && metroScenarioPage.includes("/opengraph-image")
+    && metroScenarioRuntime.includes("scenario_count === 320")
+    && metroScenarioRuntime.includes("unique_paragraphs === 2_560")
+    && metroScenarioRuntime.includes("row.force_rls === true")
+    && metroScenarioRuntime.includes("row.anon_select === false")
+    && productionDockerfile.includes("scripts/apply-investor-scenario-runtime-migration.mjs")
+    && productionDockerfile.includes(path.basename(metroScenarioMigrationPath))
+    && productionDockerignore.includes("!scripts/apply-investor-scenario-runtime-migration.mjs")
+    && productionDockerignore.includes(`!supabase/migrations/${path.basename(metroScenarioMigrationPath)}`)
+    && productionEntrypoint.includes("node /app/scripts/apply-investor-scenario-runtime-migration.mjs")
+    && productionEntrypoint.indexOf("node /app/scripts/apply-investor-scenario-runtime-migration.mjs")
+      < productionEntrypoint.lastIndexOf("start_video_factory")
     && petMovieRunMigrations.includes("20260802043347_foreign_investor_pseo.sql")
     && greaterTokyoMigrationPaths.every((migrationPath) => petMovieRunMigrations.includes(path.basename(migrationPath)))
     && petMovieRunMigrations.includes(path.basename(legacyInvestorExpansionPath))
