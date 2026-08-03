@@ -20,7 +20,7 @@ function apiError(value: unknown): string {
 
 const fieldClass = "mt-2 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
 
-export function QuoteRecoveryLogin({ initialMode, inviteToken, initialEmail }: Props) {
+export default function QuoteRecoveryLogin({ initialMode, inviteToken, initialEmail }: Props) {
   const [mode, setMode] = useState<Mode>(initialMode)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -104,7 +104,7 @@ export function QuoteRecoveryLogin({ initialMode, inviteToken, initialEmail }: P
             {loading ? <LockKeyhole className="size-4 animate-pulse" /> : <ArrowRight className="size-4" />}{loading ? "処理中…" : mode === "login" ? "ログイン" : "アカウントを作成"}
           </button>
         </form>
-        <p className="mt-6 text-center text-xs leading-5 text-slate-500">登録により<Link className="underline" href="/ja/legal">利用規約</Link>と<Link className="underline" href="/ja/privacy">プライバシーポリシー</Link>に同意したものとみなします。</p>
+        <p className="mt-6 text-center text-xs leading-5 text-slate-500">登録により<Link className="underline" href="/ja/terms">利用規約</Link>と<Link className="underline" href="/ja/privacy">プライバシーポリシー</Link>に同意したものとみなします。</p>
       </section>
     </div>
   )

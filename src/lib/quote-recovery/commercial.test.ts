@@ -3,6 +3,8 @@ import { hashQuoteRecoveryPassword, verifyQuoteRecoveryPassword } from "./auth"
 import { quoteRecoveryJsonAllowed, quoteRecoveryMutationAllowed } from "./http"
 import { isQuoteRecoveryPlan, priceIdForPlan } from "./plans"
 import { quoteRecoveryMemberUpdateSchema, quoteRecoveryQuoteUpdateSchema, quoteRecoverySignupSchema } from "./commercial-schemas"
+import { escapeQuoteRecoveryEmailHtml } from "./email"
+import { isStandaloneRoute } from "@/components/aesop/standalone-routes"
 
 describe("Quote Recovery commercial security", () => {
   afterEach(() => {
@@ -46,5 +48,15 @@ describe("Quote Recovery commercial security", () => {
     expect(quoteRecoveryQuoteUpdateSchema.safeParse({ ownerName: null, nextActionDate: null, status: "draft" }).success).toBe(false)
     expect(quoteRecoveryMemberUpdateSchema.safeParse({ role: "admin" }).success).toBe(true)
     expect(quoteRecoveryMemberUpdateSchema.safeParse({ role: "owner" }).success).toBe(false)
+  })
+
+  it("isolates Quote Recovery routes from the marketing chrome", () => {
+    expect(isStandaloneRoute("/ja/quote-recovery")).toBe(true)
+    expect(isStandaloneRoute("/ja/quote-recovery/login")).toBe(true)
+    expect(isStandaloneRoute("/ja/services")).toBe(false)
+  })
+
+  it("escapes invitation email content", () => {
+    expect(escapeQuoteRecoveryEmailHtml(`<script>alert("x")</script>&'`)).toBe("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;&amp;&#39;")
   })
 })

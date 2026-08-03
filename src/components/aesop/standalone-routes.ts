@@ -6,6 +6,7 @@ export function isStandaloneRoute(pathname: string): boolean {
   if (/^\/[a-z]{2}\/d\//.test(pathname)) return true
   if (/^\/[a-z]{2}\/demo\//.test(pathname)) return true
   if (/^\/[a-z]{2}\/admin(\/|$)/.test(pathname)) return true
+  if (/^\/[a-z]{2}\/quote-recovery(\/|$)/.test(pathname)) return true
   if (/^\/p\//.test(pathname)) return true
   return false
 }

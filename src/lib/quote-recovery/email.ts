@@ -1,5 +1,9 @@
 type EmailResult = { ok: true; id: string } | { ok: false; error: string }
 
+export function escapeQuoteRecoveryEmailHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character)
+}
+
 export async function sendQuoteRecoveryEmail(input: { to: string; subject: string; html: string }): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim()
   const from = process.env.QUOTE_RECOVERY_FROM_EMAIL?.trim()
