@@ -85,49 +85,13 @@
         "padding_bottom": 36
       }
     },
-    "collapsible-content": {
-      "type": "collapsible-content",
-      "blocks": {
-        "collapsible-row-0": {
-          "type": "collapsible_row",
-          "settings": {
-            "icon": "none",
-            "row_content": "",
-            "page": ""
-          }
-        },
-        "collapsible-row-1": {
-          "type": "collapsible_row",
-          "settings": {
-            "icon": "none",
-            "row_content": "",
-            "page": ""
-          }
-        },
-        "collapsible-row-2": {
-          "type": "collapsible_row",
-          "settings": {
-            "icon": "none",
-            "row_content": "",
-            "page": ""
-          }
-        }
-      },
-      "block_order": [
-        "collapsible-row-0",
-        "collapsible-row-1",
-        "collapsible-row-2"
-      ],
+    "sericia-product-details": {
+      "type": "sericia-product-details",
       "settings": {
-        "caption": "",
-        "heading_size": "h1",
-        "heading_alignment": "center",
-        "layout": "section",
-        "color_scheme": "scheme-1",
-        "container_color_scheme": "scheme-1",
-        "open_first_collapsible_row": true,
-        "image_ratio": "adapt",
-        "desktop_layout": "image_second",
+        "heading": "Details, delivery & returns",
+        "show_sku": true,
+        "show_vendor": true,
+        "show_product_type": true,
         "padding_top": 36,
         "padding_bottom": 36
       }
@@ -160,7 +124,7 @@
   "order": [
     "main",
     "disclosures",
-    "collapsible-content",
+    "sericia-product-details",
     "related-products"
   ]
 }

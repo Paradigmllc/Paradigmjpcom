@@ -1,11 +1,36 @@
 [
   {
     "name": "theme_info",
-    "theme_name": "Rise",
-    "theme_version": "15.5.0",
-    "theme_author": "Shopify",
+    "theme_name": "SERICIA WoodMart OS2",
+    "theme_version": "1.0.0",
+    "theme_author": "Paradigm LLC",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
     "theme_support_url": "https://support.shopify.com/"
+  },
+  {
+    "name": "SERICIA release safety",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "sericia_preview_mode",
+        "label": "Show the pre-launch preview notice",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "sericia_search_indexing_ready",
+        "label": "Allow search engine indexing",
+        "info": "Enable only after products, policies, payments, and checkout verification are complete.",
+        "default": false
+      },
+      {
+        "type": "checkbox",
+        "id": "sericia_use_system_fonts",
+        "label": "Use fast system fonts",
+        "info": "Avoids a large webfont download while preserving the SERICIA typography scale.",
+        "default": true
+      }
+    ]
   },
   {
     "name": "t:settings_schema.logo.name",

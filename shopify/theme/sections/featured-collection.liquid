@@ -30,6 +30,22 @@
     padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
   }
 
+  .featured-collection-empty {
+    align-items: flex-start;
+    background: rgba(var(--color-foreground), 0.035);
+    border: 0.1rem solid rgba(var(--color-foreground), 0.12);
+    border-radius: var(--text-boxes-radius);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    grid-column: 1 / -1;
+    padding: clamp(2.4rem, 5vw, 5.6rem);
+  }
+
+  .featured-collection-empty > * {
+    margin: 0;
+  }
+
   @media screen and (min-width: 750px) {
     .section-{{ section.id }}-padding {
       padding-top: {{ section.settings.padding_top }}px;
@@ -134,7 +150,7 @@
               {%- assign skip_card_product_styles = true -%}
             {%- endfor -%}
           {% endpaginate %}
-        {%- else -%}
+        {%- elsif request.design_mode and section.settings.collection == blank -%}
           {%- for i in (1..section.settings.columns_desktop) -%}
             <li
               class="grid__item{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
@@ -162,6 +178,14 @@
               %}
             </li>
           {%- endfor -%}
+        {%- else -%}
+          <li class="featured-collection-empty grid__item">
+            <div role="status">
+              <p class="serica-eyebrow">Opening collection</p>
+              <h3 class="h2">Our first objects are being prepared.</h3>
+              <p>Each product will appear only after its availability, provenance, imagery, and international delivery details have been verified.</p>
+            </div>
+          </li>
         {%- endif -%}
       </ul>
       {%- if show_mobile_slider or show_desktop_slider -%}

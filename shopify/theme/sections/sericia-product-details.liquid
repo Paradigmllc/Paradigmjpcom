@@ -1,0 +1,148 @@
+{%- liquid
+  assign origin = product.metafields.sericia.country_of_origin.value
+  assign materials = product.metafields.sericia.materials_care
+  assign dimensions = product.metafields.sericia.dimensions.value
+  assign maker_story = product.metafields.sericia.maker_story
+  assign selected_variant = product.selected_or_first_available_variant
+  assign has_product_details = false
+  if origin != blank or dimensions != blank or section.settings.show_sku and selected_variant.sku != blank or section.settings.show_vendor and product.vendor != blank or section.settings.show_product_type and product.type != blank
+    assign has_product_details = true
+  endif
+-%}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+  .sericia-product-details__grid {
+    border-top: 0.1rem solid rgba(var(--color-foreground), 0.14);
+  }
+  .sericia-product-details details {
+    border-bottom: 0.1rem solid rgba(var(--color-foreground), 0.14);
+  }
+  .sericia-product-details summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    min-height: 6.4rem;
+    padding: 1.6rem 0;
+  }
+  .sericia-product-details summary:focus-visible {
+    outline: 0.2rem solid rgba(var(--color-foreground), 0.75);
+    outline-offset: 0.3rem;
+  }
+  .sericia-product-details summary .icon-caret {
+    height: 0.7rem;
+    transition: transform 180ms ease;
+    width: 1.2rem;
+  }
+  .sericia-product-details details[open] summary .icon-caret {
+    transform: rotate(180deg);
+  }
+  .sericia-product-details__content {
+    padding: 0 0 2.4rem;
+  }
+  .sericia-product-details__list {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+  }
+  .sericia-product-details__list div {
+    display: grid;
+    gap: 0.2rem;
+  }
+  .sericia-product-details__list dt {
+    color: rgba(var(--color-foreground), 0.64);
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sericia-product-details__list dd {
+    margin: 0;
+  }
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+    .sericia-product-details__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sericia-product-details summary .icon-caret {
+      transition: none;
+    }
+  }
+{%- endstyle -%}
+
+<section class="sericia-product-details section-{{ section.id }}-padding color-{{ section.settings.color_scheme }} gradient">
+  <div class="page-width">
+    {%- if section.settings.heading != blank -%}
+      <h2 class="h2">{{ section.settings.heading | escape }}</h2>
+    {%- endif -%}
+    <div class="sericia-product-details__grid">
+      {%- if has_product_details -%}
+        <details open>
+          <summary>
+            <span class="h4">Product details</span>
+            {{- 'icon-caret.svg' | inline_asset_content -}}
+          </summary>
+          <div class="sericia-product-details__content">
+            <dl class="sericia-product-details__list">
+              {%- if section.settings.show_vendor and product.vendor != blank -%}<div><dt>Maker / brand</dt><dd>{{ product.vendor | escape }}</dd></div>{%- endif -%}
+              {%- if section.settings.show_product_type and product.type != blank -%}<div><dt>Category</dt><dd>{{ product.type | escape }}</dd></div>{%- endif -%}
+              {%- if section.settings.show_sku and selected_variant.sku != blank -%}<div><dt>SKU</dt><dd>{{ selected_variant.sku | escape }}</dd></div>{%- endif -%}
+              {%- if origin != blank -%}<div><dt>Country of origin</dt><dd>{{ origin | escape }}</dd></div>{%- endif -%}
+              {%- if dimensions != blank -%}<div><dt>Dimensions</dt><dd>{{ dimensions | escape }}</dd></div>{%- endif -%}
+            </dl>
+          </div>
+        </details>
+      {%- endif -%}
+      {%- if materials != blank -%}
+        <details>
+          <summary><span class="h4">Materials & care</span>{{- 'icon-caret.svg' | inline_asset_content -}}</summary>
+          <div class="sericia-product-details__content rte">{{ materials | metafield_tag }}</div>
+        </details>
+      {%- endif -%}
+      {%- if maker_story != blank -%}
+        <details>
+          <summary><span class="h4">Maker story</span>{{- 'icon-caret.svg' | inline_asset_content -}}</summary>
+          <div class="sericia-product-details__content rte">{{ maker_story | metafield_tag }}</div>
+        </details>
+      {%- endif -%}
+      <details>
+        <summary><span class="h4">Shipping, duties & returns</span>{{- 'icon-caret.svg' | inline_asset_content -}}</summary>
+        <div class="sericia-product-details__content rte">
+          <p>Shipping options, cost, and the estimated delivery window are shown at checkout. International orders can be subject to import duties or local taxes determined by the destination.</p>
+          <p>
+            {%- if shop.shipping_policy.url != blank -%}<a href="{{ shop.shipping_policy.url }}">Shipping policy</a>{%- endif -%}
+            {%- if shop.shipping_policy.url != blank and shop.refund_policy.url != blank -%} · {%- endif -%}
+            {%- if shop.refund_policy.url != blank -%}<a href="{{ shop.refund_policy.url }}">Returns & refunds</a>{%- endif -%}
+          </p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "SERICIA product details",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Details, delivery & returns" },
+    { "type": "checkbox", "id": "show_sku", "label": "Show SKU", "default": true },
+    { "type": "checkbox", "id": "show_vendor", "label": "Show maker / brand", "default": true },
+    { "type": "checkbox", "id": "show_product_type", "label": "Show category", "default": true },
+    { "type": "color_scheme", "id": "color_scheme", "label": "Color scheme", "default": "scheme-1" },
+    { "type": "range", "id": "padding_top", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Top padding", "default": 36 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Bottom padding", "default": 36 }
+  ],
+  "presets": [{ "name": "SERICIA product details" }]
+}
+{% endschema %}
