@@ -49,7 +49,16 @@
                   alt: card_image.alt
               }}
             {%- else -%}
-              {{ 'collection-' | append: forloop.index | placeholder_svg_tag: 'placeholder-svg' }}
+              <div class="serica-category-card__fallback serica-category-card__fallback--{{ forloop.index }}" aria-hidden="true">
+                <span class="serica-category-card__monogram">
+                  {%- case forloop.index -%}
+                    {%- when 1 -%}器
+                    {%- when 2 -%}工
+                    {%- when 3 -%}暮
+                    {%- else -%}贈
+                  {%- endcase -%}
+                </span>
+              </div>
             {%- endif -%}
           </div>
           <div class="serica-category-card__content">

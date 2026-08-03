@@ -3,14 +3,14 @@
     "serica-hero": {
       "type": "serica-marketplace-hero",
       "settings": {
-        "eyebrow": "Independent Japan, delivered worldwide",
-        "heading": "Objects with a story.",
-        "text": "<p>Discover considered goods from independent Japanese makers, small studios, and local shops.</p>",
-        "primary_label": "Shop new arrivals",
+        "eyebrow": "Independent Japan · selected with context",
+        "heading": "A quieter side of Japan.",
+        "text": "<p>Considered craft and everyday design, selected in Japan and explained for life beyond it.</p>",
+        "primary_label": "Explore the collection",
         "primary_link": "shopify://collections/all",
-        "secondary_label": "Explore collections",
-        "secondary_link": "shopify://collections",
-        "note": "Tracked international delivery from Japan"
+        "secondary_label": "How we curate",
+        "secondary_link": "#our-curation",
+        "note": "Opening collection in preparation"
       }
     },
     "serica-promises": {
@@ -20,32 +20,32 @@
           "type": "promise",
           "settings": {
             "icon": "globe",
-            "heading": "Worldwide delivery",
-            "text": "Tracked shipping from Japan"
+            "heading": "Curated in Japan",
+            "text": "Independent craft and everyday design"
           }
         },
         "packed": {
           "type": "promise",
           "settings": {
             "icon": "box",
-            "heading": "Carefully packed",
-            "text": "Handled by our Japan team"
+            "heading": "Details first",
+            "text": "Materials, dimensions and care"
           }
         },
         "makers": {
           "type": "promise",
           "settings": {
             "icon": "heart",
-            "heading": "Independent makers",
-            "text": "Small-batch goods with a story"
+            "heading": "Provenance visible",
+            "text": "Maker, origin and process context"
           }
         },
         "secure": {
           "type": "promise",
           "settings": {
             "icon": "shield",
-            "heading": "Secure checkout",
-            "text": "Protected international payments"
+            "heading": "Built for abroad",
+            "text": "Clear context for global shoppers"
           }
         }
       },
@@ -92,9 +92,44 @@
       },
       "block_order": ["tableware", "craft", "living", "gifts"],
       "settings": {
-        "eyebrow": "Explore by mood",
-        "heading": "A quieter kind of marketplace.",
-        "text": "<p>Useful, beautiful pieces selected for the rituals of everyday life.</p>"
+        "eyebrow": "Browse the opening edit",
+        "heading": "Made for everyday rituals.",
+        "text": "<p>Four ways into the collection, from the table to the small objects that make thoughtful gifts.</p>"
+      }
+    },
+    "sericia-story": {
+      "type": "sericia-editorial-story",
+      "blocks": {
+        "origin": {
+          "type": "principle",
+          "settings": {
+            "heading": "Origin made visible",
+            "text": "Maker and place are part of the object, not an afterthought."
+          }
+        },
+        "details": {
+          "type": "principle",
+          "settings": {
+            "heading": "Details before release",
+            "text": "Materials, dimensions and care are checked before publication."
+          }
+        },
+        "context": {
+          "type": "principle",
+          "settings": {
+            "heading": "Context that travels",
+            "text": "Japanese everyday objects explained clearly for international life."
+          }
+        }
+      },
+      "block_order": ["origin", "details", "context"],
+      "settings": {
+        "eyebrow": "The SERICIA standard",
+        "heading": "We begin with the story behind the object.",
+        "text": "<p>SERICIA is being built for curious shoppers beyond Japan. Every published item must carry useful context about its maker, material, origin and care.</p>",
+        "principles_label": "Our curation principles",
+        "button_label": "Explore the opening collection",
+        "button_link": "shopify://collections/all"
       }
     },
     "all-products": {
@@ -125,5 +160,5 @@
       }
     }
   },
-  "order": ["serica-hero", "serica-promises", "serica-categories", "all-products"]
+  "order": ["serica-hero", "serica-promises", "serica-categories", "sericia-story", "all-products"]
 }

@@ -1,5 +1,16 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS - 2026-08-03 SERICIA WoodMart OS 2 storefront release
+
+- Replaced the previously published Rise-derived storefront presentation with a custom SERICIA WoodMart OS 2 implementation. The purchased WoodMart 1.4 archive was audited as a 2018 legacy theme with 302 Theme Check errors / 1,189 total offenses, so its commerce structure was ported onto the current Shopify OS 2 foundation instead of publishing broken legacy Liquid.
+- Implemented a responsive editorial hero, WoodMart-style category and product merchandising, service/value strip, verified-data-only product details, collection filtering/sorting/quick add, predictive search, cart drawer, locale/country selectors, editorial maker story, structured breadcrumbs, preview-mode status, and fail-closed `noindex,follow` release safety.
+- Added original SERICIA hero and maker-process imagery, optimized to 105 KB and 119 KB WebP respectively. Empty catalog states no longer render fake Shopify placeholder products; products appear only after the existing BASE and 14-point evidence gates pass.
+- Product sync now persists BASE source identity and Japan origin metafields. Focused Shopify sync/admin tests pass 9/9, repository TypeScript and targeted ESLint pass, theme JSON parses, and Shopify Theme Check passes all 175 files with zero offenses.
+- Password protection has been removed by the owner. Shopify theme `SERICIA WoodMart OS2 Production` (ID `144335896624`) is live; Rise and the former development theme remain unpublished rollback options. `https://sericia.com/`, `/collections/all`, `/search`, and `/cart` return HTTP 200 without a password redirect.
+- Live visual audits show the new responsive hero and navigation on desktop and mobile. Lighthouse after system-font, animation, favicon, metadata, and contrast fixes reports desktop 92 performance / 97 accessibility / CLS 0; mobile accessibility is 97 and CLS 0. Remaining Best Practices findings are Shopify-hosted Shop/third-party-cookie CSP findings, not theme-authored console code.
+- Commercial launch remains fail-closed because the real Shopify catalog is still 0. Real product detail, add-to-cart, payment, duties/shipping, and checkout E2E cannot be truthfully completed until verified BASE inventory and payment/shipping configuration exist. Search indexing remains disabled and the public preview banner states that products and checkout are not yet available.
+- ACTIVE HANDOFF: complete BASE Developers/OAuth connection and sync verified real inventory as DRAFT, finish the 14-point product evidence, configure Shopify Markets/payment/shipping/tax/returns, then execute desktop/mobile real-product checkout E2E. Only after every launch gate passes should preview mode and `noindex` be removed.
+
 ## CURRENT STATUS - 2026-08-03 Quote Recovery commercial completion
 
 - Rebuilt Quote Recovery as a dedicated standalone SaaS surface: product-specific header/footer, complete conversion LP, persistent pricing, product preview, workflow, spreadsheet comparison, security, FAQ, final CTA, responsive mobile layout, and Japanese metadata.

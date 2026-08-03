@@ -36,6 +36,12 @@ describe("BASE catalog normalization", () => {
     expect(input.productOptions[0].name).toBe("Variation")
     expect(input.variants[0].inventoryQuantities[0].quantity).toBe(2)
     expect(input.variants[0].inventoryItem.countryCodeOfOrigin).toBe("JP")
+    expect(input.metafields).toContainEqual({
+      namespace: "sericia",
+      key: "country_of_origin",
+      type: "single_line_text_field",
+      value: "Japan",
+    })
   })
 
   it("falls back to living when no stronger collection signal exists", () => {

@@ -1,0 +1,62 @@
+{%- liquid
+  assign breadcrumb_name = blank
+  assign breadcrumb_url = blank
+  assign breadcrumb_parent_name = blank
+  assign breadcrumb_parent_url = blank
+
+  case request.page_type
+    when 'product'
+      assign breadcrumb_name = product.title
+      assign breadcrumb_url = product.url
+      if collection != blank
+        assign breadcrumb_parent_name = collection.title
+        assign breadcrumb_parent_url = collection.url
+      endif
+    when 'collection'
+      assign breadcrumb_name = collection.title
+      assign breadcrumb_url = collection.url
+    when 'article'
+      assign breadcrumb_name = article.title
+      assign breadcrumb_url = article.url
+      assign breadcrumb_parent_name = blog.title
+      assign breadcrumb_parent_url = blog.url
+    when 'blog'
+      assign breadcrumb_name = blog.title
+      assign breadcrumb_url = blog.url
+    when 'page'
+      assign breadcrumb_name = page.title
+      assign breadcrumb_url = page.url
+  endcase
+-%}
+
+{%- if breadcrumb_name != blank -%}
+  {%- capture breadcrumb_items -%}
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": {{ shop.name | json }},
+      "item": {{ request.origin | append: routes.root_url | json }}
+    }
+    {%- if breadcrumb_parent_name != blank -%}
+      ,{
+        "@type": "ListItem",
+        "position": 2,
+        "name": {{ breadcrumb_parent_name | json }},
+        "item": {{ request.origin | append: breadcrumb_parent_url | json }}
+      }
+    {%- endif -%}
+    ,{
+      "@type": "ListItem",
+      "position": {% if breadcrumb_parent_name != blank %}3{% else %}2{% endif %},
+      "name": {{ breadcrumb_name | json }},
+      "item": {{ request.origin | append: breadcrumb_url | json }}
+    }
+  {%- endcapture -%}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{{ breadcrumb_items | strip }}]
+    }
+  </script>
+{%- endif -%}

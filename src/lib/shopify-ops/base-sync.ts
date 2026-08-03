@@ -148,6 +148,11 @@ export function buildShopifyProductSetInput(product: NormalizedBaseProduct, loca
     status: "DRAFT",
     collections: [collectionId],
     tags: ["BASE sync", `base-item-${product.baseItemId}`, product.collectionHandle],
+    metafields: [
+      { namespace: "sericia", key: "source", type: "single_line_text_field", value: "BASE" },
+      { namespace: "sericia", key: "source_item_id", type: "single_line_text_field", value: String(product.baseItemId) },
+      { namespace: "sericia", key: "country_of_origin", type: "single_line_text_field", value: "Japan" },
+    ],
     productOptions: [{ name: optionName, position: 1, values: product.variations.map((variation) => ({ name: variation.name })) }],
     files: product.images.map((originalSource, index) => ({
       originalSource,

@@ -8,9 +8,9 @@
  * ------------------------------------------------------------
  */
 {
-  "current": "Rise",
+  "current": "SERICIA WoodMart OS2",
   "presets": {
-    "Rise": {
+    "SERICIA WoodMart OS2": {
       "logo_width": 90,
       "color_schemes": {
         "scheme-1": {
@@ -77,7 +77,7 @@
       "spacing_sections": 0,
       "spacing_grid_horizontal": 8,
       "spacing_grid_vertical": 8,
-      "animations_reveal_on_scroll": true,
+      "animations_reveal_on_scroll": false,
       "animations_hover_elements": "none",
       "buttons_border_thickness": 1,
       "buttons_border_opacity": 100,
@@ -177,12 +177,15 @@
       "social_youtube_link": "",
       "social_vimeo_link": "",
       "predictive_search_enabled": true,
-      "predictive_search_show_vendor": false,
-      "predictive_search_show_price": false,
+      "predictive_search_show_vendor": true,
+      "predictive_search_show_price": true,
       "currency_code_enabled": true,
-      "cart_type": "notification",
+      "sericia_preview_mode": true,
+      "sericia_search_indexing_ready": false,
+      "sericia_use_system_fonts": true,
+      "cart_type": "drawer",
       "show_vendor": false,
-      "show_cart_note": false,
+      "show_cart_note": true,
       "cart_drawer_collection": "",
       "cart_color_scheme": "scheme-1",
       "sections": {
