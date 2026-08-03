@@ -85,6 +85,8 @@ describe("Greater Tokyo investor scenario content contract", () => {
     const entrypoint = fs.readFileSync(path.join(process.cwd(), "docker-entrypoint.sh"), "utf8")
     expect(runtime).toContain("scenario_count === 320")
     expect(runtime).toContain("unique_paragraphs === 2_560")
+    expect(runtime).toContain("jsonb_array_elements(sections.value -> 'paragraphs')")
+    expect(runtime).not.toContain("jsonb_array_elements(section.value -> 'paragraphs') AS paragraph")
     expect(runtime).toContain("row.force_rls === true")
     expect(runtime).toContain("row.anon_select === false")
     expect(dockerfile).toContain("scripts/apply-investor-scenario-runtime-migration.mjs")
