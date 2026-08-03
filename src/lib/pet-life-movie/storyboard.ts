@@ -25,17 +25,26 @@ export function buildFactualStoryboard(project: PetMovieProjectRow, assets: PetM
     ...project.memories.slice(0, 3).map((caption) => ({ caption, source: "memory" as const })),
     { caption: language.closing, source: "closing" as const },
   ]
-  const sceneCount = Math.max(5, Math.min(8, facts.length))
-  const scenes = Array.from({ length: sceneCount }, (_, index): PetMovieScene => {
-    const fact = facts[Math.min(index, facts.length - 1)]
-    const asset = assets[index % assets.length]
+  const sceneCount = Math.min(20, assets.length)
+  const selectedFacts = facts.length <= sceneCount
+    ? facts
+    : [...facts.slice(0, sceneCount - 1), facts[facts.length - 1]]
+  const factsByScene = new Map<number, (typeof facts)[number]>()
+  selectedFacts.forEach((fact, index) => {
+    const sceneIndex = selectedFacts.length === 1
+      ? 0
+      : Math.round(index * (sceneCount - 1) / (selectedFacts.length - 1))
+    factsByScene.set(sceneIndex, fact)
+  })
+  const scenes = assets.slice(0, sceneCount).map((asset, index): PetMovieScene => {
+    const fact = factsByScene.get(index)
     return {
       id: `scene-${index + 1}`,
       assetId: asset.id,
       durationSeconds: 2,
       motion: motions[index % motions.length],
-      caption: fact.caption,
-      source: fact.source,
+      caption: fact?.caption ?? "",
+      source: fact?.source ?? "visual",
     }
   })
   return {

@@ -180,7 +180,8 @@ def _source_fidelity_score_at(
     generated_path: Path,
     timestamp_seconds: float,
     *,
-    sample_size: int = 512,
+    sample_width: int,
+    sample_height: int,
 ) -> float:
     """Measure structural similarity at one generated-video timestamp."""
     completed = run_command(
@@ -196,11 +197,11 @@ def _source_fidelity_score_at(
             "-filter_complex",
             (
                 "[0:v]select='eq(n,0)',setpts=PTS-STARTPTS,"
-                f"scale={sample_size}:{sample_size}:force_original_aspect_ratio=increase,"
-                f"crop={sample_size}:{sample_size},format=yuv420p[reference];"
+                f"scale={sample_width}:{sample_height}:force_original_aspect_ratio=increase,"
+                f"crop={sample_width}:{sample_height},format=yuv420p[reference];"
                 "[1:v]select='eq(n,0)',setpts=PTS-STARTPTS,"
-                f"scale={sample_size}:{sample_size}:force_original_aspect_ratio=increase,"
-                f"crop={sample_size}:{sample_size},format=yuv420p[candidate];"
+                f"scale={sample_width}:{sample_height}:force_original_aspect_ratio=increase,"
+                f"crop={sample_width}:{sample_height},format=yuv420p[candidate];"
                 "[reference][candidate]ssim"
             ),
             "-frames:v",
@@ -224,6 +225,9 @@ def _normalized_luma_entropy_at(
     ffmpeg: str,
     media_path: Path,
     timestamp_seconds: float,
+    *,
+    sample_width: int,
+    sample_height: int,
 ) -> float:
     """Return normalized luma entropy for one frame (0=flat, 1=complex)."""
     command = [ffmpeg, "-hide_banner"]
@@ -234,7 +238,10 @@ def _normalized_luma_entropy_at(
             "-i",
             str(media_path),
             "-vf",
-            "format=yuv420p,entropy,metadata=print",
+            (
+                f"scale={sample_width}:{sample_height}:force_original_aspect_ratio=increase,"
+                f"crop={sample_width}:{sample_height},format=yuv420p,entropy,metadata=print"
+            ),
             "-frames:v",
             "1",
             "-f",
@@ -253,6 +260,20 @@ def _normalized_luma_entropy_at(
     if not 0 <= entropy <= 1:
         raise MediaError("Frame entropy is outside the valid range")
     return entropy
+
+
+def _fidelity_sample_dimensions(width: int, height: int, longest_side: int) -> tuple[int, int]:
+    if width <= 0 or height <= 0:
+        raise MediaError("Generated dimensions are unavailable for fidelity scoring")
+    if width >= height:
+        sample_width = longest_side
+        sample_height = max(2, round(longest_side * height / width))
+    else:
+        sample_height = longest_side
+        sample_width = max(2, round(longest_side * width / height))
+    # yuv420p requires even dimensions. Preserve the generated aspect ratio while
+    # matching the center crop used by the source-conditioned workflow.
+    return sample_width - sample_width % 2, sample_height - sample_height % 2
 
 
 def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
@@ -284,11 +305,23 @@ def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
             final_timestamp,
         }
     )
+    detail_width, detail_height = _fidelity_sample_dimensions(
+        probe.width,
+        probe.height,
+        512,
+    )
+    coarse_width, coarse_height = _fidelity_sample_dimensions(
+        probe.width,
+        probe.height,
+        32,
+    )
     opening_score = _source_fidelity_score_at(
         ffmpeg,
         source_path,
         generated_path,
         0.0,
+        sample_width=detail_width,
+        sample_height=detail_height,
     )
     coarse_scores = [
         _source_fidelity_score_at(
@@ -296,7 +329,8 @@ def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
             source_path,
             generated_path,
             timestamp,
-            sample_size=32,
+            sample_width=coarse_width,
+            sample_height=coarse_height,
         )
         for timestamp in timestamps
     ]
@@ -305,9 +339,21 @@ def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
     # callers can retain their reviewed source_fidelity_threshold.
     temporal_structure_score = min(1.0, min(coarse_scores) / 0.40)
 
-    source_entropy = _normalized_luma_entropy_at(ffmpeg, source_path, 0.0)
+    source_entropy = _normalized_luma_entropy_at(
+        ffmpeg,
+        source_path,
+        0.0,
+        sample_width=detail_width,
+        sample_height=detail_height,
+    )
     generated_entropies = [
-        _normalized_luma_entropy_at(ffmpeg, generated_path, timestamp)
+        _normalized_luma_entropy_at(
+            ffmpeg,
+            generated_path,
+            timestamp,
+            sample_width=detail_width,
+            sample_height=detail_height,
+        )
         for timestamp in timestamps
     ]
     minimum_generated_entropy = min(generated_entropies)

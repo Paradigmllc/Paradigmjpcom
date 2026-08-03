@@ -22,6 +22,8 @@ from .workspace import slugify
 
 router = APIRouter(prefix="/v1/pet-movie", tags=["pet-movie"])
 
+PET_MOVIE_MINIMUM_PHOTOS = {"mini": 10, "story": 18, "cinema": 18}
+
 
 class PetMovieInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -68,6 +70,17 @@ class PetMovieRenderRequest(BaseModel):
             raise ValueError("qaRenderId is only allowed for internal QA renders")
         if self.renderTier == "cinematic_gpu" and not self.aiMotionConsent:
             raise ValueError("AI motion consent is required for cinematic GPU renders")
+        minimum_photos = PET_MOVIE_MINIMUM_PHOTOS[self.plan]
+        input_asset_ids = {item.assetId for item in self.inputs}
+        storyboard_asset_ids = {scene.assetId for scene in self.storyboard.scenes}
+        if len(input_asset_ids) < minimum_photos:
+            raise ValueError(
+                f"{self.plan} requires at least {minimum_photos} distinct input photos"
+            )
+        if len(storyboard_asset_ids) < minimum_photos:
+            raise ValueError(
+                f"{self.plan} requires at least {minimum_photos} distinct storyboard photos"
+            )
         return self
 
 
@@ -165,6 +178,14 @@ def _pet_motion_prompt(scene: PetMovieScene, template_id: str) -> str:
     )
 
 
+def _distinct_asset_file_count(asset_paths: list[str]) -> int:
+    content_hashes: set[str] = set()
+    for asset_path in asset_paths:
+        with Path(asset_path).open("rb") as asset_file:
+            content_hashes.add(hashlib.file_digest(asset_file, "sha256").hexdigest())
+    return len(content_hashes)
+
+
 async def _download_assets(request: PetMovieRenderRequest, root: Path) -> dict[str, str]:
     target = root / "inbox" / "pet-movie-assets" / request.projectId
     target.mkdir(parents=True, exist_ok=True)
@@ -210,6 +231,17 @@ async def create_pet_movie_render(request: PetMovieRenderRequest) -> dict[str, o
     missing_asset_ids = sorted({scene.assetId for scene in request.storyboard.scenes} - set(assets))
     if missing_asset_ids:
         raise HTTPException(status_code=422, detail=f"Storyboard references unknown assets: {', '.join(missing_asset_ids)}")
+    minimum_photos = PET_MOVIE_MINIMUM_PHOTOS[request.plan]
+    if _distinct_asset_file_count(list(assets.values())) < minimum_photos:
+        for asset_path in assets.values():
+            Path(asset_path).unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"{request.plan} requires at least {minimum_photos} different photo files; "
+                "duplicate uploads cannot be used to stretch a paid film"
+            ),
+        )
     target_duration = 30.0 if request.plan == "mini" else 60.0
     scene_duration = target_duration / len(request.storyboard.scenes)
     deliverables = pet_movie_deliverables(request.plan, request.locale)

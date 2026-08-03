@@ -7,7 +7,11 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 import video_factory.pet_movie_api as pet_movie_api
-from video_factory.pet_movie_api import PET_MOVIE_VISUALS, PetMovieRenderRequest
+from video_factory.pet_movie_api import (
+    PET_MOVIE_VISUALS,
+    PetMovieRenderRequest,
+    _distinct_asset_file_count,
+)
 from video_factory.pet_movie_contract import (
     allowed_pet_movie_download_url,
     pet_movie_deliverables,
@@ -46,12 +50,13 @@ def render_payload() -> dict[str, object]:
             "title": "Mugiとの時間",
             "scenes": [
                 {
-                    "id": "scene-1",
-                    "assetId": "asset-1",
+                    "id": f"scene-{index}",
+                    "assetId": f"asset-{index}",
                     "durationSeconds": 2,
                     "motion": "slow_zoom",
                     "caption": "はじめて会った日",
                 }
+                for index in range(1, 19)
             ],
         },
         "inputs": [
@@ -59,9 +64,48 @@ def render_payload() -> dict[str, object]:
                 "assetId": f"asset-{index}",
                 "url": f"https://account.r2.cloudflarestorage.com/photo-{index}.jpg?sig=x",
             }
-            for index in range(1, 6)
+            for index in range(1, 19)
         ],
     }
+
+
+def test_paid_render_rejects_stretched_or_repeated_storyboards() -> None:
+    payload = render_payload()
+    payload["plan"] = "mini"
+    payload["inputs"] = payload["inputs"][:9]
+    payload["storyboard"] = {
+        "title": "Mugi",
+        "scenes": payload["storyboard"]["scenes"][:9],
+    }
+    with pytest.raises(ValidationError, match="at least 10 distinct input photos"):
+        PetMovieRenderRequest.model_validate(payload)
+
+    repeated = render_payload()
+    repeated["storyboard"] = {
+        "title": "Mugi",
+        "scenes": [
+            {
+                "id": f"scene-{index}",
+                "assetId": "asset-1",
+                "durationSeconds": 2,
+                "motion": "slow_zoom",
+                "caption": "Memory",
+            }
+            for index in range(1, 19)
+        ],
+    }
+    with pytest.raises(ValidationError, match="at least 18 distinct storyboard photos"):
+        PetMovieRenderRequest.model_validate(repeated)
+
+
+def test_distinct_asset_file_count_rejects_byte_identical_uploads(tmp_path) -> None:
+    first = tmp_path / "one.jpg"
+    duplicate = tmp_path / "duplicate.jpg"
+    different = tmp_path / "two.jpg"
+    first.write_bytes(b"same-photo")
+    duplicate.write_bytes(b"same-photo")
+    different.write_bytes(b"different-photo")
+    assert _distinct_asset_file_count([str(first), str(duplicate), str(different)]) == 2
 
 
 def test_internal_qa_mode_requires_its_audit_id() -> None:
