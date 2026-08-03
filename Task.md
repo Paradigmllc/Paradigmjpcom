@@ -8,6 +8,15 @@
 - HyperFrames 0.7.87 lint/validate/inspect/check are clean; a 720x1280 H.264/AAC 24fps fixture rendered successfully. Pet TypeScript checks, 38 targeted Vitest tests, Python Ruff/compile checks, Windows-safe cutover tests, ESLint, quality guard, and the full Next production build pass.
 - ACTIVE HANDOFF: merge and deploy this branch, apply the QA migration, bind `pet-memory-i2v` against the already-approved Wan 2.2 artifacts on the existing managed RTX 3090, keep checkout disabled until an actual pet-photo QA MP4 passes the fidelity gate and human review, then enable `PET_MOVIE_GPU_RENDER_ENABLED=true` and verify live paid readiness. No customer charge or delivery is authorized for QA.
 
+## CURRENT STATUS - 2026-08-03 SERICIA luxury storefront direction
+
+- Reworked the WoodMart OS 2 storefront from a craft-forward Japanese aesthetic into an international luxury concept-store direction using Noto Sans throughout, a black/ivory/champagne palette, restrained typography, sharp commerce controls, gallery-style category panels, and material-led editorial copy.
+- Replaced the pale craft hero with an original 2400x960 dark editorial still life featuring smoked glass, limestone, brushed metal, and charcoal textile. The generated asset is optimized to a 151 KB WebP and contains no logo, text, packaging, or fabricated product claim.
+- Removed Japanese monogram decoration and remaining encoding artifacts from custom sections. Updated the hero, service promises, category edit, editorial principles, announcement bar, preview banner, fallback metadata, and theme identity to `SERICIA WoodMart Luxe` 1.1.0.
+- Shopify Theme Check passes. `SERICIA WoodMart Luxe Production` (ID `144336257072`) is the live password-free theme; all former theme IDs hold the same luxury code as rollback protection. Live-render Lighthouse on mobile reports 81 performance, 97 accessibility, CLS 0, and 180 ms TBT; indexing remains intentionally disabled until the real catalog and checkout gates pass.
+- PRs #719, #721, and #722 are merged. Exact main `f263e3f3` deployed successfully through GitHub/Coolify run `30775094450`; routing and public runtime verification passed. Shopify still serves an older page-cache body on canonical `/`, `/collections/all`, and `/cart`, while the same live theme renders 1.1.0 immediately on cache-bypass URLs such as `https://sericia.com/?view=` and on uncached search routes.
+- ACTIVE HANDOFF: monitor Shopify's stale canonical page-cache expiration without reverting the live theme. Keep preview/noindex safety active while the real Shopify catalog remains 0 and BASE/payments/checkout evidence is unavailable; then complete real-product desktop/mobile checkout E2E before commercial release.
+
 ## CURRENT STATUS - 2026-08-03 SERICIA WoodMart OS 2 storefront release
 
 - Replaced the previously published Rise-derived storefront presentation with a custom SERICIA WoodMart OS 2 implementation. The purchased WoodMart 1.4 archive was audited as a 2018 legacy theme with 302 Theme Check errors / 1,189 total offenses, so its commerce structure was ported onto the current Shopify OS 2 foundation instead of publishing broken legacy Liquid.
@@ -26,7 +35,9 @@
 - Completed daily operations UX with pre-import CSV review, recognized-column and rejection summaries, searchable/filterable/sortable/paginated quote views, mobile cards, CSV export, quote owner/status/next-action editing, activity timeline, notification read state, and real invitation email delivery with escaped HTML.
 - Added authenticated tenant-scoped activity and notification APIs, invitation delivery auditing, regression tests, and native-fallback contract links. Existing tenant isolation, RLS, billing, plan limits, and audit controls remain intact.
 - Verification passed on the clean `codex/quote-recovery-v1-completion` worktree: `npm ci` (0 vulnerabilities), TypeScript, targeted ESLint with zero warnings, 13 unit tests, full 648-page Next.js production build, and 8/8 desktop/mobile Chromium/WebKit Quote Recovery E2E tests. Desktop and 390px full-page visual inspection passed.
-- ACTIVE HANDOFF: commit and push the branch, open/merge the PR after CI, release through the canonical production path, and verify the live LP/login/contract CTA plus authenticated API guards. A real paid Checkout remains authorization-bound and must not be completed with an unapproved card.
+- Production release completed through PR **#718** (main `b8dbb060`, included in deployed exact-main `9b660a4d`), GitHub run **30773696834**, and Coolify deployment **u5pqb9z5zm1vbrk3ixso633n**. The post-deploy release doctor passed.
+- Live HTTPS verification passed 8/8 desktop/mobile Chromium/WebKit checks: complete LP content, responsive layout, signup page without the former error boundary, and pricing CTA navigation. The new LP fingerprint and product shell are present; Checkout, activity, and notification endpoints reject unauthenticated requests with 401 after the origin guard.
+- ACTIVE HANDOFF: no remaining code or release task in this commercial-completion scope. Future launch operations are the planned dedicated domain change and, only with explicit payment authorization, one real paid Checkout-to-webhook-to-portal acceptance transaction; do not charge an unapproved card.
 
 ## CURRENT STATUS - 2026-08-03 Investor content uniqueness and depth
 
