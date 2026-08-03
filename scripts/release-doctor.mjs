@@ -484,6 +484,7 @@ function checkStaticReleaseRules() {
     ? fs.readFileSync(metroScenarioRuntimePath, "utf8")
     : ""
   const productionDockerfile = fs.existsSync("Dockerfile") ? fs.readFileSync("Dockerfile", "utf8") : ""
+  const productionDockerignore = fs.existsSync(".dockerignore") ? fs.readFileSync(".dockerignore", "utf8") : ""
   const productionEntrypoint = fs.existsSync("docker-entrypoint.sh")
     ? fs.readFileSync("docker-entrypoint.sh", "utf8")
     : ""
@@ -545,6 +546,8 @@ function checkStaticReleaseRules() {
     && metroScenarioRuntime.includes("row.anon_select === false")
     && productionDockerfile.includes("scripts/apply-investor-scenario-runtime-migration.mjs")
     && productionDockerfile.includes(path.basename(metroScenarioMigrationPath))
+    && productionDockerignore.includes("!scripts/apply-investor-scenario-runtime-migration.mjs")
+    && productionDockerignore.includes(`!supabase/migrations/${path.basename(metroScenarioMigrationPath)}`)
     && productionEntrypoint.includes("node /app/scripts/apply-investor-scenario-runtime-migration.mjs")
     && productionEntrypoint.indexOf("node /app/scripts/apply-investor-scenario-runtime-migration.mjs")
       < productionEntrypoint.lastIndexOf("start_video_factory")

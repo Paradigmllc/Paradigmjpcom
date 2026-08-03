@@ -80,6 +80,7 @@ describe("Greater Tokyo investor scenario content contract", () => {
   it("applies and verifies the scenario migration inside the production container before startup", () => {
     const runtime = fs.readFileSync(path.join(process.cwd(), "scripts/apply-investor-scenario-runtime-migration.mjs"), "utf8")
     const dockerfile = fs.readFileSync(path.join(process.cwd(), "Dockerfile"), "utf8")
+    const dockerignore = fs.readFileSync(path.join(process.cwd(), ".dockerignore"), "utf8")
     const entrypoint = fs.readFileSync(path.join(process.cwd(), "docker-entrypoint.sh"), "utf8")
     expect(runtime).toContain("scenario_count === 320")
     expect(runtime).toContain("unique_paragraphs === 2_560")
@@ -87,6 +88,8 @@ describe("Greater Tokyo investor scenario content contract", () => {
     expect(runtime).toContain("row.anon_select === false")
     expect(dockerfile).toContain("scripts/apply-investor-scenario-runtime-migration.mjs")
     expect(dockerfile).toContain("20260803013000_investor_metro_scenarios.sql")
+    expect(dockerignore).toContain("!scripts/apply-investor-scenario-runtime-migration.mjs")
+    expect(dockerignore).toContain("!supabase/migrations/20260803013000_investor_metro_scenarios.sql")
     expect(entrypoint.indexOf("node /app/scripts/apply-investor-scenario-runtime-migration.mjs"))
       .toBeLessThan(entrypoint.lastIndexOf("start_video_factory"))
   })
