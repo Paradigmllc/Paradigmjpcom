@@ -27,12 +27,11 @@ import subprocess
 import sys
 import tempfile
 import urllib.request
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Optional
 
 import yaml
-
 
 CF_IPS_URL = "https://api.cloudflare.com/client/v4/ips"
 CACHE_SCHEMA_VERSION = 1
@@ -46,7 +45,7 @@ DEMO_HOST = "demo.paradigmjp.com"
 
 def validate_cloudflare_ranges(ipv4: object, ipv6: object) -> tuple[list[str], list[str]]:
     if not isinstance(ipv4, list) or not isinstance(ipv6, list):
-        raise RuntimeError("Cloudflare IP range cache has an invalid shape")
+        raise TypeError("Cloudflare IP range cache has an invalid shape")
     if len(ipv4) < 10 or len(ipv6) < 5:
         raise RuntimeError("Cloudflare IP range set is unexpectedly incomplete")
     if any(not isinstance(value, str) for value in [*ipv4, *ipv6]):
@@ -107,11 +106,11 @@ def load_route_document(route_file: Path) -> tuple[str, dict]:
     config = yaml.safe_load(original_text)
     http = config.get("http") if isinstance(config, dict) else None
     if not isinstance(http, dict):
-        raise RuntimeError("Traefik HTTP configuration is missing")
+        raise TypeError("Traefik HTTP configuration is missing")
     if not isinstance(http.get("middlewares"), dict):
-        raise RuntimeError("Traefik middleware configuration is malformed")
+        raise TypeError("Traefik middleware configuration is malformed")
     if not isinstance(http.get("routers"), dict) or not isinstance(http.get("services"), dict):
-        raise RuntimeError("Traefik router/service configuration is malformed")
+        raise TypeError("Traefik router/service configuration is malformed")
     service = http["services"].get("paradigmhp-svc")
     servers = service.get("loadBalancer", {}).get("servers") if isinstance(service, dict) else None
     if not isinstance(servers, list) or len(servers) != 1 or not isinstance(servers[0], dict):
@@ -127,7 +126,7 @@ def atomic_write(
     text: str,
     *,
     mode: int,
-    owner: Optional[tuple[int, int]] = None,
+    owner: tuple[int, int] | None = None,
 ) -> None:
     if not path.parent.is_dir():
         raise RuntimeError("Atomic write parent directory does not exist")
@@ -138,17 +137,21 @@ def atomic_write(
             handle.flush()
             os.fsync(handle.fileno())
         os.chmod(temporary_name, mode)
-        if owner is not None:
+        if owner is not None and hasattr(os, "chown"):
             try:
                 os.chown(temporary_name, owner[0], owner[1])
             except PermissionError:
                 pass
         os.replace(temporary_name, path)
-        directory_fd = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        # POSIX supports fsync on a directory to durably persist the rename.
+        # Windows rejects opening a directory with os.open, while os.replace
+        # itself already provides the atomic swap used by local verification.
+        if os.name != "nt":
+            directory_fd = os.open(path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
     finally:
         if os.path.exists(temporary_name):
             os.unlink(temporary_name)
@@ -159,7 +162,7 @@ def write_ranges_cache(
     ipv4: list[str],
     ipv6: list[str],
     *,
-    prepared_at: Optional[datetime] = None,
+    prepared_at: datetime | None = None,
 ) -> None:
     normalized_ipv4, normalized_ipv6 = validate_cloudflare_ranges(ipv4, ipv6)
     timestamp = (prepared_at or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -181,12 +184,12 @@ def write_ranges_cache(
 def load_cached_ranges(
     cache_file: Path,
     *,
-    now: Optional[datetime] = None,
+    now: datetime | None = None,
 ) -> tuple[list[str], list[str]]:
     if not cache_file.is_file():
         raise RuntimeError("Prepared Cloudflare IP range cache not found")
     cache_mode = stat.S_IMODE(cache_file.stat().st_mode)
-    if cache_mode & 0o077:
+    if os.name != "nt" and cache_mode & 0o077:
         raise RuntimeError("Prepared Cloudflare IP range cache permissions are too broad")
     try:
         payload = json.loads(cache_file.read_text(encoding="utf-8"))
@@ -214,7 +217,7 @@ def prepare_cloudflare_cache(
     cache_file: Path,
     *,
     fetcher: Callable[[], tuple[list[str], list[str]]] = fetch_cloudflare_ranges,
-    now: Optional[datetime] = None,
+    now: datetime | None = None,
 ) -> dict:
     # The route must exist and parse before any release can be queued.
     load_route_document(route_file)
@@ -249,12 +252,29 @@ def discover_app_aliases(container_name: str) -> list[str]:
 def middleware_list(router: dict) -> list[str]:
     value = router.get("middlewares") or []
     if not isinstance(value, list):
-        raise RuntimeError("Router middleware list has an unexpected shape")
+        raise TypeError("Router middleware list has an unexpected shape")
     return [str(item) for item in value]
 
 
 def prepend_once(values: list[str], name: str) -> list[str]:
     return [name, *[item for item in values if item != name]]
+
+
+def verify_upstream_ready(new_ip: str) -> None:
+    request = urllib.request.Request(
+        f"http://{new_ip}:3000/api/ready",
+        headers={"User-Agent": "Paradigm-cutover-probe/1.0", "Cache-Control": "no-cache"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=3) as response:
+            payload = json.load(response)
+            status = getattr(response, "status", 200)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        raise RuntimeError("New upstream readiness probe failed") from error
+    if status < 200 or status >= 300 or not isinstance(payload, dict):
+        raise RuntimeError("New upstream readiness probe returned an invalid response")
+    if payload.get("ok") is not True or payload.get("status") != "ready":
+        raise RuntimeError("New upstream did not report ready")
 
 
 def apply_cached_origin_lock(
@@ -265,7 +285,8 @@ def apply_cached_origin_lock(
     new_ip: str,
     *,
     alias_discoverer: Callable[[str], list[str]] = discover_app_aliases,
-    now: Optional[datetime] = None,
+    readiness_validator: Callable[[str], None] = verify_upstream_ready,
+    now: datetime | None = None,
 ) -> dict:
     original_text, config = load_route_document(route_file)
     ipv4, ipv6 = load_cached_ranges(cache_file, now=now)
@@ -275,6 +296,9 @@ def apply_cached_origin_lock(
         ipaddress.ip_address(new_ip)
     except ValueError as error:
         raise RuntimeError("New upstream address is invalid") from error
+    # Fail before any route mutation. The old upstream remains live unless the
+    # replacement answers the exact application readiness contract.
+    readiness_validator(new_ip)
 
     http = config["http"]
     middlewares = http["middlewares"]
@@ -287,7 +311,7 @@ def apply_cached_origin_lock(
     http_router = routers.get("paradigmhp-http")
     https_router = routers.get("paradigmhp-https")
     if not isinstance(http_router, dict) or not isinstance(https_router, dict):
-        raise RuntimeError("Paradigm routers are missing")
+        raise TypeError("Paradigm routers are missing")
     if http_router.get("service") != "paradigmhp-svc" or https_router.get("service") != "paradigmhp-svc":
         raise RuntimeError("Paradigm router service target is unexpected")
 

@@ -46,12 +46,20 @@ const paymentCopy = {
   pt: "Método e momento do pagamento: cobrança única na confirmação do pedido com cartão de crédito ou débito disponível no Stripe.",
 } as const
 
+const productionCopy = {
+  ja: "有料本編：同意済み写真からGPUで短い自然動作を生成。顔立ち・毛並み・体型の一致基準を下回るショットは採用せず、制作担当がドラフトと最終版を確認します。",
+  en: "Paid film: subtle natural motion is GPU-generated from consented photos. Shots below the face, fur, and body-shape fidelity threshold are rejected before draft and final human review.",
+  es: "Película de pago: la GPU genera movimientos naturales sutiles a partir de fotos autorizadas. Se rechazan los planos que no conserven rostro, pelaje y forma corporal antes de dos revisiones humanas.",
+  pt: "Filme pago: a GPU gera movimentos naturais sutis a partir de fotos autorizadas. Cenas que não preservam rosto, pelagem e formato corporal são rejeitadas antes de duas revisões humanas.",
+} as const
+
 export default function PetMovieCommercialDetails({ locale }: { locale: Locale }) {
   const t = copy[locale]
   return (
     <section id="pricing" className="border-y border-paradigm-line bg-paradigm-paper-card py-20 md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <div className="mx-auto max-w-3xl text-center"><p className="text-xs font-semibold uppercase tracking-[.18em] text-paradigm-accent">{t.eyebrow}</p><h2 className="mt-4 font-display text-4xl tracking-tight md:text-6xl">{t.title}</h2><p className="mt-5 leading-7 text-paradigm-ink-soft">{t.lead}</p><p className="mt-3 text-sm font-medium text-paradigm-ink">{paymentCopy[locale]}</p></div>
+        <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-paradigm-accent/25 bg-paradigm-accent/5 p-5 text-sm leading-6 text-paradigm-ink-soft">{productionCopy[locale]}</div>
         <div className="mt-12 grid gap-5 md:grid-cols-3">{PET_MOVIE_PLANS.map((plan) => <article key={plan.id} className={`rounded-3xl border bg-paradigm-paper p-7 ${plan.id === "story" ? "border-paradigm-accent shadow-lg" : "border-paradigm-line"}`}><div className="flex items-start justify-between gap-4"><div><h3 className="font-display text-2xl">{plan.name}</h3><p className="mt-1 text-sm text-paradigm-ink-mute">{plan.durationSeconds} sec · {plan.formats.join(" + ")}</p></div><p className="text-3xl font-bold">${plan.priceUsd}</p></div><ul className="mt-7 space-y-3 text-sm text-paradigm-ink-soft"><li className="flex gap-2"><Check className="h-4 w-4 shrink-0 text-paradigm-accent" aria-hidden="true" />{t.oneTime}</li><li className="flex gap-2"><FileCheck2 className="h-4 w-4 shrink-0 text-paradigm-accent" aria-hidden="true" />{t.reviewed}</li><li className="flex gap-2"><LockKeyhole className="h-4 w-4 shrink-0 text-paradigm-accent" aria-hidden="true" />Private delivery</li></ul></article>)}</div>
         <div className="mt-8 grid gap-4 lg:grid-cols-3"><div className="rounded-2xl border border-paradigm-line p-5"><Clock3 className="mb-3 h-5 w-5 text-paradigm-accent" aria-hidden="true" /><p className="text-sm leading-6">{t.delivery}</p></div><div className="rounded-2xl border border-paradigm-line p-5"><LockKeyhole className="mb-3 h-5 w-5 text-paradigm-accent" aria-hidden="true" /><p className="text-sm leading-6">{t.privacy}</p></div><div className="rounded-2xl border border-paradigm-line p-5"><LifeBuoy className="mb-3 h-5 w-5 text-paradigm-accent" aria-hidden="true" /><p className="text-sm leading-6">{t.support}</p></div></div>
         <div className="mt-5 rounded-2xl bg-paradigm-paper-deep p-5 text-sm leading-6 text-paradigm-ink-soft"><ReceiptText className="mb-3 h-5 w-5 text-paradigm-accent" aria-hidden="true" />{t.remedy}</div>

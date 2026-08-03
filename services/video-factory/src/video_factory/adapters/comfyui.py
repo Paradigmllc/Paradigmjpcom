@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 import httpx
 
 from ..io import file_sha256
-from ..media import create_placeholder_clip, normalize_clip
+from ..media import MediaError, create_placeholder_clip, normalize_clip, source_fidelity_score
 from ..model_registry import assert_model_bindings_approved
 from ..models import Engine, EngineOutput, Shot
 from ..workflow_registry import (
@@ -73,6 +73,26 @@ def _rights_satisfied(contract: WorkflowContract, context: EngineContext) -> Non
         raise ComfyUIError(
             f"Workflow {contract.id} is blocked by missing rights: {', '.join(missing)}"
         )
+
+
+def upload_source_image(client: httpx.Client, shot: Shot) -> str:
+    source = next((Path(item) for item in shot.source_assets if Path(item).is_file()), None)
+    if source is None:
+        raise ComfyUIError(f"{shot.id} requires a readable source image")
+    upload_name = f"pet-life-movie-{uuid.uuid4().hex}{source.suffix.lower() or '.image'}"
+    with source.open("rb") as handle:
+        response = client.post(
+            "/upload/image",
+            files={"image": (upload_name, handle, "application/octet-stream")},
+            data={"type": "input", "overwrite": "false"},
+        )
+    response.raise_for_status()
+    payload = response.json()
+    saved_name = str(payload.get("name") or "").strip()
+    if not saved_name:
+        raise ComfyUIError("ComfyUI source upload returned no image name")
+    subfolder = str(payload.get("subfolder") or "").strip().strip("/")
+    return f"{subfolder}/{saved_name}" if subfolder else saved_name
 
 
 def _load_workflow(shot: Shot, context: EngineContext) -> tuple[Path, dict[str, Any], str]:
@@ -152,17 +172,6 @@ class ComfyUIAdapter(EngineAdapter):
             raise ComfyUIError("COMFYUI_API_KEY is required in production")
 
         workflow_path, workflow, workflow_id = _load_workflow(shot, context)
-        bindings = {
-            "prompt": shot.metadata.get("prompt", shot.body or shot.purpose),
-            "negative_prompt": shot.metadata.get(
-                "negative_prompt", "distorted text, logo mutation"
-            ),
-            "seed": int(shot.metadata.get("seed", 1)),
-            "width": context.deliverable.width,
-            "height": context.deliverable.height,
-            **dict(shot.metadata.get("comfyui_bindings", {})),
-        }
-        prompt = replace_placeholders(workflow, bindings)
         client_id = str(uuid.uuid4())
 
         timeout = httpx.Timeout(30.0, read=60.0)
@@ -171,6 +180,23 @@ class ComfyUIAdapter(EngineAdapter):
             timeout=timeout,
             headers=_headers(context.settings.comfyui_api_key),
         ) as client:
+            source_image = (
+                upload_source_image(client, shot)
+                if shot.metadata.get("comfyui_upload_source_image")
+                else None
+            )
+            bindings = {
+                "prompt": shot.metadata.get("prompt", shot.body or shot.purpose),
+                "negative_prompt": shot.metadata.get(
+                    "negative_prompt", "distorted text, logo mutation"
+                ),
+                "seed": int(shot.metadata.get("seed", 1)),
+                "width": context.deliverable.width,
+                "height": context.deliverable.height,
+                "source_image": source_image,
+                **dict(shot.metadata.get("comfyui_bindings", {})),
+            }
+            prompt = replace_placeholders(workflow, bindings)
             response = client.post("/prompt", json={"prompt": prompt, "client_id": client_id})
             response.raise_for_status()
             prompt_id = response.json()["prompt_id"]
@@ -216,7 +242,40 @@ class ComfyUIAdapter(EngineAdapter):
             width=context.deliverable.width,
             height=context.deliverable.height,
             fps=context.deliverable.fps,
+            loop_source=False,
         )
+        fidelity_threshold = float(shot.metadata.get("source_fidelity_threshold") or 0)
+        fidelity_score: float | None = None
+        fidelity_error: str | None = None
+        if fidelity_threshold > 0:
+            source = next(
+                (Path(item) for item in shot.source_assets if Path(item).is_file()),
+                None,
+            )
+            try:
+                if source is None:
+                    raise MediaError("source image is unavailable for fidelity scoring")
+                fidelity_score = source_fidelity_score(source, output)
+            except (MediaError, OSError, ValueError) as error:
+                fidelity_error = str(error)
+            if fidelity_score is None or fidelity_score < fidelity_threshold:
+                from .ffmpeg import FFmpegAdapter
+
+                fallback = FFmpegAdapter().run(shot, context)
+                fallback.provenance.update(
+                    {
+                        "gpu_workflow_id": workflow_id,
+                        "gpu_prompt_id": prompt_id,
+                        "source_fidelity_score": fidelity_score,
+                        "source_fidelity_threshold": fidelity_threshold,
+                        "source_fidelity_error": fidelity_error,
+                        "identity_safe_fallback": True,
+                    }
+                )
+                fallback.warnings.append(
+                    "Generated motion failed the source-fidelity gate; supplied-photo motion was used."
+                )
+                return fallback
         return EngineOutput(
             shot_id=shot.id,
             engine=Engine.COMFYUI,
@@ -228,6 +287,8 @@ class ComfyUIAdapter(EngineAdapter):
                 "prompt_id": prompt_id,
                 "workflow_id": workflow_id,
                 "workflow": str(workflow_path),
+                "source_fidelity_score": fidelity_score,
+                "source_fidelity_threshold": fidelity_threshold or None,
                 "workflow_sha256": file_sha256(workflow_path),
                 "source_output": item,
             },

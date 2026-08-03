@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       mood: input.mood,
       time_together: input.timeTogether,
       memories: input.memories,
+      ai_motion_consent_at: new Date().toISOString(),
     }).select("*").single()
     if (error) throw new Error(`Project creation failed: ${error.message}`)
     const project = data as PetMovieProjectRow

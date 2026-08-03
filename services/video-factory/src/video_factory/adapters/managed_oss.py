@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import base64
 import hashlib
+import mimetypes
 import time
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import httpx
@@ -45,15 +48,34 @@ class ManagedOssWorkerAdapter(EngineAdapter):
             / context.namespace
             / f"{shot.id}-{self.profile.id}-request.json"
         )
+        source_assets_payload: list[dict[str, str]] = []
         request_payload = {
-            "protocol_version": 1,
+            "protocol_version": 2,
             "profile_id": self.profile.id,
             "profile_revision": self.profile.revision,
             "shot": shot.model_dump(mode="json"),
             "deliverable": context.deliverable.model_dump(mode="json"),
             "brand": context.manifest.brand.model_dump(mode="json"),
             "rights": context.manifest.rights.model_dump(mode="json"),
+            "source_assets": source_assets_payload,
         }
+        total_source_bytes = 0
+        for raw_path in shot.source_assets:
+            source = Path(raw_path)
+            if not source.is_file():
+                raise RuntimeError("Managed GPU source asset is unavailable")
+            source_bytes = source.read_bytes()
+            total_source_bytes += len(source_bytes)
+            if len(source_bytes) > 20 * 1024 * 1024 or total_source_bytes > 60 * 1024 * 1024:
+                raise RuntimeError("Managed GPU source assets exceed the transfer limit")
+            source_assets_payload.append(
+                {
+                    "name": source.name,
+                    "content_type": mimetypes.guess_type(source.name)[0] or "application/octet-stream",
+                    "sha256": hashlib.sha256(source_bytes).hexdigest(),
+                    "data_base64": base64.b64encode(source_bytes).decode("ascii"),
+                }
+            )
         write_json(request_path, request_payload)
         temporary = output.with_suffix(output.suffix + ".part")
         digest = hashlib.sha256()

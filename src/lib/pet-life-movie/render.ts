@@ -5,6 +5,7 @@ import { siteBaseUrl } from "./http"
 import { buildPipelineManifest } from "./storyboard"
 import type { PetMovieProjectRow } from "./types"
 import { sendPetMovieEmail } from "./email"
+import { resolvePetMovieTemplate } from "./templates"
 
 function optionalEnv(name: string): string | null {
   const value = process.env[name]
@@ -83,6 +84,7 @@ export async function executePetMovieRenderJob(jobId: string, projectId: string)
   if (projectError) throw new Error(`Render project load failed: ${projectError.message}`)
   const project = projectData as PetMovieProjectRow
   if (!project.storyboard || project.payment_status !== "paid") throw new Error("Paid storyboard is required before rendering")
+  if (!project.ai_motion_consent_at) throw new Error("Recorded AI motion consent is required before GPU rendering")
   const videoFactoryBase = optionalEnv("VIDEO_FACTORY_INTERNAL_URL")?.replace(/\/+$/, "")
   const rendererUrl = videoFactoryBase
     ? `${videoFactoryBase}/v1/pet-movie/renders`
@@ -111,11 +113,15 @@ export async function executePetMovieRenderJob(jobId: string, projectId: string)
       ...(rendererSecret ? { "x-api-key": rendererSecret } : {}),
     },
     body: JSON.stringify({
+      mode: "customer_paid",
+      renderTier: "cinematic_gpu",
+      aiMotionConsent: true,
       jobId,
       projectId,
       plan: project.plan,
       locale: project.locale,
       storyboard: project.storyboard,
+      templateId: resolvePetMovieTemplate(project.storyboard.templateId).id,
       inputs: assets.map((asset, index) => ({ assetId: asset.id, url: inputs[index].downloadUrl })),
       pipeline: buildPipelineManifest(),
       safety: { factualOnly: true, voiceCloning: false, preservePetIdentity: true },

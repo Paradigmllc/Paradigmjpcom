@@ -6,6 +6,8 @@ import { Activity, ArrowUpRight, CheckCircle2, Clock3, Globe2, Pause, Play, Rock
 import { toast, Toaster } from "sonner"
 import { runPetMarketingSlotAction, updatePetMarketingCampaignAction, type PetGrowthActionResult } from "@/app/[locale]/admin/pet-life-movie-growth/actions"
 import type { PetMarketingDashboard, PetMarketingRun, PetMarketingSlot } from "@/lib/pet-life-movie/marketing/types"
+import type { PetMovieQaDashboard } from "@/lib/pet-life-movie/qa-render"
+import PetMovieQualityConsole from "./PetMovieQualityConsole"
 
 const slotLabels: Record<PetMarketingSlot, string> = {
   apac: "APAC · 09:15 JST",
@@ -44,7 +46,7 @@ function RunRow({ run }: { run: PetMarketingRun }) {
   )
 }
 
-export default function PetMovieGrowthConsole({ dashboard, initialError }: { dashboard: PetMarketingDashboard | null; initialError?: string }) {
+export default function PetMovieGrowthConsole({ dashboard, qaDashboard, initialError }: { dashboard: PetMarketingDashboard | null; qaDashboard: PetMovieQaDashboard | null; initialError?: string }) {
   const [pending, startTransition] = useTransition()
   const act = (action: (data: FormData) => Promise<PetGrowthActionResult>, data: FormData) => {
     startTransition(async () => {
@@ -82,6 +84,8 @@ export default function PetMovieGrowthConsole({ dashboard, initialError }: { das
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Project CVR</p><p className="mt-3 text-4xl font-black">{dashboard.funnel.projectConversionRate}%</p><p className="mt-2 text-xs text-zinc-500">LP閲覧から案件作成</p></div>
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Content queue</p><p className="mt-3 text-4xl font-black">{dashboard.posts.length}</p><p className="mt-2 text-xs text-zinc-500">最新120件</p></div>
         </section>
+
+        <PetMovieQualityConsole dashboard={qaDashboard} />
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
           <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-violet-600">Launch windows</p><h2 className="mt-2 text-2xl font-bold">世界を追いかける自動運転</h2></div><Globe2 className="h-8 w-8 text-violet-500" /></div><div className="mt-6 grid gap-3 sm:grid-cols-3">{Object.entries(slotLabels).map(([slot, label]) => <form key={slot} action={(data) => act(runPetMarketingSlotAction, data)} className="rounded-2xl bg-zinc-50 p-4"><input type="hidden" name="slot" value={slot} /><p className="text-sm font-bold">{label}</p><p className="mt-2 text-xs leading-5 text-zinc-500">投稿生成・予約・公開・再試行</p><button disabled={pending} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50"><Play className="h-3.5 w-3.5" />今すぐ実行</button></form>)}</div></div>

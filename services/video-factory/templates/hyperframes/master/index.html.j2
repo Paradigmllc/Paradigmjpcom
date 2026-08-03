@@ -7,33 +7,69 @@
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: {{ brand.primary_color }}; }
-    #stage { position: relative; width: {{ width }}px; height: {{ height }}px; background: {{ brand.primary_color }}; }
+    #stage { position: relative; width: {{ width }}px; height: {{ height }}px; overflow: hidden; isolation: isolate; background: {{ brand.primary_color }}; }
     video.clip { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: {{ brand.primary_color }}; }
+
+    .pet-scene { position: absolute; z-index: 2; inset: 0; overflow: hidden; isolation: isolate; background: transparent; pointer-events: none; }
+    .pet-backdrop, .pet-photo { position: absolute; inset: -3%; width: 106%; height: 106%; object-fit: cover; background: {{ brand.primary_color }}; }
+    .pet-backdrop { z-index: 0; filter: blur(54px) saturate(.78); opacity: .58; transform: scale(1.12); animation: backdrop-breathe var(--scene-duration) ease-in-out both; }
+    .pet-photo { z-index: 1; }
+    .pet-vignette { position: absolute; z-index: 2; inset: 0; background: linear-gradient(180deg, rgba(23,19,26,.08) 0%, rgba(23,19,26,0) 42%, rgba(23,19,26,.72) 100%); }
+    .pet-grain { position: absolute; z-index: 3; inset: -50%; opacity: .12; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E"); animation: grain-shift 1.6s steps(2,end) both; }
+    .pet-rule { position: absolute; z-index: 4; left: {{ brand.safe_margin_percent }}%; right: {{ brand.safe_margin_percent }}%; top: {{ brand.safe_margin_percent }}%; height: 3px; background: {{ brand.accent_color }}; transform-origin: left; animation: rule-draw .72s .18s cubic-bezier(.16,1,.3,1) both; }
+    .pet-index { position: absolute; z-index: 4; right: {{ brand.safe_margin_percent }}%; top: calc({{ brand.safe_margin_percent }}% + 24px); color: {{ brand.text_color }}; font: 700 clamp(18px,1.25vw,25px)/1 "IBM Plex Mono", monospace; letter-spacing: .16em; text-shadow: 0 2px 12px rgba(23,19,26,.6); animation: index-in .48s .28s cubic-bezier(.16,1,.3,1) both; }
+    .pet-caption { position: absolute; z-index: 5; left: {{ brand.safe_margin_percent }}%; right: {{ brand.safe_margin_percent }}%; bottom: max({{ brand.safe_margin_percent }}%, 86px); display: flex; align-items: flex-end; }
+    .vertical .pet-caption { bottom: max(14%, 188px); }
+    .pet-caption p { max-width: 88%; margin: 0; padding: .52em .7em .62em; color: #F7F1E8; background: rgba(23,19,26,.68); border: 2px solid rgba(247,241,232,.2); border-radius: .42em; box-shadow: 0 24px 70px rgba(23,19,26,.28); backdrop-filter: blur(16px); font: 700 clamp(38px,4.2vw,74px)/1.32 "BIZ UDPMincho", "Yu Mincho", serif; letter-spacing: -.025em; text-wrap: balance; text-shadow: 0 2px 12px rgba(0,0,0,.4); animation: caption-settle .82s .32s cubic-bezier(.16,1,.3,1) both; }
+    .pet-provenance { position: absolute; z-index: 5; left: {{ brand.safe_margin_percent }}%; bottom: calc({{ brand.safe_margin_percent }}% - 28px); color: rgba(247,241,232,.72); font: 700 clamp(15px,1vw,21px)/1 "IBM Plex Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+
+    .pet-scene { animation: focus-reveal var(--transition) cubic-bezier(.37,0,.2,1) both; }
+    .playful-scrapbook.pet-scene { animation-name: paper-reveal; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+    .cinematic-tribute.pet-scene { animation-name: light-leak-reveal; animation-timing-function: cubic-bezier(.37,0,.2,1); }
+    .playful-scrapbook.pet-photo { inset: 3.5%; width: 93%; height: 93%; border: clamp(10px,1.2vw,22px) solid #F7F1E8; transform: rotate(var(--tilt)); box-shadow: 0 36px 90px rgba(43,32,42,.28); }
+    .playful-scrapbook .pet-caption p { color: #2B202A; background: rgba(247,241,232,.92); border-color: {{ brand.accent_color }}; box-shadow: 10px 12px 0 {{ brand.accent_color }}; text-shadow: none; }
+    .warm-keepsake.pet-photo { inset: 2.8%; width: 94.4%; height: 94.4%; border: clamp(6px,.65vw,12px) solid rgba(247,241,232,.88); box-shadow: 0 28px 90px rgba(43,32,42,.24); }
+    .warm-keepsake .pet-caption p { background: rgba(43,32,42,.74); }
+    .cinematic-tribute.pet-photo { filter: saturate(.86) contrast(1.04); }
+    .cinematic-tribute .pet-vignette { background: radial-gradient(circle at 50% 42%, rgba(23,19,26,0) 22%, rgba(23,19,26,.2) 60%, rgba(23,19,26,.86) 100%); }
+    .cinematic-tribute .pet-rule { height: 2px; }
+
+    .motion-slow_zoom.pet-photo { animation: photo-push var(--scene-duration) linear both; }
+    .motion-pan_left.pet-photo { animation: photo-pan-left var(--scene-duration) ease-in-out both; }
+    .motion-pan_right.pet-photo { animation: photo-pan-right var(--scene-duration) ease-in-out both; }
+    .motion-parallax.pet-photo { animation: photo-drift var(--scene-duration) ease-in-out both; }
+    .pet-scene.final { animation-name: focus-reveal, final-resolve; animation-duration: var(--transition), var(--scene-duration); animation-timing-function: cubic-bezier(.37,0,.2,1), linear; }
+
+    @keyframes focus-reveal { from { opacity: 0; filter: blur(26px); transform: scale(1.035); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+    @keyframes paper-reveal { from { opacity: 0; clip-path: inset(7% 7% 88% 7% round 22px); transform: translateY(2.5%) rotate(-1.5deg); } to { opacity: 1; clip-path: inset(0 0 0 0 round 0); transform: none; } }
+    @keyframes light-leak-reveal { 0% { opacity: 0; filter: blur(34px) brightness(1.7); transform: scale(1.08); } 45% { opacity: 1; filter: blur(12px) brightness(1.25); } 100% { opacity: 1; filter: blur(0) brightness(1); transform: scale(1); } }
+    @keyframes photo-push { from { transform: scale(1.015); } to { transform: scale(1.09); } }
+    @keyframes photo-pan-left { from { transform: scale(1.1) translateX(2.5%); } to { transform: scale(1.1) translateX(-2.5%); } }
+    @keyframes photo-pan-right { from { transform: scale(1.1) translateX(-2.5%); } to { transform: scale(1.1) translateX(2.5%); } }
+    @keyframes photo-drift { from { transform: scale(1.06) rotate(-.25deg) translateY(1%); } to { transform: scale(1.095) rotate(.25deg) translateY(-1%); } }
+    @keyframes backdrop-breathe { from { transform: scale(1.12) translate(-.5%,.5%); } to { transform: scale(1.18) translate(.5%,-.5%); } }
+    @keyframes caption-settle { from { opacity: 0; transform: translateY(54px); letter-spacing: .01em; } to { opacity: 1; transform: none; letter-spacing: -.025em; } }
+    @keyframes index-in { from { opacity: 0; transform: translateX(36px); } to { opacity: 1; transform: none; } }
+    @keyframes rule-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes grain-shift { from { transform: translate(-2%,1%); } to { transform: translate(2%,-1%); } }
+    @keyframes final-resolve { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
   </style>
 </head>
 <body>
-  <div
-    id="stage"
-    data-composition-id="master-{{ language }}"
-    data-no-timeline
-    data-start="0"
-    data-duration="{{ total_duration }}"
-    data-width="{{ width }}"
-    data-height="{{ height }}"
-    data-fps="{{ fps }}"
-  >
+  <div id="stage" class="{% if height > width %}vertical{% else %}horizontal{% endif %}" data-composition-id="master-{{ language }}" data-no-timeline data-start="0" data-duration="{{ total_duration }}" data-width="{{ width }}" data-height="{{ height }}" data-fps="{{ fps }}">
     {% for clip in clips %}
-    <video
-      id="scene-{{ '%03d' | format(loop.index) }}"
-      class="clip"
-      data-start="{{ clip.start }}"
-      data-duration="{{ clip.duration }}"
-      data-track-index="0"
-      src="assets/{{ clip.filename }}"
-      {% if clip.has_audio %}data-has-audio="true"{% else %}muted{% endif %}
-      playsinline
-      preload="auto"
-    ></video>
+    {% if pet_template %}
+    <video id="backdrop-{{ '%03d' | format(loop.index) }}" class="pet-backdrop clip" data-start="{{ clip.start }}" data-duration="{{ clip.duration }}" data-track-index="{{ 200 + loop.index0 }}" style="--scene-duration: {{ clip.duration }}s;" src="assets/{{ clip.backdrop_filename }}" muted playsinline preload="auto"></video>
+    <video id="media-{{ '%03d' | format(loop.index) }}" class="pet-photo clip {{ pet_template }} motion-{{ clip.motion }}" data-start="{{ clip.start }}" data-duration="{{ clip.duration }}" data-track-index="{{ 100 + loop.index0 }}" style="--scene-duration: {{ clip.duration }}s; --tilt: {% if loop.index is even %}.7deg{% else %}-.7deg{% endif %};" src="assets/{{ clip.filename }}" {% if clip.has_audio %}data-has-audio="true"{% else %}muted{% endif %} playsinline preload="auto"></video>
+    <section id="scene-{{ '%03d' | format(loop.index) }}" class="pet-scene clip {{ pet_template }} motion-{{ clip.motion }}{% if loop.last %} final{% endif %}" data-start="{{ clip.start }}" data-duration="{{ clip.duration }}" data-track-index="{{ loop.index0 }}" style="--scene-duration: {{ clip.duration }}s; --transition: {{ transition_seconds }}s; --tilt: {% if loop.index is even %}.7deg{% else %}-.7deg{% endif %};">
+      <div class="pet-vignette"></div><div class="pet-grain"></div><div class="pet-rule"></div>
+      <div class="pet-index" data-layout-allow-occlusion data-layout-allow-overlap>{{ '%02d' | format(loop.index) }} / {{ '%02d' | format(clips | length) }}</div>
+      <div class="pet-caption"><p data-layout-allow-occlusion data-layout-allow-overlap>{{ clip.caption }}</p></div>
+      {% if loop.last %}<div class="pet-provenance">Pet Life Movie · factual memories</div>{% endif %}
+    </section>
+    {% else %}
+    <video id="scene-{{ '%03d' | format(loop.index) }}" class="clip" data-start="{{ clip.start }}" data-duration="{{ clip.duration }}" data-track-index="0" src="assets/{{ clip.filename }}" {% if clip.has_audio %}data-has-audio="true"{% else %}muted{% endif %} playsinline preload="auto"></video>
+    {% endif %}
     {% endfor %}
   </div>
 </body>

@@ -66,17 +66,29 @@ const studioQaSchema = z.object({
   qa: z.object({ passed: z.boolean() }).passthrough(),
 }).strict()
 
-const studioDeliveredSchema = z.object({
+const studioDeliveredItemsSchema = z.array(z.object({
+  name: z.string().regex(/^[a-z0-9][a-z0-9-]{1,79}$/),
+  artifact_path: z.string().regex(/^deliverables\/[a-z0-9][a-z0-9.-]{1,100}$/),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/),
+  size_bytes: z.number().int().positive().max(250 * 1024 * 1024),
+}).strict()).min(1).max(3)
+
+const studioCustomerDeliveredSchema = z.object({
+  pet_movie_mode: z.literal("customer_paid").optional(),
   pet_movie_project_id: z.string().uuid(),
   pet_movie_job_id: z.string().uuid(),
   reviewer: z.string().trim().min(1).max(200),
-  items: z.array(z.object({
-    name: z.string().regex(/^[a-z0-9][a-z0-9-]{1,79}$/),
-    artifact_path: z.string().regex(/^deliverables\/[a-z0-9][a-z0-9.-]{1,100}$/),
-    sha256: z.string().regex(/^[a-f0-9]{64}$/),
-    size_bytes: z.number().int().positive().max(250 * 1024 * 1024),
-  }).strict()).min(1).max(3),
+  items: studioDeliveredItemsSchema,
 }).strict()
+
+const studioQaDeliveredSchema = z.object({
+  pet_movie_mode: z.literal("internal_qa"),
+  pet_movie_qa_render_id: z.string().uuid(),
+  reviewer: z.string().trim().min(1).max(200),
+  items: studioDeliveredItemsSchema,
+}).strict()
+
+const studioDeliveredSchema = z.union([studioCustomerDeliveredSchema, studioQaDeliveredSchema])
 
 function internalApiKey(): string | null {
   const value = process.env.VIDEO_FACTORY_INTERNAL_API_KEY
@@ -218,19 +230,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           .eq("project_id", parsed.project_id)
         databaseError = result.error
         if (!databaseError) {
-          const { ingestPetMovieDelivery } = await import("@/lib/pet-life-movie/delivery")
-          await ingestPetMovieDelivery({
-            rendererProjectId: parsed.project_id,
-            projectId: payload.pet_movie_project_id,
-            jobId: payload.pet_movie_job_id,
-            reviewer: payload.reviewer,
-            items: payload.items.map((item) => ({
-              name: item.name,
-              artifactPath: item.artifact_path,
-              sha256: item.sha256,
-              sizeBytes: item.size_bytes,
-            })),
-          })
+          const items = payload.items.map((item) => ({
+            name: item.name,
+            artifactPath: item.artifact_path,
+            sha256: item.sha256,
+            sizeBytes: item.size_bytes,
+          }))
+          if (payload.pet_movie_mode === "internal_qa") {
+            const { ingestPetMovieQaDelivery } = await import("@/lib/pet-life-movie/qa-render")
+            await ingestPetMovieQaDelivery({
+              rendererProjectId: parsed.project_id,
+              qaRenderId: payload.pet_movie_qa_render_id,
+              reviewer: payload.reviewer,
+              items,
+            })
+          } else {
+            const { ingestPetMovieDelivery } = await import("@/lib/pet-life-movie/delivery")
+            await ingestPetMovieDelivery({
+              rendererProjectId: parsed.project_id,
+              projectId: payload.pet_movie_project_id,
+              jobId: payload.pet_movie_job_id,
+              reviewer: payload.reviewer,
+              items,
+            })
+          }
         }
       }
     } catch (error) {

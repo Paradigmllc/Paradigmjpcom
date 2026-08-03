@@ -155,7 +155,7 @@ function checkStaticReleaseRules() {
     : ""
   const prepareCall = noLoginDeploy.lastIndexOf("prepareManualTraefikOriginLock()")
   const deployCall = noLoginDeploy.indexOf("const uuid = await triggerDeploy()")
-  const applyCall = noLoginDeploy.lastIndexOf("refreshManualTraefikRoute()")
+  const applyCall = noLoginDeploy.lastIndexOf("watchAndRefreshManualTraefikRoute()")
   if (
     prepareCall >= 0 &&
     deployCall > prepareCall &&
@@ -166,6 +166,15 @@ function checkStaticReleaseRules() {
     pass("deploy validates and caches Cloudflare CIDRs before replacing the app container")
   } else {
     fail("deploy must prepare Cloudflare CIDRs before deploy and atomically apply them afterward")
+  }
+  if (
+    noLoginDeploy.includes("$health\" = 'healthy'") &&
+    noLoginDeploy.includes("http://$ip:3000/api/ready") &&
+    noLoginDeploy.includes("Promise.all([waitDeploy(uuid), cutover.promise])")
+  ) {
+    pass("deploy promotes the new upstream concurrently only after container and app readiness")
+  } else {
+    fail("deploy must watch and promote a directly verified healthy upstream during cutover")
   }
   const applyHelperBody = originLockHelper.match(
     /def apply_cached_origin_lock\([\s\S]*?(?:\r?\n){2,}def main\(/,

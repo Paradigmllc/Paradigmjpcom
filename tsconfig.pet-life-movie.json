@@ -13,6 +13,8 @@
     "src/components/pet-life-movie/**/*.tsx",
     "src/app/api/pet-life-movie/**/*.ts",
     "src/app/[locale]/pet-life-movie/**/*.tsx",
+    "src/app/[locale]/admin/pet-life-movie-growth/**/*.ts",
+    "src/app/[locale]/admin/pet-life-movie-growth/**/*.tsx",
     "src/app/api/stripe/webhook/route.ts",
     "src/lib/sales/r2-storage.ts"
   ],

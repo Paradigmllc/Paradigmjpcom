@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-08-03 Pet Life Movie source-conditioned GPU quality
+
+- User quality review correctly identified that the prior free preview and paid renderer were editorial photo motion rather than source-conditioned GPU video. Paid delivery now fails closed unless `pet-memory-i2v` is an exact `approved_bound` ComfyUI workflow; a missing/unready workflow can no longer silently sell a slideshow.
+- Added consented source-image upload to the managed Wan 2.2 GPU, deterministic micro-motion prompts, source-vs-first-frame SSIM gate, per-shot identity-safe fallback with provenance, 97-frame non-looping motion, and two mandatory human approval gates. Free preview and paid-film differences are now explicit on the LP and order UI.
+- Added three distinct editorial systems (`warm-keepsake`, `playful-scrapbook`, `cinematic-tribute`), orientation-safe captions, overlapped transitions, layered photo treatment, QA-only render persistence/API/admin console, and isolated QA event ingestion that cannot mutate payment/delivery/email state.
+- HyperFrames 0.7.87 lint/validate/inspect/check are clean; a 720x1280 H.264/AAC 24fps fixture rendered successfully. Pet TypeScript checks, 38 targeted Vitest tests, Python Ruff/compile checks, Windows-safe cutover tests, ESLint, quality guard, and the full Next production build pass.
+- ACTIVE HANDOFF: merge and deploy this branch, apply the QA migration, bind `pet-memory-i2v` against the already-approved Wan 2.2 artifacts on the existing managed RTX 3090, keep checkout disabled until an actual pet-photo QA MP4 passes the fidelity gate and human review, then enable `PET_MOVIE_GPU_RENDER_ENABLED=true` and verify live paid readiness. No customer charge or delivery is authorized for QA.
+
 ## CURRENT STATUS - 2026-08-03 SERICIA WoodMart OS 2 storefront release
 
 - Replaced the previously published Rise-derived storefront presentation with a custom SERICIA WoodMart OS 2 implementation. The purchased WoodMart 1.4 archive was audited as a 2018 legacy theme with 302 Theme Check errors / 1,189 total offenses, so its commerce structure was ported onto the current Shopify OS 2 foundation instead of publishing broken legacy Liquid.

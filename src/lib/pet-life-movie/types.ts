@@ -19,6 +19,7 @@ export type PetOccasion = "life" | "birthday" | "adoption" | "growth" | "memoria
 export type PetMovieLocale = "ja" | "en" | "es" | "pt"
 export type PetMovieMood = "warm" | "playful" | "cinematic" | "gentle"
 export type PetMoviePlan = "mini" | "story" | "cinema"
+export type PetMovieQaStatus = "queued" | "rendering" | "review_required" | "delivered" | "failed" | "cancelled"
 
 export interface PetMovieProjectRow {
   id: string
@@ -40,6 +41,7 @@ export interface PetMovieProjectRow {
   customer_email: string | null
   paid_at: string | null
   refunded_at: string | null
+  ai_motion_consent_at: string | null
   terms_version: string | null
   terms_accepted_at: string | null
   deleted_at: string | null
@@ -63,6 +65,26 @@ export interface PetMovieDeliverableRow {
   size_bytes: number
   sha256: string
   created_at: string
+}
+
+export interface PetMovieQaRenderRow {
+  id: string
+  project_id: string
+  template_id: import("./templates").PetMovieTemplateId
+  status: PetMovieQaStatus
+  renderer_project_id: string | null
+  renderer_run_id: string | null
+  output_object_key: string | null
+  output_name: string | null
+  mime_type: "video/mp4" | null
+  size_bytes: number | null
+  sha256: string | null
+  reviewer: string | null
+  error_message: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface PetMovieAssetRow {
@@ -91,9 +113,10 @@ export interface PetMovieScene {
 }
 
 export interface PetMovieStoryboard {
-  version: 1
+  version: 1 | 2
   locale: PetMovieLocale
   title: string
+  templateId?: import("./templates").PetMovieTemplateId
   factualOnly: true
   durationSeconds: number
   scenes: PetMovieScene[]

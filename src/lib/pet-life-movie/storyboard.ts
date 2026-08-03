@@ -5,6 +5,7 @@ import type {
   PetMovieScene,
   PetMovieStoryboard,
 } from "./types"
+import { templateForMood } from "./templates"
 
 const copy = {
   ja: { title: (name: string) => `${name}との大切な時間`, opening: (name: string) => `${name}と出会えたこと`, closing: "ずっと、たいせつな家族。" },
@@ -38,9 +39,10 @@ export function buildFactualStoryboard(project: PetMovieProjectRow, assets: PetM
     }
   })
   return {
-    version: 1,
+    version: 2,
     locale: project.locale,
     title: language.title(project.pet_name),
+    templateId: templateForMood(project.mood),
     factualOnly: true,
     durationSeconds: scenes.reduce((total, scene) => total + scene.durationSeconds, 0),
     scenes,
