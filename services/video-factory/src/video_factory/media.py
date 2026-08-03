@@ -179,6 +179,8 @@ def _source_fidelity_score_at(
     source_path: Path,
     generated_path: Path,
     timestamp_seconds: float,
+    *,
+    sample_size: int = 512,
 ) -> float:
     """Measure structural similarity at one generated-video timestamp."""
     completed = run_command(
@@ -194,11 +196,11 @@ def _source_fidelity_score_at(
             "-filter_complex",
             (
                 "[0:v]select='eq(n,0)',setpts=PTS-STARTPTS,"
-                "scale=512:512:force_original_aspect_ratio=increase,"
-                "crop=512:512,format=yuv420p[reference];"
+                f"scale={sample_size}:{sample_size}:force_original_aspect_ratio=increase,"
+                f"crop={sample_size}:{sample_size},format=yuv420p[reference];"
                 "[1:v]select='eq(n,0)',setpts=PTS-STARTPTS,"
-                "scale=512:512:force_original_aspect_ratio=increase,"
-                "crop=512:512,format=yuv420p[candidate];"
+                f"scale={sample_size}:{sample_size}:force_original_aspect_ratio=increase,"
+                f"crop={sample_size}:{sample_size},format=yuv420p[candidate];"
                 "[reference][candidate]ssim"
             ),
             "-frames:v",
@@ -218,14 +220,50 @@ def _source_fidelity_score_at(
     return score
 
 
-def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
-    """Return the worst structural match across the generated clip.
+def _normalized_luma_entropy_at(
+    ffmpeg: str,
+    media_path: Path,
+    timestamp_seconds: float,
+) -> float:
+    """Return normalized luma entropy for one frame (0=flat, 1=complex)."""
+    command = [ffmpeg, "-hide_banner"]
+    if timestamp_seconds > 0:
+        command.extend(["-ss", f"{timestamp_seconds:.6f}"])
+    command.extend(
+        [
+            "-i",
+            str(media_path),
+            "-vf",
+            "format=yuv420p,entropy,metadata=print",
+            "-frames:v",
+            "1",
+            "-f",
+            "null",
+            "-",
+        ]
+    )
+    completed = run_command(command, timeout=180)
+    match = re.search(
+        r"lavfi\.entropy\.normalized_entropy\.normal\.Y=([0-9]+(?:\.[0-9]+)?)",
+        completed.stderr,
+    )
+    if not match:
+        raise MediaError("FFmpeg did not report normalized frame entropy")
+    entropy = float(match.group(1))
+    if not 0 <= entropy <= 1:
+        raise MediaError("Frame entropy is outside the valid range")
+    return entropy
 
-    This is a conservative structural guard, not a claim of biometric identity.
-    Sampling the opening, quarter points and final frame prevents an output that
-    starts correctly but later loses the supplied subject from passing the gate.
-    Low-scoring shots fall back to the supplied-photo edit and still require
-    human review.
+
+def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
+    """Return a motion-aware source-fidelity score for a generated clip.
+
+    The opening frame must retain the supplied image at full structural detail.
+    Later samples are compared at low spatial frequency so legitimate breathing,
+    blinking and small head motion remain possible, while entropy preservation
+    rejects the flat-color collapse observed in the production GPU canary. This
+    remains a conservative technical guard, not a biometric identity claim; every
+    paid render still requires human review.
     """
     ffmpeg = _require("ffmpeg")
     source_path = Path(source)
@@ -246,16 +284,45 @@ def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
             final_timestamp,
         }
     )
-    scores = [
+    opening_score = _source_fidelity_score_at(
+        ffmpeg,
+        source_path,
+        generated_path,
+        0.0,
+    )
+    coarse_scores = [
         _source_fidelity_score_at(
             ffmpeg,
             source_path,
             generated_path,
             timestamp,
+            sample_size=32,
         )
         for timestamp in timestamps
     ]
-    return min(scores)
+    # A coarse SSIM of 0.40 preserves the scene's major spatial layout while
+    # allowing real subject motion. Normalize it into the existing 0..1 gate so
+    # callers can retain their reviewed source_fidelity_threshold.
+    temporal_structure_score = min(1.0, min(coarse_scores) / 0.40)
+
+    source_entropy = _normalized_luma_entropy_at(ffmpeg, source_path, 0.0)
+    generated_entropies = [
+        _normalized_luma_entropy_at(ffmpeg, generated_path, timestamp)
+        for timestamp in timestamps
+    ]
+    minimum_generated_entropy = min(generated_entropies)
+    if source_entropy < 0.25:
+        # Low-detail source images are valid. Do not demand texture they never
+        # had, but still reject a material entropy loss beyond encoding noise.
+        entropy_score = (
+            1.0
+            if minimum_generated_entropy + 0.05 >= source_entropy
+            else minimum_generated_entropy / max(source_entropy, 0.05)
+        )
+    else:
+        entropy_score = min(1.0, minimum_generated_entropy / source_entropy)
+
+    return min(opening_score, temporal_structure_score, entropy_score)
 
 
 def assemble_clips(
