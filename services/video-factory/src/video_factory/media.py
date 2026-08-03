@@ -174,31 +174,30 @@ def normalize_clip(
     return target
 
 
-def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
-    """Compare the source image with the generated clip's first frame.
-
-    This is a conservative structural guard, not a claim of biometric identity.
-    It catches changed markings, framing collapses and unrelated outputs before
-    creative review; low-scoring shots fall back to the supplied-photo edit.
-    """
-    ffmpeg = _require("ffmpeg")
-    source_path = Path(source)
-    generated_path = Path(generated)
-    if not source_path.is_file() or not generated_path.is_file():
-        raise MediaError("Source fidelity inputs do not exist")
+def _source_fidelity_score_at(
+    ffmpeg: str,
+    source_path: Path,
+    generated_path: Path,
+    timestamp_seconds: float,
+) -> float:
+    """Measure structural similarity at one generated-video timestamp."""
     completed = run_command(
         [
             ffmpeg,
             "-hide_banner",
             "-i",
             str(source_path),
+            "-ss",
+            f"{timestamp_seconds:.6f}",
             "-i",
             str(generated_path),
             "-filter_complex",
             (
-                "[0:v]scale=512:512:force_original_aspect_ratio=increase,"
+                "[0:v]select='eq(n,0)',setpts=PTS-STARTPTS,"
+                "scale=512:512:force_original_aspect_ratio=increase,"
                 "crop=512:512,format=yuv420p[reference];"
-                "[1:v]select='eq(n,0)',scale=512:512:force_original_aspect_ratio=increase,"
+                "[1:v]select='eq(n,0)',setpts=PTS-STARTPTS,"
+                "scale=512:512:force_original_aspect_ratio=increase,"
                 "crop=512:512,format=yuv420p[candidate];"
                 "[reference][candidate]ssim"
             ),
@@ -217,6 +216,46 @@ def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
     if not 0 <= score <= 1:
         raise MediaError("Source fidelity score is outside the valid range")
     return score
+
+
+def source_fidelity_score(source: str | Path, generated: str | Path) -> float:
+    """Return the worst structural match across the generated clip.
+
+    This is a conservative structural guard, not a claim of biometric identity.
+    Sampling the opening, quarter points and final frame prevents an output that
+    starts correctly but later loses the supplied subject from passing the gate.
+    Low-scoring shots fall back to the supplied-photo edit and still require
+    human review.
+    """
+    ffmpeg = _require("ffmpeg")
+    source_path = Path(source)
+    generated_path = Path(generated)
+    if not source_path.is_file() or not generated_path.is_file():
+        raise MediaError("Source fidelity inputs do not exist")
+    probe = probe_media(generated_path)
+    if probe.duration_seconds <= 0:
+        raise MediaError("Generated clip duration is unavailable for fidelity scoring")
+    final_frame_offset = 1 / probe.fps if probe.fps > 0 else 0.04
+    final_timestamp = max(0.0, probe.duration_seconds - final_frame_offset)
+    timestamps = sorted(
+        {
+            0.0,
+            probe.duration_seconds * 0.25,
+            probe.duration_seconds * 0.5,
+            probe.duration_seconds * 0.75,
+            final_timestamp,
+        }
+    )
+    scores = [
+        _source_fidelity_score_at(
+            ffmpeg,
+            source_path,
+            generated_path,
+            timestamp,
+        )
+        for timestamp in timestamps
+    ]
+    return min(scores)
 
 
 def assemble_clips(

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import fcntl
 import json
 import os
 import threading
+import time
 import uuid
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,7 +21,7 @@ from .vast import vast_instance_connection
 
 ACTIVE_RUN_STATES = {"queued", "running"}
 MANAGED_LABEL_PREFIX = "paradigm-comfyui"
-_process_lock = threading.RLock()
+_process_lock = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -107,16 +109,46 @@ def _runtime_root(settings: Settings) -> Path:
     return root
 
 
-@contextmanager
-def lifecycle_lock(settings: Settings) -> Iterator[None]:
+@asynccontextmanager
+async def lifecycle_lock(
+    settings: Settings,
+    *,
+    timeout_seconds: float,
+    poll_seconds: float,
+) -> AsyncIterator[None]:
+    """Serialize lifecycle mutations without blocking the API event loop."""
     lock_path = _runtime_root(settings) / "gpu-lifecycle.lock"
-    with _process_lock, lock_path.open("a+", encoding="utf-8") as handle:
-        os.chmod(lock_path, 0o600)
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    deadline = time.monotonic() + max(timeout_seconds, 0.1)
+    handle: TextIO | None = None
+    while handle is None:
+        process_acquired = _process_lock.acquire(blocking=False)
+        if process_acquired:
+            candidate: TextIO | None = None
+            try:
+                candidate = lock_path.open("a+", encoding="utf-8")
+                os.chmod(lock_path, 0o600)
+                fcntl.flock(candidate.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                handle = candidate
+            except BlockingIOError:
+                if candidate is not None:
+                    candidate.close()
+                _process_lock.release()
+            except BaseException:
+                if candidate is not None:
+                    candidate.close()
+                _process_lock.release()
+                raise
+        if handle is not None:
+            break
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Timed out waiting for the GPU lifecycle lock")
+        await asyncio.sleep(max(0.01, poll_seconds))
+    try:
+        yield
+    finally:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        handle.close()
+        _process_lock.release()
 
 
 def read_json(path: Path) -> dict[str, Any] | None:

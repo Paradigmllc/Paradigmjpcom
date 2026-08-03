@@ -191,3 +191,16 @@ def test_default_merge_preserves_existing_reviews_and_only_appends_missing(
         target_path=target_path,
         defaults_path=defaults_path,
     ) == []
+
+
+def test_pet_memory_provisioning_uses_gpu_native_intermediate() -> None:
+    provisioner = (
+        Path(__file__).parents[3]
+        / "scripts"
+        / "vast"
+        / "provision-video-factory-wan22.sh"
+    ).read_text(encoding="utf-8")
+
+    assert 'update({"width": 576, "height": 1024, "length": 73})' in provisioner
+    assert 'update({"steps": 20, "cfg": 5.0, "denoise": 1.0})' in provisioner
+    assert 'workflow["7"]["inputs"]["length"] = 97' not in provisioner

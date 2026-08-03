@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ from video_factory.gpu_lifecycle import (
 from video_factory.gpu_lifecycle_state import (
     acquire_gpu_lease,
     find_managed_instance,
+    lifecycle_lock,
     release_gpu_lease,
 )
 from video_factory.runtime_config import load_runtime_config, update_runtime_config
@@ -119,6 +121,47 @@ def test_gpu_starts_for_run_and_stops_when_idle(
     runtime = load_runtime_config(settings.workspace)
     assert runtime.comfyui_base_url == "https://203.0.113.10:48189"
     assert runtime.vast_instance_id == 46258780
+
+
+def test_lifecycle_lock_waits_without_blocking_the_event_loop(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    settings = _settings(monkeypatch, tmp_path)
+
+    async def scenario() -> None:
+        first_acquired = asyncio.Event()
+        release_first = asyncio.Event()
+        second_acquired = asyncio.Event()
+
+        async def first() -> None:
+            async with lifecycle_lock(
+                settings,
+                timeout_seconds=1,
+                poll_seconds=0.001,
+            ):
+                first_acquired.set()
+                await release_first.wait()
+
+        async def second() -> None:
+            await first_acquired.wait()
+            async with lifecycle_lock(
+                settings,
+                timeout_seconds=1,
+                poll_seconds=0.001,
+            ):
+                second_acquired.set()
+
+        first_task = asyncio.create_task(first())
+        second_task = asyncio.create_task(second())
+        await first_acquired.wait()
+        await asyncio.sleep(0.01)
+        assert second_acquired.is_set() is False
+        release_first.set()
+        await asyncio.wait_for(asyncio.gather(first_task, second_task), timeout=1)
+        assert second_acquired.is_set() is True
+
+    asyncio.run(scenario())
 
 
 def test_gpu_waits_for_proxy_metadata_after_vast_reports_running(

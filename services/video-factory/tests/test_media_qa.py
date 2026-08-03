@@ -1,9 +1,14 @@
+import shutil
 from pathlib import Path
 
+import pytest
+
+from video_factory.commands import run_command
 from video_factory.media import (
     create_placeholder_clip,
     normalize_clip,
     probe_media,
+    source_fidelity_score,
     write_caption_vtt,
 )
 from video_factory.models import DeliverableSpec, Shot, ShotKind
@@ -80,6 +85,64 @@ def test_generated_motion_holds_its_final_frame_instead_of_looping(tmp_path: Pat
     )
 
     assert abs(probe_media(output).duration_seconds - 1.5) <= 0.05
+
+
+def test_source_fidelity_rejects_a_clip_that_collapses_after_its_first_frame(
+    tmp_path: Path,
+) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        pytest.skip("ffmpeg is unavailable")
+    source = tmp_path / "source.mp4"
+    generated = tmp_path / "collapsed.mp4"
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0xC9A27A:s=320x180:r=24:d=1",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(source),
+        ],
+        timeout=120,
+    )
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0xC9A27A:s=320x180:r=24:d=0.2",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0x101010:s=320x180:r=24:d=0.8",
+            "-filter_complex",
+            "[0:v][1:v]concat=n=2:v=1:a=0[out]",
+            "-map",
+            "[out]",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(generated),
+        ],
+        timeout=120,
+    )
+
+    assert source_fidelity_score(source, generated) < 0.78
 
 
 def test_caption_vtt_uses_shot_timing(tmp_path: Path) -> None:
