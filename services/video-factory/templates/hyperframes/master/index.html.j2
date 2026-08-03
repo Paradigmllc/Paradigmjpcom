@@ -64,7 +64,7 @@
     <section id="scene-{{ '%03d' | format(loop.index) }}" class="pet-scene clip {{ pet_template }} motion-{{ clip.motion }}{% if loop.last %} final{% endif %}" data-start="{{ clip.start }}" data-duration="{{ clip.duration }}" data-track-index="{{ loop.index0 }}" style="--scene-duration: {{ clip.duration }}s; --transition: {{ transition_seconds }}s; --tilt: {% if loop.index is even %}.7deg{% else %}-.7deg{% endif %};">
       <div class="pet-vignette"></div><div class="pet-grain"></div><div class="pet-rule"></div>
       <div class="pet-index" data-layout-allow-occlusion data-layout-allow-overlap>{{ '%02d' | format(loop.index) }} / {{ '%02d' | format(clips | length) }}</div>
-      <div class="pet-caption"><p data-layout-allow-occlusion data-layout-allow-overlap>{{ clip.caption }}</p></div>
+      {% if clip.caption %}<div class="pet-caption"><p data-layout-allow-occlusion data-layout-allow-overlap>{{ clip.caption }}</p></div>{% endif %}
       {% if loop.last %}<div class="pet-provenance">Pet Life Movie · factual memories</div>{% endif %}
     </section>
     {% else %}

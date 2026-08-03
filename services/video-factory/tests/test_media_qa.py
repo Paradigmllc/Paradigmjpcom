@@ -203,6 +203,56 @@ def test_source_fidelity_allows_restrained_motion_without_scene_loss(
     assert source_fidelity_score(source, generated) >= 0.78
 
 
+def test_source_fidelity_compares_the_generated_aspect_ratio_crop(tmp_path: Path) -> None:
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg is None:
+        pytest.skip("ffmpeg is unavailable")
+    source = tmp_path / "wide-source.png"
+    generated = tmp_path / "vertical-crop.mp4"
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=s=400x300:r=24:d=0.05",
+            "-frames:v",
+            "1",
+            str(source),
+        ],
+        timeout=120,
+    )
+    run_command(
+        [
+            ffmpeg,
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-loop",
+            "1",
+            "-i",
+            str(source),
+            "-vf",
+            "scale=180:320:force_original_aspect_ratio=increase,crop=180:320",
+            "-t",
+            "1",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            str(generated),
+        ],
+        timeout=120,
+    )
+
+    assert source_fidelity_score(source, generated) >= 0.78
+
+
 def test_caption_vtt_uses_shot_timing(tmp_path: Path) -> None:
     shots = [
         Shot(

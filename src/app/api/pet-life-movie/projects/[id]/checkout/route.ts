@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { createCheckoutSession, expireCheckoutSession } from "@/lib/stripe"
 import { readProjectToken } from "@/lib/pet-life-movie/auth"
-import { authorizePetMovieProject, PET_MOVIE_TABLES, recordPetMovieEvent, requirePetMovieDatabase } from "@/lib/pet-life-movie/data"
+import { authorizePetMovieProject, listPetMovieAssets, PET_MOVIE_TABLES, recordPetMovieEvent, requirePetMovieDatabase } from "@/lib/pet-life-movie/data"
 import { petMovieErrorResponse, siteBaseUrl } from "@/lib/pet-life-movie/http"
 import { parseJsonBody, petMovieCheckoutSchema } from "@/lib/pet-life-movie/schema"
 import { getPetMovieMarketReadiness } from "@/lib/pet-life-movie/readiness"
-import { PET_MOVIE_TERMS_VERSION } from "@/lib/pet-life-movie/commercial"
+import { petMoviePlan, PET_MOVIE_TERMS_VERSION } from "@/lib/pet-life-movie/commercial"
 import { createPetMovieCheckoutIdempotencyKey } from "@/lib/pet-life-movie/checkout"
+import { buildFactualStoryboard } from "@/lib/pet-life-movie/storyboard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -30,6 +31,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, error: "Paid production is temporarily unavailable." }, { status: 503 })
     }
     const input = petMovieCheckoutSchema.parse(await parseJsonBody(request))
+    const plan = petMoviePlan(input.plan)
+    const assets = await listPetMovieAssets(project.id, true)
+    if (assets.length < plan.minimumPhotos) {
+      return NextResponse.json({
+        ok: false,
+        error: `${plan.name} requires at least ${plan.minimumPhotos} distinct uploaded photos so the paid film is not a stretched slideshow.`,
+        requiredPhotos: plan.minimumPhotos,
+        uploadedPhotos: assets.length,
+      }, { status: 409 })
+    }
+    const paidStoryboard = buildFactualStoryboard(project, assets)
     const priceId = PRICE_MAP[input.plan]
     if (!priceId) return NextResponse.json({ ok: false, error: `Stripe price is not configured for ${input.plan}.` }, { status: 503 })
     if (project.stripe_checkout_session_id) {
@@ -57,6 +69,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       status: "payment_required",
       stripe_checkout_session_id: checkout.data.id,
       customer_email: input.email,
+      storyboard: paidStoryboard,
       terms_version: PET_MOVIE_TERMS_VERSION,
       terms_accepted_at: new Date().toISOString(),
     }).eq("id", project.id)

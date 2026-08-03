@@ -70,7 +70,17 @@ describe("buildFactualStoryboard", () => {
     expect(result.version).toBe(2)
     expect(result.templateId).toBe("warm-keepsake")
     expect(result.scenes).toHaveLength(6)
-    expect(result.scenes.every((scene) => allowedFacts.has(scene.caption))).toBe(true)
+    expect(result.scenes.filter((scene) => scene.caption).every((scene) => allowedFacts.has(scene.caption))).toBe(true)
+    expect(new Set(result.scenes.map((scene) => scene.assetId)).size).toBe(6)
+  })
+
+  it("uses every supplied photo once and reserves captions for factual emotional beats", () => {
+    const result = buildFactualStoryboard(project(), assets(20))
+    expect(result.scenes).toHaveLength(20)
+    expect(new Set(result.scenes.map((scene) => scene.assetId)).size).toBe(20)
+    expect(result.scenes.filter((scene) => scene.caption)).toHaveLength(6)
+    expect(result.scenes.filter((scene) => scene.source === "visual")).toHaveLength(14)
+    expect(result.scenes.at(-1)?.source).toBe("closing")
   })
 
   it("selects a distinct production template from the requested mood", () => {

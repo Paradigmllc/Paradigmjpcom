@@ -71,7 +71,7 @@ export default function PetMoviePreview({ storyboard, assetUrls, watermark = tru
             <>
               <Image src={src} alt="" fill sizes="(max-width: 768px) 92vw, 380px" className="scale-125 object-cover opacity-60 blur-2xl saturate-75" unoptimized aria-hidden="true" />
               <motion.div className={`absolute overflow-hidden ${playful ? "inset-4 rotate-[-.7deg] border-[7px] border-[#F7F1E8] shadow-2xl" : "inset-0"}`} animate={paused || reducedMotion ? undefined : imageMotion} transition={{ duration: scene.durationSeconds, ease: "linear" }}>
-                <Image src={src} alt={`${storyboard.title} — ${scene.caption}`} fill sizes="(max-width: 768px) 92vw, 380px" className={`object-cover ${cinematic ? "saturate-[.86] contrast-[1.04]" : ""}`} unoptimized />
+                <Image src={src} alt={scene.caption ? `${storyboard.title} — ${scene.caption}` : storyboard.title} fill sizes="(max-width: 768px) 92vw, 380px" className={`object-cover ${cinematic ? "saturate-[.86] contrast-[1.04]" : ""}`} unoptimized />
               </motion.div>
             </>
           ) : (
@@ -82,11 +82,11 @@ export default function PetMoviePreview({ storyboard, assetUrls, watermark = tru
           <motion.div initial={{ opacity: 0, x: 22 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.24, duration: 0.42 }} className="absolute right-[9%] top-[11%] font-mono text-[10px] font-bold tracking-[.18em] text-[#F7F1E8] drop-shadow-lg">
             {String(sceneIndex + 1).padStart(2, "0")} / {String(storyboard.scenes.length).padStart(2, "0")}
           </motion.div>
-          <div className="absolute inset-x-[9%] bottom-[14%] text-[#F7F1E8]">
+          {scene.caption && <div className="absolute inset-x-[9%] bottom-[14%] text-[#F7F1E8]">
             <motion.p initial={{ opacity: 0, y: 30, letterSpacing: ".01em" }} animate={{ opacity: 1, y: 0, letterSpacing: "-.02em" }} transition={{ delay: 0.3, duration: 0.68, ease: [0.16, 1, 0.3, 1] }} className={`max-w-[92%] rounded-xl border px-4 py-3 font-serif text-lg font-bold leading-relaxed ${playful ? "border-[#E8A838] bg-[#F7F1E8]/95 text-[#2B202A] shadow-[6px_7px_0_#E8A838]" : "border-white/15 bg-[#17131A]/70 shadow-2xl backdrop-blur-md"}`}>
               {scene.caption}
             </motion.p>
-          </div>
+          </div>}
         </motion.section>
       </AnimatePresence>
 

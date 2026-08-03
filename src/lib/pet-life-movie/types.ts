@@ -109,7 +109,7 @@ export interface PetMovieScene {
   durationSeconds: number
   motion: "slow_zoom" | "pan_left" | "pan_right" | "parallax" | "ai_motion"
   caption: string
-  source: "pet_name" | "time_together" | "memory" | "closing"
+  source: "pet_name" | "time_together" | "memory" | "closing" | "visual"
 }
 
 export interface PetMovieStoryboard {
