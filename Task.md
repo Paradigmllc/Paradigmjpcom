@@ -94,3 +94,37 @@
 - Added `migration_059_quote_recovery_validation.sql`: aggregate diagnostic events and pilot inquiries only, RLS enabled, anon/authenticated grants revoked, service-role policies explicit. Raw quote rows are never persisted by this slice.
 - Added unit coverage for Japanese/quoted CSV parsing, required-field rejection, rule-based prioritization, and exclusion of closed quotes. `npx tsc --noEmit --pretty false` passes. Vitest is currently blocked before test discovery by the pre-existing incomplete `node_modules/@vitest/utils` installation (`dist/constants.js` missing); repair dependencies without overwriting the user's in-progress package/lock changes, then rerun.
 - Validation gates before building the authenticated SaaS core: confirm actual CSV import completion, candidate-ranking acceptance, pilot conversion, and repeated weekly use. Only then add organization membership, quote/activity persistence, reminders, invites, and billing; email auto-send, quote creation, OCR, and black-box AI scoring remain out of scope.
+## CURRENT STATUS - 2026-08-02 AI creator direct-pay vertical slice
+
+- Character direction is fixed: no central rose/gun tattoo; only the supplied floral tattoo reference on the right lateral abdomen/flank. Added the safe clothed master at `public/creator/character-master-v1.png`.
+- Added an age-gated creator LP at `/[locale]/creator` with DB-backed offers, empty/error/loading states, and external Solana Pay USDC checkout.
+- Added server-side checkout creation with a unique Ed25519 reference, private status token, finalized on-chain USDC validation, expiry handling, entitlement creation, and one-use Telegram invite delivery.
+- Added authenticated creator operations at `/[locale]/admin/creator` plus `/api/creator/content-jobs`; jobs persist in Supabase and can dispatch to the existing n8n/Vast.ai/ComfyUI lane with `start-on-demand-stop-after-upload` policy.
+- Added Supabase migration `20260802022541_creator_platform_foundation.sql`; all five tables have RLS enabled, anon/authenticated access revoked, and service-role-only grants.
+- Crossmint was excluded because its official review policy prohibits adult content including qualifying AI-generated content. MoonPay was excluded because its terms forbid certain sexually oriented materials/services. Telegram crypto is kept off-platform: the external LP uses Solana Pay, while Telegram only receives an invite after validated payment.
+- Verification: creator payment core TypeScript files passed an isolated TypeScript compile before dependency repair was attempted; `git diff --check` passes. Full Vitest/build remain blocked by the pre-existing incomplete `node_modules` (`@vitest/utils/dist/constants.js`, React, Payload and other packages missing). `npm ci` and a no-save TypeScript restore both stalled without output and were stopped; tracked package/lock changes were not overwritten.
+- Release blocker: current branch is the unrelated `codex/quote-recovery-vertical-saas` with user-owned dirty `package.json`/`package-lock.json` changes. Do not commit this creator slice into that branch or deploy adult content under the Paradigm corporate domain. Move the listed creator files into a dedicated repo/domain, configure `CREATOR_SOLANA_RECIPIENT`, Telegram bot/chat, Solana RPC, and creator content webhook, then apply the migration and run build/E2E before release.
+
+## CURRENT STATUS - 2026-08-07 YouTube 複数チャンネル自動運用パイプライン
+
+### 実装済み (src/lib/youtube/)
+- **形式レジストリ** (`formats/`): チャンネル形式を型ではなくデータとして定義。`definitions/` に1ファイル追加すれば新形式が増える。現在6形式 (manim解説 / ニュース / 漫画風 / キャラアバター / アニメ風 / 英語Shorts)。
+- **品質ゲート** (`quality/`): 収益化剥奪を防ぐ公開前検査。反復性(文字3-gram Jaccard + 構成指紋)、情報密度、未検証の断定、メタデータ整合、合成メディア開示を機械判定。inauthentic content 判定はチャンネル全体の反復性で決まるため、直近N本との差分を測る設計。
+- **リサーチ層** (`research/`): Google News RSS + Hacker News (どちらも無認証)。Reddit は 2026-08 時点で匿名JSONが403のため OAuth 必須。YouTube Data API は quota.ts が太平洋時間の暦日で管理 (search=100 units)。
+- **台本層** (`script/`): 構成案 → シーンごと本文 → メタ情報 の3段階逐次生成。一括生成では qwen2.5:14b が390〜490文字で頭打ちになり密度不足で通らなかったため。逐次化で985〜1284文字に到達しゲート通過を実測。
+- **レンダリング** (`render/`): HyperFrames コンポジション生成。visualSpec の構造 (timeline/columns/stat/quote) を解釈し、項目ごとのビート、edge-tts の発話区間から同期字幕、全編背景モーションを付与。
+- **審査層** (`review/`): 公開前の人間承認。ゲート通過 ≠ 公開可能 (実測でゲート通過台本が出典に無い税率を創作) のため必須。migration_060_youtube_review.sql + /api/youtube/review + /[locale]/admin/youtube。
+
+### 検証状況
+- 157テスト通過 / 型エラー0。`npm test -- src/lib/youtube` で実行可能。
+- 実データ (Google News 実記事 → 台本 → 3分43秒の動画) を通しで生成済み。
+- LLM は OSS 既定 (`YOUTUBE_SCRIPT_LLM=oss`、OpenAI互換)。Dify Cloud は環境変数で切替。
+
+### 次のアクション
+1. 視覚素材の実装 — 現状はテキスト主体で視覚的訴求が不足。無料経路(Openverse / Wikimedia / SVG図表)と ComfyUI 経路の両方が未着手。
+2. Supabase 起動 — Coolify にサービス定義済み (5コンテナに削減、既存キーが通る env 設定済み)。起動操作のみ残。
+3. 投稿層 — YouTube Data API OAuth + private アップロード + Telegram 承認通知。
+
+### インフラで解決した問題 (2026-08-07)
+- **Twenty CRM の worker が server として起動していた** (`/opt/twenty-compose.yml` に command 指定漏れ)。2026-06-17 から328,421件のジョブが未処理で蓄積し、redis が 10.39GB まで肥大、swap枯渇・load average 332・OOM Killer 発動の原因になっていた。`command: ["node", "dist/queue-worker/queue-worker"]` の追加で解決。redis 129MB / load 1.64 に回復。
+- node_modules の破損は `npm ci` で解消済み。
