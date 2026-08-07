@@ -86,6 +86,10 @@ function renderItems(
   const visible = items.slice(0, layout === "columns" ? 3 : 5)
 
   if (layout === "columns") {
+    // 比較棒グラフは各項目の名前と値を両方描いている。カードを並べると同じ対が二度出るので、
+    // 図があるときは図に任せる(stat と同じ理由)。
+    if (hasFigure) return ""
+
     return [
       `      <div class="columns">`,
       ...visible.map(
@@ -299,6 +303,13 @@ export function buildComposition(
           `  tl.from("#${scene.id} .sources", { opacity: 0, duration: 0.5, ease: "sine.out" }, ${round2(at + 0.9)});`,
         )
       }
+      // 図表を動かす。リングを掃き、棒を伸ばし、数値を数え上げる。
+      rows.push(`  hfFigures("${scene.id}", ${at}, ${round2(beatSpan)});`)
+      // 入場が終わったあと画面が完全に止まると紙芝居に見える。
+      // 尺いっぱいかけて本文をゆっくり上へ流し、背景のドリフトとの視差を作る。
+      rows.push(
+        `  tl.fromTo("#${scene.id} .scene-body", { y: 0 }, { y: -16, duration: ${duration}, ease: "none" }, ${at});`,
+      )
       return rows.join("\n")
     })
     .join("\n")
@@ -374,6 +385,7 @@ ${audioClips}
     [data-composition-id="root"] .line-2 { font-size: 54px; font-weight: 500; color: #C6CEDC; }
 
     /* 図表 — items から組み立てた SVG。図が無いシーンでは要素ごと出力されない。 */
+    [data-composition-id="root"] .figure text { font-variant-numeric: tabular-nums; }
     [data-composition-id="root"] .figure {
       display: block;
       width: 100%; max-width: 1240px;
@@ -475,6 +487,62 @@ ${audioClips}
   <script>
     window.__timelines = window.__timelines || {};
     const tl = gsap.timeline({ paused: true });
+
+    // 数え上げ。onUpdate は文字の書き換えだけに保つ(O(1))。
+    // 幅の変わる桁で行が揺れないよう CSS 側で tabular-nums を効かせている。
+    function hfCount(el, at, dur) {
+      var target = parseFloat(el.getAttribute("data-count-to"));
+      var unit = el.getAttribute("data-count-unit") || "";
+      var decimals = parseInt(el.getAttribute("data-count-decimals") || "0", 10);
+      var travel = parseFloat(el.getAttribute("data-count-travel") || "0");
+      var state = { v: 0 };
+      tl.to(state, {
+        v: target,
+        duration: dur,
+        ease: "power2.out",
+        onUpdate: function () {
+          el.textContent = state.v.toLocaleString("en-US", {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+          }) + unit;
+        }
+      }, at);
+      // 棒グラフの値は先端に付いて動く。棒と同じ尺・同じイーズで着地させる。
+      if (travel !== 0) {
+        tl.fromTo(el, { x: travel }, { x: 0, duration: dur, ease: "power3.out" }, at);
+      }
+    }
+
+    // 図表の動き。data-* には終値だけが入っていて、時刻は尺を知っている側から渡す。
+    // width/height は動かさない。リングは dashoffset、棒は scaleX。
+    function hfFigures(sceneId, at, span) {
+      var scope = document.getElementById(sceneId);
+      if (!scope) return;
+      var i;
+
+      var rings = scope.querySelectorAll("[data-ring-target]");
+      for (i = 0; i < rings.length; i += 1) {
+        tl.fromTo(rings[i],
+          { strokeDashoffset: parseFloat(rings[i].getAttribute("data-ring-len")) },
+          { strokeDashoffset: parseFloat(rings[i].getAttribute("data-ring-target")),
+            duration: 1.2, ease: "power2.out" },
+          at + 0.6);
+      }
+
+      var bars = scope.querySelectorAll("[data-bar-origin]");
+      for (i = 0; i < bars.length; i += 1) {
+        tl.fromTo(bars[i],
+          { scaleX: 0 },
+          { scaleX: 1, duration: 1.0, ease: "power3.out",
+            svgOrigin: bars[i].getAttribute("data-bar-origin") },
+          at + 0.6 + i * span);
+      }
+
+      var nums = scope.querySelectorAll("[data-count-to]");
+      for (i = 0; i < nums.length; i += 1) {
+        hfCount(nums[i], at + 0.6 + i * span, 1.0);
+      }
+    }
 
     // 背景を全編ゆっくり動かす。1本の長いトゥイーンなので無限リピートにしない。
     tl.fromTo(".bg-drift",
