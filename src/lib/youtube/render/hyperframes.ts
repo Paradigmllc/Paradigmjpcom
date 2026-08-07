@@ -20,6 +20,7 @@ import type { VideoScript } from "../formats/types"
 import type { SceneAudio } from "./tts"
 import { buildCaptionCues, offsetCues, resolveCueOverlaps, type CaptionCue } from "./captions"
 import { diversifyLayouts, normalizeLayout, type LayoutItem, type SceneLayout } from "./layouts"
+import { buildFigure } from "./figures"
 
 const TRANSITION_SEC = 0.6
 const OUTRO_SEC = 0.9
@@ -206,6 +207,7 @@ export function buildComposition(
           : "",
         `      </div>`,
         `      <div class="scene-body">`,
+        buildFigure(layout, items),
         renderItems(scene.id, layout, items),
         `      </div>`,
         scene.sources.length > 0
@@ -346,6 +348,15 @@ ${audioClips}
     }
     [data-composition-id="root"] .line-1,
     [data-composition-id="root"] .line-2 { font-size: 54px; font-weight: 500; color: #C6CEDC; }
+
+    /* 図表 — items から組み立てた SVG。図が無いシーンでは要素ごと出力されない。 */
+    [data-composition-id="root"] .figure {
+      display: block;
+      width: 100%; max-width: 1240px;
+      margin: 0 0 44px;
+      overflow: visible;
+    }
+    [data-composition-id="root"] .layout-stat .figure { margin-left: auto; margin-right: auto; }
 
     /* timeline */
     [data-composition-id="root"] .tl { list-style: none; margin: 0; padding: 0 0 0 42px; position: relative; }

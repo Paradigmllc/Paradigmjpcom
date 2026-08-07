@@ -254,3 +254,37 @@ describe("buildComposition", () => {
     expect(html.includes("<img src=x")).toBe(false)
   })
 })
+
+/* ───── 図表の組み込み ───── */
+
+describe("composition figures", () => {
+  const STAT_SPEC = { layout: "stat", items: ["45% が導入済み"] }
+  const QUOTE_SPEC = { layout: "quote", items: ["引用された一文"] }
+
+  it("数値の読めるシーンにはSVG図表が入る", () => {
+    const result = buildComposition(
+      script([scene("s1", 6, ["導入率"], STAT_SPEC), scene("s2", 6, ["経緯"], TIMELINE_SPEC)]),
+      [audio("s1", 6, 6), audio("s2", 6, 6)],
+    )
+    expect(result.html).toContain('<svg class="figure"')
+    // 図の段階表示は既存のビート機構に載る。
+    expect(result.html).toContain('<g data-beat="0">')
+  })
+
+  it("引用シーンには図表を足さない", () => {
+    const result = buildComposition(
+      script([scene("s1", 6, ["引用"], QUOTE_SPEC)]),
+      [audio("s1", 6, 6)],
+    )
+    expect(result.html).not.toContain('<svg class="figure"')
+  })
+
+  it("同じ台本からは同じHTMLが出る(決定論)", () => {
+    const build = () =>
+      buildComposition(
+        script([scene("s1", 6, ["導入率"], STAT_SPEC)]),
+        [audio("s1", 6, 6)],
+      ).html
+    expect(build()).toBe(build())
+  })
+})
