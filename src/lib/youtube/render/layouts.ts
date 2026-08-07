@@ -11,6 +11,8 @@
  * それぞれ候補リストから拾う防御的な正規化を通す。
  */
 
+import { parseNumber } from "./figures"
+
 export type SceneLayout = "timeline" | "columns" | "stat" | "quote" | "headline"
 
 export interface LayoutItem {
@@ -54,16 +56,22 @@ export function normalizeItem(raw: unknown): LayoutItem | null {
   if (!raw || typeof raw !== "object") return null
 
   const record = raw as Record<string, unknown>
-  const marker = stripUrls(asText(MARKER_KEYS.map((key) => record[key]).find((value) => asText(value))))
+  let marker = stripUrls(asText(MARKER_KEYS.map((key) => record[key]).find((value) => asText(value))))
 
   const usedAsMarker = MARKER_KEYS.find((key) => asText(record[key]) === marker && marker.length > 0)
-  const body = stripUrls(
-    asText(
-      BODY_KEYS.filter((key) => key !== usedAsMarker)
-        .map((key) => record[key])
-        .find((value) => asText(value)),
-    ),
-  )
+  const bodyKey = BODY_KEYS.filter((key) => key !== usedAsMarker).find((key) => asText(record[key]))
+  const body = stripUrls(asText(bodyKey ? record[bodyKey] : undefined))
+
+  // 時間軸キーが無く、別の内容キーに数値がある項目は、その数値を marker に採る。
+  // {name:"中国", value:"820万台"} のような形は最初の内容キーだけを読むと
+  // 「820万台」が丸ごと消え、本文からも図表からも数量が失われていた。
+  if (marker.length === 0) {
+    const numericKey = BODY_KEYS.filter((key) => key !== usedAsMarker && key !== bodyKey).find((key) => {
+      const text = stripUrls(asText(record[key]))
+      return text.length > 0 && parseNumber(text) !== null
+    })
+    if (numericKey) marker = stripUrls(asText(record[numericKey]))
+  }
 
   if (body.length === 0 && marker.length === 0) return null
   return { marker, body: body.length > 0 ? body : marker }

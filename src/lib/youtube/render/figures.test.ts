@@ -26,6 +26,13 @@ describe("parseNumber", () => {
     expect(parseNumber("1,234.5倍")?.value).toBe(1234.5)
   })
 
+  it("助数詞まで表記に残す", () => {
+    // 「820万」で切ると台数なのか金額なのか読めなくなる。
+    expect(parseNumber("820万台")?.display).toBe("820万台")
+    expect(parseNumber("3,200億円")?.display).toBe("3,200億円")
+    expect(parseNumber("820万台")?.value).toBe(8_200_000)
+  })
+
   it("数値が無ければ null", () => {
     expect(parseNumber("数字のない文")).toBeNull()
     expect(parseNumber("")).toBeNull()

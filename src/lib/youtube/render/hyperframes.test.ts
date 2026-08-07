@@ -74,6 +74,22 @@ describe("normalizeItem", () => {
     expect(normalizeItem({ text: "写真 https://j-cast.com/image/x.jpg あり" })?.body).toBe("写真  あり")
   })
 
+  it("数値を持つ兄弟キーを捨てない", () => {
+    // 最初の内容キーだけを読むと 820万台 が消え、本文からも図表からも数量が失われていた。
+    expect(normalizeItem({ name: "中国", value: "820万台" })).toEqual({ marker: "820万台", body: "中国" })
+  })
+
+  it("時間軸キーがあるときは数値の兄弟キーで上書きしない", () => {
+    expect(normalizeItem({ date: "2026", label: "見直し", value: "42%" })).toEqual({
+      marker: "2026",
+      body: "見直し",
+    })
+  })
+
+  it("数値でない兄弟キーは marker にしない", () => {
+    expect(normalizeItem({ name: "中国", detail: "拡大が続く" })).toEqual({ marker: "", body: "中国" })
+  })
+
   it("中身が無ければ null", () => {
     expect(normalizeItem({})).toBeNull()
     expect(normalizeItem(null)).toBeNull()
