@@ -151,3 +151,29 @@ failed ユニットは 0 件になった。
 - `opt-twenty-server-1` の再作成（新 Supabase 鍵と新 `APP_SECRET` の反映）。compose 側は更新済みだが、稼働中コンテナは旧値のまま。Twenty の UI 自体は動作しているが、Twenty 内の Supabase 連携は 401 になる。
 - Postgres のパスワード（`supabase2026pass` / `twenty_secret_2026`）は未ローテーション。**DB ポートは外部露出しておらず UFW も 22/80/443/3001 のみ許可**のため遠隔からの悪用は不可。優先度は JWT より低い。
 - **作業中に fail2ban で SSH が繰り返し遮断された。** 短時間に多数の SSH 接続を張ったため。今後は `ControlMaster` による多重化で1接続に集約すること。
+
+## 2026-08-07 追記 — twenty-server 再作成完了とビルドキャッシュの構造対策
+
+### twenty-server の再作成（完了）
+compose 管理外だった `opt-twenty-server-1` を compose 定義から再作成し、新 Supabase 鍵・新 `APP_SECRET`・不足していた `NEXT_PUBLIC_SUPABASE_*` を反映した。旧コンテナはリネームして停止・削除。
+
+**注意**: 旧コンテナも `twenty-server` エイリアスを保持しているため、新旧が同時に起動していると Traefik が両方へ振り分ける。再作成したら旧を即座に停止すること。
+
+### ビルドキャッシュの構造対策（完了）
+**paradigm-hp のデプロイ1回でビルドキャッシュが 5.2GB -> 19.5GB に増え、イメージも 55.8GB -> 63.9GB に増える**ことが判明した。放置すると毎デプロイで積み上がる。
+
+`/etc/docker/daemon.json` に BuildKit の内蔵 GC を設定した（cron や systemd timer は不要・BuildKit がビルド時に自前で回収する）。
+
+```json
+"builder": { "gc": { "enabled": true, "defaultKeepStorage": "10GB",
+  "policy": [ {"keepStorage":"2GB","filter":["unused-for=48h"]},
+              {"keepStorage":"10GB","all":true} ] } }
+```
+
+反映には Docker デーモンの再起動が必要。`live-restore: true` のため 55 コンテナすべて稼働を維持したまま再起動でき、`docker-network-fix.service` がネットワーク再接続を担った。再起動後に全サイト・Supabase REST の疎通を確認済み。
+
+### 最終状態
+ディスク 82%（27GB 空き）。failed ユニット 0。異常コンテナ 0。
+
+### 運用上の教訓
+- **SSH の接続頻度に注意**。短時間に多数の接続を張ると fail2ban に遮断され、作業が中断する。`~/.ssh/config.prod` に `ControlMaster` 設定を用意したので以後はこれを使う（`ControlPath` は 104 バイト制限があるため短いパスにすること）。
