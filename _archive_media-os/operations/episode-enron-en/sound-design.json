@@ -1,0 +1,531 @@
+{
+  "version": 1,
+  "episodeId": "episode-enron-en",
+  "generatedMusicAllowed": false,
+  "mix": {
+    "targetIntegratedLufs": -14,
+    "targetTruePeakDbtp": -1.5,
+    "narrationGainDb": 0,
+    "ducking": {
+      "threshold": 0.03,
+      "ratio": 8,
+      "attackMs": 20,
+      "releaseMs": 350
+    }
+  },
+  "tracks": [
+    {
+      "id": "snd-bed-01",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-01.wav",
+      "startSeconds": 0,
+      "durationSeconds": 41,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "b69ebb2376cc468143028a31b19365b7ec6bc99845ef402bf04725c01dadabc8",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-01",
+      "motif": "hook:hook"
+    },
+    {
+      "id": "snd-bed-02",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-02.wav",
+      "startSeconds": 41,
+      "durationSeconds": 59,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "ac7519a41cf9ba1cca965f2a6d0ea82f23843a98f87358aa4752eecd48eeba74",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-02",
+      "motif": "testimony:advance"
+    },
+    {
+      "id": "snd-bed-03",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-03.wav",
+      "startSeconds": 100,
+      "durationSeconds": 65,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "ef50ec1482bd291f725355314e8131e10d8844d1504463746c2f5f300e1f5b86",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-03",
+      "motif": "context:advance"
+    },
+    {
+      "id": "snd-bed-04",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-04.wav",
+      "startSeconds": 165,
+      "durationSeconds": 68,
+      "gainDb": -24.7,
+      "loop": false,
+      "sha256": "6c488a6d5dd67224f0e939782f0af5b7d8e79ebf62a86b39b575e15440a3a5ab",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-04",
+      "motif": "evidence:hold_to_read"
+    },
+    {
+      "id": "snd-bed-05",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-05.wav",
+      "startSeconds": 233,
+      "durationSeconds": 67,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "95a729f8610385a88d80518ecaf6a1aa501e6ad2c9419e8476a3ccc90ba4b14d",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-05",
+      "motif": "testimony:advance"
+    },
+    {
+      "id": "snd-bed-06",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-06.wav",
+      "startSeconds": 300,
+      "durationSeconds": 68,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "4f72ac1d718021914d3b425fb46767d23d490e5e707521aa94fa18f619a06096",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-06",
+      "motif": "corroboration:breath"
+    },
+    {
+      "id": "snd-bed-07",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-07.wav",
+      "startSeconds": 368,
+      "durationSeconds": 58,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "b1fb91f8eb1829c487f8f49d8cb2e3c33ee269ebb6665117ea6568013ca13032",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-07",
+      "motif": "timeline:advance"
+    },
+    {
+      "id": "snd-bed-08",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-08.wav",
+      "startSeconds": 426,
+      "durationSeconds": 66,
+      "gainDb": -24.7,
+      "loop": false,
+      "sha256": "3054fc232297f660364d43e05916e7ee26c0cfaf37aef0215b81cb27cb6a6dd0",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-08",
+      "motif": "counterclaim:advance"
+    },
+    {
+      "id": "snd-bed-09",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-09.wav",
+      "startSeconds": 492,
+      "durationSeconds": 68,
+      "gainDb": -24.7,
+      "loop": false,
+      "sha256": "2ada2065b98ce0435118c1b053edc77db7e582fc46a2a370be5bf5de931d9f03",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-09",
+      "motif": "evidence:hold_to_read"
+    },
+    {
+      "id": "snd-bed-10",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-10.wav",
+      "startSeconds": 560,
+      "durationSeconds": 68,
+      "gainDb": -25.4,
+      "loop": false,
+      "sha256": "660c1eafc79225f54f40bd1f2a1ee7c56d1efcac83c818e73d75c9a32581f7cb",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-10",
+      "motif": "authority:hold_to_read"
+    },
+    {
+      "id": "snd-bed-11",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-11.wav",
+      "startSeconds": 628,
+      "durationSeconds": 65,
+      "gainDb": -24.7,
+      "loop": false,
+      "sha256": "80c0d3d6625360db42acf9bebc51335ecea09ce0d803d897b1fe0c0f3392f92d",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-11",
+      "motif": "reversal:breath"
+    },
+    {
+      "id": "snd-bed-12",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-12.wav",
+      "startSeconds": 693,
+      "durationSeconds": 66,
+      "gainDb": -26,
+      "loop": false,
+      "sha256": "64acecf52ab0ddc7a8d3ba428f29c0a712100787fef52d7c8bc28d93c2a2434b",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-12",
+      "motif": "implications:advance"
+    },
+    {
+      "id": "snd-bed-13",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-13.wav",
+      "startSeconds": 759,
+      "durationSeconds": 44,
+      "gainDb": -26,
+      "loop": false,
+      "sha256": "f5da45d6d81b4a652500b6af626610b9123923f397e4d22c5ec2f91e6de8d10f",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-13",
+      "motif": "method:advance"
+    },
+    {
+      "id": "snd-bed-14",
+      "kind": "music",
+      "source": "../../renders/sound/episode-enron-en/snd-bed-14.wav",
+      "startSeconds": 803,
+      "durationSeconds": 37,
+      "gainDb": -26,
+      "loop": false,
+      "sha256": "0361c52ec5bfd24e81084f36aea54202af5a8c6c380ea2cdf4710ad30197a4fa",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-14",
+      "motif": "outro:advance"
+    },
+    {
+      "id": "snd-cue-01",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-01.wav",
+      "startSeconds": 40.82,
+      "durationSeconds": 0.72,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "5e55888efbd60dd7fed516d1ce2cb947870338da5db0d50ef4b525b8ed384f4e",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-02",
+      "emphasis": "paper"
+    },
+    {
+      "id": "snd-cue-02",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-02.wav",
+      "startSeconds": 99.82,
+      "durationSeconds": 0.9,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "b4a9637a396b85b2704d38a1d3275627412f51a8f52414573f56a102ad9704ae",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-03",
+      "emphasis": "pulse"
+    },
+    {
+      "id": "snd-cue-03",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-03.wav",
+      "startSeconds": 164.82,
+      "durationSeconds": 1.1,
+      "gainDb": -15,
+      "loop": false,
+      "sha256": "77faf17252d9bfcfd88ba1987647fb7df44472fafedb74d82112cba157e5e08e",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-04",
+      "emphasis": "impact"
+    },
+    {
+      "id": "snd-cue-04",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-04.wav",
+      "startSeconds": 232.82,
+      "durationSeconds": 0.9,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "b4a9637a396b85b2704d38a1d3275627412f51a8f52414573f56a102ad9704ae",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-05",
+      "emphasis": "pulse"
+    },
+    {
+      "id": "snd-cue-05",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-05.wav",
+      "startSeconds": 299.82,
+      "durationSeconds": 0.72,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "d51ca2813ba0b476a22cc0bab99418ed5b4030406d6555bee1bfa12ee75ac03a",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-06",
+      "emphasis": "paper"
+    },
+    {
+      "id": "snd-cue-06",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-06.wav",
+      "startSeconds": 367.82,
+      "durationSeconds": 0.9,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "20b5b8ab2ecec9198dca2a499fdf2839e832566dfaa419c45d095074f36c09c9",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-07",
+      "emphasis": "pulse"
+    },
+    {
+      "id": "snd-cue-07",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-07.wav",
+      "startSeconds": 425.82,
+      "durationSeconds": 1.1,
+      "gainDb": -15,
+      "loop": false,
+      "sha256": "61d05e5d1997ad919eb01e540ccb89e82557586fe6a3a1be8d9a37d83748624c",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-08",
+      "emphasis": "impact"
+    },
+    {
+      "id": "snd-cue-08",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-08.wav",
+      "startSeconds": 491.82,
+      "durationSeconds": 1.1,
+      "gainDb": -15,
+      "loop": false,
+      "sha256": "61d05e5d1997ad919eb01e540ccb89e82557586fe6a3a1be8d9a37d83748624c",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-09",
+      "emphasis": "impact"
+    },
+    {
+      "id": "snd-cue-09",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-09.wav",
+      "startSeconds": 559.82,
+      "durationSeconds": 0.72,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "f4ab065c999b4f1eefe0560616c6569794d14da4f0efdbc766bf5aff29b12f44",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-10",
+      "emphasis": "paper"
+    },
+    {
+      "id": "snd-cue-10",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-10.wav",
+      "startSeconds": 627.82,
+      "durationSeconds": 1.1,
+      "gainDb": -15,
+      "loop": false,
+      "sha256": "72991749f5904fddeb25900b8a50754a986bce3e360ba3eb7ce5788404a605c5",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-11",
+      "emphasis": "impact"
+    },
+    {
+      "id": "snd-cue-11",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-11.wav",
+      "startSeconds": 692.82,
+      "durationSeconds": 0.9,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "90eb321f1845089d5f2d10135b06f08e7a41fd786a5ad8e6f1eac12ce847029e",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-12",
+      "emphasis": "resolve"
+    },
+    {
+      "id": "snd-cue-12",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-12.wav",
+      "startSeconds": 758.82,
+      "durationSeconds": 0.9,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "20455a15b694ef496d1108170b5c94fce9d9c7221c94ae6c5c7924cefb8a39f8",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-13",
+      "emphasis": "resolve"
+    },
+    {
+      "id": "snd-cue-13",
+      "kind": "sfx",
+      "source": "../../renders/sound/episode-enron-en/snd-cue-13.wav",
+      "startSeconds": 802.82,
+      "durationSeconds": 0.9,
+      "gainDb": -18,
+      "loop": false,
+      "sha256": "d09457b9e5a109f8e96eadd2c1c21c38260ae539006bad0877306b1dbe3249ed",
+      "rights": {
+        "license": "project-original",
+        "commercialUse": true,
+        "provenance": "deterministic_ffmpeg_synthesis_v1",
+        "attribution": "YouTube Media OS original procedural score",
+        "aiGenerated": false
+      },
+      "sceneId": "episode-enron-en-scene-14",
+      "emphasis": "resolve"
+    }
+  ]
+}

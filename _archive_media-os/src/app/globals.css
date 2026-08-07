@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  --background: #11100d;
+  --foreground: #f2efe6;
+}
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 18% -10%, rgba(212, 167, 44, 0.12), transparent 32rem),
+    radial-gradient(circle at 92% 12%, rgba(134, 45, 38, 0.12), transparent 28rem),
+    var(--background);
+  color: var(--foreground);
+  font-family: "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #d4a72c;
+  color: #11100d;
+}

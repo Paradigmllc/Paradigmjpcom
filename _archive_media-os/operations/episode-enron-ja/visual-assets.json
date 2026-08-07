@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "episodeId": "episode-enron-ja",
+  "workflowPath": "../../config/comfyui/evidence-reconstruction-sdxl-api.json",
+  "bindings": { "positiveTextNode": "6", "negativeTextNode": "7", "samplerNode": "3", "latentNode": "5", "saveNode": "9" },
+  "assets": [
+    {
+      "id": "enron-ja-ledger-gap", "sceneOrdinal": 1, "seed": 18582002, "width": 1344, "height": 768,
+      "prompt": "Abstract Japanese investigative documentary reconstruction of corporate ledger columns separating to expose a cash-flow gap, tactile archival paper, restrained teal and muted coral palette, no readable text, no people",
+      "negativePrompt": "real person, face, logo, readable fabricated Japanese document, glossy advertising, cyberpunk, matrix rain, watermark",
+      "photorealistic": false, "disclosureRequired": false, "realPersonLikeness": false,
+      "rights": { "mode": "project_generated", "commercialUse": true, "thirdPartyReference": false }
+    },
+    {
+      "id": "enron-ja-evidence-boxes", "sceneOrdinal": 4, "seed": 4001801, "width": 1344, "height": 768,
+      "prompt": "Stylized evidence-room reconstruction of sealed archive boxes forming a monumental grid, sober government investigation atmosphere, dramatic side light and paper texture, no labels, no people",
+      "negativePrompt": "real person, police logo, readable case labels, fabricated quote, weapon, blood, watermark",
+      "photorealistic": false, "disclosureRequired": false, "realPersonLikeness": false,
+      "rights": { "mode": "project_generated", "commercialUse": true, "thirdPartyReference": false }
+    },
+    {
+      "id": "enron-ja-raptor-structure", "sceneOrdinal": 8, "seed": 11130066, "width": 1344, "height": 768,
+      "prompt": "Abstract financial structure reconstruction with nested entities, circular guarantees and concealed return paths built as paper architecture, investigative infographic realism, no readable text, no people",
+      "negativePrompt": "dinosaur, real person, company logo, readable fake contract, generic flowchart, neon cyberpunk, watermark",
+      "photorealistic": false, "disclosureRequired": false, "realPersonLikeness": false,
+      "rights": { "mode": "project_generated", "commercialUse": true, "thirdPartyReference": false }
+    },
+    {
+      "id": "enron-ja-collapse-archive", "sceneOrdinal": 12, "seed": 16810523, "width": 1344, "height": 768,
+      "prompt": "Editorial documentary reconstruction of a financial chart collapsing into court archives and victim compensation records, restrained institutional mood, layered paper-cut depth, no readable text, no identifiable people",
+      "negativePrompt": "real person, celebrity likeness, logo, readable fabricated record, explosion, sensational disaster image, watermark",
+      "photorealistic": false, "disclosureRequired": false, "realPersonLikeness": false,
+      "rights": { "mode": "project_generated", "commercialUse": true, "thirdPartyReference": false }
+    }
+  ]
+}

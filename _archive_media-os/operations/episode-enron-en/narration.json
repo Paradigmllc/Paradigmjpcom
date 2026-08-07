@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "episodeId": "episode-enron-en",
+  "language": "en",
+  "voice": {
+    "provider": "kokoro-onnx",
+    "id": "af_nova",
+    "speed": 1,
+    "provenance": "bundled_stock_model_voice",
+    "humanImitation": false,
+    "modelLicense": "Apache-2.0",
+    "adapterLicense": "MIT"
+  },
+  "transcription": {
+    "provider": "faster-whisper",
+    "model": "small.en",
+    "language": "en",
+    "device": "cpu",
+    "computeType": "int8"
+  },
+  "quality": {
+    "minimumAccuracy": 0.9
+  },
+  "gapSeconds": 0.25,
+  "segments": [
+    {
+      "id": "narr-01-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-01",
+      "targetDurationSeconds": 6.383,
+      "text": "The company is already falling before the system seems to understand what it is seeing.",
+      "claimIds": [],
+      "editorialIntent": "Open on collapse, then frame Enron as a failure of institutional timing, where warnings, market signals, and official response moved on separate tracks.",
+      "visualSync": "A signal intercept map rides over a stock line, then splits into three asynchronous channels labeled warning, public claim, and response before converging at a December 2001 bankruptcy marker.",
+      "pauseAfterSeconds": 0.8
+    },
+    {
+      "id": "narr-01-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-01",
+      "targetDurationSeconds": 11.064,
+      "text": "Enron filed for bankruptcy in December 2001, and the FBI later described the case that followed as the most complex white-collar crime investigation in its history.",
+      "claimIds": [
+        "claim-en-collapse"
+      ],
+      "sourceLocator": "opening and Investigation sections",
+      "editorialIntent": "Open on collapse, then frame Enron as a failure of institutional timing, where warnings, market signals, and official response moved on separate tracks.",
+      "visualSync": "A signal intercept map rides over a stock line, then splits into three asynchronous channels labeled warning, public claim, and response before converging at a December 2001 bankruptcy marker.",
+      "pauseAfterSeconds": 0.8
+    },
+    {
+      "id": "narr-01-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-01",
+      "targetDurationSeconds": 22.553,
+      "text": "That ending is settled. The harder question sits earlier, in the slower period when contradictory financial signals, public reassurance, and institutional response could all exist at once without forcing a timely correction. This episode treats Enron not as one explosive moment, but as an oversight failure measured in delays, handoffs, and missed convergence.",
+      "claimIds": [],
+      "editorialIntent": "Open on collapse, then frame Enron as a failure of institutional timing, where warnings, market signals, and official response moved on separate tracks.",
+      "visualSync": "A signal intercept map rides over a stock line, then splits into three asynchronous channels labeled warning, public claim, and response before converging at a December 2001 bankruptcy marker.",
+      "pauseAfterSeconds": 0.8
+    },
+    {
+      "id": "narr-02-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-02",
+      "targetDurationSeconds": 4.255,
+      "text": "Here, the dispute begins not with confession, but with structure.",
+      "claimIds": [],
+      "editorialIntent": "Introduce two alleged transaction structures with strict boundary language, making clear these are SEC allegations rather than settled fact.",
+      "visualSync": "Two testimony rails run in parallel for Raptor I and Cuiaba, with markers for independence, risk, side agreement, temporary transfer, and repurchase understanding blinking out of sync.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-02-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-02",
+      "targetDurationSeconds": 15.745,
+      "text": "The SEC alleged that Raptor I was presented as a hedge with an independent party even though the counterparty was not independent, its investment was not genuinely at risk, and an undisclosed side agreement protected its return.",
+      "claimIds": [
+        "claim-en-raptor"
+      ],
+      "sourceLocator": "Use of SPEs and LJM Partnerships — Raptor I",
+      "editorialIntent": "Introduce two alleged transaction structures with strict boundary language, making clear these are SEC allegations rather than settled fact.",
+      "visualSync": "Two testimony rails run in parallel for Raptor I and Cuiaba, with markers for independence, risk, side agreement, temporary transfer, and repurchase understanding blinking out of sync.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-02-03",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-02",
+      "targetDurationSeconds": 16.17,
+      "text": "The SEC also alleged that an interest in the poorly performing Cuiaba project was temporarily moved to LJM for 11.3 million dollars under an undisclosed repurchase understanding, and that Enron improperly recognized about 65 million dollars of income.",
+      "claimIds": [
+        "claim-en-cuiaba"
+      ],
+      "sourceLocator": "Cuiaba project transaction",
+      "editorialIntent": "Introduce two alleged transaction structures with strict boundary language, making clear these are SEC allegations rather than settled fact.",
+      "visualSync": "Two testimony rails run in parallel for Raptor I and Cuiaba, with markers for independence, risk, side agreement, temporary transfer, and repurchase understanding blinking out of sync.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-02-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-02",
+      "targetDurationSeconds": 16.17,
+      "text": "If that theory is accepted, the issue is not mere complexity. It is that presentation allegedly traveled on one track while risk traveled on another, leaving outsiders to read a cleaner picture than the underlying mechanics would justify.",
+      "claimIds": [
+        "claim-en-raptor",
+        "claim-en-cuiaba"
+      ],
+      "sourceLocator": "Use of SPEs and LJM Partnerships — Raptor I",
+      "editorialIntent": "Introduce two alleged transaction structures with strict boundary language, making clear these are SEC allegations rather than settled fact.",
+      "visualSync": "Two testimony rails run in parallel for Raptor I and Cuiaba, with markers for independence, risk, side agreement, temporary transfer, and repurchase understanding blinking out of sync.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-03-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-03",
+      "targetDurationSeconds": 5.106,
+      "text": "The ground firms up when the record moves from accusation to verdict.",
+      "claimIds": [],
+      "editorialIntent": "Mark the boundary between what was convicted and what remains broader interpretation, while establishing the scale of market harm.",
+      "visualSync": "A hard authority boundary locks allegation on one side and conviction on the other; beneath it, a stock chart rises from early 1998 to January 2001, then drains toward zero.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-03-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-03",
+      "targetDurationSeconds": 16.17,
+      "text": "A federal jury convicted Jeffrey Skilling in 2006 of conspiracy, twelve securities-fraud counts, insider trading, and five false-statement counts, and in 2013 he was resentenced to 168 months and ordered to forfeit about 42 million dollars for victims.",
+      "claimIds": [
+        "claim-en-conviction"
+      ],
+      "sourceLocator": "Jury verdict and 2013 resentencing",
+      "editorialIntent": "Mark the boundary between what was convicted and what remains broader interpretation, while establishing the scale of market harm.",
+      "visualSync": "A hard authority boundary locks allegation on one side and conviction on the other; beneath it, a stock chart rises from early 1998 to January 2001, then drains toward zero.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-03-03",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-03",
+      "targetDurationSeconds": 17.021,
+      "text": "The Justice Department said the scheme made Enron appear healthy and predictable, helped its stock rise from about 30 dollars in early 1998 to above 80 dollars in January 2001, and ended with December 2001 bankruptcy and virtually worthless stock.",
+      "claimIds": [
+        "claim-en-stock"
+      ],
+      "sourceLocator": "Scheme effects on stock price and bankruptcy",
+      "editorialIntent": "Mark the boundary between what was convicted and what remains broader interpretation, while establishing the scale of market harm.",
+      "visualSync": "A hard authority boundary locks allegation on one side and conviction on the other; beneath it, a stock chart rises from early 1998 to January 2001, then drains toward zero.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-03-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-03",
+      "targetDurationSeconds": 14.894,
+      "text": "Those confirmed points matter because they set the limits of certainty. Serious crimes were proved. Enormous market damage was established. But the documentary question remains narrower and more procedural: why did correction arrive so late?",
+      "claimIds": [],
+      "editorialIntent": "Mark the boundary between what was convicted and what remains broader interpretation, while establishing the scale of market harm.",
+      "visualSync": "A hard authority boundary locks allegation on one side and conviction on the other; beneath it, a stock chart rises from early 1998 to January 2001, then drains toward zero.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-04-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-04",
+      "targetDurationSeconds": 2.979,
+      "text": "Once the break was public, hesitation narrowed.",
+      "claimIds": [],
+      "editorialIntent": "Show how forcefully institutions acted after collapse became public, emphasizing the contrast between late certainty and earlier ambiguity.",
+      "visualSync": "A corroboration lattice fills rapidly with bankruptcy, investigation, pleas, and convictions until the frame resembles an assembled machine of state response.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-04-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-04",
+      "targetDurationSeconds": 11.489,
+      "text": "The FBI says Enron filed for bankruptcy in December 2001, and the bureau describes the resulting case as the most complex white-collar crime investigation in its history.",
+      "claimIds": [
+        "claim-en-collapse"
+      ],
+      "sourceLocator": "opening and Investigation sections",
+      "editorialIntent": "Show how forcefully institutions acted after collapse became public, emphasizing the contrast between late certainty and earlier ambiguity.",
+      "visualSync": "A corroboration lattice fills rapidly with bankruptcy, investigation, pleas, and convictions until the frame resembles an assembled machine of state response.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-04-03",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-04",
+      "targetDurationSeconds": 13.191,
+      "text": "The FBI also reports that the five-year investigation produced jury convictions of senior officials and guilty pleas from others, and that 22 people were convicted for actions related to the fraud.",
+      "claimIds": [
+        "claim-en-accountability"
+      ],
+      "sourceLocator": "Accountability section",
+      "editorialIntent": "Show how forcefully institutions acted after collapse became public, emphasizing the contrast between late certainty and earlier ambiguity.",
+      "visualSync": "A corroboration lattice fills rapidly with bankruptcy, investigation, pleas, and convictions until the frame resembles an assembled machine of state response.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-04-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-04",
+      "targetDurationSeconds": 21.277,
+      "text": "What the confirmed record shows is not speed, but force. After collapse, institutions could route evidence, sustain a long inquiry, and produce accountability at scale. The question is why comparable authority did not align sooner, when uncertainty was still a problem to be tested rather than ruins to be catalogued.",
+      "claimIds": [],
+      "editorialIntent": "Show how forcefully institutions acted after collapse became public, emphasizing the contrast between late certainty and earlier ambiguity.",
+      "visualSync": "A corroboration lattice fills rapidly with bankruptcy, investigation, pleas, and convictions until the frame resembles an assembled machine of state response.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-05-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-05",
+      "targetDurationSeconds": 2.128,
+      "text": "Then the abstract turns physical.",
+      "claimIds": [],
+      "editorialIntent": "Make the investigation tactile through the headquarters search, stressing that evidence collection came after prevention had failed.",
+      "visualSync": "A 50-story tower turns into a searchable grid. Floors light up as agents move through them and evidence boxes stack in the lobby like a paper skyline.",
+      "pauseAfterSeconds": 0.5
+    },
+    {
+      "id": "narr-05-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-05",
+      "targetDurationSeconds": 10.213,
+      "text": "In January 2002, agents searched Enron's 50-story headquarters for nine days, recovered more than 400 boxes of evidence, and conducted more than 100 interviews.",
+      "claimIds": [
+        "claim-en-search"
+      ],
+      "sourceLocator": "Investigation — January 2002 headquarters search",
+      "editorialIntent": "Make the investigation tactile through the headquarters search, stressing that evidence collection came after prevention had failed.",
+      "visualSync": "A 50-story tower turns into a searchable grid. Floors light up as agents move through them and evidence boxes stack in the lobby like a paper skyline.",
+      "pauseAfterSeconds": 0.5
+    },
+    {
+      "id": "narr-05-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-05",
+      "targetDurationSeconds": 21.277,
+      "text": "A search of that size does not explain the fraud by itself, but it does show what had to happen once the company had already broken open. Material had to be frozen, lifted out of ordinary circulation, and compared under conditions that no market participant could recreate in real time.",
+      "claimIds": [],
+      "editorialIntent": "Make the investigation tactile through the headquarters search, stressing that evidence collection came after prevention had failed.",
+      "visualSync": "A 50-story tower turns into a searchable grid. Floors light up as agents move through them and evidence boxes stack in the lobby like a paper skyline.",
+      "pauseAfterSeconds": 0.5
+    },
+    {
+      "id": "narr-05-04",
+      "role": "outcome",
+      "sceneId": "episode-enron-en-scene-05",
+      "targetDurationSeconds": 9.362,
+      "text": "Hold the image: a nine-day search inside a 50-story headquarters, after the stage when warning could still become prevention had already passed.",
+      "claimIds": [
+        "claim-en-search"
+      ],
+      "sourceLocator": "Investigation — January 2002 headquarters search",
+      "editorialIntent": "Make the investigation tactile through the headquarters search, stressing that evidence collection came after prevention had failed.",
+      "visualSync": "A 50-story tower turns into a searchable grid. Floors light up as agents move through them and evidence boxes stack in the lobby like a paper skyline.",
+      "pauseAfterSeconds": 0.5
+    },
+    {
+      "id": "narr-06-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-06",
+      "targetDurationSeconds": 4.255,
+      "text": "In white-collar cases, proof rarely arrives in one dramatic object.",
+      "claimIds": [],
+      "editorialIntent": "Differentiate suspicion from proof by focusing on evidentiary volume and the labor needed to build a prosecutable record.",
+      "visualSync": "A classified index abstraction blooms outward into fields for interviews, boxes, terabytes, and employee email nodes, each locking into a structured case archive.",
+      "pauseAfterSeconds": 1.1
+    },
+    {
+      "id": "narr-06-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-06",
+      "targetDurationSeconds": 13.191,
+      "text": "The FBI says the investigation ultimately involved more than eighteen hundred interviews, more than three thousand boxes of evidence, over four terabytes of collected digital data, and email from more than six hundred employees.",
+      "claimIds": [
+        "claim-en-data"
+      ],
+      "sourceLocator": "Investigation — evidence volume and interviews",
+      "editorialIntent": "Differentiate suspicion from proof by focusing on evidentiary volume and the labor needed to build a prosecutable record.",
+      "visualSync": "A classified index abstraction blooms outward into fields for interviews, boxes, terabytes, and employee email nodes, each locking into a structured case archive.",
+      "pauseAfterSeconds": 1.1
+    },
+    {
+      "id": "narr-06-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-06",
+      "targetDurationSeconds": 25.532,
+      "text": "That scale matters because prosecution had to be assembled rather than presumed. Accounts had to be checked against documents, documents against digital records, and digital records against one another until pattern became record. The labor itself is a clue: uncertainty did not disappear because someone sensed danger; it disappeared only when institutions could preserve, route, and test an enormous archive.",
+      "claimIds": [],
+      "editorialIntent": "Differentiate suspicion from proof by focusing on evidentiary volume and the labor needed to build a prosecutable record.",
+      "visualSync": "A classified index abstraction blooms outward into fields for interviews, boxes, terabytes, and employee email nodes, each locking into a structured case archive.",
+      "pauseAfterSeconds": 1.1
+    },
+    {
+      "id": "narr-06-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-06",
+      "targetDurationSeconds": 6.383,
+      "text": "By then, silence was no longer maintained by doubt. It was being displaced by volume.",
+      "claimIds": [],
+      "editorialIntent": "Differentiate suspicion from proof by focusing on evidentiary volume and the labor needed to build a prosecutable record.",
+      "visualSync": "A classified index abstraction blooms outward into fields for interviews, boxes, terabytes, and employee email nodes, each locking into a structured case archive.",
+      "pauseAfterSeconds": 1.1
+    },
+    {
+      "id": "narr-07-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-07",
+      "targetDurationSeconds": 2.128,
+      "text": "Accountability also leaves a ledger.",
+      "claimIds": [],
+      "editorialIntent": "Trace the movement from investigation to asset restraint and victim compensation, while stressing the limits of after-the-fact recovery.",
+      "visualSync": "Legal channels pull seized assets through narrowing gates toward victims; some funds reach the endpoint while other loss fields remain empty and unrecoverable.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-07-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-07",
+      "targetDurationSeconds": 13.617,
+      "text": "The FBI says financial analysis supported restraining orders and the seizure of more than 168 million dollars in assets, and that more than 105 million dollars was forfeited to help compensate victims.",
+      "claimIds": [
+        "claim-en-assets"
+      ],
+      "sourceLocator": "Investigation — asset seizure and forfeiture",
+      "editorialIntent": "Trace the movement from investigation to asset restraint and victim compensation, while stressing the limits of after-the-fact recovery.",
+      "visualSync": "Legal channels pull seized assets through narrowing gates toward victims; some funds reach the endpoint while other loss fields remain empty and unrecoverable.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-07-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-07",
+      "targetDurationSeconds": 20.851,
+      "text": "That is real recovery, but it is recovery in the past tense. Assets can be traced once a case is built. Trust, timing, and the vanished chance to intervene do not return so cleanly. Money may be restrained after the fact; institutional hesitation cannot be unwound the same way.",
+      "claimIds": [],
+      "editorialIntent": "Trace the movement from investigation to asset restraint and victim compensation, while stressing the limits of after-the-fact recovery.",
+      "visualSync": "Legal channels pull seized assets through narrowing gates toward victims; some funds reach the endpoint while other loss fields remain empty and unrecoverable.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-07-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-07",
+      "targetDurationSeconds": 9.787,
+      "text": "So the film moves backward again, to the period when reassurance and strain could still share the same calendar without settling the argument.",
+      "claimIds": [],
+      "editorialIntent": "Trace the movement from investigation to asset restraint and victim compensation, while stressing the limits of after-the-fact recovery.",
+      "visualSync": "Legal channels pull seized assets through narrowing gates toward victims; some funds reach the endpoint while other loss fields remain empty and unrecoverable.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-08-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-08",
+      "targetDurationSeconds": 3.83,
+      "text": "The broadest allegation is also the easiest to misuse.",
+      "claimIds": [],
+      "editorialIntent": "Present the SEC's broad scheme allegation with discipline, preserving the distinction between overarching theory and proved mechanism.",
+      "visualSync": "Authority seals and transcript pages stack into a provisional allegation node labeled results, condition, and performance, with edges that remain visibly tentative.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-08-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-08",
+      "targetDurationSeconds": 11.489,
+      "text": "The SEC alleged that Jeffrey Skilling, Richard Causey, and others manipulated Enron's publicly reported financial results and made false or misleading statements about its condition and performance.",
+      "claimIds": [
+        "claim-en-scheme"
+      ],
+      "sourceLocator": "Summary — wide-ranging scheme allegations",
+      "editorialIntent": "Present the SEC's broad scheme allegation with discipline, preserving the distinction between overarching theory and proved mechanism.",
+      "visualSync": "Authority seals and transcript pages stack into a provisional allegation node labeled results, condition, and performance, with edges that remain visibly tentative.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-08-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-08",
+      "targetDurationSeconds": 20.426,
+      "text": "That is an overall theory of deception, not a license to flatten the case into one easy moral sentence. Complex markets and aggressive accounting, standing alone, do not prove a coordinated fraud. The boundary has to hold. Allegation is a serious institutional act, but it is still allegation.",
+      "claimIds": [],
+      "editorialIntent": "Present the SEC's broad scheme allegation with discipline, preserving the distinction between overarching theory and proved mechanism.",
+      "visualSync": "Authority seals and transcript pages stack into a provisional allegation node labeled results, condition, and performance, with edges that remain visibly tentative.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-08-04",
+      "role": "outcome",
+      "sceneId": "episode-enron-en-scene-08",
+      "targetDurationSeconds": 15.319,
+      "text": "Even so, if the SEC's theory is credited in part, the contradiction sharpens: reported strength and underlying strain were allegedly moving in opposite directions while outside systems still had to decide what they were looking at.",
+      "claimIds": [
+        "claim-en-scheme"
+      ],
+      "sourceLocator": "Summary — wide-ranging scheme allegations",
+      "editorialIntent": "Present the SEC's broad scheme allegation with discipline, preserving the distinction between overarching theory and proved mechanism.",
+      "visualSync": "Authority seals and transcript pages stack into a provisional allegation node labeled results, condition, and performance, with edges that remain visibly tentative.",
+      "pauseAfterSeconds": 0.6
+    },
+    {
+      "id": "narr-09-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-09",
+      "targetDurationSeconds": 2.128,
+      "text": "Sometimes the hinge is tiny.",
+      "claimIds": [],
+      "editorialIntent": "Explain one alleged earnings maneuver in concrete analyst-facing terms, avoiding unsupported accounting generalization.",
+      "visualSync": "A document revision diff flips reserve entries into reported earnings while an analyst estimate hangs just two cents below the final line.",
+      "pauseAfterSeconds": 1.2
+    },
+    {
+      "id": "narr-09-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-09",
+      "targetDurationSeconds": 14.894,
+      "text": "The SEC alleged that executives chose to beat analysts' second-quarter 2000 estimate by two cents and caused millions of dollars of reserves to be released into earnings so Enron could report 34 cents per share.",
+      "claimIds": [
+        "claim-en-reserves"
+      ],
+      "sourceLocator": "Improper reserve releases — second quarter 2000",
+      "editorialIntent": "Explain one alleged earnings maneuver in concrete analyst-facing terms, avoiding unsupported accounting generalization.",
+      "visualSync": "A document revision diff flips reserve entries into reported earnings while an analyst estimate hangs just two cents below the final line.",
+      "pauseAfterSeconds": 1.2
+    },
+    {
+      "id": "narr-09-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-09",
+      "targetDurationSeconds": 21.277,
+      "text": "In that account, the mechanism is concrete. A narrow target sits in front of the market. Reserves are allegedly released. The quarter lands just above expectation. Nothing about that sequence needs grand rhetoric to matter, because a small beat can preserve the impression that performance is steady and under control.",
+      "claimIds": [
+        "claim-en-reserves"
+      ],
+      "sourceLocator": "Improper reserve releases — second quarter 2000",
+      "editorialIntent": "Explain one alleged earnings maneuver in concrete analyst-facing terms, avoiding unsupported accounting generalization.",
+      "visualSync": "A document revision diff flips reserve entries into reported earnings while an analyst estimate hangs just two cents below the final line.",
+      "pauseAfterSeconds": 1.2
+    },
+    {
+      "id": "narr-09-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-09",
+      "targetDurationSeconds": 9.362,
+      "text": "The allegation is limited, but the institutional lesson is larger: thin margins can carry thick signals when outside confidence depends on them.",
+      "claimIds": [],
+      "editorialIntent": "Explain one alleged earnings maneuver in concrete analyst-facing terms, avoiding unsupported accounting generalization.",
+      "visualSync": "A document revision diff flips reserve entries into reported earnings while an analyst estimate hangs just two cents below the final line.",
+      "pauseAfterSeconds": 1.2
+    },
+    {
+      "id": "narr-10-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-10",
+      "targetDurationSeconds": 4.681,
+      "text": "Another alleged mechanism depends on where losses are made to live.",
+      "claimIds": [],
+      "editorialIntent": "Make the alleged transfer of losses legible as an internal organizational maneuver with a claimed reporting effect.",
+      "visualSync": "Loss blocks slide from Enron Energy Services into Enron Wholesale, where reserve pools and earnings fields absorb the movement as labels remain unchanged.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-10-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-10",
+      "targetDurationSeconds": 14.894,
+      "text": "The SEC alleged that Enron moved a large losing portion of Enron Energy Services into Enron Wholesale in 2001 so Wholesale earnings and reserve accounts could absorb hundreds of millions of dollars in EES losses.",
+      "claimIds": [
+        "claim-en-ees"
+      ],
+      "sourceLocator": "Concealing EES Failures",
+      "editorialIntent": "Make the alleged transfer of losses legible as an internal organizational maneuver with a claimed reporting effect.",
+      "visualSync": "Loss blocks slide from Enron Energy Services into Enron Wholesale, where reserve pools and earnings fields absorb the movement as labels remain unchanged.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-10-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-10",
+      "targetDurationSeconds": 25.532,
+      "text": "Taken as alleged, the effect is plain even without technical language. The economic pain does not vanish. It is reassigned to a different reporting home, where stronger-looking fields can absorb what would otherwise stand out more clearly. That is not a claim about every transfer inside a complex company. It is a claim about this one and its alleged purpose.",
+      "claimIds": [
+        "claim-en-ees"
+      ],
+      "sourceLocator": "Concealing EES Failures",
+      "editorialIntent": "Make the alleged transfer of losses legible as an internal organizational maneuver with a claimed reporting effect.",
+      "visualSync": "Loss blocks slide from Enron Energy Services into Enron Wholesale, where reserve pools and earnings fields absorb the movement as labels remain unchanged.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-10-04",
+      "role": "outcome",
+      "sceneId": "episode-enron-en-scene-10",
+      "targetDurationSeconds": 6.383,
+      "text": "If the allegation is right, then the organization itself became part of the masking device.",
+      "claimIds": [
+        "claim-en-ees"
+      ],
+      "sourceLocator": "Concealing EES Failures",
+      "editorialIntent": "Make the alleged transfer of losses legible as an internal organizational maneuver with a claimed reporting effect.",
+      "visualSync": "Loss blocks slide from Enron Energy Services into Enron Wholesale, where reserve pools and earnings fields absorb the movement as labels remain unchanged.",
+      "pauseAfterSeconds": 1
+    },
+    {
+      "id": "narr-11-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-11",
+      "targetDurationSeconds": 5.106,
+      "text": "The final mechanism turns market belief into part of the accounting story.",
+      "claimIds": [],
+      "editorialIntent": "Present the alleged loop between promotional claims, stock movement, and recognized earnings without overstating what the record proves.",
+      "visualSync": "Three panels labeled promotion, stock price, and recognized earnings animate separately, then snap into a circular sequence around Project Greyhawk.",
+      "pauseAfterSeconds": 0.9
+    },
+    {
+      "id": "narr-11-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-11",
+      "targetDurationSeconds": 13.617,
+      "text": "The SEC alleged that misleading claims about Enron Broadband Services helped raise Enron's stock and that Project Greyhawk enabled Enron to recognize about 85 million dollars in earnings tied to that increase.",
+      "claimIds": [
+        "claim-en-ebs"
+      ],
+      "sourceLocator": "Promoting EBS to Manufacture Earnings",
+      "editorialIntent": "Present the alleged loop between promotional claims, stock movement, and recognized earnings without overstating what the record proves.",
+      "visualSync": "Three panels labeled promotion, stock price, and recognized earnings animate separately, then snap into a circular sequence around Project Greyhawk.",
+      "pauseAfterSeconds": 0.9
+    },
+    {
+      "id": "narr-11-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-11",
+      "targetDurationSeconds": 20.851,
+      "text": "Within that allegation, sequence is everything. Claims move outward. Confidence rises. The higher stock price then feeds back into recognized earnings. If that account is accepted, the market is not merely reacting to the story. The story is allegedly being folded back into the numbers presented to the market.",
+      "claimIds": [
+        "claim-en-ebs"
+      ],
+      "sourceLocator": "Promoting EBS to Manufacture Earnings",
+      "editorialIntent": "Present the alleged loop between promotional claims, stock movement, and recognized earnings without overstating what the record proves.",
+      "visualSync": "Three panels labeled promotion, stock price, and recognized earnings animate separately, then snap into a circular sequence around Project Greyhawk.",
+      "pauseAfterSeconds": 0.9
+    },
+    {
+      "id": "narr-11-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-11",
+      "targetDurationSeconds": 11.489,
+      "text": "That is why this beat matters. It suggests a loop in which narration, valuation, and reported performance may have reinforced one another instead of checking one another.",
+      "claimIds": [],
+      "editorialIntent": "Present the alleged loop between promotional claims, stock movement, and recognized earnings without overstating what the record proves.",
+      "visualSync": "Three panels labeled promotion, stock price, and recognized earnings animate separately, then snap into a circular sequence around Project Greyhawk.",
+      "pauseAfterSeconds": 0.9
+    },
+    {
+      "id": "narr-12-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-12",
+      "targetDurationSeconds": 7.234,
+      "text": "Taken together, the record points less to one mystery than to a timing failure distributed across systems.",
+      "claimIds": [],
+      "editorialIntent": "Draw a restrained interpretive lesson from the combined record, keeping the causal claim focused on institutional routing, testing, and action.",
+      "visualSync": "An authority map shows allegation, investigation, market signal, and institutional action moving in separate lanes that align only after collapse.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-12-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-12",
+      "targetDurationSeconds": 14.468,
+      "text": "Confirmed facts establish what followed the break: bankruptcy, a vast investigation, convictions, and asset recovery. The SEC allegations describe earlier mechanisms that, if true, could make reported strength appear sturdier than the underlying condition.",
+      "claimIds": [
+        "claim-en-collapse",
+        "claim-en-accountability",
+        "claim-en-assets",
+        "claim-en-scheme"
+      ],
+      "sourceLocator": "opening and Investigation sections",
+      "editorialIntent": "Draw a restrained interpretive lesson from the combined record, keeping the causal claim focused on institutional routing, testing, and action.",
+      "visualSync": "An authority map shows allegation, investigation, market signal, and institutional action moving in separate lanes that align only after collapse.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-12-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-12",
+      "targetDurationSeconds": 22.979,
+      "text": "That combination does not prove every later interpretation, and it should not be forced to. What it does sustain is a disciplined question. Why could authoritative warnings and contradictory financial signals remain unresolved until the cost of uncertainty became catastrophic? Why were some signals treated as noise until the archive became impossible to ignore?",
+      "claimIds": [],
+      "editorialIntent": "Draw a restrained interpretive lesson from the combined record, keeping the causal claim focused on institutional routing, testing, and action.",
+      "visualSync": "An authority map shows allegation, investigation, market signal, and institutional action moving in separate lanes that align only after collapse.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-12-04",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-12",
+      "targetDurationSeconds": 11.915,
+      "text": "The restrained lesson is procedural. Whistleblowing has value only when an institution can route, preserve, test, and act on a warning without allowing uncertainty to harden into silence.",
+      "claimIds": [],
+      "editorialIntent": "Draw a restrained interpretive lesson from the combined record, keeping the causal claim focused on institutional routing, testing, and action.",
+      "visualSync": "An authority map shows allegation, investigation, market signal, and institutional action moving in separate lanes that align only after collapse.",
+      "pauseAfterSeconds": 0.7
+    },
+    {
+      "id": "narr-13-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-13",
+      "targetDurationSeconds": 5.957,
+      "text": "So the line between allegation and proof is not cosmetic. It is the method.",
+      "claimIds": [],
+      "editorialIntent": "State the documentary method, reinforce the allegation-versus-proof boundary, and sharpen the final systems question.",
+      "visualSync": "A clean workflow passes through four gates labeled allegation, confirmation, conviction, and interpretation; only some records clear every gate.",
+      "pauseAfterSeconds": 0.4
+    },
+    {
+      "id": "narr-13-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-13",
+      "targetDurationSeconds": 14.894,
+      "text": "Some parts of this story were alleged by the SEC. Other parts were later confirmed by the FBI and the Justice Department, and a federal jury convicted Jeffrey Skilling in 2006 before his 2013 resentencing.",
+      "claimIds": [
+        "claim-en-scheme",
+        "claim-en-collapse",
+        "claim-en-conviction"
+      ],
+      "sourceLocator": "Summary — wide-ranging scheme allegations",
+      "editorialIntent": "State the documentary method, reinforce the allegation-versus-proof boundary, and sharpen the final systems question.",
+      "visualSync": "A clean workflow passes through four gates labeled allegation, confirmation, conviction, and interpretation; only some records clear every gate.",
+      "pauseAfterSeconds": 0.4
+    },
+    {
+      "id": "narr-13-03",
+      "role": "transition",
+      "sceneId": "episode-enron-en-scene-13",
+      "targetDurationSeconds": 16.596,
+      "text": "Keep that boundary intact, and Enron stops behaving like legend. It becomes a systems test in which institutions had to decide what counted as signal, what counted as proof, and when delay itself had become part of the damage.",
+      "claimIds": [],
+      "editorialIntent": "State the documentary method, reinforce the allegation-versus-proof boundary, and sharpen the final systems question.",
+      "visualSync": "A clean workflow passes through four gates labeled allegation, confirmation, conviction, and interpretation; only some records clear every gate.",
+      "pauseAfterSeconds": 0.4
+    },
+    {
+      "id": "narr-14-01",
+      "role": "hook",
+      "sceneId": "episode-enron-en-scene-14",
+      "targetDurationSeconds": 5.532,
+      "text": "By the end, the evidence is overwhelming, and it is useless for prevention.",
+      "claimIds": [],
+      "editorialIntent": "Close on the scale of the finished archive and return to the unresolved institutional question rather than a moral slogan.",
+      "visualSync": "Transcript pages dim into boxes, email nodes, and a dead stock line, while one unresolved warning pulse remains lit on the signal map.",
+      "pauseAfterSeconds": 1.3
+    },
+    {
+      "id": "narr-14-02",
+      "role": "evidence",
+      "sceneId": "episode-enron-en-scene-14",
+      "targetDurationSeconds": 14.043,
+      "text": "The finished case file included more than three thousand boxes of evidence, over four terabytes of collected digital data, and stock that the Justice Department said ended virtually worthless after the December 2001 bankruptcy.",
+      "claimIds": [
+        "claim-en-data",
+        "claim-en-stock"
+      ],
+      "sourceLocator": "Investigation — evidence volume and interviews",
+      "editorialIntent": "Close on the scale of the finished archive and return to the unresolved institutional question rather than a moral slogan.",
+      "visualSync": "Transcript pages dim into boxes, email nodes, and a dead stock line, while one unresolved warning pulse remains lit on the signal map.",
+      "pauseAfterSeconds": 1.3
+    },
+    {
+      "id": "narr-14-03",
+      "role": "cta",
+      "sceneId": "episode-enron-en-scene-14",
+      "targetDurationSeconds": 17.872,
+      "text": "The harder question lies earlier. When the next warning enters a powerful system, will it be preserved, tested, and acted on in time, or will it travel one channel too slowly until the evidence again has to be gathered floor by floor?",
+      "claimIds": [],
+      "editorialIntent": "Close on the scale of the finished archive and return to the unresolved institutional question rather than a moral slogan.",
+      "visualSync": "Transcript pages dim into boxes, email nodes, and a dead stock line, while one unresolved warning pulse remains lit on the signal map.",
+      "pauseAfterSeconds": 1.3
+    }
+  ]
+}

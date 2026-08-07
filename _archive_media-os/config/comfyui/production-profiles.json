@@ -1,0 +1,148 @@
+{
+  "version": "2026-08-03.1",
+  "profiles": [
+    {
+      "id": "realistic_host",
+      "label": "Photoreal fictional host",
+      "visualModes": ["avatar_fullscreen", "avatar_pip"],
+      "outputKind": "video",
+      "compositingRole": "host_overlay",
+      "readiness": "production",
+      "workflowPathEnv": "MEDIA_OS_REALISTIC_HOST_WORKFLOW_PATH",
+      "bindingPathEnv": "MEDIA_OS_REALISTIC_HOST_BINDINGS_PATH",
+      "generator": "comfyui_musetalk",
+      "requiredCapabilities": ["fictional_identity_lock", "audio_driven_lip_sync", "blink_and_gaze", "commercial_use_models"],
+      "quality": {
+        "minimumWidth": 768,
+        "minimumHeight": 768,
+        "minimumBytes": 250000,
+        "minimumDurationSeconds": 3,
+        "maximumDurationSeconds": 12,
+        "requireAlpha": false,
+        "requireLipSyncScore": true,
+        "minimumLipSyncScore": 0.72,
+        "requireIdentityScore": true,
+        "minimumIdentityScore": 0.82
+      }
+    },
+    {
+      "id": "anime_cohost",
+      "label": "Identity-locked anime co-host",
+      "visualModes": ["anime_reenactment"],
+      "outputKind": "image",
+      "compositingRole": "character_plate",
+      "readiness": "preview",
+      "workflowPath": "evidence-reconstruction-sdxl-api.json",
+      "generator": "comfyui_sdxl_ip_adapter",
+      "requiredCapabilities": ["character_reference", "expression_prompt", "commercial_use_models"],
+      "bindings": {
+        "positiveTextNode": "6",
+        "negativeTextNode": "7",
+        "samplerNode": "3",
+        "latentNode": "5",
+        "saveNode": "9"
+      },
+      "quality": {
+        "minimumWidth": 1280,
+        "minimumHeight": 720,
+        "minimumBytes": 10000,
+        "requireAlpha": false,
+        "requireLipSyncScore": false,
+        "requireIdentityScore": true,
+        "minimumIdentityScore": 0.78
+      }
+    },
+    {
+      "id": "manga_docudrama",
+      "label": "Motion-comic docudrama panel",
+      "visualModes": ["motion_comic"],
+      "outputKind": "image",
+      "compositingRole": "parallax_panel",
+      "readiness": "preview",
+      "workflowPath": "evidence-reconstruction-sdxl-api.json",
+      "generator": "comfyui_sdxl_controlnet",
+      "requiredCapabilities": ["panel_composition", "character_reference", "commercial_use_models"],
+      "bindings": {
+        "positiveTextNode": "6",
+        "negativeTextNode": "7",
+        "samplerNode": "3",
+        "latentNode": "5",
+        "saveNode": "9"
+      },
+      "quality": {
+        "minimumWidth": 1280,
+        "minimumHeight": 720,
+        "minimumBytes": 10000,
+        "requireAlpha": false,
+        "requireLipSyncScore": false,
+        "requireIdentityScore": false
+      }
+    },
+    {
+      "id": "cinematic_reenactment",
+      "label": "Wan cinematic motion insert",
+      "visualModes": ["cinematic_reconstruction", "system_reconstruction"],
+      "outputKind": "video",
+      "compositingRole": "cinematic_plate",
+      "readiness": "production",
+      "workflowPathEnv": "MEDIA_OS_CINEMATIC_MOTION_WORKFLOW_PATH",
+      "bindingPathEnv": "MEDIA_OS_CINEMATIC_MOTION_BINDINGS_PATH",
+      "generator": "comfyui_wan22_i2v",
+      "requiredCapabilities": ["wan22_i2v", "temporal_consistency", "camera_motion_control", "commercial_use_models"],
+      "quality": {
+        "minimumWidth": 1280,
+        "minimumHeight": 720,
+        "minimumBytes": 250000,
+        "minimumDurationSeconds": 3,
+        "maximumDurationSeconds": 7,
+        "requireAlpha": false,
+        "requireLipSyncScore": false,
+        "requireIdentityScore": false
+      }
+    },
+    {
+      "id": "cinematic_keyframe",
+      "label": "Archive macro keyframe",
+      "visualModes": ["archive_macro"],
+      "outputKind": "image",
+      "compositingRole": "cinematic_plate",
+      "readiness": "preview",
+      "workflowPath": "evidence-reconstruction-sdxl-api.json",
+      "generator": "comfyui_sdxl_keyframe",
+      "requiredCapabilities": ["documentary_lighting", "fictional_cast_only", "commercial_use_models"],
+      "bindings": {
+        "positiveTextNode": "6",
+        "negativeTextNode": "7",
+        "samplerNode": "3",
+        "latentNode": "5",
+        "saveNode": "9"
+      },
+      "quality": {
+        "minimumWidth": 1280,
+        "minimumHeight": 720,
+        "minimumBytes": 10000,
+        "requireAlpha": false,
+        "requireLipSyncScore": false,
+        "requireIdentityScore": false
+      }
+    },
+    {
+      "id": "evidence_room",
+      "label": "Evidence Room motion graphics",
+      "visualModes": ["source_document", "evidence_map", "data_motion", "screenlife"],
+      "outputKind": "composition",
+      "compositingRole": "hyperframes_native",
+      "readiness": "production",
+      "generator": "hyperframes",
+      "requiredCapabilities": ["source_locator", "claim_status", "deterministic_text", "wcag_contrast"],
+      "quality": {
+        "minimumWidth": 1920,
+        "minimumHeight": 1080,
+        "minimumBytes": 0,
+        "requireAlpha": false,
+        "requireLipSyncScore": false,
+        "requireIdentityScore": false
+      }
+    }
+  ]
+}
