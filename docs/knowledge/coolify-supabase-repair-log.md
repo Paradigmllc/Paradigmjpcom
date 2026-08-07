@@ -110,3 +110,44 @@ For full Supabase parity, deploy a separate staged stack first:
 - `/opt/supabase/docker-compose.yml` と `/opt/twenty-compose.yml` に **DB パスワード・JWT シークレット・Supabase キーが平文**で記載されている。`APP_SECRET` と `PGRST_JWT_SECRET` は `change_me` を含む既定値のまま。環境変数への外出しとローテーションが必要。
 - `docker-network-fix.service` と `cloud-init-hotplugd.service` が failed 状態。
 - 定常的な増加要因は oss-supabase バックアップ（約1.2GB/日・14日保持で頭打ち）とイメージ55.8GB。**新たな cron / systemd timer は WW-EVENT ルールにより追加していない。**
+
+## 2026-08-07 — シークレットのローテーションと failed ユニットの解消
+
+### JWT シークレットのローテーション（完了）
+
+`PGRST_JWT_SECRET` が `paradigm_jwt_secret_change_me_2026_changeme` という既定値のままだった。**これを知っていれば service_role の JWT を偽造でき、公開されている `https://supabase.paradigmjp.com/rest/v1/` 経由で DB を全操作できる**状態だった（DB ポート自体は外部露出していないが、REST は公開されている）。
+
+消費者の全体像:
+
+| 消費者 | 対象 |
+|---|---|
+| `/opt/supabase/docker-compose.yml` | `PGRST_JWT_SECRET`（署名鍵）3箇所 |
+| `/opt/twenty-compose.yml` | anon / service_role |
+| `dotfiles/infra/token-registry.json` | 4件 |
+| Coolify `paradigm-hp` env | 5件（production + preview） |
+
+無効時間を最小化するため次の順序で実施した。**Coolify env を先に更新 → paradigm-hp をデプロイ（この間も旧鍵は有効なのでサイトは動く）→ デプロイ完了後に PostgREST を切替 → 消費者を再起動。**
+
+結果: 新鍵で REST 200、**旧 service_role は 401 で拒否**を確認。paradigmjp.com / ai-tools / twenty / supabase すべて正常。
+
+### 注意点（次回のために）
+
+- **Coolify API の `value` は一覧で20文字に切り詰められる。`real_value` が実値。** これで照合すると必ずミスする。
+- Coolify の env PATCH に `uuid` を含めると 422（`This field is not allowed.`）。
+- Coolify API は Python の urllib だと Cloudflare に 403 で弾かれる。curl を使う。
+- `opt-twenty-server-1` は **compose 管理外（手動 docker run 作成）**。compose を書き換えても反映されないため、鍵の更新には再作成が必要。稼働中コンテナには compose に無い `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` があり、compose 側に補完した。
+- Traefik は Twenty を **IP 直指定（`10.0.1.4:3000`）** していた。コンテナ再作成で壊れるため、エイリアス `twenty-server` 参照へ変更した。切替時に一時的に 502 になったので、エイリアス付与と同時に行うこと。
+
+### failed ユニットの解消（完了）
+
+**`docker-network-fix.service`** — 存在しないコンテナ (`services-paperclip-1` / `paradigm-outreach-worker`) への接続を試み、ループ末尾の `docker network connect` が非ゼロを返してサービス全体が failed になっていた。存在確認・接続済み判定・明示的な `exit 0` を持つ `/usr/local/sbin/docker-network-fix.sh` に置き換え、`twenty-server` エイリアスの維持も担わせた。
+
+**`cloud-init-hotplugd.service`** — Docker が veth インターフェースを頻繁に作り消しするため udev フックが発火し、**7日で161回失敗**して毎回 Python トレースバックをログに書いていた（`RuntimeError: Failed to detect False in updated metadata`）。この環境では成功しえないので `90-cloud-init-hook-hotplug.rules` を無効化し、socket も停止。元ファイルは `/root/` に退避。
+
+failed ユニットは 0 件になった。
+
+### 残作業
+
+- `opt-twenty-server-1` の再作成（新 Supabase 鍵と新 `APP_SECRET` の反映）。compose 側は更新済みだが、稼働中コンテナは旧値のまま。Twenty の UI 自体は動作しているが、Twenty 内の Supabase 連携は 401 になる。
+- Postgres のパスワード（`supabase2026pass` / `twenty_secret_2026`）は未ローテーション。**DB ポートは外部露出しておらず UFW も 22/80/443/3001 のみ許可**のため遠隔からの悪用は不可。優先度は JWT より低い。
+- **作業中に fail2ban で SSH が繰り返し遮断された。** 短時間に多数の SSH 接続を張ったため。今後は `ControlMaster` による多重化で1接続に集約すること。
