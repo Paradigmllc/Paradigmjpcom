@@ -22,7 +22,7 @@ import { synthesizeSpeech, transcribeAudio } from "./audio-pipeline"
 import { renderWithOssEngine, type OssRenderInput } from "./oss-renderers"
 import { createVideoJob, runVideoJobAction } from "./video-pipeline"
 import { getComfyuiClientConfig, updateComfyuiClientConfig } from "./comfyui-client"
-import { deployComfyuiToVast } from "./vast-comfyui-deploy"
+import { deployComfyuiToVast, waitForComfyuiReady } from "./vast-comfyui-deploy"
 import { createR2SignedUploads, sanitizeR2ObjectName } from "./r2-storage"
 import { findCompanyBySlug, findCompanyById, findCompanyByDomain } from "./companies"
 
@@ -105,11 +105,21 @@ export async function runVideoOrchestrator(
       console.warn("[Orchestrator] ComfyUI is not ready. Deploying to Vast.ai dynamically...");
       const deployStart = Date.now();
       const deploy = await deployComfyuiToVast({ gpuType: "RTX_4090", disk: 64, workload: "comfyui_full" });
-      steps.push(makeStep("vast_comfyui_deploy", deploy.ok, deployStart, { error: deploy.error, data: { url: deploy.comfyuiUrl, instanceId: deploy.instanceId } }));
-      
-      if (deploy.ok && deploy.comfyuiUrl) {
-        // 設定を動的に上書きしてAPIを使えるようにする
-        updateComfyuiClientConfig(deploy.comfyuiUrl);
+
+      // 作成応答には到達可能なURLが含まれない。外部ポートが割り当てられ
+      // ComfyUI が応答を返すまで待ってから設定を上書きする。
+      // ここを待たずに URL を設定すると、以降の生成が黙って全て失敗する。
+      const ready = deploy.ok && deploy.instanceId
+        ? await waitForComfyuiReady(deploy.instanceId)
+        : null;
+
+      steps.push(makeStep("vast_comfyui_deploy", ready?.ok === true, deployStart, {
+        error: deploy.error ?? ready?.error,
+        data: { url: ready?.comfyuiUrl ?? null, instanceId: deploy.instanceId },
+      }));
+
+      if (ready?.ok && ready.comfyuiUrl) {
+        updateComfyuiClientConfig(ready.comfyuiUrl);
         comfyuiConfig = getComfyuiClientConfig();
       }
     }

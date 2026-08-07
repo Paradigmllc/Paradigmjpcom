@@ -53,10 +53,22 @@ export interface VastSearchParams {
   diskSpace?: number
 }
 
+/**
+ * Docker のポート公開情報。running のインスタンスにだけ現れる。
+ * 例: { "8188/tcp": [{ HostIp: "0.0.0.0", HostPort: "40251" }] }
+ */
+export type VastPortBindings = Record<string, Array<{ HostIp?: string; HostPort?: string }>>
+
+/**
+ * Vast.ai /api/v0/instances/ が実際に返すフィールド。
+ * `status` という単一フィールドは存在せず、actual_status と cur_state に分かれている。
+ */
 export interface VastInstance {
   id: number
   label: string | null
-  status: "running" | "stopped" | "off" | "pending"
+  actual_status: string | null
+  cur_state: string | null
+  intended_status: string | null
   gpu_name: string
   num_gpus: number
   gpu_ram: number
@@ -67,11 +79,51 @@ export interface VastInstance {
   image_uuid: string | null
   ssh_host: string | null
   ssh_port: number | null
+  /** 外部からインスタンスに到達するためのグローバルIP。 */
+  public_ipaddr: string | null
+  /** コンテナ内ポート → 外部ポートの対応。running 時のみ入る。 */
+  ports: VastPortBindings | null
   jupyter_token: string | null
   jupyter_port: number | null
   actual_uptime: number
   machine_id: number
   geolocation: string | null
+}
+
+export type VastInstanceState = "running" | "pending" | "stopped" | "unknown"
+
+/**
+ * インスタンスの状態を正規化する。
+ * Vast.ai は actual_status / cur_state / intended_status の3つを返すため、
+ * 呼び出し側がどれを見るべきか迷わないようここで1つに畳む。
+ */
+export function getVastInstanceState(instance: VastInstance): VastInstanceState {
+  const actual = (instance.actual_status ?? "").toLowerCase()
+  const current = (instance.cur_state ?? "").toLowerCase()
+
+  if (actual === "running") return "running"
+  if (actual === "loading" || current === "loading" || current === "creating") return "pending"
+  if (actual === "exited" || current === "stopped" || actual === "created") return "stopped"
+  if (actual.length === 0 && current.length === 0) return "unknown"
+  return "stopped"
+}
+
+/**
+ * コンテナ内ポートに対応する外部URLを組み立てる。
+ * Vast.ai は外部ポートを動的に割り当てるため、固定ポートを前提にしてはいけない。
+ * 到達不能な場合は null を返す。呼び出し側で localhost を使わせない。
+ */
+export function resolveVastPortUrl(
+  instance: VastInstance,
+  internalPort: number,
+  protocol: "http" | "https" = "http",
+): string | null {
+  const host = instance.public_ipaddr
+  if (!host) return null
+  const binding = instance.ports?.[`${internalPort}/tcp`]?.[0]
+  const externalPort = binding?.HostPort
+  if (!externalPort) return null
+  return `${protocol}://${host}:${externalPort}`
 }
 
 export interface VastCreateInstanceParams {
@@ -80,9 +132,24 @@ export interface VastCreateInstanceParams {
   disk: number
   label?: string
   env?: Record<string, string>
+  /**
+   * 起動時に実行するシェルスクリプトの行。
+   *
+   * 重要: これがスクリプトとして解釈されるのは runtype が ssh 系のときだけ。
+   * ssh:false だと runtype が "args" になり、Vast.ai はこの文字列を
+   * コンテナの exec argv としてそのまま渡す。結果、複数行のスクリプトは
+   * 「そういう名前の実行ファイル」を探して OCI runtime create failed で落ちる。
+   * 起動スクリプトを使いたい場合は ssh: true にすること。
+   */
   onStart?: string[]
   jupyter?: boolean
   ssh?: boolean
+  /**
+   * 外部公開したいコンテナ内ポート。指定しないと ComfyUI などに外から到達できない。
+   * Vast.ai 側は実際の外部ポートを動的に割り当てるため、
+   * 起動後に resolveVastPortUrl() で解決すること。
+   */
+  exposePorts?: number[]
 }
 
 export interface VastCreateInstanceResult {
@@ -209,12 +276,20 @@ export async function createVastInstance(
   }
 
   try {
+    // Vast.ai のポート公開は独立フィールドではなく、env の中の "-p 8188:8188" という
+    // キーで表現する(値は任意)。`ports` を渡しても黙って無視され、22番しか開かない。
+    // 実機で確認済み: 公開済みインスタンスの extra_env に ["-p 1111:1111","1"] が並んでいる。
+    const env: Record<string, string> = { ...(params.env ?? {}) }
+    for (const port of params.exposePorts ?? []) {
+      env[`-p ${port}:${port}`] = "1"
+    }
+
     const body: Record<string, unknown> = {
       image: params.image,
       disk: params.disk,
       label: params.label ?? `paradigm-video-${Date.now()}`,
       runtype: params.ssh ? "ssh_direct" : "args",
-      ...(params.env ? { env: params.env } : {}),
+      ...(Object.keys(env).length > 0 ? { env } : {}),
       ...(params.onStart ? { onstart: params.onStart.join("\n") } : {}),
       ...(params.jupyter ? { jupyter: true, jupyter_dir: "/workspace" } : {}),
       ...(params.ssh ? { ssh: true } : {}),
@@ -259,7 +334,8 @@ export async function listVastInstances(
   }
 
   try {
-    const res = await fetch(`${VAST_API_V1}/instances`, {
+    // /api/v1/instances は存在せず HTML の 301 を返す。v0 が正。
+    const res = await fetch(`${VAST_API_V0}/instances/`, {
       headers: authHeaders(),
       signal: AbortSignal.timeout(timeoutMs),
     })
@@ -322,15 +398,31 @@ async function vastInstanceAction(
   }
 
   try {
-    const res = await fetch(`${VAST_API_V1}/instances/${instanceId}/${action}`, {
-      method: "PUT",
+    // v0 は状態変更を PUT /instances/{id}/ の body で表現し、削除は DELETE を使う。
+    const res = await fetch(`${VAST_API_V0}/instances/${instanceId}/`, {
+      method: action === "destroy" ? "DELETE" : "PUT",
       headers: authHeaders(),
+      ...(action === "destroy"
+        ? {}
+        : { body: JSON.stringify({ state: action === "start" ? "running" : "stopped" }) }),
       signal: AbortSignal.timeout(timeoutMs),
     })
 
     if (!res.ok) {
       const text = await readErrorBody(res, action)
       return { ok: false, error: `Vast.ai ${action} failed: HTTP ${res.status} ${text.slice(0, 200)}` }
+    }
+
+    // Vast.ai は失敗時も HTTP 200 で { success: false, error } を返すため、本文まで見る。
+    // 例: GPU が他ユーザーに使用中だと resources_unavailable が返り、要求はキューされるだけ。
+    const body = (await res.json().catch(() => null)) as
+      | { success?: boolean; error?: string; msg?: string }
+      | null
+    if (body && body.success === false) {
+      return {
+        ok: false,
+        error: `Vast.ai ${action} rejected: ${body.error ?? "unknown"} ${body.msg ?? ""}`.trim(),
+      }
     }
 
     return { ok: true }
@@ -369,6 +461,8 @@ export async function uploadToVastInstance(
   }
 
   try {
+    // 未検証。/api/v1 は 301 を返すため、この呼び出しは現状成功しない。
+    // Vast.ai へのファイル転送は SSH/scp が正規経路。本番利用前に要再実装。
     const res = await fetch(`${VAST_API_V1}/instances/${instanceId}/upload`, {
       method: "POST",
       headers: authHeaders(),

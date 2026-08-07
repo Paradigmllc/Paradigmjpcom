@@ -24,8 +24,13 @@ import {
   createVastInstance,
   listVastInstances,
   destroyVastInstance,
+  getVastInstanceState,
+  resolveVastPortUrl,
   type VastSearchOffer,
 } from "./vast-client"
+
+/** ComfyUI がコンテナ内で待ち受けるポート。外部ポートは Vast.ai が動的に決める。 */
+const COMFYUI_INTERNAL_PORT = 8188
 
 /* ───── 型定義 ───── */
 
@@ -209,10 +214,16 @@ export async function deployComfyuiToVast(
     env: {
       COMFYUI_PORT: String(comfyuiPort),
       WORKLOAD: workload,
+      // ComfyUI 同梱イメージ (vastai/aio-studio 系) はこの変数で起動引数を決める。
+      // 既定は "--listen 127.0.0.1 --port 18188" で、ループバックかつ非公開ポートに
+      // バインドされるため外部から到達できない。0.0.0.0 と公開ポートを明示して上書きする。
+      COMFYUI_ARGS: `--listen 0.0.0.0 --port ${comfyuiPort}`,
     },
     onStart: onStartScripts,
     jupyter: true,
     ssh: true,
+    // これが無いと ComfyUI が起動しても外部から到達できない。
+    exposePorts: [comfyuiPort],
   })
 
   if (!createResult.ok || !createResult.instanceId) {
@@ -224,13 +235,13 @@ export async function deployComfyuiToVast(
 
   const instanceId = createResult.instanceId
 
+  // comfyuiUrl はここでは返せない。Vast.ai が外部ポートを割り当てるのは起動後で、
+  // 作成応答には含まれない。以前は "http://localhost:8188" を返していたが、
+  // それを ComfyUI クライアントに設定すると全生成が黙って失敗する。
+  // 呼び出し側は checkComfyuiDeployStatus / waitForComfyuiReady で解決すること。
   return {
     ok: true,
     instanceId,
-    comfyuiUrl: `http://localhost:${comfyuiPort}`,
-    sshHost: undefined, // インスタンス起動後に更新
-    sshPort: undefined,
-    jupyterToken: undefined,
   }
 }
 
@@ -249,17 +260,30 @@ export async function checkComfyuiDeployStatus(
       return { ok: false, instanceId, status: "error", error: "Instance not found" }
     }
 
-    if (instance.status !== "running") {
+    const state = getVastInstanceState(instance)
+    if (state !== "running") {
       return {
         ok: false,
         instanceId,
-        status: instance.status === "pending" ? "deploying" : "stopped",
-        error: instance.status === "pending" ? "Instance is still deploying..." : "Instance is stopped",
+        status: state === "pending" ? "deploying" : "stopped",
+        error:
+          state === "pending"
+            ? "Instance is still deploying..."
+            : `Instance is not running (actual_status=${instance.actual_status ?? "?"})`,
       }
     }
 
-    // ComfyUI API の応答確認
-    const comfyuiUrl = `http://${instance.ssh_host}:8188`
+    // 外部ポートは Vast.ai が動的に割り当てるため、固定ポートを前提にしない。
+    const comfyuiUrl = resolveVastPortUrl(instance, COMFYUI_INTERNAL_PORT)
+    if (!comfyuiUrl) {
+      return {
+        ok: false,
+        instanceId,
+        status: "deploying",
+        error: `ポート ${COMFYUI_INTERNAL_PORT} がまだ公開されていません。作成時に exposePorts を指定したか確認してください。`,
+      }
+    }
+
     try {
       const res = await fetch(`${comfyuiUrl}/system_stats`, {
         signal: AbortSignal.timeout(10_000),
@@ -291,6 +315,41 @@ export async function checkComfyuiDeployStatus(
       error: error instanceof Error ? error.message : "Failed to check deploy status",
     }
   }
+}
+
+export interface WaitForComfyuiOptions {
+  /** 諦めるまでの最大待ち時間。素の CUDA イメージからの構築は10分以上かかる。 */
+  timeoutMs?: number
+  /** 状態確認の間隔。 */
+  pollIntervalMs?: number
+}
+
+/**
+ * ComfyUI が外部から叩ける状態になるまで待つ。
+ *
+ * deployComfyuiToVast は作成要求を投げるだけで URL を返さない。
+ * インスタンス起動 → ポート割り当て → ComfyUI 起動 の3段階が終わって初めて
+ * 到達可能になるため、URL が必要な呼び出し側はこの関数を通す。
+ */
+export async function waitForComfyuiReady(
+  instanceId: number,
+  options: WaitForComfyuiOptions = {},
+): Promise<ComfyuiDeployStatus> {
+  const timeoutMs = options.timeoutMs ?? 15 * 60_000
+  const pollIntervalMs = options.pollIntervalMs ?? 15_000
+  const deadline = Date.now() + timeoutMs
+
+  let last: ComfyuiDeployStatus = { ok: false, instanceId, status: "deploying" }
+
+  while (Date.now() < deadline) {
+    last = await checkComfyuiDeployStatus(instanceId)
+    if (last.ok && last.status === "running" && last.comfyuiUrl) return last
+    // 停止・エラーは待っても変わらないので即座に返す。
+    if (last.status === "stopped" || last.status === "error") return last
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+  }
+
+  return { ...last, ok: false, error: last.error ?? `ComfyUI が ${timeoutMs / 1000} 秒以内に起動しませんでした。` }
 }
 
 /**
