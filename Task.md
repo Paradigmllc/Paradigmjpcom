@@ -1,4 +1,28 @@
-﻿## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
+﻿## ACTIVE HANDOFF - 2026-08-07 開発環境をサーバー側へ移設 / YouTube パイプライン継続
+
+### まずこれを読む
+作業場所は**ローカルではなくサーバー上**に移った。`paradigm-prod-01` の `/opt/dev/paradigmjpcom`（ブランチ `codex/quote-recovery-vertical-saas`）。
+入り方は private リポジトリ `Gracecom1/paradigm-workstation` を clone して `CONNECT.ps1`（Win）/ `connect.sh`（Mac・Linux）を実行するだけ。接続情報と鍵はそのリポジトリにある（**public 化厳禁**）。
+
+移設理由: 操作対象（Coolify / Hetzner / Vast.ai / Supabase / Twenty）が全てリモートで、ローカルに置く意味がない。テストはローカル 114 秒に対しサーバー 2 秒。動画レンダリングは CPU を数分占有するのでサーバー向き。
+
+- Claude Code のプロジェクトキーは `-opt-dev-paradigmjpcom`。**作業ディレクトリのパスを変えると会話履歴が別プロジェクト扱いになる**ので変えないこと。
+- 過去の会話ログと memory は `/root/.claude/projects/-opt-dev-paradigmjpcom/` にある。続きは `/resume` で選ぶ。
+- git 管理外のローカル限定ファイル（`creator/*` 一式、`scratch/`、`scripts/revenueos-readiness-gate.mjs`、`scripts/lib/sales-supabase-client.mjs`、`scripts/unlock-payload-users.sh`、`.env.local`、`.env.supabase`）は転送済み。`creator/*` は Task.md 記載のリリースブロッカー通り、この法人リポジトリにコミットしてはいけない。
+
+### 次のアクション（優先順）
+1. **Supabase 起動** — 最も詰まっている。Coolify にサービス定義済み（service `kw7m6sd5otbouk4h0ydpniwn`、5コンテナに削減、既存の anon/service キーがそのまま通るよう JWT シークレットを引き継ぎ済み）。起動操作のみ残。`.env.local` の URL は `supabase.paradigmjp.com` に修正済み（`supabase.appexx.me` ではない）。
+2. **視覚素材の実装** — 現状の動画はテキスト主体で視覚的訴求が不足。Openverse と Wikimedia が API キー不要で使えることは確認済み。SVG 図表と ComfyUI 経路は未着手。
+3. **投稿層** — YouTube Data API OAuth + private アップロード + Telegram 承認通知。
+
+### 踏んだら壊れる箇所
+- **本番サイト paradigmjp.com と Twenty CRM が同じサーバーに同居**している。重い処理の前に必ず `free -h`。このサーバーで `limits_memory`（設定値）を空き容量と読み違えて本番を 2 回落としている。実使用量を見ること。
+- `paradigm-workstation` の `.gitattributes` にある `id_ed25519 -text` を消すと、clone 時に git が秘密鍵を CRLF に変換して壊す。Windows では鍵のパーミッションを絞らないと OpenSSH が鍵を無視する（`CONNECT.ps1` が実施）。
+- Coolify API は権限不足のエンドポイントで 403 ではなく **200 + 空配列**を返す。空配列を「リソースが無い」と読むと誤診する。
+- BullMQ で `priority` 付きジョブは `wait` ではなく `prioritized` に入る。`wait`/`active`/`delayed` が 0 でも滞留ゼロとは限らない（実際に 328,383 件の未処理ジョブを空と誤認しかけた）。
+- API キーの正典は `~/.claude/projects/**/memory/reference_api_keys.md`。`**` の通り**全プロジェクト横断で探す**こと。Hetzner や Coolify の鍵は別プロジェクト配下にある。
+
+## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
 
 - Replaced the generated demo renderer for `/{slug}` and `/demo/{slug}/{section}` with a delivery-quality full-site renderer instead of redirecting to broken static-looking lower pages.
 - Added full-site data generation for home, services, pricing, cases, FAQ, about, blog, contact, privacy, terms, and tokushoho pages.
