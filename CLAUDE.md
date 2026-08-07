@@ -2,6 +2,12 @@
 
 This file is a lightweight project entrypoint. Keep detailed history out of this file.
 
+## 「続きから開始して」と言われたら
+
+確認も質問もせず、`Task.md` 冒頭の ACTIVE HANDOFF を読み、そこに書かれた「次のアクション」の先頭から着手する。ユーザーに操作を頼まないこと。
+
+作業はこのローカルではなくサーバー上（`root@178.105.138.55:/opt/dev/paradigmjpcom`）で行う。詳細と注意点は ACTIVE HANDOFF にある。接続鍵は private リポジトリ `Gracecom1/paradigm-workstation` にあるので、手元に無ければ `gh repo clone Gracecom1/paradigm-workstation` で取得する（**このリポジトリは public なので鍵と .env は絶対に置かない**）。
+
 ## Start Here
 
 1. Read `AGENTS.md` for repo rules.
