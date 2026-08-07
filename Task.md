@@ -52,15 +52,41 @@
 実台本相当のフィクスチャで 3/3 シーンに SVG が入り、棒の比率も一致することを確認済み。
 （ESLint はこのブランチに設定ファイルが無く実行できない。既存の状態。）
 
+### 実レンダリング検証で出た欠陥（2026-08-07・`ea40341a`）
+
+`hyperframes check --snapshots` で実フレームを見て3件見つけた。**HTML の中身が正しくても
+フレームを見ないと分からない種類のものばかりだった。**
+
+1. **レンダリングホストに日本語フォントが1つも入っていなかった（最重要）。**
+   `fc-list :lang=ja` が **0件**、フォント総数8。コンポジションは `"Noto Sans JP", sans-serif` を
+   指定しているので、CJK が全て豆腐（□）になっていた。見出し・SVG ラベル・「出典 1件」が全滅。
+   `apt-get install -y fonts-noto-cjk` + `fc-cache -f` で解消（30件認識）。
+   **恒久対策が必要**: このホストに手で入れただけなので、Docker / Lambda / Cloud Run など
+   別環境でレンダリングした瞬間に再発する。レンダリング用イメージ側にフォントを焼くこと。
+   過去に「実データで3分43秒の動画を生成済み」とあるが、その動画も見出しが豆腐だった可能性が高い。
+
+2. **stat で数値が二重に描かれ衝突していた。** 図のゲージと `.stat-value`(168px) が同じ数字を
+   出し、`check` が `content_overlap` を error 報告。図がある場合は数値をゲージに任せる形に修正。
+
+3. **timeline の図を削除した。** 既存の `<ol class="tl">` と内容が完全に重複するうえ、
+   横軸へ等間隔に点を打つ実装は「2024/2025/2030」でも等間隔に見え、実際の年数差を偽る。
+   図は **stat（円弧ゲージ）と columns（比較棒）の2種のみ**。
+
+検証結果: `hyperframes check` = OVERALL ok / layout error 0 / contrast 29/29 通過 / runtime error 0。
+lint の warning 32件は `hyperframes.ts` が元から出している `composition_self_attribute_selector` で
+今回の変更とは無関係。
+
 ### 次のアクション
 
-1. **視覚素材の残り** — SVG 図表は入った。実写が要るなら Openverse / Wikimedia（APIキー不要）だが、
+1. **レンダリング環境へのフォント焼き込み（先にこれ）** — 上記1の恒久対策。
+   別環境でレンダリングすると日本語が豆腐に戻る。
+2. **視覚素材の残り** — SVG 図表は入った。実写が要るなら Openverse / Wikimedia（APIキー不要）だが、
    CC-BY は表示クレジット義務があるため、収益化チャンネルではライセンス種別・帰属表記・
    非商用除外を機械的に守る実装と品質ゲート側の権利チェックが必須。ComfyUI 経路は未着手。
-2. 投稿層 — YouTube Data API OAuth + private アップロード + Telegram 承認通知。
-3. Coolify への Supabase 移行方針の決定（上記の罠を解消してから）。
-4. `SALES_SUPABASE_URL` を廃止済み droplet から `supabase.paradigmjp.com` へ直す。
-5. Traefik の `supabase-api-svc` が存在しない `supabase-api-proxy` を指している件の解消。
+3. 投稿層 — YouTube Data API OAuth + private アップロード + Telegram 承認通知。
+4. Coolify への Supabase 移行方針の決定（上記の罠を解消してから）。
+5. `SALES_SUPABASE_URL` を廃止済み droplet から `supabase.paradigmjp.com` へ直す。
+6. Traefik の `supabase-api-svc` が存在しない `supabase-api-proxy` を指している件の解消。
 
 ### 注意
 
