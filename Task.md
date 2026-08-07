@@ -1,4 +1,53 @@
-﻿## ACTIVE HANDOFF - 2026-08-07 開発環境をサーバー側へ移設 / YouTube パイプライン継続
+﻿## ACTIVE HANDOFF - 2026-08-07 Supabase 復旧完了 / 視覚素材が次の実装
+
+### 前回ハンドオフの「Supabase は起動操作のみ残」は誤り。3つの罠があった
+
+1. **Coolify サービス `kw7m6sd5otbouk4h0ydpniwn` を起動してはいけない。**
+   別ボリュームの**空の PG15**（`kw7m6sd5otbouk4h0ydpniwn_supabase-db-data` = 72M / PG_VERSION 15）を指している。
+   実データは旧スタック `/opt/supabase`（compose project `supabase`）の
+   `supabase_supabase-db-data` = **4.1G / PG_VERSION 16**（`postgres:16-alpine`）。
+   JWT シークレットを引き継いでいるため anon/service キーは**通ってしまう**。
+   接続成功・全テーブル0件というサイレント失敗になる。PG16 データを PG15 バイナリでは開けないので
+   ボリューム差し替えでも解決しない。Coolify 移行は独立した課題として判断すること。
+
+2. **`SALES_SUPABASE_URL`（.env.local 145行目）が旧 DigitalOcean droplet のまま。**
+   `https://supabase-paradigm.139.59.250.5.sslip.io` を指している。前回直したのは
+   `NEXT_PUBLIC_SUPABASE_URL`（47行目）だけ。139.59.250.5 は旧 Appexxme 時代の廃止済みホスト。
+
+3. **Traefik の `/rest/v1` 経路が壊れている。** `paradigmjp.yml` の `supabase-api-svc` は
+   `http://supabase-api-proxy:80` を指すが、**そのコンテナは存在しない**（`docker ps -a` に無し）。
+   `supabase.paradigmjp.com` 本体は `supabase-studio-1:3000` に向いている。
+   公開 URL 経由の REST は 502 になる。内部 docker ネットワーク経由なら `supabase-rest-1` で疎通する。
+
+### 今回やったこと（2026-08-07）
+
+- 旧スタックは 00:29 UTC に**全5コンテナが同時 SIGTERM で正常停止**していた（`OOMKilled=false`、db は exit 0）。
+  クラッシュではないので、既存コンテナをそのまま `docker start` で復帰させた（compose 再作成なし＝設定・ボリューム無変更）。
+- `docker start supabase-db-1` → healthy / `docker start supabase-rest-1` → schema cache 409 relations。
+  メモリ増加は約 120MB のみ。realtime と studio は**起動していない**
+  （realtime は停止時に `system_memory_high_watermark` アラームが有効だった。必要になるまで止めておく）。
+- `migration_060_youtube_review.sql` は**未適用だった**ので適用した（冪等・追加のみ・トランザクション）。
+  `yt_channels` / `yt_videos` / `yt_review_events` を作成、3表とも RLS 有効・service_role のみ・anon SELECT 拒否。
+  postgrest は 409 → **412 relations** を認識。
+- `npx vitest run src/lib/youtube` = **148 passed / 10 files / 2.41s**。
+
+### 次のアクション
+
+1. **視覚素材の実装（本命）** — `render/layouts.ts` は visualSpec を
+   timeline/columns/stat/quote/headline の**5レイアウトに正規化しているが全てテキスト**。
+   `render/hyperframes.ts` は CSS の色とグラデーションのみで `<img>` も `<svg>` も出していない。
+   既存の Openverse / Wikimedia クライアントはリポジトリに**無い**（再利用先なし・新規実装）。
+   正規化済みの `NormalizedLayout.items` がそのまま図の入力になるので、SVG 図表が最短経路。
+2. 投稿層 — YouTube Data API OAuth + private アップロード + Telegram 承認通知。
+3. Coolify への Supabase 移行方針の決定（上記1の罠を解消してから）。
+
+### 注意
+
+- ディスクが **92%（150G中12G空き）**。docker の再利用可能領域が約10GB
+  （build cache 6.07GB + dangling image 4.0GB）。動画レンダリングは大きなファイルを書くので事前に確認すること。
+- 本番サイトと Twenty CRM が同居。重い処理の前に `free -h` の**実使用量**を見る（`limits_memory` 設定値ではない）。
+
+## ACTIVE HANDOFF - 2026-08-07 開発環境をサーバー側へ移設 / YouTube パイプライン継続
 
 ### まずこれを読む
 作業場所は**ローカルではなくサーバー上**に移った。`paradigm-prod-01` の `/opt/dev/paradigmjpcom`（ブランチ `codex/quote-recovery-vertical-saas`）。
