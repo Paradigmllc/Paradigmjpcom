@@ -13,7 +13,8 @@ export type DifyWorkflowKey =
   | "karteToReport"
   | "karteToSalesMaterial"
   | "formMessageGenerator"
-  | "formViolationDetector";
+  | "formViolationDetector"
+  | "videoScriptGenerator";
 
 const KEY_ENV: Record<DifyWorkflowKey, string> = {
   templatePicker: "DIFY_TEMPLATE_PICKER_KEY",
@@ -21,6 +22,7 @@ const KEY_ENV: Record<DifyWorkflowKey, string> = {
   karteToSalesMaterial: "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
   formMessageGenerator: "DIFY_FORM_MESSAGE_KEY",
   formViolationDetector: "DIFY_FORM_VIOLATION_KEY",
+  videoScriptGenerator: "DIFY_VIDEO_SCRIPT_GENERATOR_KEY",
 };
 
 export interface DifyRunResult<T = unknown> {
