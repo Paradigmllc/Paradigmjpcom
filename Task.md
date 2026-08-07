@@ -8,7 +8,20 @@
 
 - Claude Code のプロジェクトキーは `-opt-dev-paradigmjpcom`。**作業ディレクトリのパスを変えると会話履歴が別プロジェクト扱いになる**ので変えないこと。
 - 過去の会話ログと memory は `/root/.claude/projects/-opt-dev-paradigmjpcom/` にある。続きは `/resume` で選ぶ。
-- git 管理外のローカル限定ファイル（`creator/*` 一式、`scratch/`、`scripts/revenueos-readiness-gate.mjs`、`scripts/lib/sales-supabase-client.mjs`、`scripts/unlock-payload-users.sh`、`.env.local`、`.env.supabase`）は転送済み。`creator/*` は Task.md 記載のリリースブロッカー通り、この法人リポジトリにコミットしてはいけない。
+
+### 未コミットだったものの退避先（2026-08-07 に完了）
+ローカルの作業ツリーにしか無かったファイルは、全て git に入れるか適切なリポジトリへ退避した。**ローカルPCを捨てても失われるものは無い。**
+
+| 対象 | 退避先 |
+|---|---|
+| `scripts/revenueos-readiness-gate.mjs` / `scripts/lib/sales-supabase-client.mjs` / `scripts/unlock-payload-users.sh` | このリポジトリに追跡追加（`c4f8e346`） |
+| creator スライス 15ファイル | `Gracecom1/hana-private` ブランチ `import/paradigmjpcom-slice-20260807` の `imports/paradigmjpcom-2026-08-07/` |
+| `scratch/`（WordPress テーマ改修 24ファイル） | `Gracecom1/AI-Tool-Navi` ブランチ `import/paradigmjpcom-scratch-20260807` の `imports/paradigmjpcom-scratch-2026-08-07/` |
+| `users.json` / `wp-source.html` | 0バイトのため削除 |
+| `.env.local` / `.env.supabase` | **git には入れない**。実体はサーバー上。値の正典は `reference_api_keys.md`、必要な変数名は `.env.example` |
+
+- creator スライスは `hana-private` が正規リポジトリで、**あちらの main の方が先に進んでいる**（attribution / metrics / social-posts などがある）。退避したのは checkout と content-jobs だけの初期版なのでマージしないこと。法人リポジトリへのコミット禁止は従来通り。
+- **要対応**: `scratch/wp-ai-tools-ui/*.mjs` に Coolify の実APIトークンが平文で直書きされていた。退避時に `process.env.COOLIFY_API_TOKEN` へ書き換えたが、露出期間があったのでトークンのローテーションを検討すること。
 
 ### 次のアクション（優先順）
 1. **Supabase 起動** — 最も詰まっている。Coolify にサービス定義済み（service `kw7m6sd5otbouk4h0ydpniwn`、5コンテナに削減、既存の anon/service キーがそのまま通るよう JWT シークレットを引き継ぎ済み）。起動操作のみ残。`.env.local` の URL は `supabase.paradigmjp.com` に修正済み（`supabase.appexx.me` ではない）。
