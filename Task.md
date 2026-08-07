@@ -31,15 +31,36 @@
   postgrest は 409 → **412 relations** を認識。
 - `npx vitest run src/lib/youtube` = **148 passed / 10 files / 2.41s**。
 
+### 視覚素材: SVG 図表を実装済み（2026-08-07）
+
+`render/figures.ts` を追加した（`b5c92e91` / `a97996c4`）。正規化済み items から図を組み立てる。
+外部素材を取りに行かないのでネットワーク・APIキー・GPU・第三者の権利が一切絡まない。
+
+- stat = 割合なら円弧ゲージ、それ以外は下線付きの大きな数値
+- columns = 数値が2つ以上あるときだけ比較棒グラフ（幅は最大値に対する比）
+- timeline = marker が2つ以上あるとき横軸に点を打つ
+- quote / headline = 文字組みそのものが表現なので図を足さない
+- **数値が読めなければ空文字を返す**。根拠の無い飾りの図形は出さない（事実性の担保）
+- 段階表示は既存の `data-beat` に載せた。GSAP が `[data-beat='N']` を拾うので図の各行が本文と同時に出る
+- 幾何は items から決定論的に導く。HyperFrames は任意時刻へシークするため乱数・現在時刻は混ぜられない
+
+**併せて `normalizeItem` のデータ欠落を直した。** `{name:"中国", value:"820万台"}` のような項目で
+最初の内容キーだけを読んで `820万台` を捨てていた。図表だけでなく本文の col-marker からも
+数量が消えていたので、時間軸キーが無いときに限り未使用の内容キーから数値を marker に採る。
+
+検証: `npx vitest run src/lib/youtube` = **171 passed / 11 files**、tsc エラー0。
+実台本相当のフィクスチャで 3/3 シーンに SVG が入り、棒の比率も一致することを確認済み。
+（ESLint はこのブランチに設定ファイルが無く実行できない。既存の状態。）
+
 ### 次のアクション
 
-1. **視覚素材の実装（本命）** — `render/layouts.ts` は visualSpec を
-   timeline/columns/stat/quote/headline の**5レイアウトに正規化しているが全てテキスト**。
-   `render/hyperframes.ts` は CSS の色とグラデーションのみで `<img>` も `<svg>` も出していない。
-   既存の Openverse / Wikimedia クライアントはリポジトリに**無い**（再利用先なし・新規実装）。
-   正規化済みの `NormalizedLayout.items` がそのまま図の入力になるので、SVG 図表が最短経路。
+1. **視覚素材の残り** — SVG 図表は入った。実写が要るなら Openverse / Wikimedia（APIキー不要）だが、
+   CC-BY は表示クレジット義務があるため、収益化チャンネルではライセンス種別・帰属表記・
+   非商用除外を機械的に守る実装と品質ゲート側の権利チェックが必須。ComfyUI 経路は未着手。
 2. 投稿層 — YouTube Data API OAuth + private アップロード + Telegram 承認通知。
-3. Coolify への Supabase 移行方針の決定（上記1の罠を解消してから）。
+3. Coolify への Supabase 移行方針の決定（上記の罠を解消してから）。
+4. `SALES_SUPABASE_URL` を廃止済み droplet から `supabase.paradigmjp.com` へ直す。
+5. Traefik の `supabase-api-svc` が存在しない `supabase-api-proxy` を指している件の解消。
 
 ### 注意
 
