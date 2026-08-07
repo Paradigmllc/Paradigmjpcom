@@ -67,3 +67,46 @@ For full Supabase parity, deploy a separate staged stack first:
 - `/opt/supabase/docker-compose.yml` に **PostgreSQL パスワードと JWT シークレットが平文で書かれている**（`POSTGRES_PASSWORD`、`PGRST_JWT_SECRET`）。JWT シークレットは既定値のままの文字列を含む。環境変数への外出しとローテーションが必要。
 - studio / meta / realtime が停止していた原因は特定できていない。再発した場合はコンテナの終了理由を確認すること。
 - ディスク使用率 87%。
+
+## 2026-08-07 — ディスク逼迫 (89%) の根本解決
+
+`/` が 150GB 中 89% まで到達し、作業中もさらに増え続けていた。Supabase の studio/meta/realtime が停止していた原因もこれである可能性が高い。
+
+### 根本原因（3つ）
+
+**1. Redis の失敗した BGSAVE 残骸 12.2GB（最大要因）**
+
+`opt-twenty-redis-1`（Twenty CRM の Redis）のボリュームに `temp-*.rdb` が5個、計12.2GB 残留していた。実際の `dump.rdb` は 45MB。Redis は BGSAVE 完了時に temp を `dump.rdb` へリネームするが、**失敗した場合は削除せず放置する**。
+
+`maxmemory` が未設定（0B=無制限）だったためデータセットが 2.9GB まで膨張し、保存が失敗。以後 **ディスク逼迫 → BGSAVE 失敗 → 残骸増加 → さらに逼迫** という自己増強ループに入っていた。
+
+対処: 孤児 temp を削除し、`/opt/twenty-compose.yml` の redis に `--maxmemory 1gb --maxmemory-policy noeviction` と `mem_limit: 1500m` を設定。通常使用は約150MB なので約7倍の余裕があり、暴走時は書き込みが明示的に失敗して気づける。
+
+**2. cloudflared-ssh.service の無限再起動（syslog 191,780行）**
+
+`ExecStart=/usr/local/bin/cloudflared access tcp --hostname ssh.paradigmjp.com --url localhost:22` は**クライアント側で実行するコマンド**で、サーバー上では sshd が保持する 127.0.0.1:22 に bind できず必ず失敗する。`Restart=always` と組み合わさり **NRestarts=85,645**。一度も成功していない。
+
+対処: `systemctl disable --now cloudflared-ssh.service`。`cloudflared-openclaw.service`（正常稼働中の別トンネル）と直接 SSH には影響なし。
+
+**3. 同一 DB に対する二重バックアップ**
+
+| | `db-backup.service` | `oss-supabase-backup.service` |
+|---|---|---|
+| 内容 | 単一 pg_dump・平文 | pg_dump×2 + pg_dumpall・GPG暗号化 |
+| 保管 | ローカルのみ | R2 へオフサイト（毎日成功を確認） |
+| 増加 | 約0.6GB/日 | 約1.2GB/日 |
+
+前者は後者に完全に劣後していた。対処: `db-backup.timer` を無効化し、移行用に直近2件を残して6件削除。
+
+### その他の回収
+- Docker ビルドキャッシュ 3.7GB
+- npm キャッシュ・`/root/.cache` 約2GB
+- journald を 200MB へ vacuum（310MB 回収）
+
+### 結果
+**89% → 74%（38GB 空き）**。コンテナ55個すべて正常、Twenty も 200 応答を維持。
+
+### 残る課題
+- `/opt/supabase/docker-compose.yml` と `/opt/twenty-compose.yml` に **DB パスワード・JWT シークレット・Supabase キーが平文**で記載されている。`APP_SECRET` と `PGRST_JWT_SECRET` は `change_me` を含む既定値のまま。環境変数への外出しとローテーションが必要。
+- `docker-network-fix.service` と `cloud-init-hotplugd.service` が failed 状態。
+- 定常的な増加要因は oss-supabase バックアップ（約1.2GB/日・14日保持で頭打ち）とイメージ55.8GB。**新たな cron / systemd timer は WW-EVENT ルールにより追加していない。**
