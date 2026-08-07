@@ -4,7 +4,6 @@ import {
   buildColumnsFigure,
   buildFigure,
   buildStatFigure,
-  buildTimelineFigure,
   parseNumber,
 } from "./figures"
 import type { LayoutItem } from "./layouts"
@@ -73,26 +72,15 @@ describe("buildColumnsFigure", () => {
   })
 })
 
-describe("buildTimelineFigure", () => {
-  it("marker が2つ以上あるとき横軸に点を打つ", () => {
-    const svg = buildTimelineFigure([
-      item("2024", "着手"),
-      item("2025", "拡大"),
-      item("2026", "完了"),
-    ])
-    expect(svg.match(/<circle/g)?.length).toBe(3)
-    expect(svg).toContain("2026")
-  })
-
-  it("marker が足りなければ図を出さない", () => {
-    expect(buildTimelineFigure([item("", "本文だけ"), item("", "本文だけ")])).toBe("")
-  })
-})
-
 describe("buildFigure", () => {
   it("quote と headline には図を足さない", () => {
     expect(buildFigure("quote", [item("出典", "引用文 50%")])).toBe("")
     expect(buildFigure("headline", [item("", "見出し 50%")])).toBe("")
+  })
+
+  it("timeline にも図を足さない", () => {
+    // 既存の <ol class="tl"> と内容が重複し、等間隔の横軸は実際の年数差を偽る。
+    expect(buildFigure("timeline", [item("2024", "着手"), item("2030", "完了")])).toBe("")
   })
 
   it("ビート属性を付けて既存の段階表示に載せる", () => {
@@ -100,8 +88,8 @@ describe("buildFigure", () => {
   })
 
   it("同じ入力からは同じ出力になる(決定論)", () => {
-    const input = [item("2024", "着手"), item("2025", "完了")]
-    expect(buildFigure("timeline", input)).toBe(buildFigure("timeline", input))
+    const input = [item("", "国内 120億円"), item("", "海外 60億円")]
+    expect(buildFigure("columns", input)).toBe(buildFigure("columns", input))
   })
 
   it("stat は数値トークンだけを取り出すので周囲のマークアップが混入しない", () => {
@@ -111,10 +99,10 @@ describe("buildFigure", () => {
   })
 
   it("図に載る項目テキストは XML エスケープされる", () => {
-    // timeline / columns は marker と body をそのまま描くため、ここが実際の escape 経路。
-    const svg = buildFigure("timeline", [item("<b>2024", "着手 & 準備"), item("2025", "完了")])
-    expect(svg).not.toContain("<b>2024")
-    expect(svg).toContain("&lt;b&gt;2024")
+    // columns は marker と body をそのまま描くため、ここが実際の escape 経路。
+    const svg = buildFigure("columns", [item("", "<b>国内 120億円"), item("", "海外 & 60億円")])
+    expect(svg).not.toContain("<b>国内")
+    expect(svg).toContain("&lt;b&gt;")
     expect(svg).toContain("&amp;")
   })
 })

@@ -178,42 +178,13 @@ export function buildColumnsFigure(items: LayoutItem[]): string {
 }
 
 /**
- * timeline: marker が時間軸として読めるときだけ横軸に点を打つ。
- * 既存の縦並びリストは CSS 側で描いているので、こちらは時間の広がりを見せる役に絞る。
- */
-export function buildTimelineFigure(items: LayoutItem[]): string {
-  const points = items.slice(0, 5).filter((item) => item.marker.trim().length > 0)
-  if (points.length < 2) return ""
-
-  const axisY = 96
-  const left = 70
-  const right = 930
-  const step = (right - left) / (points.length - 1)
-
-  const marks = points.flatMap((item, index) => {
-    const x = round2(left + step * index)
-    return [
-      `          <g data-beat="${index}">`,
-      `            <circle cx="${x}" cy="${axisY}" r="13" fill="${AMBER}" />`,
-      `            <text x="${x}" y="${axisY - 34}" text-anchor="middle" font-size="30" font-weight="700" fill="${CREAM}">${escapeXml(clip(item.marker, 10))}</text>`,
-      `            <text x="${x}" y="${axisY + 54}" text-anchor="middle" font-size="24" fill="${CREAM_DIM}">${escapeXml(clip(item.body, 12))}</text>`,
-      `          </g>`,
-    ]
-  })
-
-  return svg(170, [
-    `          <line x1="${left}" y1="${axisY}" x2="${right}" y2="${axisY}" stroke="${AMBER_SOFT}" stroke-width="6" stroke-linecap="round" />`,
-    ...marks,
-  ])
-}
-
-/**
  * レイアウトに対応する図を返す。描くだけの根拠が無ければ空文字。
  * quote と headline は文字組みそのものが表現なので図を足さない。
  */
 export function buildFigure(layout: SceneLayout, items: LayoutItem[]): string {
   if (layout === "stat") return buildStatFigure(items)
   if (layout === "columns") return buildColumnsFigure(items)
-  if (layout === "timeline") return buildTimelineFigure(items)
+  // timeline は図を足さない。既存の <ol class="tl"> が同じ内容を縦に描いており重複するうえ、
+  // 横軸に等間隔で点を打つと「2024/2025/2030」でも等しい間隔に見え、実際の年数差を偽る。
   return ""
 }

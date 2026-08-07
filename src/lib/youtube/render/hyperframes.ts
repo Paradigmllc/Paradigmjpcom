@@ -77,7 +77,12 @@ export function buildTimeline(
 
 /* ───── レイアウトごとのマークアップ ───── */
 
-function renderItems(sceneId: string, layout: SceneLayout, items: LayoutItem[]): string {
+function renderItems(
+  sceneId: string,
+  layout: SceneLayout,
+  items: LayoutItem[],
+  hasFigure = false,
+): string {
   const visible = items.slice(0, layout === "columns" ? 3 : 5)
 
   if (layout === "columns") {
@@ -95,6 +100,24 @@ function renderItems(sceneId: string, layout: SceneLayout, items: LayoutItem[]):
 
   if (layout === "stat") {
     const [lead, ...rest] = visible
+
+    // 図表が数値を描いているときに .stat-value を並べると、同じ数字が二重に出るうえ
+    // 168px の行が図の高さと衝突する(check が content_overlap を検出した)。
+    // 図がある場合は数値をゲージ側に任せ、本文はラベルと補足だけにする。
+    if (hasFigure) {
+      return [
+        `      <div class="stat">`,
+        lead?.body ? `        <p class="stat-label" data-beat="1">${escapeHtml(lead.body)}</p>` : "",
+        ...rest.map(
+          (item, index) =>
+            `        <p class="stat-note" data-beat="${index + 2}">${escapeHtml(item.body)}</p>`,
+        ),
+        `      </div>`,
+      ]
+        .filter((row) => row.length > 0)
+        .join("\n")
+    }
+
     return [
       `      <div class="stat">`,
       `        <p class="stat-value" data-beat="0">${escapeHtml(lead?.marker || lead?.body || "")}</p>`,
@@ -196,6 +219,7 @@ export function buildComposition(
       const clipDuration = round2(entry.durationSec + (isLast ? OUTRO_SEC : TRANSITION_SEC))
       const track = 1 + (index % 2)
       const { layout, items } = normalized[index]
+      const figure = buildFigure(layout, items)
       const heading = scene.onScreenText[0] ?? items[0]?.body ?? ""
 
       return [
@@ -207,8 +231,8 @@ export function buildComposition(
           : "",
         `      </div>`,
         `      <div class="scene-body">`,
-        buildFigure(layout, items),
-        renderItems(scene.id, layout, items),
+        figure,
+        renderItems(scene.id, layout, items, figure.length > 0),
         `      </div>`,
         scene.sources.length > 0
           ? `      <p class="sources">出典 ${scene.sources.length}件</p>`
@@ -356,7 +380,9 @@ ${audioClips}
       margin: 0 0 44px;
       overflow: visible;
     }
-    [data-composition-id="root"] .layout-stat .figure { margin-left: auto; margin-right: auto; }
+    [data-composition-id="root"] .layout-stat .figure {
+      max-width: 620px; margin-left: auto; margin-right: auto;
+    }
 
     /* timeline */
     [data-composition-id="root"] .tl { list-style: none; margin: 0; padding: 0 0 0 42px; position: relative; }
