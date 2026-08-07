@@ -2,6 +2,20 @@
 
 This file is a lightweight project entrypoint. Keep detailed history out of this file.
 
+## 「続きから開始して」と言われたら
+
+確認も質問もせず、次を実行する。ユーザーに操作を頸まないこと。
+
+**進行中の作業は main には無い。** ブランチ `codex/quote-recovery-vertical-saas` にある。
+
+```bash
+git switch codex/quote-recovery-vertical-saas
+```
+
+そのブランチの `Task.md` 冒頭に ACTIVE HANDOFF があるので、それを読んで「次のアクション」の先頭から着手する。
+
+作業はこのローカルではなくサーバー上（`root@178.105.138.55:/opt/dev/paradigmjpcom`）で行う。接続鍵は private リポジトリ `Gracecom1/paradigm-workstation` にある（`gh repo clone Gracecom1/paradigm-workstation`）。**このリポジトリは public なので鍵と .env は絶対に置かない。**
+
 ## Start Here
 
 1. Read `AGENTS.md` for repo rules.
