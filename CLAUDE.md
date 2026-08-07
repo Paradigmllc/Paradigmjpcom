@@ -17,8 +17,8 @@ This file is a lightweight project entrypoint. Keep detailed history out of this
 
 ## Current Focus
 
-- Revenue OS external OSS GUI replacement and Coolify deployment recovery.
-- Directus, Keystatic, Supabase Studio, and OpenMontage entries must not show faux internal Studio UI.
+- YouTube 複数チャンネル自動運用パイプライン（`src/lib/youtube/`）。次は Supabase 起動 → 視覚素材 → 投稿層。
+- 詳細と優先順は `Task.md` の ACTIVE HANDOFF を参照。
 
 ## Archive
 
