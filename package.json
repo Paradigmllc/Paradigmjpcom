@@ -37,7 +37,7 @@
     "@paradigmllc/blocks": "github:Paradigmllc/paradigm-blocks#main",
     "@payloadcms/db-postgres": "^3.85.0",
     "@payloadcms/next": "^3.85.0",
-    "@payloadcms/richtext-lexical": "^3.85.0",
+    "@payloadcms/richtext-lexical": "3.85.1",
     "@radix-ui/react-accordion": "^1.2.13",
     "@radix-ui/react-avatar": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.16",
