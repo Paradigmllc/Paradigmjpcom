@@ -50,3 +50,7 @@ opencode.json
 .next*.log
 docker-compose.sales-pipeline.yml
 2026-*-openclaw-backup.tar.gz
+
+# テスト成果物(Playwright)。生成物なのでコミットしない
+.playwright-mcp/
+test-results/

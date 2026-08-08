@@ -1,5 +1,28 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-07 生成モデルの商用ライセンス監査（未着手 / 調査のみ完了）
+
+- `src/lib/sales/comfyui-workflows.ts` の既定 checkpoint が、VaaS（Essential $1,500／Unlimited $3,500／Priority $5,500）の有償納品で使われる状態になっている。ライセンス条件を確認した結果、**出力物の販売ではなくモデル自体の商用運用に条件が付く**ことが判明した。
+- `flux-dev-fp8.safetensors`（9ワークフローで既定使用）— FLUX.1 [dev] Non-Commercial License。**Outputs はBFLが所有権を主張せず「commercial purposes を含む任意の目的」で使用可**（競合モデルの学習・蒸留のみ禁止）。一方 Non-Commercial Purpose の定義は "revenue-generating activity" と "direct interactions with or that has impact on end users" を明示的に除外しており、有償サービスのパイプライン内でモデルを実行する行為は無償ライセンスの範囲外。BFLの商用／セルフホスティングライセンス取得、FLUX.1-schnell（Apache-2.0）への差し替え、FLUX.2 の Builder/Platform ティア購入のいずれかが必要。
+- 同ライセンスは利用者に**コンテンツフィルタの実装を義務付け**、CSAM および非同意の親密画像の生成を禁止している。フィルタは任意の安全対策ではなく契約上の義務。
+- `svd-fp16.safetensors`（動画・img2vid）— Stability AI Community License。年間売上の閾値以下であれば商用可、超過時は Enterprise ライセンス。現在の閾値と適用条件は要確認。
+- `animatediffModel.safetensors` / `mm_sd_v15_v2.ckpt` — OpenRAIL-M 系。商用可だが使用制限条項あり。条項の確認が未了。
+- `docs/knowledge/video-as-a-service-operating-system.md` の「標準採用モデルは商用利用条件が明確なものを優先し、モデルごとのライセンス、地域制限、再配布条件を案件開始前に確認する」に対し、既定値がハードコードで方針を上書きしている状態。checkpoint 名を DB 化し `commercial_ok` が真のモデルのみ選択可能にする構造対応が必要（A-CONTENT準拠）。
+- 未着手: ① 全 checkpoint のライセンス確定と台帳化 ② 商用可モデルへの差し替えまたはライセンス購入の判断 ③ `models` テーブル新設と生成ジョブからの参照強制 ④ コンテンツフィルタの実装。**判断が出るまで有償納品での該当ワークフロー使用は保留。**
+
+## CURRENT STATUS — 2026-08-07 Japan Entry LinkedIn運用設計（設計完了 / 外部送信0）
+
+- Japan Entry Partnerの海外SMB向けLinkedIn運用を「発信（週3投稿＋日次コメント）」「接触（接続申請→観察メッセージ）」の2トラックで定義した。運用仕様は `docs/knowledge/linkedin-japan-entry-outreach-operations.md`。
+- 接触は売り込まない4ステップ（D0コメント → D2接続申請 → 承認後観察メッセージ → D+5診断ツール）とし、SALES-CENTERルール4の「教えてあげる」体裁をLinkedInへ移植する。自動化ツールは使用しない。
+- 投稿は新規執筆せず既存英語ブログ22本（`src/lib/japan-entry-blog*.ts`）を1記事3〜5投稿へ分解し、反応の良いものだけをブログ記事へ昇格させてpSEO/GEO資産に還流させる。
+- 無料アカウントはパーソナライズドノート月5通程度でoutboundが成立しないため、Sales Navigator Coreを参入条件とする。
+- 地域は3 Tier順次投入に確定した。Tier1（W1-6）シンガポール／韓国テック／豪州、Tier2（W7-14）米国／英国、Tier3（W15-）UAE／サウジ。1日15-20接続の上限により同時並行はしない。
+- 台湾・タイはLinkedIn浸透率が低く到達できないため本運用の対象外とし、別チャネル設計へ回す。中東は逆方向（日本→中東）需要の可能性がありJapan Entryとは別商品として扱う。
+- Apolloは無料プランでPeople Search APIが使用不可、かつコールドメールを主経路としない設計上Sales Navigatorと機能重複するため、本ワークフローでは使用しない。
+- 英語プロフィール文面（Headline／About）を確定しdocsへ記載した。USCPA資格は訴求軸に含めず「東京拠点のJapan Entry専門家」に統一する（2026-08-07ユーザー判断）。
+- LinkedInアカウントは初期状態（見出し`OtherのUSCPA`、会社`Other`、写真・バナー・Aboutなし、つながり1、投稿0、プロフィール言語 日本語のみ）。英語プロフィール追加とプライマリ化を入力し保存操作まで実施したが、Chrome拡張切断のため**保存成否は未確認**。次回接続時に検証する。
+- 未着手: ① 英語プロフィール保存の確認とAbout入力 ② 写真・バナー・カスタムURL・Experience（`Other`置換）・Featured ③ Week 0のつながり50〜100件積み上げ ④ Sales Navigator Core契約可否 ⑤ 台湾・タイ向け別チャネル設計。LinkedInへの投稿・接続申請・DM送信はいずれも未実施。
+
 ## CURRENT STATUS — 2026-07-28 Video制作パイプライン標準化（HyperFrames＋ComfyUI）
 
 - 公開価格は変更しない（Essential `$1,500/月`、Unlimited `$3,500/月`、Priority `$5,500/月`）。価格はAI実行時間ではなく、企画・ブランド設計・修正・派生・ローカライズ・最終QAを含む承認可能な完成動画に対するものとする。
