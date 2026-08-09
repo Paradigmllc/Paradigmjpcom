@@ -56,7 +56,16 @@ async function proxy(req: NextRequest, method: "GET" | "POST") {
     // 画面遷移なら Payload のログインへ送る。API 呼び出しには JSON で返す
     if (method === "GET") {
       const back = encodeURIComponent(req.nextUrl.pathname + req.nextUrl.search)
-      return NextResponse.redirect(new URL(`/admin/login?redirect=${back}`, req.url))
+      // req.url はリバースプロキシ配下だとコンテナ内部の URL
+      // (http://0.0.0.0:3000/...) になり、そこへ転送すると到達できない。
+      // 実際に本番で 0.0.0.0:3000 へ飛ばしてしまったので、
+      // 転送先は必ず外向きのホスト名から組む。
+      const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host")
+      const proto = req.headers.get("x-forwarded-proto") ?? "https"
+      if (!host) {
+        return NextResponse.json({ error: "ログインが必要です" }, { status: 401 })
+      }
+      return NextResponse.redirect(`${proto}://${host}/admin/login?redirect=${back}`)
     }
     return NextResponse.json({ error: "ログインが必要です" }, { status: 401 })
   }
