@@ -1755,6 +1755,7 @@ import urllib.request
 import yaml
 
 path, container, expected_ip = sys.argv[1:4]
+MIDDLEWARE_NAME_PY = "paradigm-cloudflare-only"
 config = yaml.safe_load(open(path, encoding="utf-8"))
 http = config.get("http", {})
 routers = http.get("routers", {})
@@ -1824,6 +1825,28 @@ for name in ("paradigmhp-origin-alias-http", "paradigmhp-origin-alias-https"):
         configured_aliases.update(rule_hosts(routers[name].get("rule")))
 if not aliases.issubset(configured_aliases):
     raise RuntimeError("A Docker app alias bypasses the Cloudflare middleware")
+
+# Coolify がコンテナラベルから生成するルータは priority 100000 を持つ。
+# ファイル側の保護ルータがそれより低いと、Traefik はラベル側を採用し、
+# Cloudflare 限定ミドルウェアが一切効かなくなる。ミドルウェアの有無だけを
+# 見ていたため、実際に priority 1000 で 4 ホストがオリジンに直接到達可能な
+# 状態を「正常」と報告していた。優先度の大小まで検証する。
+docker_priorities = [0]
+for key, value in labels.items():
+    if re.fullmatch(r"traefik\.http\.routers\.[^.]+\.priority", str(key)):
+        try:
+            docker_priorities.append(int(str(value)))
+        except ValueError:
+            raise RuntimeError("A Docker router priority is not an integer")
+highest_docker_priority = max(docker_priorities)
+for name, router in routers.items():
+    if MIDDLEWARE_NAME_PY not in (router.get("middlewares") or []):
+        continue
+    priority = router.get("priority")
+    if not isinstance(priority, int) or priority <= highest_docker_priority:
+        raise RuntimeError(
+            "Protected router priority does not outrank Docker label routers"
+        )
 
 all_hosts = {"paradigmjp.com", "www.paradigmjp.com", "keystatic.paradigmjp.com"} | docker_hosts
 if ${POST_DEPLOY ? "True" : "False"}:
