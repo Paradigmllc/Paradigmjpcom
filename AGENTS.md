@@ -212,6 +212,23 @@ APIキーはグローバルメモリ管理（環境変数 `DEEPSEEK_API_KEY`）�
 - Supabase Realtime はコード前提ではなくインフラ前提も必須。`supabase-db-1` は `wal_level=logical`、`supabase-realtime` は healthy、`public.sales_pipeline_runs` は `supabase_realtime` publication に含める。`/api/sales/pipeline/events` は `SALES_SUPABASE_REALTIME_URL` を使い、PostgREST (`supabase-rest-1`) に WebSocket 接続しない。
 - Twenty は server が 200 でも worker 再起動ループなら不合格。`opt-twenty-worker-1` は restart count が低く、1GiB mem limit / `NODE_OPTIONS=--max-old-space-size=768` / worker 側 migrations disabled を維持する。
 
+**ディスクを埋める2つの増加源（2026-08-10 対処済み・再発防止）**:
+- **ビルドキャッシュ**: prune を年齢基準 (`until=168h`) からサイズ基準
+  (`--keep-storage`) に変更した。1日に何度もビルドする運用では、溜まるのは常に
+  新しいキャッシュなので7日保持では何も消えず、数時間で 12.48GB まで膨らんで
+  ディスクが 97% に達した。サイズ上限なら積み上がる速さが変わっても頭打ちになる。
+  既定は通常時 4GB / 逼迫時 2GB。`PARADIGM_BUILD_CACHE_KEEP_GB` で調整。
+- **ローカルのバックアップ**: `OSS_SUPABASE_BACKUP_RETENTION_DAYS` の既定 14 日は
+  1.2GB/日 × 14 = 約17GB になり、150GB のディスクでは deploy を止める側に効く。
+  systemd drop-in で **3 日**に短縮した。全世代は Cloudflare R2 に残るので、
+  ローカルは復旧の初動に足りる分だけ持つ。
+- **消す前に必ず退避先そのものを確認する**。journald の保持は約5日しかないため、
+  「ログに R2 アップロード記録が無い＝未退避」ではない。実際、記録の無かった
+  5世代はすべて R2 に存在した。R2 の一覧は
+  `/etc/paradigm/oss-supabase-backup.env` の認証情報で ListObjectsV2 を叩いて確認する。
+- **スワップは削らない**。8GB×2 あるが両方使用中で、メモリは 15GB 中 9.1GB が
+  スワップに出ている。消すと OOM で本番が落ちる。
+
 **古い worktree から release を実行しない（2026-08-10 実害あり）**:
 - `scripts/lib/refresh-traefik-origin-lock.py` の `PROTECTED_ROUTER_PRIORITY` が
   古い版では `1000` にハードコードされている。Coolify がコンテナラベルから生成する
