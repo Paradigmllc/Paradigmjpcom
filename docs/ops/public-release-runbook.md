@@ -337,7 +337,7 @@ backup job must then produce:
 - an adjacent `.sha256` file that verifies with `sha256sum -c`;
 - the same archive and checksum on the configured off-host SSH target or R2
   prefix;
-- a 14-day retention window without deleting the newest archive.
+- a 3-day local retention window without deleting the newest archive (every generation is retained in Cloudflare R2; local copies are only the staging area).
 
 For the quarterly restore drill, copy one archive to an isolated disposable
 PostgreSQL instance, verify the checksum, inspect it with `pg_restore --list`,
