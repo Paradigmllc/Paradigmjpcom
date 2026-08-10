@@ -163,6 +163,51 @@ class OriginLockReleaseTests(unittest.TestCase):
         if ORIGIN_LOCK.os.name != "nt":
             self.assertEqual(stat.S_IMODE(backups[0].stat().st_mode), 0o600)
 
+    def test_protected_priority_outranks_coolify_label_routers(self) -> None:
+        """Coolify がラベルから生成するルータより高いことを保証する。
+
+        Coolify は traefik.http.routers.<name>.priority に 100000 を付ける。
+        保護ルータがそれ以下だと Traefik はラベル側を採用し、Cloudflare 限定
+        ミドルウェアが一切効かなくなる。実際に 1000 で書かれ、4 ホストが
+        オリジンに直接到達できる状態が本番で発生した。
+        """
+        COOLIFY_LABEL_ROUTER_PRIORITY = 100000
+        self.assertGreater(
+            ORIGIN_LOCK.PROTECTED_ROUTER_PRIORITY,
+            COOLIFY_LABEL_ROUTER_PRIORITY,
+        )
+
+        self.prepare()
+        with mock.patch.object(
+            ORIGIN_LOCK.urllib.request,
+            "urlopen",
+            side_effect=AssertionError("post-deploy network access is forbidden"),
+        ):
+            ORIGIN_LOCK.apply_cached_origin_lock(
+                self.route_file,
+                self.cache_file,
+                "app-uuid",
+                "app-container",
+                "192.0.2.202",
+                alias_discoverer=lambda _container: ["generated.example.test"],
+                readiness_validator=lambda _ip: None,
+                now=self.now + timedelta(minutes=5),
+            )
+
+        config = yaml.safe_load(self.route_file.read_text(encoding="utf-8"))["http"]
+        protected = [
+            name
+            for name, router in config["routers"].items()
+            if ORIGIN_LOCK.MIDDLEWARE_NAME in (router.get("middlewares") or [])
+        ]
+        self.assertTrue(protected, "保護ルータが1つも書かれていない")
+        for name in protected:
+            self.assertGreater(
+                config["routers"][name].get("priority"),
+                COOLIFY_LABEL_ROUTER_PRIORITY,
+                f"{name} がラベル側ルータに負ける",
+            )
+
     def test_missing_route_and_stale_cache_are_fatal_without_mutation(self) -> None:
         original = self.route_file.read_bytes()
         missing_route = self.root / "missing.yml"

@@ -212,6 +212,20 @@ APIキーはグローバルメモリ管理（環境変数 `DEEPSEEK_API_KEY`）�
 - Supabase Realtime はコード前提ではなくインフラ前提も必須。`supabase-db-1` は `wal_level=logical`、`supabase-realtime` は healthy、`public.sales_pipeline_runs` は `supabase_realtime` publication に含める。`/api/sales/pipeline/events` は `SALES_SUPABASE_REALTIME_URL` を使い、PostgREST (`supabase-rest-1`) に WebSocket 接続しない。
 - Twenty は server が 200 でも worker 再起動ループなら不合格。`opt-twenty-worker-1` は restart count が低く、1GiB mem limit / `NODE_OPTIONS=--max-old-space-size=768` / worker 側 migrations disabled を維持する。
 
+**古い worktree から release を実行しない（2026-08-10 実害あり）**:
+- `scripts/lib/refresh-traefik-origin-lock.py` の `PROTECTED_ROUTER_PRIORITY` が
+  古い版では `1000` にハードコードされている。Coolify がコンテナラベルから生成する
+  ルータは `100000` なので、古い版で release を実行すると **Traefik がラベル側を
+  採用し、Cloudflare 限定ミドルウェアが一切効かなくなる**。
+- 実際に `paradigmjp.com` / `www` / `keystatic` / `status` の4ホストが
+  オリジンIPへ直接到達可能になり、偽装 CF ヘッダでも 200 を返す状態が発生した。
+  WAF・レート制限・Bot 対策がすべて迂回されていた。
+- release 前に必ず確認する:
+  `grep -c "PROTECTED_ROUTER_PRIORITY = 200000" scripts/lib/refresh-traefik-origin-lock.py`
+  が `1` であること。`0` ならその worktree から release してはいけない。
+- 検証は `python3 scripts/lib/refresh-traefik-origin-lock_test.py`
+  （優先度がラベル側を上回ることを検査する回帰テストを含む）。
+
 **deploy 失敗時の即診断**:
 - `module-not-found` → untracked ファイルの push 忘れ
 - `EUSAGE: Missing from lock file` → `package.json` 手編集後に `npm install` 忘れ

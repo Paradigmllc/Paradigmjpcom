@@ -416,8 +416,15 @@ def apply_cached_origin_lock(
     if aliases:
         protected.extend(["paradigmhp-origin-alias-http", "paradigmhp-origin-alias-https"])
     for name in protected:
-        if reparsed["routers"][name].get("middlewares", [None])[0] != MIDDLEWARE_NAME:
+        router = reparsed["routers"][name]
+        if router.get("middlewares", [None])[0] != MIDDLEWARE_NAME:
             raise RuntimeError("Rendered protected router failed validation")
+        # ミドルウェアが付いていても、Coolify がコンテナラベルから生成する
+        # ルータ(priority 100000)に負けると素通りする。優先度まで検証しないと
+        # 「施錠済み」と報告しながらオリジンが開いたままになる。
+        # 実際に priority 1000 で書かれ、4ホストが直接到達可能になっていた。
+        if router.get("priority") != PROTECTED_ROUTER_PRIORITY:
+            raise RuntimeError("Rendered protected router priority failed validation")
 
     changed = rendered != original_text
     if changed:
