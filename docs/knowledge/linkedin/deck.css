@@ -1,0 +1,210 @@
+/* Shared design system for LinkedIn document-post carousels.
+   One stylesheet for every deck: the visual identity must not drift between
+   posts, and a per-deck copy guarantees it will. Page box is 1080x1350 (4:5),
+   which maximises mobile feed area. */
+  :root{
+    --paper:#FBFAF8;
+    --ink:#16161A;
+    /* Carousels are read at ~380px wide on a phone. 300-weight grey at that
+       size is where "elegant" turns into "unreadable" — keep body text at 400
+       and darken the grey rather than shrinking the leading. */
+    --muted:#57575E;
+    --faint:#77777F;
+    --rule:#E4E1DA;
+    --accent:#1D4ED8;
+    --accent-soft:#EEF2FF;
+    --warn:#B45309;
+    --warn-soft:#FEF3E2;
+    --ok:#047857;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @page{ size:1080px 1350px; margin:0 }
+  html,body{background:var(--paper)}
+  body{
+    font-family:"Noto Sans",system-ui,sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .slide{
+    width:1080px;height:1350px;
+    background:var(--paper);
+    padding:96px 92px 84px;
+    display:flex;flex-direction:column;
+    position:relative;
+    page-break-after:always;
+    break-after:page;
+    overflow:hidden;
+  }
+  .slide:last-child{page-break-after:auto;break-after:auto}
+
+  .eyebrow{
+    font-family:"Outfit",sans-serif;
+    font-size:19px;font-weight:600;
+    letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);
+  }
+  h1{
+    font-family:"Outfit",sans-serif;
+    font-size:104px;font-weight:600;line-height:1.02;
+    letter-spacing:-.028em;
+  }
+  h2{
+    font-family:"Outfit",sans-serif;
+    font-size:62px;font-weight:600;line-height:1.1;
+    letter-spacing:-.022em;
+  }
+  h3{
+    font-family:"Outfit",sans-serif;
+    font-size:34px;font-weight:600;line-height:1.25;
+    letter-spacing:-.012em;
+  }
+  p{font-size:29px;line-height:1.62;color:var(--muted);font-weight:400}
+  p.lead{font-size:34px;line-height:1.55;color:var(--ink);font-weight:400}
+  strong{font-weight:600;color:var(--ink)}
+  .rule{height:1px;background:var(--rule);width:100%}
+  .spacer{flex:1}
+
+  .foot{
+    /* .spacer collapses to 0 on dense slides, so guarantee the gap here
+       rather than letting a callout box sit flush against the footer. */
+    margin-top:34px;
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:"Outfit",sans-serif;font-size:19px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+    font-weight:500;
+  }
+
+  /* gate number block */
+  .gate{display:flex;align-items:flex-start;gap:34px}
+  .gate-num{
+    font-family:"Outfit",sans-serif;
+    font-size:150px;font-weight:300;line-height:.82;
+    color:var(--accent);letter-spacing:-.05em;
+    flex-shrink:0;
+  }
+  .kicker{
+    font-family:"Outfit",sans-serif;font-size:20px;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+  }
+
+  ul{list-style:none}
+  li{
+    font-size:28px;line-height:1.5;color:var(--muted);font-weight:400;
+    padding-left:34px;position:relative;margin-bottom:19px;
+  }
+  li::before{
+    content:"";position:absolute;left:0;top:16px;
+    width:13px;height:1.5px;background:var(--accent);
+  }
+
+  .insight{
+    background:var(--accent-soft);
+    border-left:4px solid var(--accent);
+    padding:34px 38px;
+  }
+  .insight .lab{
+    font-family:"Outfit",sans-serif;font-size:18px;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+    margin-bottom:14px;
+  }
+  .insight p{font-size:29px;line-height:1.5;color:var(--ink);font-weight:400}
+
+  .cost{
+    background:var(--warn-soft);
+    border-left:4px solid var(--warn);
+    padding:30px 36px;
+  }
+  .cost .lab{
+    font-family:"Outfit",sans-serif;font-size:18px;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--warn);
+    margin-bottom:12px;
+  }
+  .cost p{font-size:27px;line-height:1.48;color:var(--ink);font-weight:400}
+
+  table{width:100%;border-collapse:collapse}
+  th{
+    font-family:"Outfit",sans-serif;font-size:19px;font-weight:600;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--faint);
+    text-align:left;padding:0 0 18px;border-bottom:1px solid var(--rule);
+  }
+  td{
+    font-size:25px;line-height:1.42;color:var(--muted);font-weight:400;
+    padding:26px 26px 26px 0;border-bottom:1px solid var(--rule);
+    vertical-align:top;
+  }
+  td:last-child{padding-right:0}
+  td.k{color:var(--ink);font-weight:500}
+
+  /* dependency diagram */
+  .dep{display:flex;flex-direction:column;gap:0}
+  .dep-row{display:flex;align-items:center;gap:26px;padding:30px 0}
+  .dep-idx{
+    font-family:"Outfit",sans-serif;font-size:22px;font-weight:600;
+    color:#fff;background:var(--accent);
+    width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .dep-body{flex:1}
+  .dep-name{font-family:"Outfit",sans-serif;font-size:32px;font-weight:600;color:var(--ink)}
+  .dep-req{font-size:23px;color:var(--muted);font-weight:400;margin-top:5px}
+  /* The connector has to read as one chain. A short, pale rule between rows
+     reads as a dash and the dependency claim is lost. */
+  .dep-line{width:2px;height:48px;background:#BFB9AE;margin-left:25px}
+
+  .big-q{
+    font-family:"Outfit",sans-serif;
+    font-size:56px;font-weight:600;line-height:1.16;
+    letter-spacing:-.02em;
+  }
+  .cta-box{border-top:2px solid var(--ink);padding-top:38px}
+
+  /* Cover contents. A document post's first page is its feed thumbnail —
+     it has to state the scope, not just the title, or there is no reason
+     to swipe. */
+  .toc{display:flex;flex-direction:column}
+  .toc-item{
+    display:flex;align-items:baseline;gap:24px;
+    padding:17px 0;border-bottom:1px solid var(--rule);
+  }
+  .toc-item:first-child{border-top:1px solid var(--rule)}
+  .toc-n{
+    font-family:"Outfit",sans-serif;font-size:21px;font-weight:600;
+    color:var(--accent);width:26px;flex-shrink:0;
+  }
+  .toc-t{font-family:"Outfit",sans-serif;font-size:29px;font-weight:500;color:var(--ink)}
+  .toc-d{font-size:23px;color:var(--faint);font-weight:400;margin-left:auto}
+  .url{
+    font-family:"Outfit",sans-serif;font-size:30px;font-weight:600;
+    color:var(--accent);letter-spacing:-.005em;
+  }
+
+/* Ghost node — a step in a sequence the seller is absent for. Same geometry
+   as .dep-idx so the two read as one chain with presence/absence encoded. */
+.dep-idx.ghost{
+  background:transparent;color:var(--faint);
+  border:2px solid #CFCBC2;
+}
+.dep-tag{
+  font-family:"Outfit",sans-serif;font-size:19px;font-weight:600;
+  letter-spacing:.13em;text-transform:uppercase;
+  margin-left:auto;flex-shrink:0;
+}
+.dep-tag.in{color:var(--accent)}
+.dep-tag.out{color:var(--faint)}
+
+/* Two-column audit checklist. The single most-saved page in a deck is the one
+   the reader can run against their own site, so it gets its own denser scale. */
+.check{display:grid;grid-template-columns:1fr 1fr;gap:36px 44px}
+.check-item{
+  font-size:26px;line-height:1.42;color:var(--muted);font-weight:400;
+  padding-left:38px;position:relative;
+}
+.check-item::before{
+  content:"";position:absolute;left:0;top:4px;
+  width:21px;height:21px;border:2px solid #BFB9AE;border-radius:4px;
+}
+
+/* Denser table for slides that carry a table plus a callout. Row padding is
+   the only compressible thing there — the flex spacers have already collapsed
+   to zero by the time a slide is tight. */
+table.tight td{padding:19px 26px 19px 0}

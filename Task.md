@@ -1,5 +1,18 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-08-07 Japan Entry LinkedIn運用（設計完了・第1弾カルーセル制作完了 / 外部送信0）
+
+- 海外SMB向けLinkedIn運用を「発信」「接触」の2トラックで定義した。運用仕様 `docs/knowledge/linkedin-japan-entry-outreach-operations.md`、投稿素材 `docs/knowledge/linkedin/`。
+- 接触は売り込まない4ステップ（D0コメント → D2接続申請 → 承認後観察メッセージ → D+5診断ツール）とし、SALES-CENTERルール4の体裁をLinkedInへ移植する。自動化ツールは使用しない。
+- 地域は3 Tier順次投入。Tier1 シンガポール／韓国テック／豪州、Tier2 米国／英国、Tier3 UAE／サウジ。台湾・タイはLinkedIn浸透率が低く対象外（別チャネル）。
+- Apolloは無料プランでPeople Search API不可、かつコールドメール非採用の設計上Sales Navigatorと重複するため使用しない。Sales Navigator Coreを参入条件とする。
+- 永久保存版コンテンツはLinkedInドキュメント投稿（PDFカルーセル）形式に確定。投稿本文は3,000字上限・約200字で折り返されるため長文記事は本文で成立しない。
+- カルーセル3本すべて制作完了（各12ページ・溢れ検査済み）。01 `The Japan Entry Sequence`（全ICP）、02 `The Silent Quarter`（SaaS/B2B）、03 `The Trust Surface`（EC/D2C）。投稿本文も各 `carousel-NN-post-copy.md` に確定。
+- 共有デザインシステムを `docs/knowledge/linkedin/deck.css` に切り出し、HTML→PDFレンダラ `render-carousel.mjs` を整備（既存Playwrightを使用・新規依存なし）。制作規約と溢れ検査手順は `docs/knowledge/linkedin/README.md`。
+- 配信順序は W1=02 → W3=03 → W5=01。カルーセルは2週に1本を上限とし、間の週はテキスト投稿で埋める（連投すると初速が割れて配信量が落ちる）。
+- LinkedInプロフィールは初期状態。英語プロフィール追加とプライマリ化を入力し保存操作まで実施したが、Chrome拡張切断のため**保存成否は未確認**。
+- 未着手: ① 英語プロフィール保存の確認とAbout入力 ② 写真・バナー・カスタムURL・Experience（`Other`置換）・Featured ③ Week 0のつながり50〜100件積み上げ ④ Sales Navigator契約可否 ⑤ カルーセル03の返品8日デフォルト記述を現行法で確認。LinkedInへの投稿・接続申請・DM送信はいずれも未実施。
+
 # CURRENT STATUS - 2026-08-03 Pet Life Movie source-conditioned GPU quality
 
 - User quality review correctly identified that the prior free preview and paid renderer were editorial photo motion rather than source-conditioned GPU video. Paid delivery now fails closed unless `pet-memory-i2v` is an exact `approved_bound` ComfyUI workflow; a missing/unready workflow can no longer silently sell a slideshow.
