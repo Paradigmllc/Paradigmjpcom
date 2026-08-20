@@ -1,4 +1,19 @@
-﻿## ACTIVE HANDOFF - 2026-08-07 Supabase 復旧完了 / 視覚素材が次の実装
+﻿## ACTIVE HANDOFF - 2026-08-20 Twenty同期を60秒cron→DBイベント駆動へ (定期実行廃止)
+
+`revenueos-twenty-sync.timer`(60秒ごと pull100+writeback3) を廃止し、DB LISTEN/NOTIFY の
+常駐ブリッジ `revenueos-twenty-bridge` (host `/opt/revenueos-twenty-bridge/`・git `ops/revenueos-twenty-bridge/`
+ブランチ `ops/twenty-event-bridge`) に置換。**アプリ再デプロイなし・インフラのみ**。
+
+- writeback: `sales_companies` の report_ready 遷移 → trigger `trg_twenty_writeback` → NOTIFY → bridge → `/api/sales/companies/<id>/twenty-sync`
+- pull: Twenty `company` 変更 → trigger `trg_revenueos_pull` → NOTIFY → bridge(8s debounce) → `/api/sales/twenty/webhook`
+- Twenty native webhook は raw-insert が worker に配送されず不可 → DB trigger で代替。ループは遷移ガードで防止。
+- 実弾検証済: 両方向 end-to-end OK / アイドル30秒で spurious 0 / error 0。旧timerは `disable --now` 済(二度とenable禁止・.serviceは手動フル再同期用に温存)。
+- ⚠️ Twentyのデータモデル変更で company テーブルが作り替わると `trg_revenueos_pull` が消える → `pull-trigger.sql` 再適用で復旧(保険でbridge再起動=reconcile full pull)。
+- 詳細: `ops/revenueos-twenty-bridge/README.md` / memory `reference-revenueos-twenty-bridge`。
+
+---
+
+## ACTIVE HANDOFF - 2026-08-07 Supabase 復旧完了 / 視覚素材が次の実装
 
 ### 前回ハンドオフの「Supabase は起動操作のみ残」は誤り。3つの罠があった
 
