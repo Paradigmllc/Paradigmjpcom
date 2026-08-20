@@ -13,7 +13,7 @@
  *   ③ 起動時に一度だけ reconcile: 取りこぼし救済 (未同期の report_ready を writeback + 1 回 pull)。
  *      これは「起動イベント」時の 1 回のみで、定期実行ではない。
  *
- * 握りつぶし禁止 (catch は必ず log + 失敗継続時 Slack 通知)。値のハードコードなし (全部 env)。
+ * 握りつぶし禁止 (catch は必ず構造化 log + /health の consecutiveFailures で可視化)。値のハードコードなし (全部 env)。
  */
 import http from "node:http";
 import pg from "pg";
@@ -34,22 +34,12 @@ const PULL_TOKEN = ENV("PULL_TOKEN");                     // Twenty webhook URL 
 const PORT = Number(ENV("PORT", "8791"));
 const DEBOUNCE_MS = Number(ENV("PULL_DEBOUNCE_MS", "8000"));
 const PULL_LIMIT = Number(ENV("PULL_LIMIT", "200"));
-const SLACK_WEBHOOK = ENV("SLACK_WEBHOOK_URL", "");       // 任意
 const HTTP_TIMEOUT_MS = 90_000;
 
+// 失敗は構造化ログ (docker logs) と /health の consecutiveFailures で監視する。外部通知は持たない。
 const log = (level, msg, extra = {}) => console.log(JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra }));
 
 let consecutiveFailures = 0;
-async function alertSlack(text) {
-  if (!SLACK_WEBHOOK) return;
-  try {
-    await fetch(SLACK_WEBHOOK, {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: `:twisted_rightwards_arrows: *twenty-bridge* ${text}` }),
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch (error) { log("error", "slack alert failed", { error: String(error?.message ?? error) }); }
-}
 
 async function callRevenueOS(path, body) {
   const url = `${REVENUEOS_URL}${path}`;
@@ -64,7 +54,6 @@ async function callRevenueOS(path, body) {
   } catch (error) {
     consecutiveFailures++;
     log("error", "revenueos call threw", { path, error: String(error?.message ?? error), consecutiveFailures });
-    if (consecutiveFailures === 3) await alertSlack(`RevenueOS への呼び出しが3回連続失敗 (${path}): ${String(error?.message ?? error)}`);
     return { ok: false, error: String(error?.message ?? error) };
   }
   const text = await res.text();
@@ -72,7 +61,6 @@ async function callRevenueOS(path, body) {
   if (!res.ok) {
     consecutiveFailures++;
     log("error", "revenueos call non-2xx", { path, status: res.status, body: text.slice(0, 300), consecutiveFailures });
-    if (consecutiveFailures === 3) await alertSlack(`RevenueOS 呼び出しが3回連続失敗 (${path}) HTTP ${res.status}`);
     return { ok: false, status: res.status, json };
   }
   consecutiveFailures = 0;
@@ -143,7 +131,6 @@ function makeListener({ label, config, channel, onNotify, onConnect }) {
       catch (error) {
         backoff = Math.min(backoff * 2, 60_000);
         log("error", "reconnect failed", { label, error: String(error?.message ?? error), nextBackoff: backoff });
-        if (backoff >= 60_000) await alertSlack(`${label} の LISTEN 再接続に失敗し続けています: ${String(error?.message ?? error)}`);
         scheduleReconnect();
       }
     }, backoff);

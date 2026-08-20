@@ -73,8 +73,8 @@ ssh root@<host> 'docker exec -i opt-twenty-db-1 psql -U twenty -d twenty < /opt/
 ## 監視
 
 - 構造化ログ: `docker logs revenueos-twenty-bridge`（JSON 1行/イベント）。
-- 失敗が 3 連続すると Slack 通知（`SLACK_WEBHOOK_URL` が設定されていれば）。
-  ※ このホストには現状 Slack webhook が未設定。URL を `.env` に入れれば即有効化される。
+- `/health` が `consecutiveFailures` を返す（連続失敗数）。Docker HEALTHCHECK が 60s ごとに叩く。
+- 外部通知（Slack 等）は持たない。監視はログ + `/health` のみ。
 
 ## 旧 timer
 

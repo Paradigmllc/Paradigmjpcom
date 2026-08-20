@@ -14,7 +14,6 @@ WHSEC=$(docker exec "$APP" sh -lc 'printf "%s" "$TRIGGER_WEBHOOK_SECRET"')
 # 既存 .env があれば PULL_TOKEN を維持 (Twenty 側 URL と一致させるため)、無ければ新規発行
 PTOKEN=$(grep -s '^PULL_TOKEN=' .env | cut -d= -f2)
 [ -n "$PTOKEN" ] || PTOKEN=$(openssl rand -hex 24)
-SLACK=$(python3 -c "import json;print(json.load(open('/var/lib/docker/volumes/youtube-media-os_media-os-data/_data/config/slack.json')).get('webhook',''))" 2>/dev/null || true)
 
 umask 177
 cat > .env <<EOF
@@ -37,7 +36,6 @@ PULL_TOKEN=${PTOKEN}
 PORT=8791
 PULL_DEBOUNCE_MS=8000
 PULL_LIMIT=200
-SLACK_WEBHOOK_URL=${SLACK}
 EOF
 umask 022
 echo "[deploy] .env 生成 (0600)"
