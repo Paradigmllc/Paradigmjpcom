@@ -1,0 +1,18 @@
+services:
+  twenty-bridge:
+    build: .
+    image: revenueos-twenty-bridge:latest
+    container_name: revenueos-twenty-bridge
+    restart: unless-stopped
+    env_file: /opt/revenueos-twenty-bridge/.env
+    networks: [coolify]
+    # coolify 網に居れば supabase-db-1:5432 (LISTEN) と RevenueOS app:3000 (curl) 両方に到達でき、
+    # Twenty (同じ coolify 網) からの native webhook も revenueos-twenty-bridge:8791 で受けられる。
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    mem_limit: 128m
+
+networks:
+  coolify:
+    external: true

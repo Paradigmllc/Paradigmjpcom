@@ -1,0 +1,11 @@
+{
+  "name": "revenueos-twenty-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Event-driven RevenueOS <-> Twenty sync bridge (LISTEN/NOTIFY + Twenty native webhook). Replaces the 60s systemd timer.",
+  "main": "bridge.mjs",
+  "scripts": { "start": "node bridge.mjs" },
+  "dependencies": { "pg": "^8.13.1" },
+  "engines": { "node": ">=20" }
+}
