@@ -44,6 +44,7 @@ import { Categories } from "./src/collections/Categories"
 import { Settings } from "./src/globals/Settings"
 import { Header } from "./src/globals/Header"
 import { Footer } from "./src/globals/Footer"
+import { createR2MediaStorage } from "./src/lib/payload-r2-media"
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -251,6 +252,7 @@ export default buildConfig({
     schemaName: "paradigm",
     push: false,
   }),
+  plugins: [createR2MediaStorage()],
   sharp,
   // P17 2026-04-27: コンテンツ多言語化も 12 言語対応
   // 既存 Posts/Services/Works/FAQs/Pricing/Settings の `localized: true` 列が自動で 12 言語分の JSONB 値を持つ
