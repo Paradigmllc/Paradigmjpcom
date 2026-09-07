@@ -119,7 +119,8 @@
                 <label class="field span-2"><span>ターゲット *</span><textarea id="audience" required minlength="10" rows="3" placeholder="業種、役職、抱えている課題、認知段階"></textarea></label>
                 <label class="field"><span>完成尺（秒） *</span><input id="duration" type="number" min="5" max="1800" value="30" required></label>
                 <label class="field"><span>掲載媒体 *</span><input id="platforms" value="LinkedIn, YouTube" required placeholder="LinkedIn, YouTube"></label>
-                <label class="field span-2"><span>章・ショット台本(JSON、120秒超は必須)</span><textarea id="editorial-chapters" rows="8" aria-label="章とショットの台本" placeholder='[{"id":"opening","title":"導入","shots":[{"title":"最初の場面","kind":"text_motion","duration_seconds":5,"visual_direction":"この場面で示す図解・被写体・動きを具体的に記述","headline":"見出し","narration":"読み上げ原稿","narration_path":"/data/voice/shot-001.wav"}]}]'></textarea><small>1ショット0.5〜30秒・最大999ショット・完成尺30分まで。章内合計を完成尺と一致させ、言語ごとに別案件にしてください。音声はアップロードしたパスを指定します。空欄では短尺の標準構成を使います。</small></label>
+                <div class="field span-2"><span>章・ショットをフォームで編集（120秒超は必須）</span><div class="button-row"><button id="add-editorial-chapter" class="button secondary" type="button">章を追加</button><button id="undo-editorial-change" class="button secondary" type="button" disabled>直前の追加・削除・移動を戻す</button></div><p id="chapter-editor-status" role="status" aria-live="polite"></p><div id="chapter-editor"></div><small>編集する章・ショットを切り替えて入力します。画面にない素材・workflow設定も保持します。取り消しは直前1回のみで、文字入力やJSON編集後は無効になります。未送信の入力は画面を閉じると失われます。</small></div>
+                <details class="field span-2"><summary>詳細JSON（フォームと同期）</summary><label class="field"><span>章・ショット台本</span><textarea id="editorial-chapters" rows="8" aria-label="章とショットの台本"></textarea><small>1ショット0.5〜30秒・最大999ショット・最大60章・完成尺30分まで。章内合計を完成尺と一致させ、言語ごとに別案件にしてください。音声はアップロードしたパスを指定します。素材・workflow・画面要点はJSONで編集できます。</small></label></details>
                 <div class="field span-2"><button id="check-editorial-plan" class="button secondary" type="button" aria-label="課金せず章台本を検証">台本・タイムラインを検証(課金なし)</button><div id="editorial-plan-result" class="summary-box" role="status" aria-live="polite">章台本はまだ検証していません。</div></div>
               </div>
             </article>
@@ -309,6 +310,7 @@
   <script src="/console/console-engine-catalog.js" defer></script>
   <script src="/console/console-studio.js" defer></script>
   <script src="/console/console-editorial.js" defer></script>
+  <script src="/console/console-chapter-editor.js" defer></script>
   <script src="/console/console-readiness.js" defer></script>
 </body>
 </html>

@@ -14,16 +14,20 @@
   }
   const button = document.querySelector("#check-editorial-plan")
   const result = document.querySelector("#editorial-plan-result")
-  document.querySelector("#editorial-chapters").addEventListener("input", () => {
+  let revision = 0
+  document.querySelector("#video-form").addEventListener("input", () => {
+    revision++
     result.textContent = "台本が変更されました。再検証してください。"
   })
   button.addEventListener("click", async () => {
     button.disabled = true
     result.textContent = "台本・タイムラインを検証中…"
+    const checkedRevision = revision
     try {
       const manifest = await api("/v1/briefs/plan", {
         method: "POST", body: JSON.stringify(window.buildStudioBrief()),
       })
+      if (checkedRevision !== revision) { result.textContent = "検証中に入力が変更されました。再検証してください。"; return }
       const chapters = manifest.metadata?.chapters || []
       result.replaceChildren()
       const summary = document.createElement("p")
@@ -37,6 +41,7 @@
       toast("台本の構造と合計尺を確認しました")
     } catch (error) {
       console.error("[editorial] Plan validation failed", error)
+      if (checkedRevision !== revision) { result.textContent = "検証中に入力が変更されました。再検証してください。"; return }
       result.textContent = error.message || "台本を検証できませんでした"
       toast(result.textContent, "error")
     } finally {

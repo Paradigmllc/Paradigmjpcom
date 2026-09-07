@@ -67,6 +67,8 @@ def test_editorial_plan_auth_api_and_gui(example_brief: ClientBrief, monkeypatch
     assert len(response.json()["shots"]) == 60
     assert "editorial-chapters" in client.get("/console/").text
     assert client.get("/console/console-editorial.js").status_code == 200
+    assert 'id="chapter-editor"' in client.get("/console/").text
+    assert client.get("/console/console-chapter-editor.js").status_code == 200
 
 
 def test_editorial_template_escapes_untrusted_copy(service_root: Path) -> None:

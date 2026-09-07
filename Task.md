@@ -1,5 +1,16 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 chapter/shot form in existing Factory dashboard
+
+- Replaced JSON-only chapter intake with a small native form editor in the existing console. Add/select/reorder/remove chapters and shots; edit timing, direction, copy, narration and audio path. Detailed JSON remains bidirectionally synchronized and preserves unexposed source/workflow/visual-point fields. No new library, table or generation endpoint.
+- Only one selected chapter/shot editor is mounted, including large chapter inputs. Limits remain 60 chapters / 200 shots per chapter / 999 total shots; server Pydantic validation is still authoritative. New blank fields and empty chapters are drafts, not production-ready placeholders.
+- One-step undo restores structural changes; subsequent text/JSON edits disable it to avoid discarding newer work. Malformed JSON is retained and blocks form mutations. The UI explicitly warns that unsent inputs are not automatically persisted across page close/reload. Existing submitted ClientBrief/run persistence remains unchanged.
+- All brief-input edits invalidate displayed planning results. A planning response arriving after an edit cannot display stale success. `/v1/briefs/plan` remains non-generating; rights, model approval and human delivery gates are unchanged.
+- Local verification uses real console assets plus intercepted browser fixture APIs and the actual Python planning API tests. No new footage, model download, paid GPU, provider call, deployment or delivery occurred. Draft PR #740 remains the release vehicle; production is not updated.
+- Verification: editorial/console Python tests 14/14, desktop/mobile chapter+overview E2E 4/4 (including 200-shot bounded DOM, invalid JSON preservation, hidden-field retention, reorder/undo and stale-response rejection), visual screenshot inspection, Ruff, mypy 64 files and targeted ESLint passed. Service-wide pytest was not rerun for the static-editor change; prior timing flakes remain documented below.
+- Final root TypeScript pre-check and staged whitespace check passed; no dependency or lockfile changes. All browser endpoints in these tests were intercepted locally, with no running QA server left behind.
+- ACTIVE HANDOFF: continue actual footage quality and GPU bootstrap reliability alongside existing dashboard usability. Draft persistence, source-asset picking and chapter preview continuity remain separate follow-ups; do not claim high-quality long-form generation from this editor alone.
+
 # CURRENT STATUS - 2026-09-07 existing dashboard remains the studio entry point
 
 - Owner explicitly asks to improve the previously built dashboard's content and usability alongside generation/backend improvements. Keep the existing Video Factory console as the production entry point, retain the commercial Video Growth dashboard, and connect new quality/cost controls rather than creating an isolated replacement UI.
