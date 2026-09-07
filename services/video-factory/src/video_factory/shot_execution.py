@@ -13,6 +13,18 @@ from .settings import Settings
 from .workspace import ProjectWorkspace
 
 
+def validate_rerender_selection(
+    manifest: ShotManifest, shot_ids: list[str] | None,
+) -> set[str] | None:
+    if shot_ids is None:
+        return None
+    selected = set(shot_ids)
+    known = {shot.id for shot in manifest.shots}
+    if not selected or not selected.issubset(known):
+        raise ValueError("再生成には既存のショットIDを1件以上指定してください。")
+    return selected
+
+
 def render_revision(context: EngineContext, service_root: Path) -> str:
     settings = context.settings
     files = [

@@ -33,7 +33,7 @@ from .qa import run_technical_qa
 from .review import approve_review, create_pending_review
 from .router import route_manifest
 from .settings import Settings
-from .shot_execution import execute_shots, preflight_shot_reuse
+from .shot_execution import execute_shots, preflight_shot_reuse, validate_rerender_selection
 from .state import initialize_project_state, transition_project_state
 from .studio_events import emit_studio_project_started, emit_studio_qa_completed
 from .validation import validate_brief
@@ -60,12 +60,13 @@ def _resolve_service_root() -> Path:
 SERVICE_ROOT = _resolve_service_root()
 
 
-def _manifest_profile_ids(manifest: ShotManifest) -> list[str]:
+def _manifest_profile_ids(manifest: ShotManifest, shot_ids: set[str] | None = None) -> list[str]:
     return sorted(
         {
             profile_id
             for shots in [manifest.shots, *manifest.localized_shots.values()]
             for shot in shots
+            if shot_ids is None or shot.id in shot_ids
             if (profile_id := str(shot.metadata.get("engine_profile_id") or "").strip())
         }
     )
@@ -81,9 +82,10 @@ def _emit_profile_events(
     state: str,
     progress: int,
     run_id: str | None,
+    shot_ids: set[str] | None = None,
     error_message: str | None = None,
 ) -> None:
-    for profile_id in _manifest_profile_ids(manifest):
+    for profile_id in _manifest_profile_ids(manifest, shot_ids):
         run_lifecycle(
             emit_operator_event(
                 settings,
@@ -375,16 +377,18 @@ def production_flow(
         manifest = route_task(manifest, settings, dry_run)
     if dry_run and not manifest_path:
         manifest = _dry_run_manifest(manifest)
+    selected_shots = validate_rerender_selection(manifest, rerender_shot_ids)
     profile_catalog = load_engine_profile_catalog(settings.engine_profile_catalog_path)
     requires_managed_gpu = not dry_run and manifest_requires_managed_gpu(
         manifest,
         profile_catalog,
+        selected_shots,
     )
-    required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog)
+    required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog, selected_shots)
     gpu_lease: GpuLease | None = None
     try:
-        preflight_workflow_durations(manifest, settings, dry_run=dry_run)
         preflight_shot_reuse(manifest, settings, SERVICE_ROOT, rerender_shot_ids, dry_run=dry_run)
+        preflight_workflow_durations(manifest, settings, dry_run=dry_run, shot_ids=selected_shots)
         manifest = prepare_editorial_audio(
             manifest, ProjectWorkspace.create(settings.workspace, manifest.project_id).root,
             dry_run=dry_run,
@@ -394,6 +398,7 @@ def production_flow(
                 settings,
                 manifest,
                 event_type="profile_selected",
+                shot_ids=selected_shots,
                 title="OSSエンジンを選択",
                 message="監査済みプロファイルを制作runへ固定しました。",
                 state="selected",
@@ -422,6 +427,7 @@ def production_flow(
                 settings,
                 manifest,
                 event_type="profile_started",
+                shot_ids=selected_shots,
                 title="OSSエンジン処理を開始",
                 message="必要なworkerまたはComfyUI workflowの実行を開始しました。",
                 state="running",
@@ -438,7 +444,7 @@ def production_flow(
                 auto_approve=auto_approve,
                 reviewer=reviewer,
                 delivery_target=delivery_target,
-                rerender_shot_ids=set(rerender_shot_ids) if rerender_shot_ids else None,
+                rerender_shot_ids=selected_shots,
             )
         except Exception as error:
             if not dry_run:
@@ -446,6 +452,7 @@ def production_flow(
                     settings,
                     manifest,
                     event_type="profile_failed",
+                    shot_ids=selected_shots,
                     title="OSSエンジン処理に失敗",
                     message="制作runを安全停止しました。Consoleで失敗理由を確認してください。",
                     state="failed",
@@ -459,6 +466,7 @@ def production_flow(
                 settings,
                 manifest,
                 event_type="profile_completed",
+                shot_ids=selected_shots,
                 title="OSSエンジン処理が完了",
                 message="生成素材の処理が完了し、QA・承認工程へ進みました。",
                 state="completed",

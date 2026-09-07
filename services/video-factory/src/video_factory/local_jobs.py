@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from .job_inputs import input_project_id, snapshot_inputs, submission_guard
 from .models import PipelineResult
 from .pipeline import production_flow
 from .settings import Settings
@@ -84,7 +85,7 @@ def load_local_job(settings: Settings, run_id: str) -> LocalJob | None:
 def list_local_jobs(
     settings: Settings,
     *,
-    limit: int = 100,
+    limit: int | None = 100,
 ) -> tuple[list[LocalJob], list[str]]:
     jobs: list[LocalJob] = []
     errors: list[str] = []
@@ -100,13 +101,13 @@ def list_local_jobs(
             jobs.append(LocalJob(**payload))
         except (OSError, json.JSONDecodeError, TypeError) as error:
             errors.append(f"{path.name}: {error}")
-        if len(jobs) >= limit:
+        if limit is not None and len(jobs) >= limit:
             break
     return jobs, errors
 
 
 def reconcile_interrupted_local_jobs(settings: Settings) -> list[LocalJob]:
-    jobs, errors = list_local_jobs(settings, limit=10_000)
+    jobs, errors = list_local_jobs(settings, limit=None)
     if errors:
         logger.error("Unreadable local job records during startup: %s", errors)
     interrupted: list[LocalJob] = []
@@ -125,6 +126,15 @@ def reconcile_interrupted_local_jobs(settings: Settings) -> list[LocalJob]:
         _write_job(settings, failed)
         interrupted.append(failed)
     return interrupted
+
+
+def require_project_idle(settings: Settings, project_id: str) -> None:
+    jobs, errors = list_local_jobs(settings, limit=None)
+    if errors:
+        logger.error("Cannot verify local queue records: %s", errors)
+        raise ValueError("ジョブ記録を検証できません。管理画面でエラーを確認してください。")
+    if any(job.project_id == project_id and job.status in {"queued", "running"} for job in jobs):
+        raise ValueError("この案件は生成待ちまたは生成中です。完了後に修正してください。")
 
 
 def _executor(settings: Settings) -> ThreadPoolExecutor:
@@ -155,9 +165,13 @@ def _run_job(settings: Settings, job: LocalJob) -> None:
             rerender_shot_ids=job.rerender_shot_ids,
         )
         dumped = pipeline_result.model_dump(mode="json")
+        qa_failed = pipeline_result.status == "failed"
+        if qa_failed:
+            logger.error("Video Factory local job %s did not pass QA", job.run_id)
         completed = replace(
             running,
-            status="completed",
+            status="failed" if qa_failed else "completed",
+            error="Technical QA failed; review the persisted QA report." if qa_failed else None,
             updated_at=_now(),
             project_id=pipeline_result.project_id,
             result=dumped,
@@ -189,7 +203,7 @@ def submit_local_job(
     manifest_path: Path | None = None,
     rerender_shot_ids: list[str] | None = None,
 ) -> LocalJob:
-    with _lock:
+    with _lock, submission_guard(settings):
         selected_run_id = run_id or str(uuid.uuid4())
         try:
             uuid.UUID(selected_run_id)
@@ -198,19 +212,26 @@ def submit_local_job(
         existing = load_local_job(settings, selected_run_id)
         if existing is not None:
             return existing
+        project_id = input_project_id(brief_path)
+        if project_id:
+            require_project_idle(settings, project_id)
+        frozen_brief, frozen_manifest = snapshot_inputs(
+            settings, selected_run_id, brief_path, manifest_path,
+        )
         timestamp = _now()
         job = LocalJob(
             run_id=selected_run_id,
             status="queued",
             created_at=timestamp,
             updated_at=timestamp,
-            brief_path=str(brief_path),
+            brief_path=str(frozen_brief),
             dry_run=dry_run,
             planner_provider=planner_provider,
             auto_approve=auto_approve,
             delivery_target=delivery_target,
-            manifest_path=str(manifest_path) if manifest_path else None,
-            rerender_shot_ids=rerender_shot_ids,
+            manifest_path=str(frozen_manifest) if frozen_manifest else None,
+            rerender_shot_ids=list(rerender_shot_ids) if rerender_shot_ids is not None else None,
+            project_id=project_id,
         )
         _write_job(settings, job)
         future = _executor(settings).submit(_run_job, settings, job)

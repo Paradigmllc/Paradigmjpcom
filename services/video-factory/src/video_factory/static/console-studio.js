@@ -196,6 +196,7 @@
   function qaHtml(detail) {
     const qa = detail.qa
     if (!qa) return '<div class="studio-qa empty compact">QA結果はまだありません。</div>'
+    if (["production", "failed"].includes(detail.state?.status)) return '<div class="studio-qa empty compact">修正・再生成中です。保存済み動画とQAは前回版の可能性があります。再レビューが必要です。</div>'
     const probe = qa.probe || {}
     const audio = probe.audio_peak_db == null ? "未検出" : `${Number(probe.audio_peak_db).toFixed(1)} dBFS`
     return `<div class="studio-qa ${qa.passed ? "passed" : "failed"}">
@@ -208,60 +209,11 @@
     const shots = detail.manifest?.shots || []
     if (!shots.length) return '<div class="storyboard-section"><div class="empty compact">Storyboardはまだありません。</div></div>'
     const language = detail.manifest.primary_deliverable?.language || "ja"
-    return `<section class="storyboard-section">
-      <div class="panel-heading studio-heading"><div><p class="eyebrow">COMMERCIAL STUDIO</p><h2>Storyboard・シーン修正</h2></div><span class="badge neutral">${shots.length} scenes</span></div>
-      ${qaHtml(detail)}
-      <div class="storyboard-list" data-storyboard-language="${escapeHtml(language)}">
-        ${shots.map((shot) => `<article class="storyboard-card" data-shot-editor="${escapeHtml(shot.id)}">
-          <div class="storyboard-card-head"><span>${escapeHtml(shot.id)} · ${escapeHtml(shot.kind)}</span><strong>${escapeHtml(shot.title)}</strong><small>${escapeHtml(shot.duration_seconds)}s</small></div>
-          <label><span>見出し</span><input data-shot-headline value="${escapeHtml(shot.headline)}" maxlength="500"></label>
-          <label><span>本文</span><textarea data-shot-body rows="2" maxlength="2000">${escapeHtml(shot.body)}</textarea></label>
-          <label><span>テンプレート</span><select data-shot-template>${templateOptions(shot.template_id)}</select></label>
-          <div class="storyboard-actions"><button class="button secondary" data-save-shot type="button">保存</button><button class="button primary" data-rerender-shot type="button">保存して再生成</button></div>
-        </article>`).join("")}
-      </div>
-    </section>`
-  }
-
-  async function saveShot(editor, detail, rerender) {
-    const shotId = editor.dataset.shotEditor
-    const buttons = $$('button', editor)
-    buttons.forEach((button) => { button.disabled = true })
-    try {
-      await api(`/v1/projects/${encodeURIComponent(detail.project_id)}/shots/${encodeURIComponent(shotId)}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          language: detail.manifest.primary_deliverable?.language || "ja",
-          headline: $('[data-shot-headline]', editor).value.trim(),
-          body: $('[data-shot-body]', editor).value.trim(),
-          template_id: $('[data-shot-template]', editor).value,
-          reviewer: state.bootstrap?.factory?.environment === "production" ? "Paradigm Producer" : "GUI Reviewer",
-        }),
-      })
-      toast(`${shotId} を保存しました`)
-      if (rerender) {
-        const result = await api(`/v1/projects/${encodeURIComponent(detail.project_id)}/rerender`, {
-          method: "POST",
-          body: JSON.stringify({ shot_ids: [shotId] }),
-        })
-        if (result.run_id && window.watchVideoFactoryRun) window.watchVideoFactoryRun(result.run_id)
-        toast(result.accepted ? "再生成をバックグラウンドで開始しました" : "再生成が完了しました")
-      }
-      await loadProjects(true)
-      await loadProjectDetail(detail.project_id)
-    } catch (error) {
-      console.error("[video-factory-console] shot revision failed", error)
-      toast(error.message || "シーンを更新できませんでした", "error")
-    } finally {
-      buttons.forEach((button) => { button.disabled = false })
-    }
+    return window.shotRevisionHtml(detail, language, qaHtml(detail), templateOptions)
   }
 
   function wireStudioProjectTools(detail) {
-    $$('[data-shot-editor]').forEach((editor) => {
-      $('[data-save-shot]', editor).addEventListener("click", () => void saveShot(editor, detail, false))
-      $('[data-rerender-shot]', editor).addEventListener("click", () => void saveShot(editor, detail, true))
-    })
+    window.wireShotRevision(detail, templateOptions)
   }
 
   function wireColors() {

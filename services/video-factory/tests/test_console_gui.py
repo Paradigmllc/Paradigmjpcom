@@ -60,7 +60,10 @@ def test_console_static_app_and_runtime_secret_masking(
     assert studio_script.status_code == 200
     assert "catch {" not in studio_script.text
     assert "setInterval" not in studio_script.text
-    assert "保存して再生成" in studio_script.text
+    assert "console-shot-revision.js" in page.text
+    revision_script = client.get("/console/console-shot-revision.js")
+    assert revision_script.status_code == 200
+    assert "保存して再生成" in revision_script.text
     for asset in ("console-projects.js", "console-runtime.js"):
         response = client.get(f"/console/{asset}")
         assert response.status_code == 200

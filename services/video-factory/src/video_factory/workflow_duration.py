@@ -48,7 +48,10 @@ def require_workflow_duration(workflow: Mapping[str, object], seconds: float, fp
         )
 
 
-def preflight_workflow_durations(manifest: ShotManifest, settings: Settings, *, dry_run: bool) -> None:
+def preflight_workflow_durations(
+    manifest: ShotManifest, settings: Settings, *, dry_run: bool,
+    shot_ids: set[str] | None = None,
+) -> None:
     if dry_run:
         return
     from .adapters.base import EngineContext
@@ -58,6 +61,8 @@ def preflight_workflow_durations(manifest: ShotManifest, settings: Settings, *, 
     for deliverable in manifest.deliverables:
         context = EngineContext(settings, workspace, manifest, deliverable, False, deliverable.name)
         for shot in manifest.shots_for_language(deliverable.language):
+            if shot_ids is not None and shot.id not in shot_ids:
+                continue
             if shot.engine is Engine.COMFYUI:
                 _, workflow, _ = _load_workflow(shot, context)
                 require_workflow_duration(workflow, shot.duration_seconds, deliverable.fps)

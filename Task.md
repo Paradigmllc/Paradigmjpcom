@@ -1,5 +1,16 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 production revision loop, not mass-production approval
+
+- Owner explicitly requests practical mass-production readiness, not another five-second source demo. Operational readiness remains **NOT achieved**: no newly approved finished short/long-form video or verified per-usable-video cost in this turn.
+- Existing console/API now edit generation direction and authored narration/audio inputs with a named revision author. Old voice paths are cleared when words change without replacement; effective clearing is included in existing DB revision events. Workflow/model/rights approval settings remain unchanged. Unsupported full-track/localized audio revisions fail explicitly.
+- Partial rerenders verify every reused receipt before GPU work; GPU/worker requirements, workflow duration checks and profile events now include only selected shots. A CPU text-shot revision no longer starts GPU for untouched ComfyUI shots. Whole master/audio/caption composition is retained.
+- Local queued input files are snapshotted (JSON/YAML preserved). Submission/edit file lock rejects same-project local queued/running jobs and edits. QA-failed pipeline results now persist as failed jobs, not completed. This is not cross-backend distributed execution or automatic recovery.
+- Existing dashboard has one shot editor at a time, stale QA/approval handling and explicit errors. Fixed the default preview choosing the last source clip instead of `master/master.mp4`; the console now prioritizes the whole master and allows artifact switching. This does not establish the master's creative quality.
+- Verification: service pytest 172/172 (existing Prefect teardown warning), desktop/mobile fixture E2E 6/6, Ruff, mypy 66 files, root TypeScript and targeted ESLint. Final effective-revision-payload change additionally covered by the API tests. No new dependency, GPU, paid API, production DB migration, output approval or deployment.
+- Live release blocker reconfirmed: prior head `b6511780`, PR #740 draft, validate run `34113479364` failed at npm audit; deploy skipped. Local audit 13 vulnerabilities / 8 high; npm image-size latest 2.0.2 and advisory has no patched version. No audit bypass or direct deployment. Common CMS dependency remediation affects the wider website.
+- ACTIVE HANDOFF: [production revision evidence and remaining acceptance gates](docs/knowledge/video-studio-production-revision-20260907.md). Obtain first operating theme/volume/cost limits, produce substantive finished short then chapter-based long-form, and resolve the shared release blocker. Do not equate the 172 tests, new editor or 5-second source with a completed studio.
+
 # CURRENT STATUS - 2026-09-07 actual source quality and lean GPU runtime
 
 - Generation is the priority, not another dashboard-only iteration. Added a sandbox-only digest-pinned `vastai/comfy` 0.28.0 / CUDA 12.9 option (9.53 GB compressed amd64 image) instead of the historical All-in-One App Studio image (25.98 GB). Immutable image, existing approved model checksums and baseline workflow SHA are retained; production settings/approvals are unchanged.
