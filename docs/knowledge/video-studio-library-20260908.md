@@ -75,9 +75,12 @@ URLでの版選択ができる。新しい独立ダッシュボードや別DBは
   Next.jsの[ビルドキャッシュの説明](https://nextjs.org/docs/app/guides/ci-build-caching)
   とローカル実体を確認。選択buildのsrcパス解決にも問題があり、インストール済み
   Next.jsのテスト用NEXT_PRIVATE_APP_PATHSで対象ルートを指定して検証する。
-- 2026-09-08現在のnpm audit: 13件 / high8件、image-size/payload/undiciは
+- この実装時点のnpm audit: 13件 / high8件、image-size/payload/undiciは
   fixAvailable=false。本番URL `/ja/admin/video-studio-control` はHTTP404。
   PR #740はdraft。監査無効化・正式release gate迂回・本番反映の主張はしない。
+
+同日後続の[依存修復](video-studio-release-remediation-20260908.md)で監査は2件/high2件へ
+減少。Undiciはoverrideを更新して修復できた。残る共通CMS問題と本番確認は未完。
 
 Next.js / Supabase / Reactスキルに従い、既存の認証とDBを再利用し、
 サーバー専用処理を分離、版を上書きしないAPI、独立した読み込み/空/エラー状態を採用。

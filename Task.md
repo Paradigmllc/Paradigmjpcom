@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 release dependency remediation, production still blocked
+
+- Reduced npm audit from 13 vulnerabilities / high 8 to **2 / high 2** using existing same-major dependencies (16 lockfile package version changes). Undici override 7.28.0 → 7.29.1; previous fixAvailable=false reflected the pinned override, not the absence of a compatible fix. No audit bypass or new library. Effective Sharp override unchanged.
+- Remaining image-size and Payload advisories have no published patched version at inspection. Common CMS fork/replacement affects the wider site; asked the user for scope expansion, awaiting response. No production write, deploy, GPU or paid generation.
+- Related unit/API/auth tests **64 passed**, new compatibility tests 6 included; TypeScript and targeted ESLint passed. Full Vitest **1563 passed / 15 failed**; all 15 reproduce against unchanged HEAD and old dependencies. Existing failures include a 525-line Vast provisioning script, a stale deployment-function assertion, and old sales/manual-message expectations. Full suite is NOT green.
+- Updated-dependency targeted Next.js compile succeeded; PC/mobile browser fixture regressions 6 cases verified, screenshots inspected. Local Supabase is unconfigured, so startup sales-queue recovery reports a configuration error. Browser fixtures do not prove production DB or notification delivery.
+- Live authenticated production bootstrap HTTP200, but production_ready=false because ComfyUI/GPU unavailable. Workflow/model runtime registries ready; LivePortrait/MuseTalk and other specialist engines disabled. This is an idle-GPU observation, not proof of provider failure or generation quality. SSH works, host disk 89% and swap in use.
+- ACTIVE HANDOFF: [remediation evidence and remaining gates](docs/knowledge/video-studio-release-remediation-20260908.md). Await authority for common CMS remediation; preserve security gate and human first-cut/final review. World-class/all-genre finished-video quality and actual production acceptance remain unproved. No claim that code tests improve the owner's rejected 10/100 footage.
+
 # CURRENT STATUS - 2026-09-08 versioned studio library, not generation parity
 
 - Added template/character/recipe version registration, derived versions, duplication, immutable conditions and URL-selected history inside the existing Video Studio Control dashboard. Uses the existing generation-events DB table plus authenticated API; no separate dashboard, table, dependency or paid execution.
