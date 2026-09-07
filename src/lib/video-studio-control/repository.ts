@@ -13,6 +13,20 @@ import type {
 
 type Row = Record<string, unknown>
 
+async function budgetRows(client: ReturnType<typeof database>, today: string, now: string): Promise<Row[]> {
+  const rows: Row[] = []
+  const pageSize = 500
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_RUNS)
+      .select("id,state,reserved_cost_cents,actual_cost_cents,llm_tokens_used,gpu_seconds_used,decision,expires_at,completed_at")
+      .or(`created_at.gte.${today},updated_at.gte.${today},completed_at.gte.${today},state.in.(queued,running,retryable),and(state.eq.reserved,expires_at.gt.${now})`)
+      .order("id").range(offset, offset + pageSize - 1)
+    if (error) throw new Error(`Video Studio budget query failed: ${error.message}`)
+    rows.push(...(data ?? []).map(record))
+    if (!data || data.length < pageSize) return rows
+  }
+}
+
 function database() {
   const client = getServiceSalesSupabase()
   if (!client) throw new Error("Video Studio database is unavailable")
@@ -103,16 +117,16 @@ export async function getGenerationControlDashboard(): Promise<GenerationControl
     client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_RUNS).select("*").order("created_at", { ascending: false }).limit(100),
     client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_EVENTS).select("*").order("created_at", { ascending: false }).limit(50),
     client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_QUALITY_REVIEWS).select("*").order("created_at", { ascending: false }).limit(100),
-    client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_RUNS).select("state,reserved_cost_cents,actual_cost_cents,llm_tokens_used,gpu_seconds_used,decision,expires_at,completed_at").gte("created_at", todayStart.toISOString()),
+    budgetRows(client, todayStart.toISOString(), now.toISOString()),
   ])
-  const failure = policyResult.error ?? providerResult.error ?? runResult.error ?? eventResult.error ?? qualityResult.error ?? todayResult.error
+  const failure = policyResult.error ?? providerResult.error ?? runResult.error ?? eventResult.error ?? qualityResult.error
   if (failure) throw new Error(`Video Studio dashboard query failed: ${failure.message}`)
   const policy = policyFrom(record(policyResult.data))
   const providers = (providerResult.data ?? []).map((row) => providerFrom(record(row)))
   const runs = (runResult.data ?? []).map((row) => runFrom(record(row)))
   const events = (eventResult.data ?? []).map((row) => eventFrom(record(row)))
   const qualityReviews = (qualityResult.data ?? []).map((row) => qualityFrom(record(row)))
-  const todayRows = (todayResult.data ?? []).map((row) => record(row))
+  const todayRows = todayResult
   const runProviders = new Map(runs.map((run) => [run.id, run.selectedProvider]))
   const providerBenchmarks = providers.map(({ provider }) => {
     const reviews = qualityReviews.filter((review) => runProviders.get(review.runId) === provider)
@@ -126,9 +140,11 @@ export async function getGenerationControlDashboard(): Promise<GenerationControl
     generatedAt: now.toISOString(), policy, providers, runs, events, qualityReviews, providerBenchmarks,
     totals: {
       todayCommittedCents: todayRows.reduce((sum, row) => {
-        if (nullableText(row, "completed_at")) return sum + number(row, "actual_cost_cents")
+        const state = text(row, "state")
         const expiry = nullableText(row, "expires_at")
-        return expiry && new Date(expiry) <= now ? sum : sum + number(row, "reserved_cost_cents")
+        const active = ["queued", "running", "retryable"].includes(state)
+          || (state === "reserved" && expiry !== null && new Date(expiry) > now)
+        return sum + (active ? Math.max(number(row, "actual_cost_cents"), number(row, "reserved_cost_cents")) : number(row, "actual_cost_cents"))
       }, 0),
       todayActualCents: todayRows.reduce((sum, row) => sum + number(row, "actual_cost_cents"), 0),
       todayLlmTokens: todayRows.reduce((sum, row) => sum + number(row, "llm_tokens_used"), 0),

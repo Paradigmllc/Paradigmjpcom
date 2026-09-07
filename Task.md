@@ -1,5 +1,20 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 generation reservation safety follow-up
+
+- Hardened undeployed PR #740: idempotency keys now reject changed content, project, estimates or caller; actual cancelled spend and active reservations remain accounted across expiry and midnight. Reservation and attempt accounting share the budget lock. The dashboard uses paginated conservative accounting rather than dropping active expired rows.
+- Disabled default policy, automatic retries and artifact-unverified cache reuse. Restricted run/attempt/provider-health writes to privileged RPCs. Budget updates require an admin; replayed preflight does not resend notifications, and blocked decisions expose their reason in the GUI.
+- Added an isolated PostgreSQL/WASM regression script (17 assertions passed, migration applied twice, role grants tested), in addition to the 13 passing focused Vitest checks. This is not a multi-connection concurrency test or production DB verification. No project dependency or lockfile change was needed for the temporary test runtime.
+- Full TypeScript and targeted ESLint passed; quality guard reports 0 errors / 99 existing warnings. Four duplicate generated `.next/types/* 2.*` files caused the initial typecheck failure and were preserved under `/tmp/video-control-db-test.7m7SVB/duplicate-next-types/` before the successful rerun. No user source files were deleted.
+- ACTIVE HANDOFF: not production-ready and not deployed. Still require dispatch-time attempt claims, callback idempotency, trusted provider estimates, physical GPU stop confirmation and representative quality canaries. Do not merge/deploy or claim enforced actual-spend limits on the strength of reservation tests. Existing PR CI audit failure must also be resolved before release. No paid provider was called.
+
+# CURRENT STATUS - 2026-09-07 14:13 JST Hetzner recovery
+
+- User completed invoice payment. Chrome live read-back shows all three invoices settled and the suspension banner removed. Existing `paradigm-prod-01` is powered on with its expected public IP and inbound SSH/HTTP/HTTPS firewall rules intact.
+- Initial probes still timed out, then SSH authenticated successfully and `https://paradigmjp.com` redirected to `/en` with HTTP 200. No reboot, firewall edit, payment, server creation, deploy, or paid generation was performed. Automatic suspension removal is consistent with this recovery, not independently proven as the only prior fault.
+- Read-only host check: uptime 40 days; RAM available 6,766 MiB; swap used 9,041 / 16,383 MiB; root disk 88% used with 18 GiB available. Coolify/proxy, database and YouTube studio report healthy. Browser OS console contains historical Apache OOM-kill messages; this does not establish an ongoing OOM incident.
+- ACTIVE HANDOFF: infrastructure reachability is restored, not video generation readiness. PR #740 remains undeployed and its reservation/attempt RPCs are not yet integrated into actual provider dispatch/callbacks. Do not claim enforced production spending limits or SOTA-quality mass production until integration and real database/runtime checks pass. Preserve swap; investigate disk headroom and historical WordPress OOM separately before a production build. No paid GPU/API canary was run.
+
 # CURRENT STATUS - 2026-09-07 Video Studio quality and spend control Phase 1
 
 - Added a server-enforced generation control plane for the Video Factory. One atomic PostgreSQL RPC now decides `allow`, `block`, or quality-approved `reuse` before any provider call, covering idempotency, daily/per-run cost, LLM token, GPU-time, retry, reservation-expiry, and provider circuit-breaker gates.

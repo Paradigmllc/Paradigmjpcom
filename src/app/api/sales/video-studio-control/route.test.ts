@@ -57,7 +57,14 @@ describe("Video Studio control API", () => {
     mocks.reserve.mockResolvedValue({ run: { id: "run-2", decision: "block", selected_provider: "kling", block_reason: "daily_cost_limit" } })
     const response = await POST(request("POST", { ...preflight, qualityTier: "premium" }))
     expect(response.status).toBe(409)
+    expect(await response.json()).toMatchObject({ ok: false, error: expect.stringContaining("daily_cost_limit") })
     expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining("block"), expect.objectContaining({ priority: 90 }))
+  })
+
+  it("does not repeat notifications on idempotent replay", async () => {
+    mocks.reserve.mockResolvedValue({ idempotent_replay: true, run: { id: "run-1", decision: "allow" } })
+    expect((await POST(request("POST", preflight))).status).toBe(200)
+    expect(mocks.notify).not.toHaveBeenCalled()
   })
 
   it("does not allow viewers to change budgets", async () => {

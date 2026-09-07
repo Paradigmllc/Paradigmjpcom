@@ -21,7 +21,7 @@ insert into public.video_factory_generation_policies (
   circuit_failure_threshold, circuit_cooldown_minutes,
   reservation_ttl_minutes, updated_by
 ) values (
-  'studio-default', true, 5000, 1200, 30000, 900, 2, 3, 30, 20,
+  'studio-default', false, 5000, 1200, 30000, 900, 2, 3, 30, 20,
   'migration:20260907120000'
 ) on conflict (id) do nothing;
 
@@ -145,7 +145,7 @@ create or replace function public.video_factory_reserve_generation_run(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
   policy_row public.video_factory_generation_policies%rowtype;
@@ -164,6 +164,14 @@ begin
   select * into existing_run from public.video_factory_generation_runs
   where idempotency_key = p_idempotency_key;
   if found then
+    if row(existing_run.content_hash, existing_run.project_id, existing_run.shot_kind,
+      existing_run.quality_tier, existing_run.requested_provider, existing_run.estimated_cost_cents,
+      existing_run.estimated_llm_tokens, existing_run.estimated_gpu_seconds, existing_run.requested_by)
+      is distinct from row(p_content_hash, nullif(p_project_id, ''), p_shot_kind,
+      p_quality_tier, p_requested_provider, p_estimated_cost_cents,
+      p_estimated_llm_tokens, p_estimated_gpu_seconds, p_requested_by) then
+      raise exception 'generation idempotency payload conflict' using errcode = '22023';
+    end if;
     return jsonb_build_object('run', to_jsonb(existing_run), 'idempotent_replay', true);
   end if;
 
@@ -185,32 +193,35 @@ begin
     update public.video_factory_provider_health set circuit_state = 'half_open', updated_at = now()
     where provider = selected;
     health_row.circuit_state := 'half_open';
+    health_row.updated_at := now();
   end if;
 
-  select coalesce(sum(case when state in ('succeeded', 'failed', 'cache_hit') then actual_cost_cents else reserved_cost_cents end), 0)
+  -- Conservative accounting: active work never loses its reservation at midnight
+  -- or expiry. Only an unstarted, expired reservation can release unused funds.
+  select coalesce(sum(case
+    when state in ('queued', 'running', 'retryable') then greatest(actual_cost_cents, reserved_cost_cents)
+    when state = 'reserved' and expires_at > now() then greatest(actual_cost_cents, reserved_cost_cents)
+    else actual_cost_cents end), 0)
   into used_today
   from public.video_factory_generation_runs
-  where created_at >= ((now() at time zone 'Asia/Tokyo')::date at time zone 'Asia/Tokyo')
-    and state not in ('blocked', 'cancelled')
-    and (expires_at is null or expires_at > now() or state in ('succeeded', 'failed', 'cache_hit'));
+  where greatest(created_at, completed_at, updated_at) >= ((now() at time zone 'Asia/Tokyo')::date at time zone 'Asia/Tokyo')
+    or state in ('queued', 'running', 'retryable')
+    or (state = 'reserved' and expires_at > now());
 
-  select * into cached_run from public.video_factory_generation_runs
-  where content_hash = p_content_hash and quality_tier = p_quality_tier
-    and selected_provider = selected and state = 'succeeded'
-    and exists (
-      select 1 from public.video_factory_generation_quality_reviews quality
-      where quality.run_id = video_factory_generation_runs.id and quality.approved
-        and quality.overall_score >= case p_quality_tier when 'premium' then 85 when 'balanced' then 75 else 65 end
-    )
-  order by completed_at desc limit 1;
+  -- Reuse remains disabled until artifact identity, rights, project scope and
+  -- the latest human review can all be verified. A prompt hash is not an asset.
 
-  if cached_run.id is not null then
+  if not policy_row.enabled then reason := 'policy_disabled';
+  elsif cached_run.id is not null then
     decision := 'reuse'; run_state := 'cache_hit';
-  elsif not policy_row.enabled then reason := 'policy_disabled';
+  elsif health_row.provider is null then reason := 'provider_not_configured';
   elsif health_row.circuit_state = 'open' then reason := 'provider_circuit_open';
   elsif health_row.circuit_state = 'half_open' and exists (
     select 1 from public.video_factory_generation_runs
-    where selected_provider = selected and state in ('reserved', 'queued', 'running') and created_at >= health_row.updated_at
+    where selected_provider = selected and (
+      state in ('queued', 'running', 'retryable')
+      or (state = 'reserved' and expires_at > now())
+    )
   ) then reason := 'provider_half_open_probe_in_progress';
   elsif p_estimated_cost_cents > policy_row.per_run_budget_cents then reason := 'per_run_cost_limit';
   elsif used_today + p_estimated_cost_cents > policy_row.daily_budget_cents then reason := 'daily_cost_limit';
@@ -261,7 +272,7 @@ create or replace function public.video_factory_record_generation_attempt(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
   run_row public.video_factory_generation_runs%rowtype;
@@ -272,6 +283,7 @@ declare
   effective_fingerprint text;
   effective_message text;
 begin
+  perform pg_advisory_xact_lock(hashtextextended('video_factory_generation_budget', 0));
   select * into run_row from public.video_factory_generation_runs where id = p_run_id for update;
   if not found then raise exception 'generation run not found'; end if;
   if run_row.state not in ('reserved', 'queued', 'running', 'retryable') then raise exception 'generation run is terminal'; end if;
@@ -308,10 +320,8 @@ begin
       circuit_state = 'closed', consecutive_failures = 0, opened_at = null,
       retry_after = null, last_success_at = now(), updated_at = now()
     where provider = run_row.selected_provider;
-  elsif effective_state = 'failed' and attempt_no < run_row.max_attempts
-    and coalesce(effective_fingerprint, '') not in ('cost_limit_overrun', 'llm_token_limit_overrun', 'gpu_time_limit_overrun') then
-    next_state := 'retryable';
   else
+    -- No automatic retry until a fresh atomic attempt claim reserves its cost.
     next_state := effective_state;
   end if;
 
@@ -353,15 +363,15 @@ begin
     execute format('alter table public.%I force row level security', table_name);
     execute format('revoke all on table public.%I from public, anon, authenticated, service_role', table_name);
     execute format('drop policy if exists %I on public.%I', table_name || '_service_role_all', table_name);
-    execute format('create policy %I on public.%I for all to service_role using ((select auth.role()) = ''service_role'') with check ((select auth.role()) = ''service_role'')', table_name || '_service_role_all', table_name);
+    execute format('create policy %I on public.%I for all to service_role using (true) with check (true)', table_name || '_service_role_all', table_name);
   end loop;
 end
 $$;
 
 grant select, update on table public.video_factory_generation_policies to service_role;
-grant select, update on table public.video_factory_provider_health to service_role;
-grant select, insert, update on table public.video_factory_generation_runs to service_role;
-grant select, insert on table public.video_factory_generation_attempts to service_role;
+grant select on table public.video_factory_provider_health to service_role;
+grant select on table public.video_factory_generation_runs to service_role;
+grant select on table public.video_factory_generation_attempts to service_role;
 grant select, insert on table public.video_factory_generation_quality_reviews to service_role;
 grant select, insert on table public.video_factory_generation_events to service_role;
 
