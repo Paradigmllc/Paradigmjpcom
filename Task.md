@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 production verification and source-conditioned pilot
+
+- PR #741 merged as `33fa3d97`; formal release passed preflight, migrations and 133/133 DB table checks. Coolify deployment `zljfl9dw4599umgjb1pilrz1` finished and secure route cutover succeeded. Public smoke stopped on a false-negative literal match: actual HTML is `28<!-- --> distinct decisions`. Added HTML-only React empty-comment normalization with unchanged required words/counts and regression tests; full release gate is not yet complete.
+- Actual authenticated production GUI saved and read back library version `c884b8ee-b570-4f83-9148-d88a476229d3` (ひと息の朝・人物実写 I2V候補 20260908). This is an unverified recipe declaration, not production binding or quality approval. Browser sign-in is now available; earlier sign-in blocker is obsolete.
+- One bounded RTX5090 pilot is ACTIVE: instance `50210637`, machine `21954`, exact label `paradigm-comfyui-keyframe-pilot-20260908`; compute quote USD0.48148148/hour, conservative 90-minute estimate USD1.0321 against USD2 experiment budget (not a provider billing cap). Original rental start 1788822152.116549; absolute 90-minute deadline and stop/delete/read-back remain required. No additional rental.
+- Qwen-Image-2512 reference generated in 92.24 seconds after model/runtime hash verification. Assistant inspected natural skin, restrained light, visible face/hands; cup is above the table rather than resting on it. Proceeding to internal Wan2.2 I2V-A14B motion test only, not human/commercial approval. Native reference SHA256 `ec0dc961bfbd7a507d9018eb777fb4399b2cb6c64c3cf94b0ad15668131cc704`.
+- Fixed pilot-only TLS trust by downloading the Vast CA from its official documented HTTPS endpoint into a process-scoped CA bundle; hostname/certificate verification stays enabled, system trust unchanged. Resumed the same owned instance with the original deadline, no replacement rental or production configuration mutation. Pilot files/evidence live outside git at `/Users/apple/Desktop/Paradigm-video-QA-20260908/keyframe-pilot`; host runner `resume_pilot.py` owns cleanup. Current GPU state must be updated after cleanup.
+- Three original Japanese AivisSpeech narration lines generated with the live engine's hash-matched ACML1.0 policy; no voice clone. HyperFrames project `morning-breath` is an internal first-cut work in progress, not a finished film.
+
 # CURRENT STATUS - 2026-09-08 release transaction repair
 
 - PR #740 merged as `be4b0f11` after all CI checks passed. Formal `npm run release:prod` reached DB SSH migrations but failed in the old Japan operator alias migration: transaction-local `set_config(..., true)` was immediately lost under psql autocommit. Added explicit BEGIN/COMMIT boundaries to both old case/alias migrations using that capability; no trigger removal, persistent capability, audit deletion or approval bypass.

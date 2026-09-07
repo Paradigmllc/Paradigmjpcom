@@ -18,6 +18,7 @@ import {
   getCoolifyAuth as getSharedCoolifyAuth,
 } from "./lib/coolify-env.mjs"
 import { sshArgs } from "./lib/ssh-options.mjs"
+import { missingReleaseMarkers } from "./lib/release-marker-check.mjs"
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -1734,7 +1735,7 @@ async function smoke(url, markers = []) {
     if (res.status < 200 || res.status >= 400) throw new Error(`${url} returned HTTP ${res.status}`)
     if (markers.length > 0) {
       const body = await res.text()
-      const missing = markers.filter((marker) => !body.includes(marker))
+      const missing = missingReleaseMarkers(body, markers, res.headers.get("content-type") ?? "")
       if (missing.length > 0) {
         throw new Error(`${url} is missing release marker(s): ${missing.join(", ")}`)
       }
