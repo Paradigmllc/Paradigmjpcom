@@ -29,6 +29,7 @@ on:
       - supabase/migrations/20260802203000_video_factory_studio_scale_readiness.sql
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
+      - scripts/lib/release-marker-check*
       - scripts/verify-db-tables.mjs
       - .agents/skills/paradigm-video-producer/**
       - .codex/config.toml
@@ -64,6 +65,7 @@ on:
       - supabase/migrations/20260802203000_video_factory_studio_scale_readiness.sql
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
+      - scripts/lib/release-marker-check*
       - scripts/verify-db-tables.mjs
       - .agents/skills/paradigm-video-producer/**
       - .codex/config.toml
@@ -89,6 +91,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Release SSR marker regression
+        run: node --test scripts/lib/release-marker-check.test.mjs
       - name: CMS security, real parser regressions and artifact integrity
         run: >-
           npm exec -- vitest run
