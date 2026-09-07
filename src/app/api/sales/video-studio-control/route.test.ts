@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 
 const mocks = vi.hoisted(() => ({
-  authorize: vi.fn(), dashboard: vi.fn(), reserve: vi.fn(), updatePolicy: vi.fn(), review: vi.fn(), notify: vi.fn(),
+  authorize: vi.fn(), dashboard: vi.fn(), reserve: vi.fn(), updatePolicy: vi.fn(), review: vi.fn(), notify: vi.fn(), benchmark: vi.fn(),
 }))
 
 vi.mock("@/lib/sales/api-auth", () => ({ authorizeSalesApiRequest: mocks.authorize }))
@@ -12,6 +12,7 @@ vi.mock("@/lib/video-studio-control/repository", () => ({
   reserveGenerationRun: mocks.reserve,
   updateGenerationPolicy: mocks.updatePolicy,
   recordGenerationQualityReview: mocks.review,
+  recordBenchmarkReview: mocks.benchmark,
 }))
 
 import { GET, POST } from "./route"
@@ -74,10 +75,35 @@ describe("Video Studio control API", () => {
     expect(mocks.reserve).not.toHaveBeenCalled()
   })
 
-  it("records a six-axis quality decision for cache eligibility", async () => {
+  it("rejects legacy approval without eight-axis evidence", async () => {
     const response = await POST(request("POST", { action: "review_quality", runId: "11111111-1111-4111-8111-111111111111", identityScore: 90, motionScore: 88, promptScore: 91, artifactScore: 84, audioScore: 86, commercialScore: 89, approved: true, note: "Commercial quality passed" }))
-    expect(response.status).toBe(201)
-    expect(mocks.review).toHaveBeenCalledOnce()
+    expect(response.status).toBe(400)
+    expect(mocks.review).not.toHaveBeenCalled()
+  })
+
+  const benchmark = { rubricVersion: "studio-8axis-v1", genre: "product", caseId: "coffee-steam-v1",
+    protocolHash: "a".repeat(64), artifactSha256: "b".repeat(64),
+    scores: { identity: 90, direction: 90, motion: 90, visual: 90, brand: 90, audio: 90, editing: 90, delivery: 90 },
+    blockingDefects: [], totalCostCents: null, repairMinutes: null }
+  const benchmarkInput = { action: "review_benchmark", runId: "11111111-1111-4111-8111-111111111111",
+    benchmark, approved: true, note: "Manual eight-axis benchmark fixture" }
+  it("saves a benchmark and sends both-channel notification", async () => {
+    mocks.benchmark.mockResolvedValue({ id: "benchmark-1", runId: benchmarkInput.runId, overallScore: 90, approved: true, note: benchmarkInput.note })
+    expect((await POST(request("POST", benchmarkInput))).status).toBe(201)
+    expect(mocks.benchmark).toHaveBeenCalledWith(benchmarkInput, expect.objectContaining({ key: "payload:1" }))
     expect(mocks.notify).toHaveBeenCalledWith(expect.stringContaining("品質比較"), expect.objectContaining({ type: "video_studio_quality_reviewed" }))
+  })
+  it("rejects a forged approval with a critical defect before DB writes", async () => {
+    expect((await POST(request("POST", { ...benchmarkInput, benchmark: { ...benchmark, blockingDefects: ["frozen_motion"] } }))).status).toBe(400)
+    expect(mocks.benchmark).not.toHaveBeenCalled()
+    expect(mocks.notify).not.toHaveBeenCalled()
+  })
+  it("cannot approve when the database rejects the run or score", async () => {
+    mocks.benchmark.mockRejectedValue(new Error("Benchmark approval blocked by database"))
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined)
+    expect((await POST(request("POST", benchmarkInput))).status).toBe(422)
+    expect(mocks.notify).not.toHaveBeenCalled()
+    expect(log).toHaveBeenCalled()
+    log.mockRestore()
   })
 })

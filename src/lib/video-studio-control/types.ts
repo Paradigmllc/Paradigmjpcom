@@ -1,3 +1,5 @@
+import type { BenchmarkEvidence, BenchmarkGroup } from "./benchmark"
+
 export type GenerationPolicy = {
   id: string
   enabled: boolean
@@ -73,6 +75,7 @@ export type GenerationQualityReview = {
   reviewer: string
   note: string
   createdAt: string
+  benchmark: BenchmarkEvidence | null
 }
 
 export type GenerationControlDashboard = {
@@ -83,6 +86,7 @@ export type GenerationControlDashboard = {
   events: GenerationEvent[]
   qualityReviews: GenerationQualityReview[]
   providerBenchmarks: Array<{ provider: string; reviewCount: number; averageScore: number; approvalRate: number }>
+  benchmarkGroups: BenchmarkGroup[]
   totals: {
     todayCommittedCents: number
     todayActualCents: number

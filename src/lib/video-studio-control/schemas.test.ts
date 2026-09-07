@@ -28,7 +28,8 @@ describe("video studio generation control schemas", () => {
 
   it("requires bounded six-axis quality evidence", () => {
     const review = { action: "review_quality", runId: "11111111-1111-4111-8111-111111111111", identityScore: 90, motionScore: 88, promptScore: 91, artifactScore: 84, audioScore: 86, commercialScore: 89, approved: true, note: "Commercial review passed" }
-    expect(generationControlMutationSchema.safeParse(review).success).toBe(true)
+    expect(generationControlMutationSchema.safeParse(review).success).toBe(false)
+    expect(generationControlMutationSchema.safeParse({ ...review, approved: false }).success).toBe(true)
     expect(generationControlMutationSchema.safeParse({ ...review, motionScore: 101 }).success).toBe(false)
   })
 })

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { GenerationControlDashboard, GenerationPolicy } from "@/lib/video-studio-control/types"
+import { BenchmarkResults, BenchmarkReviewForm } from "./BenchmarkReviewForm"
 
 type ApiPayload = { ok: boolean; error?: string; dashboard?: GenerationControlDashboard }
 
@@ -71,22 +72,6 @@ function PreflightForm({ busy, onRun }: { busy: boolean; onRun: (body: Record<st
   </CardContent></Card>
 }
 
-function QualityForm({ dashboard, busy, onSave }: { dashboard: GenerationControlDashboard; busy: boolean; onSave: (body: Record<string, unknown>) => Promise<void> }) {
-  const eligible = dashboard.runs.filter((run) => run.state === "succeeded" || run.state === "cache_hit")
-  const [runId, setRunId] = useState(eligible[0]?.id ?? "")
-  const [scores, setScores] = useState({ identityScore: 80, motionScore: 80, promptScore: 80, artifactScore: 80, audioScore: 80, commercialScore: 80 })
-  const [approved, setApproved] = useState(true)
-  const [note, setNote] = useState("商用品質基準に基づく比較レビュー")
-  const update = (key: keyof typeof scores, value: string) => setScores((current) => ({ ...current, [key]: Number(value) }))
-  return <Card><CardHeader><CardTitle className="text-base">6軸品質比較</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    <label className="space-y-1 text-xs font-semibold sm:col-span-2 lg:col-span-3">対象run<select aria-label="品質レビュー対象run" className="block min-h-10 w-full rounded-md border bg-white px-3" value={runId} onChange={(event) => setRunId(event.target.value)}><option value="">完了runを選択</option>{eligible.map((run) => <option key={run.id} value={run.id}>{run.selectedProvider} · {run.qualityTier} · {run.id.slice(0, 8)}</option>)}</select></label>
-    {Object.entries(scores).map(([key, value]) => <label key={key} className="space-y-1 text-xs font-semibold">{key}<Input type="number" min={0} max={100} value={value} onChange={(event) => update(key as keyof typeof scores, event.target.value)} /></label>)}
-    <label className="space-y-1 text-xs font-semibold sm:col-span-2 lg:col-span-3">レビュー根拠<Input value={note} onChange={(event) => setNote(event.target.value)} /></label>
-    <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={approved} onChange={(event) => setApproved(event.target.checked)} />品質合格（自動再利用は未接続）</label>
-    <Button className="sm:col-span-2" disabled={busy || !runId || note.trim().length < 10} onClick={() => onSave({ action: "review_quality", runId, ...scores, approved, note })}>品質レビューを保存</Button>
-  </CardContent></Card>
-}
-
 export function VideoStudioControlDashboard() {
   const [dashboard, setDashboard] = useState<GenerationControlDashboard | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -113,8 +98,8 @@ export function VideoStudioControlDashboard() {
       </section>
       <PreflightForm busy={busy} onRun={(payload) => mutate(payload, "preflight判定を記録しました")} />
       <PolicyForm policy={dashboard.policy} busy={busy} onSave={(payload) => mutate(payload, "強制上限を更新しました")} />
-      <QualityForm dashboard={dashboard} busy={busy} onSave={(payload) => mutate(payload, "品質比較を記録しました")} />
-      <Card><CardHeader><CardTitle className="text-base">Provider品質ベンチマーク</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{dashboard.providerBenchmarks.map((item) => <div key={item.provider} className="rounded-lg border p-4"><p className="font-bold">{item.provider}</p><p className="mt-2 text-2xl font-black">{item.reviewCount ? item.averageScore : "—"}</p><p className="text-xs text-zinc-500">{item.reviewCount}件 · 合格率 {item.approvalRate}%</p></div>)}</CardContent></Card>
+      <BenchmarkReviewForm dashboard={dashboard} busy={busy} onSave={(payload) => mutate(payload, "実映像の評価を記録しました")} />
+      <BenchmarkResults dashboard={dashboard} />
       <Card><CardHeader><CardTitle className="text-base">Provider circuit breaker</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{dashboard.providers.length === 0 ? <p className="text-sm text-zinc-500">provider状態はまだありません。</p> : dashboard.providers.map((provider) => <div key={provider.provider} className="rounded-lg border p-4"><p className="font-bold">{provider.provider}</p><p className={provider.circuitState === "closed" ? "text-sm text-emerald-700" : "text-sm text-rose-700"}>{provider.circuitState}</p><p className="mt-1 text-xs text-zinc-500">連続失敗 {provider.consecutiveFailures}</p></div>)}</CardContent></Card>
       <Card><CardHeader><CardTitle className="text-base">直近の生成予約</CardTitle></CardHeader><CardContent>{dashboard.runs.length === 0 ? <p className="text-sm text-zinc-500">生成予約はまだありません。</p> : <div className="overflow-x-auto"><table className="min-w-[900px] w-full text-left text-xs"><thead><tr className="border-b">{["時刻", "判定", "状態", "provider", "品質", "予想", "実費", "試行", "理由"].map((label) => <th key={label} className="p-2">{label}</th>)}</tr></thead><tbody>{dashboard.runs.slice(0, 30).map((run) => <tr key={run.id} className="border-b"><td className="p-2">{new Date(run.createdAt).toLocaleString("ja-JP")}</td><td className="p-2 font-bold">{run.decision}</td><td className="p-2">{run.state}</td><td className="p-2">{run.selectedProvider}</td><td className="p-2">{run.qualityTier}</td><td className="p-2">{money(run.estimatedCostCents)}</td><td className="p-2">{money(run.actualCostCents)}</td><td className="p-2">{run.attemptCount}/{run.maxAttempts}</td><td className="p-2 text-rose-700">{run.blockReason ?? "—"}</td></tr>)}</tbody></table></div>}</CardContent></Card>
     </>}

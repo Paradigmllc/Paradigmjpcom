@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import type { SalesApiPrincipal } from "@/lib/sales/api-auth"
+import { benchmarkReviewSchema, benchmarkSchema, benchmarkScore, buildBenchmarkGroups, type BenchmarkReviewInput } from "./benchmark"
 import type { GenerationPolicyInput, GenerationPreflightInput, GenerationQualityReviewInput } from "./schemas"
 import type {
   GenerationControlDashboard,
@@ -95,11 +96,13 @@ function eventFrom(row: Row): GenerationEvent {
 }
 
 function qualityFrom(row: Row): GenerationQualityReview {
+  const parsed = benchmarkSchema.safeParse(row.benchmark)
   return {
     id: text(row, "id"), runId: text(row, "run_id"), identityScore: number(row, "identity_score"),
     motionScore: number(row, "motion_score"), promptScore: number(row, "prompt_score"), artifactScore: number(row, "artifact_score"),
-    audioScore: number(row, "audio_score"), commercialScore: number(row, "commercial_score"), overallScore: number(row, "overall_score"),
+    audioScore: number(row, "audio_score"), commercialScore: number(row, "commercial_score"), overallScore: parsed.success ? benchmarkScore(parsed.data) : number(row, "overall_score"),
     approved: row.approved === true, reviewer: text(row, "reviewer"), note: text(row, "note"), createdAt: text(row, "created_at"),
+    benchmark: parsed.success ? parsed.data : null,
   }
 }
 
@@ -127,17 +130,9 @@ export async function getGenerationControlDashboard(): Promise<GenerationControl
   const events = (eventResult.data ?? []).map((row) => eventFrom(record(row)))
   const qualityReviews = (qualityResult.data ?? []).map((row) => qualityFrom(record(row)))
   const todayRows = todayResult
-  const runProviders = new Map(runs.map((run) => [run.id, run.selectedProvider]))
-  const providerBenchmarks = providers.map(({ provider }) => {
-    const reviews = qualityReviews.filter((review) => runProviders.get(review.runId) === provider)
-    return {
-      provider, reviewCount: reviews.length,
-      averageScore: reviews.length ? Math.round(reviews.reduce((sum, review) => sum + review.overallScore, 0) / reviews.length * 10) / 10 : 0,
-      approvalRate: reviews.length ? Math.round(reviews.filter((review) => review.approved).length / reviews.length * 100) : 0,
-    }
-  })
   return {
-    generatedAt: now.toISOString(), policy, providers, runs, events, qualityReviews, providerBenchmarks,
+    generatedAt: now.toISOString(), policy, providers, runs, events, qualityReviews, providerBenchmarks: [],
+    benchmarkGroups: buildBenchmarkGroups(runs, qualityReviews),
     totals: {
       todayCommittedCents: todayRows.reduce((sum, row) => {
         const state = text(row, "state")
@@ -156,6 +151,7 @@ export async function getGenerationControlDashboard(): Promise<GenerationControl
 }
 
 export async function recordGenerationQualityReview(input: GenerationQualityReviewInput, principal: SalesApiPrincipal) {
+  if (input.approved) throw new Error("Legacy review cannot approve without benchmark evidence")
   const { data, error } = await database().from(DB_TABLES.VIDEO_FACTORY_GENERATION_QUALITY_REVIEWS).insert({
     run_id: input.runId, identity_score: input.identityScore, motion_score: input.motionScore,
     prompt_score: input.promptScore, artifact_score: input.artifactScore, audio_score: input.audioScore,
@@ -163,6 +159,20 @@ export async function recordGenerationQualityReview(input: GenerationQualityRevi
   }).select("*").single()
   if (error) throw new Error(`Video generation quality review failed: ${error.message}`)
   return qualityFrom(record(data))
+}
+
+export async function recordBenchmarkReview(raw: BenchmarkReviewInput, principal: SalesApiPrincipal) {
+  const input = benchmarkReviewSchema.parse(raw)
+  const scores = input.benchmark.scores
+  const { data, error } = await database().from(DB_TABLES.VIDEO_FACTORY_GENERATION_QUALITY_REVIEWS).insert({
+    run_id: input.runId, identity_score: scores.identity ?? 0, motion_score: scores.motion,
+    prompt_score: scores.direction, artifact_score: scores.visual, audio_score: scores.audio ?? 0,
+    commercial_score: scores.brand ?? 0, approved: input.approved, reviewer: principal.key,
+    note: input.note, benchmark: input.benchmark,
+  }).select("*").single()
+  if (error) throw new Error(`Video benchmark review failed: ${error.message}`)
+  const review = qualityFrom(record(data))
+  return { ...review, overallScore: benchmarkScore(input.benchmark) }
 }
 
 export async function reserveGenerationRun(input: GenerationPreflightInput, principal: SalesApiPrincipal) {

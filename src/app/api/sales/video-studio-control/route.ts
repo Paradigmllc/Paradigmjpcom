@@ -4,6 +4,7 @@ import { authorizeSalesApiRequest, type OperatorRole } from "@/lib/sales/api-aut
 import { generationControlMutationSchema } from "@/lib/video-studio-control/schemas"
 import {
   getGenerationControlDashboard,
+  recordBenchmarkReview,
   recordGenerationQualityReview,
   reserveGenerationRun,
   updateGenerationPolicy,
@@ -51,8 +52,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "費用・品質ガードの入力を確認してください", fields: parsed.error.flatten().fieldErrors }, { status: 400 })
   }
   try {
-    if (parsed.data.action === "review_quality") {
-      const review = await recordGenerationQualityReview(parsed.data, auth.principal)
+    if (parsed.data.action === "review_quality" || parsed.data.action === "review_benchmark") {
+      const review = parsed.data.action === "review_benchmark"
+        ? await recordBenchmarkReview(parsed.data, auth.principal)
+        : await recordGenerationQualityReview(parsed.data, auth.principal)
       const notification = await notifyBothChannels("Video Studio品質比較を記録しました。", {
         title: review.approved ? "動画品質レビュー合格" : "動画品質レビュー要改善",
         message: `総合 ${review.overallScore}/100。${review.note}`,

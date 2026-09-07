@@ -49,4 +49,11 @@ describe("public HTTP security headers", () => {
       "upgrade-insecure-requests",
     )
   })
+
+  it("allows development source maps without allowing eval in production", () => {
+    expect(buildContentSecurityPolicy(false)).toContain("'unsafe-eval'")
+    expect(buildContentSecurityPolicy(true)).not.toContain("'unsafe-eval'")
+    expect(buildContentSecurityPolicy(false).replace("'unsafe-eval' ", "") + "; upgrade-insecure-requests")
+      .toBe(buildContentSecurityPolicy(true))
+  })
 })

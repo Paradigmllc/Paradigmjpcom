@@ -380,6 +380,70 @@ grant execute on function public.video_factory_reserve_generation_run(text,text,
 revoke all on function public.video_factory_record_generation_attempt(uuid,text,text,integer,integer,integer,text,text,text) from public, anon, authenticated;
 grant execute on function public.video_factory_record_generation_attempt(uuid,text,text,integer,integer,integer,text,text,text) to service_role;
 
+-- This control-plane migration remains undeployed. Preserve legacy review columns
+-- and rows; new evidence is additive and never grants delivery/cache permission.
+alter table public.video_factory_generation_quality_reviews add column if not exists benchmark jsonb;
+create or replace function public.video_factory_guard_quality_review() returns trigger
+language plpgsql security invoker set search_path = '' as $$
+declare
+  evidence jsonb := new.benchmark;
+  axis text; value jsonb; numeric_value numeric;
+  weights jsonb := '{"identity":20,"direction":15,"motion":15,"visual":15,"brand":10,"audio":10,"editing":10,"delivery":5}';
+  weight_sum numeric := 0; weighted_sum numeric := 0;
+  run_state text; tier text;
+begin
+  select state, quality_tier into run_state, tier from public.video_factory_generation_runs where id = new.run_id;
+  if run_state is distinct from 'succeeded' then raise exception 'Quality review requires a succeeded source run'; end if;
+  if evidence is null then
+    if new.approved then raise exception 'Legacy review cannot approve without benchmark evidence'; end if;
+    return new;
+  end if;
+  if jsonb_typeof(evidence) is distinct from 'object'
+    or not (evidence ?& array['rubricVersion','genre','caseId','protocolHash','artifactSha256','scores','blockingDefects','totalCostCents','repairMinutes'])
+    or (select count(*) from jsonb_object_keys(evidence)) <> 9
+    or evidence->>'rubricVersion' is distinct from 'studio-8axis-v1'
+    or coalesce(evidence->>'genre','') not in ('explainer','avatar','anime','manga','product','landscape','music','brand')
+    or coalesce(evidence->>'caseId','') !~ '^[a-z0-9][a-z0-9-]{2,99}$'
+    or coalesce(evidence->>'protocolHash','') !~ '^[a-f0-9]{64}$'
+    or coalesce(evidence->>'artifactSha256','') !~ '^[a-f0-9]{64}$'
+    or jsonb_typeof(evidence->'scores') is distinct from 'object'
+    or jsonb_typeof(evidence->'blockingDefects') is distinct from 'array'
+  then raise exception 'Invalid benchmark evidence'; end if;
+  if (select count(*) from jsonb_object_keys(evidence->'scores')) <> 8 then raise exception 'Eight rubric axes required'; end if;
+  for axis in select jsonb_object_keys(weights) loop
+    value := evidence->'scores'->axis;
+    if value = 'null'::jsonb and axis in ('identity','brand','audio') then continue; end if;
+    if jsonb_typeof(value) is distinct from 'number' then raise exception 'Invalid benchmark score'; end if;
+    numeric_value := value::text::numeric;
+    if numeric_value < 0 or numeric_value > 100 or numeric_value <> trunc(numeric_value) then raise exception 'Invalid benchmark score'; end if;
+    weighted_sum := weighted_sum + numeric_value * (weights->>axis)::numeric;
+    weight_sum := weight_sum + (weights->>axis)::numeric;
+  end loop;
+  if jsonb_array_length(evidence->'blockingDefects') > 8
+    or (select count(distinct v) from jsonb_array_elements(evidence->'blockingDefects') v) <> jsonb_array_length(evidence->'blockingDefects')
+    or exists (select 1 from jsonb_array_elements_text(evidence->'blockingDefects') d
+      where d is null or d not in ('identity_break','product_distortion','frozen_motion','unreadable_text','audio_desync','rights_unresolved','watermark','corrupt_output'))
+  then raise exception 'Invalid benchmark defects'; end if;
+  foreach axis in array array['totalCostCents','repairMinutes'] loop
+    value := evidence->axis;
+    if value = 'null'::jsonb then continue; end if;
+    if jsonb_typeof(value) is distinct from 'number' then raise exception 'Invalid benchmark cost or repair time'; end if;
+    numeric_value := value::text::numeric;
+    if numeric_value < 0 or numeric_value <> trunc(numeric_value)
+      or numeric_value > (case when axis = 'totalCostCents' then 10000000 else 100000 end)
+    then raise exception 'Invalid benchmark cost or repair time'; end if;
+  end loop;
+  if new.approved and (jsonb_array_length(evidence->'blockingDefects') > 0
+    or round(weighted_sum / weight_sum, 2) < case tier when 'economy' then 75 when 'balanced' then 85 else 90 end)
+  then raise exception 'Benchmark approval blocked by defects or provisional threshold'; end if;
+  return new;
+end $$;
+revoke all on function public.video_factory_guard_quality_review() from public, anon, authenticated;
+grant execute on function public.video_factory_guard_quality_review() to service_role;
+drop trigger if exists video_factory_quality_review_guard on public.video_factory_generation_quality_reviews;
+create trigger video_factory_quality_review_guard before insert on public.video_factory_generation_quality_reviews
+  for each row execute function public.video_factory_guard_quality_review();
+
 comment on table public.video_factory_generation_runs is 'Auditable cost, token, GPU-time, idempotency, and cache ledger for video generation.';
 comment on table public.video_factory_generation_attempts is 'Append-only provider callback outcomes and failure fingerprints.';
 comment on table public.video_factory_generation_quality_reviews is 'Append-only human quality comparison rubric for generated video.';

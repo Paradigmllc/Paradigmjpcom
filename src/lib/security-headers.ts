@@ -31,7 +31,10 @@ const contentSecurityPolicyDirectives = [
 
 export function buildContentSecurityPolicy(isProduction: boolean): string {
   return [
-    ...contentSecurityPolicyDirectives,
+    // Next's development source maps/HMR require eval. Never enable it in a
+    // production build; browser tests must not bypass CSP to hide a blank UI.
+    ...contentSecurityPolicyDirectives.map((directive) => !isProduction && directive.startsWith("script-src ")
+      ? directive.replace("script-src ", "script-src 'unsafe-eval' ") : directive),
     ...(isProduction ? productionOnlyDirectives : []),
   ].join("; ")
 }

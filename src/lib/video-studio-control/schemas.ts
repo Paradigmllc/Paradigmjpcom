@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { benchmarkReviewSchema } from "./benchmark"
 
 export const providers = ["auto", "vast_oss", "runway", "kling", "seedance", "heygen"] as const
 export const shotKinds = ["avatar", "cinematic", "product", "social", "broll", "motion_graphics"] as const
@@ -44,12 +45,13 @@ export const generationQualityReviewSchema = z.object({
   commercialScore: z.number().int().min(0).max(100),
   approved: z.boolean(),
   note: z.string().trim().min(10).max(2_000),
-})
+}).refine((review) => !review.approved, { message: "合格の記録には実映像ベンチマークが必要です", path: ["approved"] })
 
 export const generationControlMutationSchema = z.discriminatedUnion("action", [
   generationPreflightSchema,
   generationPolicySchema,
   generationQualityReviewSchema,
+  benchmarkReviewSchema,
 ])
 
 export type GenerationPreflightInput = z.infer<typeof generationPreflightSchema>

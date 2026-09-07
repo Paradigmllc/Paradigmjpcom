@@ -11,6 +11,15 @@ const { PGlite } = await import(pathToFileURL(resolve(process.argv[2])).href)
 const db = new PGlite()
 let passed = 0
 const migration = await readFile('supabase/migrations/20260907120000_video_factory_generation_control_plane.sql', 'utf8')
+const evidence = { rubricVersion: 'studio-8axis-v1', genre: 'product', caseId: 'coffee-steam-v1',
+  protocolHash: 'a'.repeat(64), artifactSha256: 'b'.repeat(64),
+  scores: { identity: 90, direction: 90, motion: 90, visual: 90, brand: 90, audio: 90, editing: 90, delivery: 90 },
+  blockingDefects: [], totalCostCents: null, repairMinutes: null }
+async function review(runId, benchmark = evidence, approved = true) {
+  return db.query(`insert into public.video_factory_generation_quality_reviews
+    (run_id,identity_score,motion_score,prompt_score,artifact_score,audio_score,commercial_score,approved,reviewer,note,benchmark)
+    values ($1,90,90,90,90,90,90,$2,'test:reviewer','Manual fixture review, not a delivery approval',$3) returning benchmark`, [runId, approved, benchmark])
+}
 async function reserve(key, overrides = {}) {
   const p = { key, hash: 'a'.repeat(64), project: 'fixture', shot: 'broll', tier: 'economy',
     provider: 'vast_oss', cost: 100, tokens: 0, seconds: 30, actor: 'test:operator', ...overrides }
@@ -75,9 +84,7 @@ try {
   await test('approved review alone cannot authorize cache reuse', async () => {
     const first = await reserve('cache-candidate')
     await db.query("update public.video_factory_generation_runs set state='succeeded', completed_at=now() where id=$1", [first.run.id])
-    await db.query(`insert into public.video_factory_generation_quality_reviews
-      (run_id, identity_score,motion_score,prompt_score,artifact_score,audio_score,commercial_score,approved,reviewer,note)
-      values ($1,100,100,100,100,100,100,true,'test:reviewer','Approved fixture without artifact')`, [first.run.id])
+    await review(first.run.id)
     assert.equal((await reserve('cache-recheck')).run.decision, 'allow')
   })
   await test('failed attempt cannot automatically retry', async () => {
@@ -97,6 +104,49 @@ try {
       await assert.rejects(reserve(`forbidden-${role}`), /permission denied/)
     })
   }
+  await test('service role persists eight-axis evidence without update permission', async () => {
+    const first = await reserve('evidence-success')
+    await db.query("update public.video_factory_generation_runs set state='succeeded' where id=$1", [first.run.id])
+    await db.exec('set local role service_role')
+    assert.deepEqual((await review(first.run.id)).rows[0].benchmark, evidence)
+    await assert.rejects(db.exec('update public.video_factory_generation_quality_reviews set approved=true'), /permission denied/)
+  })
+  for (const state of ['reserved','running','cache_hit','failed']) {
+    await test(`cannot score ${state} as fresh generated footage`, async () => {
+      const first = await reserve(`state-${state}`)
+      await db.query('update public.video_factory_generation_runs set state=$2 where id=$1', [first.run.id,state])
+      await assert.rejects(review(first.run.id), /requires a succeeded/)
+    })
+  }
+  for (const [name, change] of [
+    ['critical defect', { blockingDefects: ['frozen_motion'] }],
+    ['low score', { scores: { ...evidence.scores, motion: 0, visual: 0 } }],
+    ['missing score', { scores: { ...evidence.scores, motion: null } }],
+    ['invalid hash', { artifactSha256: 'bad' }],
+    ['negative cost', { totalCostCents: -1 }],
+    ['unknown defect', { blockingDefects: ['ignore_rules'] }],
+    ['duplicate defect', { blockingDefects: ['watermark','watermark'] }],
+    ['unknown axis', { scores: { ...evidence.scores, override: 100 } }],
+    ['unbounded score', { scores: { ...evidence.scores, motion: 101 } }],
+    ['fractional score', { scores: { ...evidence.scores, motion: 99.5 } }],
+  ]) {
+    await test(`database rejects approval: ${name}`, async () => {
+      const first = await reserve('invalid-evidence')
+      await db.query("update public.video_factory_generation_runs set state='succeeded' where id=$1", [first.run.id])
+      await assert.rejects(review(first.run.id, { ...evidence, ...change }), /benchmark|rubric/i)
+    })
+  }
+  await test('legacy cannot approve but can record rejection', async () => {
+    const first = await reserve('legacy-evidence')
+    await db.query("update public.video_factory_generation_runs set state='succeeded' where id=$1", [first.run.id])
+    await review(first.run.id, null, false)
+    await assert.rejects(review(first.run.id, null, true), /Legacy review cannot approve/)
+  })
+  await test('explicit non-applicable axes can pass without invented scores', async () => {
+    const first = await reserve('non-applicable-evidence')
+    await db.query("update public.video_factory_generation_runs set state='succeeded' where id=$1", [first.run.id])
+    await review(first.run.id, { ...evidence, scores: { ...evidence.scores, identity: null, brand: null, audio: null } })
+  })
   process.stdout.write(`${passed} database assertions passed (single-connection PGlite; not a concurrency test).\n`)
 } finally {
   await db.close()
