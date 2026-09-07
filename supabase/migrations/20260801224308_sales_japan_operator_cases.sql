@@ -1,6 +1,8 @@
 -- RevenueOS case control for the external Japan market operator offer.
 -- External sending remains outside this schema and always requires a human action.
 
+-- Preserve the transaction-local mutation capability when replayed through psql.
+BEGIN;
 SELECT set_config('app.japan_operator_mutation', 'rpc', true);
 
 CREATE TABLE IF NOT EXISTS public.sales_japan_operator_cases (
@@ -390,3 +392,5 @@ COMMENT ON FUNCTION public.sales_create_japan_operator_case(uuid, text, text, te
   IS 'Atomically creates a Japan operator case and its first audit event.';
 
 NOTIFY pgrst, 'reload schema';
+
+COMMIT;
