@@ -6,7 +6,6 @@ const state = {
   activeProjectId: null,
   selectedTemplate: sessionStorage.getItem("videoFactoryTemplateHash") || "",
   previewObjectUrl: null,
-  projectPoll: null,
 }
 
 const $ = (selector, root = document) => root.querySelector(selector)
@@ -113,6 +112,7 @@ function setConnection(connected) {
     ? "API応答正常"
     : "API接続が必要"
   $("#auth-panel").classList.toggle("hidden", connected)
+  if (!connected) $("#dashboard-readiness").innerHTML = '<div class="empty compact">未接続 — 現在の実行条件は確認できません。</div>'
 }
 
 function escapeHtml(value) {
@@ -225,11 +225,15 @@ async function loadBootstrap() {
   }
   if (window.loadStudioReadiness) void window.loadStudioReadiness()
   await loadProjects(true)
-  if (!state.projectPoll) {
-    state.projectPoll = setInterval(
-      () => state.connected && loadProjects(true),
-      15000,
-    )
+}
+
+async function refreshConsole() {
+  try {
+    await loadBootstrap()
+  } catch (error) {
+    console.error("[video-factory-console] refresh failed", error)
+    setConnection(false)
+    toast(error.message || "現在の接続状態を取得できませんでした", "error")
   }
 }
 
@@ -370,10 +374,10 @@ function wireEvents() {
     if (event.key === "Enter") void connect()
   })
   $("#refresh-all").addEventListener("click", () => {
-    void loadBootstrap().catch((error) => toast(error.message, "error"))
+    void refreshConsole()
   })
   $("#refresh-health").addEventListener("click", () => {
-    void loadBootstrap().catch((error) => toast(error.message, "error"))
+    void refreshConsole()
   })
   $("#refresh-projects").addEventListener("click", () => void loadProjects())
   $("#video-form").addEventListener("submit", submitVideo)

@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 existing dashboard remains the studio entry point
+
+- Owner explicitly asks to improve the previously built dashboard's content and usability alongside generation/backend improvements. Keep the existing Video Factory console as the production entry point, retain the commercial Video Growth dashboard, and connect new quality/cost controls rather than creating an isolated replacement UI.
+- Updated the existing Factory home with runtime capability counts, unresolved checks/gaps, timestamps, and clear actions for short/long-form scripts, footage/QA/approvals, GPU state and the eight-axis review ledger. Reuses `/v1/studio/readiness` and its existing DB-sync route; no new table, provider or dependency.
+- Readiness is explicitly an environment check, not a creative quality score. Errors/disconnection clear home success indicators; stale overlapping responses are ignored. Removed idle 15-second project-list polling; refresh after user actions and the existing active-job observer remain.
+- Local-only browser tests serve actual console assets with intercepted fixture APIs: desktop/mobile, safe text rendering, navigation, recovery and read-only requests. No production UI, DB, paid API or GPU was changed. Publication remains behind the existing release audit gate on draft PR #740.
+- Verification: console/readiness API pytest 14/14, desktop/mobile fixture E2E 2/2, screenshot inspection, Ruff, mypy 64 files, targeted ESLint and final root TypeScript pre-check passed. The service-wide Python suite was not rerun for this static-console change; the prior full-suite timing flakes remain recorded below. No local dev server or paid resource was started.
+- ACTIVE HANDOFF: continue content/usability updates in the existing console together with generation work. Next priorities: clearer shot/chapter editing, real preview-to-review continuity and trusted cost/error visibility. Do not equate this navigation/readiness improvement with improved footage or completed long-form production.
+
 # CURRENT STATUS - 2026-09-07 updated concept: evidence-based quality review
 
 - Fully read the updated 1,862-line discussion document. Retain the existing OSS studio and low-cost shorts/long-form goal; do not interpret document suggestions as permission to buy tools, create a replacement project, or approve footage.

@@ -71,6 +71,19 @@
           <article class="metric"><span>Vast.ai</span><strong id="metric-vast">—</strong><small id="metric-vast-note">APIキー未確認</small></article>
         </div>
 
+        <article class="panel dashboard-overview" aria-label="スタジオの現在地">
+          <div class="panel-heading"><div><p class="eyebrow">STUDIO OVERVIEW</p><h2>今できること・次に確認すること</h2></div><button class="button secondary" data-go="readiness" type="button">対応状況を詳しく見る</button></div>
+          <p class="panel-lead">環境が使えることと、投稿できる映像品質は別です。準備度やテンプレート数を作品の点数として扱いません。</p>
+          <div id="dashboard-readiness" role="status" aria-live="polite"><div class="empty compact">未確認 — API接続後に実行条件を表示します。</div></div>
+          <div class="dashboard-next-actions">
+            <button class="button secondary" data-go="create" type="button">1. 短尺・長編の台本を準備</button>
+            <button class="button secondary" data-go="projects" type="button">2. 実映像・QA・承認を確認</button>
+            <button class="button secondary" data-go="gpu" type="button">3. GPU状態・エラーを確認</button>
+            <a class="button secondary" href="https://paradigmjp.com/ja/admin/video-studio-control" target="_blank" rel="noopener noreferrer" aria-label="8項目品質・費用台帳を別タブで開く">8項目品質・費用台帳 ↗</a>
+          </div>
+          <p class="panel-lead">画面を開くだけでは生成・GPU起動を行いません。情報は接続時・操作後・更新ボタンで取得します。進行中ジョブの確認は継続します。</p>
+        </article>
+
         <div class="dashboard-grid">
           <article class="panel production-map">
             <div class="panel-heading"><div><p class="eyebrow">PRODUCTION FLOW</p><h2>一気通貫の制作レーン</h2></div><button class="text-button" data-go="create" type="button">新規依頼 →</button></div>
@@ -183,7 +196,7 @@
       <section class="view" data-view-panel="readiness">
         <div class="readiness-summary">
           <article class="panel readiness-score-panel">
-            <div class="readiness-score-head"><p class="eyebrow">STUDIO SCALE READINESS</p><span id="studio-readiness-badge" class="badge neutral">確認中</span></div>
+            <div class="readiness-score-head"><p class="eyebrow">実行環境の準備度（映像の品質点ではありません）</p><span id="studio-readiness-badge" class="badge neutral">確認中</span></div>
             <div class="readiness-score"><span id="studio-readiness-score">—</span><small>/100</small></div>
             <p>実行中の環境、監査済みテンプレート、エンジン、QA、承認ゲートから算出します。見た目の品質は自動採点せず、人間レビューを必須にしています。</p>
             <div class="readiness-mini-metrics">

@@ -43,6 +43,10 @@ def test_console_static_app_and_runtime_secret_masking(
     assert 'id="narration-path"' in page.text
     assert 'id="oss-worker-url"' in page.text
     assert 'id="oss-worker-api-key"' in page.text
+    assert 'id="dashboard-readiness"' in page.text
+    assert "映像の品質点ではありません" in page.text
+    assert "今できること・次に確認すること" in page.text
+    assert "setInterval" not in client.get("/console/console.js").text
     lifecycle_script = client.get("/console/console-gpu-lifecycle.js")
     assert lifecycle_script.status_code == 200
     assert "catch {" not in lifecycle_script.text
