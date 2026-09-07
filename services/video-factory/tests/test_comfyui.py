@@ -1,13 +1,22 @@
+from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 import httpx
+import pytest
 
+from video_factory.adapters.base import EngineContext
 from video_factory.adapters.comfyui import (
+    ComfyUIAdapter,
+    ComfyUIError,
     find_outputs,
     replace_placeholders,
     upload_source_image,
 )
-from video_factory.models import Shot, ShotKind
+from video_factory.models import ClientBrief, MediaProbe, Shot, ShotKind
+from video_factory.planner import deterministic_plan
+from video_factory.settings import Settings
+from video_factory.workspace import ProjectWorkspace
 
 
 def test_replace_placeholders_preserves_non_exact_strings() -> None:
@@ -37,6 +46,44 @@ def test_find_outputs_handles_video_node_shapes() -> None:
         }
     }
     assert find_outputs(history)[0]["filename"] == "clip.mp4"
+
+
+def test_adapter_rejects_short_motion_before_normalization(
+    tmp_path: Path, settings: Settings, example_brief: ClientBrief,
+) -> None:
+    manifest = deterministic_plan(example_brief)
+    shot = manifest.shots[0].model_copy(update={"duration_seconds": 30})
+    context = EngineContext(
+        replace(settings, comfyui_base_url="https://gpu.test", comfyui_api_key="fixture"),
+        ProjectWorkspace.create(tmp_path, "coverage-test"), manifest,
+        manifest.primary_deliverable, False,
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/prompt":
+            return httpx.Response(200, json={"prompt_id": "fixture-job"})
+        if request.url.path == "/history/fixture-job":
+            return httpx.Response(200, json={"fixture-job": {"outputs": {
+                "1": {"videos": [{"filename": "clip.mp4", "type": "output"}]}
+            }}})
+        if request.url.path == "/view":
+            return httpx.Response(200, content=b"fixture-only")
+        raise AssertionError(f"Unexpected route: {request.url.path}")
+
+    client = httpx.Client(base_url="https://gpu.test", transport=httpx.MockTransport(handler))
+    module = "video_factory.adapters.comfyui"
+    native = MediaProbe(path="clip.mp4", duration_seconds=49/24, width=640,
+                        height=360, fps=24, has_audio=False, codec="h264")
+    with (
+        patch(f"{module}._load_workflow", return_value=(tmp_path / "graph.json", {}, "fixture")),
+        patch(f"{module}.httpx.Client", return_value=client),
+        patch(f"{module}.probe_motion_source", return_value=native),
+        patch(f"{module}.normalize_clip") as normalize,
+        pytest.raises(ComfyUIError, match=r"素材 2\.042秒 / 必要 30\.000秒"),
+    ):
+        ComfyUIAdapter().run(shot, context)
+    normalize.assert_not_called()
+    assert (context.workspace.assets_generated / "default" / "clip.mp4").is_file()
 
 
 def test_upload_source_image_sends_the_real_source_to_comfyui(tmp_path: Path) -> None:

@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 OSS long-form quality diagnosis
+
+- Owner clarified: build a self-owned, low-cost multi-OSS studio for genuinely publishable shorts AND long-form; proprietary SaaS names are quality comparators, not the intended subscriptions. Preserve this scope in future handoffs.
+- Audited the existing catalog: 40 profiles, 5 approved / 25 pending / 10 blocked (approval is not live runtime proof). Standard planning still uses seven generic sections above 45 seconds; a 600-second brief actually fails because 144/132-second sections exceed Shot's 120-second maximum. Long-form readiness is not established.
+- Fixed a concrete quality defect in the ComfyUI adapter: inspect native VIDEO-stream duration before normalization, reject missing motion beyond one output frame instead of silently freeze-padding, retain downloaded source for diagnosis, and record native media provenance separately from requested output duration. Still-image workflows remain supported. No new model approval, provider call, GPU rental, or posting occurred.
+- The real previous 2.041667-second MP4 passes at its native duration and is rejected for 5/30-second slots. Focused mocked/unit coverage: 17 passing cases; final full pytest, Ruff and mypy 60 files pass; root tsc passes. Three-output dry-run reaches draft_review_required without human approval or delivery. Existing Prefect teardown logging warning persists (exit 0). Prior PR CI npm audit remains failed: 13 vulnerabilities including 8 high and undici transitive issues with no available fix reported; no audit bypass or production deployment.
+- ACTIVE HANDOFF: changes remain on draft PR #740, not deployed. This is a quality guard, NOT improved creative footage or completed long-form support. Next implement narrative/shot/audio contracts with existing DB/API/GUI, produce a substantive 30-60-second mixed-media sequence, then distinct 3-5-minute chapters and longer resumable masters. Do not substitute repeated footage or metadata catalogs for quality evidence. Plan: [long-form quality diagnosis](docs/knowledge/video-studio-longform-quality-20260907.md).
+
 # CURRENT STATUS - 2026-09-07 paid studio source canary
 
 - Restored Hetzner SSH/site access verified. Inspected the live persistent workflow/model registries (not distribution placeholders): both T2V/I2V workflows approved and SHA-bound. No direct HeyGen/Runway/Kling/Seedance credential variables in the main app environment; other stores/accounts not ruled out.

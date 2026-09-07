@@ -10,9 +10,15 @@ from urllib.parse import urlencode
 import httpx
 
 from ..io import file_sha256
-from ..media import MediaError, create_placeholder_clip, normalize_clip, source_fidelity_score
+from ..media import (
+    MediaError,
+    create_placeholder_clip,
+    normalize_clip,
+    source_fidelity_score,
+)
 from ..model_registry import assert_model_bindings_approved
 from ..models import Engine, EngineOutput, Shot
+from ..source_coverage import probe_motion_source, require_motion_coverage
 from ..workflow_registry import (
     WorkflowContract,
     load_api_workflow,
@@ -235,6 +241,20 @@ class ComfyUIAdapter(EngineAdapter):
             downloaded.parent.mkdir(parents=True, exist_ok=True)
             downloaded.write_bytes(media_response.content)
 
+        native_probe = probe_motion_source(downloaded)
+        # Only video workflows need continuous motion. Image workflows remain
+        # legitimate still assets, but must not be advertised as generated video.
+        is_still = (
+            native_probe.codec in {"png", "mjpeg", "webp"}
+            and native_probe.duration_seconds == 0
+        )
+        if not is_still:
+            try:
+                require_motion_coverage(
+                    native_probe, shot.duration_seconds, context.deliverable.fps,
+                )
+            except ValueError as error:
+                raise ComfyUIError(str(error)) from error
         normalize_clip(
             downloaded,
             output,
@@ -291,6 +311,8 @@ class ComfyUIAdapter(EngineAdapter):
                 "source_fidelity_threshold": fidelity_threshold or None,
                 "workflow_sha256": file_sha256(workflow_path),
                 "source_output": item,
+                "native_media": native_probe.model_dump(mode="json"),
+                "requested_duration_seconds": shot.duration_seconds,
             },
             elapsed_seconds=time.monotonic() - started,
         )
