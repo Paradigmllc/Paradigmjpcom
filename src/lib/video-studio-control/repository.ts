@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { LIBRARY_EVENT } from "./library"
 import type { SalesApiPrincipal } from "@/lib/sales/api-auth"
 import { benchmarkReviewSchema, benchmarkSchema, benchmarkScore, buildBenchmarkGroups, type BenchmarkReviewInput } from "./benchmark"
 import type { GenerationPolicyInput, GenerationPreflightInput, GenerationQualityReviewInput } from "./schemas"
@@ -118,7 +119,7 @@ export async function getGenerationControlDashboard(): Promise<GenerationControl
     client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_POLICIES).select("*").eq("id", "studio-default").single(),
     client.from(DB_TABLES.VIDEO_FACTORY_PROVIDER_HEALTH).select("*").order("provider"),
     client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_RUNS).select("*").order("created_at", { ascending: false }).limit(100),
-    client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_EVENTS).select("*").order("created_at", { ascending: false }).limit(50),
+    client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_EVENTS).select("*").neq("event_type", LIBRARY_EVENT).order("created_at", { ascending: false }).limit(50),
     client.from(DB_TABLES.VIDEO_FACTORY_GENERATION_QUALITY_REVIEWS).select("*").order("created_at", { ascending: false }).limit(100),
     budgetRows(client, todayStart.toISOString(), now.toISOString()),
   ])

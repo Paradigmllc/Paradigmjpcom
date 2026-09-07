@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { GenerationControlDashboard, GenerationPolicy } from "@/lib/video-studio-control/types"
 import { BenchmarkResults, BenchmarkReviewForm } from "./BenchmarkReviewForm"
+import { StudioLibraryPanel } from "./StudioLibraryPanel"
 
 type ApiPayload = { ok: boolean; error?: string; dashboard?: GenerationControlDashboard }
 
@@ -90,6 +91,7 @@ export function VideoStudioControlDashboard() {
   return <main className="min-h-dvh bg-zinc-50 px-4 py-6 sm:px-6 sm:py-10"><div className="mx-auto max-w-[1500px] space-y-6">
     <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">検証用の予約台帳です。実際の生成処理・GPU停止とはまだ接続されていません。自動再試行と成果物キャッシュ再利用は無効です。以下の上限は申告見積もりの予約判定であり、実課金の強制停止を保証しません。</p>
     <header className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-700">Video Studio Control Plane</p><h1 className="mt-2 text-2xl font-black sm:text-3xl">品質・費用・Vast.ai安定運用</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">日次・実行単位の見積もり、トークン数、GPU秒数を予約時に検査します。同一キーの再送は同じ予約を返します。この画面の事前判定はGPUも有料APIも起動しません。</p></div><div className="flex gap-2"><Button variant="outline" onClick={() => void refresh()} disabled={busy}><RefreshCw />更新</Button><Button asChild variant="outline"><Link href="/video-factory-console" prefetch={false}>Factory Console</Link></Button></div></div></header>
+    <StudioLibraryPanel />
     {error && <Card className="border-rose-200"><CardContent className="flex items-center justify-between gap-3 p-5"><p role="alert" className="flex items-center gap-2 text-sm text-rose-700"><AlertTriangle />{error}</p><Button variant="outline" onClick={() => void refresh()}>再試行</Button></CardContent></Card>}
     {!dashboard && !error && <Card><CardContent className="p-10 text-center text-sm text-zinc-500">生成台帳を読み込み中…</CardContent></Card>}
     {dashboard && <>

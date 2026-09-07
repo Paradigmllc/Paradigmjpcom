@@ -11,6 +11,7 @@ test("renders cost, circuit, and quality controls without provider execution", a
   const now = new Date().toISOString()
   let getRequests = 0
   const submissions: Array<Record<string, unknown>> = []
+  await page.route("**/api/sales/video-studio-library*", (route) => route.fulfill({ json: { ok: true, versions: [], nextOffset: null, canWrite: false } }))
   await page.route("**/api/sales/video-studio-control*", async (route) => {
     if (route.request().method() === "POST") {
       submissions.push(route.request().postDataJSON() as Record<string, unknown>)

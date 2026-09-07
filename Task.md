@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 versioned studio library, not generation parity
+
+- Added template/character/recipe version registration, derived versions, duplication, immutable conditions and URL-selected history inside the existing Video Studio Control dashboard. Uses the existing generation-events DB table plus authenticated API; no separate dashboard, table, dependency or paid execution.
+- Operator-scoped reads and parent checks; legacy/work are explicitly shared admin scopes. Private library events are excluded from the pre-existing global control query. Strict request validation, bounded body, deterministic metadata integrity checks and idempotent replay/race recovery. Notification delivery and persisted version outcomes remain separate.
+- All entries remain draft with missing-reference and unverified-material/quality/execution gates. Reference hashes are declarations only. No generation worker binding, commercial-quality approval, SaaS character/template copying or all-genre mass-production claim.
+- Related Vitest 49 passed, root TypeScript and targeted ESLint passed. Local desktop/mobile fixture browser tests 6/6 passed against the compiled actual routes, screenshots inspected. Initial test login throttling fixed by test-session reuse without changing auth limits. Real DB/RLS/notification delivery and production UI remain unverified until the formal release gate passes. [Implementation and evidence limits](docs/knowledge/video-studio-library-20260908.md).
+- Live release checks: PR #740 remains draft; public control page HTTP404; audit 13 vulnerabilities / 8 high with image-size/payload/undici fixAvailable=false. No bypass or production deploy. Local build hit ENOSPC; removed only this worktree's regenerable webpack cache (~2.2GiB), preserving all original media.
+- ACTIVE HANDOFF: connect verified inventory assets and pinned versions to existing generation/revision execution, then prove character/shot consistency on actual finished videos with bounded cost. Resolve shared audit/release gates before claiming deployed UI/DB functionality. No GPU or paid API started in this change.
+
 # CURRENT STATUS - 2026-09-07 two new portrait educational first cuts
 
 - User requests actual publishable/deliverable work. Produced **two new independent Japanese educational shorts**, not clips cut from the earlier 219-second master: city-rain 32 seconds and groundwater 34.5 seconds, both 1080x1920 / 24fps. Original SVG/GSAP diagrams, twelve new AivisSpeech narration lines, authored captions, credits and draft publishing descriptions with USGS sources.
