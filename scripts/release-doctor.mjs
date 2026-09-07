@@ -639,6 +639,10 @@ function checkStaticReleaseRules() {
   const studioReadinessMigration = fs.existsSync(studioReadinessMigrationPath)
     ? fs.readFileSync(studioReadinessMigrationPath, "utf8")
     : ""
+  const generationControlPath = "supabase/migrations/20260907120000_video_factory_generation_control_plane.sql"
+  const generationControl = fs.existsSync(generationControlPath)
+    ? fs.readFileSync(generationControlPath, "utf8")
+    : ""
   const studioSecurityMarkers = [
     "video_factory_brand_kits",
     "video_factory_creative_templates",
@@ -666,10 +670,16 @@ function checkStaticReleaseRules() {
     && studioReadinessMigration.toLowerCase().includes("grant select, insert")
     && noLoginDeploy.includes("20260802203000_video_factory_studio_scale_readiness.sql")
     && noLoginDeploy.includes("applyVideoFactoryStudioScaleReadinessMigration")
+    && generationControl.toLowerCase().includes("video_factory_reserve_generation_run")
+    && generationControl.toLowerCase().includes("pg_advisory_xact_lock")
+    && generationControl.toLowerCase().includes("circuit_failure_threshold")
+    && generationControl.toLowerCase().includes("force row level security")
+    && noLoginDeploy.includes("20260907120000_video_factory_generation_control_plane.sql")
+    && noLoginDeploy.includes("applyVideoFactoryGenerationControlPlaneMigration")
   ) {
-    pass("Video Factory commercial Studio and readiness evidence have server-only RLS and release wiring")
+    pass("Video Factory Studio readiness and generation cost controls have server-only RLS and release wiring")
   } else {
-    fail("Video Factory commercial Studio and readiness evidence require RLS and release migration wiring")
+    fail("Video Factory Studio readiness and generation cost controls require RLS and release migration wiring")
   }
 
   const videoGrowthMigrationPath = "supabase/migrations/20260802132000_video_growth_direct_acquisition.sql"

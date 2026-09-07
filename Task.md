@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 Video Studio quality and spend control Phase 1
+
+- Added a server-enforced generation control plane for the Video Factory. One atomic PostgreSQL RPC now decides `allow`, `block`, or quality-approved `reuse` before any provider call, covering idempotency, daily/per-run cost, LLM token, GPU-time, retry, reservation-expiry, and provider circuit-breaker gates.
+- Added six RLS/FORCE-RLS server-only tables for policies, provider health, generation runs, append-only attempts, append-only six-axis quality reviews, and audit events. Actual cost/token/GPU overruns fail closed; repeated provider failures open the circuit and permit only one half-open probe after cooldown.
+- Added `/api/sales/video-studio-control` and `/ja/admin/video-studio-control` with authenticated role gates, DB bell + Slack mutation notifications, loading/empty/error states, manual refresh only, no-cost preflight, hard-limit editing, provider health, recent runs, quality review, and provider benchmark visibility. The existing Video Growth screen links to the control plane.
+- Cache reuse requires a succeeded run plus an approved human review and tier score threshold. Raw generation prompts are not persisted in the control ledger; the UI stores only a SHA-256 content identity.
+- Release wiring covers both migration runners, DB-table verification, and release-doctor markers. TypeScript and targeted ESLint pass; 12 Vitest tests, quality guard (0 errors), a 672-page production build, and desktop/mobile Playwright 2/2 pass. E2E found and fixed an unwanted stopped-Factory prefetch. No GPU, Vast.ai, or paid video API was invoked.
+- Design and runtime handoff: `docs/knowledge/video-studio-generation-control-plane.md`.
+- ACTIVE HANDOFF: Phase 1 is locally complete but not deployed. Production SSH preflight timed out and the public site had recent Cloudflare 522/523 symptoms, so no production mutation was attempted. After infrastructure health is restored, merge through PR, run the formal `npm run release:prod` gate, verify the six tables/RPC ACLs and authenticated page, then wrap existing provider dispatch/callback paths with the reservation and attempt RPCs before one non-billable canary per provider lane.
+
 # CURRENT STATUS - 2026-08-03 Pet Life Movie source-conditioned GPU quality
 
 - User quality review correctly identified that the prior free preview and paid renderer were editorial photo motion rather than source-conditioned GPU video. Paid delivery now fails closed unless `pet-memory-i2v` is an exact `approved_bound` ComfyUI workflow; a missing/unready workflow can no longer silently sell a slideshow.
