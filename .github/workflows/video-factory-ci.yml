@@ -3,6 +3,14 @@ name: Video Factory CI
 on:
   pull_request:
     paths:
+      - package.json
+      - package-lock.json
+      - vendor/**
+      - patches/payload/**
+      - scripts/prepare-payload-security-fork.mjs
+      - src/collections/Users*
+      - tests/image-size-security.test.ts
+      - tests/payload-security-fork.test.ts
       - Dockerfile
       - docker-entrypoint.sh
       - services/video-factory/**
@@ -30,6 +38,14 @@ on:
   push:
     branches: [main]
     paths:
+      - package.json
+      - package-lock.json
+      - vendor/**
+      - patches/payload/**
+      - scripts/prepare-payload-security-fork.mjs
+      - src/collections/Users*
+      - tests/image-size-security.test.ts
+      - tests/payload-security-fork.test.ts
       - Dockerfile
       - docker-entrypoint.sh
       - services/video-factory/**
@@ -73,6 +89,13 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: CMS security, real parser regressions and artifact integrity
+        run: >-
+          npm exec -- vitest run
+          src/collections/Users.security.test.ts
+          tests/image-size-security.test.ts
+          tests/payload-security-fork.test.ts
+          --maxWorkers=1
       - name: Direct-growth unit and API tests
         run: >-
           npm exec -- vitest run

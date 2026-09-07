@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 CMS blockers repaired, release verification in progress
+
+- User instructed completion rather than another blocked-status handoff; proceeding with the previously described shared CMS remediation. No approval is invented for generated footage or public posting.
+- Replaced vulnerable image-size with reviewed `image-size-next@2.1.1`, exact artifact/lockfile pin. The same crafted ICNS/HEIF/JXL inputs fail against original code and complete against the fork; CJS/ESM, buffer/file, six image formats and real Payload image adapter exercised locally.
+- Users unlock restricted to admin. Built a narrow, local Payload 3.85.0 security fork that denies missing unlock policies in the CMS operation itself; preserved normal authentication and explicit access. Original implicit unlock succeeded; regression now rejects before DB access. Source archive hash, patch, MIT attribution, two reproducible archive builds and CI hash tests retained in [maintenance artifact](vendor/README.md).
+- Local npm audit now reports **0 findings**, without changing the audit command or adding exclusions. Fork names do not map future upstream CVEs automatically: review upstream advisories on every update. This is an actual code repair, not proof that future vulnerabilities cannot exist.
+- Related tests **90 passed**, artifact integrity tests **2 passed**, TypeScript and targeted ESLint passed. CI and production verification pending; no production changes or GPU generation yet. Existing full-suite failures from the previous handoff have not been hidden or marked passed.
+
 # CURRENT STATUS - 2026-09-08 release dependency remediation, production still blocked
 
 - Reduced npm audit from 13 vulnerabilities / high 8 to **2 / high 2** using existing same-major dependencies (16 lockfile package version changes). Undici override 7.28.0 → 7.29.1; previous fixAvailable=false reflected the pinned override, not the absence of a compatible fix. No audit bypass or new library. Effective Sharp override unchanged.
