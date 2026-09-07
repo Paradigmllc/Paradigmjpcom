@@ -102,3 +102,35 @@ def test_incompatible_host_blocks_before_paid_create(service_root, settings, tmp
     client.create_instance.assert_not_awaited()
     client._request.assert_not_awaited()
     assert not (settings.workspace / "projects/wan-qa-incompatible/probe-started.json").exists()
+
+
+def test_genre_suite_uses_original_prompts_and_conditioned_continuations(service_root, tmp_path):
+    probe = runpy.run_path(str(service_root / "tools/wan_quality_probe.py"))
+    genre = runpy.run_path(str(service_root / "tools/genre_quality_cases.py"))
+    baseline = {"1": {"inputs": {"unet_name": "reviewed.safetensors"}},
+                "2": {"inputs": {}}, "7": {"inputs": {}}, "8": {"inputs": {}}, "11": {"inputs": {}}}
+    cases = genre["candidates"](baseline, "wan-qa-genres-fixture", tmp_path, probe["make_manifest"])
+    assert len(cases) == 10
+    assert len({manifest.metadata["genre"] for _, _, manifest in cases}) == 5
+    assert "start_image" not in baseline["7"]["inputs"]
+    for index, (name, graph, manifest) in enumerate(cases):
+        assert graph["1"] == baseline["1"]
+        assert graph["8"]["inputs"]["steps"] == 50
+        assert manifest.rights.claims_approved_by_client is False
+        assert manifest.metadata["quality_accepted"] is False
+        assert manifest.metadata["production_bound"] is False
+        assert manifest.shots[0].id == f"shot-{index + 1:03d}"
+        if name.endswith("-2"):
+            assert graph["7"]["inputs"]["start_image"] == ["12", 0]
+            assert graph["12"]["inputs"]["image"] == "{{source_image}}"
+        else:
+            assert "12" not in graph
+
+
+@pytest.mark.parametrize("candidate", ["draft20", "reference50"])
+def test_ambiguous_candidate_cannot_start_full_paid_genre_suite(service_root, candidate):
+    probe = runpy.run_path(str(service_root / "tools/wan_quality_probe.py"))
+    with patch.object(probe["Settings"], "from_env") as settings, pytest.raises(ValueError, match="cannot narrow"):
+        asyncio.run(probe["run"](1, "wan-qa-invalid", True, candidate=candidate,
+                                 runtime="comfy-pinned", suite="genres"))
+    settings.assert_not_called()

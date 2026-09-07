@@ -1,0 +1,9 @@
+{
+  "duration": 64,
+  "assertions": [
+    {"kind":"appearsBy","selector":"#headline","bySec":0.5},
+    {"kind":"staysInFrame","selector":"#headline"},
+    {"kind":"staysInFrame","selector":"#caption-band"},
+    {"kind":"keepsMoving","withinSelector":"#diagram","maxStaticSec":4}
+  ]
+}

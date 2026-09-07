@@ -10,6 +10,7 @@ import math
 import secrets
 import signal
 import time
+from pathlib import Path
 
 import httpx
 import yaml
@@ -128,11 +129,16 @@ def select_offer(offers: list[dict[str, object]], offer_id: int | None, machine_
 
 
 async def run(offer_id: int | None, project: str, execute: bool, machine_id: int | None = None,
-              candidate: str = "both", runtime: str = "legacy") -> None:
+              candidate: str = "both", runtime: str = "legacy", suite: str = "cup") -> None:
     if candidate not in {"both", "draft20", "reference50"}:
         raise ValueError("Unknown candidate")
     if runtime not in {"legacy", "comfy-pinned"}:
         raise ValueError("Unknown runtime")
+    if suite not in {"cup", "genres"} or (suite == "genres" and runtime != "comfy-pinned"):
+        raise ValueError("Genre QA requires the pinned runtime")
+    if suite == "genres" and candidate != "both":
+        raise ValueError("Cup candidate selection cannot narrow a genre suite")
+    wall_limit = 5400 if suite == "genres" else 2400
     settings = Settings.from_env()
     workspace = ProjectWorkspace.create(settings.workspace, project)
     label = f"paradigm-comfyui-{project}"
@@ -144,6 +150,9 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
                   for index, (name, graph) in enumerate(make_candidates(json.loads(baseline_bytes)), 1)]
     if candidate != "both":
         candidates = [item for item in candidates if item[0] == candidate]
+    if suite == "genres":
+        from genre_quality_cases import candidates as genre_candidates
+        candidates = genre_candidates(json.loads(baseline_bytes), project, workspace.root, make_manifest)
     client = VastClient(VastConfig.from_workspace(settings.workspace))
     if await client.list_instances():
         raise ValueError("Existing instance found; no duplicate rental")
@@ -164,7 +173,7 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
         print(json.dumps({"mode": "read_only", "offer": {key: offer.get(key) for key in
             ("id", "machine_id", "gpu_name", "dph_total", "inet_down", "disk_bw", "disk_space")},
             "label": label, "planned_frames": 121, "planned_size": [1280, 704],
-            "wall_clock_limit_seconds": 2400, "bootstrap_limit_seconds": 900,
+            "wall_clock_limit_seconds": wall_limit, "bootstrap_limit_seconds": 900,
             "candidates": [item[0] for item in candidates], "runtime": runtime,
             "image": COMFY_IMAGE if runtime == "comfy-pinned" else None,
             "estimated_budget_usd": 1, "hard_billing_cap": False}), flush=True)
@@ -187,7 +196,7 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
     failed = False
     key = secrets.token_hex(32)
     signal.signal(signal.SIGALRM, timeout_signal)
-    signal.alarm(2400)
+    signal.alarm(wall_limit)
     try:
         script = f"https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/{PROVISION_REVISION}/scripts/vast/provision-video-factory-wan22.sh"
         env = {"PROVISIONING_SCRIPT": script, "COMFY_PROXY_KEY": key,
@@ -252,10 +261,16 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
         log("model_and_runtime_verified", status="200")
         sandbox = dataclasses.replace(verified, environment="local", comfyui_allow_unregistered_workflows=True,
                                       comfyui_timeout_seconds=600)
+        previous_native: Path | None = None
         for name, graph, manifest in candidates:
-            if time.monotonic() - started > 1750:
+            if time.monotonic() - started > wall_limit - 650:
                 log("candidate_skipped", candidate=name, reason="deadline_headroom")
                 break
+            if manifest.shots[0].metadata.get("continuation"):
+                from genre_quality_cases import bind_continuation
+                if previous_native is None:
+                    raise ValueError("Continuation requires an earlier native output")
+                bind_continuation(manifest, previous_native, workspace.root / f"{name}-reference.png")
             path = workspace.root / f"{name}-workflow.json"
             path.write_text(json.dumps(graph, indent=2))
             shot, spec = manifest.shots[0], manifest.primary_deliverable
@@ -266,7 +281,8 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
             native_files = set(workspace.assets_generated.rglob("*.mp4")) - before
             if len(native_files) != 1:
                 raise ValueError("Expected one native source")
-            native = probe_media(next(iter(native_files)))
+            previous_native = next(iter(native_files))
+            native = probe_media(previous_native)
             if native.width != 1280 or native.height != 704 or native.duration_seconds < 5:
                 raise ValueError("Native output does not match comparison")
             (workspace.root / f"{name}-native.json").write_text(native.model_dump_json(indent=2))
@@ -303,7 +319,8 @@ if __name__ == "__main__":
     parser.add_argument("--execute", action="store_true", help="Explicit paid single rental; default is read-only")
     parser.add_argument("--candidate", choices=["both", "draft20", "reference50"], default="both")
     parser.add_argument("--runtime", choices=["legacy", "comfy-pinned"], default="legacy")
+    parser.add_argument("--suite", choices=["cup", "genres"], default="cup")
     args = parser.parse_args()
     if not args.project.startswith("wan-qa-") or not args.project.replace("-", "").isalnum():
         parser.error("Use a unique wan-qa- project slug")
-    asyncio.run(run(args.offer_id, args.project, args.execute, args.machine_id, args.candidate, args.runtime))
+    asyncio.run(run(args.offer_id, args.project, args.execute, args.machine_id, args.candidate, args.runtime, args.suite))
