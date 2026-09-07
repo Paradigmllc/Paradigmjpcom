@@ -151,6 +151,8 @@ def test_managed_gpu_is_used_only_when_routed_manifest_needs_comfyui(
     monkeypatch.setattr(pipeline, "validate_task", lambda _path: (brief, report))
     monkeypatch.setattr(pipeline, "plan_task", lambda *_args: manifest)
     monkeypatch.setattr(pipeline, "_production_flow_impl", result)
+    # This test isolates GPU routing; workflow contract preflight has separate coverage.
+    monkeypatch.setattr(pipeline, "preflight_workflow_durations", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(pipeline, "ensure_gpu_ready", ensure_gpu)
     monkeypatch.setattr(pipeline, "release_gpu_if_idle", release_gpu)
 

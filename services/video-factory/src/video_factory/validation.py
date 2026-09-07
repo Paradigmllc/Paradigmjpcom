@@ -12,6 +12,9 @@ from .models import (
 
 def validate_brief(brief: ClientBrief) -> ValidationReport:
     findings: list[ValidationFinding] = []
+    requested_kinds = set(brief.requested_shot_kinds) | {
+        shot.kind for chapter in brief.chapters for shot in chapter.shots
+    }
 
     if not brief.rights.source_assets_cleared:
         findings.append(
@@ -40,7 +43,7 @@ def validate_brief(brief: ClientBrief) -> ValidationReport:
             ShotKind.PORTRAIT_ANIMATION,
             ShotKind.LIP_SYNC,
         }
-        for kind in brief.requested_shot_kinds
+        for kind in requested_kinds
     )
     if generative_requested and not brief.rights.ai_generation_allowed:
         findings.append(
@@ -53,7 +56,7 @@ def validate_brief(brief: ClientBrief) -> ValidationReport:
         )
 
     if (
-        ShotKind.PORTRAIT_ANIMATION in brief.requested_shot_kinds
+        ShotKind.PORTRAIT_ANIMATION in requested_kinds
         and brief.rights.likeness_consent is not LikenessConsent.GRANTED
     ):
             findings.append(
@@ -65,7 +68,7 @@ def validate_brief(brief: ClientBrief) -> ValidationReport:
                 )
             )
     if (
-        ShotKind.LIP_SYNC in brief.requested_shot_kinds
+        ShotKind.LIP_SYNC in requested_kinds
         and brief.rights.voice_consent is not LikenessConsent.GRANTED
     ):
             findings.append(

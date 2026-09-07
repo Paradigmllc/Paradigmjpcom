@@ -161,8 +161,12 @@ describe("Video Factory operator events", () => {
         project_name: "Commercial Launch",
         template_id: "auto",
         brand: { kit_id: "commercial-brand", name: "Commercial" },
-        brief: { objective: "Launch a commercial video" },
-        manifest: { project_id: "commercial-launch", shots: [] },
+        brief: { objective: "Launch a commercial video", chapters: [
+          { id: "chapter-01", title: "構成", shots: [{ narration: "章の原稿", duration_seconds: 6 }] },
+        ] },
+        manifest: { project_id: "commercial-launch", shots: [
+          { id: "shot-001", metadata: { chapter_id: "chapter-01", timeline_start_seconds: 0, narration: "章の原稿" } },
+        ] },
       },
     }
     const response = await POST(new NextRequest(
@@ -183,6 +187,8 @@ describe("Video Factory operator events", () => {
       expect.objectContaining({
         project_id: "commercial-launch",
         brand_kit_id: "commercial-brand",
+        brief: studioEvent.payload.brief,
+        manifest: studioEvent.payload.manifest,
       }),
       { onConflict: "project_id" },
     )

@@ -20,7 +20,7 @@ class HyperFramesAdapter(EngineAdapter):
         self.environment = Environment(
             loader=FileSystemLoader(str(template_root)),
             undefined=StrictUndefined,
-            autoescape=select_autoescape(["html", "xml"]),
+            autoescape=select_autoescape(["html", "xml", "j2"]),
         )
 
     def run(self, shot: Shot, context: EngineContext) -> EngineOutput:
@@ -29,7 +29,9 @@ class HyperFramesAdapter(EngineAdapter):
         project = context.workspace.hyperframes / context.namespace / shot.id
         project.mkdir(parents=True, exist_ok=True)
         selected = creative_template(shot.template_id)
-        template = self.environment.get_template("commercial-studio/index.html.j2")
+        editorial = bool(shot.metadata.get("editorial"))
+        template_name = "editorial" if editorial else "commercial-studio"
+        template = self.environment.get_template(f"{template_name}/index.html.j2")
         rendered = template.render(
             project_name=context.manifest.project_name,
             composition_id=shot.id,
@@ -45,6 +47,8 @@ class HyperFramesAdapter(EngineAdapter):
             template_name=selected.display_name,
             shot_kind=shot.kind.value,
             brand=context.manifest.brand.model_dump(mode="json"),
+            chapter_title=str(shot.metadata.get("chapter_title") or ""),
+            visual_points=shot.metadata.get("visual_points") or [],
         )
         (project / "index.html").write_text(rendered, encoding="utf-8")
         (project / "meta.json").write_text(
@@ -59,7 +63,7 @@ class HyperFramesAdapter(EngineAdapter):
             ),
             encoding="utf-8",
         )
-        frame_source = self.template_root / "commercial-studio" / "frame.md"
+        frame_source = self.template_root / template_name / "frame.md"
         (project / "frame.md").write_text(
             frame_source.read_text(encoding="utf-8"), encoding="utf-8"
         )
@@ -112,7 +116,7 @@ class HyperFramesAdapter(EngineAdapter):
             provenance={
                 "version": context.settings.hyperframes_version,
                 "project": str(project),
-                "template": selected.id,
+                "template": template_name if editorial else selected.id,
             },
             warnings=warnings,
             elapsed_seconds=time.monotonic() - started,

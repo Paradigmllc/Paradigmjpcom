@@ -19,6 +19,7 @@ from ..media import (
 from ..model_registry import assert_model_bindings_approved
 from ..models import Engine, EngineOutput, Shot
 from ..source_coverage import probe_motion_source, require_motion_coverage
+from ..workflow_duration import require_workflow_duration
 from ..workflow_registry import (
     WorkflowContract,
     load_api_workflow,
@@ -178,6 +179,7 @@ class ComfyUIAdapter(EngineAdapter):
             raise ComfyUIError("COMFYUI_API_KEY is required in production")
 
         workflow_path, workflow, workflow_id = _load_workflow(shot, context)
+        require_workflow_duration(workflow, shot.duration_seconds, context.deliverable.fps)
         client_id = str(uuid.uuid4())
 
         timeout = httpx.Timeout(30.0, read=60.0)

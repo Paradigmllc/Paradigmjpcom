@@ -7,6 +7,7 @@ from .adapters.base import EngineContext
 from .adapters.registry import AdapterRegistry
 from .compositor import compose_master
 from .delivery import deliver_project
+from .editorial_audio import finish_editorial_media, prepare_editorial_audio
 from .engine_profiles import (
     load_engine_profile_catalog,
     manifest_requires_managed_gpu,
@@ -16,11 +17,9 @@ from .finalization import finalize_project
 from .gpu_lifecycle import ensure_gpu_ready, release_gpu_if_idle, run_lifecycle
 from .gpu_lifecycle_state import GpuLease, acquire_gpu_lease
 from .io import load_brief, write_json, write_model
-from .media import finish_master_media
 from .models import (
     ClientBrief,
     DeliverableSpec,
-    EngineOutput,
     PipelineResult,
     ReviewStage,
     ReviewStatus,
@@ -34,9 +33,11 @@ from .qa import run_technical_qa
 from .review import approve_review, create_pending_review
 from .router import route_manifest
 from .settings import Settings
+from .shot_execution import execute_shots, preflight_shot_reuse
 from .state import initialize_project_state, transition_project_state
 from .studio_events import emit_studio_project_started, emit_studio_qa_completed
 from .validation import validate_brief
+from .workflow_duration import preflight_workflow_durations
 from .workspace import ProjectWorkspace, slugify
 
 
@@ -185,30 +186,7 @@ def _production_flow_impl(
             dry_run=dry_run,
             namespace=deliverable.name,
         )
-        outputs = []
-        for shot in shots:
-            if shot.engine is None:
-                raise RuntimeError(f"Shot was not routed: {deliverable.name}/{shot.id}")
-            adapter = registry.get(shot.engine)
-            cached_path = adapter.output_path(shot, context)
-            if (
-                rerender_shot_ids is not None
-                and shot.id not in rerender_shot_ids
-                and cached_path.is_file()
-            ):
-                outputs.append(
-                    EngineOutput(
-                        shot_id=shot.id,
-                        engine=shot.engine,
-                        status="dry_run" if dry_run else "completed",
-                        media_path=str(cached_path),
-                        provenance={"cache": "existing-shot"},
-                        warnings=[],
-                        elapsed_seconds=0,
-                    )
-                )
-            else:
-                outputs.append(adapter.run(shot, context))
+        outputs = execute_shots(shots, context, registry, SERVICE_ROOT, rerender_shot_ids)
         outputs_by_deliverable[deliverable.name] = [
             output.model_dump(mode="json") for output in outputs
         ]
@@ -241,7 +219,7 @@ def _production_flow_impl(
             if is_primary
             else workspace.master / f"captions-{deliverable.name}.vtt"
         )
-        caption_file = finish_master_media(
+        caption_file = finish_editorial_media(
             master_path,
             manifest,
             shots,
@@ -405,6 +383,12 @@ def production_flow(
     required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog)
     gpu_lease: GpuLease | None = None
     try:
+        preflight_workflow_durations(manifest, settings, dry_run=dry_run)
+        preflight_shot_reuse(manifest, settings, SERVICE_ROOT, rerender_shot_ids, dry_run=dry_run)
+        manifest = prepare_editorial_audio(
+            manifest, ProjectWorkspace.create(settings.workspace, manifest.project_id).root,
+            dry_run=dry_run,
+        )
         if not dry_run:
             _emit_profile_events(
                 settings,

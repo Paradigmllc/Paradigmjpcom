@@ -127,6 +127,8 @@ def route_manifest(
                     f"No available engine for {shot.id} ({shot.kind.value}); "
                     f"tried {', '.join(rejected)}"
                 )
+            if not dry_run and shot.metadata.get("editorial") and profile is None and selected.value != rule.get("primary"):
+                raise RoutingError(f"{shot.id}: 台本で指定した {shot.kind.value} の実行環境がありません。別形式へ自動代替しません。")
             shot.engine = selected
             shot.routing_reason = (
                 f"selected={selected.value}; "

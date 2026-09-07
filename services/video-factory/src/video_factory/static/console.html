@@ -77,7 +77,7 @@
             <ol class="flow-list">
               <li><span>1</span><div><strong>依頼・ブリーフ</strong><small>目的、対象、尺、素材、権利を入力</small></div></li>
               <li><span>2</span><div><strong>企画・ショット設計</strong><small>Plannerが構成と制作エンジンを決定</small></div></li>
-              <li><span>3</span><div><strong>素材生成・画面収録</strong><small>ComfyUI、Playwright、FFmpegを並列実行</small></div></li>
+              <li><span>3</span><div><strong>素材生成・画面収録</strong><small>必要なエンジンを選び、ショット単位で実行</small></div></li>
               <li><span>4</span><div><strong>HyperFrames合成</strong><small>文字、UI、字幕、CTAを正確にレンダリング</small></div></li>
               <li><span>5</span><div><strong>人間承認・納品</strong><small>ドラフト承認と最終承認を経て納品</small></div></li>
             </ol>
@@ -99,13 +99,15 @@
         <form id="video-form" class="creation-layout">
           <div class="form-main">
             <article class="panel form-section">
-              <div class="section-number">01</div><div class="section-copy"><p class="eyebrow">BRIEF</p><h2>何を作りますか？</h2><p>自然な文章で詳しく書くほど、Plannerの初稿精度が上がります。</p></div>
+              <div class="section-number">01</div><div class="section-copy"><p class="eyebrow">BRIEF</p><h2>何を作りますか？</h2><p>標準Plannerは短尺の構成雛形を作ります。内容を指定するには章・ショット台本を入力してください。</p></div>
               <div class="field-grid">
                 <label class="field span-2"><span>案件名 *</span><input id="project-name" required minlength="3" placeholder="例：Paradigm VaaS 20秒広告"></label>
                 <label class="field span-2"><span>目的・訴求 *</span><textarea id="objective" required minlength="10" rows="4" placeholder="誰に何を理解してもらい、最終的に何をしてほしいか"></textarea></label>
                 <label class="field span-2"><span>ターゲット *</span><textarea id="audience" required minlength="10" rows="3" placeholder="業種、役職、抱えている課題、認知段階"></textarea></label>
-                <label class="field"><span>完成尺（秒） *</span><input id="duration" type="number" min="5" max="600" value="30" required></label>
+                <label class="field"><span>完成尺（秒） *</span><input id="duration" type="number" min="5" max="1800" value="30" required></label>
                 <label class="field"><span>掲載媒体 *</span><input id="platforms" value="LinkedIn, YouTube" required placeholder="LinkedIn, YouTube"></label>
+                <label class="field span-2"><span>章・ショット台本(JSON、120秒超は必須)</span><textarea id="editorial-chapters" rows="8" aria-label="章とショットの台本" placeholder='[{"id":"opening","title":"導入","shots":[{"title":"最初の場面","kind":"text_motion","duration_seconds":5,"visual_direction":"この場面で示す図解・被写体・動きを具体的に記述","headline":"見出し","narration":"読み上げ原稿","narration_path":"/data/voice/shot-001.wav"}]}]'></textarea><small>1ショット0.5〜30秒・最大999ショット・完成尺30分まで。章内合計を完成尺と一致させ、言語ごとに別案件にしてください。音声はアップロードしたパスを指定します。空欄では短尺の標準構成を使います。</small></label>
+                <div class="field span-2"><button id="check-editorial-plan" class="button secondary" type="button" aria-label="課金せず章台本を検証">台本・タイムラインを検証(課金なし)</button><div id="editorial-plan-result" class="summary-box" role="status" aria-live="polite">章台本はまだ検証していません。</div></div>
               </div>
             </article>
 
@@ -123,7 +125,7 @@
               <div class="field-grid">
                 <label class="field"><span>ブランド名 *</span><input id="brand-name" value="Paradigm" required></label>
                 <label class="field"><span>Brand Kit ID</span><input id="brand-kit-id" value="paradigm-default" pattern="[a-z0-9][a-z0-9\-]{2,79}"></label>
-                <label class="field"><span>フォント</span><input id="font-family" value="IBM Plex Sans, Noto Sans JP"></label>
+                <label class="field"><span>フォント</span><input id="font-family" value="Noto Sans JP"></label>
                 <label class="field color-field"><span>メインカラー</span><div><input id="primary-color" type="color" value="#0F172A"><input id="primary-color-text" value="#0F172A" maxlength="7"></div></label>
                 <label class="field color-field"><span>アクセント</span><div><input id="accent-color" type="color" value="#34D399"><input id="accent-color-text" value="#34D399" maxlength="7"></div></label>
                 <label class="field color-field"><span>セカンダリ</span><div><input id="secondary-color" type="color" value="#111827"><input id="secondary-color-text" value="#111827" maxlength="7"></div></label>
@@ -293,6 +295,7 @@
   <script src="/console/console-runtime.js" defer></script>
   <script src="/console/console-engine-catalog.js" defer></script>
   <script src="/console/console-studio.js" defer></script>
+  <script src="/console/console-editorial.js" defer></script>
   <script src="/console/console-readiness.js" defer></script>
 </body>
 </html>

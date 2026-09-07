@@ -83,6 +83,7 @@
       audience: $("#audience").value.trim(),
       platforms: commaValues($("#platforms").value),
       duration_seconds: Number($("#duration").value),
+      chapters: window.readEditorialChapters ? window.readEditorialChapters() : [],
       languages,
       brand: {
         name: $("#brand-name").value.trim(),

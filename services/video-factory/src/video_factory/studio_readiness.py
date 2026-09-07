@@ -338,6 +338,12 @@ def preflight_studio_brief(
         if finding.severity.value == "warning"
     ]
 
+    from .editorial_audio import inspect_editorial_audio
+    try:
+        inspect_editorial_audio(planned)
+    except (ValueError, OSError) as error:
+        blockers.append(str(error))
+
     if brief.template_id != "auto":
         selected_template = creative_template(brief.template_id)
         unsupported = [
@@ -363,7 +369,9 @@ def preflight_studio_brief(
         if profile.get("ready") is not True or not supports_kind:
             blockers.append(f"Engine profile {profile_id} is not production-ready for {kind.value}.")
 
-    exact_kinds = set(brief.requested_shot_kinds)
+    exact_kinds = set(brief.requested_shot_kinds) | {
+        shot.kind for chapter in brief.chapters for shot in chapter.shots
+    }
     for item in requested:
         if not item.production_allowed:
             blockers.append(f"{item.shot_kind.value}: no production runtime is available.")

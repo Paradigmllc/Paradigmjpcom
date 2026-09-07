@@ -90,7 +90,7 @@ def create_hyperframes_master_project(
     environment = Environment(
         loader=FileSystemLoader(str(template_root)),
         undefined=StrictUndefined,
-        autoescape=select_autoescape(["html", "xml"]),
+        autoescape=select_autoescape(["html", "xml", "j2"]),
     )
     template = environment.get_template("master/index.html.j2")
     rendered = template.render(

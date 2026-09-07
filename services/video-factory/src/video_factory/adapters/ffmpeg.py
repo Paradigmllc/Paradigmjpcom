@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..media import create_placeholder_clip, normalize_clip
 from ..models import Engine, EngineOutput, Shot
+from ..source_coverage import probe_motion_source, require_motion_coverage
 from .base import EngineAdapter, EngineContext
 
 
@@ -15,6 +16,8 @@ class FFmpegAdapter(EngineAdapter):
         existing = next((Path(item) for item in shot.source_assets if Path(item).is_file()), None)
         warnings: list[str] = []
         if existing is None:
+            if not context.dry_run:
+                raise ValueError(f"{shot.id}: 読み込める支給素材がありません。代替の空動画は生成しません。")
             create_placeholder_clip(
                 output,
                 duration_seconds=shot.duration_seconds,
@@ -25,6 +28,12 @@ class FFmpegAdapter(EngineAdapter):
             )
             warnings.append("No readable source asset; generated a placeholder clip.")
         else:
+            still_image = False
+            if not context.dry_run:
+                native = probe_motion_source(existing)
+                still_image = native.codec in {"png", "mjpeg", "webp"} and native.duration_seconds == 0
+                if not still_image:
+                    require_motion_coverage(native, shot.duration_seconds, context.deliverable.fps)
             normalize_clip(
                 existing,
                 output,
@@ -33,6 +42,7 @@ class FFmpegAdapter(EngineAdapter):
                 height=context.deliverable.height,
                 fps=context.deliverable.fps,
                 fit="cover" if shot.metadata.get("pet_movie_template_id") else "contain",
+                loop_source=context.dry_run or still_image,
             )
         return EngineOutput(
             shot_id=shot.id,
