@@ -5,6 +5,7 @@
 FROM node:22.23.1-alpine3.24 AS deps
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
+COPY vendor/paradigmllc-payload-security-3.85.0.tgz ./vendor/paradigmllc-payload-security-3.85.0.tgz
 RUN --mount=type=cache,target=/root/.npm npm install --prefer-offline --no-audit --no-fund
 
 FROM node:22.23.1-alpine3.24 AS builder

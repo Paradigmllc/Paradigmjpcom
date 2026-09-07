@@ -141,6 +141,12 @@ export const DB_TABLES = {
   VIDEO_FACTORY_SHOT_REVISIONS: "video_factory_shot_revisions",
   VIDEO_FACTORY_QUALITY_METRICS: "video_factory_quality_metrics",
   VIDEO_FACTORY_STUDIO_READINESS_SNAPSHOTS: "video_factory_studio_readiness_snapshots",
+  VIDEO_FACTORY_GENERATION_POLICIES: "video_factory_generation_policies",
+  VIDEO_FACTORY_PROVIDER_HEALTH: "video_factory_provider_health",
+  VIDEO_FACTORY_GENERATION_RUNS: "video_factory_generation_runs",
+  VIDEO_FACTORY_GENERATION_ATTEMPTS: "video_factory_generation_attempts",
+  VIDEO_FACTORY_GENERATION_QUALITY_REVIEWS: "video_factory_generation_quality_reviews",
+  VIDEO_FACTORY_GENERATION_EVENTS: "video_factory_generation_events",
 
   // ── Video subscription direct acquisition ──
   VIDEO_GROWTH_CAMPAIGNS: "video_growth_campaigns",

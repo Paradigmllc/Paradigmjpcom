@@ -2,8 +2,7 @@ import { createClient } from "@supabase/supabase-js"
 
 let browserClient: ReturnType<typeof createClient> | null = null
 
-function readEnv(name: string): string | null {
-  const value = process.env[name]
+function readEnv(name: string, value = process.env[name]): string | null {
   if (!value) {
     console.error(`[supabase] ${name} is not configured`)
     return null
@@ -58,8 +57,9 @@ export function getSalesSupabaseConfig(): { url: string; serviceKey: string; sou
 
 export function getSupabaseClient() {
   if (browserClient) return browserClient
-  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL")
-  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+  // Next.js only inlines literal public env references in browser bundles.
+  const url = readEnv("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const anonKey = readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   if (!url || !anonKey) return null
   browserClient = createClient(url, anonKey)
   return browserClient

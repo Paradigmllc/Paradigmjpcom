@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 
 from .creative_templates import creative_template, template_for_shot
+from .editorial import editorial_plan
 from .io import model_sha256
 from .models import ClientBrief, LocalizationSpec, Shot, ShotKind, ShotManifest
 from .settings import Settings
@@ -169,6 +170,8 @@ def _narrative_segments(duration: float) -> list[tuple[str, float, ShotKind, str
 
 
 def deterministic_plan(brief: ClientBrief) -> ShotManifest:
+    if brief.chapters:
+        return editorial_plan(brief)
     project_id = slugify(brief.project_name)
     primary = brief.deliverables[0]
     language = primary.language
@@ -284,6 +287,8 @@ def plan_brief(
     settings: Settings,
     provider: str = "deterministic",
 ) -> ShotManifest:
+    if brief.chapters:
+        return editorial_plan(brief)
     if provider == "external":
         return external_plan(brief, settings)
     if provider != "deterministic":

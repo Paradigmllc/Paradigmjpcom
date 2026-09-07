@@ -124,11 +124,13 @@ def resolved_adapter(profile: EngineProfile) -> Engine:
 def selected_profiles(
     manifest: ShotManifest,
     catalog: EngineProfileCatalog,
+    shot_ids: set[str] | None = None,
 ) -> list[EngineProfile]:
     profile_ids = {
         str(shot.metadata.get("engine_profile_id") or "").strip()
         for shots in [manifest.shots, *manifest.localized_shots.values()]
         for shot in shots
+        if shot_ids is None or shot.id in shot_ids
         if str(shot.metadata.get("engine_profile_id") or "").strip()
     }
     return [catalog.get(profile_id) for profile_id in sorted(profile_ids)]
@@ -137,26 +139,29 @@ def selected_profiles(
 def manifest_requires_managed_gpu(
     manifest: ShotManifest,
     catalog: EngineProfileCatalog,
+    shot_ids: set[str] | None = None,
 ) -> bool:
     if any(
         shot.engine is Engine.COMFYUI
         for shots in [manifest.shots, *manifest.localized_shots.values()]
         for shot in shots
+        if shot_ids is None or shot.id in shot_ids
     ):
         return True
     return any(
         resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU
-        for profile in selected_profiles(manifest, catalog)
+        for profile in selected_profiles(manifest, catalog, shot_ids)
     )
 
 
 def required_managed_oss_profiles(
     manifest: ShotManifest,
     catalog: EngineProfileCatalog,
+    shot_ids: set[str] | None = None,
 ) -> tuple[tuple[str, str], ...]:
     return tuple(
         (profile.id, profile.revision)
-        for profile in selected_profiles(manifest, catalog)
+        for profile in selected_profiles(manifest, catalog, shot_ids)
         if profile.runtime is EngineRuntime.EXTERNAL_CLI
         and resolved_execution_target(profile) is ExecutionTarget.MANAGED_GPU
     )

@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/console/console-gpu-lifecycle.css">
   <link rel="stylesheet" href="/console/console-engine-catalog.css">
   <link rel="stylesheet" href="/console/console-studio.css">
+  <link rel="stylesheet" href="/console/console-shot-revision.css">
   <link rel="stylesheet" href="/console/console-readiness.css">
   <link rel="stylesheet" href="/console/console-responsive.css">
 </head>
@@ -71,13 +72,26 @@
           <article class="metric"><span>Vast.ai</span><strong id="metric-vast">—</strong><small id="metric-vast-note">APIキー未確認</small></article>
         </div>
 
+        <article class="panel dashboard-overview" aria-label="スタジオの現在地">
+          <div class="panel-heading"><div><p class="eyebrow">STUDIO OVERVIEW</p><h2>今できること・次に確認すること</h2></div><button class="button secondary" data-go="readiness" type="button">対応状況を詳しく見る</button></div>
+          <p class="panel-lead">環境が使えることと、投稿できる映像品質は別です。準備度やテンプレート数を作品の点数として扱いません。</p>
+          <div id="dashboard-readiness" role="status" aria-live="polite"><div class="empty compact">未確認 — API接続後に実行条件を表示します。</div></div>
+          <div class="dashboard-next-actions">
+            <button class="button secondary" data-go="create" type="button">1. 短尺・長編の台本を準備</button>
+            <button class="button secondary" data-go="projects" type="button">2. 実映像・QA・承認を確認</button>
+            <button class="button secondary" data-go="gpu" type="button">3. GPU状態・エラーを確認</button>
+            <a class="button secondary" href="https://paradigmjp.com/ja/admin/video-studio-control" target="_blank" rel="noopener noreferrer" aria-label="8項目品質・費用台帳を別タブで開く">8項目品質・費用台帳 ↗</a>
+          </div>
+          <p class="panel-lead">画面を開くだけでは生成・GPU起動を行いません。情報は接続時・操作後・更新ボタンで取得します。進行中ジョブの確認は継続します。</p>
+        </article>
+
         <div class="dashboard-grid">
           <article class="panel production-map">
             <div class="panel-heading"><div><p class="eyebrow">PRODUCTION FLOW</p><h2>一気通貫の制作レーン</h2></div><button class="text-button" data-go="create" type="button">新規依頼 →</button></div>
             <ol class="flow-list">
               <li><span>1</span><div><strong>依頼・ブリーフ</strong><small>目的、対象、尺、素材、権利を入力</small></div></li>
               <li><span>2</span><div><strong>企画・ショット設計</strong><small>Plannerが構成と制作エンジンを決定</small></div></li>
-              <li><span>3</span><div><strong>素材生成・画面収録</strong><small>ComfyUI、Playwright、FFmpegを並列実行</small></div></li>
+              <li><span>3</span><div><strong>素材生成・画面収録</strong><small>必要なエンジンを選び、ショット単位で実行</small></div></li>
               <li><span>4</span><div><strong>HyperFrames合成</strong><small>文字、UI、字幕、CTAを正確にレンダリング</small></div></li>
               <li><span>5</span><div><strong>人間承認・納品</strong><small>ドラフト承認と最終承認を経て納品</small></div></li>
             </ol>
@@ -99,13 +113,16 @@
         <form id="video-form" class="creation-layout">
           <div class="form-main">
             <article class="panel form-section">
-              <div class="section-number">01</div><div class="section-copy"><p class="eyebrow">BRIEF</p><h2>何を作りますか？</h2><p>自然な文章で詳しく書くほど、Plannerの初稿精度が上がります。</p></div>
+              <div class="section-number">01</div><div class="section-copy"><p class="eyebrow">BRIEF</p><h2>何を作りますか？</h2><p>標準Plannerは短尺の構成雛形を作ります。内容を指定するには章・ショット台本を入力してください。</p></div>
               <div class="field-grid">
                 <label class="field span-2"><span>案件名 *</span><input id="project-name" required minlength="3" placeholder="例：Paradigm VaaS 20秒広告"></label>
                 <label class="field span-2"><span>目的・訴求 *</span><textarea id="objective" required minlength="10" rows="4" placeholder="誰に何を理解してもらい、最終的に何をしてほしいか"></textarea></label>
                 <label class="field span-2"><span>ターゲット *</span><textarea id="audience" required minlength="10" rows="3" placeholder="業種、役職、抱えている課題、認知段階"></textarea></label>
-                <label class="field"><span>完成尺（秒） *</span><input id="duration" type="number" min="5" max="600" value="30" required></label>
+                <label class="field"><span>完成尺（秒） *</span><input id="duration" type="number" min="5" max="1800" value="30" required></label>
                 <label class="field"><span>掲載媒体 *</span><input id="platforms" value="LinkedIn, YouTube" required placeholder="LinkedIn, YouTube"></label>
+                <div class="field span-2"><span>章・ショットをフォームで編集（120秒超は必須）</span><div class="button-row"><button id="add-editorial-chapter" class="button secondary" type="button">章を追加</button><button id="undo-editorial-change" class="button secondary" type="button" disabled>直前の追加・削除・移動を戻す</button></div><p id="chapter-editor-status" role="status" aria-live="polite"></p><div id="chapter-editor"></div><small>編集する章・ショットを切り替えて入力します。画面にない素材・workflow設定も保持します。取り消しは直前1回のみで、文字入力やJSON編集後は無効になります。未送信の入力は画面を閉じると失われます。</small></div>
+                <details class="field span-2"><summary>詳細JSON（フォームと同期）</summary><label class="field"><span>章・ショット台本</span><textarea id="editorial-chapters" rows="8" aria-label="章とショットの台本"></textarea><small>1ショット0.5〜30秒・最大999ショット・最大60章・完成尺30分まで。章内合計を完成尺と一致させ、言語ごとに別案件にしてください。音声はアップロードしたパスを指定します。素材・workflow・画面要点はJSONで編集できます。</small></label></details>
+                <div class="field span-2"><button id="check-editorial-plan" class="button secondary" type="button" aria-label="課金せず章台本を検証">台本・タイムラインを検証(課金なし)</button><div id="editorial-plan-result" class="summary-box" role="status" aria-live="polite">章台本はまだ検証していません。</div></div>
               </div>
             </article>
 
@@ -123,7 +140,7 @@
               <div class="field-grid">
                 <label class="field"><span>ブランド名 *</span><input id="brand-name" value="Paradigm" required></label>
                 <label class="field"><span>Brand Kit ID</span><input id="brand-kit-id" value="paradigm-default" pattern="[a-z0-9][a-z0-9\-]{2,79}"></label>
-                <label class="field"><span>フォント</span><input id="font-family" value="IBM Plex Sans, Noto Sans JP"></label>
+                <label class="field"><span>フォント</span><input id="font-family" value="Noto Sans JP"></label>
                 <label class="field color-field"><span>メインカラー</span><div><input id="primary-color" type="color" value="#0F172A"><input id="primary-color-text" value="#0F172A" maxlength="7"></div></label>
                 <label class="field color-field"><span>アクセント</span><div><input id="accent-color" type="color" value="#34D399"><input id="accent-color-text" value="#34D399" maxlength="7"></div></label>
                 <label class="field color-field"><span>セカンダリ</span><div><input id="secondary-color" type="color" value="#111827"><input id="secondary-color-text" value="#111827" maxlength="7"></div></label>
@@ -181,7 +198,7 @@
       <section class="view" data-view-panel="readiness">
         <div class="readiness-summary">
           <article class="panel readiness-score-panel">
-            <div class="readiness-score-head"><p class="eyebrow">STUDIO SCALE READINESS</p><span id="studio-readiness-badge" class="badge neutral">確認中</span></div>
+            <div class="readiness-score-head"><p class="eyebrow">実行環境の準備度（映像の品質点ではありません）</p><span id="studio-readiness-badge" class="badge neutral">確認中</span></div>
             <div class="readiness-score"><span id="studio-readiness-score">—</span><small>/100</small></div>
             <p>実行中の環境、監査済みテンプレート、エンジン、QA、承認ゲートから算出します。見た目の品質は自動採点せず、人間レビューを必須にしています。</p>
             <div class="readiness-mini-metrics">
@@ -293,6 +310,9 @@
   <script src="/console/console-runtime.js" defer></script>
   <script src="/console/console-engine-catalog.js" defer></script>
   <script src="/console/console-studio.js" defer></script>
+  <script src="/console/console-shot-revision.js" defer></script>
+  <script src="/console/console-editorial.js" defer></script>
+  <script src="/console/console-chapter-editor.js" defer></script>
   <script src="/console/console-readiness.js" defer></script>
 </body>
 </html>

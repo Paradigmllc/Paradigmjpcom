@@ -1,0 +1,48 @@
+<!doctype html><html lang="ja"><head><meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}html,body,#main{width:1080px;height:1920px;overflow:hidden;background:#f3efe4;color:#203936;font-family:'Noto Sans JP',sans-serif}#main{position:relative}
+.mast{position:absolute;left:84px;top:155px;width:840px;display:flex;justify-content:space-between;border-top:3px solid #203936;padding-top:24px;font:28px 'IBM Plex Mono',monospace;letter-spacing:2px}
+.head{text-wrap:balance;position:absolute;top:260px;left:84px;width:838px;font-size:78px;line-height:1.28;font-weight:700;letter-spacing:-3px}.head em{font-style:normal;color:#176f86}
+#diagram{position:absolute;left:50px;top:520px;width:960px;height:800px}svg text{font-family:'Noto Sans JP',sans-serif;font-size:30px;font-weight:700;fill:#203936}.caption{text-wrap:balance;position:absolute;left:84px;top:1425px;width:810px;font-size:45px;font-weight:700;line-height:1.55;letter-spacing:-1px}.caption::before{content:'';display:block;width:54px;height:5px;background:#176f86;margin-bottom:24px}
+.source{position:absolute;left:84px;top:1715px;width:825px;font-size:23px;line-height:1.6;color:#41534d}.source span{display:block}.progress{position:absolute;left:84px;top:1668px;width:810px;height:4px;background:#176f86;transform-origin:left center}.note{position:absolute;top:1344px;left:84px;font-size:26px;color:#41534d}
+</style></head><body><div id="main" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="32">
+<div class="mast"><span>WATER / FIELD NOTES</span><span>01</span></div>
+<h1 id="h1" class="head clip" data-start="0" data-duration="5.2" data-track-index="1">街の雨は、<em>どこへ？</em></h1>
+<h2 id="h2" class="head clip" data-start="5.2" data-duration="4.8" data-track-index="1">鍵は、<em>地面の違い。</em></h2>
+<h2 id="h3" class="head clip" data-start="10" data-duration="5" data-track-index="1">土には、<em>しみ込む。</em></h2>
+<h2 id="h4" class="head clip" data-start="15" data-duration="5.4" data-track-index="1">道路では、<em>流れる。</em></h2>
+<h2 id="h5" class="head clip" data-start="20.4" data-duration="5.2" data-track-index="1">一気に集まると、<em>追いつかない。</em></h2>
+<h2 id="h6" class="head clip" data-start="25.6" data-duration="6.4" data-track-index="1">雨の量。<em>行き先。速さ。</em></h2>
+<svg id="diagram" viewBox="0 0 960 800" role="img" aria-label="土への浸透と道路から排水口への流出の模式図">
+<defs><pattern id="soil" width="35" height="31" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="2.5" fill="#987d5c"/></pattern><clipPath id="rain-window"><rect x="30" y="35" width="900" height="315"/></clipPath></defs>
+<path d="M35 368H400V734H35Z" fill="#dfc8a3"/><path d="M35 380H400V734H35Z" fill="url(#soil)"/><path d="M535 368H925V734H535Z" fill="#b8b9ab"/><path d="M535 368H925" stroke="#203936" stroke-width="20"/><path d="M35 365H400" stroke="#687b43" stroke-width="12"/>
+<g id="trees"><path d="M170 351V223" stroke="#725c43" stroke-width="12"/><path d="M106 264L170 119L234 264Z" fill="#607843"/><path d="M86 315L170 172L254 315Z" fill="#7f945e"/><path d="M329 357V293" stroke="#725c43" stroke-width="8"/><circle cx="329" cy="278" r="42" fill="#7f945e"/></g>
+<g id="buildings"><path d="M610 353V181H711V353Z" fill="#d19d70"/><path d="M719 353V115H832V353Z" fill="#e3b88c"/><g fill="#f3efe4"><path d="M630 205H653V242H630ZM671 205H694V242H671ZM630 266H653V303H630ZM671 266H694V303H671Z"/><path d="M743 143H766V180H743ZM786 143H809V180H786ZM743 205H766V242H743ZM786 205H809V242H786ZM743 267H766V304H743ZM786 267H809V304H786Z"/></g></g>
+<g id="rain" clip-path="url(#rain-window)" stroke="#176f86" stroke-width="5" stroke-linecap="round"></g>
+<g fill="none" stroke="#176f86" stroke-width="8" stroke-linecap="round"><path class="draw soil-arrow" d="M113 403V541M100 525L113 541L126 525"/><path class="draw soil-arrow" d="M219 403V583M206 567L219 583L232 567"/><path class="draw soil-arrow" d="M327 403V541M314 525L327 541L340 525"/><path class="draw road-arrow" d="M561 339H867L878 359M851 353L878 359L876 333"/></g>
+<path d="M877 378V641H722" fill="none" stroke="#203936" stroke-width="29" stroke-linejoin="round"/><path d="M877 378V641H722" fill="none" stroke="#f3efe4" stroke-width="14"/><path id="pipeflow" d="M877 378V641H722" fill="none" stroke="#176f86" stroke-width="10" stroke-dasharray="16 16"/>
+<rect x="850" y="358" width="57" height="23" rx="4" fill="#203936"/><path d="M859 360V376M869 360V376M879 360V376M889 360V376M899 360V376" stroke="#f3efe4" stroke-width="3"/>
+<ellipse id="puddle" cx="861" cy="344" rx="68" ry="11" fill="#176f86"/>
+<text x="135" y="782">土の地面</text><text x="637" y="782">道路・屋根</text><g id="waterdots" fill="#176f86"></g>
+</svg>
+<p class="note">模式図：水量・速度の比率は実測値ではありません</p>
+<p id="cap1" class="caption clip" data-start=".4" data-duration="4.8" data-track-index="2">同じ雨でも、街では水が一気に集まります。</p>
+<p id="cap2" class="caption clip" data-start="5.2" data-duration="4.8" data-track-index="2">違いは、地面にしみ込む場所の少なさ。</p>
+<p id="cap3" class="caption clip" data-start="10" data-duration="5" data-track-index="2">土の地面なら、雨の一部は中へしみ込みます。</p>
+<p id="cap4" class="caption clip" data-start="15" data-duration="5.4" data-track-index="2">でも、道路や屋根では、表面を流れて排水口へ。</p>
+<p id="cap5" class="caption clip" data-start="20.4" data-duration="5.2" data-track-index="2">短い時間に水が集まると、排水が追いつかないことも。</p>
+<p id="cap6" class="caption clip" data-start="25.6" data-duration="6.4" data-track-index="2">街の雨を考える鍵は、水の量だけでなく、行き先と速さです。</p>
+<div id="progress" class="progress"></div><p class="source"><span>参考：USGS Water Science School ／ 図：オリジナル</span><span>音声合成：AivisSpeech・阿井田 茂</span></p>
+<audio id="a1" class="clip" src="assets/audio/c1.wav" data-start=".4" data-duration="3.49725" data-track-index="10"></audio><audio id="a2" class="clip" src="assets/audio/c2.wav" data-start="5.2" data-duration="3.021166667" data-track-index="10"></audio><audio id="a3" class="clip" src="assets/audio/c3.wav" data-start="10" data-duration="3.636541667" data-track-index="10"></audio><audio id="a4" class="clip" src="assets/audio/c4.wav" data-start="15" data-duration="4.379583333" data-track-index="10"></audio><audio id="a5" class="clip" src="assets/audio/c5.wav" data-start="20.4" data-duration="4.077625" data-track-index="10"></audio><audio id="a6" class="clip" src="assets/audio/c6.wav" data-start="25.6" data-duration="5.08775" data-track-index="10"></audio>
+</div><script>
+window.__timelines = window.__timelines || {};
+const tl=gsap.timeline({paused:true});const ns='http://www.w3.org/2000/svg';
+for(let i=0;i<36;i++){const line=document.createElementNS(ns,'line');const x=45+(i*73)%860;const y=40+(i*47)%250;line.setAttribute('x1',x);line.setAttribute('x2',x-14);line.setAttribute('y1',y);line.setAttribute('y2',y+30);document.getElementById('rain').appendChild(line);tl.fromTo(line,{y:-290},{y:310,duration:1.5,repeat:19,ease:'none'},(i%6)*.1);}
+tl.fromTo('#h1',{y:22,opacity:0},{y:0,opacity:1,duration:.35,ease:'power3.out'},0);
+document.querySelectorAll('.draw').forEach(p=>{const length=p.getTotalLength();p.style.strokeDasharray=length;p.style.strokeDashoffset=length;tl.to(p,{strokeDashoffset:0,duration:1,ease:'power2.out'},p.classList.contains('soil-arrow')?10.2:15.2);});
+tl.fromTo('#pipeflow',{strokeDashoffset:0,opacity:0},{strokeDashoffset:-960,opacity:1,duration:16,ease:'none'},15.2);
+tl.fromTo('#puddle',{scaleX:0,scaleY:0},{scaleX:1,scaleY:1,transformOrigin:'50% 50%',duration:4.8,ease:'power1.inOut'},20.4);
+for(let i=0;i<12;i++){const d=document.createElementNS(ns,'circle');d.setAttribute('cx',78+(i%4)*90);d.setAttribute('cy',401+Math.floor(i/4)*30);d.setAttribute('r','4');document.getElementById('waterdots').appendChild(d);tl.fromTo(d,{y:0,opacity:0},{y:210,opacity:.8,duration:3.4,repeat:4,ease:'none'},10.2+(i%3)*.2);}
+tl.fromTo('#progress',{scaleX:0},{scaleX:1,duration:32,ease:'none'},0);window.__timelines['main']=tl;
+</script></body></html>

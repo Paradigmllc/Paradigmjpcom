@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -162,6 +162,30 @@ class LocalizationSpec(BaseModel):
     reviewer: str | None = Field(default=None, max_length=200)
 
 
+class EditorialShot(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=200)
+    kind: ShotKind
+    duration_seconds: float = Field(ge=0.5, le=30, allow_inf_nan=False)
+    visual_direction: str = Field(min_length=10, max_length=2000)
+    headline: str = Field(default="", max_length=500)
+    body: str = Field(default="", max_length=2000)
+    narration: str = Field(default="", max_length=2000)
+    narration_path: str | None = Field(default=None, max_length=2000)
+    visual_points: list[Annotated[str, Field(min_length=1, max_length=80)]] = Field(default_factory=list, max_length=4)
+    source_assets: list[str] = Field(default_factory=list, max_length=20)
+    workflow_id: str | None = Field(default=None, pattern=r"^[a-z0-9][a-z0-9-]{2,79}$")
+
+
+class EditorialChapter(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{1,79}$")
+    title: str = Field(min_length=1, max_length=200)
+    shots: list[EditorialShot] = Field(min_length=1, max_length=200)
+
+
 class ClientBrief(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -169,7 +193,8 @@ class ClientBrief(BaseModel):
     objective: str = Field(min_length=10, max_length=2000)
     audience: str = Field(min_length=10, max_length=2000)
     platforms: list[str] = Field(min_length=1, max_length=12)
-    duration_seconds: float = Field(ge=5, le=600)
+    duration_seconds: float = Field(ge=5, le=1800, allow_inf_nan=False)
+    chapters: list[EditorialChapter] = Field(default_factory=list, max_length=60)
     languages: list[str] = Field(min_length=1, max_length=12)
     brand: BrandSpec
     template_id: CreativeTemplateId | Literal["auto"] = "auto"
@@ -186,6 +211,21 @@ class ClientBrief(BaseModel):
 
     @model_validator(mode="after")
     def cross_field_checks(self) -> ClientBrief:
+        if self.chapters:
+            ids = [chapter.id for chapter in self.chapters]
+            if len(set(ids)) != len(ids):
+                raise ValueError("章IDは重複できません。")
+            shots = [shot for chapter in self.chapters for shot in chapter.shots]
+            if len(shots) > 999:
+                raise ValueError("1作品のショット数は999件以内にしてください。")
+            if abs(sum(shot.duration_seconds for shot in shots) - self.duration_seconds) > 0.01:
+                raise ValueError("章内ショットの合計尺と完成尺を一致させてください。")
+            if len({item.language for item in self.deliverables}) != 1:
+                raise ValueError("章台本は言語ごとに別案件で制作してください。")
+            if self.audio.narration_path and any(shot.narration_path for shot in shots):
+                raise ValueError("全編音声とショット別音声は同時に指定できません。")
+        elif self.duration_seconds > 120:
+            raise ValueError("120秒を超える作品には章とショットの台本が必要です。")
         deliverable_languages = {item.language.split("-")[0] for item in self.deliverables}
         brief_languages = {item.split("-")[0] for item in self.languages}
         if not deliverable_languages.issubset(brief_languages):

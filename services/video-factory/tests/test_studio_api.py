@@ -148,6 +148,83 @@ def test_delivered_project_cannot_be_revised_or_rerendered(
 
     assert revision.status_code == 409
     assert rerender.status_code == 409
+
+
+def test_creative_revision_preserves_engine_contract_and_clears_stale_voice(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, example_brief: ClientBrief,
+) -> None:
+    workspace = tmp_path / "workspace"
+    project_id = _create_project(workspace, example_brief)
+    manifest_path = workspace / "projects" / project_id / "shot-manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["metadata"]["planning_mode"] = "authored_chapters"
+    manifest["shots"][0]["metadata"] = {
+        "prompt": "Old direction", "narration": "Old voice", "narration_path": "/old.wav",
+        "workflow_id": "approved-workflow", "engine_profile_revision": "pinned",
+    }
+    manifest_path.write_text(json.dumps(manifest))
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "factory-test-key")
+    client = TestClient(app)
+    response = client.patch(
+        f"/v1/projects/{project_id}/shots/shot-001", headers=_headers(),
+        json={"language": example_brief.deliverables[0].language, "prompt": "Restrained steam",
+              "narration": "New voice", "reviewer": "Named Producer"},
+    )
+    assert response.status_code == 200
+    assert response.json()["shot"]["metadata"] == {
+        "prompt": "Restrained steam", "narration": "New voice", "narration_path": None,
+        "workflow_id": "approved-workflow", "engine_profile_revision": "pinned",
+    }
+    assert response.json()["revision"]["patch"]["prompt"] == "Restrained steam"
+    assert response.json()["revision"]["patch"]["narration_path"] is None
+    project = client.get(f"/v1/projects/{project_id}", headers=_headers()).json()
+    assert project["revisions"][0]["patch"]["narration"] == "New voice"
+    assert project["state"]["status"] == "production"
+
+
+@pytest.mark.parametrize("patch", [
+    {"prompt": " "}, {"reviewer": " "}, {"metadata": {"workflow_id": "unapproved"}},
+    {"narration": "Not an authored project"},
+])
+def test_invalid_creative_patch_leaves_manifest_unchanged(
+    patch: dict[str, object], monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+    example_brief: ClientBrief,
+) -> None:
+    workspace = tmp_path / "workspace"
+    project_id = _create_project(workspace, example_brief)
+    manifest_path = workspace / "projects" / project_id / "shot-manifest.json"
+    previous = manifest_path.read_bytes()
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "factory-test-key")
+    response = TestClient(app).patch(
+        f"/v1/projects/{project_id}/shots/shot-001", headers=_headers(),
+        json={"reviewer": "Named Producer", **patch},
+    )
+    assert response.status_code == 422
+    assert manifest_path.read_bytes() == previous
+
+
+def test_active_project_rejects_revision_before_manifest_write(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, example_brief: ClientBrief,
+) -> None:
+    workspace = tmp_path / "workspace"
+    project_id = _create_project(workspace, example_brief)
+    manifest_path = workspace / "projects" / project_id / "shot-manifest.json"
+    previous = manifest_path.read_bytes()
+    monkeypatch.setenv("VIDEO_FACTORY_WORKSPACE", str(workspace))
+    monkeypatch.setenv("VIDEO_FACTORY_API_KEY", "factory-test-key")
+
+    def reject(*_args: object) -> None:
+        raise ValueError("生成中")
+
+    monkeypatch.setattr(studio_api, "require_project_idle", reject)
+    response = TestClient(app).patch(
+        f"/v1/projects/{project_id}/shots/shot-001", headers=_headers(),
+        json={"reviewer": "Named Producer", "headline": "Cannot race the render"},
+    )
+    assert response.status_code == 409
+    assert manifest_path.read_bytes() == previous
     manifest = json.loads(
         (workspace / "projects" / project_id / "shot-manifest.json").read_text(
             encoding="utf-8"

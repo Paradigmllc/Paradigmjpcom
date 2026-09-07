@@ -116,6 +116,15 @@ def _adopt_connection(settings: Settings, instance: dict[str, Any]) -> None:
     )
 
 
+def _confirmed_stopped(instance: dict[str, Any]) -> bool:
+    # Loading, frozen, offline and exited-with-restart-intent are NOT stop evidence.
+    return (
+        instance.get("actual_status") in {"stopped", "exited"}
+        and intended_status(instance) == "stopped"
+        and instance.get("cur_state") == "stopped"
+    )
+
+
 async def ensure_gpu_ready(
     settings: Settings,
     *,
@@ -188,6 +197,7 @@ async def ensure_gpu_ready(
                                 worker = await _oss_worker_status(settings)
                                 _assert_worker_profiles(worker, required_oss_profiles)
                             except (httpx.HTTPError, ValueError) as error:
+                                worker = None
                                 last_detail = f"Managed OSS worker is starting: {error}"
                         if proxy.get("ready") is True and (
                             not required_oss_profiles or worker is not None
@@ -317,7 +327,7 @@ async def release_gpu_if_idle(
             instance = find_managed_instance(settings, instances)
             managed_id = instance_id(instance)
             price = hourly_price(instance)
-            if instance_status(instance) != "running":
+            if _confirmed_stopped(instance):
                 return write_lifecycle_state(
                     settings,
                     phase="stopped",
@@ -351,7 +361,7 @@ async def release_gpu_if_idle(
             while time.monotonic() < deadline:
                 instances = await _instances(settings)
                 instance = find_managed_instance(settings, instances)
-                if instance_status(instance) != "running":
+                if _confirmed_stopped(instance):
                     state = write_lifecycle_state(
                         settings,
                         phase="stopped",
@@ -375,8 +385,8 @@ async def release_gpu_if_idle(
                     )
                     return state
                 await asyncio.sleep(settings.gpu_poll_seconds)
-            raise TimeoutError(f"Managed GPU {managed_id} remained running after the stop request")
-    except (VastAPIError, OSError, RuntimeError, TimeoutError, ValueError) as error:
+            raise TimeoutError(f"Managed GPU {managed_id}: provider stop confirmation was not received")
+    except (VastAPIError, httpx.HTTPError, OSError, RuntimeError, TimeoutError, ValueError) as error:
         state = write_lifecycle_state(
             settings,
             phase="error",

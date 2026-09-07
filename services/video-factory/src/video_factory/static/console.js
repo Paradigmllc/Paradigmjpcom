@@ -6,7 +6,6 @@ const state = {
   activeProjectId: null,
   selectedTemplate: sessionStorage.getItem("videoFactoryTemplateHash") || "",
   previewObjectUrl: null,
-  projectPoll: null,
 }
 
 const $ = (selector, root = document) => root.querySelector(selector)
@@ -51,9 +50,31 @@ async function api(path, options = {}) {
     const detail = typeof body === "object" && body
       ? body.detail || body.error
       : body
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail))
+    throw new Error(formatApiError(detail))
   }
   return body
+}
+
+function formatApiError(detail) {
+  if (typeof detail === "string") return detail
+  if (!Array.isArray(detail)) return "処理できませんでした。入力内容または接続状態を確認してください。"
+  const labels = { audience: "ターゲット", objective: "目的・訴求", project_name: "案件名",
+    duration_seconds: "完成尺", chapters: "章台本", shots: "ショット", title: "タイトル",
+    visual_direction: "映像の指示", narration: "読み上げ原稿", visual_points: "画面の要点",
+    languages: "言語", deliverables: "納品形式", approver: "承認者", email: "メール" }
+  return detail.map((item) => {
+    const field = (item.loc || []).filter((part) => part !== "body")
+      .map((part) => typeof part === "number" ? `${part + 1}番目` : labels[part] || part).join(" / ")
+    const context = item.ctx || {}
+    const message = item.type === "string_too_short" ? `${context.min_length}文字以上で入力してください。`
+      : item.type === "string_too_long" ? `${context.max_length}文字以内で入力してください。`
+      : item.type === "missing" ? "必須項目です。"
+      : item.type === "greater_than_equal" ? `${context.ge}以上にしてください。`
+      : item.type === "less_than_equal" ? `${context.le}以下にしてください。`
+      : item.type === "value_error" ? String(item.msg).replace(/^Value error, /, "")
+      : "形式または選択値を確認してください。"
+    return `${field || "入力内容"}: ${message}`
+  }).join("\n")
 }
 
 function setView(name) {
@@ -91,6 +112,7 @@ function setConnection(connected) {
     ? "API応答正常"
     : "API接続が必要"
   $("#auth-panel").classList.toggle("hidden", connected)
+  if (!connected) $("#dashboard-readiness").innerHTML = '<div class="empty compact">未接続 — 現在の実行条件は確認できません。</div>'
 }
 
 function escapeHtml(value) {
@@ -203,11 +225,15 @@ async function loadBootstrap() {
   }
   if (window.loadStudioReadiness) void window.loadStudioReadiness()
   await loadProjects(true)
-  if (!state.projectPoll) {
-    state.projectPoll = setInterval(
-      () => state.connected && loadProjects(true),
-      15000,
-    )
+}
+
+async function refreshConsole() {
+  try {
+    await loadBootstrap()
+  } catch (error) {
+    console.error("[video-factory-console] refresh failed", error)
+    setConnection(false)
+    toast(error.message || "現在の接続状態を取得できませんでした", "error")
   }
 }
 
@@ -348,10 +374,10 @@ function wireEvents() {
     if (event.key === "Enter") void connect()
   })
   $("#refresh-all").addEventListener("click", () => {
-    void loadBootstrap().catch((error) => toast(error.message, "error"))
+    void refreshConsole()
   })
   $("#refresh-health").addEventListener("click", () => {
-    void loadBootstrap().catch((error) => toast(error.message, "error"))
+    void refreshConsole()
   })
   $("#refresh-projects").addEventListener("click", () => void loadProjects())
   $("#video-form").addEventListener("submit", submitVideo)

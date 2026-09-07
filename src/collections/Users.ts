@@ -22,6 +22,9 @@ export const Users: CollectionConfig = {
     create: isAdmin,
     update: isSelfOrAdmin,
     delete: isAdmin,
+    // Payload's default unlock access accepts any authenticated user.
+    // Keep lockout recovery restricted to administrators, including the CMS UI.
+    unlock: isAdmin,
     admin: ({ req }) => Boolean(req.user),
   },
   fields: [

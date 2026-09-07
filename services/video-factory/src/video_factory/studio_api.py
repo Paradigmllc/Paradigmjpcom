@@ -11,29 +11,18 @@ from .console_api import require_console_api_key
 from .creative_templates import creative_template, template_catalog_payload
 from .gpu_lifecycle import run_lifecycle
 from .io import write_json, write_model
-from .local_jobs import submit_local_job
-from .models import ClientBrief, PipelineResult, ProjectStatus, Shot, ShotManifest
+from .job_inputs import submission_guard
+from .local_jobs import require_project_idle, submit_local_job
+from .models import ClientBrief, PipelineResult, ProjectStatus, ShotManifest
 from .operator_events import emit_operator_event
 from .pipeline import production_flow
 from .settings import Settings
+from .shot_revision import ShotRevisionRequest, replace_shot
 from .state import load_project_state, transition_project_state
 from .studio_readiness import build_studio_readiness, preflight_studio_brief
 from .workspace import ProjectWorkspace
 
 router = APIRouter()
-
-
-class ShotRevisionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    language: str = Field(default="ja", pattern=r"^[a-z]{2}(?:-[A-Z]{2})?$")
-    headline: str | None = Field(default=None, max_length=500)
-    body: str | None = Field(default=None, max_length=2000)
-    template_id: str | None = Field(
-        default=None,
-        pattern=r"^[a-z0-9][a-z0-9-]{2,79}$",
-    )
-    reviewer: str = Field(min_length=2, max_length=200)
 
 
 class RerenderRequest(BaseModel):
@@ -60,20 +49,6 @@ def _manifest(workspace: ProjectWorkspace) -> ShotManifest:
         )
     except (OSError, ValueError) as error:
         raise HTTPException(status_code=422, detail=f"Project manifest is invalid: {error}") from error
-
-
-def _replace_shot(shots: list[Shot], shot_id: str, updates: dict[str, object]) -> list[Shot]:
-    found = False
-    revised: list[Shot] = []
-    for shot in shots:
-        if shot.id == shot_id:
-            found = True
-            revised.append(shot.model_copy(deep=True, update=updates))
-        else:
-            revised.append(shot)
-    if not found:
-        raise HTTPException(status_code=404, detail="Shot not found")
-    return revised
 
 
 def _editable_project_status(workspace: ProjectWorkspace) -> ProjectStatus:
@@ -172,12 +147,29 @@ def revise_project_shot(
     request: ShotRevisionRequest,
 ) -> dict[str, object]:
     settings = Settings.from_env()
+    with submission_guard(settings):
+        try:
+            require_project_idle(settings, project_id)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return _save_revision(settings, project_id, shot_id, request)
+
+
+def _save_revision(
+    settings: Settings, project_id: str, shot_id: str, request: ShotRevisionRequest,
+) -> dict[str, object]:
     workspace = _workspace(settings, project_id)
     editable_status = _editable_project_status(workspace)
     manifest = _manifest(workspace)
     updates = request.model_dump(exclude_none=True, exclude={"language", "reviewer"})
     if not updates:
         raise HTTPException(status_code=422, detail="At least one shot field must be changed")
+    if "narration" in updates or "narration_path" in updates:
+        if manifest.metadata.get("planning_mode") != "authored_chapters":
+            raise HTTPException(status_code=422, detail="音声修正には章台本のプロジェクトが必要です。")
+        if (manifest.audio.narration_path and manifest.audio.narration_path !=
+                manifest.metadata.get("editorial_narration_path")):
+            raise HTTPException(status_code=422, detail="全編音源を使用中です。台本側で全編音源を差し替えてください。")
     if request.template_id:
         try:
             selected_template = creative_template(request.template_id)
@@ -187,9 +179,11 @@ def revise_project_shot(
 
     language = request.language.split("-")[0]
     primary_language = manifest.primary_deliverable.language.split("-")[0]
+    if language != primary_language and ("narration" in updates or "narration_path" in updates):
+        raise HTTPException(status_code=422, detail="言語別音声の再構成は未対応です。主言語の章台本を修正してください。")
     manifest_updates: dict[str, object]
     if language == primary_language:
-        manifest_updates = {"shots": _replace_shot(manifest.shots, shot_id, updates)}
+        manifest_updates = {"shots": replace_shot(manifest.shots, shot_id, updates)}
     else:
         localized_key = next(
             (key for key in manifest.localized_shots if key.split("-")[0] == language),
@@ -198,9 +192,13 @@ def revise_project_shot(
         if localized_key is None:
             raise HTTPException(status_code=404, detail="Localized storyboard not found")
         localized = dict(manifest.localized_shots)
-        localized[localized_key] = _replace_shot(localized[localized_key], shot_id, updates)
+        localized[localized_key] = replace_shot(localized[localized_key], shot_id, updates)
         manifest_updates = {"localized_shots": localized}
-    revised_manifest = manifest.model_copy(deep=True, update=manifest_updates)
+    revised_manifest = ShotManifest.model_validate({**manifest.model_dump(), **manifest_updates})
+    revised_shot = next(shot for shot in revised_manifest.shots_for_language(request.language)
+                        if shot.id == shot_id)
+    if "narration" in updates and revised_shot.metadata.get("narration_path") is None:
+        updates["narration_path"] = None
     write_model(workspace.root / "shot-manifest.json", revised_manifest)
     _return_to_production(workspace, expected=editable_status)
 
@@ -234,11 +232,7 @@ def revise_project_shot(
     return {
         "ok": True,
         "revision": revision,
-        "shot": next(
-            shot.model_dump(mode="json")
-            for shot in revised_manifest.shots_for_language(request.language)
-            if shot.id == shot_id
-        ),
+        "shot": revised_shot.model_dump(mode="json"),
     }
 
 
@@ -272,14 +266,17 @@ def rerender_project(project_id: str, request: RerenderRequest) -> dict[str, obj
         )
         return {"ok": True, "accepted": False, "result": result.model_dump(mode="json")}
 
-    job = submit_local_job(
-        settings,
-        brief_path=brief_path,
-        dry_run=False,
-        planner_provider="deterministic",
-        auto_approve=False,
-        delivery_target="local",
-        manifest_path=manifest_path,
-        rerender_shot_ids=request.shot_ids,
-    )
+    try:
+        job = submit_local_job(
+            settings,
+            brief_path=brief_path,
+            dry_run=False,
+            planner_provider="deterministic",
+            auto_approve=False,
+            delivery_target="local",
+            manifest_path=manifest_path,
+            rerender_shot_ids=request.shot_ids,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     return {"ok": True, "accepted": True, "run_id": job.run_id, "backend": "local"}

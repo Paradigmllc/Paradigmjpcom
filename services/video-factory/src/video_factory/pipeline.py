@@ -7,6 +7,7 @@ from .adapters.base import EngineContext
 from .adapters.registry import AdapterRegistry
 from .compositor import compose_master
 from .delivery import deliver_project
+from .editorial_audio import finish_editorial_media, prepare_editorial_audio
 from .engine_profiles import (
     load_engine_profile_catalog,
     manifest_requires_managed_gpu,
@@ -16,11 +17,9 @@ from .finalization import finalize_project
 from .gpu_lifecycle import ensure_gpu_ready, release_gpu_if_idle, run_lifecycle
 from .gpu_lifecycle_state import GpuLease, acquire_gpu_lease
 from .io import load_brief, write_json, write_model
-from .media import finish_master_media
 from .models import (
     ClientBrief,
     DeliverableSpec,
-    EngineOutput,
     PipelineResult,
     ReviewStage,
     ReviewStatus,
@@ -34,9 +33,11 @@ from .qa import run_technical_qa
 from .review import approve_review, create_pending_review
 from .router import route_manifest
 from .settings import Settings
+from .shot_execution import execute_shots, preflight_shot_reuse, validate_rerender_selection
 from .state import initialize_project_state, transition_project_state
 from .studio_events import emit_studio_project_started, emit_studio_qa_completed
 from .validation import validate_brief
+from .workflow_duration import preflight_workflow_durations
 from .workspace import ProjectWorkspace, slugify
 
 
@@ -59,12 +60,13 @@ def _resolve_service_root() -> Path:
 SERVICE_ROOT = _resolve_service_root()
 
 
-def _manifest_profile_ids(manifest: ShotManifest) -> list[str]:
+def _manifest_profile_ids(manifest: ShotManifest, shot_ids: set[str] | None = None) -> list[str]:
     return sorted(
         {
             profile_id
             for shots in [manifest.shots, *manifest.localized_shots.values()]
             for shot in shots
+            if shot_ids is None or shot.id in shot_ids
             if (profile_id := str(shot.metadata.get("engine_profile_id") or "").strip())
         }
     )
@@ -80,9 +82,10 @@ def _emit_profile_events(
     state: str,
     progress: int,
     run_id: str | None,
+    shot_ids: set[str] | None = None,
     error_message: str | None = None,
 ) -> None:
-    for profile_id in _manifest_profile_ids(manifest):
+    for profile_id in _manifest_profile_ids(manifest, shot_ids):
         run_lifecycle(
             emit_operator_event(
                 settings,
@@ -185,30 +188,7 @@ def _production_flow_impl(
             dry_run=dry_run,
             namespace=deliverable.name,
         )
-        outputs = []
-        for shot in shots:
-            if shot.engine is None:
-                raise RuntimeError(f"Shot was not routed: {deliverable.name}/{shot.id}")
-            adapter = registry.get(shot.engine)
-            cached_path = adapter.output_path(shot, context)
-            if (
-                rerender_shot_ids is not None
-                and shot.id not in rerender_shot_ids
-                and cached_path.is_file()
-            ):
-                outputs.append(
-                    EngineOutput(
-                        shot_id=shot.id,
-                        engine=shot.engine,
-                        status="dry_run" if dry_run else "completed",
-                        media_path=str(cached_path),
-                        provenance={"cache": "existing-shot"},
-                        warnings=[],
-                        elapsed_seconds=0,
-                    )
-                )
-            else:
-                outputs.append(adapter.run(shot, context))
+        outputs = execute_shots(shots, context, registry, SERVICE_ROOT, rerender_shot_ids)
         outputs_by_deliverable[deliverable.name] = [
             output.model_dump(mode="json") for output in outputs
         ]
@@ -241,7 +221,7 @@ def _production_flow_impl(
             if is_primary
             else workspace.master / f"captions-{deliverable.name}.vtt"
         )
-        caption_file = finish_master_media(
+        caption_file = finish_editorial_media(
             master_path,
             manifest,
             shots,
@@ -397,19 +377,28 @@ def production_flow(
         manifest = route_task(manifest, settings, dry_run)
     if dry_run and not manifest_path:
         manifest = _dry_run_manifest(manifest)
+    selected_shots = validate_rerender_selection(manifest, rerender_shot_ids)
     profile_catalog = load_engine_profile_catalog(settings.engine_profile_catalog_path)
     requires_managed_gpu = not dry_run and manifest_requires_managed_gpu(
         manifest,
         profile_catalog,
+        selected_shots,
     )
-    required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog)
+    required_oss_profiles = required_managed_oss_profiles(manifest, profile_catalog, selected_shots)
     gpu_lease: GpuLease | None = None
     try:
+        preflight_shot_reuse(manifest, settings, SERVICE_ROOT, rerender_shot_ids, dry_run=dry_run)
+        preflight_workflow_durations(manifest, settings, dry_run=dry_run, shot_ids=selected_shots)
+        manifest = prepare_editorial_audio(
+            manifest, ProjectWorkspace.create(settings.workspace, manifest.project_id).root,
+            dry_run=dry_run,
+        )
         if not dry_run:
             _emit_profile_events(
                 settings,
                 manifest,
                 event_type="profile_selected",
+                shot_ids=selected_shots,
                 title="OSSエンジンを選択",
                 message="監査済みプロファイルを制作runへ固定しました。",
                 state="selected",
@@ -438,6 +427,7 @@ def production_flow(
                 settings,
                 manifest,
                 event_type="profile_started",
+                shot_ids=selected_shots,
                 title="OSSエンジン処理を開始",
                 message="必要なworkerまたはComfyUI workflowの実行を開始しました。",
                 state="running",
@@ -454,7 +444,7 @@ def production_flow(
                 auto_approve=auto_approve,
                 reviewer=reviewer,
                 delivery_target=delivery_target,
-                rerender_shot_ids=set(rerender_shot_ids) if rerender_shot_ids else None,
+                rerender_shot_ids=selected_shots,
             )
         except Exception as error:
             if not dry_run:
@@ -462,6 +452,7 @@ def production_flow(
                     settings,
                     manifest,
                     event_type="profile_failed",
+                    shot_ids=selected_shots,
                     title="OSSエンジン処理に失敗",
                     message="制作runを安全停止しました。Consoleで失敗理由を確認してください。",
                     state="failed",
@@ -475,6 +466,7 @@ def production_flow(
                 settings,
                 manifest,
                 event_type="profile_completed",
+                shot_ids=selected_shots,
                 title="OSSエンジン処理が完了",
                 message="生成素材の処理が完了し、QA・承認工程へ進みました。",
                 state="completed",

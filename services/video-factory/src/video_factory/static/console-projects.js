@@ -14,15 +14,22 @@ async function fetchArtifactBlob(url) {
   return response.blob()
 }
 
+let previewSequence = 0
+
 async function showPreview(url) {
-  if (state.previewObjectUrl) URL.revokeObjectURL(state.previewObjectUrl)
+  const sequence = ++previewSequence
+  const status = $("#project-preview-status")
+  if (status) status.textContent = "動画を読み込んでいます…"
   const blob = await fetchArtifactBlob(url)
+  if (sequence !== previewSequence) return
+  if (state.previewObjectUrl) URL.revokeObjectURL(state.previewObjectUrl)
   state.previewObjectUrl = URL.createObjectURL(blob)
   const video = $("#project-preview")
   if (video) {
     video.src = state.previewObjectUrl
     video.load()
   }
+  if (status) status.textContent = "表示した動画の品質・承認状態を確認してください。全編マスターも自動承認されません。"
 }
 
 async function downloadArtifact(url, name) {
@@ -128,6 +135,7 @@ function wireProjectActions() {
 
 async function loadProjectDetail(projectId) {
   if (!projectId) return
+  ++previewSequence
   const target = $("#project-detail")
   target.innerHTML = '<div class="empty tall">案件を読み込んでいます。</div>'
   try {
@@ -139,6 +147,7 @@ async function loadProjectDetail(projectId) {
     const videos = artifacts.filter((item) => {
       return String(item.media_type).startsWith("video/")
     })
+    const preferred = videos.find((item) => item.path === "master/master.mp4") || videos[0]
     const status = currentStatus(detail)
     target.innerHTML = `
       <div class="project-detail-header">
@@ -147,7 +156,7 @@ async function loadProjectDetail(projectId) {
         <div class="project-meta">${statusBadge(status)}<span class="badge neutral">${escapeHtml(detail.manifest?.duration_seconds || "—")}s</span><span class="badge neutral">${artifacts.length} files</span></div>
       </div>
       ${videos.length
-        ? '<div class="preview-wrap"><video id="project-preview" controls playsinline></video></div>'
+        ? `<div class="preview-wrap"><label class="field"><span>確認する動画</span><select id="project-preview-choice" aria-label="確認する動画">${videos.map((item, index) => `<option value="${index}"${item === preferred ? " selected" : ""}>${item.path.startsWith("master/") ? "全編マスター" : "素材・その他"} — ${escapeHtml(item.path)}</option>`).join("")}</select></label><p id="project-preview-status" role="status" aria-live="polite"></p><video id="project-preview" controls playsinline></video></div>`
         : '<div class="empty compact">プレビュー動画はまだありません。</div>'}
       ${reviewControls(status)}
       ${window.studioProjectToolsHtml ? window.studioProjectToolsHtml(detail) : ""}
@@ -157,7 +166,19 @@ async function loadProjectDetail(projectId) {
           ? artifacts.map((item) => `<div class="artifact-row"><span><strong>${escapeHtml(item.path)}</strong><small>${escapeHtml(item.media_type)} · ${formatBytes(item.size)}</small></span><button data-download-url="${escapeHtml(item.url)}" data-download-name="${escapeHtml(item.name)}" type="button">保存</button></div>`).join("")
           : '<div class="empty compact">成果物はありません。</div>'}
       </div>`
-    if (videos.length) await showPreview(videos.at(-1).url)
+    if (preferred) {
+      $("#project-preview-choice").addEventListener("change", async (event) => {
+        try {
+          await showPreview(videos[Number(event.target.value)].url)
+        } catch (error) {
+          console.error("[video-factory-console] preview failed", error)
+          const status = $("#project-preview-status")
+          if (status) status.textContent = "動画を取得できませんでした。別の動画を選ぶか、再読み込みしてください。"
+          toast(error.message || "動画を取得できませんでした", "error")
+        }
+      })
+      await showPreview(preferred.url)
+    }
     $$('[data-download-url]', target).forEach((button) => {
       button.addEventListener("click", () => {
         void downloadArtifact(

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ project_name }} — {{ eyebrow }}</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body { color: {{ brand.text_color }}; font-family: {{ brand.font_family | tojson }}, sans-serif; }
+    #stage { width: {{ width }}px; height: {{ height }}px; position: relative; overflow: hidden; }
+    .fill { position: absolute; inset: 0; background: {{ brand.primary_color }}; }
+    .composition { position: absolute; inset: 0; padding: 6% 7% 15%; display: flex; flex-direction: column; gap: {{ (height * 0.045)|round }}px; }
+    .chapter { display: flex; justify-content: space-between; gap: 5%; font-size: {{ (width * 0.018)|round }}px; letter-spacing: .06em; }
+    .chapter span { display: block; }
+    .chapter .label { animation: reveal .55s .05s cubic-bezier(.16,1,.3,1) both; }
+    .chapter .brand { opacity: .8; }
+    .rule { height: {{ (height * 0.006)|round }}px; background: {{ brand.accent_color }}; transform-origin: left; animation: draw .7s .1s cubic-bezier(.65,0,.35,1) both; }
+    .main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: {{ (height * 0.04)|round }}px; }
+    h1 { margin: 0; max-width: 95%; font-size: {{ (width * (0.06 if width > height else 0.084))|round }}px; line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; animation: title .65s .12s cubic-bezier(.16,1,.3,1) both; }
+    p { margin: 0; max-width: 92%; font-size: {{ (width * (0.027 if width > height else 0.038))|round }}px; line-height: 1.5; animation: reveal .65s .4s cubic-bezier(.22,1,.36,1) both; }
+    .points { display: flex; gap: 4%; margin-top: 2%; }
+    .point { flex: 1; min-width: 0; border-top: {{ (height * 0.003)|round }}px solid {{ brand.accent_color }}; padding-top: 3%; animation: point .6s calc(.7s + var(--i) * .35s) cubic-bezier(.2,.7,.2,1) both; }
+    .point span { display: block; font-size: {{ (width * 0.018)|round }}px; margin-bottom: 8%; color: {{ brand.text_color }}; }
+    .point strong { display: block; font-size: {{ (width * (0.03 if width > height else 0.045))|round }}px; line-height: 1.4; overflow-wrap: anywhere; }
+    {% if width <= height %}
+    .points { flex-direction: column; gap: {{ (height * 0.018)|round }}px; }
+    .point { display: flex; gap: 6%; padding-top: 3%; }
+    .point span { margin: 0; font-size: {{ (width * 0.028)|round }}px; }
+    {% endif %}
+    @keyframes reveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes title { from { opacity: 0; transform: translateX(-35px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes draw { from { transform: scaleX(.02); } to { transform: scaleX(1); } }
+    @keyframes point { from { opacity: 0; transform: translateY(25px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  </style>
+</head>
+<body>
+  <div id="stage" data-composition-id="{{ composition_id }}" data-no-timeline data-start="0" data-duration="{{ duration_seconds }}" data-width="{{ width }}" data-height="{{ height }}">
+    <div class="fill"></div>
+    <section class="clip composition" data-start="0" data-duration="{{ duration_seconds }}" data-track-index="1">
+      <div class="chapter"><span class="label">{{ chapter_title }}</span><span class="brand">{{ brand.name }}</span></div>
+      <div class="rule"></div>
+      <div class="main">
+        <h1>{{ headline }}</h1>
+        {% if body %}<p>{{ body }}</p>{% endif %}
+        {% if visual_points %}<div class="points">{% for point in visual_points %}<div class="point" style="--i: {{ loop.index0 }}"><span>{{ '%02d'|format(loop.index) }}</span><strong>{{ point }}</strong></div>{% endfor %}</div>{% endif %}
+      </div>
+    </section>
+  </div>
+</body>
+</html>

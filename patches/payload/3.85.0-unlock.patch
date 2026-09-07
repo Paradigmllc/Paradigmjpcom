@@ -1,0 +1,24 @@
+diff --git a/dist/auth/operations/unlock.js b/dist/auth/operations/unlock.js
+--- a/dist/auth/operations/unlock.js
++++ b/dist/auth/operations/unlock.js
+@@ -40,7 +40,7 @@
+         if (!overrideAccess) {
+             const accessResult = await executeAccess({
+                 req
+-            }, collectionConfig.access.unlock);
++            }, collectionConfig.access.unlock ?? (() => false));
+             if (accessResult && typeof accessResult === 'object') {
+                 whereConstraint = accessResult;
+             }
+@@ -100,4 +100,3 @@
+     }
+ };
+ 
+-//# sourceMappingURL=unlock.js.map
+\ No newline at end of file
+diff --git a/dist/auth/operations/.npmignore b/dist/auth/operations/.npmignore
+new file mode 100644
+--- /dev/null
++++ b/dist/auth/operations/.npmignore
+@@ -0,0 +1 @@
++unlock.js.map

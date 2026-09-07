@@ -31,6 +31,10 @@ def test_vast_template_and_offer_search_request_shapes() -> None:
         requests.append(request)
         assert request.headers["Authorization"] == "Bearer test-key"
         if request.url.path.endswith("/v0/template/"):
+            assert "order_by" not in request.url.params
+            assert json.loads(request.url.params["select_filters"]) == {
+                "recommended": {"eq": True}, "use_ssh": {"eq": True}
+            }
             return httpx.Response(
                 200,
                 json={
@@ -88,6 +92,20 @@ def test_vast_template_and_offer_search_request_shapes() -> None:
     assert [item["hash_id"] for item in templates] == ["template-1"]
     assert offers[0]["id"] == 123
     assert len(requests) == 2
+
+
+def test_vast_template_sorting_happens_before_limit() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert "order_by" not in request.url.params
+        return httpx.Response(200, json={"templates": [
+            {"name": "ComfyUI A", "count_created": 2},
+            {"name": "ComfyUI B", "count_created": 100},
+            {"name": "ComfyUI C"},
+        ]})
+
+    client = VastClient(_config(), transport=httpx.MockTransport(handler))
+    templates = asyncio.run(client.search_templates(query="ComfyUI", limit=1))
+    assert [item["name"] for item in templates] == ["ComfyUI B"]
 
 
 def test_vast_instance_lifecycle() -> None:

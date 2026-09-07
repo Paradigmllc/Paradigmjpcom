@@ -10,9 +10,16 @@ from urllib.parse import urlencode
 import httpx
 
 from ..io import file_sha256
-from ..media import MediaError, create_placeholder_clip, normalize_clip, source_fidelity_score
+from ..media import (
+    MediaError,
+    create_placeholder_clip,
+    normalize_clip,
+    source_fidelity_score,
+)
 from ..model_registry import assert_model_bindings_approved
 from ..models import Engine, EngineOutput, Shot
+from ..source_coverage import probe_motion_source, require_motion_coverage
+from ..workflow_duration import require_workflow_duration
 from ..workflow_registry import (
     WorkflowContract,
     load_api_workflow,
@@ -23,6 +30,33 @@ from .base import EngineAdapter, EngineContext
 
 class ComfyUIError(RuntimeError):
     pass
+
+
+def require_successful_history(history: dict[str, Any]) -> None:
+    """Fail before consuming partial outputs; never echo model inputs/tracebacks."""
+    status = history.get("status")
+    if not isinstance(status, dict):
+        return  # Older supported endpoints omit status; preserve their output contract.
+    messages = status.get("messages", [])
+    if isinstance(messages, list):
+        for message in messages:
+            if not isinstance(message, (list, tuple)) or not message:
+                continue
+            if message[0] == "execution_interrupted":
+                raise ComfyUIError("ComfyUI generation interrupted; partial output rejected")
+            if message[0] == "execution_error":
+                data = message[1] if len(message) > 1 and isinstance(message[1], dict) else {}
+                # Only a fixed category leaves this boundary, not exception text or inputs.
+                exception_type = str(data.get("exception_type", ""))
+                category = "GPU memory exhausted" if exception_type in {
+                    "torch.OutOfMemoryError", "torch.cuda.OutOfMemoryError",
+                    "comfy.model_management.OOM_EXCEPTION",
+                } else "node execution failed"
+                raise ComfyUIError(f"ComfyUI {category}; partial output rejected")
+    if status.get("status_str") == "error":
+        raise ComfyUIError("ComfyUI generation failed; partial output rejected")
+    if status.get("completed") is True and not find_outputs(history):
+        raise ComfyUIError("ComfyUI completed without downloadable output")
 
 
 def replace_placeholders(value: Any, bindings: dict[str, Any]) -> Any:
@@ -172,6 +206,7 @@ class ComfyUIAdapter(EngineAdapter):
             raise ComfyUIError("COMFYUI_API_KEY is required in production")
 
         workflow_path, workflow, workflow_id = _load_workflow(shot, context)
+        require_workflow_duration(workflow, shot.duration_seconds, context.deliverable.fps)
         client_id = str(uuid.uuid4())
 
         timeout = httpx.Timeout(30.0, read=60.0)
@@ -208,6 +243,7 @@ class ComfyUIAdapter(EngineAdapter):
                 payload = history_response.json()
                 if prompt_id in payload:
                     history = payload[prompt_id]
+                    require_successful_history(history)
                     if find_outputs(history):
                         break
                 time.sleep(context.settings.comfyui_poll_seconds)
@@ -235,6 +271,20 @@ class ComfyUIAdapter(EngineAdapter):
             downloaded.parent.mkdir(parents=True, exist_ok=True)
             downloaded.write_bytes(media_response.content)
 
+        native_probe = probe_motion_source(downloaded)
+        # Only video workflows need continuous motion. Image workflows remain
+        # legitimate still assets, but must not be advertised as generated video.
+        is_still = (
+            native_probe.codec in {"png", "mjpeg", "webp"}
+            and native_probe.duration_seconds == 0
+        )
+        if not is_still:
+            try:
+                require_motion_coverage(
+                    native_probe, shot.duration_seconds, context.deliverable.fps,
+                )
+            except ValueError as error:
+                raise ComfyUIError(str(error)) from error
         normalize_clip(
             downloaded,
             output,
@@ -291,6 +341,8 @@ class ComfyUIAdapter(EngineAdapter):
                 "source_fidelity_threshold": fidelity_threshold or None,
                 "workflow_sha256": file_sha256(workflow_path),
                 "source_output": item,
+                "native_media": native_probe.model_dump(mode="json"),
+                "requested_duration_seconds": shot.duration_seconds,
             },
             elapsed_seconds=time.monotonic() - started,
         )

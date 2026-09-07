@@ -260,7 +260,6 @@ class VastClient:
             params={
                 "select_filters": json.dumps(filters),
                 "select_cols": json.dumps(["*"]),
-                "order_by": "count_created",
             },
         )
         templates = payload.get("templates", []) if isinstance(payload, dict) else []
@@ -276,6 +275,9 @@ class VastClient:
                 or needle in str(item.get("image", "")).lower()
                 or needle in str(item.get("desc", "")).lower()
             ]
+        # Vast currently rejects order_by=count_created with HTTP 400 even
+        # though it is documented. Sort the returned rows locally instead.
+        results.sort(key=lambda item: float(item.get("count_created") or 0), reverse=True)
         return results[: max(1, min(limit, 100))]
 
     async def search_offers(

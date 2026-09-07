@@ -1,4 +1,20 @@
+.dashboard-overview { margin: 18px 0; }
+.chapter-editor-card, .chapter-editor-shot { border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; margin: 12px 0; min-width: 0; }
+.chapter-editor-card summary, .chapter-editor-shot summary { cursor: pointer; font-weight: 700; margin-bottom: 12px; overflow-wrap: anywhere; }
+#chapter-editor select { width: 100%; min-width: 0; margin: 8px 0; }
+#chapter-editor .button-row { flex-wrap: wrap; margin: 10px 0; }
+#chapter-editor-status { font-size: 13px; color: #475569; line-height: 1.7; }
+.dashboard-capability-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0 20px; }
+.dashboard-capability-counts > div { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+.dashboard-capability-counts span, .dashboard-capability-counts strong { display: block; }
+.dashboard-capability-counts span { color: #475569; font-size: 12px; }
+.dashboard-capability-counts strong { margin-top: 6px; font-size: 24px; }
+.dashboard-check-time { padding: 0 20px; color: #475569; font-size: 12px; line-height: 1.7; }
+.dashboard-overview .readiness-gaps li { font-size: 13px; overflow-wrap: anywhere; }
+.dashboard-next-actions { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 20px 12px; }
 @media (max-width: 760px) {
+  .dashboard-capability-counts { grid-template-columns: 1fr; }
+  .dashboard-next-actions .button { width: 100%; white-space: normal; }
   html,
   body {
     max-width: 100%;

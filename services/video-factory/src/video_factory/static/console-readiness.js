@@ -1,4 +1,5 @@
 (() => {
+  let latestRequest = 0
   const kindLabels = {
     text_motion: "文字・モーション",
     ui_capture: "Web・UI収録",
@@ -13,7 +14,7 @@
   }
 
   function stateLabel(value) {
-    return { ready: "本番可", conditional: "条件付き", blocked: "未対応" }[value] || value
+    return { ready: "実行条件OK", conditional: "条件付き", blocked: "要対応" }[value] || value
   }
 
   function badgeClass(value) {
@@ -21,6 +22,18 @@
   }
 
   function renderReadiness(snapshot) {
+    const counts = ["ready", "conditional", "blocked"].map((status) => ({
+      status, count: snapshot.capabilities.filter((item) => item.state === status).length,
+    }))
+    const gaps = [...new Set([
+      ...snapshot.checks.filter((item) => !item.passed).map((item) => `${item.label}: ${item.evidence}`),
+      ...snapshot.gaps,
+    ])]
+    $("#dashboard-readiness").innerHTML = `
+      <div class="dashboard-capability-counts">${counts.map((item) => `<div><span>${stateLabel(item.status)}</span><strong>${item.count}種</strong></div>`).join("")}</div>
+      <p class="dashboard-check-time">環境確認: ${escapeHtml(formatTime(snapshot.generated_at))} · 実映像の品質合格は案件ごとのレビューで確認</p>
+      <ul class="readiness-gaps">${gaps.length ? gaps.slice(0, 4).map((item) => `<li>${escapeHtml(item)}</li>`).join("") : "<li>この環境チェックで未解決項目はありません。作品の品質・権利・納品承認は別途必要です。</li>"}</ul>
+      ${gaps.length > 4 ? `<p class="dashboard-check-time">ほか ${gaps.length - 4} 件。「対応状況を詳しく見る」で確認できます。</p>` : ""}`
     const badge = $("#studio-readiness-badge")
     badge.textContent = stateLabel(snapshot.status)
     badge.className = `badge ${badgeClass(snapshot.status)}`
@@ -58,13 +71,22 @@
 
   async function loadStudioReadiness() {
     if (!state.connected) return
+    const request = ++latestRequest
+    $("#dashboard-readiness").innerHTML = '<div class="empty compact">実行条件を確認中…</div>'
     const list = $("#studio-capability-list")
     if (list) list.innerHTML = '<div class="empty">実行環境から準備度を再計算しています。</div>'
     try {
       const body = await api("/v1/studio/readiness")
+      if (request !== latestRequest || !state.connected) return
       renderReadiness(body)
     } catch (error) {
+      if (request !== latestRequest || !state.connected) return
       console.error("[video-factory-console] Studio readiness failed", error)
+      $("#dashboard-readiness").innerHTML = '<div class="empty compact">確認失敗 — 現在の対応状況は不明です。上の更新ボタンで再試行してください。</div>'
+      $("#studio-readiness-badge").textContent = "確認失敗"
+      $("#studio-readiness-badge").className = "badge bad"
+      for (const id of ["studio-readiness-score", "studio-template-count", "studio-capability-count", "studio-safe-parallel"]) $("#" + id).textContent = "—"
+      $("#studio-readiness-time").textContent = "取得失敗・以前の判定は無効"
       if (list) list.innerHTML = `<div class="empty"><strong>準備度を取得できませんでした</strong><p>${escapeHtml(error.message)}</p></div>`
       toast(error.message || "量産準備度を取得できませんでした", "error")
     }

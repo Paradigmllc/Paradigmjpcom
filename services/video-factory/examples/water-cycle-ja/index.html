@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280, height=720">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+*{box-sizing:border-box;margin:0}html,body{width:1280px;height:720px;overflow:hidden;background:#f1ebdf}
+body{font-family:"Noto Sans JP",sans-serif;color:#183a43}
+#water{width:1280px;height:720px;position:relative;overflow:hidden}
+.header{position:absolute;left:56px;top:32px;width:1168px;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:48px;font-weight:700;letter-spacing:-.035em}.eyebrow{font-size:24px;margin-bottom:6px}
+.stage-number{font-family:"IBM Plex Mono",monospace;font-size:32px;align-self:flex-start}
+#diagram{position:absolute;left:56px;top:145px;width:1168px;height:420px;overflow:hidden}
+#camera,#world{width:1168px;height:420px;transform-origin:50% 50%}
+svg{width:1168px;height:420px;display:block;overflow:hidden}
+.waterline{stroke:#f1ebdf;stroke-width:2;fill:none}.route{opacity:0;fill:none;stroke:#087f9c;stroke-width:6;stroke-linecap:round}
+.thin{stroke-width:3}.warm{stroke:#d5892e}.label{font-family:"Noto Sans JP",sans-serif;font-size:25px;font-weight:700;fill:#183a43}
+.rain{stroke:#087f9c;stroke-width:3;stroke-linecap:round}
+.caption{position:absolute;left:56px;top:598px;width:1168px;height:103px;border-top:2px solid #183a43;padding-top:14px;font-size:28px;line-height:1.43;font-weight:400}
+.subtitle{position:absolute;inset:14px 0 0}.summary{position:absolute;left:56px;top:558px;width:1168px;height:34px;font-size:24px}
+    </style>
+  </head>
+  <body>
+<main data-hf-id="hf-99pe" id="water" data-composition-id="water" data-start="0" data-width="1280" data-height="720" data-duration="64">
+ <header data-hf-id="hf-hr6f" class="header"><div data-hf-id="hf-yeow"><p data-hf-id="hf-rkzt" class="eyebrow">水の旅 / WATER CYCLE</p><h1 data-hf-id="hf-fpq4" id="headline">雨の、その前と後。</h1></div><div data-hf-id="hf-f96a" id="stage-number" class="stage-number">01 / 06</div></header>
+ <div data-hf-id="hf-1l1g" id="diagram"><div data-hf-id="hf-j2lh" id="camera" data-layout-allow-overflow=""><div data-hf-id="hf-j427" id="world">
+ <svg data-hf-id="hf-bypx" viewBox="0 0 1168 420" role="img" aria-label="海から蒸発して雲や雨となり、川と地下水を通って戻る水の循環の模式図">
+ <defs data-hf-id="hf-mh0t"><pattern data-hf-id="hf-neiw" id="soil-lines" width="24" height="16" patternUnits="userSpaceOnUse"><path data-hf-id="hf-fdpg" d="M0 15H12" stroke="#183a43" stroke-opacity=".18" stroke-width="2" /></pattern></defs>
+ <path data-hf-id="hf-aweg" d="M0 298H365L420 290L524 264L644 241L692 166L748 84L803 163L849 205L904 242L1006 223L1090 248L1168 245V420H0Z" fill="#b7a187" />
+ <path data-hf-id="hf-80b0" d="M365 298L420 290L524 264L644 241L692 166L748 84L803 163L849 205L904 242L1006 223L1090 248L1168 245V272L1090 275L1006 249L904 268L849 231L803 191L748 128L704 190L664 263L524 285L421 314L365 322Z" fill="#628674" />
+ <path data-hf-id="hf-xsct" d="M0 324H421L534 297L646 281L698 296L1168 292V420H0Z" fill="url(#soil-lines)" />
+ <path data-hf-id="hf-8eh7" d="M0 296C54 289 96 304 154 296S256 286 310 297S376 302 422 292V420H0Z" fill="#087f9c" />
+ <g data-hf-id="hf-mdkh" id="sea-waves"><path data-hf-id="hf-tryn" class="waterline" d="M12 318Q49 309 83 318T154 318T225 318T296 318T369 318" /><path data-hf-id="hf-qkmj" class="waterline" d="M30 345Q69 336 108 345T186 345T264 345T340 345" /><path data-hf-id="hf-9flo" class="waterline" d="M6 378Q43 370 80 378T154 378T228 378T302 378T376 378" /></g>
+ <g data-hf-id="hf-9jpv" id="sun"><circle data-hf-id="hf-8bog" cx="130" cy="84" r="37" fill="#d5892e" /><path data-hf-id="hf-oryu" id="sun-rays" d="M130 27V9M130 141V158M73 84H55M187 84H205M90 44L77 31M171 124L184 137M90 124L77 137M171 44L184 31" fill="none" stroke="#d5892e" stroke-width="4" /></g>
+ <g data-hf-id="hf-smcn" id="tree"><path data-hf-id="hf-0uj7" d="M978 246V184" stroke="#183a43" stroke-width="9" /><path data-hf-id="hf-124f" d="M978 209L955 186M978 220L1006 196" stroke="#183a43" stroke-width="5" /><circle data-hf-id="hf-a6sa" cx="953" cy="182" r="28" fill="#628674" /><circle data-hf-id="hf-psm9" cx="988" cy="161" r="35" fill="#628674" /><circle data-hf-id="hf-gt4g" cx="1016" cy="190" r="26" fill="#628674" /></g>
+ <g data-hf-id="hf-pdb4" id="cloud" fill="#f1ebdf" stroke="#183a43" stroke-width="3"><path data-hf-id="hf-kisk" d="M499 99C475 97 475 63 504 60C510 18 557 15 576 45C599 27 632 47 632 68C663 62 677 99 649 110H506Z" /></g>
+ <g data-hf-id="hf-242o" id="cloud-particles" fill="#087f9c"><circle data-hf-id="hf-7z56" cx="522" cy="70" r="4" /><circle data-hf-id="hf-unrs" cx="548" cy="55" r="5" /><circle data-hf-id="hf-az8f" cx="576" cy="76" r="4" /><circle data-hf-id="hf-kdjq" cx="604" cy="64" r="4" /><circle data-hf-id="hf-vbsl" cx="635" cy="88" r="5" /><circle data-hf-id="hf-o0ro" cx="547" cy="88" r="4" /><circle data-hf-id="hf-myrg" cx="592" cy="95" r="4" /></g>
+ <path data-hf-id="hf-e1s4" id="heat-route" class="route warm thin" d="M157 132Q185 177 213 237" />
+ <path data-hf-id="hf-4zae" id="evaporation-route" class="route" d="M279 269C286 212 296 175 338 137C374 104 420 83 468 80" />
+ <path data-hf-id="hf-mkec" id="rain-route" class="route thin" d="M650 121Q687 159 715 209" />
+ <path data-hf-id="hf-8h3q" id="river-route" class="route" d="M726 172Q706 207 674 235T585 268T493 291T407 313" />
+ <path data-hf-id="hf-x0go" id="ground-route" class="route" d="M864 262C859 289 848 322 821 340C745 379 600 382 446 365" />
+ <path data-hf-id="hf-1a0i" id="transpiration-route" class="route thin" d="M1016 145Q1018 84 935 64Q844 39 703 72" />
+ <g data-hf-id="hf-2c1r" id="vapour-dots" fill="#087f9c" /><g data-hf-id="hf-sj69" id="rain-drops" class="rain" />
+ <g data-hf-id="hf-462g" id="cloud-detail"><circle data-hf-id="hf-1ao3" cx="1050" cy="79" r="59" fill="#f1ebdf" stroke="#183a43" stroke-width="2" /><circle data-hf-id="hf-f51l" cx="1031" cy="65" r="10" fill="#087f9c" /><circle data-hf-id="hf-mb9g" cx="1068" cy="59" r="7" fill="#087f9c" /><circle data-hf-id="hf-9qwj" cx="1055" cy="96" r="12" fill="#087f9c" /><path data-hf-id="hf-81bd" d="M664 79H987" stroke="#183a43" stroke-width="2" stroke-dasharray="5 8" /></g>
+ <text data-hf-id="hf-z80a" class="label" x="83" y="269">海</text><text data-hf-id="hf-nven" class="label" x="732" y="298">大地</text>
+ <text data-hf-id="hf-7l3i" id="evap-label" class="label" x="280" y="204">蒸発</text><text data-hf-id="hf-medz" id="cloud-label" class="label" x="501" y="151">雲：水滴や氷の粒</text><text data-hf-id="hf-v15i" id="rain-label" class="label" x="770" y="142">雨・雪</text>
+ <text data-hf-id="hf-wv93" id="river-label" class="label" x="492" y="236">川</text><text data-hf-id="hf-ehdp" id="ground-label" class="label" x="608" y="353">地下水</text><text data-hf-id="hf-sokl" id="tree-label" class="label" x="880" y="91">蒸散</text>
+ <circle data-hf-id="hf-3d7m" id="hero-drop" cx="269" cy="52" r="11" fill="#087f9c" />
+ </svg></div></div></div>
+ <p data-hf-id="hf-1cqi" class="summary" id="process-note">海・空・大地をつなぐ、水の循環。</p>
+ <div data-hf-id="hf-ha12" class="caption" id="caption-band" data-layout-allow-caption-zone="">
+ <p data-hf-id="hf-gbqq" id="sub-01" class="subtitle clip" data-start="0.8" data-duration="7.026667" data-track-index="3">雨は、どこから来て、どこへ行くのでしょう。ひと粒の水を追うと、海と空と大地がつながって見えてきます。</p>
+ <p data-hf-id="hf-1zzl" id="sub-02" class="subtitle clip" data-start="8.526667" data-duration="9.104833" data-track-index="3">太陽の熱で、海や地面の水が蒸発します。水は気体の水蒸気になり、空気の中へ。水蒸気そのものは、目には見えません。</p>
+ <p data-hf-id="hf-ao6u" id="sub-03" class="subtitle clip" data-start="18.3315" data-duration="10.799875" data-track-index="3">空気が上昇して冷えると、水蒸気が小さな水滴や氷の粒になります。それが集まって、雲になるのです。白く見える雲は、水蒸気そのものではありません。</p>
+ <p data-hf-id="hf-r22m" id="sub-04" class="subtitle clip" data-start="29.831375" data-duration="9.89425" data-track-index="3">雲の中で粒が成長すると、雨や雪となって地上へ落ちてきます。海から出た水が、必ず陸に降るわけではなく、海に戻ることもあります。</p>
+ <p data-hf-id="hf-5jp1" id="sub-05" class="subtitle clip" data-start="40.425625" data-duration="8.861" data-track-index="3">陸に降った水の行き先は、ひとつではありません。地表を流れて川に入る水もあれば、地面にしみ込んで地下水になる水もあります。</p>
+ <p data-hf-id="hf-9l1x" id="sub-06" class="subtitle clip" data-start="49.986625" data-duration="13.354083" data-track-index="3">川や地下水を通って、海へ戻る水。植物から再び空へ出る水。場所によって、とどまる時間も違います。雨は、水が姿と場所を変えてめぐる、大きな旅の一場面なのです。</p>
+ </div>
+ <audio data-hf-id="hf-wyi4" id="voice-01" class="clip" src="assets/audio/01.wav" data-start="0.8" data-duration="7.026667" data-track-index="10" data-volume="1"></audio>
+ <audio data-hf-id="hf-yb12" id="voice-02" class="clip" src="assets/audio/02.wav" data-start="8.526667" data-duration="9.104833" data-track-index="10" data-volume="1"></audio>
+ <audio data-hf-id="hf-555r" id="voice-03" class="clip" src="assets/audio/03.wav" data-start="18.3315" data-duration="10.799875" data-track-index="10" data-volume="1"></audio>
+ <audio data-hf-id="hf-k9qt" id="voice-04" class="clip" src="assets/audio/04.wav" data-start="29.831375" data-duration="9.89425" data-track-index="10" data-volume="1"></audio>
+ <audio data-hf-id="hf-9lbx" id="voice-05" class="clip" src="assets/audio/05.wav" data-start="40.425625" data-duration="8.861" data-track-index="10" data-volume="1"></audio>
+ <audio data-hf-id="hf-8czm" id="voice-06" class="clip" src="assets/audio/06.wav" data-start="49.986625" data-duration="13.354083" data-track-index="10" data-volume="1"></audio>
+</main>
+
+    <script>
+window.__timelines=window.__timelines||{};
+const tl=gsap.timeline({paused:true}),ns="http://www.w3.org/2000/svg";
+for(let i=0;i<8;i++){
+ const dot=document.createElementNS(ns,"circle");dot.id=`vapour-${i}`;dot.setAttribute("cx",String(262+i*4));dot.setAttribute("cy","271");dot.setAttribute("r","4");document.getElementById("vapour-dots").append(dot);
+ tl.fromTo(dot,{x:0,y:0,opacity:0},{x:60,y:-106,opacity:.85,duration:2.2,ease:"power1.inOut",repeat:2,repeatDelay:.4},10+i*.17);tl.to(dot,{opacity:0,duration:.3},18);
+}
+for(let i=0;i<12;i++){
+ const drop=document.createElementNS(ns,"line");drop.id=`rain-${i}`;const x=521+(i%6)*23,y=117+Math.floor(i/6)*22;drop.setAttribute("x1",String(x));drop.setAttribute("x2",String(x-5));drop.setAttribute("y1",String(y));drop.setAttribute("y2",String(y+13));document.getElementById("rain-drops").append(drop);
+ tl.fromTo(drop,{y:0,x:0,opacity:0},{y:101,x:45,opacity:.85,duration:1.15,ease:"power1.in",repeat:6,repeatDelay:.12},30.8+(i%6)*.16);tl.to(drop,{opacity:0,duration:.3},40);
+}
+const draw=(id,at,duration)=>{const el=document.getElementById(id),length=el.getTotalLength();el.style.strokeDasharray=String(length);tl.set(el,{opacity:1},at);tl.fromTo(el,{strokeDashoffset:length},{strokeDashoffset:0,duration,ease:"none"},at);};
+draw("heat-route",8.9,1.6);draw("evaporation-route",10.2,3.3);draw("rain-route",30.1,1.2);draw("river-route",42.2,3.7);draw("ground-route",45.7,3.7);draw("transpiration-route",52.8,3.5);
+tl.fromTo("#hero-drop",{y:0,scale:.8},{y:237,scale:1,duration:1.8,ease:"power2.in"},.5);tl.to("#hero-drop",{scale:0,opacity:0,duration:.25},2.3);
+tl.fromTo("#sea-waves",{x:-7},{x:7,duration:2.6,repeat:23,yoyo:true,ease:"sine.inOut"},0);
+tl.fromTo("#sun-rays",{opacity:.6},{opacity:1,duration:3.2,repeat:19,yoyo:true,ease:"sine.inOut"},0);
+tl.fromTo("#cloud",{opacity:.1,x:-30},{opacity:1,x:0,duration:3,ease:"power2.out"},18.4);tl.fromTo("#cloud-particles",{opacity:0},{opacity:1,duration:2,ease:"power1.out"},20);
+tl.fromTo("#cloud-detail",{opacity:0},{opacity:1,duration:.8,ease:"power1.out"},23.3);tl.to("#cloud-detail",{opacity:0,duration:.6},29.2);tl.set("#cloud-detail",{opacity:0},29.831375);
+for(const [id,at] of [["evap-label",10],["cloud-label",21],["rain-label",31],["river-label",43],["ground-label",46],["tree-label",53]])tl.fromTo(`#${id}`,{opacity:0},{opacity:1,duration:.5,ease:"power1.out"},at);
+tl.fromTo("#camera",{scale:1},{scale:1.08,duration:1.8,ease:"power3.inOut"},9);tl.fromTo("#world",{x:0,y:0},{x:42,y:0,duration:1.8,ease:"power3.inOut"},9);
+tl.to("#camera",{scale:1,duration:1.8,ease:"power3.inOut"},18.2);tl.to("#world",{x:0,y:0,duration:1.8,ease:"power3.inOut"},18.2);
+const phases=[
+ {at:0,title:"雨の、その前と後。",note:"海・空・大地をつなぐ、水の循環。"},
+ {at:8.526667,title:"見えない水に、姿を変える。",note:"蒸発：液体 → 気体　／　点と矢印は見えない移動の模式表現"},
+ {at:18.3315,title:"雲は、水蒸気そのものではない。",note:"凝結：水蒸気が冷え、水滴や氷の粒に。"},
+ {at:29.831375,title:"ひと粒が育ち、雨になる。",note:"降水：雨や雪となって、海にも陸にも降る。"},
+ {at:40.425625,title:"行き先は、ひとつじゃない。",note:"地表を流れる水と、地中へしみ込む水。"},
+ {at:49.986625,title:"大きな旅の、一場面。",note:"概念図・縮尺不同　／　合成音声：AivisSpeech・阿井田 茂"}
+];
+const cursor={time:0};tl.to(cursor,{time:64,duration:64,ease:"none",onUpdate:()=>{const phase=phases.findLast(p=>cursor.time>=p.at)||phases[0];document.getElementById("headline").textContent=phase.title;document.getElementById("process-note").textContent=phase.note;document.getElementById("stage-number").textContent=`0${phases.indexOf(phase)+1} / 06`;}},0);
+// Sample vector geometry once, then interpolate immutable points on the timeline.
+for(const [id,start,travel] of [["river-route",46,3.5],["ground-route",49.5,6],["transpiration-route",56.5,4]]){
+ const path=document.getElementById(id),length=path.getTotalLength(),points=Array.from({length:101},(_,i)=>{const p=path.getPointAtLength(length*i/100);return [p.x,p.y];});
+ for(let n=0;n<2;n++){
+  const marker=document.createElementNS(ns,"circle");marker.setAttribute("r","4");marker.setAttribute("fill","#f1ebdf");marker.setAttribute("stroke","#087f9c");marker.setAttribute("stroke-width","2");marker.style.opacity="0";path.parentNode.append(marker);
+  const driver={t:0};tl.to(driver,{t:64-start,duration:64-start,ease:"none",onUpdate:()=>{const age=driver.t-n*.9,pos=((age%travel)+travel)%travel/travel*100,i=Math.min(99,Math.floor(pos)),p=points[i],q=points[i+1];marker.setAttribute("cx",String(p[0]+(q[0]-p[0])*(pos-i)));marker.setAttribute("cy",String(p[1]+(q[1]-p[1])*(pos-i)));marker.style.opacity=age>0&&driver.t<64-start-.1?"1":"0";}},start);
+ }
+}
+window.__timelines.water=tl;
+    </script>
+  </body>
+</html>

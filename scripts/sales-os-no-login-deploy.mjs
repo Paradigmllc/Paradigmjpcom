@@ -771,6 +771,14 @@ async function applyVideoFactoryStudioScaleReadinessMigration(envs) {
   )
 }
 
+async function applyVideoFactoryGenerationControlPlaneMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260907120000_video_factory_generation_control_plane.sql",
+    "Video Factory generation control plane migration",
+  )
+}
+
 async function applyVideoGrowthDirectAcquisitionMigration(envs) {
   return applySqlMigration(
     envs,
@@ -2137,6 +2145,7 @@ async function main() {
     console.log(await applyVideoFactoryCommercialStudioMigration(envs))
     console.log(await applyVideoFactoryStudioLeastPrivilegeMigration(envs))
     console.log(await applyVideoFactoryStudioScaleReadinessMigration(envs))
+    console.log(await applyVideoFactoryGenerationControlPlaneMigration(envs))
     console.log(await applyVideoGrowthDirectAcquisitionMigration(envs))
     console.log(await applyVideoGrowthCommercialSchemaMigration(envs))
     console.log(await applyVideoGrowthCommercialIntakeMigration(envs))
