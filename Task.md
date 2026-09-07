@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-07 paid studio source canary
+
+- Restored Hetzner SSH/site access verified. Inspected the live persistent workflow/model registries (not distribution placeholders): both T2V/I2V workflows approved and SHA-bound. No direct HeyGen/Runway/Kling/Seedance credential variables in the main app environment; other stores/accounts not ruled out.
+- User authorized small paid QA. One RTX 3090 rental 50127927 generated a real synthetic cup T2V via the authenticated adapter: 640x360, 24fps, 2.041667 seconds, 34.009 seconds generation. Initial setup through teardown took 863 seconds. Model checksums and doctor passed first. This is internal source QA, not a customer delivery or human approval.
+- Instance stopped/destroyed and verified absent by API plus Chrome Instances (0). Result persisted on Hetzner and copied locally before final handoff. Displayed credit difference $11.53 -> $11.49 is provisional, not finalized billing. No automatic recharge or continuing GPU rental.
+- Quality is not yet sufficient: cup geometry is broadly stable in sampled frames, but steam/camera movement are weak and the image soft. The audio track is effectively silent. No claim of HeyGen/Runway/Kling/Seedance parity or scalable readiness.
+- Fixed reproducible Vast template-search HTTP 400 by omitting order_by and sorting locally; regression tests include sort-before-limit. Service pytest, Ruff, mypy and root tsc passed; Prefect teardown logging warning and preexisting ops-script EXE001 remain noted.
+- ACTIVE HANDOFF: obtain owner review of the actual source clip, then compare longer/higher-resolution approved workflow candidates. PR #740 remains draft/undeployed, without verified dispatch/callback/physical-stop enforcement. Do not merge or enable unattended generation yet. Details and artifact paths: [capability audit](docs/knowledge/video-studio-capability-audit-20260907.md).
+
 # CURRENT STATUS - 2026-09-07 generation reservation safety follow-up
 
 - Hardened undeployed PR #740: idempotency keys now reject changed content, project, estimates or caller; actual cancelled spend and active reservations remain accounted across expiry and midnight. Reservation and attempt accounting share the budget lock. The dashboard uses paginated conservative accounting rather than dropping active expired rows.

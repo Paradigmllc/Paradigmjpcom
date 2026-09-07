@@ -191,7 +191,6 @@ def discover_templates(api_key: str) -> list[dict[str, Any]]:
             {
                 "select_filters": json.dumps(filters, separators=(",", ":")),
                 "select_cols": json.dumps(["*"]),
-                "order_by": "count_created",
             }
         )
         body = vast_json(api_key, "GET", f"/v0/template/?{query}")
