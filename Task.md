@@ -1,5 +1,12 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 release transaction repair
+
+- PR #740 merged as `be4b0f11` after all CI checks passed. Formal `npm run release:prod` reached DB SSH migrations but failed in the old Japan operator alias migration: transaction-local `set_config(..., true)` was immediately lost under psql autocommit. Added explicit BEGIN/COMMIT boundaries to both old case/alias migrations using that capability; no trigger removal, persistent capability, audit deletion or approval bypass.
+- Reproduced the same failure with the actual production guard function on a disposable session-local TEMP table. Transaction-wrapped probe passed and confirmed the capability is absent after COMMIT; no business records used. Four regression tests, TypeScript and targeted ESLint passed; tests added to the existing Japan operator CI.
+- Found Coolify's merge-triggered automatic deployment `h11vf3layum41z534phmc6b4` for `be4b0f11`; it was not started by the formal release. Disabled future automatic git-push deployments through the documented application API (200), and independently verified `application_settings.is_auto_deploy_enabled=false` by read-only DB query. Current build and live application untouched. Formal release did NOT trigger a duplicate build before its DB failure. Do not equate this automatic build with a completed release gate.
+- Chrome public UI currently needs CMS sign-in; user asked non-blockingly to log in while implementation continues. GPU inventory is empty. Qwen-Image-2512 + Wan I2V-A14B official model/workflow metadata and Apache licenses reviewed as candidates; no new model download, rental, generation, production binding or footage approval yet.
+
 # CURRENT STATUS - 2026-09-08 CMS blockers repaired, release verification in progress
 
 - CI on `ab3d6872`: routing, both validation jobs, storage, direct-growth/security regressions, Python service tests and production-container build all passed. Formal `release-doctor --pre-deploy` now passes; actual release/fingerprint and production browser checks are still pending.

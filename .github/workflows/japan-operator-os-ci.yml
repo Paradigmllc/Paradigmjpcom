@@ -18,6 +18,7 @@ on:
       - "scripts/release-doctor.mjs"
       - "scripts/verify-db-tables.mjs"
       - "e2e/japan-operator-os.spec.ts"
+      - "tests/japan-operator-migration-transaction.test.ts"
       - ".github/workflows/japan-operator-os-ci.yml"
   workflow_dispatch:
 
@@ -47,6 +48,7 @@ jobs:
       - name: Focused unit and API tests
         run: >-
           npm exec -- vitest run
+          tests/japan-operator-migration-transaction.test.ts
           src/lib/sales/japan-operator-workflow.test.ts
           src/lib/sales/japan-operator-release-wiring.test.ts
           src/lib/sales/japan-operator-docuseal.test.ts

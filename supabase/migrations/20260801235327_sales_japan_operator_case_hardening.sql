@@ -1,6 +1,10 @@
 -- Harden the Japan operator audit boundary and repair Wave 1 aliases discovered
 -- by production read-back. This migration is idempotent and safe to replay.
 
+-- psql/SSH executes statements in autocommit unless this migration supplies a
+-- transaction. Keep the mutation capability transaction-local, never persistent.
+BEGIN;
+
 SELECT set_config('app.japan_operator_mutation', 'rpc', true);
 
 REVOKE ALL ON TABLE public.sales_japan_operator_cases FROM service_role;
@@ -181,3 +185,5 @@ JOIN wave_one ON wave_one.id = operator_case.company_id
 ON CONFLICT (idempotency_key) DO NOTHING;
 
 NOTIFY pgrst, 'reload schema';
+
+COMMIT;
