@@ -6,6 +6,7 @@ import asyncio
 import dataclasses
 import hashlib
 import json
+import math
 import secrets
 import signal
 import time
@@ -32,6 +33,8 @@ from video_factory.workspace import ProjectWorkspace
 BASELINE_SHA = "1895ad608ef57be836992a92d3898593b15a70206b52ade5cdc7ca651c985bc6"
 PROVISION_REVISION = "842f9ab962333b0404b5cc8b92d5207dc4d472d3"
 TEMPLATE = "d143053633a1aa5145e705dd9d60854b"
+# Reviewed amd64 manifest: vastai/comfy:v0.28.0-cuda-12.9-py312 (not a mutable tag).
+COMFY_IMAGE = "vastai/comfy@sha256:694125bebb5b00d77878693770c9550602e9cbf644e9fe3d9b3b35ee27385e8d"
 PROMPT = (
     "Macro cinematic product shot of a plain ivory ceramic coffee cup on dark walnut. "
     "At the beginning a thin plume of hot steam rises vertically, then curls visibly "
@@ -45,6 +48,10 @@ PROMPT = (
 
 def eligible(offer: dict[str, object]) -> bool:
     try:
+        for field in ("dph_total", "inet_down", "disk_bw", "disk_space", "storage_cost", "inet_down_cost", "inet_up_cost"):
+            value = float(str(offer[field]))
+            if not math.isfinite(value) or value < 0:
+                return False
         return (
             offer.get("num_gpus") == 1
             and float(str(offer.get("dph_total", "inf"))) <= 0.40
@@ -55,7 +62,29 @@ def eligible(offer: dict[str, object]) -> bool:
             and float(str(offer.get("inet_down_cost", "inf"))) <= 0.004
             and float(str(offer.get("inet_up_cost", "inf"))) <= 0.004
         )
-    except (ValueError, TypeError):
+    except (KeyError, ValueError, TypeError):
+        return False
+
+
+def bootstrap_phase(instance: dict[str, object]) -> str:
+    """Persist diagnostic categories, never arbitrary provider messages/secrets."""
+    message = str(instance.get("status_msg", "")).lower()
+    for category, patterns in (
+        ("disk_full", ("no space left", "disk quota exceeded")),
+        ("image_unavailable", ("manifest unknown", "pull access denied", "image not found")),
+        ("image_downloading", ("downloading", "pulling")),
+        ("image_extracting", ("extracting", "unpacking")),
+    ):
+        if any(pattern in message for pattern in patterns):
+            return category
+    return "unspecified"
+
+
+def compatible_cuda(offer: dict[str, object]) -> bool:
+    try:
+        value = float(str(offer["cuda_max_good"]))
+        return math.isfinite(value) and value >= 12.9
+    except (KeyError, TypeError, ValueError):
         return False
 
 
@@ -98,7 +127,12 @@ def select_offer(offers: list[dict[str, object]], offer_id: int | None, machine_
     return min(matches, key=lambda item: float(str(item["dph_total"]))) if matches else None
 
 
-async def run(offer_id: int | None, project: str, execute: bool, machine_id: int | None = None) -> None:
+async def run(offer_id: int | None, project: str, execute: bool, machine_id: int | None = None,
+              candidate: str = "both", runtime: str = "legacy") -> None:
+    if candidate not in {"both", "draft20", "reference50"}:
+        raise ValueError("Unknown candidate")
+    if runtime not in {"legacy", "comfy-pinned"}:
+        raise ValueError("Unknown runtime")
     settings = Settings.from_env()
     workspace = ProjectWorkspace.create(settings.workspace, project)
     label = f"paradigm-comfyui-{project}"
@@ -108,6 +142,8 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
         raise ValueError("Baseline workflow changed; re-review the experiment")
     candidates = [(name, graph, make_manifest(project, index, name, str(workspace.root / f"{name}-workflow.json")))
                   for index, (name, graph) in enumerate(make_candidates(json.loads(baseline_bytes)), 1)]
+    if candidate != "both":
+        candidates = [item for item in candidates if item[0] == candidate]
     client = VastClient(VastConfig.from_workspace(settings.workspace))
     if await client.list_instances():
         raise ValueError("Existing instance found; no duplicate rental")
@@ -122,17 +158,23 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
                           "selected_id_present": any(item.get("id") == offer_id for item in offers)}), flush=True)
         raise ValueError("Selected offer unavailable or outside constraints; no replacement rental")
     offer_id = int(str(offer["id"]))
+    if runtime == "comfy-pinned" and not compatible_cuda(offer):
+        raise ValueError("Pinned CUDA 12.9 runtime requires verified host CUDA >= 12.9")
     if not execute:
         print(json.dumps({"mode": "read_only", "offer": {key: offer.get(key) for key in
             ("id", "machine_id", "gpu_name", "dph_total", "inet_down", "disk_bw", "disk_space")},
             "label": label, "planned_frames": 121, "planned_size": [1280, 704],
             "wall_clock_limit_seconds": 2400, "bootstrap_limit_seconds": 900,
+            "candidates": [item[0] for item in candidates], "runtime": runtime,
+            "image": COMFY_IMAGE if runtime == "comfy-pinned" else None,
             "estimated_budget_usd": 1, "hard_billing_cap": False}), flush=True)
         return
     # Exclusive marker prevents rerenting after success, failure, or ambiguous create.
     with (workspace.root / "probe-started.json").open("x") as handle:
         json.dump({"offer_id": offer_id, "machine_id": offer.get("machine_id"), "label": label,
-                   "estimated_budget_usd": 1, "automatic_approval": False}, handle)
+                   "estimated_budget_usd": 1, "automatic_approval": False,
+                   "candidates": [item[0] for item in candidates], "runtime": runtime,
+                   "image": COMFY_IMAGE if runtime == "comfy-pinned" else None}, handle)
     started = time.monotonic()
 
     def log(phase: str, **values: object) -> None:
@@ -148,14 +190,25 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
     signal.alarm(2400)
     try:
         script = f"https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/{PROVISION_REVISION}/scripts/vast/provision-video-factory-wan22.sh"
-        result = await client.create_instance(
-            offer_id, template_hash_id=TEMPLATE, label=label, disk_gb=100, runtype="ssh_direct",
-            env={"PROVISIONING_SCRIPT": script, "COMFY_PROXY_KEY": key,
+        env = {"PROVISIONING_SCRIPT": script, "COMFY_PROXY_KEY": key,
                  "COMFY_INTERNAL_PORT": "18188", "COMFY_PROXY_PORT": "18189",
-                 "COMFYUI_ARGS": "--disable-auto-launch --listen 127.0.0.1 --port 18188",
-                 "-p 18189:18189": "1"},
-            onstart='bash -lc \'set -e; curl -fsSL "$PROVISIONING_SCRIPT" -o /tmp/paradigm-qa-provision.sh; bash /tmp/paradigm-qa-provision.sh\'',
-        )
+                 "COMFYUI_ARGS": "--disable-auto-launch --disable-all-custom-nodes --listen 127.0.0.1 --port 18188",
+                 "-p 18189:18189": "1"}
+        onstart = 'bash -lc \'set -e; curl -fsSL "$PROVISIONING_SCRIPT" -o /tmp/paradigm-qa-provision.sh; bash /tmp/paradigm-qa-provision.sh\''
+        if runtime == "comfy-pinned":
+            # Sandbox only: explicit image creation avoids a template silently selecting
+            # the 26GB all-in-one image or a newer CUDA family. No production settings change.
+            result = await client._request("PUT", f"/v0/asks/{offer_id}/", json_body={
+                "image": COMFY_IMAGE, "label": label, "disk": 100, "target_state": "running",
+                "cancel_unavail": True, "runtype": "ssh_direct", "env": env, "onstart": onstart,
+            })
+        else:
+            result = await client.create_instance(
+                offer_id, template_hash_id=TEMPLATE, label=label, disk_gb=100,
+                runtype="ssh_direct", env=env, onstart=onstart,
+            )
+        if not isinstance(result, dict):
+            raise ValueError("Ambiguous creation response")
         nested = result.get("result")
         identity = int((nested.get("new_contract") if isinstance(nested, dict) else None)
                        or result.get("new_contract") or result.get("id") or 0) or None
@@ -170,9 +223,12 @@ async def run(offer_id: int | None, project: str, execute: bool, machine_id: int
                 if instance is None:
                     raise ValueError("Sandbox disappeared")
                 status = instance.get("actual_status")
-                if status != last_status:
-                    log("bootstrap", status=status)
-                    last_status = status
+                detail = bootstrap_phase(instance)
+                if (status, detail) != last_status:
+                    log("bootstrap", status=status, detail=detail)
+                    last_status = (status, detail)
+                if detail in {"disk_full", "image_unavailable"} or status in {"exited", "offline", "stopped"}:
+                    raise RuntimeError("Terminal bootstrap failure; no automatic replacement")
                 if status == "running":
                     try:
                         connection = vast_instance_connection(instance)
@@ -245,7 +301,9 @@ if __name__ == "__main__":
     target.add_argument("--machine-id", type=int, help="Resolve the current offer on this exact reviewed host only")
     parser.add_argument("--project", required=True)
     parser.add_argument("--execute", action="store_true", help="Explicit paid single rental; default is read-only")
+    parser.add_argument("--candidate", choices=["both", "draft20", "reference50"], default="both")
+    parser.add_argument("--runtime", choices=["legacy", "comfy-pinned"], default="legacy")
     args = parser.parse_args()
     if not args.project.startswith("wan-qa-") or not args.project.replace("-", "").isalnum():
         parser.error("Use a unique wan-qa- project slug")
-    asyncio.run(run(args.offer_id, args.project, args.execute, args.machine_id))
+    asyncio.run(run(args.offer_id, args.project, args.execute, args.machine_id, args.candidate, args.runtime))

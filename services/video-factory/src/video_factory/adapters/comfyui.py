@@ -32,6 +32,33 @@ class ComfyUIError(RuntimeError):
     pass
 
 
+def require_successful_history(history: dict[str, Any]) -> None:
+    """Fail before consuming partial outputs; never echo model inputs/tracebacks."""
+    status = history.get("status")
+    if not isinstance(status, dict):
+        return  # Older supported endpoints omit status; preserve their output contract.
+    messages = status.get("messages", [])
+    if isinstance(messages, list):
+        for message in messages:
+            if not isinstance(message, (list, tuple)) or not message:
+                continue
+            if message[0] == "execution_interrupted":
+                raise ComfyUIError("ComfyUI generation interrupted; partial output rejected")
+            if message[0] == "execution_error":
+                data = message[1] if len(message) > 1 and isinstance(message[1], dict) else {}
+                # Only a fixed category leaves this boundary, not exception text or inputs.
+                exception_type = str(data.get("exception_type", ""))
+                category = "GPU memory exhausted" if exception_type in {
+                    "torch.OutOfMemoryError", "torch.cuda.OutOfMemoryError",
+                    "comfy.model_management.OOM_EXCEPTION",
+                } else "node execution failed"
+                raise ComfyUIError(f"ComfyUI {category}; partial output rejected")
+    if status.get("status_str") == "error":
+        raise ComfyUIError("ComfyUI generation failed; partial output rejected")
+    if status.get("completed") is True and not find_outputs(history):
+        raise ComfyUIError("ComfyUI completed without downloadable output")
+
+
 def replace_placeholders(value: Any, bindings: dict[str, Any]) -> Any:
     if isinstance(value, dict):
         return {key: replace_placeholders(item, bindings) for key, item in value.items()}
@@ -216,6 +243,7 @@ class ComfyUIAdapter(EngineAdapter):
                 payload = history_response.json()
                 if prompt_id in payload:
                     history = payload[prompt_id]
+                    require_successful_history(history)
                     if find_outputs(history):
                         break
                 time.sleep(context.settings.comfyui_poll_seconds)

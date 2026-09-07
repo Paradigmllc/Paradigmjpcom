@@ -1,4 +1,11 @@
+import asyncio
+import hashlib
+import json
 import runpy
+from dataclasses import replace
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 
 def test_candidate_manifest_validates_before_paid_execution(service_root):
@@ -35,6 +42,8 @@ def test_offer_must_include_all_cost_and_bootstrap_evidence(service_root):
         assert not probe["eligible"](incomplete)
     assert not probe["eligible"]({**offer, "inet_down": 400})
     assert not probe["eligible"]({**offer, "inet_up_cost": .02})
+    for value in (-1, float('nan'), float('inf')):
+        assert not probe["eligible"]({**offer, "dph_total": value})
 
 
 def test_host_pin_resolves_fresh_offer_without_switching_host(service_root):
@@ -45,3 +54,51 @@ def test_host_pin_resolves_fresh_offer_without_switching_host(service_root):
     assert probe["select_offer"](offers, 201, None) is None
     assert probe["select_offer"](offers, None, 10)["id"] == 202
     assert probe["select_offer"](offers, None, 12) is None
+
+
+def test_bootstrap_diagnostics_never_return_provider_message(service_root):
+    probe = runpy.run_path(str(service_root / "tools/wan_quality_probe.py"))
+    classify = probe["bootstrap_phase"]
+    assert classify({"status_msg": "Extracting layer sensitive-value"}) == "image_extracting"
+    assert classify({"status_msg": "no space left on device sensitive-value"}) == "disk_full"
+    assert classify({"status_msg": "manifest unknown secret-url"}) == "image_unavailable"
+    assert classify({"status_msg": "arbitrary API_KEY=secret"}) == "unspecified"
+
+
+def test_pinned_runtime_rejects_unknown_or_incompatible_driver(service_root):
+    probe = runpy.run_path(str(service_root / "tools/wan_quality_probe.py"))
+    assert "@sha256:" in probe["COMFY_IMAGE"]
+    compatible = probe["compatible_cuda"]
+    assert compatible({"cuda_max_good": 12.9})
+    assert compatible({"cuda_max_good": 13.0})
+    for value in (12.7, None, "", float("inf"), float("nan")):
+        assert not compatible({"cuda_max_good": value})
+    assert not compatible({})
+
+
+def test_incompatible_host_blocks_before_paid_create(service_root, settings, tmp_path):
+    probe = runpy.run_path(str(service_root / "tools/wan_quality_probe.py"))
+    root = tmp_path / "workflows"
+    (root / "api").mkdir(parents=True)
+    content = json.dumps({"2": {"inputs": {}}, "7": {"inputs": {}}, "8": {"inputs": {}}}).encode()
+    (root / "api/abstract-broll-t2v-v1.0.json").write_bytes(content)
+    client = Mock()
+    client.list_instances = AsyncMock(return_value=[])
+    client.search_offers = AsyncMock(return_value=[{
+        "id": 1, "machine_id": 42, "num_gpus": 1, "dph_total": .2, "inet_down": 900,
+        "disk_bw": 2000, "disk_space": 200, "storage_cost": .2,
+        "inet_down_cost": .003, "inet_up_cost": .003, "cuda_max_good": 12.7,
+    }])
+    client.create_instance = AsyncMock()
+    client._request = AsyncMock()
+    namespace = probe["run"].__globals__
+    with (
+        patch.dict(namespace, BASELINE_SHA=hashlib.sha256(content).hexdigest()),
+        patch.object(probe["Settings"], "from_env", return_value=replace(settings, comfyui_workflow_root=root)),
+        patch.dict(namespace, VastClient=Mock(return_value=client)),
+        pytest.raises(ValueError, match="CUDA"),
+    ):
+        asyncio.run(probe["run"](1, "wan-qa-incompatible", True, runtime="comfy-pinned"))
+    client.create_instance.assert_not_awaited()
+    client._request.assert_not_awaited()
+    assert not (settings.workspace / "projects/wan-qa-incompatible/probe-started.json").exists()
