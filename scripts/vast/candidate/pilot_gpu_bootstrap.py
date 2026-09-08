@@ -3,6 +3,7 @@ import concurrent.futures
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import time
@@ -25,12 +26,23 @@ def fetch_model(root, item):
     url = f"https://huggingface.co/{repo}/resolve/{revision}/split_files/{relative}"
     started = time.monotonic()
     print(json.dumps({"model_download_started": target.name, "bytes": size}), flush=True)
-    # Existing image includes aria2: bounded parallel ranges and resumable partials.
-    subprocess.run(["aria2c", "--continue=true", "--auto-file-renaming=false",
+    # The pinned image does not guarantee aria2. Never assume tools exist from
+    # the provisioner's optional branch; use its supported curl fallback.
+    if shutil.which("aria2c"):
+        command = ["aria2c", "--continue=true", "--auto-file-renaming=false",
         "--allow-overwrite=false", "--max-connection-per-server=8", "--split=8",
         "--min-split-size=64M", "--max-tries=3", "--retry-wait=3", "--timeout=45",
         "--connect-timeout=15", "--file-allocation=none", "--console-log-level=error",
-        "--summary-interval=0", f"--dir={partial.parent}", f"--out={partial.name}", url],
+        "--summary-interval=0", f"--dir={partial.parent}", f"--out={partial.name}", url]
+    elif shutil.which("curl"):
+        command = ["curl", "--fail", "--location", "--silent", "--show-error",
+                   "--continue-at", "-", "--retry", "3", "--retry-delay", "3",
+                   "--connect-timeout", "15", "--max-time", "900",
+                   "--speed-limit", "1024", "--speed-time", "60",
+                   "--output", str(partial), url]
+    else:
+        raise RuntimeError("Candidate download requires aria2c or curl")
+    subprocess.run(command,
         check=True, timeout=900, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     with partial.open("rb") as source:
         actual = hashlib.file_digest(source, "sha256").hexdigest()
@@ -106,5 +118,21 @@ def main():
     print(json.dumps({"pilot_bootstrap_ready": True}), flush=True)
 
 
+def record_failure(root, error):
+    target = root / "manifest-base.json"
+    data = json.loads(target.read_text()) if target.is_file() else {"models": []}
+    data["pilot"] = {"bootstrap_failed": True, "error_category": type(error).__name__,
+                     "production_approved": False}
+    root.mkdir(parents=True, exist_ok=True)
+    temporary = root / "manifest-failed.tmp"
+    temporary.write_text(json.dumps(data))
+    temporary.replace(target)
+    print(json.dumps({"pilot_bootstrap_failed": type(error).__name__}), flush=True)
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        record_failure(Path("/workspace/video-factory-bootstrap"), error)
+        raise SystemExit(1)

@@ -7,8 +7,9 @@ not a production workflow approval or a new rental entry point.
 - Verifies the original provisioner SHA before making the narrowly tested sandbox patch.
 - Removes the unrelated Wan 5B download/manifest block, but retains the authenticated
   TLS proxy, loopback ComfyUI and disabled custom nodes.
-- Downloads two models concurrently, each with at most eight ranged connections,
-  a 900-second timeout and three attempts. Partial files remain resumable.
+- Downloads two models concurrently. Uses aria2 when present (at most eight ranged
+  connections per model), otherwise bounded/resumable curl. Each subprocess has a
+  900-second timeout. Partial files remain resumable.
 - Reuses complete cache entries only after exact size and SHA-256 verification.
 - Publishes the candidate model manifest only after all selected models verify.
 - `PILOT_REUSE_MOTION=1` selects Wan-only weights for a hash-validated existing image
@@ -18,6 +19,9 @@ not a production workflow approval or a new rental entry point.
 - The legacy proxy's base workflow advertisement is NOT executable approval for this
   candidate. The runner must validate its own graph, nodes, exact model hashes and
   `pilot` runtime receipt. No production registry is changed by this loader.
+- On bootstrap failure, the manifest exposes `pilot.bootstrap_failed=true` and only
+  the error category. The runner must immediately abort and verify teardown when
+  this flag is set; do not wait until the ordinary bootstrap timeout.
 
 Run the no-network/no-GPU tests from this directory:
 
@@ -29,7 +33,9 @@ The sibling pinned shell script is only read and syntax-checked. The tests mock 
 downloads with tiny byte fixtures. Mac system Python 3.9 lacks `hashlib.file_digest`;
 use Python 3.11+ (the isolated server test used Python 3.12).
 
-This correction has not yet passed a new paid model bootstrap or generated the
-NOCTEA beauty film. Ten GPU-free tests pass; do not interpret that as image quality.
+The first real recovery attempt exposed missing aria2 in the pinned image. It was
+terminated at 190 seconds with verified removal; no image or video was generated.
+The curl fallback and explicit failure receipt were added afterward. Thirteen
+GPU-free tests pass; the corrected fallback has not passed a new paid model bootstrap.
 It does not provide cache persistence after instance destruction,
 a global spending ledger, or human creative acceptance. Those remain separate work.

@@ -1,5 +1,6 @@
 """No-network checks for the isolated candidate loader; no GPU rental."""
 import hashlib
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -19,6 +20,9 @@ class BootstrapTests(unittest.TestCase):
         self.item = ("org/model", "pinned-revision", "vae/fixture.safetensors",
                      len(self.content), self.digest)
         self.target = self.root / self.item[2]
+        binary = patch.object(bootstrap.shutil, "which", return_value="/usr/bin/aria2c")
+        binary.start()
+        self.addCleanup(binary.stop)
 
     def write_download(self, args, **kwargs):
         self.assertEqual(kwargs["timeout"], 900)
@@ -83,6 +87,33 @@ class BootstrapTests(unittest.TestCase):
 
     def test_full_profile_retains_all_pins(self):
         self.assertEqual(bootstrap.selected_models({}), bootstrap.MODELS)
+
+    def test_curl_fallback_is_bounded_and_verified(self):
+        def download(args, **kwargs):
+            self.assertEqual(args[0], "curl")
+            self.assertIn("--continue-at", args)
+            self.assertIn("--fail", args)
+            self.assertEqual(kwargs["timeout"], 900)
+            self.target.with_suffix(".pilot-part").write_bytes(self.content)
+        with patch.object(bootstrap.shutil, "which", side_effect=lambda name: "/usr/bin/curl" if name == "curl" else None):
+            with patch.object(bootstrap.subprocess, "run", side_effect=download):
+                bootstrap.fetch_model(self.root, self.item)
+        self.assertEqual(self.target.read_bytes(), self.content)
+
+    def test_missing_download_tools_fail_before_transfer(self):
+        with patch.object(bootstrap.shutil, "which", return_value=None):
+            with patch.object(bootstrap.subprocess, "run") as run:
+                with self.assertRaisesRegex(RuntimeError, "requires aria2c or curl"):
+                    bootstrap.fetch_model(self.root, self.item)
+        run.assert_not_called()
+
+    def test_bootstrap_error_visible_without_secret_details(self):
+        bootstrap.record_failure(self.root, RuntimeError("secret-url-token"))
+        raw = (self.root / "manifest-base.json").read_text()
+        self.assertNotIn("secret-url-token", raw)
+        data = json.loads(raw)
+        self.assertTrue(data["pilot"]["bootstrap_failed"])
+        self.assertFalse(data["pilot"]["production_approved"])
 
     def test_known_provisioner_transform(self):
         source = (Path(__file__).parent.parent / "provision-video-factory-wan22.sh").read_bytes()
