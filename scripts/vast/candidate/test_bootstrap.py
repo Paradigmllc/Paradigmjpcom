@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -126,6 +128,23 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(data["bytes"], 3)
         self.assertEqual(data["expected_bytes"], 9)
         self.assertNotIn("url", data)
+
+    def test_concurrent_events_do_not_interleave(self):
+        fragments = []
+        def split_print(payload, **kwargs):
+            fragments.append(payload)
+            time.sleep(.001)
+            fragments.append('\n')
+        with patch('builtins.print', side_effect=split_print):
+            threads = [threading.Thread(target=bootstrap.emit_event, args=({'event':i},))
+                       for i in range(16)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=3)
+            self.assertFalse(any(thread.is_alive() for thread in threads))
+        events = [json.loads(line)['event'] for line in ''.join(fragments).splitlines()]
+        self.assertEqual(sorted(events), list(range(16)))
 
     def test_known_provisioner_transform(self):
         source = (Path(__file__).parent.parent / "provision-video-factory-wan22.sh").read_bytes()

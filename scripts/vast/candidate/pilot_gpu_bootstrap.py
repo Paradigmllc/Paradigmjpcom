@@ -12,14 +12,23 @@ import urllib.request
 
 from pilot_models import MODELS, COMFY_REVISION, PROVISION_REVISION, PROVISION_SHA256
 
+LOG_LOCK = threading.Lock()
+
+
+def emit_event(value):
+    # print writes payload and newline separately; concurrent downloads can
+    # otherwise concatenate JSON objects and break line-oriented consumers.
+    with LOG_LOCK:
+        print(json.dumps(value), flush=True)
+
 
 def download_progress(partial, total, started, finished):
     while not finished.wait(30):
         # The downloader owns this path until it returns; no URL or token is logged.
         transferred = partial.stat().st_size if partial.is_file() else 0
-        print(json.dumps({"candidate_model_progress": partial.name,
+        emit_event({"candidate_model_progress": partial.name,
                           "bytes": transferred, "expected_bytes": total,
-                          "seconds": round(time.monotonic() - started)}), flush=True)
+                          "seconds": round(time.monotonic() - started)})
 
 
 def fetch_model(root, item):
@@ -35,7 +44,7 @@ def fetch_model(root, item):
     partial = target.with_suffix(".pilot-part")
     url = f"https://huggingface.co/{repo}/resolve/{revision}/split_files/{relative}"
     started = time.monotonic()
-    print(json.dumps({"model_download_started": target.name, "bytes": size}), flush=True)
+    emit_event({"model_download_started": target.name, "bytes": size})
     # The pinned image does not guarantee aria2. Never assume tools exist from
     # the provisioner's optional branch; use its supported curl fallback.
     if shutil.which("aria2c"):
@@ -67,7 +76,7 @@ def fetch_model(root, item):
     if partial.stat().st_size != size or actual != digest:
         raise RuntimeError("Downloaded candidate artifact checksum mismatch")
     partial.replace(target)
-    print(json.dumps({"candidate_model_verified": target.name, "seconds": round(time.monotonic()-started, 2)}), flush=True)
+    emit_event({"candidate_model_verified": target.name, "seconds": round(time.monotonic()-started, 2)})
     return {"exact_artifact": target.name, "sha256": digest}
 
 
@@ -133,7 +142,7 @@ def main():
     temporary = root / "manifest-pilot.tmp"
     temporary.write_text(json.dumps(data))
     temporary.replace(target)
-    print(json.dumps({"pilot_bootstrap_ready": True}), flush=True)
+    emit_event({"pilot_bootstrap_ready": True})
 
 
 def record_failure(root, error):
@@ -145,7 +154,7 @@ def record_failure(root, error):
     temporary = root / "manifest-failed.tmp"
     temporary.write_text(json.dumps(data))
     temporary.replace(target)
-    print(json.dumps({"pilot_bootstrap_failed": type(error).__name__}), flush=True)
+    emit_event({"pilot_bootstrap_failed": type(error).__name__})
 
 
 if __name__ == "__main__":
