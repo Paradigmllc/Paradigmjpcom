@@ -63,6 +63,14 @@ def candidate_provisioner(source):
     return patched
 
 
+def selected_models(environ):
+    if environ.get('PILOT_REFERENCE_ONLY') == '1':
+        return [item for item in MODELS if 'Qwen-Image' in item[0]]
+    if environ.get('PILOT_REUSE_MOTION') == '1':
+        return [item for item in MODELS if 'Wan_2.2' in item[0]]
+    return MODELS
+
+
 def main():
     root = Path("/workspace/video-factory-bootstrap")
     root.mkdir(parents=True, exist_ok=True)
@@ -84,7 +92,7 @@ def main():
     argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
     if b"--disable-all-custom-nodes" not in argv or b"127.0.0.1" not in argv:
         raise RuntimeError("Dedicated runtime must disable custom nodes and bind loopback")
-    selected = [item for item in MODELS if 'Wan_2.2' in item[0]] if os.environ.get('PILOT_REUSE_MOTION') == '1' else MODELS
+    selected = selected_models(os.environ)
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         models = list(executor.map(lambda item: fetch_model(comfy / "models", item), selected))
     target = root / "manifest-base.json"

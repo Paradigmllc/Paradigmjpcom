@@ -71,6 +71,19 @@ class BootstrapTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Pinned provisioner"):
             bootstrap.candidate_provisioner(b"untrusted script")
 
+    def test_reference_profile_excludes_motion_weights(self):
+        selected = bootstrap.selected_models({"PILOT_REFERENCE_ONLY": "1"})
+        self.assertEqual(len(selected), 3)
+        self.assertTrue(all("Qwen-Image" in item[0] for item in selected))
+
+    def test_continuation_profile_excludes_image_weights(self):
+        selected = bootstrap.selected_models({"PILOT_REUSE_MOTION": "1"})
+        self.assertEqual(len(selected), 4)
+        self.assertTrue(all("Wan_2.2" in item[0] for item in selected))
+
+    def test_full_profile_retains_all_pins(self):
+        self.assertEqual(bootstrap.selected_models({}), bootstrap.MODELS)
+
     def test_known_provisioner_transform(self):
         source = (Path(__file__).parent.parent / "provision-video-factory-wan22.sh").read_bytes()
         result = bootstrap.candidate_provisioner(source)

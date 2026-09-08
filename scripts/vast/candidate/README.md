@@ -13,6 +13,8 @@ not a production workflow approval or a new rental entry point.
 - Publishes the candidate model manifest only after all selected models verify.
 - `PILOT_REUSE_MOTION=1` selects Wan-only weights for a hash-validated existing image
   continuation; otherwise both Qwen and Wan are loaded.
+- `PILOT_REFERENCE_ONLY=1` selects only the three Qwen artifacts (30.07GB) and takes
+  precedence over continuation mode. It does not generate or approve motion.
 - The legacy proxy's base workflow advertisement is NOT executable approval for this
   candidate. The runner must validate its own graph, nodes, exact model hashes and
   `pilot` runtime receipt. No production registry is changed by this loader.
@@ -28,5 +30,6 @@ downloads with tiny byte fixtures. Mac system Python 3.9 lacks `hashlib.file_dig
 use Python 3.11+ (the isolated server test used Python 3.12).
 
 This correction has not yet passed a new paid model bootstrap or generated the
-NOCTEA beauty film. It does not provide cache persistence after instance destruction,
+NOCTEA beauty film. Ten GPU-free tests pass; do not interpret that as image quality.
+It does not provide cache persistence after instance destruction,
 a global spending ledger, or human creative acceptance. Those remain separate work.

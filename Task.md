@@ -2,6 +2,8 @@
 
 # CURRENT STATUS - 2026-09-08 NOCTEA beauty-ad production
 
+- ACTIVE reference-only recovery rental: instance50232992/machine119972, exact label`paradigm-comfyui-noctea-beauty-reference-recovery-20260908`. RTX5090/128GB RAM, quote$0.482222/h, conservative new estimate$0.3974 + previous$1.5811 < aggregate$2. Runner wall1800s/bootstrap1200s; Qwen-only30.07GB, unchanged1664x928/50step image settings. No motion or human approval is executed. Runner `/opt/paradigm-qa/bootstrap-recovery-20260908/beauty_ad_20260908.py`; MUST verify cleanup/readback before treating rental ended. Ten bootstrap tests and five existing safety tests passed, TypeScript passed. This ACTIVE entry must be superseded with actual outcome.
+
 - Recovered the isolated candidate bootstrap in `scripts/vast/candidate/`: removed unrelated base Wan5B downloads, changed single-stream candidate transfers to bounded/resumable aria2, retained exact size/SHA checks and production_approved=false. Seven no-network GPU-free tests pass on the server, including cache corruption, download corruption, timeout preservation and pinned shell syntax. Local macOS Python3.9 is incompatible with hashlib.file_digest; use Python3.11+. No new beauty image/video or paid bootstrap has been validated by these tests.
 - Read-only capacity check found no active rentals. Fast RTX5090 candidate had high transfer/storage charges; do not select on hourly price alone or silently widen the existing aggregate guard. A100 candidates require a measured throughput comparison, not an assumption that more VRAM guarantees faster FP8 generation.
 
