@@ -159,6 +159,24 @@ class BootstrapTests(unittest.TestCase):
         script.write_bytes(result)
         subprocess.run(["bash", "-n", str(script)], check=True)
 
+    def test_native_attention_opt_in_preserves_default(self):
+        source = (Path(__file__).parent.parent / 'provision-video-factory-wan22.sh').read_bytes()
+        default = bootstrap.candidate_provisioner(source)
+        native = bootstrap.candidate_provisioner(source, 'pytorch')
+        flag = b'      --use-pytorch-cross-attention \\\n'
+        self.assertNotIn(flag, default)
+        self.assertEqual(native.count(flag), 1)
+        self.assertEqual(native.replace(flag, b''), default)
+        self.assertNotIn(b'--fast', native)
+        script = self.root / 'native.sh'
+        script.write_bytes(native)
+        subprocess.run(['bash','-n',str(script)],check=True)
+
+    def test_arbitrary_attention_flags_rejected(self):
+        for value in ['sage', '--fast', 'pytorch; touch bad', '']:
+            with self.assertRaisesRegex(ValueError, 'Unsupported candidate'):
+                bootstrap.candidate_provisioner(b'not evaluated', value)
+
 
 if __name__ == "__main__":
     unittest.main()

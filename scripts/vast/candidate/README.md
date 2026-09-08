@@ -22,6 +22,12 @@ not a production workflow approval or a new rental entry point.
 - On bootstrap failure, the manifest exposes `pilot.bootstrap_failed=true` and only
   the error category. The runner must immediately abort and verify teardown when
   this flag is set; do not wait until the ordinary bootstrap timeout.
+- Optional sandbox-only `PILOT_ATTENTION_BACKEND=pytorch` adds the pinned native
+  `--use-pytorch-cross-attention` flag and verifies the actual process argv before
+  publishing its receipt. Default behavior stays unchanged. Other values are
+  rejected. No package, LoRA, step reduction or additional quantization is introduced.
+  This is an unbenchmarked comparison option, not evidence of faster or equivalent
+  output; production registry bindings are unchanged.
 
 Run the no-network/no-GPU tests from this directory:
 
@@ -39,7 +45,7 @@ The curl fallback and explicit failure receipt were added afterward. A subsequen
 Qwen-only sandbox successfully verified all three model hashes and generated the
 1664x928 NOCTEA reference in75.4456 seconds after runtime setup; its rental was
 destroyed with independent absence verification. That is still-image evidence only.
-Fifteen GPU-free tests pass. The subsequent96GB motion benchmark emitted real model
+Seventeen GPU-free tests pass. The subsequent96GB motion benchmark emitted real model
 byte progress; concurrent print calls could join JSON objects on one line. A shared
 event lock now covers all loader messages, with a forced-interleaving regression.
 The lock correction applies to future runs, not the already-running GPU process.
