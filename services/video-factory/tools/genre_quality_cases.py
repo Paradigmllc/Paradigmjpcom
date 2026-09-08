@@ -5,7 +5,7 @@ import copy
 import hashlib
 from pathlib import Path
 
-from video_factory.commands import run_command
+from video_factory.frame_boundary import extract_last_video_frame
 from video_factory.models import ShotManifest
 
 GENRES = (
@@ -54,10 +54,7 @@ def candidates(baseline: dict, project: str, root: Path, make_manifest) -> list[
 
 
 def bind_continuation(manifest: ShotManifest, previous: Path, image_path: Path) -> None:
-    run_command(["ffmpeg", "-y", "-v", "error", "-sseof", "-0.05", "-i", str(previous),
-                 "-frames:v", "1", "-update", "1", str(image_path)], timeout=120)
-    if not image_path.is_file():
-        raise ValueError("Continuation reference frame is missing")
+    extract_last_video_frame(previous, image_path)
     shot = manifest.shots[0]
     shot.source_assets = [str(image_path)]
     shot.metadata["comfyui_upload_source_image"] = True

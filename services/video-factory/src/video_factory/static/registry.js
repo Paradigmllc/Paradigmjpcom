@@ -90,7 +90,7 @@ function renderSummary() {
   $("#registry-summary").innerHTML = [
     `<span class="badge ${models.ready ? "good" : "warn"}">Models ${models.approved || 0}/${models.total || 0}</span>`,
     `<span class="badge ${workflows.ready ? "good" : "warn"}">Workflows ${workflows.enabled || 0}/${workflows.total || 0}</span>`,
-    `<span class="badge ${comfy ? "good" : "warn"}">ComfyUI ${comfy ? "connected" : "not set"}</span>`,
+    `<span class="badge warn">ComfyUI ${comfy ? "設定済み・接続未確認" : "未設定"}</span>`,
     `<span class="badge neutral">Region ${escapeHtml(state.registry?.production_region || "unset")}</span>`,
   ].join("")
 }
