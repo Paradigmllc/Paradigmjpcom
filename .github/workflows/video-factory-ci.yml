@@ -99,6 +99,7 @@ jobs:
           src/collections/Users.security.test.ts
           tests/image-size-security.test.ts
           tests/payload-security-fork.test.ts
+          tests/video-factory-console-health.test.ts
           --maxWorkers=1
       - name: Direct-growth unit and API tests
         run: >-

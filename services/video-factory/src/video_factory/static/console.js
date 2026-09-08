@@ -162,7 +162,7 @@ function flattenHealth(doctor) {
       return { name, ready: value, note: value ? "ready" : "not ready" }
     }
     if (value && typeof value === "object") {
-      const ready = value.ready ?? value.configured ?? value.ok ?? value.available
+      const ready = value.error ? false : value.ready ?? value.reachable ?? value.configured ?? value.ok ?? value.available
       const note = value.error
         || value.note
         || value.status
@@ -202,6 +202,15 @@ async function connect() {
   }
 }
 
+function comfyConnectionSummary(body) {
+  const url = body.runtime?.comfyui_base_url || body.factory?.comfyui_base_url
+  const reachable = body.doctor?.comfyui?.reachable
+  return {
+    label: !url ? "未設定" : reachable === true ? "接続確認済み" : reachable === false ? "接続不可" : "接続未確認",
+    note: url ? `${url} · 生成品質・モデル準備とは別判定` : "GPUなしプレビューのみ",
+  }
+}
+
 async function loadBootstrap() {
   const body = await api("/v1/console/bootstrap")
   state.bootstrap = body
@@ -209,8 +218,9 @@ async function loadBootstrap() {
   if (window.loadStudioTemplates) void window.loadStudioTemplates()
   $("#metric-projects").textContent = String(body.project_count ?? 0)
   const comfy = body.runtime?.comfyui_base_url || body.factory?.comfyui_base_url
-  $("#metric-comfy").textContent = comfy ? "Connected" : "Not set"
-  $("#metric-comfy-note").textContent = comfy || "GPUなしプレビューのみ"
+  const connection = comfyConnectionSummary(body)
+  $("#metric-comfy").textContent = connection.label
+  $("#metric-comfy-note").textContent = connection.note
   $("#metric-vast").textContent = body.vast?.configured ? "Ready" : "Not set"
   $("#metric-vast-note").textContent = body.vast?.configured
     ? "GPUをGUIから操作可能"
