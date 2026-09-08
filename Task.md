@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 ordered commercial-output backlog
+
+- User requested all remaining tasks in order. Canonical acceptance queue and 45s live-action film shot plan: [production backlog](docs/knowledge/video-studio-production-backlog-20260908.md). P01 is not complete: only the earlier 18s film exists; no new shot or paid GPU run this turn.
+- Reverified existing master and all3 native source hashes. Existing contact sheet is one-angle breath/gaze/smile, not the planned sitting/cup-contact/work-return narrative. Preserve/reuse sources; do not pad to45s.
+- Live runtime registry read: only abstract-broll-t2v and pet-memory-i2v are enabled (Wan5B). A14B/Qwen/MiniMax are not production-bound. Exact existing A14B sandbox recipe/cost/teardown code reviewed; no fake human binding or first/final approval.
+- MediaOS latest release is now `2f8073b5d6bba2255df53fd3875284096b0ef946`, publichealth confirmed. Separate MediaOS Task.md records535 tests, complete captions, age-only original-media deletion stopped. Earlier753292 entry below is historical.
+- Next execution: reviewed multi-angle keyframes/shot-specific generation settings forP01, native visual+motion inspection before expansion, approved workflow registration, full-film sound/edit/review. P02-P07 remain open per the linked acceptance queue.
+
 # CURRENT STATUS - 2026-09-08 MediaOS found, repaired and deployed
 
 - Found the separate existing studio repository `Gracecom1/youtube-media-os`, serving `https://paradigmjp.com/media-os`. It is not a Factory alias. Added one everyday entry with Factory and quality/cost-control links; IDs and ledgers remain separate and are explicitly labelled.
