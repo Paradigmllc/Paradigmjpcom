@@ -39,7 +39,9 @@ The curl fallback and explicit failure receipt were added afterward. A subsequen
 Qwen-only sandbox successfully verified all three model hashes and generated the
 1664x928 NOCTEA reference in75.4456 seconds after runtime setup; its rental was
 destroyed with independent absence verification. That is still-image evidence only.
-Fourteen GPU-free tests pass, including bounded byte-only progress reporting added
-after that successful run. Progress instrumentation is not yet live-run validated.
+Fifteen GPU-free tests pass. The subsequent96GB motion benchmark emitted real model
+byte progress; concurrent print calls could join JSON objects on one line. A shared
+event lock now covers all loader messages, with a forced-interleaving regression.
+The lock correction applies to future runs, not the already-running GPU process.
 It does not provide cache persistence after instance destruction,
 a global spending ledger, or human creative acceptance. Those remain separate work.
