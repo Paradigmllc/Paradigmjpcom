@@ -6,10 +6,20 @@ import os
 import shutil
 from pathlib import Path
 import subprocess
+import threading
 import time
 import urllib.request
 
 from pilot_models import MODELS, COMFY_REVISION, PROVISION_REVISION, PROVISION_SHA256
+
+
+def download_progress(partial, total, started, finished):
+    while not finished.wait(30):
+        # The downloader owns this path until it returns; no URL or token is logged.
+        transferred = partial.stat().st_size if partial.is_file() else 0
+        print(json.dumps({"candidate_model_progress": partial.name,
+                          "bytes": transferred, "expected_bytes": total,
+                          "seconds": round(time.monotonic() - started)}), flush=True)
 
 
 def fetch_model(root, item):
@@ -42,8 +52,16 @@ def fetch_model(root, item):
                    "--output", str(partial), url]
     else:
         raise RuntimeError("Candidate download requires aria2c or curl")
-    subprocess.run(command,
-        check=True, timeout=900, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    finished = threading.Event()
+    reporter = threading.Thread(target=download_progress,
+                                args=(partial, size, started, finished), daemon=True)
+    reporter.start()
+    try:
+        subprocess.run(command,
+            check=True, timeout=900, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    finally:
+        finished.set()
+        reporter.join(timeout=1)
     with partial.open("rb") as source:
         actual = hashlib.file_digest(source, "sha256").hexdigest()
     if partial.stat().st_size != size or actual != digest:

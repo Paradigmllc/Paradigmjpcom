@@ -35,7 +35,11 @@ use Python 3.11+ (the isolated server test used Python 3.12).
 
 The first real recovery attempt exposed missing aria2 in the pinned image. It was
 terminated at 190 seconds with verified removal; no image or video was generated.
-The curl fallback and explicit failure receipt were added afterward. Thirteen
-GPU-free tests pass; the corrected fallback has not passed a new paid model bootstrap.
+The curl fallback and explicit failure receipt were added afterward. A subsequent
+Qwen-only sandbox successfully verified all three model hashes and generated the
+1664x928 NOCTEA reference in75.4456 seconds after runtime setup; its rental was
+destroyed with independent absence verification. That is still-image evidence only.
+Fourteen GPU-free tests pass, including bounded byte-only progress reporting added
+after that successful run. Progress instrumentation is not yet live-run validated.
 It does not provide cache persistence after instance destruction,
 a global spending ledger, or human creative acceptance. Those remain separate work.
