@@ -30,6 +30,7 @@ on:
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
       - scripts/lib/release-marker-check*
+      - scripts/lib/release-workflow-guard*
       - scripts/verify-db-tables.mjs
       - .agents/skills/paradigm-video-producer/**
       - .codex/config.toml
@@ -66,6 +67,7 @@ on:
       - scripts/release-doctor.mjs
       - scripts/sales-os-no-login-deploy.mjs
       - scripts/lib/release-marker-check*
+      - scripts/lib/release-workflow-guard*
       - scripts/verify-db-tables.mjs
       - .agents/skills/paradigm-video-producer/**
       - .codex/config.toml
@@ -93,6 +95,8 @@ jobs:
         run: npm ci
       - name: Release SSR marker regression
         run: node --test scripts/lib/release-marker-check.test.mjs
+      - name: All-workflow deployment boundary regression
+        run: node --test scripts/lib/release-workflow-guard.test.mjs
       - name: CMS security, real parser regressions and artifact integrity
         run: >-
           npm exec -- vitest run

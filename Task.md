@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 release path race repair
+
+- PR #743 merged as `3a74fade7ad71a25f949925fc447fce86e34b8ba`; CI passed, exact decoded final-frame extraction and truthful ComfyUI connection labels included. Formal release deployment `enl9lpy1urq44h6p2um9oqms` reached finished and all public content smoke checks; post-deploy doctor still in progress at this entry.
+- Found the actual second automatic deployment path: `.github/workflows/one-shot-country-partner-release.yml` directly called Coolify and could cancel live deployments, while release-doctor inspected only `coolify-deploy.yml`. Its merge-triggered deployment `c65kivo09a2tfkq4krv7yd9d` completed; no running deployment was cancelled. Disabled future workflow runs and verified `disabled_manually` through GitHub.
+- Retired that workflow to read-only routing checks without deployment credentials/status-write permission. Also disabled the old `force-cancel-stale-coolify.yml`: it could cancel every active application deployment on a PR that touched the file. Replaced it with manual read-only recovery instructions. Added an all-workflow known-pattern regression guard to release-doctor and existing CI. This is a regression check, not a shell security sandbox.
+- Desktop files/tools became iCloud `dataless`, blocking reads. Preserved the old worktree and all media. Created this clean worktree outside iCloud at `/Users/apple/dev/video-studio-release-guard`, from the same merged SHA. Downloaded the same GitHub CLI2.95.0 into `/tmp`, verifying its official archive SHA256; no credential copy. Existing source/ref state is retained.
+- Paid continuation instance `50214852` remains active under the original 90-minute deadline/aggregate USD2 estimate gate. Two new Wan native continuations are being generated from the existing first shot; no third rental, no invented approval. Master rendering and actual review remain in progress.
+
 # CURRENT STATUS - 2026-09-08 actual I2V footage and continuation repair
 
 - PR #742 merged as `37920e9253b216422878af1ce345b8aeb8ea6a11`. Formal `npm run release:prod` completed with exit 0: preflight, migrations/133 tables, deployment `lanw0nsgwwjw76g9zyu60zog`, secure route refresh, all public content markers and post-deploy doctor including Sales health JSON `ok:true`. Earlier React SSR marker failure is repaired, not bypassed. Authenticated library GUI is available on the public studio-control URL.
