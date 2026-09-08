@@ -80,7 +80,9 @@ def fetch_model(root, item):
     return {"exact_artifact": target.name, "sha256": digest}
 
 
-def candidate_provisioner(source):
+def candidate_provisioner(source, attention_backend="default"):
+    if attention_backend not in ("default", "pytorch"):
+        raise ValueError("Unsupported candidate attention backend")
     if hashlib.sha256(source).hexdigest() != PROVISION_SHA256:
         raise RuntimeError("Pinned provisioner checksum mismatch")
     # Narrow sandbox correction to the known fallback: actually disable custom nodes.
@@ -89,6 +91,11 @@ def candidate_provisioner(source):
     if source.count(old) != 1:
         raise RuntimeError("Provisioner fallback changed")
     patched = source.replace(old, new)
+    if attention_backend == "pytorch":
+        # Native SDPA route, already in the pinned Comfy/PyTorch
+        # installation. No new package, quantization, LoRA or --fast options.
+        patched = patched.replace(b"--disable-all-custom-nodes \\\n",
+                                  b"--disable-all-custom-nodes \\\n      --use-pytorch-cross-attention \\\n")
     # The candidate owns an exact independent model manifest. Do not first download
     # the unrelated production Wan5B/encoder/VAE bundle and checksum it again.
     begin_marker = b'DIFFUSION_NAME="wan2.2_ti2v_5B_fp16.safetensors"'
@@ -116,7 +123,8 @@ def main():
     url = f"https://raw.githubusercontent.com/Paradigmllc/Paradigmjpcom/{PROVISION_REVISION}/scripts/vast/provision-video-factory-wan22.sh"
     with urllib.request.urlopen(url, timeout=30) as response:
         source = response.read()
-    patched = candidate_provisioner(source)
+    attention_backend = os.environ.get("PILOT_ATTENTION_BACKEND", "default")
+    patched = candidate_provisioner(source, attention_backend)
     script = root / "candidate-provision.sh"
     script.write_bytes(patched)
     subprocess.run(["bash", str(script)], check=True, timeout=900)
@@ -131,12 +139,15 @@ def main():
     argv = Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
     if b"--disable-all-custom-nodes" not in argv or b"127.0.0.1" not in argv:
         raise RuntimeError("Dedicated runtime must disable custom nodes and bind loopback")
+    if attention_backend == "pytorch" and b"--use-pytorch-cross-attention" not in argv:
+        raise RuntimeError("Requested native attention backend was not applied")
     selected = selected_models(os.environ)
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         models = list(executor.map(lambda item: fetch_model(comfy / "models", item), selected))
     target = root / "manifest-base.json"
     data = json.loads(target.read_text())
     data["pilot"] = {"models": models, "comfy_revision": revision,
+                     "attention_backend_request": attention_backend,
                      "custom_nodes_disabled": True, "production_approved": False,
                      "provision_sha256": hashlib.sha256(patched).hexdigest()}
     temporary = root / "manifest-pilot.tmp"
