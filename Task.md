@@ -1,5 +1,16 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 NOCTEA beauty-ad production
+
+- User changed the actual video brief to a sexy adult woman advertising cosmetics. Selected fictional 32-year-old woman and fictional NOCTEA beauty-ad concept, horizontal30s target, no efficacy/medical claims. Prior ceramics45s concept is superseded for this first new example.
+- HyperFrames project/brief: `/Users/apple/Desktop/Paradigm-video-QA-20260908/noctea-beauty-ad`. HyperFrames0.8.31 fresh sandbox, existing Factory0.7.87 pins unchanged. HeyGen signed out; no subscription purchased.
+- OSS first-look launcher: `/opt/paradigm-qa/keyframe-pilot-20260908/beauty_ad_20260908.py`. RTX5090 machine48238/instance50229222 failed model-bootstrap cutoff at1519s BEFORE reference or motion generation. Finally stopped/deleted/readback confirmed removed=true at1521s. No new beauty-ad image/video exists; no active GPU remains from this attempt. Compute quote×elapsed is about$0.205, excluding storage/network and not final billing. Do not repeat this cold-download path unchanged.
+- Conservative new estimate$0.7901 + prior$0.7910127563 = about$1.5811, aggregate cap$2 retained. This is not a final invoice. New-host download threshold650Mbps;64GB RAM/32GBVRAM/modelSHA/TLS/other limits unchanged.
+- Only1 motion is enabled before human first-look approval. Reference visual inspection is separate and not client approval. No production workflow binding, final approval or posting fabricated.
+- New user requirement: all operator UI at `https://paradigmjp.com/media-os`; optimize usable-output cost and turnaround, not lowest hourly price. MediaOS PR8 merged into its actual default branch`codex/media-os-foundation`; release`162145b148a65305890694ececc6c597b7446bbd` verified public fingerprint/worker and authenticated Chrome Factory API Ready/13 projects plus quality panel. Hosted HyperFrames/shared IDs/ledger/legacy redirects and cached high-quality model execution remain unfinished.
+- User clarified neither overspending nor excessive economizing. Reference(2).md technical/cache/QA portions reviewed; stop vs destroy claims corrected against Vast official docs. Preserve existing spending limits without making an unanswered daily-budget question block CPU implementation. Decisions/remaining tasks in `/tmp/paradigm-media-os-integration/docs/knowledge/studio-balanced-operation-20260908.md`. No new external subscription or publication.
+- Separate MediaOS fix deployed via PR6/7: release`c66b90917f497e1be69e1cf1ec11444652209efe`,561 tests including CPUFFmpeg,TS,lint,build/publicfingerprint passed. Revisions retain cast/voice/settings, reject unsafeAIplans/upstreamreceipts, holdjoblock/preserveoriginals, showoutcome in detail. Cutover blocks revisionlocks. Fullshotselective revision/completeidentityrecipe remains open.
+
 # CURRENT STATUS - 2026-09-08 ordered commercial-output backlog
 
 - User requested all remaining tasks in order. Canonical acceptance queue and 45s live-action film shot plan: [production backlog](docs/knowledge/video-studio-production-backlog-20260908.md). P01 is not complete: only the earlier 18s film exists; no new shot or paid GPU run this turn.
