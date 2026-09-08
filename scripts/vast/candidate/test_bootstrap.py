@@ -1,0 +1,89 @@
+"""No-network checks for the isolated candidate loader; no GPU rental."""
+import hashlib
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import pilot_gpu_bootstrap as bootstrap
+
+
+class BootstrapTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.content = b"tiny verified fixture"
+        self.digest = hashlib.sha256(self.content).hexdigest()
+        self.item = ("org/model", "pinned-revision", "vae/fixture.safetensors",
+                     len(self.content), self.digest)
+        self.target = self.root / self.item[2]
+
+    def write_download(self, args, **kwargs):
+        self.assertEqual(kwargs["timeout"], 900)
+        self.assertTrue(kwargs["check"])
+        self.assertIn("--continue=true", args)
+        self.assertIn("--split=8", args)
+        self.assertIn("/resolve/pinned-revision/", args[-1])
+        self.target.with_suffix(".pilot-part").write_bytes(self.content)
+
+    def test_download_verified_before_publish(self):
+        with patch.object(bootstrap.subprocess, "run", side_effect=self.write_download):
+            result = bootstrap.fetch_model(self.root, self.item)
+        self.assertEqual(result["sha256"], self.digest)
+        self.assertEqual(self.target.read_bytes(), self.content)
+        self.assertFalse(self.target.with_suffix(".pilot-part").exists())
+
+    def test_exact_cache_avoids_transfer(self):
+        self.target.parent.mkdir()
+        self.target.write_bytes(self.content)
+        with patch.object(bootstrap.subprocess, "run") as run:
+            bootstrap.fetch_model(self.root, self.item)
+        run.assert_not_called()
+
+    def test_corrupt_cache_is_not_trusted(self):
+        self.target.parent.mkdir()
+        self.target.write_bytes(b"x" * len(self.content))
+        with patch.object(bootstrap.subprocess, "run") as run:
+            with self.assertRaisesRegex(RuntimeError, "Existing candidate"):
+                bootstrap.fetch_model(self.root, self.item)
+        run.assert_not_called()
+
+    def test_corrupt_transfer_never_published(self):
+        self.content = b"y" * len(self.content)
+        with patch.object(bootstrap.subprocess, "run", side_effect=self.write_download):
+            with self.assertRaisesRegex(RuntimeError, "Downloaded candidate"):
+                bootstrap.fetch_model(self.root, self.item)
+        self.assertFalse(self.target.exists())
+
+    def test_timeout_retains_partial_for_resume(self):
+        self.target.parent.mkdir()
+        partial = self.target.with_suffix(".pilot-part")
+        partial.write_bytes(b"partial")
+        with patch.object(bootstrap.subprocess, "run", side_effect=subprocess.TimeoutExpired("aria2c", 900)):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                bootstrap.fetch_model(self.root, self.item)
+        self.assertEqual(partial.read_bytes(), b"partial")
+        self.assertFalse(self.target.exists())
+
+    def test_source_pin_cannot_be_bypassed(self):
+        with self.assertRaisesRegex(RuntimeError, "Pinned provisioner"):
+            bootstrap.candidate_provisioner(b"untrusted script")
+
+    def test_known_provisioner_transform(self):
+        source = (Path(__file__).parent.parent / "provision-video-factory-wan22.sh").read_bytes()
+        result = bootstrap.candidate_provisioner(source)
+        self.assertNotIn(b'fetch_file "$DIFFUSION_URL"', result)
+        self.assertNotIn(b'fetch_file "$TEXT_ENCODER_URL"', result)
+        self.assertNotIn(b'fetch_file "$VAE_URL"', result)
+        self.assertIn(b'"models":[],"production_approved":false', result)
+        self.assertIn(b"--disable-all-custom-nodes", result)
+        self.assertIn(b"secrets.compare_digest", result)
+        script = self.root / "patched.sh"
+        script.write_bytes(result)
+        subprocess.run(["bash", "-n", str(script)], check=True)
+
+
+if __name__ == "__main__":
+    unittest.main()

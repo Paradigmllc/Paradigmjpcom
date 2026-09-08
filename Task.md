@@ -2,6 +2,9 @@
 
 # CURRENT STATUS - 2026-09-08 NOCTEA beauty-ad production
 
+- Recovered the isolated candidate bootstrap in `scripts/vast/candidate/`: removed unrelated base Wan5B downloads, changed single-stream candidate transfers to bounded/resumable aria2, retained exact size/SHA checks and production_approved=false. Seven no-network GPU-free tests pass on the server, including cache corruption, download corruption, timeout preservation and pinned shell syntax. Local macOS Python3.9 is incompatible with hashlib.file_digest; use Python3.11+. No new beauty image/video or paid bootstrap has been validated by these tests.
+- Read-only capacity check found no active rentals. Fast RTX5090 candidate had high transfer/storage charges; do not select on hourly price alone or silently widen the existing aggregate guard. A100 candidates require a measured throughput comparison, not an assumption that more VRAM guarantees faster FP8 generation.
+
 - User changed the actual video brief to a sexy adult woman advertising cosmetics. Selected fictional 32-year-old woman and fictional NOCTEA beauty-ad concept, horizontal30s target, no efficacy/medical claims. Prior ceramics45s concept is superseded for this first new example.
 - HyperFrames project/brief: `/Users/apple/Desktop/Paradigm-video-QA-20260908/noctea-beauty-ad`. HyperFrames0.8.31 fresh sandbox, existing Factory0.7.87 pins unchanged. HeyGen signed out; no subscription purchased.
 - OSS first-look launcher: `/opt/paradigm-qa/keyframe-pilot-20260908/beauty_ad_20260908.py`. RTX5090 machine48238/instance50229222 failed model-bootstrap cutoff at1519s BEFORE reference or motion generation. Finally stopped/deleted/readback confirmed removed=true at1521s. No new beauty-ad image/video exists; no active GPU remains from this attempt. Compute quote×elapsed is about$0.205, excluding storage/network and not final billing. Do not repeat this cold-download path unchanged.
