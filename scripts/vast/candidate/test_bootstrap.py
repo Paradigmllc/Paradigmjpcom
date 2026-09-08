@@ -115,6 +115,18 @@ class BootstrapTests(unittest.TestCase):
         self.assertTrue(data["pilot"]["bootstrap_failed"])
         self.assertFalse(data["pilot"]["production_approved"])
 
+    def test_progress_contains_bytes_not_download_url(self):
+        partial = self.root / "fixture.pilot-part"
+        partial.write_bytes(b"abc")
+        finished = unittest.mock.Mock()
+        finished.wait.side_effect = [False, True]
+        with patch("builtins.print") as output:
+            bootstrap.download_progress(partial, 9, bootstrap.time.monotonic(), finished)
+        data = json.loads(output.call_args.args[0])
+        self.assertEqual(data["bytes"], 3)
+        self.assertEqual(data["expected_bytes"], 9)
+        self.assertNotIn("url", data)
+
     def test_known_provisioner_transform(self):
         source = (Path(__file__).parent.parent / "provision-video-factory-wan22.sh").read_bytes()
         result = bootstrap.candidate_provisioner(source)
