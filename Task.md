@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-08 MediaOS found, repaired and deployed
+
+- Found the separate existing studio repository `Gracecom1/youtube-media-os`, serving `https://paradigmjp.com/media-os`. It is not a Factory alias. Added one everyday entry with Factory and quality/cost-control links; IDs and ledgers remain separate and are explicitly labelled.
+- MediaOS PR #1 merged; production image/release `753292395a3c446c9a2f03589838e6e4638195c8` verified publicly and in worker. Fixed lost approval fields, initial H3 clip auto-continuation, premature SR startup, account-wide deletion fallback, admin authorization, misleading free/quality claims and mobile overflow. No paid production job or external publication submitted for verification.
+- 526 tests / 71 files, TypeScript, targeted ESLint, final build, isolated desktop/mobile and actual form forwarding passed. Public health ok:true/database ready, unauthenticated jobs401, source hashes match and both containers restart0. Logged-in Chrome confirmed actual production channels/review jobs/navigation; delivered tab remains open.
+- Preserved MediaOS DB, renders, models, prior image and server-side dirty release script. Server checkout stays old; deployed image and patch-compose artifact are authoritative. Do not run its old forced-checkout/pruning script. Source/release evidence: https://github.com/Gracecom1/youtube-media-os/pull/1 and `docs/knowledge/studio-production-gates-20260908.md` in that repo.
+- Acceptance remains asset-based: this is operational hardening, not all-genre/long-form/commercial-quality approval. Morning Breath's original assets and review-required status below remain unchanged. Next priorities are actual genre-master playback QA, preflight before paid generation, settings-preserving selective revisions and shared gallery/ID/cost integration.
+
 # CURRENT STATUS - 2026-09-08 finished first-cut and verified release
 
 - Actual finished film: **ひと息の朝 / Morning Breath**, 18.005s container, 1280x720, 432 decoded editorial24fps frames. Three native Wan2.2 I2V clips (16fps, total15.1875s) plus an intentional2.8125s closing card, original Japanese narration and captions. Local master: `/Users/apple/Desktop/Paradigm-video-QA-20260908/morning-breath/renders/morning-breath-18s-master.mp4`; SHA256 `23b3f4fa846b9a68417602f34a15633ca1df3b1cb11935985ad0dbbce134870d`. Original clips, first cut, voice files and QA evidence preserved.
