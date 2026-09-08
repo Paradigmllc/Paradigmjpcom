@@ -16,6 +16,7 @@ import { isIP } from "node:net"
 import path from "node:path"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
 import { sshArgs } from "./lib/ssh-options.mjs"
+import { inspectReleaseWorkflows } from "./lib/release-workflow-guard.mjs"
 
 const args = new Set(process.argv.slice(2))
 const PRE_DEPLOY = args.has("--pre-deploy") || (!args.has("--post-deploy") && !args.has("--local-only"))
@@ -116,19 +117,9 @@ function checkStaticReleaseRules() {
     pass("English legal identity fields are populated")
   }
 
-  const githubDeployWorkflow = fs.readFileSync(
-    ".github/workflows/coolify-deploy.yml",
-    "utf8",
-  )
-  if (
-    githubDeployWorkflow.includes("Block deploys that bypass the production release gate") &&
-    !githubDeployWorkflow.includes("/api/v1/deploy") &&
-    !githubDeployWorkflow.includes("sales-os-no-login-deploy")
-  ) {
-    pass("GitHub Actions cannot bypass release:prod")
-  } else {
-    fail("GitHub Actions must not expose a direct Coolify deployment path")
-  }
+  const workflowViolations = inspectReleaseWorkflows()
+  if (workflowViolations.length === 0) pass("GitHub workflows contain no known direct-deploy or cancellation bypass")
+  else workflowViolations.forEach((message) => fail(message))
 
   const legacyDeployEntrypoint = fs.readFileSync("scripts/deploy.mjs", "utf8")
   if (
