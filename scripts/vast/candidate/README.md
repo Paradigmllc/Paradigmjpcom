@@ -26,8 +26,10 @@ not a production workflow approval or a new rental entry point.
   `--use-pytorch-cross-attention` flag and verifies the actual process argv before
   publishing its receipt. Default behavior stays unchanged. Other values are
   rejected. No package, LoRA, step reduction or additional quantization is introduced.
-  This is an unbenchmarked comparison option, not evidence of faster or equivalent
-  output; production registry bindings are unchanged.
+  The 2026-09-08 same-host NOCTEA comparison measured roughly45.4 seconds/step
+  with both native PyTorch and xFormers. Native generation completed in929.44s;
+  it did not meet a10-minute video-production target. This option is not an
+  acceleration guarantee; production registry bindings are unchanged.
 
 Run the no-network/no-GPU tests from this directory:
 
