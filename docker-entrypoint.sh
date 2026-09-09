@@ -4,10 +4,23 @@ set -eu
 VIDEO_FACTORY_ROOT="${VIDEO_FACTORY_ROOT:-/opt/video-factory}"
 VIDEO_FACTORY_WORKSPACE="${VIDEO_FACTORY_WORKSPACE:-/data/video-factory}"
 VIDEO_FACTORY_PORT="${VIDEO_FACTORY_PORT:-8080}"
+VIDEO_FACTORY_RUNTIME_MODE="${VIDEO_FACTORY_RUNTIME_MODE:-embedded}"
+case "$VIDEO_FACTORY_RUNTIME_MODE" in
+  embedded) ;;
+  external)
+    [ "${VIDEO_FACTORY_INTERNAL_URL:-}" = "http://media-os-factory:8080" ] || {
+      echo '[runtime] External Factory requires the private MediaOS service URL' >&2; exit 1;
+    }
+    ;;
+  *) echo '[runtime] Invalid Factory runtime mode' >&2; exit 1;;
+esac
 PERSISTENT_CONFIG_ROOT="${VIDEO_FACTORY_WORKSPACE}/config"
 PERSISTENT_WORKFLOW_ROOT="${VIDEO_FACTORY_WORKSPACE}/workflows/comfyui"
 LEGACY_TRAEFIK_ROUTE="${PARADIGM_TRAEFIK_ROUTE_PATH:-/mnt/coolify-proxy-dynamic/paradigmjp.yml}"
 
+# In external mode this application is only a compatibility proxy. In particular,
+# do not bootstrap, chown, reconcile or write to the independent service volume.
+if [ "$VIDEO_FACTORY_RUNTIME_MODE" = embedded ]; then
 mkdir -p \
   "${VIDEO_FACTORY_WORKSPACE}" \
   "${PERSISTENT_CONFIG_ROOT}" \
@@ -30,6 +43,7 @@ for readme in api/README.md ui/README.md README.md workflow-template.example.jso
   fi
 done
 chown -R nextjs:nodejs "${VIDEO_FACTORY_WORKSPACE}"
+fi
 
 export VIDEO_FACTORY_ENVIRONMENT="${VIDEO_FACTORY_ENVIRONMENT:-production}"
 export VIDEO_FACTORY_WORKSPACE
@@ -195,7 +209,11 @@ trap stop_all EXIT INT TERM
 echo "[runtime] applying and verifying Greater Tokyo investor scenarios"
 node /app/scripts/apply-investor-scenario-runtime-migration.mjs
 
-start_video_factory
+if [ "$VIDEO_FACTORY_RUNTIME_MODE" = embedded ]; then
+  start_video_factory
+else
+  echo '[runtime] Factory is owned by the independent MediaOS service'
+fi
 cd /app
 echo "[runtime] starting Paradigm Next.js on 0.0.0.0:${PORT:-3000}"
 su-exec nextjs:nodejs node server.js &
@@ -204,7 +222,7 @@ repair_legacy_traefik_route_loop &
 ROUTE_REPAIR_PID=$!
 
 while kill -0 "${NEXT_PID}" 2>/dev/null; do
-  if ! kill -0 "${VIDEO_FACTORY_PID}" 2>/dev/null; then
+  if [ "$VIDEO_FACTORY_RUNTIME_MODE" = embedded ] && ! kill -0 "${VIDEO_FACTORY_PID}" 2>/dev/null; then
     echo "[runtime] Video Factory exited; restarting" >&2
     start_video_factory
   fi

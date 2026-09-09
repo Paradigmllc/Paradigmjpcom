@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+# CURRENT STATUS - 2026-09-09 MediaOS independent Factory cutover
+
+- Active Handoff: `codex/mediaos-factory-cutover`. New studio source is `/Users/apple/dev/MediaOS`, private `Gracecom1/media-os`, canonical UI `https://appexx.me/media-os`. Corporate and other business applications remain here.
+- Added explicit `VIDEO_FACTORY_RUNTIME_MODE=external` compatibility mode. It requires private `VIDEO_FACTORY_INTERNAL_URL=http://media-os-factory:8080`, skips shared-workspace bootstrap/chown, and never starts or respawns embedded generation. Default remains embedded until coordinated deployment.
+- Cutover order: independently validate new image/QA; verify no active/unknown runs or GPU leases; release this compatibility mode through `npm run release:prod`; verify all old embedded processes have exited; only then start independent Factory on the preserved volume. Never start the new process alongside the unguarded old runtime.
+- Runtime source changes belong to MediaOS. Its API acquires an exclusive workspace lock before job/GPU reconciliation and keeps ownership until local job threads drain. MediaOS has a key-hiding, authenticated, same-origin Factory gateway. Public Factory/quality transition is not yet complete at this entry.
+- Four shell-mode contract tests pass. No production cutover or new GPU generation has been performed by these changes yet. Preserve old image, DB, approvals, source media, persisted models/settings and unrelated dirty worktrees.
+
 # CURRENT STATUS - 2026-09-08 NOCTEA beauty-ad production
 
 - LATEST USER ADOPTION: explicit reply「このカットを採用して構成を進める」adopts exactMP4 SHA`f467df36e3bd35ff45ed109aacb6ef3da0b94a474d43183318bea76d221bddc4` as person material only. Original5.0625s is used once at1x in a30s HyperFrames composition with2 clearly identified photographic edits of the same reference and intro/end graphics. Local`/Users/apple/Desktop/Paradigm-video-QA-20260908/noctea-beauty-ad/`; limited approvalreceipt`qa/motion-native-001/material-approval.json`. No newGPU rental, final-ad approval or publication.
