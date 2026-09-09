@@ -24,6 +24,9 @@ const cacheKeepGb = Number.parseInt(process.env.PARADIGM_BUILD_CACHE_KEEP_GB || 
 const cacheKeepGbTight = Number.parseInt(process.env.PARADIGM_BUILD_CACHE_KEEP_GB_TIGHT || "2", 10)
 const timeoutSec = Number.parseInt(process.env.PARADIGM_SSH_CONNECT_TIMEOUT || "20", 10)
 const skip = process.argv.includes("--skip") || process.env.PARADIGM_SKIP_HOST_PREFLIGHT === "1"
+// A migration must retain stopped QA containers and rollback images. Keep the
+// disk safety failure threshold, but never make inspection delete those assets.
+const readOnly = process.env.PARADIGM_DISK_READ_ONLY === "1"
 
 function ssh(command) {
   const result = spawnSync(
@@ -48,7 +51,9 @@ function main() {
 set -e
 before="$(df -P / | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
 changed=0
-if [ "$before" -ge ${failAt} ]; then
+if [ "${readOnly ? 1 : 0}" -eq 1 ]; then
+  changed=0
+elif [ "$before" -ge ${failAt} ]; then
   docker builder prune -af --keep-storage=${cacheKeepGbTight}GB >/dev/null 2>&1 || true
   docker image prune -af >/dev/null 2>&1 || true
   docker container prune -f >/dev/null 2>&1 || true
