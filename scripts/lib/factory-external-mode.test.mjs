@@ -25,3 +25,9 @@ test('external mode without exact private URL is refused',()=>{
   const result=spawnSync('sh',[],{input:prefix,env:{...process.env,VIDEO_FACTORY_RUNTIME_MODE:'external',VIDEO_FACTORY_INTERNAL_URL:'http://127.0.0.1:8080'},encoding:'utf8'});
   assert.notEqual(result.status,0);
 });
+test('migration disk inspection can refuse a full disk without deleting rollback assets',()=>{
+  const disk=readFileSync(new URL('../host-disk-preflight.mjs',import.meta.url),'utf8');
+  assert.ok(disk.includes('process.env.PARADIGM_DISK_READ_ONLY === "1"'));
+  assert.ok(disk.includes('if [ "${readOnly ? 1 : 0}" -eq 1 ]; then\n  changed=0\nelif'));
+  assert.ok(disk.includes('if (after >= failAt)'));
+});

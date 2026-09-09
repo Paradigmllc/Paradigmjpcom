@@ -7,6 +7,7 @@
 - Cutover order: independently validate new image/QA; verify no active/unknown runs or GPU leases; release this compatibility mode through `npm run release:prod`; verify all old embedded processes have exited; only then start independent Factory on the preserved volume. Never start the new process alongside the unguarded old runtime.
 - Runtime source changes belong to MediaOS. Its API acquires an exclusive workspace lock before job/GPU reconciliation and keeps ownership until local job threads drain. MediaOS has a key-hiding, authenticated, same-origin Factory gateway. Public Factory/quality transition is not yet complete at this entry.
 - Four shell-mode contract tests pass. No production cutover or new GPU generation has been performed by these changes yet. Preserve old image, DB, approvals, source media, persisted models/settings and unrelated dirty worktrees.
+- Pre-deploy doctor passed but its existing disk preflight performed aggressive cleanup at 89%: build caches, unused images and stopped containers. DB/volumes and QA bind directories were retained; live image `c3cfb9c0` and MediaOS `0e27625` remain available. Added `PARADIGM_DISK_READ_ONLY=1` to preserve the safety threshold without cleanup for subsequent migration releases. Do not assume earlier stopped QA containers/unused image tags still exist.
 
 # CURRENT STATUS - 2026-09-08 NOCTEA beauty-ad production
 
