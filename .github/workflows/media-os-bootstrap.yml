@@ -1,0 +1,134 @@
+name: Materialize Media OS Implementation
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: materialize-media-os-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/japan-market-media-os'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || 'codex/japan-market-media-os' }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate only missing Media OS implementation files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/scripts/bootstrap_media_os.py
+          python .github/scripts/bootstrap_media_os_part2_ui.py
+          python .github/scripts/bootstrap_media_os_part2_db.py
+
+      - name: Harden generated compatibility and state transitions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          roots = [Path('src/app'), Path('app')]
+          app = next((root for root in roots if root.exists()), Path('app'))
+
+          console = app / 'work/media-os/media-os-console.tsx'
+          if console.exists():
+              text = console.read_text()
+              text = text.replace('import type { CSSProperties, FormEvent } from "react";', 'import type { CSSProperties, FormEvent, ReactElement } from "react";')
+              text = text.replace('): JSX.Element {', '): ReactElement {')
+              console.write_text(text)
+
+          lead = app / 'en/japan-market-insights/[slug]/lead-form.tsx'
+          if lead.exists():
+              text = lead.read_text()
+              text = text.replace('import { useEffect, useState } from "react";', 'import type { CSSProperties, FormEvent, ReactElement } from "react";\nimport { useEffect, useState } from "react";')
+              text = text.replace('React.FormEvent<HTMLFormElement>', 'FormEvent<HTMLFormElement>')
+              text = text.replace('React.CSSProperties', 'CSSProperties')
+              text = text.replace('): JSX.Element {', '): ReactElement {')
+              lead.write_text(text)
+
+          for relative in [
+              'work/media-os/page.tsx',
+              'en/japan-market-insights/page.tsx',
+              'en/japan-market-insights/[slug]/page.tsx',
+          ]:
+              path = app / relative
+              if path.exists():
+                  text = path.read_text()
+                  text = text.replace('): JSX.Element {', ') {')
+                  text = text.replace('): Promise<JSX.Element> {', ') {')
+                  path.write_text(text)
+
+          migration = Path('supabase/migrations/202607310001_media_os_core.sql')
+          if migration.exists():
+              text = migration.read_text()
+              old = "on conflict (memo_id, channel) do update set source_revision = excluded.source_revision, content = excluded.content, quality_issues = excluded.quality_issues, quality_error_count = excluded.quality_error_count, instruction_payload = excluded.instruction_payload, instruction_signature = excluded.instruction_signature, instruction_expires_at = excluded.instruction_expires_at, updated_at = now();"
+              new = "on conflict (memo_id, channel) do update set source_revision = excluded.source_revision, content = excluded.content, quality_issues = excluded.quality_issues, quality_error_count = excluded.quality_error_count, instruction_payload = excluded.instruction_payload, instruction_signature = excluded.instruction_signature, instruction_expires_at = excluded.instruction_expires_at, state = 'draft', approval_stage = 0, stage1_approved_by = null, stage1_approved_at = null, stage2_approved_by = null, stage2_approved_at = null, scheduled_at = null, external_url = null, published_at = null, last_error = null, updated_at = now();"
+              if old in text:
+                  migration.write_text(text.replace(old, new))
+          PY
+
+      - name: Remove one-shot transfer machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            .github/scripts/bootstrap_media_os.py \
+            .github/scripts/bootstrap_media_os_part2_ui.py \
+            .github/scripts/bootstrap_media_os_part2_db.py \
+            .github/media-os-transfer-probe.txt \
+            .github/push-files-schema-probe.txt \
+            .github/workflows/media-os-source-snapshot.yml \
+            .github/workflows/media-os-branch-cleanup.yml \
+            .github/workflows/media-os-bootstrap.yml
+          if [ -f .github/workflows/media-os-final-gate.yml ]; then
+            python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/media-os-final-gate.yml')
+          text = path.read_text()
+          text = text.replace('gh pr merge "$PR_URL" --squash --delete-branch', 'gh pr merge "$PR_URL" --auto --squash --delete-branch')
+          path.write_text(text)
+          PY
+          fi
+
+      - name: Verify materialized diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test -f "$(test -d src/app && echo src/app || echo app)/work/media-os/page.tsx"
+          test -f "$(test -d src/app && echo src/app || echo app)/en/japan-market-insights/page.tsx"
+          test -f supabase/migrations/202607310001_media_os_core.sql
+          test -f supabase/migrations/202607310002_media_os_leads_analytics.sql
+          count=$(git status --short | grep -Ev '^.. \.github/workflows/' | wc -l | tr -d ' ')
+          test "$count" -ge 12
+
+      - name: Commit implementation to the pull request branch
+        env:
+          BRANCH: ${{ github.head_ref || 'codex/japan-market-media-os' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'feat: materialize complete Japan Market Entry Media OS'
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"
