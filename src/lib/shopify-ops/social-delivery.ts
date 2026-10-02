@@ -5,7 +5,11 @@ import {
   getSocialConnectorStatuses,
   publishSocialPost,
 } from "./social-publisher";
-import { socialProductReady, socialCaption } from "./social-policy";
+import {
+  socialProductReady,
+  socialCaption,
+  socialDestination,
+} from "./social-policy";
 type Db = NonNullable<ReturnType<typeof getServiceSalesSupabase>>;
 type Row = Record<string, unknown>;
 export async function publishDuePosts(db: Db) {
@@ -69,7 +73,12 @@ export async function publishDuePosts(db: Db) {
       if (row.media_url !== product.primary_image_url)
         throw new Error("予約時の画像が更新されています。再確認してください");
       const caption = row.auto_generated
-        ? socialCaption(product, platform, actual.product.onlineStoreUrl)
+        ? socialCaption(
+            product,
+            platform,
+            actual.product.onlineStoreUrl,
+            String(row.utm_campaign ?? ""),
+          )
         : String(row.caption ?? "");
       if (!caption || typeof row.media_url !== "string")
         throw new Error("投稿素材が不足しています");
@@ -85,7 +94,11 @@ export async function publishDuePosts(db: Db) {
         platform,
         caption,
         mediaUrl: row.media_url,
-        destinationUrl: actual.product.onlineStoreUrl,
+        destinationUrl: socialDestination(
+          actual.product.onlineStoreUrl,
+          platform,
+          String(row.utm_campaign ?? ""),
+        ),
       });
       const saved = await db.rpc("sericia_finish_social", {
         p_claim: claim,

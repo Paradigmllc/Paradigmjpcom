@@ -2,10 +2,10 @@
 
 ## CURRENT STATUS — 2026-10-02 SERICIA recurring operations
 
-- Active handoff: `codex/sericia-daily-operations`. Implements recurring five-job controller, private run history, cursor continuation, expiring leases, daily operations UI, and at-most-once social delivery. Deployment pending.
+- Active handoff: `codex/sericia-daily-operations`. Implements recurring five-job controller, private run history, cursor continuation, expiring leases, daily operations UI, and at-most-once social delivery. PR760 opened; deployment pending.
 - Social rechecks actual Shopify sellability and approved content revision, prevents uncertain retries, records receipts atomically, and removes hypothetical USD price claims. Previous schedules consolidated to avoid duplicate supplier/social runners.
-- Verification: 127 Shopify tests, TypeScript, focused lint, isolated mobile/desktop Playwright and rolled-back production SQL functional/RLS checks passed. No posts, purchases, shipments or notifications sent by testing.
-- Current004a0dca runtime and120e48df archive retained; unused2509cf8b image removed after confirming no referencing containers. Disk88%, release preflight still to verify.
+- Verification: 127 initial Shopify tests, TypeScript, focused lint, isolated mobile/desktop Playwright and rolled-back production SQL functional/RLS checks passed. Security CI exposed existing dependency advisories; updated Next16.3.8, sharp0.35.5, CSV7.0.3 and patched transitives. npm audit now0;182 wider tests passed. TypeScript after update passed; local build hit ENOSPC (failed build cache removed), so updated CI build remains required. No posts, purchases, shipments or notifications sent by testing.
+- Current004a0dca runtime and120e48df archive retained; unused2509cf8b image removed after confirming no referencing containers. Disk88%; read-only preflight refused deployment. Permission to relocate the retained120e48df archive to this Mac is pending. Initial copy disconnected at177MB, rsync retry in progress; do not delete the server archive before permission and matching full-file hash.
 - Unresolved: warehouse identity/API, authorized third-party stock feed, commercial product/fulfillment terms, official social accounts and additional read_fulfillments approval. Do not claim end-to-end daily commerce readiness.
 - Detail: [recurring operations](docs/knowledge/sericia/daily-operations-20261002.md).
 

@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
-import { socialCaption, socialProductReady } from "./social-policy";
+import {
+  socialCaption,
+  socialProductReady,
+  socialDestination,
+} from "./social-policy";
 it("uses verified English copy and omits hypothetical dollar prices", () => {
   const caption = socialCaption(
     {
@@ -28,4 +32,16 @@ it("rejects incomplete commercial facts and avoids unverified origin claims", ()
       "https://sericia.com/products/cloth",
     ),
   ).not.toContain("#MadeInJapan");
+});
+
+it("attributes the actual outbound link to its organic campaign", () => {
+  expect(
+    socialDestination(
+      "https://sericia.com/products/cloth",
+      "pinterest",
+      "sericia_daily_20261002",
+    ),
+  ).toBe(
+    "https://sericia.com/products/cloth?utm_source=pinterest&utm_medium=organic_social&utm_campaign=sericia_daily_20261002",
+  );
 });

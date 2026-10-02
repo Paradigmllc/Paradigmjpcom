@@ -1,12 +1,35 @@
 name: SERICIA recurring operations
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/sericia-daily-operations.yml"
+      - "src/lib/shopify-ops/**"
+      - "src/app/api/shopify-ops/**"
+      - "src/components/shopify-ops/**"
+      - "supabase/migrations/*sericia*"
+      - "package.json"
+      - "package-lock.json"
   schedule:
-    - cron: '7,22,37,52 * * * *'
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm exec -- vitest run src/lib/shopify-ops src/app/api/shopify-ops
+      - run: npm exec -- tsc --noEmit --pretty false
   operate:
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:

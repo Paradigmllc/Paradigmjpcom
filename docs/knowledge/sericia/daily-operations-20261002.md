@@ -21,3 +21,7 @@ Social content uses verified English catalog names and avoids hypothetical USD p
 127 Shopify-focused unit/API tests; full TypeScript; targeted lint; mobile/desktop isolated Playwright with empty/error/action states. SQL transaction (rolled back) verifies RLS/grants, durable run history, exclusive job/social claims, stale revision rejection, blocked rescheduling and provider-receipt completion. No provider publication or shipment is performed by verification.
 
 Production deployment and workflow read-back are recorded in Task.md after verification.
+
+## Release follow-up
+
+PR760 security CI found existing advisories. Next.js16.3.8, sharp0.35.5, csv-parse7.0.3, axios1.20.0 and fast-uri3.1.8 plus compatible audit fixes give npm audit0. Coinbase SDK remains at its original1.54.0 to preserve existing x402 peer compatibility. Wider182 tests and TypeScript passed. Local production build failed with ENOSPC; CI must verify the final dependency tree. Production release is also blocked at the88% disk threshold; retained backup relocation permission and checksum verification are pending.

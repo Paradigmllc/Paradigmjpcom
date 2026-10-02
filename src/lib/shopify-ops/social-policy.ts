@@ -36,12 +36,23 @@ export function socialCaption(
   row: SocialProduct,
   platform: "instagram" | "pinterest",
   destination: string,
+  campaign?: string,
 ) {
   const details = catalogDetailsSchema.parse(row.catalog_data ?? {});
   if (!details.titleEn) throw new Error("英語の商品名が必要です");
+  const url = socialDestination(destination, platform, campaign);
+  // Price and delivery promises must come from the actual storefront, not USD planning hypotheses.
+  return `${details.titleEn} — selected by SERICIA.\n\nExplore materials, dimensions, current pricing and delivery options on the product page.\n\n${url}\n\n#SERICIA #JapaneseDesign${row.origin_country_code === "JP" ? " #MadeInJapan" : ""}`;
+}
+
+export function socialDestination(
+  destination: string,
+  platform: "instagram" | "pinterest",
+  campaign?: string,
+) {
   const url = new URL(destination);
   url.searchParams.set("utm_source", platform);
   url.searchParams.set("utm_medium", "organic_social");
-  // Price and delivery promises must come from the actual storefront, not USD planning hypotheses.
-  return `${details.titleEn} — selected by SERICIA.\n\nExplore materials, dimensions, current pricing and delivery options on the product page.\n\n${url.href}\n\n#SERICIA #JapaneseDesign${row.origin_country_code === "JP" ? " #MadeInJapan" : ""}`;
+  if (campaign) url.searchParams.set("utm_campaign", campaign);
+  return url.href;
 }

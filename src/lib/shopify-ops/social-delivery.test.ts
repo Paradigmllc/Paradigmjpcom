@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   publishSocialPost: vi.fn(),
   socialProductReady: vi.fn(),
   socialCaption: vi.fn(),
+  socialDestination: vi.fn(),
 }));
 vi.mock("./shopify-admin", () => mocks);
 vi.mock("./social-publisher", () => mocks);
