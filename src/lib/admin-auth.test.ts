@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
+  authorizePayloadAdminRequest,
   createAdminApiSessionToken,
   createAdminSessionToken,
   verifyAdminSessionToken,
@@ -39,5 +40,20 @@ describe("admin session tokens", () => {
     const token = createAdminSessionToken(1_700_000_000_000)
     expect(verifyAdminSessionToken(`${token}x`, 1_700_000_001_000)).toBe(false)
     expect(verifyAdminSessionToken(token, 1_700_604_801_000)).toBe(false)
+  })
+})
+
+const { payloadAuth } = vi.hoisted(() => ({ payloadAuth: vi.fn() }))
+vi.mock("payload", () => ({ getPayload: async () => ({ auth: payloadAuth }) }))
+vi.mock("@payload-config", () => ({ default: {} }))
+vi.mock("./payload-availability", () => ({ isPayloadInitCoolingDown: () => false, markPayloadInitFailure: vi.fn() }))
+describe("Payload admin identity", () => {
+  it.each([42, "user-id"])("retains authenticated user identity %s", async (id) => {
+    payloadAuth.mockResolvedValue({ user: { id, role: "admin" } })
+    expect(await authorizePayloadAdminRequest({ headers: new Headers() })).toMatchObject({ ok: true, userId: String(id), userRole: "admin" })
+  })
+  it.each([0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])("does not create an identity for invalid numeric ID %s", async (id) => {
+    payloadAuth.mockResolvedValue({ user: { id, role: "viewer" } })
+    expect((await authorizePayloadAdminRequest({ headers: new Headers() })).userId).toBeNull()
   })
 })

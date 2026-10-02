@@ -76,6 +76,7 @@ function userEmailFromUnknown(user: unknown): string | null {
 function userFieldFromUnknown(user: unknown, field: "id" | "role"): string | null {
   if (!user || typeof user !== "object" || !(field in user)) return null
   const value = (user as Record<string, unknown>)[field]
+  if (field === "id" && typeof value === "number" && Number.isSafeInteger(value) && value > 0) return String(value)
   return typeof value === "string" && value.length > 0 ? value : null
 }
 
