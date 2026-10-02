@@ -21,6 +21,16 @@ function fixture(overrides: Partial<BaseItem> = {}): BaseItem {
 }
 
 describe("BASE catalog normalization", () => {
+  it.each([
+    ["宇治抹茶", "カップに入れて楽しむ", "tea"],
+    ["手仕事の茶碗", "抹茶用", "tableware"],
+    ["風呂敷", "和紙に包んで贈る", "textiles"],
+    ["和紙ノート", "手仕事", "stationery"],
+    ["水引ピアス", "ギフト", "accessories"],
+  ])("classifies %s by the product rather than supporting copy", (title, detail, expected) => {
+    expect(classifyBaseItem({ title, detail })).toBe(expected)
+  })
+
   it("maps Japanese product copy, safe images and category", () => {
     const result = normalizeBaseItem(fixture())
     expect(result.collectionHandle).toBe("tableware")
@@ -35,8 +45,8 @@ describe("BASE catalog normalization", () => {
     expect(input.status).toBe("DRAFT")
     expect(input.productOptions[0].name).toBe("Variation")
     expect(input.variants[0].inventoryQuantities[0].quantity).toBe(2)
-    expect(input.variants[0].inventoryItem.countryCodeOfOrigin).toBe("JP")
-    expect(input.metafields).toContainEqual({
+    expect(input.variants[0].inventoryItem).not.toHaveProperty("countryCodeOfOrigin")
+    expect(input.metafields).not.toContainEqual({
       namespace: "sericia",
       key: "country_of_origin",
       type: "single_line_text_field",

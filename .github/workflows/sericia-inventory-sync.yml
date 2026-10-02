@@ -1,15 +1,17 @@
-name: SERICIA BASE inventory sync
+name: SERICIA supplier monitoring and BASE inventory sync
 
 on:
   pull_request:
     paths:
       - ".github/workflows/sericia-inventory-sync.yml"
       - "src/app/api/shopify-ops/base/**"
+      - "src/app/api/shopify-ops/suppliers/**"
+      - "src/lib/shopify-ops/supplier-*.ts"
       - "src/components/shopify-ops/ShopifyBaseSyncPanel.tsx"
       - "src/lib/shopify-ops/base-*.ts"
       - "src/lib/shopify-ops/types.ts"
   schedule:
-    # Every 30 minutes. The API applies only safe diffs and records blocked irregularities.
+    # Scheduled every 30 minutes; GitHub may delay runs. Observations expire independently.
     - cron: "7,37 * * * *"
   workflow_dispatch:
 
@@ -37,6 +39,8 @@ jobs:
       - name: Focused inventory automation tests
         run: >-
           npm exec -- vitest run
+          src/lib/shopify-ops/supplier-observation.test.ts
+          src/app/api/shopify-ops/suppliers/route.test.ts
           src/lib/shopify-ops/base-sync.test.ts
           src/lib/shopify-ops/base-sync-automation.test.ts
           src/app/api/shopify-ops/base/daily/route.test.ts
@@ -70,3 +74,16 @@ jobs:
             --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
             --header "Content-Type: application/json" \
             https://paradigmjp.com/api/shopify-ops/base/daily
+
+      - name: Refresh public supplier observations independently of authorized BASE sync
+        if: always()
+        env:
+          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
+        run: |
+          test -n "$WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 180 \
+            --request POST \
+            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
+            --header "Content-Type: application/json" \
+            --data '{"action":"refresh_all"}' \
+            https://paradigmjp.com/api/shopify-ops/suppliers

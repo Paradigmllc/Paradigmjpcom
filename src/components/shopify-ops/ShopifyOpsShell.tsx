@@ -24,7 +24,9 @@ import { ShopifyMetricsPanel } from "./ShopifyMetricsPanel"
 import { ShopifyBaseSyncPanel } from "./ShopifyBaseSyncPanel"
 import { ShopifyLaunchControlPanel } from "./ShopifyLaunchControlPanel"
 
-type TabId = "overview" | "launch" | "products" | "sync" | "content" | "metrics"
+import { ShopifySupplierPanel } from "./ShopifySupplierPanel"
+
+type TabId = "suppliers" | "overview" | "launch" | "products" | "sync" | "content" | "metrics"
 type Action = (formData: FormData) => Promise<ShopifyOpsActionResult>
 type SubmitAction = (formData: FormData) => Promise<void>
 
@@ -32,6 +34,7 @@ const tabs = [
   { id: "overview" as const, label: "全体", icon: LayoutDashboard },
   { id: "launch" as const, label: "ローンチ", icon: Rocket },
   { id: "products" as const, label: "商品", icon: Boxes },
+  { id: "suppliers" as const, label: "仕入先・倉庫", icon: Store },
   { id: "sync" as const, label: "BASE同期", icon: RefreshCw },
   { id: "content" as const, label: "コンテンツ", icon: Video },
   { id: "metrics" as const, label: "KPI", icon: BarChart3 },
@@ -64,7 +67,9 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
     }
   }
 
-  const content = activeTab === "overview"
+  const content = activeTab === "suppliers"
+    ? <ShopifySupplierPanel products={dashboard.products} />
+    : activeTab === "overview"
     ? <ShopifyOverview dashboard={dashboard} />
     : activeTab === "launch"
       ? <ShopifyLaunchControlPanel control={dashboard.launchControl} locale={locale} submit={submit(runLaunchAuditAction)} />

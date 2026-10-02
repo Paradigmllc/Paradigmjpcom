@@ -56,3 +56,6 @@ docker-compose.sales-pipeline.yml
 # テスト成果物(Playwright)。生成物なのでコミットしない
 .playwright-mcp/
 test-results/
+
+# Supabase CLI local metadata
+supabase/.temp/

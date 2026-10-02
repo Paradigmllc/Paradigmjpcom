@@ -5,7 +5,7 @@
     <div class="tea-hero__description rte">{{ section.settings.description }}</div>
     <div class="tea-hero__actions">
       <a class="button" href="{{ routes.all_products_collection_url }}">{{ section.settings.button_label | escape }}</a>
-      <a class="tea-text-link" href="#tea-guide">{{ section.settings.guide_label | escape }} <span aria-hidden="true">↗</span></a>
+      <a class="tea-text-link" href="#discovery">{{ section.settings.guide_label | escape }} <span aria-hidden="true">↗</span></a>
     </div>
     <p class="tea-hero__note">{{ section.settings.note | escape }}</p>
   </div>
@@ -13,17 +13,17 @@
     {% if section.settings.image != blank %}
       {{ section.settings.image | image_url: width: 1800 | image_tag: widths: '600, 900, 1200, 1800', sizes: '(min-width: 990px) 55vw, 100vw', loading: 'eager', fetchpriority: 'high', alt: section.settings.image.alt }}
     {% else %}
-      <img src="{{ 'sericia-tea-ritual.webp' | asset_url }}" alt="Green tea, loose sencha leaves and a Japanese teapot in warm morning light" width="1536" height="1024" loading="eager" fetchpriority="high">
+      <img src="{{ 'sericia-everyday-japan.webp' | asset_url }}" alt="Editorial arrangement of Japanese textiles, stationery, small craft and tea" width="1536" height="1024" loading="eager" fetchpriority="high">
     {% endif %}
     <span class="tea-hero__caption">{{ section.settings.caption | escape }}</span>
   </div>
 </section>
 {% schema %}
 {
-  "name": "SERICIA Japanese tea",
+  "name": "SERICIA everyday Japan",
   "settings": [
     {"type":"text","id":"eyebrow","label":"Eyebrow","default":"Japanese tea & everyday discoveries"},
-    {"type":"text","id":"heading","label":"Heading","default":"A little Japan. In every cup."},
+    {"type":"text","id":"heading","label":"Heading","default":"A little Japan. In your everyday."},
     {"type":"richtext","id":"description","label":"Description","default":"<p>Discover Japanese tea and thoughtfully chosen Japanese-made goods. A fresh perspective on daily rituals, with quality and value at heart.</p>"},
     {"type":"text","id":"button_label","label":"Collection button","default":"Explore the collection"},
     {"type":"text","id":"guide_label","label":"Guide link","default":"Find your kind of tea"},
@@ -31,6 +31,6 @@
     {"type":"text","id":"caption","label":"Image caption","default":"A moment to slow down · Editorial imagery"},
     {"type":"image_picker","id":"image","label":"Hero image"}
   ],
-  "presets": [{"name":"SERICIA Japanese tea"}]
+  "presets": [{"name":"SERICIA everyday Japan"}]
 }
 {% endschema %}

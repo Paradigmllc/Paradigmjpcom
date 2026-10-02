@@ -179,7 +179,7 @@ export type BaseSyncPreviewItem = {
   inventory: number
   imageCount: number
   variationCount: number
-  collectionHandle: "tableware" | "craft" | "living" | "gifts"
+  collectionHandle: "tableware" | "craft" | "living" | "gifts" | "tea" | "textiles" | "accessories" | "stationery"
   visibleInBase: boolean
 }
 

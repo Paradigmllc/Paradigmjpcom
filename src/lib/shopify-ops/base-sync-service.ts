@@ -8,6 +8,10 @@ import type { BaseSyncMode, BaseSyncPreviewItem, BaseSyncRun, BaseSyncRunStatus,
 type DbRow = Record<string, unknown>
 
 const COLLECTIONS: Record<SericiaCollectionHandle, string> = {
+  tea: "Tea & daily rituals",
+  textiles: "Textiles & small accessories",
+  accessories: "Accessories",
+  stationery: "Paper & stationery",
   tableware: "Tableware",
   craft: "Craft",
   living: "Living",
