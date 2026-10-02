@@ -12,7 +12,7 @@ Product reconciliation reads 50 products per request. Order reconciliation reads
 
 ## Verified current external state
 
-- User approved read_orders expansion. App version `sericia-operations-read-orders` released and the existing store installation updated. A fresh API token verifies product/inventory/order access. Real order reconciliation succeeds with zero orders. Seven product/inventory/order subscriptions are registered. Real fulfillment registration exposed the incorrect assumption that read_orders also permits fulfillment topics; the correct scope is read_fulfillments (or read_marketplace_orders). The mapping is corrected in the follow-up branch; additional read_fulfillments approval remains pending.
+- User approved read_orders expansion. App version `sericia-operations-read-orders` released and the existing store installation updated. A fresh API token verifies product/inventory/order access. Real order reconciliation succeeds with zero orders. Seven product/inventory/order subscriptions are registered. Real fulfillment registration exposed the incorrect assumption that read_orders also permits fulfillment topics; the correct scope is read_fulfillments (or read_marketplace_orders). The mapping fix is deployed as PR758 merge004a0dca; additional read_fulfillments approval remains pending.
 - Warehouse API credential absent. Contracted provider not identified. Locations and OPENLOGI remain prior candidates. Do not implement invented warehouse endpoints or claim physical inspection, packing or shipment.
 - Six real Shopify products were read through the new product reconciliation code and persisted/read back from production DB through a temporary SSH tunnel. All13 inventory items were also fetched across three cursor pages and13 location quantities persisted. Shopify source products and stock were not modified.
 - SQL migration applied transactionally. RLS, anonymous/authenticated denial, duplicate handling, stale update rejection, conflict handling, authoritative reconciliation and tombstones tested in a transaction that was rolled back. No fixture orders retained in production.
@@ -21,11 +21,11 @@ Product reconciliation reads 50 products per request. Order reconciliation reads
 - User approved removal of the oldest ac3d1f62 rollback archive; only that archive was deleted. The preceding120e48df archive remains. Host disk dropped to87%; the unchanged release guard passed. Standard release of PR757 merge2509cf8b finished as deployment `ntxzrqpuf2x82jp4plmlmija`; running image and new authenticated UI verified. No guard override, warehouse purchase or dispatch occurred.
 - Narrow read-only Gmail search for prior warehouse candidates found promotional mail but no contract or API provisioning evidence. This does not establish that no contract exists elsewhere.
 
-## Required connection sequence
+## Remaining connection sequence
 
-1. Free host capacity with authorized maintenance and deploy through the standard release path. Verify runtime fingerprint and unauthenticated endpoint boundaries.
-2. Register permitted Shopify webhook topics from the authenticated operations panel; verify subscriptions and a real subsequent product update without activating inventory or publication.
-3. Grant the existing application `read_orders` with the operator's approval, then register order/fulfillment topics and reconcile existing orders. This broadens app access to order data; no read_customers/write_orders permission is requested.
+1. Completed: standard deployment and authenticated UI/runtime verification. Invalid-signature and anonymous API requests return401.
+2. Completed:7 permitted Shopify topics registered, with real products/update delivery verified without sales activation.
+3. read_orders is granted and real order recovery verified. The additional read_fulfillments permission is prepared in Dev Dashboard and explicitly awaiting approval; then register the two remaining fulfillment topics. No write fulfillment/order scope is requested.
 4. Confirm warehouse/provider and use its supported Shopify integration. OPENLOGI's official connector/API is preferable to duplicating dispatch orchestration. Receiving, inspection, rejected items, consolidation, packing, export documentation and return processing require the provider's actual supported contract and status mappings.
 5. Obtain an authorized supplier inventory feed and stable variant/SKU mapping. BASE retail-page observations are not exact stock or automatic purchase authorization. Do not increase Shopify available inventory from a page's buy button.
 6. Run a controlled contracted-provider test from inbound receipt through tracking/delivery and cancellation/partial-failure recovery before commercial launch. Credential presence and successful mocks do not establish this result.
@@ -46,3 +46,10 @@ No Slack/email message was sent. Operator-visible reception errors are stored in
 - A temporary tag was added/removed on our tea DRAFT. Original tags restored, status remained DRAFT. A real products/update delivery was persisted with outcome applied at2026-10-02T08:45:59Z and displayed in the live operations event history. No fake order or inventory increase.
 - Scope follow-up corrects fulfillment permissions and shows the required scope in the UI. Action errors persist across automatic data refresh and disappear on a new action. Seven subscription tests and isolated mobile/desktop browser checks pass.
 
+## Final verified runtime
+
+PR758 merge004a0dca is running; deployment kcvgygc9l2ppjo5syvheolxr finished. Live UI correctly displays seven registered topics and two read_fulfillments-required topics. Post-deploy doctor passes. Standard release still exits1 on unrelated Manual Work V4 HTTP207 after the successful cutover.
+
+Supplier monitoring run36986761333 completed at08:55:20Z, saving six observations (four available displays with prices, two unknown); live UI read-back verified. Its own-shop BASE sync reports blocked/unconfigured. GitHub schedule gaps are observed; no guaranteed30-minute or realtime supplier inventory.
+
+Unused build cache and the unused81811ad1 image were removed after the2509cf8b release was verified. Current004a0dca, preceding2509cf8b and verified120e48df rollback archive remain. Temporary SSH tunnel closed after verification.
