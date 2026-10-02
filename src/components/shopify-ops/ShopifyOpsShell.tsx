@@ -55,7 +55,7 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
   useEffect(() => {
     const readTab = () => {
       const requested = new URLSearchParams(window.location.search).get('tab')
-      if (tabs.some(tab => tab.id === requested)) setActiveTab(requested as TabId)
+      setActiveTab(tabs.some(tab => tab.id === requested) ? requested as TabId : 'overview')
     }
     readTab()
     window.addEventListener('popstate', readTab)
