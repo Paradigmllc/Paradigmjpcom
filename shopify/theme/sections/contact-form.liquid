@@ -61,6 +61,10 @@
           <option value="disclosure">{{ 'sericia.disclosure' | t }}</option>
         </select>
       </div>
+      <div class="field">
+        <input class="field__input" type="text" id="ContactForm-product" name="contact[Product or order reference]" maxlength="180" placeholder="{{ 'sericia.product_reference' | t | escape }}">
+        <label class="field__label" for="ContactForm-product">{{ 'sericia.product_reference' | t }}</label>
+      </div>
       <p id="ContactForm-privacy">{{ 'sericia.privacy_note' | t }} {% if shop.privacy_policy.url != blank %}<a href="{{ shop.privacy_policy.url }}">{{ 'sericia.privacy' | t }}</a>{% endif %}</p>
       <div class="contact__fields">
         <div class="field">

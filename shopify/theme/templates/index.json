@@ -126,40 +126,46 @@
     },
     "tea-guide": {
       "type": "sericia-tea-guide",
-      "settings": {},
+      "settings": {
+        "eyebrow": "Good things, thoughtfully chosen",
+        "heading": "Make it part of your day.",
+        "intro": "A starting point for choosing Japanese tea, paper and textiles. Check each product for its specific materials, size and care.",
+        "link_label": "Ask us for guidance",
+        "note": "Product availability and care instructions vary. The individual product page is your reference."
+      },
       "blocks": {
-        "sencha": {
+        "tea": {
           "type": "tea",
           "settings": {
-            "title": "Sencha",
-            "profile": "Fresh & green",
-            "description": "Loose-leaf green tea with a refreshing character. A gentle starting point for exploring Japanese tea.",
-            "ritual": "For your everyday tea break."
+            "title": "A slower morning",
+            "profile": "Tea & rituals",
+            "description": "Explore loose-leaf sencha, roasted hojicha or whisked matcha. Choose a tea style that fits the way you like to prepare it.",
+            "ritual": "Start with flavour, then choose your tools."
           }
         },
-        "hojicha": {
+        "paper": {
           "type": "tea",
           "settings": {
-            "title": "Hojicha",
-            "profile": "Roasted & comforting",
-            "description": "Roasted Japanese green tea, loved for its warm aroma and toasty character.",
-            "ritual": "For a quiet, unhurried moment."
+            "title": "Room for an idea",
+            "profile": "Paper & stationery",
+            "description": "Discover the texture of Japanese paper. Compare notebook size, binding and the kind of writing you want to do.",
+            "ritual": "A daily notebook or a thoughtful small gift."
           }
         },
-        "matcha": {
+        "textiles": {
           "type": "tea",
           "settings": {
-            "title": "Matcha",
-            "profile": "Rich & whisked",
-            "description": "Finely ground green tea, whisked into water. Explore its distinctive texture and depth of flavour.",
-            "ritual": "For a ritual all your own."
+            "title": "Carry something lovely",
+            "profile": "Textiles & gifts",
+            "description": "A furoshiki can wrap a gift or carry an everyday object. Match the cloth dimensions and material to the way you plan to use it.",
+            "ritual": "Check the care instructions before washing."
           }
         }
       },
       "block_order": [
-        "sencha",
-        "hojicha",
-        "matcha"
+        "tea",
+        "paper",
+        "textiles"
       ]
     },
     "discovery": {

@@ -249,13 +249,15 @@ export async function updateShopifyOpsProduct(input: UpdateProductInput): Promis
   const database = requireDatabase()
   const { data: existing, error: existingError } = await database
     .from(DB_TABLES.SHOPIFY_OPS_PRODUCTS)
-    .select("clip_target, photo_target")
+    .select("clip_target, photo_target, supplier_url")
     .eq("id", input.id)
     .single()
   if (existingError) throw new Error(`商品が見つかりません: ${existingError.message}`)
   if (input.clipReady > numberFrom(existing.clip_target) || input.photoReady > numberFrom(existing.photo_target)) {
     throw new Error("完成素材数は目標数を超えて登録できません")
   }
+
+  if ((input.supplierUrl || null) !== (existing.supplier_url || null)) throw new Error("仕入先が変更されています。再読み込みし、仕入先・倉庫で編集してください")
 
   const { data, error } = await database
     .from(DB_TABLES.SHOPIFY_OPS_PRODUCTS)
@@ -265,7 +267,6 @@ export async function updateShopifyOpsProduct(input: UpdateProductInput): Promis
       clip_ready: input.clipReady,
       photo_ready: input.photoReady,
       shopify_handle: input.shopifyHandle || null,
-      supplier_url: input.supplierUrl || null,
       primary_image_url: input.primaryImageUrl || null,
       origin_country_code: input.originCountryCode || null,
       hs_code: input.hsCode || null,

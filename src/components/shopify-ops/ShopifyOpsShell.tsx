@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
@@ -24,16 +24,20 @@ import { ShopifyMetricsPanel } from "./ShopifyMetricsPanel"
 import { ShopifyBaseSyncPanel } from "./ShopifyBaseSyncPanel"
 import { ShopifyLaunchControlPanel } from "./ShopifyLaunchControlPanel"
 
+import { ShopifyOperationsLinks } from "./ShopifyOperationsLinks"
+import { ShopifyCatalogPanel } from "./ShopifyCatalogPanel"
 import { ShopifySupplierPanel } from "./ShopifySupplierPanel"
 
-type TabId = "suppliers" | "overview" | "launch" | "products" | "sync" | "content" | "metrics"
+type TabId = "operations" | "catalog" | "suppliers" | "overview" | "launch" | "products" | "sync" | "content" | "metrics"
 type Action = (formData: FormData) => Promise<ShopifyOpsActionResult>
 type SubmitAction = (formData: FormData) => Promise<void>
 
 const tabs = [
   { id: "overview" as const, label: "全体", icon: LayoutDashboard },
   { id: "launch" as const, label: "ローンチ", icon: Rocket },
-  { id: "products" as const, label: "商品", icon: Boxes },
+  { id: "catalog" as const, label: "商品カタログ", icon: Boxes },
+  { id: "products" as const, label: "掲載前確認", icon: Boxes },
+  { id: "operations" as const, label: "注文・配送", icon: Store },
   { id: "suppliers" as const, label: "仕入先・倉庫", icon: Store },
   { id: "sync" as const, label: "BASE同期", icon: RefreshCw },
   { id: "content" as const, label: "コンテンツ", icon: Video },
@@ -48,6 +52,21 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
   const [activeTab, setActiveTab] = useState<TabId>("overview")
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  useEffect(() => {
+    const readTab = () => {
+      const requested = new URLSearchParams(window.location.search).get('tab')
+      setActiveTab(tabs.some(tab => tab.id === requested) ? requested as TabId : 'overview')
+    }
+    readTab()
+    window.addEventListener('popstate', readTab)
+    return () => window.removeEventListener('popstate', readTab)
+  }, [])
+  function selectTab(tab: TabId) {
+    setActiveTab(tab)
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', tab)
+    window.history.pushState(null, '', url)
+  }
 
   function submit(action: Action): SubmitAction {
     return async (formData) => {
@@ -67,7 +86,11 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
     }
   }
 
-  const content = activeTab === "suppliers"
+  const content = activeTab === "operations"
+    ? <ShopifyOperationsLinks />
+    : activeTab === "catalog"
+    ? <ShopifyCatalogPanel />
+    : activeTab === "suppliers"
     ? <ShopifySupplierPanel products={dashboard.products} />
     : activeTab === "overview"
     ? <ShopifyOverview dashboard={dashboard} />
@@ -112,7 +135,7 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
             const Icon = tab.icon
             const active = activeTab === tab.id
             return (
-              <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} aria-pressed={active} className={`relative flex min-w-fit items-center gap-2 px-3 py-3 text-sm font-bold ${active ? "text-zinc-950" : "text-zinc-500 hover:text-zinc-800"}`}>
+              <button key={tab.id} type="button" onClick={() => selectTab(tab.id)} aria-pressed={active} className={`relative flex min-w-fit items-center gap-2 px-3 py-3 text-sm font-bold ${active ? "text-zinc-950" : "text-zinc-500 hover:text-zinc-800"}`}>
                 <Icon className="h-4 w-4" />{tab.label}
                 {active && <motion.span layoutId="shopify-tab" className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-violet-600" />}
               </button>

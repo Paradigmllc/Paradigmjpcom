@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { cookies, headers } from "next/headers"
+import { headers } from "next/headers"
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
 import { notifyBothChannels } from "@/lib/notify"
 import {
@@ -25,13 +25,11 @@ import {
 export type ShopifyOpsActionResult = { ok: true; message: string } | { ok: false; error: string }
 
 async function requireAdmin(): Promise<void> {
-  const cookieStore = await cookies()
   const requestHeaders = await headers()
   const auth = await authorizePayloadAdminRequest({
     headers: new Headers(requestHeaders),
-    legacyToken: cookieStore.get("paradigm_admin_token")?.value,
   })
-  if (!auth.ok) throw new Error("管理者認証が必要です")
+  if (!auth.ok || !auth.userId || !["admin", "editor"].includes(auth.userRole ?? "")) throw new Error("管理者または編集者の認証が必要です")
 }
 
 function localeFrom(formData: FormData): string {

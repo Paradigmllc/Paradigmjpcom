@@ -539,6 +539,8 @@
     }
   },
   "sericia": {
+    "ask_product": "Ask us about this item",
+    "product_reference": "Product or order reference (optional)",
   "eyebrow": "SERICIA client services",
   "heading": "A little guidance. A warmer welcome.",
   "intro": "Discover our approach to Japanese tea and everyday goods, find useful guidance, or get in touch.",

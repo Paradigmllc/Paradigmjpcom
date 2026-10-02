@@ -97,7 +97,7 @@ async function shopifyAccessToken(domain: string): Promise<string> {
   return token
 }
 
-async function shopifyGraphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+export async function shopifyGraphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const domain = requiredEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const version = requiredEnv("SHOPIFY_API_VERSION")
   const accessToken = await shopifyAccessToken(domain)

@@ -10,12 +10,13 @@ function contactHarness(search, valid = true) {
   const events = {};
   const windowEvents = {};
   const topic = { options: ['general', 'product', 'order', 'disclosure'].map(value => ({ value })), value: 'general' };
+  const context = { value: '' };
   const button = { disabled: false, textContent: 'Send', dataset: { sending: 'Sending…' } };
   const status = { textContent: '', dataset: { slow: 'Check your connection' } };
   let timer;
   const form = {
     dataset: {}, attrs: {}, checkValidity: () => valid,
-    querySelector: selector => ({ '#ContactForm-topic': topic, '[type="submit"]': button, '#ContactForm-progress': status })[selector],
+    querySelector: selector => ({ '#ContactForm-topic': topic, '#ContactForm-product': context, '[type="submit"]': button, '#ContactForm-progress': status })[selector],
     addEventListener: (name, fn) => events[name] = fn,
     setAttribute(name, value) { this.attrs[name] = value; },
     removeAttribute(name) { delete this.attrs[name]; },
@@ -25,7 +26,7 @@ function contactHarness(search, valid = true) {
     window: { location: { search }, addEventListener: (name, fn) => windowEvents[name] = fn },
     URLSearchParams, setTimeout: fn => { timer = fn; return 1; }, clearTimeout: () => {},
   });
-  return { topic, button, status, form, submit: (event = {}) => events.submit(event), restore: () => windowEvents.pageshow(), timeout: () => timer() };
+  return { topic, context, button, status, form, submit: (event = {}) => events.submit(event), restore: () => windowEvents.pageshow(), timeout: () => timer() };
 }
 test('disclosure deep link selects the dedicated request topic', () => {
   assert.equal(contactHarness('?topic=disclosure').topic.value, 'disclosure');
@@ -110,4 +111,10 @@ test('failed predictive search presents a readable fallback and removes loading'
   assert.equal(visibleNotice.textContent, 'Press Enter to search the full store.');
   assert.equal(instance.attrs.loading, undefined);
   assert.equal(instance.opened, true);
+});
+
+test('product enquiries carry bounded plain text without HTML insertion', () => {
+  const h = contactHarness('?topic=product&product=%3Cscript%3Ebad%3C%2Fscript%3E');
+  assert.equal(h.context.value, '<script>bad</script>');
+  assert.equal(contactHarness('?product=' + 'a'.repeat(200)).context.value.length, 180);
 });

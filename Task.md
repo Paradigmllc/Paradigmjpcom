@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-02 SERICIA catalog workflow
+
+- Active branch `codex/sericia-catalog-workflow`. User requested all independently implementable non-payment operations.
+- Added catalog CRUD, conflict detection, native-currency draft preparation, safe Shopify draft creation/recovery and native order/shipping management links. Supplier source updates now reach product checks; viewer and unidentified legacy sessions cannot mutate operations.
+- Six real research candidates enriched from linked merchant pages with original English descriptions and proposed JPY prices. They remain candidate/zero-stock; images, variants, supplier agreements and fulfillment are not approved. Schema and guarded enrichment applied; UI/application deployment pending.
+- Store basic currency verified JPY. USD economics remain a separate hypothesis.
+- Theme1.5 adds broader shopping guidance, food information and product-context enquiries. 25 focused tests and12 theme regressions pass; Theme Check0 errors/1 existing warning. Final release checks in progress.
+- Prior120e48df unused image archived/verified at `/var/backups/paradigm-release/120e48df-20261002.tar.gz` before removing its unpacked image. Current81811ad1 remains live. Disk88%; no threshold bypass, volumes and unrelated app images preserved.
+
+
 ## CURRENT STATUS — 2026-10-02 SERICIA verified release
 
 - Active handoff: `codex/sericia-auth-release`. Runtime PR #753 merge `81811ad1` deployed by standard release; Coolify deployment `j139syo0h62fdg0112cw0orc` finished. Earlier implementation PR #752 merge `120e48df` is included.

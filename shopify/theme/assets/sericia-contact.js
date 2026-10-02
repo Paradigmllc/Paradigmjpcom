@@ -5,6 +5,9 @@
   const topic = form.querySelector('#ContactForm-topic');
   const requested = new URLSearchParams(window.location.search).get('topic');
   if (topic && Array.from(topic.options).some((option) => option.value === requested)) topic.value = requested;
+  const context = form.querySelector('#ContactForm-product');
+  const product = new URLSearchParams(window.location.search).get('product');
+  if (context && product && !context.value) context.value = product.slice(0, 180);
   const button = form.querySelector('[type="submit"]');
   const status = form.querySelector('#ContactForm-progress');
   if (!button || !status) return;

@@ -5,7 +5,7 @@
   assign maker_story = product.metafields.sericia.maker_story
   assign selected_variant = product.selected_or_first_available_variant
   assign has_product_details = false
-  if origin != blank or dimensions != blank or section.settings.show_sku and selected_variant.sku != blank or section.settings.show_vendor and product.vendor != blank or section.settings.show_product_type and product.type != blank
+  if origin != blank or dimensions != blank or section.settings.show_sku and selected_variant.sku != blank and product.variants.size == 1 or section.settings.show_vendor and product.vendor != blank or section.settings.show_product_type and product.type != blank
     assign has_product_details = true
   endif
 -%}
@@ -84,6 +84,9 @@
     {%- if section.settings.heading != blank -%}
       <h2 class="h2">{{ section.settings.heading | escape }}</h2>
     {%- endif -%}
+    {% if pages.contact.url != blank %}
+      <p><a href="{{ pages.contact.url }}?topic=product&amp;product={{ product.title | url_encode }}#ContactForm">{{ 'sericia.ask_product' | t }}</a></p>
+    {% endif %}
     <div class="sericia-product-details__grid">
       {%- if has_product_details -%}
         <details open>
@@ -95,7 +98,7 @@
             <dl class="sericia-product-details__list">
               {%- if section.settings.show_vendor and product.vendor != blank -%}<div><dt>Maker / brand</dt><dd>{{ product.vendor | escape }}</dd></div>{%- endif -%}
               {%- if section.settings.show_product_type and product.type != blank -%}<div><dt>Category</dt><dd>{{ product.type | escape }}</dd></div>{%- endif -%}
-              {%- if section.settings.show_sku and selected_variant.sku != blank -%}<div><dt>SKU</dt><dd>{{ selected_variant.sku | escape }}</dd></div>{%- endif -%}
+              {%- if section.settings.show_sku and selected_variant.sku != blank and product.variants.size == 1 -%}<div><dt>SKU</dt><dd>{{ selected_variant.sku | escape }}</dd></div>{%- endif -%}
               {%- if origin != blank -%}<div><dt>Country of origin</dt><dd>{{ origin | escape }}</dd></div>{%- endif -%}
               {%- if dimensions != blank -%}<div><dt>Dimensions</dt><dd>{{ dimensions | escape }}</dd></div>{%- endif -%}
             </dl>
@@ -114,6 +117,16 @@
           <div class="sericia-product-details__content rte">{{ maker_story | metafield_tag }}</div>
         </details>
       {%- endif -%}
+      {%- assign food_keys = 'ingredients,allergens,storage' | split: ',' -%}
+      {%- assign food_labels = 'Ingredients,Allergen information,Storage & shelf life' | split: ',' -%}
+      {%- for key in food_keys -%}
+        {%- assign fact = product.metafields.sericia[key] -%}
+        {%- if fact != blank -%}
+          <details><summary><span class="h4">{{ food_labels[forloop.index0] | escape }}</span>{{- 'icon-caret.svg' | inline_asset_content -}}</summary>
+            <div class="sericia-product-details__content rte">{{ fact | metafield_tag }}</div>
+          </details>
+        {%- endif -%}
+      {%- endfor -%}
       <details>
         <summary><span class="h4">Shipping, duties & returns</span>{{- 'icon-caret.svg' | inline_asset_content -}}</summary>
         <div class="sericia-product-details__content rte">
