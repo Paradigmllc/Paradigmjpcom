@@ -307,6 +307,9 @@ export async function createShopifyOpsContent(input: CreateContentInput): Promis
 
 export async function updateShopifyOpsContentStatus(input: UpdateContentStatusInput): Promise<ShopifyOpsContentItem> {
   const database = requireDatabase()
+  const delivery = await database.from("sericia_social_deliveries").select("state").eq("content_id",input.id).maybeSingle()
+  if(delivery.error) throw new Error("公開記録を確認できません")
+  if(delivery.data) throw new Error("自動公開の試行記録があります。SNS側の実結果を照合するまで状態変更できません")
   const patch: Record<string, unknown> = { status: input.status, updated_at: new Date().toISOString() }
   if (input.status === "published") patch.published_at = new Date().toISOString()
   if (input.status !== "blocked") patch.error_message = null

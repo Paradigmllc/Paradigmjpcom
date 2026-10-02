@@ -68,13 +68,13 @@
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "csv-parse": "^6.2.1",
+    "csv-parse": "^7.0.3",
     "dotenv": "^17.4.2",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.12.1",
     "graphql": "^16.10.0",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.12",
+    "next": "^16.3.8",
     "next-intl": "^4.9.1",
     "next-themes": "^0.4.6",
     "payload": "file:vendor/paradigmllc-payload-security-3.85.0.tgz",
@@ -85,7 +85,7 @@
     "react-hook-form": "^7.72.0",
     "react-icons": "^5.7.0",
     "recharts": "^3.9.2",
-    "sharp": "0.35.3",
+    "sharp": "^0.35.5",
     "sonner": "^2.0.7",
     "stripe": "^22.4.0",
     "tailwind-merge": "^3.5.0",
@@ -138,8 +138,9 @@
     "@opentelemetry/otlp-transformer": "^0.219.0",
     "hono": "^4.12.26",
     "undici": "7.29.1",
-    "axios": "1.18.1",
+    "axios": "1.20.0",
     "image-size": "npm:image-size-next@2.1.1",
-    "payload": "$payload"
+    "payload": "$payload",
+    "fast-uri": "3.1.8"
   }
 }
