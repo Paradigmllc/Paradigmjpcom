@@ -22,8 +22,8 @@ Existing Shopify-generated privacy policy exposed a phone number and postal addr
 - Native Node regression tests: 11 passing on the final tea theme. TypeScript pre-check passed with no errors.
 - Theme Check: final tea theme zero errors, one existing vendor `facets.liquid` complexity warning.
 - Browser preview: 390px mobile service layout, disclosure preselection, required field validation, collection empty state, cart open/Escape, mobile navigation and search-to-results verified. Tea desktop hero/photo and 390px mobile hero/tea guide verified; no horizontal overflow.
-- Unpublished preview theme ID: `166334890032`. Original live theme ID: `144336257072` (retain as rollback).
-- Validated for release; publish and public fingerprint read-back are the remaining release steps.
+- Published theme ID: `166334890032`. Original live theme ID: `144336257072` (retain as rollback).
+- PR #751 merged as `6f59c42e3b32b5eafe800593031cbaa25d440d44`. Shopify publish succeeded and cookie-free public HTTP plus browser after Exit preview confirmed `data-sericia-release="1.3.0-tea"`, tea hero, absence of old hero and retained noindex. Privacy redaction rechecked.
 
 ## External information still required
 
