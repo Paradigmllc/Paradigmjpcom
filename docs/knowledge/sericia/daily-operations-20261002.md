@@ -25,3 +25,9 @@ Production deployment and workflow read-back are recorded in Task.md after verif
 ## Release follow-up
 
 PR760 security CI found existing advisories. Next.js16.3.8, sharp0.35.5, csv-parse7.0.3, axios1.20.0 and fast-uri3.1.8 plus compatible audit fixes give npm audit0. Coinbase SDK remains at its original1.54.0 to preserve existing x402 peer compatibility. Wider182 tests and TypeScript passed. Local production build failed with ENOSPC; CI must verify the final dependency tree. Production release is also blocked at the88% disk threshold; retained backup relocation permission and checksum verification are pending.
+
+## Verified handoff — 2026-10-03
+
+Runtime commit e34c795c passed all PR760 CI checks: Shopify validation, main production builds, production container and shared regression jobs. Final focused128 tests pass, wider182 pass, TypeScript/lint and final desktop/mobile fixture pass, npm audit0. PR remains open to avoid activating schedules against an undeployed endpoint.
+
+Host remains88% with current004a0dca serving. Retained120e48df archive was copied to `/Users/apple/.codex/sericia-release-evidence/backups/120e48df-20261002.tar.xz`; complete SHA256 matches server: `60e15c3c887dec712f254b9a859aa534575f08669057078113081ceda2d9f22d`. Permission to delete only the server-side copy is pending because the previous instruction retained it. Both copies still exist. After explicit permission: recheck hash and current runtime, remove only that exact server archive, rerun read-only preflight, merge PR760, standard release, then verify live authenticated daily UI/API and manually dispatch the five-job workflow. No new production schema, automatic social posts or purchases were performed in this turn.
