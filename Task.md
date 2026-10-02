@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-02 SERICIA event operations
+
+- Active handoff: `codex/sericia-fulfillment-operations`. User requested operational UI/UX, realtime product synchronization and inbound-to-shipment automation.
+- Added signed Shopify webhook receiver, atomic private event/projection DB, ordering/deduplication safeguards, authenticated subscription setup and product/order/fulfillment recovery. Operations UI supports search, scope state, errors and15-second refresh. Six actual product snapshots persisted/read back.
+- Actual Shopify order scope is missing; warehouse credentials/provider and supplier stock rights remain unconfirmed. New webhook subscriptions deliberately unregistered until receiver deployment. No automated buying, warehouse receipt/dispatch, inventory increase or new sales activation.
+-28 new focused tests and isolated mobile/desktop Playwright pass; DB transactional safety/RLS tests pass. Standard deployment still blocked at host disk88%; oldest rollback archive deletion approval remains unanswered. Current runtime81811ad1; theme1.5 remains live.
+- Details: [event operations handoff](docs/knowledge/sericia/event-operations-20261002.md). Earlier implementation PR755 and follow-up PR756 merged; this entry supersedes their release-in-progress wording.
+
 ## CURRENT STATUS — 2026-10-02 SERICIA catalog workflow
 
 - Implementation PR #755 merged as `7839b924`. Follow-up branch `codex/sericia-catalog-collections` adds matching collection assignment and observed-price visibility. User requested all independently implementable non-payment operations.
