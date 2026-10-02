@@ -40,9 +40,13 @@ export type NormalizedBaseProduct = BaseSyncPreviewItem & {
 }
 
 const COLLECTION_RULES: Array<{ handle: SericiaCollectionHandle; words: string[] }> = [
-  { handle: "tableware", words: ["器", "皿", "茶", "カップ", "グラス", "箸", "plate", "bowl", "cup", "table"] },
-  { handle: "craft", words: ["工芸", "手仕事", "和紙", "染", "陶", "木工", "金継", "craft", "handmade"] },
-  { handle: "gifts", words: ["ギフト", "贈", "プレゼント", "アクセサリー", "小物", "gift", "accessory"] },
+  { handle: "tableware", words: ["茶碗", "茶器", "急須", "皿", "カップ", "グラス", "箸", "plate", "bowl", "cup", "teapot"] },
+  { handle: "tea", words: ["日本茶", "緑茶", "煎茶", "ほうじ茶", "抹茶", "玄米茶", "茶葉", "matcha", "sencha", "hojicha", "green tea"] },
+  { handle: "textiles", words: ["風呂敷", "布", "織", "帯", "着物", "ポーチ", "furoshiki", "textile", "pouch"] },
+  { handle: "accessories", words: ["水引", "ピアス", "イヤリング", "アクセサリー", "ネイル", "earring", "accessory", "jewelry"] },
+  { handle: "stationery", words: ["和紙", "文具", "ノート", "紙", "zine", "stationery", "notebook", "washi"] },
+  { handle: "craft", words: ["工芸", "手仕事", "陶", "木工", "金継", "craft", "handmade"] },
+  { handle: "gifts", words: ["ギフト", "贈", "プレゼント", "gift"] },
 ]
 
 function integer(value: unknown, minimum = 0): number {
@@ -80,8 +84,12 @@ function imageUrls(item: BaseItem): string[] {
 }
 
 export function classifyBaseItem(item: Pick<BaseItem, "title" | "detail">): SericiaCollectionHandle {
-  const searchable = `${item.title} ${item.detail}`.toLocaleLowerCase("ja")
-  return COLLECTION_RULES.find((rule) => rule.words.some((word) => searchable.includes(word.toLocaleLowerCase("ja"))))?.handle ?? "living"
+  for (const field of [item.title, item.detail]) {
+    const searchable = field.toLocaleLowerCase("ja")
+    const match = COLLECTION_RULES.find((rule) => rule.words.some((word) => searchable.includes(word.toLocaleLowerCase("ja"))))
+    if (match) return match.handle
+  }
+  return "living"
 }
 
 export function normalizeBaseItem(raw: BaseItem): NormalizedBaseProduct {
@@ -151,7 +159,6 @@ export function buildShopifyProductSetInput(product: NormalizedBaseProduct, loca
     metafields: [
       { namespace: "sericia", key: "source", type: "single_line_text_field", value: "BASE" },
       { namespace: "sericia", key: "source_item_id", type: "single_line_text_field", value: String(product.baseItemId) },
-      { namespace: "sericia", key: "country_of_origin", type: "single_line_text_field", value: "Japan" },
     ],
     productOptions: [{ name: optionName, position: 1, values: product.variations.map((variation) => ({ name: variation.name })) }],
     files: product.images.map((originalSource, index) => ({
@@ -168,7 +175,7 @@ export function buildShopifyProductSetInput(product: NormalizedBaseProduct, loca
       barcode: variation.barcode,
       taxable: true,
       inventoryPolicy: "DENY",
-      inventoryItem: { sku: variation.sku, tracked: true, requiresShipping: true, countryCodeOfOrigin: "JP" },
+      inventoryItem: { sku: variation.sku, tracked: true, requiresShipping: true },
       inventoryQuantities: [{ locationId, name: "available", quantity: variation.inventory }],
     })),
   }

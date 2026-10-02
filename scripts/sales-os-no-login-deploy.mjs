@@ -824,6 +824,10 @@ async function applySalesProductsSchemaMigration(envs) {
   return applySqlMigration(envs, "migration_052_sales_products_bootstrap.sql", "Sales products bootstrap migration")
 }
 
+async function applyShopifySupplierMigration(envs) {
+  return applySqlMigration(envs, "20261002044712_sericia_supplier_observations.sql", "SERICIA supplier observations migration")
+}
+
 async function applyShopifyOpsMigration(envs) {
   return applySqlMigration(envs, "20260801212630_shopify_ops.sql", "Tiny Shops Shopify operations migration")
 }
@@ -2020,6 +2024,7 @@ async function main() {
     console.log(await applyShopifyBaseSyncHardeningMigration({}))
     console.log(await applyShopifyProductSocialPipelineMigration({}))
     console.log(await applyShopifyLaunchControlMigration({}))
+    console.log(await applyShopifySupplierMigration({}))
     return
   }
 
@@ -2070,6 +2075,7 @@ async function main() {
     console.log(await applyShopifyBaseSyncHardeningMigration(envs))
     console.log(await applyShopifyProductSocialPipelineMigration(envs))
     console.log(await applyShopifyLaunchControlMigration(envs))
+    console.log(await applyShopifySupplierMigration(envs))
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applyPayloadPagesPricingMigration(envs))

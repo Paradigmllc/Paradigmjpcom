@@ -3,13 +3,13 @@
     "serica-hero": {
       "type": "sericia-tea-hero",
       "settings": {
-        "eyebrow": "Japanese tea & everyday discoveries",
-        "heading": "A little Japan. In every cup.",
-        "description": "<p>Discover Japanese tea and carefully selected Japanese-made goods. Thoughtful quality, everyday enjoyment, and a closer connection to Japan.</p>",
+        "eyebrow": "Small discoveries. Made in Japan.",
+        "heading": "A little Japan. In your everyday.",
+        "description": "<p>Tea for slow mornings. Textiles to carry with you. Paper, craft and thoughtful gifts. Discover a new side of everyday Japan.</p>",
         "button_label": "Explore the collection",
-        "guide_label": "Find your kind of tea",
-        "note": "Good tea. Thoughtful essentials. A taste of Japan.",
-        "caption": "A moment to slow down · Editorial imagery"
+        "guide_label": "Explore our worlds",
+        "note": "Japanese tea, textiles, stationery & small everyday treasures.",
+        "caption": "Everyday Japan · Editorial imagery"
       }
     },
     "serica-promises": {
@@ -20,7 +20,7 @@
           "settings": {
             "icon": "globe",
             "heading": "A focus on Japan",
-            "text": "Tea & Japanese-made goods"
+            "text": "Tea, textiles, paper & craft"
           }
         },
         "quality": {
@@ -65,7 +65,7 @@
           "type": "principle",
           "settings": {
             "heading": "Japan at the centre",
-            "text": "Tea comes first, alongside a considered selection of Japanese-made essentials."
+            "text": "From tea and textiles to paper and small craft, our perspective begins with Japan."
           }
         },
         "details": {
@@ -90,8 +90,8 @@
       ],
       "settings": {
         "eyebrow": "From Japan, with care",
-        "heading": "Good things, worth slowing down for.",
-        "text": "<p>SERICIA begins with a simple idea: make the everyday pleasures of Japan easier to discover abroad. Starting with tea, we look for Japanese-made products that bring quality and quiet joy to daily life.</p>",
+        "heading": "Small things. A closer connection.",
+        "text": "<p>SERICIA brings together Japanese tea and everyday goods through a single point of discovery. Explore materials, makers and rituals, with clear product information to help you choose.</p>",
         "principles_label": "What matters to us",
         "button_label": "Get to know SERICIA",
         "button_link": "/pages/contact#about"
@@ -161,13 +161,79 @@
         "hojicha",
         "matcha"
       ]
+    },
+    "discovery": {
+      "type": "sericia-discovery",
+      "settings": {
+        "heading": "Find a little something.",
+        "intro": "Six ways to discover everyday Japan. Our opening selection is being prepared."
+      },
+      "blocks": {
+        "tea": {
+          "type": "category",
+          "settings": {
+            "title": "Tea & daily rituals",
+            "description": "Sencha, hojicha and matcha. Find your own way to pause.",
+            "collection": "tea"
+          }
+        },
+        "textiles": {
+          "type": "category",
+          "settings": {
+            "title": "Textiles & small accessories",
+            "description": "Furoshiki, pouches and tactile pieces for everyday life.",
+            "collection": "textiles"
+          }
+        },
+        "accessories": {
+          "type": "category",
+          "settings": {
+            "title": "Accessories",
+            "description": "Small details, expressive materials and thoughtful finishing.",
+            "collection": "accessories"
+          }
+        },
+        "stationery": {
+          "type": "category",
+          "settings": {
+            "title": "Paper & stationery",
+            "description": "Washi, notebooks and paper goods for ideas worth keeping.",
+            "collection": "stationery"
+          }
+        },
+        "craft": {
+          "type": "category",
+          "settings": {
+            "title": "Small craft & objects",
+            "description": "Characterful details for desks, shelves and everyday spaces.",
+            "collection": "craft"
+          }
+        },
+        "gifts": {
+          "type": "category",
+          "settings": {
+            "title": "Thoughtful gifts",
+            "description": "Discover something personal, from simple gestures to shared rituals.",
+            "collection": "gifts"
+          }
+        }
+      },
+      "block_order": [
+        "tea",
+        "textiles",
+        "accessories",
+        "stationery",
+        "craft",
+        "gifts"
+      ]
     }
   },
   "order": [
     "serica-hero",
     "serica-promises",
-    "tea-guide",
+    "discovery",
     "all-products",
+    "tea-guide",
     "sericia-story"
   ]
 }

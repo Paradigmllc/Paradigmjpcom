@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-02 SERICIA external sourcing (Codex)
+
+- Active handoff: `codex/sericia-commerce-operations`. User reconfirmed external BASE/Creema/minne/STORES retail sourcing → domestic warehouse consolidation → overseas delivery. This is different from the existing own-shop BASE OAuth integration.
+- Recovered prior discussion: Locations transit fulfillment was the initial candidate; OPENLOGI was the stocked-inventory candidate. Contracted provider/API access remains unconfirmed (question pending). No automatic buying or warehouse dispatch is claimed.
+- Shopify draft `166336102448` carries `1.4.0-everyday`, broader tea/textiles/accessories/stationery/craft/gifts design and editorial image. Public release verification pending.
+- Added authenticated supplier URL registration/observation API + admin panel + RLS table. 403/429, ambiguous variants, identity mismatch and stale data remain unconfirmed; public observations never increase sellable stock. Scheduled checks are best-effort 30-minute GitHub runs, at most 10 oldest sources per invocation, not realtime inventory.
+- Applied migration `20261002044712_sericia_supplier_observations.sql` with transaction; repaired 12 corrupted candidate names only. No candidate was made sellable. Application deployment pending.
+- Tests: 22 focused normalization/observation/auth API checks and existing 11 theme regressions passed; Theme Check zero errors/one existing warning. Final typecheck/release underway.
+- Details: [operations handoff](docs/knowledge/sericia-external-sourcing-20261002.md).
+
 ## CURRENT STATUS — 2026-10-02 SERICIA tea storefront completion (Codex)
 
 - User chose Shopify and requested all non-payment design/functionality, with no personal data on public legal pages.
