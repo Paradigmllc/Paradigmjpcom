@@ -24,7 +24,7 @@ import { ShopifyMetricsPanel } from "./ShopifyMetricsPanel"
 import { ShopifyBaseSyncPanel } from "./ShopifyBaseSyncPanel"
 import { ShopifyLaunchControlPanel } from "./ShopifyLaunchControlPanel"
 
-import { ShopifyOperationsLinks } from "./ShopifyOperationsLinks"
+import { ShopifyOperationsPanel } from "./ShopifyOperationsPanel"
 import { ShopifyCatalogPanel } from "./ShopifyCatalogPanel"
 import { ShopifySupplierPanel } from "./ShopifySupplierPanel"
 
@@ -87,7 +87,7 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
   }
 
   const content = activeTab === "operations"
-    ? <ShopifyOperationsLinks />
+    ? <ShopifyOperationsPanel />
     : activeTab === "catalog"
     ? <ShopifyCatalogPanel />
     : activeTab === "suppliers"
@@ -149,9 +149,9 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-600">Foreign customer commerce</p>
             <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">海外向けストア運営</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">軽量・高知覚価値の商品を、実写中心の短尺動画と計測可能な購入導線で販売します。</p>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">商品・仕入先・注文・配送の状況を確認し、対応が必要な処理を進めます。</p>
           </div>
-          <p className="text-xs text-zinc-400">最終同期 {formattedDate(dashboard.generatedAt)}</p>
+          <p className="text-xs text-zinc-400">画面集計 {formattedDate(dashboard.generatedAt)}</p>
         </div>
 
         <AnimatePresence mode="wait">
