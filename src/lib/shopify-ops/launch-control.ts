@@ -176,7 +176,7 @@ export function evaluateLaunchGates(input: EvaluationInput): ShopifyLaunchGate[]
       "一般公開ロック",
       input.publicReleaseApproved && !input.storefrontPasswordProtected,
       "公開承認済みでパスワード保護が解除されています",
-      input.publicReleaseApproved ? "公開承認後もパスワード保護が残っています" : "公開承認前のためパスワード保護を維持しています",
+      input.publicReleaseApproved ? "公開承認後もパスワード保護が残っています" : "販売開始の承認が未完了です。実際の公開・保護設定を確認してください",
     ),
   ]
 }

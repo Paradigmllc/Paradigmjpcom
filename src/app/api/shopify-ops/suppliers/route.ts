@@ -13,14 +13,15 @@ import {
 export const maxDuration = 180;
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-async function actor(request: NextRequest) {
+async function actor(request: NextRequest, writing = false) {
   if (authorizeWebhookRequest(request.headers).ok)
     return "system:supplier-monitor";
   const auth = await authorizePayloadAdminRequest({
     headers: request.headers,
-    legacyToken: request.cookies.get("paradigm_admin_token")?.value,
   });
-  return auth.ok && auth.userId ? `payload:${auth.userId}` : null;
+  const permitted =
+    !writing || auth.userRole === "admin" || auth.userRole === "editor";
+  return auth.ok && auth.userId && permitted ? `payload:${auth.userId}` : null;
 }
 export async function GET(request: NextRequest) {
   if (!(await actor(request)))
@@ -51,7 +52,7 @@ const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("refresh_all") }),
 ]);
 export async function POST(request: NextRequest) {
-  const user = await actor(request);
+  const user = await actor(request, true);
   if (!user)
     return NextResponse.json(
       { ok: false, error: "Unauthorized" },
@@ -59,7 +60,9 @@ export async function POST(request: NextRequest) {
     );
   if (
     !authorizeWebhookRequest(request.headers).ok &&
-    request.headers.get("origin") !== request.nextUrl.origin
+    request.headers.get("origin") !==
+      new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com")
+        .origin
   )
     return NextResponse.json(
       { ok: false, error: "Invalid origin" },
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
         ? await saveSupplierSource(input.productId, input.sourceUrl, user)
         : input.action === "refresh"
           ? await refreshSupplierSource(input.productId, user)
-          : await refreshAllSupplierSources();
+          : await refreshAllSupplierSources(user);
     return NextResponse.json(
       { ok: true, result },
       { headers: { "Cache-Control": "no-store" } },

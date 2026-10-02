@@ -40,6 +40,7 @@ describe("supplier API authorization and errors", () => {
     mocks.authorizePayloadAdminRequest.mockResolvedValue({
       ok: true,
       userId: "admin-1",
+      userRole: "admin",
     });
     expect(
       (
@@ -57,6 +58,7 @@ describe("supplier API authorization and errors", () => {
     mocks.authorizePayloadAdminRequest.mockResolvedValue({
       ok: true,
       userId: "admin-1",
+      userRole: "admin",
     });
     const response = await POST(
       request({
@@ -89,4 +91,53 @@ describe("supplier API authorization and errors", () => {
     expect(response.status).toBe(503);
     expect(await response.text()).not.toContain("private connection detail");
   });
+});
+
+it("does not let a legacy cookie shadow the identified Payload session", async () => {
+  mocks.authorizeWebhookRequest.mockReturnValue({ ok: false });
+  mocks.authorizePayloadAdminRequest.mockResolvedValue({
+    ok: true,
+    userId: "42",
+    userRole: "admin",
+  });
+  mocks.getSupplierObservations.mockResolvedValue([]);
+  const req = new NextRequest(
+    "https://paradigmjp.com/api/shopify-ops/suppliers",
+    { headers: { cookie: "paradigm_admin_token=legacy" } },
+  );
+  expect((await GET(req)).status).toBe(200);
+  expect(mocks.authorizePayloadAdminRequest).toHaveBeenLastCalledWith({
+    headers: req.headers,
+  });
+});
+it("denies viewer mutations", async () => {
+  mocks.authorizeWebhookRequest.mockReturnValue({ ok: false });
+  mocks.authorizePayloadAdminRequest.mockResolvedValue({
+    ok: true,
+    userId: "42",
+    userRole: "viewer",
+  });
+  expect(
+    (await POST(request({ action: "refresh", productId: id }))).status,
+  ).toBe(401);
+});
+it("uses the registered public origin behind the reverse proxy", async () => {
+  mocks.authorizeWebhookRequest.mockReturnValue({ ok: false });
+  mocks.authorizePayloadAdminRequest.mockResolvedValue({
+    ok: true,
+    userId: "42",
+    userRole: "admin",
+  });
+  const req = new NextRequest(
+    "http://localhost:3000/api/shopify-ops/suppliers",
+    {
+      method: "POST",
+      headers: {
+        origin: "https://paradigmjp.com",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ action: "refresh", productId: id }),
+    },
+  );
+  expect((await POST(req)).status).toBe(200);
 });

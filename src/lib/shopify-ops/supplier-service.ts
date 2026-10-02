@@ -79,7 +79,7 @@ export async function refreshSupplierSource(
     throw new Error("別の操作で仕入先が更新されました。再読込してください");
   return observation;
 }
-export async function refreshAllSupplierSources() {
+export async function refreshAllSupplierSources(actor: string) {
   const sources = await getSupplierObservations(10);
   const results = [];
   let failures = 0;
@@ -90,12 +90,7 @@ export async function refreshAllSupplierSources() {
     )
       continue;
     try {
-      results.push(
-        await refreshSupplierSource(
-          source.product_id,
-          "system:supplier-monitor",
-        ),
-      );
+      results.push(await refreshSupplierSource(source.product_id, actor));
     } catch (error) {
       console.error("[supplier-monitor] refresh failed", error);
       failures += 1;

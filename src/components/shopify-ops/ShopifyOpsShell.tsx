@@ -96,7 +96,7 @@ export function ShopifyOpsShell({ dashboard, locale }: { dashboard: ShopifyOpsDa
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white"><Store className="h-5 w-5" /></div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black tracking-tight sm:text-base">Tiny Shops of Japan</p>
+              <p className="truncate text-sm font-black tracking-tight sm:text-base">SERICIA</p>
               <p className="truncate text-[11px] font-medium text-zinc-500">Shopify Operations OS</p>
             </div>
           </div>

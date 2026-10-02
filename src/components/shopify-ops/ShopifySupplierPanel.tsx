@@ -129,7 +129,7 @@ export function ShopifySupplierPanel({
           />
         </label>
         <button
-          disabled={busy || !products.length}
+          disabled={busy || loading || !!error || !products.length}
           aria-label="仕入先URLを保存"
           className="self-end rounded bg-zinc-900 px-4 py-3 text-sm text-white disabled:opacity-50"
         >
@@ -138,7 +138,7 @@ export function ShopifySupplierPanel({
       </form>
       {loading ? (
         <p role="status">仕入先を読み込み中…</p>
-      ) : sources.length === 0 ? (
+      ) : error ? null : sources.length === 0 ? (
         <p className="rounded-xl border border-dashed p-8">
           監視対象はまだありません。商品URLを登録すると確認できます。
         </p>

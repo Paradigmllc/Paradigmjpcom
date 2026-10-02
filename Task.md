@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-02 SERICIA live verification follow-up
+
+- PR #752 merged as `120e48df`; theme166336102448 / `1.4.0-everyday` is public. Nine public routes verified with actual release fingerprint, no Liquid errors, preview/noindex retained.
+- Production supplier API registered and checked four research URLs: three availability observations, one ambiguous/unknown; all persisted, anonymous GET401. Not inventory, purchases or adopted suppliers.
+- Actual browser verification exposed Payload numeric IDs being discarded by shared auth and a legacy session potentially taking precedence. Follow-up `codex/sericia-supplier-auth` preserves verified numeric IDs, requires identified Payload sessions, denies viewer mutations and checks the registered public origin behind the proxy.
+- Error state no longer also claims the list is empty; admin branding is SERICIA and launch copy no longer asserts password protection without checking it.
+- CI inventory workflow including production build passed. Separate pre-existing Pet Life Movie npm audit failed. Deployment120e48df is live; common release command failed at unrelated Manual Work V4 reconciliationHTTP207. Separately executed post-deploy doctor passed. Do not claim every shared release gate is green.
+- Warehouse contract/API and supplier/fulfillment terms remain unresolved; question pending. Auto-buy/warehouse dispatch and commercial readiness are not claimed.
+
 ## CURRENT STATUS — 2026-10-02 SERICIA external sourcing (Codex)
 
 - Active handoff: `codex/sericia-commerce-operations`. User reconfirmed external BASE/Creema/minne/STORES retail sourcing → domestic warehouse consolidation → overseas delivery. This is different from the existing own-shop BASE OAuth integration.
