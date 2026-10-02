@@ -1,12 +1,12 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-10-02 SERICIA event operations
+## CURRENT STATUS — 2026-10-02 SERICIA live event connection
 
-- Active handoff: `codex/sericia-fulfillment-operations`. User requested operational UI/UX, realtime product synchronization and inbound-to-shipment automation.
-- Added signed Shopify webhook receiver, atomic private event/projection DB, ordering/deduplication safeguards, authenticated subscription setup and product/order/fulfillment recovery. Operations UI supports search, scope state, errors and15-second refresh. Six actual product snapshots persisted/read back.
-- Actual Shopify order scope is missing; warehouse credentials/provider and supplier stock rights remain unconfirmed. New webhook subscriptions deliberately unregistered until receiver deployment. No automated buying, warehouse receipt/dispatch, inventory increase or new sales activation.
--28 new focused tests and isolated mobile/desktop Playwright pass; DB transactional safety/RLS tests pass. Standard deployment still blocked at host disk88%; oldest rollback archive deletion approval remains unanswered. Current runtime81811ad1; theme1.5 remains live.
-- Details: [event operations handoff](docs/knowledge/sericia/event-operations-20261002.md). Earlier implementation PR755 and follow-up PR756 merged; this entry supersedes their release-in-progress wording.
+- Active handoff: `codex/sericia-fulfillment-scope-fix`. PR757 merge2509cf8b is deployed and verified in the live authenticated operations UI. Deployment `ntxzrqpuf2x82jp4plmlmija` finished; standalone post-deploy doctor passed. Shared Manual Work V4 reconciliation still returns207, so the full release command exits1 after successful deployment.
+- User approved read_orders and oldest ac3d1f62 archive removal; both completed. Previous120e48df archive retained. Seven product/inventory/order webhooks registered. Real products/update delivered, persisted as applied, and appeared in the UI at17:45:59 JST. Temporary draft-product test tag removed and original tags restored; no publication or stock increase.
+- Actual registration exposed a scope mapping defect: fulfillment notifications require read_fulfillments, not read_orders. Corrected mapping and persistent action-error display in this branch;7 scope tests plus mobile/desktop isolated UI test pass. Additional read_fulfillments version prepared but NOT released; explicit additional browser-access approval requested and pending.
+- Six products and13 inventory records persisted. Actual order reconciliation succeeds with0 orders. Warehouse contract/provider, API credential, authorized supplier stock feed and commercial terms remain unresolved. Narrow read-only mailbox search found no warehouse contract evidence. No automatic purchase, receipt, dispatch or completed commercial launch is claimed.
+- Details: [event operations handoff](docs/knowledge/sericia/event-operations-20261002.md). Historical statuses below are superseded by this entry.
 
 ## CURRENT STATUS — 2026-10-02 SERICIA catalog workflow
 

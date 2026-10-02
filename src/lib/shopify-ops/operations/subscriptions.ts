@@ -7,8 +7,8 @@ const topics = [
   ["ORDERS_CREATE", "read_orders"],
   ["ORDERS_UPDATED", "read_orders"],
   ["ORDERS_CANCELLED", "read_orders"],
-  ["FULFILLMENTS_CREATE", "read_orders"],
-  ["FULFILLMENTS_UPDATE", "read_orders"],
+  ["FULFILLMENTS_CREATE", "read_fulfillments"],
+  ["FULFILLMENTS_UPDATE", "read_fulfillments"],
 ] as const;
 export async function subscriptionStatus() {
   const origin = new URL(
@@ -44,7 +44,11 @@ export async function subscriptionStatus() {
         uri,
         topics: topics.map(([topic, scope]) => ({
           topic,
-          permitted: scopes.has(scope),
+          permitted:
+            scopes.has(scope) ||
+            (scope === "read_fulfillments" &&
+              scopes.has("read_marketplace_orders")),
+          requiredScope: scope,
           subscribed: subscriptions.some(
             (s) => s.topic === topic && s.uri === uri,
           ),

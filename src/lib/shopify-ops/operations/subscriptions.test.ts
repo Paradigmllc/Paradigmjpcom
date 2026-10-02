@@ -75,3 +75,31 @@ it("does not turn a provider registration failure into success", async () => {
     });
   await expect(connectSubscriptions("payload:1")).rejects.toThrow("購読に失敗");
 });
+
+it.each([
+  ["read_orders", true, false],
+  ["read_fulfillments", false, true],
+  ["write_fulfillments", false, true],
+  ["read_marketplace_orders", false, true],
+])(
+  "separates order and fulfillment permissions for %s",
+  async (handle, orders, fulfillments) => {
+    m.query
+      .mockResolvedValueOnce({
+        currentAppInstallation: { accessScopes: [{ handle }] },
+      })
+      .mockResolvedValueOnce({
+        webhookSubscriptions: { nodes: [], pageInfo: { hasNextPage: false } },
+      });
+    const status = await subscriptionStatus();
+    expect(
+      status.topics.find((t) => t.topic === "ORDERS_CREATE")?.permitted,
+    ).toBe(orders);
+    for (const topic of ["FULFILLMENTS_CREATE", "FULFILLMENTS_UPDATE"]) {
+      expect(status.topics.find((t) => t.topic === topic)).toMatchObject({
+        permitted: fulfillments,
+        requiredScope: "read_fulfillments",
+      });
+    }
+  },
+);
