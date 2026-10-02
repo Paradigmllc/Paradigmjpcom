@@ -15,7 +15,7 @@ Six real research candidates are in Shopify as unpublished drafts, with JPY prop
 ## Current release boundary
 
 - Shopify theme166338265136 / `1.5.0-catalog` is live. Nine public routes verify the release marker; contact-form context and390px mobile layout were checked. Prior1.4 theme retained.
-- Application PR755/756/757 are live in runtime2509cf8b. Catalog and operational event UI verified in the authenticated browser. Seven product/inventory/order notifications are registered and a real product event was received. Fulfillment notifications require additional read_fulfillments approval.
+- Application PR755/756/757/758 are live in runtime004a0dca. Catalog and operational event UI verified in the authenticated browser. Seven product/inventory/order notifications are registered and a real product event was received. Fulfillment notifications require additional read_fulfillments approval.
 - Six Shopify drafts and their DB links are already persisted. All six read back as DRAFT, tracked inventory0, oversellingDENY, native currencyJPY. Native Shopify Admin read-back also confirmed the tea draft.
 - 25 focused tests,12 theme regression tests, typecheck and lint passed; Theme Check0 errors/1 existing warning. Core Japan operator OS build, SERICIA audit and Video Factory CI passed for the implementation commit. Pre-existing Pet Life Movie npm audit fails.
 - User approved removal of the oldest ac3d1f62 archive; removed exactly that archive. Verified preceding120e48df archive remains at `/var/backups/paradigm-release/120e48df-20261002.tar.xz`. No volumes or unrelated application images removed.
