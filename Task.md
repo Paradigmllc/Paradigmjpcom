@@ -4,9 +4,9 @@
 
 - User chose Shopify and requested all non-payment design/functionality, with no personal data on public legal pages.
 - Latest direction: Japanese tea and Japanese-made products for international customers. The earlier luxury-interiors direction is superseded.
-- Implementation in isolated branch `codex/sericia-storefront-completion`; preview theme `166334890032`. Existing live theme remains unchanged at this checkpoint.
+- Released through PR #751 (merge `6f59c42e`). Shopify theme `166334890032` is live; public sericia.com fingerprint `1.3.0-tea` verified without preview cookies. Original theme `144336257072` retained for rollback.
 - Privacy policy contact paragraph redacted through Shopify Admin and public read-back verified. Payment settings remain untouched.
-- Final tea-theme QA passed: 11 regressions, TypeScript, Theme Check (one existing warning), desktop and mobile. Pending: PR/publication, real product data and shipping/returns terms. Full commerce readiness is not claimed.
+- Final tea-theme QA passed: 11 regressions, TypeScript, Theme Check (one existing warning), desktop and mobile. Pending: real product data and shipping/returns terms. Full commerce readiness is not claimed.
 - Details and verification: [SERICIA storefront handoff](docs/knowledge/sericia-storefront-20261002.md).
 
 
