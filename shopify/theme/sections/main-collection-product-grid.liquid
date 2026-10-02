@@ -43,7 +43,7 @@
   <div class="section-{{ section.id }}-padding gradient color-{{ section.settings.color_scheme }}">
     {%- paginate collection.products by section.settings.products_per_page -%}
       {% comment %} Sort is the first tabbable element when filter type is vertical {% endcomment %}
-      {%- if section.settings.enable_sorting and section.settings.filter_type == 'vertical' -%}
+      {%- if collection.all_products_count > 0 and section.settings.enable_sorting and section.settings.filter_type == 'vertical' -%}
         <facet-filters-form class="facets facets-vertical-sort page-width small-hide">
           <form class="facets-vertical-form" id="FacetSortForm">
             <div class="facet-filters sorting caption">
@@ -104,6 +104,7 @@
       <div class="{% if section.settings.filter_type == 'vertical' %} facets-vertical page-width{% endif %}">
         {{ 'component-facets.css' | asset_url | stylesheet_tag }}
         <script src="{{ 'facets.js' | asset_url }}" defer="defer"></script>
+        {%- if collection.all_products_count > 0 -%}
         {%- if section.settings.enable_filtering or section.settings.enable_sorting -%}
           <aside
             aria-labelledby="verticalTitle"
@@ -121,6 +122,7 @@
           </aside>
         {%- endif -%}
 
+        {%- endif -%}
         <div
           class="product-grid-container{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
           id="ProductGridContainer"
@@ -132,6 +134,14 @@
             <div class="collection collection--empty page-width" id="product-grid" data-id="{{ section.id }}">
               <div class="loading-overlay gradient"></div>
               <div class="title-wrapper center">
+                {% if collection.all_products_count == 0 %}
+                  <h2 class="title title--primary">{{ 'sericia.empty_title' | t }}</h2>
+                  <p>{{ 'sericia.empty_body' | t }}</p>
+                  <div class="sericia-recovery">
+                    <a class="button button--secondary" href="{{ routes.collections_url }}">{{ 'sericia.collection' | t }}</a>
+                    {% if pages.contact.url != blank %}<a class="button button--secondary" href="{{ pages.contact.url }}#ContactForm">{{ 'sericia.contact' | t }}</a>{% endif %}
+                  </div>
+                {% else %}
                 <h2 class="title title--primary">
                   {{ 'sections.collection_template.empty' | t -}}
                   <br>
@@ -140,6 +150,7 @@
                     | t: link: collection.url, class: 'underlined-link link'
                   }}
                 </h2>
+                {% endif %}
               </div>
             </div>
           {%- else -%}

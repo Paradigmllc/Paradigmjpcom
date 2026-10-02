@@ -6,6 +6,7 @@
     {{ section.settings.title }}
   </h1>
   {%- liquid
+    assign catalog_count = collections.all.all_products_count
     case section.settings.sort
       when 'products_high', 'products_low'
         assign collections = collections | sort: 'all_products_count'
@@ -23,6 +24,13 @@
       assign paginate_by = 28
     endif
   -%}
+  {%- if catalog_count == 0 -%}
+    <div class="sericia-service-notice" role="status">
+      <h2>{{ 'sericia.empty_title' | t }}</h2>
+      <p>{{ 'sericia.empty_home_body' | t }}</p>
+      {% if pages.contact.url != blank %}<a class="button" href="{{ pages.contact.url }}#ContactForm">{{ 'sericia.contact' | t }}</a>{% endif %}
+    </div>
+  {%- else -%}
   {%- paginate collections by paginate_by -%}
     <ul
       class="collection-list grid grid--{{ section.settings.columns_desktop }}-col-desktop grid--{{ section.settings.columns_mobile }}-col-tablet-down"
@@ -46,6 +54,7 @@
     </ul>
     {% render 'pagination', paginate: paginate %}
   {%- endpaginate -%}
+  {%- endif -%}
 </div>
 {% schema %}
 {

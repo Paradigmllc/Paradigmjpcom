@@ -1,0 +1,44 @@
+:root { --serica-ink:#243d2b; --serica-graphite:#314836; --serica-champagne:#586746; --serica-cream:#eee9df; --serica-sand:#ded8ca; --serica-white:#faf8f2; }
+body { background:#faf8f2; color:#243d2b; }
+.header-wrapper, .shopify-section-header-sticky .header-wrapper { background:rgba(250,248,242,.98); }
+.announcement-bar-section .utility-bar, .serica-value-strip { background:#243d2b; }
+.header__heading-link .h2 { letter-spacing:.18em; }
+.tea-hero { display:grid; grid-template-columns: 45% 55%; background:#f4f0e6; min-height:64rem; }
+.tea-hero__copy { padding:clamp(4rem,7vw,10rem) clamp(2.4rem,5vw,8rem); display:flex; flex-direction:column; justify-content:center; align-items:flex-start; }
+.tea-eyebrow { color:#526342; font-size:1.1rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; margin:0 0 2rem; }
+.tea-hero h1 { max-width:10ch; font-family:Georgia,'Times New Roman',serif; color:#243d2b; font-size:clamp(4.8rem,5.6vw,8.4rem); line-height:1.02; font-weight:400; letter-spacing:-.045em; margin:0; }
+.tea-hero__description { color:#4c5548; max-width:42rem; font-size:1.6rem; line-height:1.85; margin:2.6rem 0; }
+.tea-hero__actions { display:flex; flex-wrap:wrap; align-items:center; gap:2.4rem; }
+.tea-hero .button { --color-button:36,61,43; --color-button-text:250,248,242; padding:0 2.8rem; letter-spacing:.06em; }
+.tea-text-link { color:#243d2b; text-underline-offset:.6rem; min-height:4.4rem; display:inline-flex; align-items:center; gap:1rem; font-size:1.4rem; }
+.tea-hero__note { font-size:1.15rem; color:#56604e; margin:3rem 0 0; }
+.tea-hero__media { position:relative; min-width:0; min-height:100%; }
+.tea-hero__media img { display:block; width:100%; height:100%; object-fit:cover; object-position:65% center; }
+.tea-hero__caption { position:absolute; right:2rem; bottom:2rem; background:rgba(250,248,242,.93); padding:.7rem 1rem; color:#3f4939; font-size:1rem; }
+.tea-guide { padding-block:8rem; }
+.tea-guide__heading { display:flex; justify-content:space-between; gap:3rem; align-items:end; margin-bottom:3rem; }
+.tea-guide h2, .sericia-editorial-story__title { font-family:Georgia,'Times New Roman',serif; font-weight:400; color:#243d2b; font-size:clamp(3.4rem,4vw,5.4rem); line-height:1.12; letter-spacing:-.025em; }
+.tea-guide h2 { margin:0; max-width:14ch; }
+.tea-guide__heading > p { max-width:40rem; color:#51594b; }
+.tea-guide__grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:2rem; }
+.tea-guide__card { background:#eef0e6; padding:3rem; position:relative; border:1px solid #dce0d0; display:flex; flex-direction:column; }
+.tea-guide__card:nth-child(2) { background:#f1e8db; border-color:#e3d6c5; }
+.tea-guide__card:nth-child(3) { background:#e5eadb; border-color:#d5ddc6; }
+.tea-guide__number { align-self:flex-end; color:#637153; font:italic 3rem Georgia,serif; margin-bottom:2rem; }
+.tea-guide__card h3 { color:#243d2b; font:400 3.6rem Georgia,serif; margin:0 0 1.8rem; }
+.tea-guide__card p { color:#424f3d; font-size:1.4rem; }
+.tea-guide__card .tea-eyebrow { font-size:1rem; margin-bottom:1.4rem; }
+.tea-guide__ritual { border-top:1px solid #cbd1bf; padding-top:1.5rem; margin-top:auto; }
+.tea-guide__card a { color:#243d2b; min-height:4.4rem; display:inline-flex; align-items:center; text-underline-offset:.5rem; font-size:1.3rem; }
+.tea-guide__footnote { color:#5b6554; font-size:1.15rem; margin-top:2rem; }
+.sericia-editorial-story { background:#f1eee5; }
+.sericia-editorial-story__media { min-height:45rem; }
+.sericia-editorial-story__image { object-fit:cover; object-position:72% center; }
+.serica-section-heading__title { font-family:Georgia,'Times New Roman',serif; }
+body .sericia-preview-banner { background:#e9eddf; color:#31432c; border-bottom:1px solid #cdd5be; font-size:1rem; letter-spacing:.02em; }
+.sericia-service-footer { background:#eeeee4; }
+.button { --color-button:36,61,43; --color-button-text:250,248,242; }
+.tea-hero a:focus-visible, .tea-guide a:focus-visible { outline:2px solid #243d2b; outline-offset:5px; }
+@media (max-width:989px) { .tea-hero { grid-template-columns:1fr 1fr; min-height:54rem; } .tea-hero__copy { padding:4rem 2.4rem; } .tea-hero h1 { font-size:5.3rem; } .tea-guide__card { padding:2rem; } }
+@media (max-width:749px) { .tea-hero { display:flex; flex-direction:column; } .tea-hero__copy { padding:4rem 2.2rem; } .tea-hero h1 { max-width:12ch; font-size:5.3rem; } .tea-hero__description { margin:2rem 0; font-size:1.5rem; } .tea-hero__note { margin-top:2rem; } .tea-hero__media { height:32rem; min-height:0; } .tea-hero__media img { object-position:center; } .tea-guide { padding-block:5rem; } .tea-guide__heading { display:block; } .tea-guide__grid { grid-template-columns:1fr; } .tea-guide__card { padding:2.4rem; } .tea-guide__number { margin-bottom:0; } .tea-guide__card h3 { margin-bottom:1rem; } .tea-hero__actions { gap:1.2rem 2.2rem; } }
+@media (prefers-reduced-motion:reduce) { .tea-hero *, .tea-guide * { scroll-behavior:auto; transition:none; } }

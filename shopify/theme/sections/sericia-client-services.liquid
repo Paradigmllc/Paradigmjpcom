@@ -1,0 +1,43 @@
+<section class="sericia-service page-width" aria-labelledby="ServiceTitle">
+  <header class="sericia-service__intro">
+    <p class="serica-eyebrow">{{ 'sericia.eyebrow' | t }}</p>
+    <h1 id="ServiceTitle">{{ 'sericia.heading' | t }}</h1>
+    <p>{{ 'sericia.intro' | t }}</p>
+    <a class="button" href="#ContactForm">{{ 'sericia.contact' | t }}</a>
+  </header>
+  <div class="sericia-service__layout">
+    <nav class="sericia-service__nav" aria-label="{{ 'sericia.eyebrow' | t | escape }}">
+      <a href="#about">{{ 'sericia.about' | t }}</a>
+      <a href="#faq">{{ 'sericia.faq' | t }}</a>
+      <a href="#delivery">{{ 'sericia.shipping' | t }}</a>
+      <a href="#returns">{{ 'sericia.returns' | t }}</a>
+      <a href="#legal">{{ 'sericia.legal' | t }}</a>
+    </nav>
+    <div class="sericia-service__body">
+      <section id="about"><h2>{{ 'sericia.about' | t }}</h2><p>{{ 'sericia.about_body' | t }}</p></section>
+      <section id="faq">
+        <h2>{{ 'sericia.faq' | t }}</h2>
+        <details><summary>{{ 'sericia.catalog_q' | t }}</summary><p>{{ 'sericia.catalog_a' | t }}</p><a href="{{ routes.all_products_collection_url }}">{{ 'sericia.collection' | t }}</a></details>
+        <details><summary>{{ 'sericia.details_q' | t }}</summary><p>{{ 'sericia.details_a' | t }}</p></details>
+        <details><summary>{{ 'sericia.orders_q' | t }}</summary><p>{{ 'sericia.orders_a' | t }}</p>{% if shop.customer_accounts_enabled %}<a href="{{ routes.account_url }}">{{ 'sericia.account' | t }}</a>{% endif %}</details>
+      </section>
+      <section id="delivery">
+        <h2>{{ 'sericia.shipping' | t }}</h2><p>{{ 'sericia.shipping_body' | t }}</p>
+        {% if shop.shipping_policy.url != blank %}<a href="{{ shop.shipping_policy.url }}">{{ 'sericia.read_policy' | t }}</a>{% else %}<p class="sericia-service__notice">{{ 'sericia.shipping_pending' | t }}</p>{% endif %}
+      </section>
+      <section id="returns">
+        <h2>{{ 'sericia.returns' | t }}</h2><p>{{ 'sericia.returns_body' | t }}</p>
+        {% if shop.refund_policy.url != blank %}<a href="{{ shop.refund_policy.url }}">{{ 'sericia.read_policy' | t }}</a>{% else %}<p class="sericia-service__notice">{{ 'sericia.returns_pending' | t }}</p>{% endif %}
+      </section>
+      <section id="legal">
+        <h2>{{ 'sericia.legal' | t }}</h2>
+        <p class="sericia-service__notice">{{ 'sericia.legal_body' | t }}</p>
+        <p>{{ 'sericia.legal_request_body' | t }}</p>
+        <a class="button button--secondary" href="?topic=disclosure#ContactForm">{{ 'sericia.legal_request' | t }}</a>
+      </section>
+    </div>
+  </div>
+</section>
+{% schema %}
+{"name":"SERICIA client services","settings":[],"presets":[{"name":"SERICIA client services"}]}
+{% endschema %}

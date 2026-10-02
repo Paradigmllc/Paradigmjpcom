@@ -1,5 +1,15 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-02 SERICIA tea storefront completion (Codex)
+
+- User chose Shopify and requested all non-payment design/functionality, with no personal data on public legal pages.
+- Latest direction: Japanese tea and Japanese-made products for international customers. The earlier luxury-interiors direction is superseded.
+- Implementation in isolated branch `codex/sericia-storefront-completion`; preview theme `166334890032`. Existing live theme remains unchanged at this checkpoint.
+- Privacy policy contact paragraph redacted through Shopify Admin and public read-back verified. Payment settings remain untouched.
+- Final tea-theme QA passed: 11 regressions, TypeScript, Theme Check (one existing warning), desktop and mobile. Pending: PR/publication, real product data and shipping/returns terms. Full commerce readiness is not claimed.
+- Details and verification: [SERICIA storefront handoff](docs/knowledge/sericia-storefront-20261002.md).
+
+
 # CURRENT STATUS - 2026-09-09 MediaOS independent Factory cutover
 
 - Active Handoff: `codex/mediaos-factory-cutover`. New studio source is `/Users/apple/dev/MediaOS`, private `Gracecom1/media-os`, canonical UI `https://appexx.me/media-os`. Corporate and other business applications remain here.

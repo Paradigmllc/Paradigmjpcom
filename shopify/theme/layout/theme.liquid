@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="js" lang="{{ request.locale.iso_code }}" data-sericia-theme-version="1.1.0">
+<html class="js" lang="{{ request.locale.iso_code }}" data-sericia-theme-version="1.3.0">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -26,7 +26,7 @@
 
     <meta
       name="description"
-      content="{{ page_description | default: shop.description | default: 'A global luxury edit of exceptional objects, selected for material, proportion, and lasting presence.' | escape }}"
+      content="{{ page_description | default: shop.description | default: 'Discover Japanese tea and thoughtfully selected Japanese-made goods for everyday enjoyment.' | escape }}"
     >
 
     {%- unless settings.sericia_search_indexing_ready -%}
@@ -270,6 +270,8 @@
 
     {{ 'base.css' | asset_url | stylesheet_tag }}
     {{ 'serica-storefront.css' | asset_url | stylesheet_tag }}
+    {{ 'sericia-service.css' | asset_url | stylesheet_tag }}
+    {{ 'sericia-tea.css' | asset_url | stylesheet_tag }}
     <link rel="stylesheet" href="{{ 'component-cart-items.css' | asset_url }}" media="print" onload="this.media='all'">
 
     {%- if settings.cart_type == 'drawer' -%}
@@ -312,7 +314,7 @@
     </script>
   </head>
 
-  <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
+  <body data-sericia-release="1.3.0-tea" class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
     <a class="skip-to-content-link button visually-hidden" href="#MainContent">
       {{ 'accessibility.skip_to_text' | t }}
     </a>
@@ -345,6 +347,7 @@
     </ul>
 
     <script>
+      window.sericiaStrings = { searchError: {{ 'sericia.search_error' | t | json }} };
       window.shopUrl = '{{ request.origin }}';
       window.routes = {
         cart_add_url: '{{ routes.cart_add_url }}',

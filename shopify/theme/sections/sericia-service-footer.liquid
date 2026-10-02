@@ -1,0 +1,24 @@
+{%- assign service_url = pages.contact.url -%}
+{%- if service_url != blank -%}
+<aside class="sericia-service-footer" aria-label="{{ 'sericia.eyebrow' | t | escape }}">
+  <div class="page-width sericia-service-footer__grid">
+    <div><p class="serica-eyebrow">{{ shop.name | escape }}</p><p>{{ 'sericia.intro' | t }}</p><a href="{{ service_url }}#ContactForm">{{ 'sericia.contact' | t }}</a></div>
+    <div><h2>{{ 'sericia.collection' | t }}</h2><ul>
+      <li><a href="{{ routes.all_products_collection_url }}">{{ 'sericia.collection' | t }}</a></li>
+      <li><a href="{{ routes.search_url }}">{{ 'general.search.search' | t }}</a></li>
+      <li><a href="{{ service_url }}#about">{{ 'sericia.about' | t }}</a></li>
+      {% if shop.customer_accounts_enabled %}<li><a href="{{ routes.account_url }}">{{ 'sericia.account' | t }}</a></li>{% endif %}
+    </ul></div>
+    <div><h2>{{ 'sericia.eyebrow' | t }}</h2><ul>
+      <li><a href="{{ service_url }}#faq">{{ 'sericia.faq' | t }}</a></li>
+      <li><a href="{{ service_url }}#delivery">{{ 'sericia.shipping' | t }}</a></li>
+      <li><a href="{{ service_url }}#returns">{{ 'sericia.returns' | t }}</a></li>
+      <li><a href="{{ service_url }}#legal">{{ 'sericia.legal' | t }}</a></li>
+      {% if shop.privacy_policy.url != blank %}<li><a href="{{ shop.privacy_policy.url }}">{{ 'sericia.privacy' | t }}</a></li>{% endif %}
+    </ul></div>
+  </div>
+</aside>
+{%- endif -%}
+{% schema %}
+{"name":"SERICIA service links","settings":[],"presets":[{"name":"SERICIA service links"}]}
+{% endschema %}

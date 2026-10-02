@@ -181,9 +181,10 @@
         {%- else -%}
           <li class="featured-collection-empty grid__item">
             <div role="status">
-              <p class="serica-eyebrow">Opening collection</p>
-              <h3 class="h2">Our first objects are being prepared.</h3>
-              <p>Each product will appear only after its availability, provenance, imagery, and international delivery details have been verified.</p>
+              <p class="serica-eyebrow">{{ 'sericia.collection' | t }}</p>
+              <h3 class="h2">{{ 'sericia.empty_title' | t }}</h3>
+              <p>{{ 'sericia.empty_home_body' | t }}</p>
+              {% if pages.contact.url != blank %}<a href="{{ pages.contact.url }}#ContactForm" class="button button--secondary">{{ 'sericia.contact' | t }}</a>{% endif %}
             </div>
           </li>
         {%- endif -%}

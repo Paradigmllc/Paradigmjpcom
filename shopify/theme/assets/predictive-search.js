@@ -154,6 +154,7 @@ class PredictiveSearch extends SearchForm {
     if (activeElementIndex === selectedElementIndex) return;
 
     const activeElement = allVisibleElements[activeElementIndex];
+    if (!activeElement) return;
 
     activeElement.setAttribute('aria-selected', true);
     if (selectedElement) selectedElement.setAttribute('aria-selected', false);
@@ -200,6 +201,10 @@ class PredictiveSearch extends SearchForm {
         this.allPredictiveSearchInstances.forEach((predictiveSearchInstance) => {
           predictiveSearchInstance.cachedResults[queryKey] = resultsMarkup;
         });
+        if (this.searchTerm !== searchTerm) {
+          searchDeferred?.resolve({ totalCount: 0 });
+          return;
+        }
         this.renderSearchResults(resultsMarkup);
 
         searchDeferred?.resolve({ totalCount: this.getTotalResultCount() });
@@ -211,8 +216,17 @@ class PredictiveSearch extends SearchForm {
           return;
         }
         searchDeferred?.reject(error);
-        this.close();
-        throw error;
+        console.error('[predictive-search]', error);
+        if (this.searchTerm !== searchTerm) return;
+        const notice = document.createElement('p');
+        notice.className = 'predictive-search__item';
+        notice.setAttribute('role', 'status');
+        notice.textContent = window.sericiaStrings.searchError;
+        this.predictiveSearchResults.replaceChildren(notice);
+        this.removeAttribute('loading');
+        this.setAttribute('results', true);
+        this.open();
+        this.setLiveRegionText(window.sericiaStrings.searchError);
       });
   }
 
