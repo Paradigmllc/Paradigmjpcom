@@ -10,14 +10,14 @@
 
 ## Prepared catalog
 
-Six real research candidates are in Shopify as unpublished drafts, with JPY proposal prices and zero inventory: Shizuoka sencha, cotton furoshiki, Echizen washi notebook, mizuhiki/quartz earrings, fairy-pitta carving and art-paper bookmarks. Each belongs to its matching collection. Research source and unverified conditions are in `researched-catalog-20261002.json`. These prices are proposals, not confirmed margins; quantities, product images and supplier agreements are not approved.
+Six real research candidates are in Shopify as unpublished drafts, with JPY proposal prices and zero inventory: Shizuoka sencha, cotton furoshiki, Echizen washi notebook, mizuhiki/quartz earrings, fairy-pitta carving and art-paper bookmarks. Each belongs to its matching collection and has a standard Shopify product taxonomy. Furoshiki has five source-listed patterns; the notebook has four source-listed colours. The six drafts contain 13 variants, all verified at zero inventory with overselling denied. Research source and unverified conditions are in `researched-catalog-20261002.json`. These prices are proposals, not confirmed margins; quantities, product images and supplier agreements are not approved.
 
 ## Current release boundary
 
 - Shopify theme166338265136 / `1.5.0-catalog` is live. Nine public routes verify the release marker; contact-form context and390px mobile layout were checked. Prior1.4 theme retained.
 - Application PR755 merge7839b924 contains the catalog implementation. Its deployment was blocked by the unchanged88% host-disk threshold. Live operations still81811ad1 until a later verified release. Do not claim the new catalog UI is live yet.
 - Six Shopify drafts and their DB links are already persisted. All six read back as DRAFT, tracked inventory0, oversellingDENY, native currencyJPY. Native Shopify Admin read-back also confirmed the tea draft.
--25 focused tests,12 theme regression tests, typecheck and lint passed; Theme Check0 errors/1 existing warning. Core Japan operator OS build, SERICIA audit and Video Factory CI passed for the implementation commit. Pre-existing Pet Life Movie npm audit fails.
+- 25 focused tests,12 theme regression tests, typecheck and lint passed; Theme Check0 errors/1 existing warning. Core Japan operator OS build, SERICIA audit and Video Factory CI passed for the implementation commit. Pre-existing Pet Life Movie npm audit fails.
 - Both prior rollback archives were losslessly converted to `.tar.xz`; decompressed hashes matched. Paths: `/var/backups/paradigm-release/ac3d1f62-20261002.tar.xz` and `/var/backups/paradigm-release/120e48df-20261002.tar.xz`. Current81811ad1 image is retained. No volumes or unrelated application images removed. User permission to remove only the oldest ac3d1f62 archive is pending. Do not treat elapsed time as approval.
 
 ## Required operator actions / dependencies
