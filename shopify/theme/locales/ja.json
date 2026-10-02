@@ -539,6 +539,8 @@
     }
   },
   "sericia": {
+    "ask_product": "この商品について問い合わせる",
+    "product_reference": "商品名・注文番号（任意）",
   "eyebrow": "SERICIA カスタマーサービス",
   "heading": "日本の良いものを選ぶ時間に、安心を。",
   "intro": "日本のお茶と日用品をお届けするSERICIAの考え方、ご利用案内、お問い合わせはこちらから。",
