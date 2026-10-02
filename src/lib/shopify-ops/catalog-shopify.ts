@@ -1,4 +1,4 @@
-import { shopifyGraphql, upsertShopifyProduct } from "./shopify-admin";
+import { shopifyGraphql, upsertShopifyProduct, ensureShopifyCollection } from "./shopify-admin";
 import {
   catalogDescription,
   catalogMetafields,
@@ -40,6 +40,7 @@ export async function createCatalogDraft(product: CatalogRecord) {
     throw new Error(
       `ストア基本通貨 ${currency} の販売価格が未設定、または未対応です`,
     );
+  const collectionId = await ensureShopifyCollection(product.category, product.category);
   const metafields = catalogMetafields(product.details);
   return upsertShopifyProduct(
     {
@@ -48,6 +49,7 @@ export async function createCatalogDraft(product: CatalogRecord) {
       status: "DRAFT",
       descriptionHtml: catalogDescription(product.details),
       productType: product.category,
+    collections: [collectionId],
       tags: [marker, "sericia-review-required", product.category],
       ...(product.details.maker ? { vendor: product.details.maker } : {}),
       ...(metafields.length ? { metafields } : {}),

@@ -158,6 +158,14 @@ export function ShopifySupplierPanel({
                 <p className="mt-2 text-xs text-zinc-600">
                   {s.observation?.evidence ?? "まだ確認していません"}
                 </p>
+                {typeof s.observation?.priceJpy === "number" && (
+                  <p className="mt-2 text-sm">
+                    確認時の商品価格：¥{s.observation.priceJpy.toLocaleString("ja-JP")}
+                    {p && s.observation.priceJpy !== p.procurementCostJpy && (
+                      <span className="mt-1 block text-xs text-amber-800">登録原価と異なります。送料・種類を確認して商品カタログを更新してください。</span>
+                    )}
+                  </p>
+                )}
                 <p className="mt-2 text-xs">
                   確認日時：
                   {s.checked_at

@@ -7,6 +7,7 @@ const { query, upsert } = vi.hoisted(() => ({
 vi.mock("./shopify-admin", () => ({
   shopifyGraphql: query,
   upsertShopifyProduct: upsert,
+  ensureShopifyCollection: vi.fn().mockResolvedValue("gid://shopify/Collection/1"),
 }));
 import { createCatalogDraft } from "./catalog-shopify";
 const p: CatalogRecord = {
