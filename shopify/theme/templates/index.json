@@ -1,100 +1,61 @@
 {
   "sections": {
     "serica-hero": {
-      "type": "serica-marketplace-hero",
+      "type": "sericia-tea-hero",
       "settings": {
-        "eyebrow": "The SERICIA private edit",
-        "heading": "Objects of distinction.",
-        "text": "<p>An exacting edit of exceptional objects, chosen for material, proportion and lasting presence.</p>",
-        "primary_label": "Discover the collection",
-        "primary_link": "shopify://collections/all",
-        "secondary_label": "Our point of view",
-        "secondary_link": "#our-curation",
-        "note": "Opening edit · selected in limited quantities"
+        "eyebrow": "Japanese tea & everyday discoveries",
+        "heading": "A little Japan. In every cup.",
+        "description": "<p>Discover Japanese tea and carefully selected Japanese-made goods. Thoughtful quality, everyday enjoyment, and a closer connection to Japan.</p>",
+        "button_label": "Explore the collection",
+        "guide_label": "Find your kind of tea",
+        "note": "Good tea. Thoughtful essentials. A taste of Japan.",
+        "caption": "A moment to slow down · Editorial imagery"
       }
     },
     "serica-promises": {
       "type": "serica-value-strip",
       "blocks": {
-        "worldwide": {
+        "japan": {
           "type": "promise",
           "settings": {
             "icon": "globe",
-            "heading": "Curated selection",
-            "text": "Chosen for material and form"
+            "heading": "A focus on Japan",
+            "text": "Tea & Japanese-made goods"
           }
         },
-        "packed": {
-          "type": "promise",
-          "settings": {
-            "icon": "box",
-            "heading": "Verified details",
-            "text": "Origin, dimensions and care"
-          }
-        },
-        "makers": {
+        "quality": {
           "type": "promise",
           "settings": {
             "icon": "heart",
-            "heading": "Considered provenance",
-            "text": "Maker and production context"
+            "heading": "Thoughtful selection",
+            "text": "Quality for everyday life"
           }
         },
-        "secure": {
+        "details": {
+          "type": "promise",
+          "settings": {
+            "icon": "box",
+            "heading": "Know what you choose",
+            "text": "Clear product information"
+          }
+        },
+        "help": {
           "type": "promise",
           "settings": {
             "icon": "shield",
-            "heading": "Worldwide service",
-            "text": "Clear delivery information"
+            "heading": "Here to help",
+            "text": "Guidance before you order"
           }
         }
       },
-      "block_order": ["worldwide", "packed", "makers", "secure"],
+      "block_order": [
+        "japan",
+        "quality",
+        "details",
+        "help"
+      ],
       "settings": {
         "accessibility_label": "Our service promises"
-      }
-    },
-    "serica-categories": {
-      "type": "serica-category-showcase",
-      "blocks": {
-        "tableware": {
-          "type": "category",
-          "settings": {
-            "kicker": "The dining edit",
-            "title": "Tableware",
-            "link": "shopify://collections/tableware"
-          }
-        },
-        "craft": {
-          "type": "category",
-          "settings": {
-            "kicker": "Limited objects",
-            "title": "Objects & Editions",
-            "link": "shopify://collections/craft"
-          }
-        },
-        "living": {
-          "type": "category",
-          "settings": {
-            "kicker": "Interior perspective",
-            "title": "Interiors",
-            "link": "shopify://collections/living"
-          }
-        },
-        "gifts": {
-          "type": "category",
-          "settings": {
-            "kicker": "Considered gestures",
-            "title": "Gifts with Presence",
-            "link": "shopify://collections/gifts"
-          }
-        }
-      },
-      "block_order": ["tableware", "craft", "living", "gifts"],
-      "settings": {
-        "eyebrow": "The opening edit",
-        "heading": "A study in material and form.",
-        "text": "<p>Exceptional objects selected with restraint, clarity and an uncompromising eye for detail.</p>"
       }
     },
     "sericia-story": {
@@ -103,44 +64,48 @@
         "origin": {
           "type": "principle",
           "settings": {
-            "heading": "Material intelligence",
-            "text": "Texture, weight and finish are considered before an object enters the edit."
+            "heading": "Japan at the centre",
+            "text": "Tea comes first, alongside a considered selection of Japanese-made essentials."
           }
         },
         "details": {
           "type": "principle",
           "settings": {
-            "heading": "Exacting selection",
-            "text": "Every piece must justify its presence through proportion, purpose and longevity."
+            "heading": "Quality you can understand",
+            "text": "Clear descriptions help you explore flavour, use and care before choosing."
           }
         },
         "context": {
           "type": "principle",
           "settings": {
-            "heading": "Context without noise",
-            "text": "Origin, maker and care are presented with precision for an international audience."
+            "heading": "Value that feels right",
+            "text": "An approachable way to enjoy Japanese quality in your everyday life."
           }
         }
       },
-      "block_order": ["origin", "details", "context"],
+      "block_order": [
+        "origin",
+        "details",
+        "context"
+      ],
       "settings": {
-        "eyebrow": "The SERICIA point of view",
-        "heading": "Luxury is the discipline of choosing less, better.",
-        "text": "<p>We select for proportion, material intelligence and enduring relevance. Every piece must earn its place through both presence and purpose.</p>",
-        "principles_label": "Our curation principles",
-        "button_label": "Explore the opening collection",
-        "button_link": "shopify://collections/all"
+        "eyebrow": "From Japan, with care",
+        "heading": "Good things, worth slowing down for.",
+        "text": "<p>SERICIA begins with a simple idea: make the everyday pleasures of Japan easier to discover abroad. Starting with tea, we look for Japanese-made products that bring quality and quiet joy to daily life.</p>",
+        "principles_label": "What matters to us",
+        "button_label": "Get to know SERICIA",
+        "button_link": "/pages/contact#about"
       }
     },
     "all-products": {
       "type": "featured-collection",
       "settings": {
-        "title": "The latest edit",
+        "title": "Discover the collection",
         "heading_size": "h2",
         "show_description": false,
         "description_style": "subtitle",
         "collection": "all",
-        "products_to_show": 12,
+        "products_to_show": 8,
         "columns_desktop": 4,
         "full_width": false,
         "show_view_all": true,
@@ -155,10 +120,54 @@
         "quick_add": "standard",
         "columns_mobile": "2",
         "swipe_on_mobile": false,
-        "padding_top": 80,
-        "padding_bottom": 96
+        "padding_top": 60,
+        "padding_bottom": 60
       }
+    },
+    "tea-guide": {
+      "type": "sericia-tea-guide",
+      "settings": {},
+      "blocks": {
+        "sencha": {
+          "type": "tea",
+          "settings": {
+            "title": "Sencha",
+            "profile": "Fresh & green",
+            "description": "Loose-leaf green tea with a refreshing character. A gentle starting point for exploring Japanese tea.",
+            "ritual": "For your everyday tea break."
+          }
+        },
+        "hojicha": {
+          "type": "tea",
+          "settings": {
+            "title": "Hojicha",
+            "profile": "Roasted & comforting",
+            "description": "Roasted Japanese green tea, loved for its warm aroma and toasty character.",
+            "ritual": "For a quiet, unhurried moment."
+          }
+        },
+        "matcha": {
+          "type": "tea",
+          "settings": {
+            "title": "Matcha",
+            "profile": "Rich & whisked",
+            "description": "Finely ground green tea, whisked into water. Explore its distinctive texture and depth of flavour.",
+            "ritual": "For a ritual all your own."
+          }
+        }
+      },
+      "block_order": [
+        "sencha",
+        "hojicha",
+        "matcha"
+      ]
     }
   },
-  "order": ["serica-hero", "serica-promises", "serica-categories", "sericia-story", "all-products"]
+  "order": [
+    "serica-hero",
+    "serica-promises",
+    "tea-guide",
+    "all-products",
+    "sericia-story"
+  ]
 }

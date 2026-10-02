@@ -17,6 +17,8 @@
   <h1 class="title">
     {{ 'templates.404.title' | t }}
   </h1>
+  <p>{{ 'sericia.not_found' | t }}</p>
+  {% if pages.contact.url != blank %}<p><a href="{{ pages.contact.url }}#ContactForm">{{ 'sericia.contact' | t }}</a></p>{% endif %}
   <a href="{{ routes.all_products_collection_url }}" class="button">
     {{ 'general.continue_shopping' | t }}
   </a>

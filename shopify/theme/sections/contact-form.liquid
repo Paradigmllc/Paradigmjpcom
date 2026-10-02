@@ -1,4 +1,5 @@
 {{ 'section-contact-form.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'sericia-contact.js' | asset_url }}" defer="defer"></script>
 
 {%- style -%}
   .section-{{ section.id }}-padding {
@@ -51,6 +52,16 @@
           </li>
         </ul>
       {%- endif -%}
+      <div class="sericia-contact-topic">
+        <label for="ContactForm-topic">{{ 'sericia.topic' | t }}</label>
+        <select id="ContactForm-topic" name="contact[Topic]">
+          <option value="general">{{ 'sericia.general' | t }}</option>
+          <option value="product">{{ 'sericia.product' | t }}</option>
+          <option value="order">{{ 'sericia.order' | t }}</option>
+          <option value="disclosure">{{ 'sericia.disclosure' | t }}</option>
+        </select>
+      </div>
+      <p id="ContactForm-privacy">{{ 'sericia.privacy_note' | t }} {% if shop.privacy_policy.url != blank %}<a href="{{ shop.privacy_policy.url }}">{{ 'sericia.privacy' | t }}</a>{% endif %}</p>
       <div class="contact__fields">
         <div class="field">
           <input
@@ -59,7 +70,7 @@
             type="text"
             id="ContactForm-name"
             name="contact[{{ 'templates.contact.form.name' | t }}]"
-            value="{% if form.name %}{{ form.name }}{% elsif customer %}{{ customer.name }}{% endif %}"
+            value="{% if form.name %}{{ form.name | escape }}{% elsif customer %}{{ customer.name | escape }}{% endif %}"
             placeholder="{{ 'templates.contact.form.name' | t }}"
           >
           <label class="field__label" for="ContactForm-name">{{ 'templates.contact.form.name' | t }}</label>
@@ -73,7 +84,8 @@
             name="contact[email]"
             spellcheck="false"
             autocapitalize="off"
-            value="{% if form.email %}{{ form.email }}{% elsif customer %}{{ customer.email }}{% endif %}"
+            value="{% if form.email %}{{ form.email | escape }}{% elsif customer %}{{ customer.email | escape }}{% endif %}"
+            required
             aria-required="true"
             {% if form.errors contains 'email' %}
               aria-invalid="true"
@@ -100,34 +112,25 @@
         </div>
       </div>
       <div class="field">
-        <input
-          type="tel"
-          id="ContactForm-phone"
-          class="field__input"
-          autocomplete="tel"
-          name="contact[{{ 'templates.contact.form.phone' | t }}]"
-          pattern="[0-9\-]*"
-          value="{% if form.phone %}{{ form.phone }}{% elsif customer %}{{ customer.phone }}{% endif %}"
-          placeholder="{{ 'templates.contact.form.phone' | t }}"
-        >
-        <label class="field__label" for="ContactForm-phone">{{ 'templates.contact.form.phone' | t }}</label>
-      </div>
-      <div class="field">
         <textarea
-          rows="10"
+          rows="8"
+          required
+          maxlength="5000"
+          aria-describedby="ContactForm-privacy"
           id="ContactForm-body"
           class="text-area field__input"
           name="contact[{{ 'templates.contact.form.comment' | t }}]"
           placeholder="{{ 'templates.contact.form.comment' | t }}"
         >
-          {{- form.body -}}
+          {{- form.body | escape -}}
         </textarea>
         <label class="form__label field__label" for="ContactForm-body">
           {{- 'templates.contact.form.comment' | t -}}
         </label>
       </div>
+      <p id="ContactForm-progress" role="status" aria-live="polite" data-slow="{{ 'sericia.slow' | t | escape }}"></p>
       <div class="contact__button">
-        <button type="submit" class="button">
+        <button type="submit" class="button" data-sending="{{ 'sericia.sending' | t | escape }}">
           {{ 'templates.contact.form.send' | t }}
         </button>
       </div>
