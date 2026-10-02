@@ -1,13 +1,14 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-10-02 SERICIA live verification follow-up
+## CURRENT STATUS — 2026-10-02 SERICIA verified release
 
-- PR #752 merged as `120e48df`; theme166336102448 / `1.4.0-everyday` is public. Nine public routes verified with actual release fingerprint, no Liquid errors, preview/noindex retained.
-- Production supplier API registered and checked four research URLs: three availability observations, one ambiguous/unknown; all persisted, anonymous GET401. Not inventory, purchases or adopted suppliers.
-- Actual browser verification exposed Payload numeric IDs being discarded by shared auth and a legacy session potentially taking precedence. Follow-up `codex/sericia-supplier-auth` preserves verified numeric IDs, requires identified Payload sessions, denies viewer mutations and checks the registered public origin behind the proxy.
-- Error state no longer also claims the list is empty; admin branding is SERICIA and launch copy no longer asserts password protection without checking it.
-- CI inventory workflow including production build passed. Separate pre-existing Pet Life Movie npm audit failed. Deployment120e48df is live; common release command failed at unrelated Manual Work V4 reconciliationHTTP207. Separately executed post-deploy doctor passed. Do not claim every shared release gate is green.
-- Warehouse contract/API and supplier/fulfillment terms remain unresolved; question pending. Auto-buy/warehouse dispatch and commercial readiness are not claimed.
+- Active handoff: `codex/sericia-auth-release`. Runtime PR #753 merge `81811ad1` deployed by standard release; Coolify deployment `j139syo0h62fdg0112cw0orc` finished. Earlier implementation PR #752 merge `120e48df` is included.
+- Shopify theme `166336102448` / `1.4.0-everyday` is public; nine routes and mobile layout verified. Six categories cover tea, textiles, accessories, stationery, craft and gifts. Preview/noindex retained, no real products published.
+- Production browser verified identified Payload authentication, four saved research sources, URL save and source refresh. Furoshiki observation updated at 2026-10-02 14:55 JST. Anonymous supplier API still returns401. This is observation, not inventory or purchasing.
+- Validation: 29 focused auth/API/observation/launch tests; typecheck/lint; SERICIA CI build passed; 11 theme regressions and Theme Check (zero errors, one existing warning). Separate existing Pet Life Movie dependency audit fails. Standard release's unrelated Manual Work V4 reconciliation returns207; standalone post-deploy doctor passed. Do not claim all shared release gates passed.
+- Host disk after build-cache-only cleanup remains90% (17GB free). Current and preceding app images retained. Prior unused ac3d1f62 image was archived and verified before removal: `/var/backups/paradigm-release/ac3d1f62-20261002.tar.gz` plus SHA256 file. No volumes or unrelated images removed. Rebuildable apt index was removed; run normal apt-get update before future package installs. Next deployment must pass unchanged disk threshold; capacity maintenance remains needed.
+- Warehouse contract/API, supplier authorization, commercial product data and fulfillment terms remain unresolved; warehouse question pending. Auto-buy/warehouse dispatch and commercial readiness are not claimed. Earlier status sections below are historical and superseded by this entry.
+- Details: [operations handoff](docs/knowledge/sericia-external-sourcing-20261002.md).
 
 ## CURRENT STATUS — 2026-10-02 SERICIA external sourcing (Codex)
 
