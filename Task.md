@@ -1,5 +1,14 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-02 SERICIA recurring operations
+
+- Active handoff: `codex/sericia-daily-operations`. Implements recurring five-job controller, private run history, cursor continuation, expiring leases, daily operations UI, and at-most-once social delivery. Deployment pending.
+- Social rechecks actual Shopify sellability and approved content revision, prevents uncertain retries, records receipts atomically, and removes hypothetical USD price claims. Previous schedules consolidated to avoid duplicate supplier/social runners.
+- Verification: 127 Shopify tests, TypeScript, focused lint, isolated mobile/desktop Playwright and rolled-back production SQL functional/RLS checks passed. No posts, purchases, shipments or notifications sent by testing.
+- Current004a0dca runtime and120e48df archive retained; unused2509cf8b image removed after confirming no referencing containers. Disk88%, release preflight still to verify.
+- Unresolved: warehouse identity/API, authorized third-party stock feed, commercial product/fulfillment terms, official social accounts and additional read_fulfillments approval. Do not claim end-to-end daily commerce readiness.
+- Detail: [recurring operations](docs/knowledge/sericia/daily-operations-20261002.md).
+
 ## CURRENT STATUS — 2026-10-02 SERICIA live event connection
 
 - Active handoff: `codex/sericia-live-handoff`. PR758 merge004a0dca is deployed and verified in the live authenticated operations UI. Deployment `kcvgygc9l2ppjo5syvheolxr` finished; standalone post-deploy doctor passed. Shared Manual Work V4 reconciliation still returns207, so the full release command exits1 after successful deployment.

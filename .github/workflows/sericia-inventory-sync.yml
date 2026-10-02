@@ -74,16 +74,3 @@ jobs:
             --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
             --header "Content-Type: application/json" \
             https://paradigmjp.com/api/shopify-ops/base/daily
-
-      - name: Refresh public supplier observations independently of authorized BASE sync
-        if: always()
-        env:
-          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
-        run: |
-          test -n "$WEBHOOK_SECRET"
-          curl --fail-with-body --silent --show-error --max-time 180 \
-            --request POST \
-            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
-            --header "Content-Type: application/json" \
-            --data '{"action":"refresh_all"}' \
-            https://paradigmjp.com/api/shopify-ops/suppliers

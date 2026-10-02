@@ -1,0 +1,31 @@
+name: SERICIA recurring operations
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  operate:
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [products, inventory, orders, suppliers, social]
+    concurrency:
+      group: sericia-daily-${{ matrix.kind }}
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run due work with durable lock and result
+        env:
+          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
+          KIND: ${{ matrix.kind }}
+        run: |
+          set -euo pipefail
+          test -n "$WEBHOOK_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 180 \
+            --request POST --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
+            --header 'Content-Type: application/json' --data "{\"kind\":\"$KIND\"}" \
+            https://paradigmjp.com/api/shopify-ops/daily | tee result.json
+          jq -e '.ok == true and .result.state != "failed"' result.json

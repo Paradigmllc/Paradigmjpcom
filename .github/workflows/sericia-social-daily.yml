@@ -1,9 +1,6 @@
 name: SERICIA social daily pipeline
 
 on:
-  schedule:
-    # Draft generation at 09:10 JST, then delivery passes for US/EU time zones.
-    - cron: "10 0,9,17 * * *"
   workflow_dispatch:
 
 permissions:
@@ -27,4 +24,5 @@ jobs:
             --request POST \
             --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
             --header "Content-Type: application/json" \
-            https://paradigmjp.com/api/shopify-ops/social/daily
+            --data '{"kind":"social"}' \
+            https://paradigmjp.com/api/shopify-ops/daily
