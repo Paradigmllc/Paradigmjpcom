@@ -85,6 +85,11 @@ try {
         });
       const input = request.postDataJSON();
       calls.push(input);
+      if (input.action === "connect")
+        return route.fulfill({
+          status: 502,
+          json: { ok: false, error: "Fixture subscription failure" },
+        });
       const result =
         input.action === "status"
           ? {
@@ -95,7 +100,8 @@ try {
                   subscribed: false,
                 },
                 {
-                  topic: "ORDERS_UPDATED",
+                  topic: "FULFILLMENTS_UPDATE",
+                  requiredScope: "read_fulfillments",
                   permitted: false,
                   subscribed: false,
                 },
@@ -127,9 +133,26 @@ try {
     .getByRole("button", { name: "接続状況を確認", exact: true })
     .click();
   await page
-    .getByText("ORDERS_UPDATED: Shopify権限が必要", { exact: true })
+    .getByText("FULFILLMENTS_UPDATE: Shopify権限が必要（read_fulfillments）", {
+      exact: true,
+    })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "更新通知を登録", exact: true })
+    .click();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: "Fixture subscription failure" })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "同期状況を再読み込み", exact: true })
+    .click();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: "Fixture subscription failure" })
     .waitFor();
   await page.getByRole("button", { name: "商品を再取得", exact: true }).click();
+  await page.getByRole("alert").waitFor({ state: "detached" });
   await page
     .getByRole("button", { name: "残りの商品を取得", exact: true })
     .click();

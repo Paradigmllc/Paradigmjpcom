@@ -15,11 +15,17 @@ const labels = {
   fulfillment: "発送・配達",
 } as const;
 type Subscriptions = {
-  topics: { topic: string; permitted: boolean; subscribed: boolean }[];
+  topics: {
+    topic: string;
+    permitted: boolean;
+    subscribed: boolean;
+    requiredScope?: string;
+  }[];
 };
 export function ShopifyOperationsPanel() {
   const [data, setData] = useState<OperationDashboard | null>(null);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState<EntityKind>("order");
   const [query, setQuery] = useState("");
@@ -66,6 +72,7 @@ export function ShopifyOperationsPanel() {
       | "reconcileInventory",
   ) {
     setBusy(true);
+    setActionError("");
     try {
       const response = await fetch("/api/shopify-ops/operations", {
         method: "POST",
@@ -111,9 +118,14 @@ export function ShopifyOperationsPanel() {
       await load();
     } catch (cause) {
       console.error("[operations] action failed", cause);
-      toast.error(
-        cause instanceof Error ? cause.message : "処理に失敗しました",
+      const message =
+        cause instanceof Error ? cause.message : "処理に失敗しました";
+      setActionError(
+        action === "connect"
+          ? `${message}。一部の通知は登録済みの可能性があります。接続状況を確認してください。`
+          : message,
       );
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -154,6 +166,15 @@ export function ShopifyOperationsPanel() {
           className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-900"
         >
           {error}。表示済みの情報は最新でない可能性があります。
+        </div>
+      )}
+      {actionError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-900"
+        >
+          {actionError}
+          。一部の通知は登録済みの可能性があります。接続状況を確認してください。
         </div>
       )}
       {!data && !error && <p role="status">同期状況を読み込んでいます…</p>}
@@ -276,7 +297,7 @@ export function ShopifyOperationsPanel() {
                       ? "登録済み"
                       : s.permitted
                         ? "未登録"
-                        : "Shopify権限が必要"}
+                        : `Shopify権限が必要${s.requiredScope ? `（${s.requiredScope}）` : ""}`}
                   </li>
                 ))}
               </ul>
