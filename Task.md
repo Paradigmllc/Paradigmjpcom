@@ -1,5 +1,22 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-29 SERICIA release resumed
+
+- PR760 remains open, production runtime004a0dca remains live while the release is validated. Read-only host preflight passed at87% disk; retained backup is untouched and no deletion approval is assumed.
+- Fresh audit found advisories since the October3 validation. Updated Next16.4.3 and aligned Payload3.91.0 packages; retained explicit-deny unlock patch. Added narrow reproducible deepmerge/Zod3 security backports with pinned upstream and artifact hashes. Zod4 remains upstream4.6.7; Coinbase SDK retains v3 compatibility. No audit exemptions.
+- Validation so far: npm audit0,182 focused/wider tests, TypeScript and targeted lint passed. Clean npm ci also passed with audit0;38 security/CMS/image-upload tests and isolated mobile/desktop UI checks passed. Remote CI and production deployment verification pending at this entry.
+- Live storefront remains preview/noindex,0 published products;6 catalog candidates. Existing schedules run but BASE credentials, warehouse credentials, social credentials and fulfillment scope remain unresolved. Supplier page availability is not exact stock. Asked user for warehouse identity and official social account URLs; no credentials requested in chat.
+- Detail: [release/security notes](docs/knowledge/sericia/resume-20261029.md). Do not equate implementing recurring jobs with commercial launch or warehouse/SNS activation.
+
+## CURRENT STATUS — 2026-10-02 SERICIA recurring operations
+
+- Active handoff: `codex/sericia-daily-operations`. Implements recurring five-job controller, private run history, cursor continuation, expiring leases, daily operations UI, and at-most-once social delivery. PR760 open; runtime commit e34c795c passed all CI including production builds/container. Deployment and merge pending disk-resolution approval.
+- Social rechecks actual Shopify sellability and approved content revision, prevents uncertain retries, records receipts atomically, and removes hypothetical USD price claims. Previous schedules consolidated to avoid duplicate supplier/social runners.
+- Verification: 127 initial Shopify tests, TypeScript, focused lint, isolated mobile/desktop Playwright and rolled-back production SQL functional/RLS checks passed. Security CI exposed existing dependency advisories; updated Next16.3.8, sharp0.35.5, CSV7.0.3 and patched transitives. npm audit now0;182 wider tests passed. TypeScript after update passed; local build hit ENOSPC (failed build cache removed), but final GitHub production builds and container checks passed. Final focused tests128/128; npm audit0. No posts, purchases, shipments or notifications sent by testing.
+- Current004a0dca runtime and120e48df archive retained; unused2509cf8b image removed after confirming no referencing containers. Disk88%; read-only preflight refused deployment. Permission to relocate the retained120e48df archive to this Mac is pending. Mac copy completed and full SHA256 matched (60e15c3c887dec712f254b9a859aa534575f08669057078113081ceda2d9f22d). Local file `/Users/apple/.codex/sericia-release-evidence/backups/120e48df-20261002.tar.xz`, mode0600. Server archive still retained: do not remove without the pending permission. No production migration or new recurring workflow activated.
+- Unresolved: warehouse identity/API, authorized third-party stock feed, commercial product/fulfillment terms, official social accounts and additional read_fulfillments approval. Do not claim end-to-end daily commerce readiness.
+- Detail: [recurring operations](docs/knowledge/sericia/daily-operations-20261002.md).
+
 ## CURRENT STATUS — 2026-10-02 SERICIA live event connection
 
 - Active handoff: `codex/sericia-live-handoff`. PR758 merge004a0dca is deployed and verified in the live authenticated operations UI. Deployment `kcvgygc9l2ppjo5syvheolxr` finished; standalone post-deploy doctor passed. Shared Manual Work V4 reconciliation still returns207, so the full release command exits1 after successful deployment.

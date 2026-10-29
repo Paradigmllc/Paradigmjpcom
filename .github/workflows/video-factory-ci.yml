@@ -8,9 +8,11 @@ on:
       - vendor/**
       - patches/payload/**
       - scripts/prepare-payload-security-fork.mjs
+      - scripts/prepare-sericia-security-forks.mjs
       - src/collections/Users*
       - tests/image-size-security.test.ts
       - tests/payload-security-fork.test.ts
+      - tests/sericia-security-backports.test.ts
       - Dockerfile
       - docker-entrypoint.sh
       - services/video-factory/**
@@ -45,9 +47,11 @@ on:
       - vendor/**
       - patches/payload/**
       - scripts/prepare-payload-security-fork.mjs
+      - scripts/prepare-sericia-security-forks.mjs
       - src/collections/Users*
       - tests/image-size-security.test.ts
       - tests/payload-security-fork.test.ts
+      - tests/sericia-security-backports.test.ts
       - Dockerfile
       - docker-entrypoint.sh
       - services/video-factory/**
@@ -103,6 +107,7 @@ jobs:
           src/collections/Users.security.test.ts
           tests/image-size-security.test.ts
           tests/payload-security-fork.test.ts
+          tests/sericia-security-backports.test.ts
           tests/video-factory-console-health.test.ts
           --maxWorkers=1
       - name: Direct-growth unit and API tests

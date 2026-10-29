@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url"
 import { execFileSync } from "node:child_process"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
-const version = "3.85.0"
-const upstreamIntegrity = "sha512-Cb3jX/WRkHhT5oZCx1BikR6fe32Xbld4Esxr0i+dXtHZMjBVgMjaf/oaK81jLRBstbJbUw7Ia/jMrRw82+FlwA=="
+const version = "3.91.0"
+const upstreamIntegrity = "sha512-EF+PXc8iSuo561f82SnAY5YB8Ix6LDN4Xe4ndef0iLDNPkdEykq1vc1mgo82/HsZ4ljSv9u/wP6iP5hyIpM+wA=="
 const scratch = mkdtempSync(join(tmpdir(), "paradigm-payload-fork-"))
 const vendor = join(root, "vendor")
 mkdirSync(vendor, { recursive: true })
@@ -23,14 +23,14 @@ try {
   if (digest !== upstreamIntegrity) throw new Error("Payload upstream archive integrity mismatch")
   run("tar", ["-xzf", archive])
   const source = join(scratch, "package")
-  run("git", ["apply", "--check", join(root, "patches/payload/3.85.0-unlock.patch")], source)
-  run("git", ["apply", join(root, "patches/payload/3.85.0-unlock.patch")], source)
-  // Public API stays at 3.85.0 for Payload's exact peer dependencies.
+  run("git", ["apply", "--check", join(root, "patches/payload/3.91.0-unlock.patch")], source)
+  run("git", ["apply", join(root, "patches/payload/3.91.0-unlock.patch")], source)
+  // Public API stays at 3.91.0 for Payload's exact peer dependencies.
   // The package identity and explicit revision disclose that this is NOT upstream.
   run("npm", ["pkg", "set", "name=@paradigmllc/payload-security", "paradigmSecurityRevision=1",
     `paradigmUpstream.package=payload@${version}`, `paradigmUpstream.integrity=${upstreamIntegrity}`,
     "paradigmSecurityAdvisory=GHSA-jg8r-5jh2-v2xj",
-    "description=Paradigm local security fork of Payload 3.85.0; deny implicit account unlock"], source)
+    "description=Paradigm local security fork of Payload 3.91.0; deny implicit account unlock"], source)
   const [packed] = JSON.parse(run("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", vendor], source))
   if (packed.files.some(file => file.path === "dist/auth/operations/unlock.js.map")) {
     throw new Error("Stale unlock source map must not ship")
