@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-29 SERICIA release resumed
+
+- PR760 remains open, production runtime004a0dca remains live while the release is validated. Read-only host preflight passed at87% disk; retained backup is untouched and no deletion approval is assumed.
+- Fresh audit found advisories since the October3 validation. Updated Next16.4.3 and aligned Payload3.91.0 packages; retained explicit-deny unlock patch. Added narrow reproducible deepmerge/Zod3 security backports with pinned upstream and artifact hashes. Zod4 remains upstream4.6.7; Coinbase SDK retains v3 compatibility. No audit exemptions.
+- Validation so far: npm audit0,182 focused/wider tests, TypeScript and targeted lint passed. Clean npm ci also passed with audit0;38 security/CMS/image-upload tests and isolated mobile/desktop UI checks passed. Remote CI and production deployment verification pending at this entry.
+- Live storefront remains preview/noindex,0 published products;6 catalog candidates. Existing schedules run but BASE credentials, warehouse credentials, social credentials and fulfillment scope remain unresolved. Supplier page availability is not exact stock. Asked user for warehouse identity and official social account URLs; no credentials requested in chat.
+- Detail: [release/security notes](docs/knowledge/sericia/resume-20261029.md). Do not equate implementing recurring jobs with commercial launch or warehouse/SNS activation.
+
 ## CURRENT STATUS — 2026-10-02 SERICIA recurring operations
 
 - Active handoff: `codex/sericia-daily-operations`. Implements recurring five-job controller, private run history, cursor continuation, expiring leases, daily operations UI, and at-most-once social delivery. PR760 open; runtime commit e34c795c passed all CI including production builds/container. Deployment and merge pending disk-resolution approval.

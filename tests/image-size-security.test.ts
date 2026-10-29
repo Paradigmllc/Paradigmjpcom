@@ -1,8 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest"
 import { spawnSync } from "node:child_process"
-import { dirname, resolve } from "node:path"
-import { createRequire } from "node:module"
 import sharp from "sharp"
 
 function box(name: string, data: Buffer, declaredSize = data.length + 8) {
@@ -33,24 +31,17 @@ const probe = String.raw`
   const { tmpdir } = require('node:os');
   const { join } = require('node:path');
   const { pathToFileURL } = require('node:url');
-  const [root, mode] = process.argv.slice(1);
+  const [mode] = process.argv.slice(1);
   const data = Buffer.from(readFileSync(0, 'utf8'), 'base64');
   const dir = mkdtempSync(join(tmpdir(), 'paradigm-image-probe-'));
   const file = join(dir, 'fixture.bin');
   (async () => {
     try {
       writeFileSync(file, data);
-      let result;
-      if (mode.startsWith('payload')) {
-        const entry = pathToFileURL(require.resolve('payload'));
-        const { getImageSize } = await import(new URL('uploads/getImageSize.js', entry));
-        result = await getImageSize({ data, mimetype: 'image/png', ...(mode.endsWith('file') ? { tempFilePath: file } : {}) });
-      } else {
-        const fromFile = mode.endsWith('file');
-        const target = join(root, 'dist', (fromFile ? 'fromFile' : 'index') + (mode.startsWith('cjs') ? '.cjs' : '.mjs'));
-        const api = mode.startsWith('cjs') ? require(target) : await import(pathToFileURL(target));
-        result = fromFile ? await api.imageSizeFromFile(file) : api.imageSize(data);
-      }
+      const entry = pathToFileURL(require.resolve('payload'));
+      const { getImageSize } = await import(new URL('uploads/getImageSize.js', entry));
+      const fileInput = { data, mimetype: 'image/png', ...(mode.endsWith('file') ? { tempFilePath: file } : {}) };
+      const result = await getImageSize({ file: fileInput, ...(mode.startsWith('sharp') ? { sharp: require('sharp') } : {}) });
       process.stdout.write(JSON.stringify({ completed: true, result }));
     } catch (error) {
       if (['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND', 'ENOENT'].includes(error?.code)) throw error;
@@ -61,11 +52,7 @@ const probe = String.raw`
 `
 
 function runProbe(data: Buffer, mode: string) {
-  const payloadRequire = createRequire(import.meta.resolve("payload"))
-  const root = process.env.IMAGE_SIZE_REVIEW_ROOT
-    ? resolve(process.env.IMAGE_SIZE_REVIEW_ROOT)
-    : dirname(dirname(payloadRequire.resolve("image-size")))
-  const child = spawnSync(process.execPath, ["--max-old-space-size=64", "-e", probe, root, mode], {
+  const child = spawnSync(process.execPath, ["--max-old-space-size=64", "-e", probe, mode], {
     input: data.toString("base64"), encoding: "utf8", timeout: 2000, killSignal: "SIGKILL", maxBuffer: 8192,
   })
   expect(child.error, `${mode}: ${child.error?.message ?? child.stderr}`).toBeUndefined()
@@ -73,7 +60,7 @@ function runProbe(data: Buffer, mode: string) {
   return JSON.parse(child.stdout) as { completed: boolean; rejected?: boolean; result?: { width: number; height: number } }
 }
 
-const modes = ["esm-buffer", "cjs-buffer", "esm-file", "cjs-file"] as const
+const modes = ["probe-buffer", "probe-file", "sharp-buffer", "sharp-file"] as const
 describe("image parser security regression", () => {
   for (const [name, data] of [["ICNS", icns], ["HEIF", heif], ["JXL", jxl]] as const) {
     it.each(modes)(`${name} zero length terminates through %s`, (mode) => {
@@ -86,12 +73,4 @@ describe("image parser security regression", () => {
     for (const mode of modes) expect(runProbe(buffer, mode).result).toMatchObject({ width: 128, height: 256 })
   })
 
-  // Do not run Payload against an uninstalled review candidate: it resolves the installed dependency.
-  it.skipIf(Boolean(process.env.IMAGE_SIZE_REVIEW_ROOT))("exercises Payload's real buffer and temporary-file upload adapter", async () => {
-    const buffer = await sharp({ create: { width: 128, height: 256, channels: 3, background: "white" } }).png().toBuffer()
-    for (const mode of ["payload-buffer", "payload-file"]) {
-      expect(runProbe(buffer, mode).result).toMatchObject({ width: 128, height: 256 })
-      for (const data of [icns, heif, jxl]) expect(runProbe(data, mode).completed).toBe(true)
-    }
-  })
 })

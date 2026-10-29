@@ -5,7 +5,9 @@
 FROM node:22.23.1-alpine3.24 AS deps
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
-COPY vendor/paradigmllc-payload-security-3.85.0.tgz ./vendor/paradigmllc-payload-security-3.85.0.tgz
+COPY vendor/paradigmllc-payload-security-3.91.0.tgz ./vendor/paradigmllc-payload-security-3.91.0.tgz
+COPY vendor/paradigmllc-deepmerge-security-4.3.1.tgz ./vendor/paradigmllc-deepmerge-security-4.3.1.tgz
+COPY vendor/paradigmllc-zod-security-3.25.76.tgz ./vendor/paradigmllc-zod-security-3.25.76.tgz
 RUN --mount=type=cache,target=/root/.npm npm install --prefer-offline --no-audit --no-fund
 
 FROM node:22.23.1-alpine3.24 AS builder
