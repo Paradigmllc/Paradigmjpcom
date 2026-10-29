@@ -2022,6 +2022,7 @@ async function reconcileManualWorkV4Artifacts(envs) {
 async function main() {
   console.log("Sales OS no-login deploy")
   if (APPLY_SHOPIFY_ONLY) {
+    console.log(await applySqlMigration({}, "20261029054000_payload_auth_reset_requested_at.sql", "Payload auth reset request timestamp migration"))
     console.log(await applyShopifyOpsMigration({}))
     console.log(await applyShopifyBaseSyncMigration({}))
     console.log(await applyShopifyBaseSyncHardeningMigration({}))
@@ -2073,6 +2074,7 @@ async function main() {
   }
 
   if (!DRY) {
+    console.log(await applySqlMigration(envs, "20261029054000_payload_auth_reset_requested_at.sql", "Payload auth reset request timestamp migration"))
     console.log(await applyShopifyOpsMigration(envs))
     console.log(await applyShopifyBaseSyncMigration(envs))
     console.log(await applyShopifyBaseSyncHardeningMigration(envs))

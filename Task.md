@@ -1,5 +1,12 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-29 CMS login repaired
+
+- Login failed before password validation because Payload3.90+ reads `paradigm.users.reset_password_requested_at`, missing after the3.91 upgrade. Previous "expired session" diagnosis was incomplete; this was a missed DB migration in our release.
+- Added nullable timestamp(3) with time zone through `20261029054000_payload_auth_reset_requested_at.sql`. Verified transactional double-apply/rollback and applied to production. Existing passwords, roles, lockouts and sessions were not changed. User-supplied existing credentials successfully authenticated through the normal CMS browser form; no credentials stored in code/docs.
+- Authenticated SERICIA daily UI now shows all five jobs and real history: three reconciliation successes, supplier/social blocked for the documented commercial prerequisites. Browser evidence saved outside git. No shipments, purchases or social posts.
+- Generated Payload types updated by the official generator (only two added declarations). Both standard and Shopify-only release paths apply the migration; SQL asserts expected nullable timestamp schema. This is a DB-only runtime repair; current3d06ff29 app image requires no rebuild. TypeScript, auth/security/API tests and script syntax checks passed; production SQL assertions and authenticated browser checks passed.
+
 ## CURRENT STATUS — 2026-10-29 SERICIA recurring operations LIVE
 
 - PR760 merged as3d06ff29c400bc5cfd06fd21be2f7941a2ca58b9; deployment qxfin8terngn8aqqve900vkq finished. Container n8i2sjiqvr2d8hrzppop2m2i-051652102742 is healthy on that exact image. Public authenticated daily endpoint responds with the new five-job model. Standalone post-deploy doctor passed. Shared Manual Work V4 reconciliation still returns207 after successful deployment; it is unresolved and not hidden.
