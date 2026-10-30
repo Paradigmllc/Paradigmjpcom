@@ -10,8 +10,11 @@ Existing public operations and daily jobs still use Shopify. This change adds an
 - Quantity is per registered Medusa location, with stocked/reserved/incoming separately shown. Missing locations mean unconfirmed, never invented zero. Reserved balance may be negative and is not advertised as sellable channel stock. Shopify jobs/snapshots, product catalog, supplier/social readiness and existing permissions are unchanged.
 - Read-only queries do not create bell/Slack notifications. Existing Medusa DB is the source; no synthetic success/history records are persisted.
 
+Draft [PR763](https://github.com/Paradigmllc/Paradigmjpcom/pull/763), implementation `7fbea69b`.
+
 ## Verification
 
+- Fresh root npm audit reports0 advisories; this does not cover all auxiliary lockfiles or independently audit the existing private security forks. GitHub default-branch aggregate advisories remain separate.
 - 35 focused unit/API tests passed (including 10 new validation/auth/response-safety tests); TypeScript and targeted ESLint passed.
 - Actual component bundled with existing esbuild/Tailwind, exercised in Playwright at390px and1440px: product/inventory selection, pagination, absent locations, negative reserved balance, empty, unconfigured, failure and retry. No horizontal overflow, browser errors or mutation requests. Evidence outside git: `/tmp/sericia-medusa-ops-ui/`.
 - Bundled actual reader executed inside the private Medusa container against standard APIs. Verified6 products/all6 drafts,13 inventory items/no registered locations. A temporary secret API key authenticated using Basic; finally revoked and independently rejected with401. No product, order or inventory mutation. Revoked key audit record remains.
@@ -22,3 +25,5 @@ Existing public operations and daily jobs still use Shopify. This change adds an
 Not deployed. Read-only host preflight failed at94% root usage versus88% gate. Root free9.3GiB; approved dedicated volume has17GiB free. Docker reports5.904GB build cache all active (0 reclaimable), and4.777GB reclaimable images, which include retained rollback assets. No image, backup, volume or active build cache deletion; no gate bypass.
 
 Before release: safely resolve root capacity, pass CI/build and standard `npm run release:prod`, configure dedicated secret key and a reachable private Medusa origin, and verify authenticated public API/UI fingerprint. Do not expose the private Medusa Admin port publicly. Current public SERICIA remains Shopify; this read-only tab is not completion of automated inventory/fulfillment migration or commercial readiness.
+
+Read-only capacity diagnosis: retained release archive≈1GiB and logs≈890MiB cannot alone close the gap. Docker build cache is shared with active images, private/reclaimable0B; no broad cleanup is justified by this task.
