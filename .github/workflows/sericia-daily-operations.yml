@@ -4,6 +4,9 @@ on:
     paths:
       - ".github/workflows/sericia-daily-operations.yml"
       - "src/lib/shopify-ops/**"
+      - "src/lib/medusa-ops/**"
+      - "src/app/api/medusa-ops/**"
+      - "scripts/verify-sericia-medusa-ui.mjs"
       - "src/app/api/shopify-ops/**"
       - "src/components/shopify-ops/**"
       - "supabase/migrations/*sericia*"
@@ -18,7 +21,9 @@ jobs:
   validate:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +31,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm exec -- vitest run src/lib/shopify-ops src/app/api/shopify-ops
+      - run: npm exec -- vitest run src/lib/shopify-ops src/app/api/shopify-ops src/lib/medusa-ops src/app/api/medusa-ops
       - run: npm exec -- tsc --noEmit --pretty false
+      - run: npm exec -- playwright install --with-deps chromium
+      - run: node scripts/verify-sericia-medusa-ui.mjs /tmp/sericia-medusa-ops-ui
+      - run: npm run build
   operate:
     if: github.event_name != 'pull_request'
     strategy:
