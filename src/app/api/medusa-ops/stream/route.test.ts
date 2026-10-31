@@ -20,7 +20,7 @@ it("rejects anonymous and viewer before opening a stream",async()=>{
 it("subscribes before reading history, pushes changes and cleans up on abort",async()=>{
  const controller=new AbortController();const response=await GET(new Request("https://ops.test/api/medusa-ops/stream",{signal:controller.signal}));
  expect(m.client.mock.calls[0][0]).toBe("http://supabase-realtime:4000/socket");
- expect(m.client.mock.calls[0][1].headers.Host).toBe("realtime-dev.localhost");
+ expect(m.client.mock.calls[0][1].transport).toBeTypeOf("function");
  expect(response.headers.get("cache-control")).toBe("private, no-store");expect(m.history).not.toHaveBeenCalled();
  m.subscribe.mock.calls[0][0]("SUBSCRIBED");await vi.waitFor(()=>expect(m.history).toHaveBeenCalledTimes(1));
  m.on.mock.calls[0][2]();await vi.waitFor(()=>expect(m.history).toHaveBeenCalledTimes(2));
