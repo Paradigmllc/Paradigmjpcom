@@ -37,3 +37,9 @@ Shared Docker DNS resolved generic postgres inconsistently after recreation. Bac
 Live draft change exposed an upstream priority boundary: Medusa2.22.1 assigns internal priority2097152 while BullMQ5.81.5 accepts at most2097151. Explicit jobOptions.priority100 avoids this; the test executes the actual event builder for internal and ordinary events. Failed grouped events were not claimed as delivered. Original draft title restored. Retry only reviewed catalog events, never blanket replay purchases/shipments/emails.
 
 Final deployment fingerprints and live GUI roundtrip pending.
+
+## Realtime runtime dependency repair
+
+Live subscriptions exposed missing wal2json in the shared plain PostgreSQL16-alpine image. The application does not receive actual Postgres changes until that decoding plugin is installed. docker/supabase-wal2json.Dockerfile pins the exact deployed PostgreSQL16.14 digest and upstream wal2json2.7 commit. scripts/verify-supabase-wal2json.py creates an isolated network-disabled tmpfs database, compares the PostgreSQL binary to the current server and verifies a real INSERT is decoded; its temporary container is always removed. No production data enters the fixture.
+
+Deployment procedure: retain the current Compose file; copy the verified plugin library into the running same-version DB, verify a temporary logical slot can load it, and pin the derived image in Compose for future recreations. This avoids restarting the shared DB just to load an output plugin. Verify installed-library SHA against the isolated image. Do not overwrite an existing different library or change volumes/passwords. Roll back the Compose image and remove only this added plugin after disconnecting consumers if repair is rejected. Rebuild and re-run the isolated check before any future PostgreSQL image upgrade.
