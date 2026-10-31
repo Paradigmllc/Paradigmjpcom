@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const m=vi.hoisted(()=>({auth:vi.fn(),history:vi.fn(),subscribe:vi.fn(),remove:vi.fn(),disconnect:vi.fn(),on:vi.fn()}));
+const m=vi.hoisted(()=>({client:vi.fn(),auth:vi.fn(),history:vi.fn(),subscribe:vi.fn(),remove:vi.fn(),disconnect:vi.fn(),on:vi.fn()}));
 vi.mock("@/lib/admin-auth",()=>({authorizePayloadAdminRequest:m.auth}));
 vi.mock("@/lib/medusa-ops/events",()=>({readChanges:m.history}));
 vi.mock("@/lib/supabase",()=>({getSalesSupabaseConfig:()=>({url:"http://supabase-rest-1:3000",serviceKey:"secret"})}));
 vi.mock("@supabase/supabase-js",()=>({RealtimeClient:class {
+ constructor(...args: unknown[]){m.client(...args);}
  channel(){const channel={on:m.on.mockImplementation(()=>channel),subscribe:m.subscribe};return channel;}
  removeChannel=m.remove;disconnect=m.disconnect;
 }}));
@@ -18,6 +19,8 @@ it("rejects anonymous and viewer before opening a stream",async()=>{
 });
 it("subscribes before reading history, pushes changes and cleans up on abort",async()=>{
  const controller=new AbortController();const response=await GET(new Request("https://ops.test/api/medusa-ops/stream",{signal:controller.signal}));
+ expect(m.client.mock.calls[0][0]).toBe("http://supabase-realtime:4000/socket");
+ expect(m.client.mock.calls[0][1].headers.Host).toBe("realtime-dev.localhost");
  expect(response.headers.get("cache-control")).toBe("private, no-store");expect(m.history).not.toHaveBeenCalled();
  m.subscribe.mock.calls[0][0]("SUBSCRIBED");await vi.waitFor(()=>expect(m.history).toHaveBeenCalledTimes(1));
  m.on.mock.calls[0][2]();await vi.waitFor(()=>expect(m.history).toHaveBeenCalledTimes(2));

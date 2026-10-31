@@ -12,8 +12,10 @@ export async function GET(request: Request) {
   const explicit = process.env.SALES_SUPABASE_REALTIME_URL ?? process.env.NEXT_PUBLIC_SUPABASE_REALTIME_URL;
   const url = new URL(explicit ?? config.url);
   if (!explicit && url.hostname === "supabase-rest-1") { url.hostname = "supabase-realtime"; url.port = "4000"; }
-  url.pathname = "/realtime/v1"; url.search = ""; url.hash = "";
-  const realtime = new RealtimeClient(url.toString(), { params: { apikey: config.serviceKey }, headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}` } });
+  const direct = url.hostname === "supabase-realtime";
+  url.pathname = direct ? "/socket" : "/realtime/v1"; url.search = ""; url.hash = "";
+  const key = process.env.SERICIA_MEDUSA_REALTIME_KEY ?? config.serviceKey;
+  const realtime = new RealtimeClient(url.toString(), { params: { apikey: key }, headers: { apikey: key, Authorization: `Bearer ${key}`, ...(direct ? { Host: "realtime-dev.localhost" } : {}) } });
   let close = () => {};
   const stream = new ReadableStream({
     start(controller) {
