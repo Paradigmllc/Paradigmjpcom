@@ -43,6 +43,7 @@ export async function GET(request: Request) {
       request.signal.addEventListener("abort", close, { once: true });
       if (request.signal.aborted) { close(); return; }
       channel.subscribe(status => {
+        if (closed) return;
         if (status === "SUBSCRIBED") { send({ type: "connected" }); void refresh(); }
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           console.error("[medusa-stream] realtime disconnected"); send({ type: "error", message: "自動更新が切断されました。再接続してください" }); close();
