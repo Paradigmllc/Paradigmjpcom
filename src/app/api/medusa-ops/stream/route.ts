@@ -1,3 +1,4 @@
+import WebSocket from "ws";
 import { RealtimeClient } from "@supabase/supabase-js";
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getSalesSupabaseConfig } from "@/lib/supabase";
@@ -12,8 +13,17 @@ export async function GET(request: Request) {
   const explicit = process.env.SALES_SUPABASE_REALTIME_URL ?? process.env.NEXT_PUBLIC_SUPABASE_REALTIME_URL;
   const url = new URL(explicit ?? config.url);
   if (!explicit && url.hostname === "supabase-rest-1") { url.hostname = "supabase-realtime"; url.port = "4000"; }
-  url.pathname = "/realtime/v1"; url.search = ""; url.hash = "";
-  const realtime = new RealtimeClient(url.toString(), { params: { apikey: config.serviceKey }, headers: { apikey: config.serviceKey, Authorization: `Bearer ${config.serviceKey}` } });
+  const direct = url.hostname === "supabase-realtime";
+  url.pathname = direct ? "/socket" : "/realtime/v1"; url.search = ""; url.hash = "";
+  const key = process.env.SERICIA_MEDUSA_REALTIME_KEY ?? config.serviceKey;
+  // Realtime's native transport ignores headers; the private tenant is selected by Host.
+  class PrivateSocket extends WebSocket {
+    constructor(address: string | URL, protocols?: string | string[]) {
+      super(address, protocols, { headers: { Host: "realtime-dev.localhost" } });
+    }
+  }
+  type Transport = NonNullable<ConstructorParameters<typeof RealtimeClient>[1]>["transport"];
+  const realtime = new RealtimeClient(url.toString(), { params: { apikey: key }, ...(direct ? { transport: PrivateSocket as unknown as Transport } : {}) });
   let close = () => {};
   const stream = new ReadableStream({
     start(controller) {

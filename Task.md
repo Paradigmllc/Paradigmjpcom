@@ -1,10 +1,12 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-10-31 Medusa change events (implementation in progress)
+## CURRENT STATUS — 2026-10-31 Medusa change events (live verification in progress)
 
-- Owner Codex, branch codex/sericia-medusa-events. Scope: signed catalog/inventory change notices, private durable history, authenticated SSE and existing-panel invalidation. Reuses Medusa Redis event bus and Supabase Realtime; no new paid dependency or polling schedule.
-- Sender in Sericiacom migration branch: fixed HTTPS destination, minimal fields, timestamped HMAC, stable retry identity; five attempts with exponential backoff and retained failed jobs. Receiver validates bounded body/signature/topic, DB deduplicates. Private history stores no customer data. UI distinguishes internal Medusa changes from unconnected supplier/warehouse stock.
-- Local backend15tests, receiver18tests, TypeScript and responsive UI verification passed. SQL transaction verification, CI, deploy, live event roundtrip pending. No public cutover or commercial launch claim.
+- PR765 deployed as9146c145, migration applied; exact container healthy and standalone postdoctor passed. Shared wrapper still ends with unrelated Manual Work V4 HTTP207. PR766 fixes direct Realtime socket path, tenant routing and separate runtime-only key; existing PostgREST and Realtime signing keys differ. Actual SDK subscription acknowledged the private table. Realtime headers are ignored by the native transport, so use existing ws explicitly as a runtime dependency.
+- Backend bad9f46a live but live change check exposed Medusa2.22.1 internal priority2^21 exceeding BullMQ5.81.5's maximum. Follow-up7a5cc041 pins job priority100 and accepts serialized stable timestamps,16tests/CIpassed; image deployment pending. Temporary draft-title change restored. No source event was falsely reported as received.
+- Private Medusa DB/Redis hostnames changed to unique container names after shared-network generic postgres DNS collided; DB migration and /health200 verified. No data or credentials reset. Public Shopify unchanged; warehouse/supplier/SNS connections and commercial/payment evidence remain outstanding.
+- Capacity: unused cache reclaimed; prior appaa23, storefrontf526 and backend8630 archived with all OCI hashes and docker-load verification before exact unused-tag removal. Root20GiBfree, approved volume8.0GiBfree before next build. All backup generations retained.
+- Runtime-only SERICIA_MEDUSA_REALTIME_KEY must rotate before2027-10-31. No key in git/build/preview. Details: [event delivery](docs/knowledge/sericia/medusa-events-20261031.md).
 
 ## CURRENT STATUS — 2026-10-31 Medusa operations LIVE / capacity recovered
 
