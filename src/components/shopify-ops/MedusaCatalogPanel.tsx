@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { MedusaChanges } from "./MedusaChanges";
 import { toast } from "sonner";
 import type { MedusaCatalog } from "@/lib/medusa-ops/catalog";
 
@@ -24,6 +25,7 @@ export function MedusaCatalogPanel() {
     } finally { if (!signal.aborted) setBusy(false); }
   }, [kind, offset]);
   const [revision, setRevision] = useState(0);
+  const handleChange = useCallback(() => setRevision(v => v + 1), []);
   useEffect(() => {
     const controller = new AbortController();
     void load(controller.signal);
@@ -45,7 +47,7 @@ export function MedusaCatalogPanel() {
     {error && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-4 text-red-900">{error}</p>}
     {data && !data.configured && <p className="rounded-xl border bg-white p-5">Medusa管理APIは未接続です。管理者がサーバーの接続URLと専用APIキーを設定すると取得できます。</p>}
     {data?.configured && <>
-      <p className="text-sm text-zinc-600">全{data.count}件 ／ 取得日時 {new Date(data.fetchedAt).toLocaleString("ja-JP")}（自動同期ではありません）</p>
+      <p className="text-sm text-zinc-600">全{data.count}件 ／ 取得日時 {new Date(data.fetchedAt).toLocaleString("ja-JP")}（Medusa取得値）</p>
       {!data.rows.length && <p className="rounded-xl border bg-white p-5">このページに登録データはありません。</p>}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {data.kind === "products" ? data.rows.map(row => <article className="min-w-0 rounded-xl border bg-white p-4" key={row.id}>
@@ -66,5 +68,6 @@ export function MedusaCatalogPanel() {
       <div className="flex gap-2"><button className={button} disabled={busy || offset === 0} onClick={() => setOffset(Math.max(0, offset - 50))}>前の50件</button>
         <button className={button} disabled={busy || data.nextOffset === null} onClick={() => { if (data.nextOffset !== null) setOffset(data.nextOffset); }}>次の50件</button></div>
     </>}
+    <MedusaChanges onChange={handleChange} />
   </section>;
 }

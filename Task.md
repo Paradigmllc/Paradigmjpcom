@@ -1,5 +1,11 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-31 Medusa change events (implementation in progress)
+
+- Owner Codex, branch codex/sericia-medusa-events. Scope: signed catalog/inventory change notices, private durable history, authenticated SSE and existing-panel invalidation. Reuses Medusa Redis event bus and Supabase Realtime; no new paid dependency or polling schedule.
+- Sender in Sericiacom migration branch: fixed HTTPS destination, minimal fields, timestamped HMAC, stable retry identity; five attempts with exponential backoff and retained failed jobs. Receiver validates bounded body/signature/topic, DB deduplicates. Private history stores no customer data. UI distinguishes internal Medusa changes from unconnected supplier/warehouse stock.
+- Local backend15tests, receiver18tests, TypeScript and responsive UI verification passed. SQL transaction verification, CI, deploy, live event roundtrip pending. No public cutover or commercial launch claim.
+
 ## CURRENT STATUS — 2026-10-31 Medusa operations LIVE / capacity recovered
 
 - PR763 merged and deployed as `aa23a36c45d8d7ffb97b29179645f9d35adb364a`, Coolify deployment `hancofxautekjb8du4o64fsj` finished; exact-image container healthy. CMS→operations→Medusa shows6draft products and13inventory items; desktop/mobile verified. No warehouse locations; quantities explicitly unconfirmed. Fixed GET reader only, no supplier real-time sync claim.
