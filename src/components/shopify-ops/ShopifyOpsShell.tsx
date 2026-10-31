@@ -33,12 +33,14 @@ import { ShopifyMetricsPanel } from "./ShopifyMetricsPanel";
 import { ShopifyBaseSyncPanel } from "./ShopifyBaseSyncPanel";
 import { ShopifyLaunchControlPanel } from "./ShopifyLaunchControlPanel";
 
+import { MedusaCatalogPanel } from "./MedusaCatalogPanel";
 import { ShopifyDailyPanel } from "./ShopifyDailyPanel";
 import { ShopifyOperationsPanel } from "./ShopifyOperationsPanel";
 import { ShopifyCatalogPanel } from "./ShopifyCatalogPanel";
 import { ShopifySupplierPanel } from "./ShopifySupplierPanel";
 
 type TabId =
+  | "medusa"
   | "daily"
   | "operations"
   | "catalog"
@@ -53,6 +55,7 @@ type Action = (formData: FormData) => Promise<ShopifyOpsActionResult>;
 type SubmitAction = (formData: FormData) => Promise<void>;
 
 const tabs = [
+  { id: "medusa" as const, label: "Medusa確認", icon: Boxes },
   { id: "overview" as const, label: "全体", icon: LayoutDashboard },
   { id: "daily" as const, label: "日々の運用", icon: RefreshCw },
   { id: "launch" as const, label: "ローンチ", icon: Rocket },
@@ -124,7 +127,9 @@ export function ShopifyOpsShell({
   }
 
   const content =
-    activeTab === "daily" ? (
+    activeTab === "medusa" ? (
+      <MedusaCatalogPanel />
+    ) : activeTab === "daily" ? (
       <ShopifyDailyPanel />
     ) : activeTab === "operations" ? (
       <ShopifyOperationsPanel />

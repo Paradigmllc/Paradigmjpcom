@@ -1,5 +1,13 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-30 Medusa operations reader (not deployed)
+
+- Draft [PR763](https://github.com/Paradigmllc/Paradigmjpcom/pull/763), implementation `7fbea69b`, branch `codex/sericia-medusa-operations`: added independent read-only Medusa product/inventory tab, authenticated GET API, strict validation, bounded paging, private errors, explicit missing-location/unconfigured states. Existing Medusa DB/API reused; Shopify daily jobs unchanged. No paid dependencies.
+- 35 focused tests, TypeScript, lint and desktop/mobile component browser checks passed. Actual compiled reader verified6 draft products and13 inventory items on private Medusa through a temporary secret API key; key revoked and401 confirmed. No orders, stock changes, dispatches or posts.
+- Deployment blocked by read-only root-disk preflight94% (>88% gate); no cleanup or gate bypass. Production API credentials/network wiring and authenticated deployed UI verification remain pending. Warehouse is confirmed NOT contracted; do not re-ask its identity as though a contract exists.
+- Details: [Medusa operations reader](docs/knowledge/sericia/medusa-operations-20261030.md).
+
+
 ## CURRENT STATUS — 2026-10-29 CMS login repaired
 
 - Login failed before password validation because Payload3.90+ reads `paradigm.users.reset_password_requested_at`, missing after the3.91 upgrade. Previous "expired session" diagnosis was incomplete; this was a missed DB migration in our release.
