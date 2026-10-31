@@ -1,5 +1,19 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-10-31 Medusa change events (implementation in progress)
+
+- Owner Codex, branch codex/sericia-medusa-events. Scope: signed catalog/inventory change notices, private durable history, authenticated SSE and existing-panel invalidation. Reuses Medusa Redis event bus and Supabase Realtime; no new paid dependency or polling schedule.
+- Sender in Sericiacom migration branch: fixed HTTPS destination, minimal fields, timestamped HMAC, stable retry identity; five attempts with exponential backoff and retained failed jobs. Receiver validates bounded body/signature/topic, DB deduplicates. Private history stores no customer data. UI distinguishes internal Medusa changes from unconnected supplier/warehouse stock.
+- Local backend15tests, receiver18tests, TypeScript and responsive UI verification passed. SQL transaction verification, CI, deploy, live event roundtrip pending. No public cutover or commercial launch claim.
+
+## CURRENT STATUS — 2026-10-31 Medusa operations LIVE / capacity recovered
+
+- PR763 merged and deployed as `aa23a36c45d8d7ffb97b29179645f9d35adb364a`, Coolify deployment `hancofxautekjb8du4o64fsj` finished; exact-image container healthy. CMS→operations→Medusa shows6draft products and13inventory items; desktop/mobile verified. No warehouse locations; quantities explicitly unconfirmed. Fixed GET reader only, no supplier real-time sync claim.
+- Root87%/20GiB free, approved20GB volume47%/9.9GiB free. Four encrypted backup generations relocated with hashes and persistent bind/mount dependency; timer active. Unused build cache9.285GB reclaimed. Prior3d06ff29 image archived, all blobs verified, docker-load roundtrip matched, then unused tag removed. Other archives/volumes/running images preserved.
+- Runtime-only private Medusa connection configured; secret excluded from build/preview. CI138tests/build/typecheck/browser passed; formal preflight and standalone postdoctor passed. Shared release wrapper still encounters unrelated Manual Work V4 HTTP207 after deployment; not a fully green wrapper.
+- Public Shopify retained. Warehouse uncontracted; supplier stock rights, SNS credentials, commercial terms and payment/order E2E remain outstanding. No orders/dispatches/posts executed.
+- Details/rollback: [live verification](docs/knowledge/sericia/medusa-operations-live-20261031.md). This entry supersedes the previous not-deployed status.
+
 ## CURRENT STATUS — 2026-10-30 Medusa operations reader (not deployed)
 
 - Draft [PR763](https://github.com/Paradigmllc/Paradigmjpcom/pull/763), implementation `7fbea69b`, branch `codex/sericia-medusa-operations`: added independent read-only Medusa product/inventory tab, authenticated GET API, strict validation, bounded paging, private errors, explicit missing-location/unconfigured states. Existing Medusa DB/API reused; Shopify daily jobs unchanged. No paid dependencies.

@@ -8,11 +8,18 @@ const destination=process.argv[2];
 if(!destination||!path.isAbsolute(destination))throw new Error('Absolute evidence directory required');
 await fs.mkdir(destination,{recursive:true});
 const bundle=await build({stdin:{contents:`import React from 'react';import {createRoot} from 'react-dom/client';import {Toaster} from 'sonner';import {MedusaCatalogPanel} from './src/components/shopify-ops/MedusaCatalogPanel';createRoot(document.getElementById('app')).render(<><Toaster/><MedusaCatalogPanel/></>);`,resolveDir:process.cwd(),loader:'tsx'},bundle:true,write:false,format:'iife',platform:'browser',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'}});
-const styles=await postcss([tailwind()]).process('@import "tailwindcss"; @source "../src/components/shopify-ops/MedusaCatalogPanel.tsx";',{from:path.join(process.cwd(),'scripts/medusa-fixture.css')});
+const styles=await postcss([tailwind()]).process('@import "tailwindcss"; @source "../src/components/shopify-ops/MedusaCatalogPanel.tsx"; @source "../src/components/shopify-ops/MedusaChanges.tsx";',{from:path.join(process.cwd(),'scripts/medusa-fixture.css')});
 const browser=await chromium.launch({headless:true,channel:process.env.CI?undefined:'chrome'});
 let mode='normal';const calls=[],errors=[];
 try{
  const page=await browser.newPage({viewport:{width:390,height:844}});page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(() => {
+   window.__eventStreams=[];
+   window.EventSource=class {
+     constructor(){window.__eventStreams.push(this);setTimeout(()=>{this.onmessage?.({data:JSON.stringify({type:'connected'})});this.onmessage?.({data:JSON.stringify({type:'changes',rows:[]})});},20);}
+     close(){}
+   };
+ });
  await page.route('http://sericia-fixture.test/**',async route=>{
   const req=route.request(),url=new URL(req.url());
   if(url.pathname==='/api/medusa-ops'){
@@ -39,6 +46,10 @@ try{
   if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error(`${name} overflow`);
   await page.screenshot({path:path.join(destination,`${name}.png`),fullPage:true});
  }
+ const before=calls.length;
+ await page.evaluate(()=>window.__eventStreams.at(-1).onmessage({data:JSON.stringify({type:'changes',rows:[{id:'change1',topic:'product.updated',entity_id:'prod_1',received_at:'2026-10-31T00:00:00Z',notification_error:false}]})}));
+ await expect.poll(()=>calls.length).toBeGreaterThan(before);
+ await expect(page.getByText('product.updated ／ prod_1',{exact:false})).toBeVisible();
  mode='empty';await page.getByRole('button',{name:'Medusaデータを再取得'}).click();await expect(page.getByText('このページに登録データはありません。')).toBeVisible();
  mode='unconfigured';await page.reload();await expect(page.getByText('Medusa管理APIは未接続です。',{exact:false})).toBeVisible();
  mode='error';await page.getByRole('button',{name:'Medusaデータを再取得'}).click();await expect(page.getByRole('alert')).toContainText('接続を確認してください');
