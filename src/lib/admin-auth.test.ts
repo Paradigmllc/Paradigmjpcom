@@ -46,7 +46,7 @@ describe("admin session tokens", () => {
 const { payloadAuth } = vi.hoisted(() => ({ payloadAuth: vi.fn() }))
 vi.mock("payload", () => ({ getPayload: async () => ({ auth: payloadAuth }) }))
 vi.mock("@payload-config", () => ({ default: {} }))
-vi.mock("./payload-availability", () => ({ isPayloadInitCoolingDown: () => false, markPayloadInitFailure: vi.fn() }))
+vi.mock("./payload-availability", () => ({ isPayloadInitCoolingDown: () => true, markPayloadInitFailure: vi.fn() }))
 describe("Payload admin identity", () => {
   it.each([42, "user-id"])("retains authenticated user identity %s", async (id) => {
     payloadAuth.mockResolvedValue({ user: { id, role: "admin" } })
@@ -57,3 +57,23 @@ describe("Payload admin identity", () => {
     expect((await authorizePayloadAdminRequest({ headers: new Headers() })).userId).toBeNull()
   })
 })
+
+describe("authentication availability is independent from public content", () => {
+  it("still rejects an unauthenticated request while public reads are cooling down", async () => {
+    payloadAuth.mockResolvedValue({user:null});
+    expect((await authorizePayloadAdminRequest({headers:new Headers()})).ok).toBe(false);
+  });
+  it("backs off actual auth failures, then revalidates credentials", async () => {
+    vi.useFakeTimers();
+    const log=vi.spyOn(console,"error").mockImplementation(()=>{});
+    try {
+      payloadAuth.mockRejectedValueOnce(new Error("unavailable"));
+      expect((await authorizePayloadAdminRequest({headers:new Headers()})).ok).toBe(false);
+      payloadAuth.mockClear();payloadAuth.mockResolvedValue({user:{id:42,role:"admin"}});
+      expect((await authorizePayloadAdminRequest({headers:new Headers()})).ok).toBe(false);
+      expect(payloadAuth).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(3_001);
+      expect(await authorizePayloadAdminRequest({headers:new Headers()})).toMatchObject({ok:true,userId:"42"});
+    } finally { vi.useRealTimers();log.mockRestore(); }
+  });
+});
