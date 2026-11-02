@@ -1,9 +1,12 @@
 # Paradigmjpcom Task
 
-## CURRENT STATUS — 2026-11-02 notification history repair in progress
+## CURRENT STATUS — 2026-11-02 notification history and admin access LIVE
 
-- Owner Codex: fix Medusa Slack body, add DB-filtered failure-only history with existing authenticated SSE and existing UI. No new dependency/queue/scheduler. DB partial index included in formal migration path. Preserve catalog invalidations while filtering. No notification replay or external messages during tests.
-- Scope: events helper/tests, stream validation/tests, MedusaChanges UI/browser fixture, additive index, release migration registration. No stock/order changes or public cutover.
+- PR768 merged61380cda; formal deploymentfh76ilnwzl9n91ryjwh95cls finished, exact-image healthy container verified. Postdoctor passed. Shared wrapper still ends with unrelated Manual Work V4 HTTP207; transient502 at cutover recovered.
+- Medusa Slack text now includes topic/entity instead of literal sales. Authenticated SSE/UI adds DB-filtered failure history (latest30matching rows), validated filter, loading/empty/error states, partial index; filtering preserves catalog invalidation. No replay or external test notification.
+- Public blog timeout previously short-circuited administrator credential checks. Auth now uses independent3sbackoff only after actual authentication failures. Existing login opened CMS→operations→Medusa at13:22 JST;6draft products, realtime connected, failure filter empty. DB10events/0failures. No credentials/roles changed.
+- Local34tests/TS/lint/browser passed. CI41386452197:162tests, TS, responsive browser, build passed; other affected CI passed except existing Pet Life18moderate audit. SQL double-apply/RLS assertion rolled back; formal migration applied. [Detailed evidence](docs/knowledge/sericia/notification-history-20261102.md).
+- Cache9.284GB reclaimed, root88%/19GiBfree and volume68%/6.1GiBfree. Backups/prior image retained. PublicShopify maintained; private backend/storefront7a5cc041 unchanged. Notification replay/terminal failure recovery, external supplier/warehouse/SNS connections and payment/order/dispatch E2E remain open.
 
 ## CURRENT STATUS — 2026-10-31 Medusa change delivery LIVE / private storefront verified
 
