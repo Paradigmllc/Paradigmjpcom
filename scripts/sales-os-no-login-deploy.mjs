@@ -830,7 +830,8 @@ async function applyShopifySupplierMigration(envs) {
   await applySqlMigration(envs, "20261002074428_sericia_operation_events.sql", "SERICIA operation events migration")
   await applySqlMigration(envs, "20261002091538_sericia_daily_operations.sql", "SERICIA daily operations migration")
   await applySqlMigration(envs, "20261031050000_sericia_medusa_events.sql", "SERICIA Medusa event history migration")
-  return applySqlMigration(envs, "20261031060000_sericia_realtime_subscription_repair.sql", "SERICIA Realtime subscription object repair")
+  await applySqlMigration(envs, "20261031060000_sericia_realtime_subscription_repair.sql", "SERICIA Realtime subscription object repair")
+  return applySqlMigration(envs, "20261102050000_sericia_medusa_failed_notifications.sql", "SERICIA failed notification history index")
 }
 
 async function applyShopifyOpsMigration(envs) {
