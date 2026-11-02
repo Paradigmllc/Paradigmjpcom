@@ -12,6 +12,7 @@ export function verifyEventSignature(body: Buffer, timestamp: string | null, sig
   const expected = createHmac("sha256", secret).update(timestamp + ".").update(body).digest();
   return timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }
+export const historyFilter = z.enum(["all", "failed"]);
 export async function saveChange(event: z.infer<typeof changeEvent>) {
   // Stable identity survives delivery retries; these are invalidation notices, not stock quantities.
   const id = createHash("sha256").update(JSON.stringify([event.topic, event.entityId, event.occurredAt])).digest("hex");
@@ -21,7 +22,7 @@ export async function saveChange(event: z.infer<typeof changeEvent>) {
   if (!saved.data?.length) return { duplicate: true };
   let notified = false;
   try {
-    const notification = await notifyBothChannels("sales", { title: "SERICIA Medusa更新", message: `${event.topic}: ${event.entityId}`, link: "/ja/admin/shopify?tab=medusa", type: "sericia_medusa_change", idempotencyKey: `sericia-medusa-${id}` });
+    const notification = await notifyBothChannels(`SERICIA Medusa更新: ${event.topic} ／ ${event.entityId}`, { title: "SERICIA Medusa更新", message: `${event.topic}: ${event.entityId}`, link: "/ja/admin/shopify?tab=medusa", type: "sericia_medusa_change", idempotencyKey: `sericia-medusa-${id}` });
     notified = notification.ok;
   } catch { console.error("[medusa-events] notification failed"); }
   if (!notified) {
@@ -31,9 +32,12 @@ export async function saveChange(event: z.infer<typeof changeEvent>) {
   }
   return { duplicate: false };
 }
-export async function readChanges() {
-  const { data, error } = await operationsDb().from("sericia_medusa_events")
-    .select("id,topic,entity_id,occurred_at,received_at,notification_error").order("received_at", { ascending: false }).limit(30);
+export async function readChanges(filter: z.infer<typeof historyFilter> = "all") {
+  const selection = historyFilter.parse(filter);
+  let query = operationsDb().from("sericia_medusa_events")
+    .select("id,topic,entity_id,occurred_at,received_at,notification_error");
+  if (selection === "failed") query = query.eq("notification_error", true);
+  const { data, error } = await query.order("received_at", { ascending: false }).limit(30);
   if (error) throw new Error("event_history_unavailable");
   return data ?? [];
 }

@@ -16,7 +16,7 @@ try{
  await page.addInitScript(() => {
    window.__eventStreams=[];
    window.EventSource=class {
-     constructor(){window.__eventStreams.push(this);setTimeout(()=>{this.onmessage?.({data:JSON.stringify({type:'connected'})});this.onmessage?.({data:JSON.stringify({type:'changes',rows:[]})});},20);}
+     constructor(url){this.url=url;window.__eventStreams.push(this);setTimeout(()=>{this.onmessage?.({data:JSON.stringify({type:'connected'})});this.onmessage?.({data:JSON.stringify({type:'changes',rows:[]})});},20);}
      close(){}
    };
  });
@@ -50,6 +50,22 @@ try{
  await page.evaluate(()=>window.__eventStreams.at(-1).onmessage({data:JSON.stringify({type:'changes',rows:[{id:'change1',topic:'product.updated',entity_id:'prod_1',received_at:'2026-10-31T00:00:00Z',notification_error:false}]})}));
  await expect.poll(()=>calls.length).toBeGreaterThan(before);
  await expect(page.getByText('product.updated ／ prod_1',{exact:false})).toBeVisible();
+ await page.getByRole('button',{name:'通知失敗のみ表示'}).click();
+ await expect(page.getByText('通知失敗は記録されていません。')).toBeVisible();
+ await expect.poll(()=>page.evaluate(()=>window.__eventStreams.at(-1).url)).toContain('notifications=failed');
+ const failureCalls=calls.length;
+ await page.evaluate(()=>window.__eventStreams.at(-1).onmessage({data:JSON.stringify({type:'changes',rows:[{id:'old-failure',topic:'product.updated',entity_id:'prod_failed',received_at:'2026-10-01T00:00:00Z',notification_error:true}]})}));
+ await expect(page.getByText('ベル・Slack通知の一部が失敗しました。')).toBeVisible();
+ await expect.poll(()=>calls.length).toBeGreaterThan(failureCalls);
+ const unchangedCalls=calls.length;
+ await page.evaluate(()=>window.__eventStreams.at(-1).onmessage({data:JSON.stringify({type:'changes',rows:[{id:'old-failure',topic:'product.updated',entity_id:'prod_failed',received_at:'2026-10-01T00:00:00Z',notification_error:true}]})}));
+ await expect.poll(()=>calls.length).toBeGreaterThan(unchangedCalls);
+ for(const [name,width,height] of [['failed-mobile',390,844],['failed-desktop',1440,1000]]){
+  await page.setViewportSize({width,height});
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error(`${name} overflow`);
+  await page.screenshot({path:path.join(destination,`${name}.png`),fullPage:true});
+ }
+ await page.getByRole('button',{name:'すべての変更通知'}).click();
  mode='empty';await page.getByRole('button',{name:'Medusaデータを再取得'}).click();await expect(page.getByText('このページに登録データはありません。')).toBeVisible();
  mode='unconfigured';await page.reload();await expect(page.getByText('Medusa管理APIは未接続です。',{exact:false})).toBeVisible();
  mode='error';await page.getByRole('button',{name:'Medusaデータを再取得'}).click();await expect(page.getByRole('alert')).toContainText('接続を確認してください');

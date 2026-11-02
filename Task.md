@@ -1,5 +1,10 @@
 # Paradigmjpcom Task
 
+## CURRENT STATUS — 2026-11-02 notification history repair in progress
+
+- Owner Codex: fix Medusa Slack body, add DB-filtered failure-only history with existing authenticated SSE and existing UI. No new dependency/queue/scheduler. DB partial index included in formal migration path. Preserve catalog invalidations while filtering. No notification replay or external messages during tests.
+- Scope: events helper/tests, stream validation/tests, MedusaChanges UI/browser fixture, additive index, release migration registration. No stock/order changes or public cutover.
+
 ## CURRENT STATUS — 2026-10-31 Medusa change delivery LIVE / private storefront verified
 
 - App PR766 deployed asfa736a08; Coolifyq1i5jzqpmcgocoe8l1zf1e67 finished. Runtime-only restartbssslm35kcgb4jyfxewgn70p finished using the same image, WS_NO_BUFFER_UTIL=1, healthy upstream and origin lock verified. Standalone postdoctor passed after restart. Shared full release wrapper still ends at unrelated Manual Work V4 HTTP207; transient502 during original cutover recovered. Do not call the entire wrapper green.

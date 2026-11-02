@@ -1,4 +1,4 @@
-import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
+import { markPayloadInitFailure } from "./payload-availability"
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
 
 export type AdminAuthSource = "payload" | "legacy" | "webhook" | "none"
@@ -13,6 +13,7 @@ export type AdminAuthResult = {
 
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
 const ADMIN_API_SESSION_TTL_SECONDS = 60 * 60
+let payloadAuthRetryAt = 0
 
 function adminSessionSecret(): string | null {
   return [
@@ -113,7 +114,8 @@ export async function authorizePayloadAdminRequest(input: {
     return { ok: true, source: "legacy", userEmail: null }
   }
 
-  if (isPayloadInitCoolingDown()) {
+  // Public content timeouts must not prevent independent credential validation.
+  if (Date.now() < payloadAuthRetryAt) {
     return { ok: false, source: "none", userEmail: null }
   }
 
@@ -124,6 +126,7 @@ export async function authorizePayloadAdminRequest(input: {
     ])
     const payload = await getPayload({ config })
     const { user } = await payload.auth({ headers: input.headers })
+    payloadAuthRetryAt = 0
 
     if (user) {
       return {
@@ -135,6 +138,7 @@ export async function authorizePayloadAdminRequest(input: {
       }
     }
   } catch (e) {
+    payloadAuthRetryAt = Date.now() + 3_000
     markPayloadInitFailure(e)
     console.error("[admin-auth] Payload admin auth failed:", e)
   }

@@ -2,12 +2,15 @@ import WebSocket from "ws";
 import { RealtimeClient } from "@supabase/supabase-js";
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getSalesSupabaseConfig } from "@/lib/supabase";
-import { readChanges } from "@/lib/medusa-ops/events";
+import { historyFilter, readChanges } from "@/lib/medusa-ops/events";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const auth = await authorizePayloadAdminRequest({ headers: request.headers });
   if (!auth.ok || !auth.userId || !["admin", "editor"].includes(auth.userRole ?? "")) return new Response("Unauthorized", { status: 401 });
+  const params = new URL(request.url).searchParams;
+  const filter = historyFilter.safeParse(params.get("notifications") ?? "all");
+  if (!filter.success || [...params.keys()].some(key => key !== "notifications") || params.getAll("notifications").length > 1) return new Response("Invalid filter", { status: 400 });
   const config = getSalesSupabaseConfig();
   if (!config) return new Response("Not configured", { status: 503 });
   const explicit = process.env.SALES_SUPABASE_REALTIME_URL ?? process.env.NEXT_PUBLIC_SUPABASE_REALTIME_URL;
@@ -34,7 +37,7 @@ export async function GET(request: Request) {
         if (closed) return;
         if (refreshing) { pending = true; return; }
         refreshing = true;
-        try { send({ type: "changes", rows: await readChanges() }); }
+        try { send({ type: "changes", rows: await readChanges(filter.data) }); }
         catch { console.error("[medusa-stream] history unavailable"); send({ type: "error", message: "更新履歴を取得できません" }); }
         finally { refreshing = false; if (pending) { pending = false; void refresh(); } }
       };

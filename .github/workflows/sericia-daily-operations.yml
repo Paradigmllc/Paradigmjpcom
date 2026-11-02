@@ -5,6 +5,8 @@ on:
       - ".github/workflows/sericia-daily-operations.yml"
       - "src/lib/shopify-ops/**"
       - "src/lib/medusa-ops/**"
+      - "src/lib/admin-auth.ts"
+      - "src/lib/admin-auth.test.ts"
       - "src/app/api/medusa-ops/**"
       - "scripts/verify-sericia-medusa-ui.mjs"
       - "src/app/api/shopify-ops/**"
@@ -31,7 +33,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm exec -- vitest run src/lib/shopify-ops src/app/api/shopify-ops src/lib/medusa-ops src/app/api/medusa-ops
+      - run: npm exec -- vitest run src/lib/shopify-ops src/app/api/shopify-ops src/lib/medusa-ops src/app/api/medusa-ops src/lib/admin-auth.test.ts
       - run: npm exec -- tsc --noEmit --pretty false
       - run: npm exec -- playwright install --with-deps chromium
       - run: node scripts/verify-sericia-medusa-ui.mjs /tmp/sericia-medusa-ops-ui
