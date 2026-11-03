@@ -102,6 +102,7 @@ export async function getSocialAutomationStatus(): Promise<ShopifySocialAutomati
 export async function runDailySocialPipeline(
   runDate = tokyoDateString(),
 ): Promise<ShopifySocialRun> {
+  if (process.env.SERICIA_MEDUSA_ADMIN_URL?.trim()) throw new Error("Medusa向けSNS公開設定が未完了です。旧Shopify向け投稿は停止しています");
   const database = requireDatabase();
   const { data: existing, error: existingError } = await database
     .from(DB_TABLES.SHOPIFY_SOCIAL_RUNS)

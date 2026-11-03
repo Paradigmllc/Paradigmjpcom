@@ -15,7 +15,7 @@ it("reports unconfigured without making a request", async () => {
 it("rejects incomplete settings, caller URLs and malformed paging", async () => {
   vi.stubEnv("SERICIA_MEDUSA_SECRET_API_KEY", "");
   await expect(getMedusaCatalog({kind:"products",offset:0})).rejects.toThrow();
-  for(const params of [{kind:"orders"},{offset:-1},{offset:1.2},{offset:1000001},{url:"https://evil.test"}])
+  for(const params of [{kind:"customers"},{offset:-1},{offset:1.2},{offset:1000001},{url:"https://evil.test"}])
     expect(catalogQuery.safeParse(params).success).toBe(false);
   expect(fetchMock).not.toHaveBeenCalled();
 });
@@ -48,4 +48,12 @@ it("rejects failed upstream and inconsistent pagination",async()=>{
   await expect(getMedusaCatalog({kind:"products",offset:0})).rejects.toThrow("HTTP 401");
   fetchMock.mockResolvedValue(Response.json({count:1,offset:0,limit:50,products:[]}));
   await expect(getMedusaCatalog({kind:"products",offset:0})).rejects.toThrow("不整合");
+});
+
+it("returns only order summary fields, never customer or payment details", async () => {
+  fetchMock.mockResolvedValue(Response.json({ count: 1, offset: 0, limit: 50, orders: [{id:"order_1",display_id:1,status:"pending",payment_status:"captured",fulfillment_status:"not_fulfilled",currency_code:"jpy",total:1200,created_at:"2026-11-03T00:00:00Z",email:"private@example.invalid",shipping_address:{address_1:"private"},payment_collections:[{data:"secret"}]}] }));
+  const data = await getMedusaCatalog({kind:"orders",offset:0});
+  expect(data).toMatchObject({configured:true,kind:"orders",rows:[{display_id:1,total:1200,payment_status:"captured"}]});
+  expect(JSON.stringify(data)).not.toMatch(/private|secret|shipping_address|payment_collections/);
+  expect(fetchMock.mock.calls[0][0].pathname).toBe("/admin/orders");
 });

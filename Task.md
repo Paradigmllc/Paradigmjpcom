@@ -1,3 +1,10 @@
+## CURRENT STATUS — 2026-11-03 Medusa運営経路の切替（検証中）
+
+- Owner: Codex。ユーザーは仕入先APIの許可・認証情報を未取得と回答。倉庫未契約は継承。公開sericia.comはMedusaへ切替済み、storefront ae237e0f。
+- 運営画面の初期表示をMedusaへ変更。注文の決済・発送状態を標準Medusa DB/APIから取得、顧客住所/メール/決済内部情報は応答へ出さない。日次ジョブは既存ロック/履歴DBを使ってMedusaのみ取得。旧Shopify cursorは安全に先頭から読直し、5ページで継続。仕入先・SNSは明示blocked、空振り成功にしない。
+- Medusa接続設定があるruntimeから旧Shopify Admin APIと旧SNS公開を遮断。Shopify用集計をページ描画で呼ばない。実在庫・注文・発送を変更しない。
+- ローカル168tests+追加dispatch1test、型/lint、PC/390px UI/注文状態/タブURL復元/空・エラー・通知状態が通過。実Medusa注文GET200/count0確認。CI/正式配備と本番UI確認はこれから。
+
 # Paradigmjpcom Task
 
 ## CURRENT STATUS — 2026-11-02 notification history and admin access LIVE
