@@ -1,9 +1,11 @@
-## CURRENT STATUS — 2026-11-03 Medusa運営経路の切替（検証中）
+## CURRENT STATUS — 2026-11-03 Medusa運営 LIVE / Shopify解約受理
 
-- Owner: Codex。ユーザーは仕入先APIの許可・認証情報を未取得と回答。倉庫未契約は継承。公開sericia.comはMedusaへ切替済み、storefront ae237e0f。
-- 運営画面の初期表示をMedusaへ変更。注文の決済・発送状態を標準Medusa DB/APIから取得、顧客住所/メール/決済内部情報は応答へ出さない。日次ジョブは既存ロック/履歴DBを使ってMedusaのみ取得。旧Shopify cursorは安全に先頭から読直し、5ページで継続。仕入先・SNSは明示blocked、空振り成功にしない。
-- Medusa接続設定があるruntimeから旧Shopify Admin APIと旧SNS公開を遮断。Shopify用集計をページ描画で呼ばない。実在庫・注文・発送を変更しない。
-- ローカル168tests+追加dispatch1test、型/lint、PC/390px UI/注文状態/タブURL復元/空・エラー・通知状態が通過。実Medusa注文GET200/count0確認。CI/正式配備と本番UI確認はこれから。
+- PR770/main5099d201、Coolify enrbd0r71veotnljle2c6ass finished。exact-image healthy、本番CMSのMedusa画面/注文0/自動更新接続と公開sericia.com HTTP200 + Medusa headerを確認。独立postdoctor成功。共通release wrapper末尾の別機能Manual Work V4 HTTP207は残存。
+- 運営画面と日次処理をMedusaへ切替。顧客PIIなしの商品/在庫/注文read、既存DBロック・履歴を再利用。旧Shopify API/SNSへのfallbackなし。CI169tests/型/PC・390px UI/build成功。実起動41558945499で注文0・仕入先/SNS blocked、UI操作で商品6・在庫13のread結果をDB記録。
+- 明示承認後、Shopifyプラン解約を確定。「2026年11月3日に無効になります」と再開ボタンを確認。Messaging / SERICIA BASE Sync / Shopify Claude Connector App全3件がアンインストール履歴に表示、インストール済み空。決済情報保存は選択解除。公開Medusaは継続HTTP200。
+- 古いShopify専用inventory/launchのschedule・実行jobと重複social workflowを削除する追補。回帰CIを残し、Medusa日次5種類だけを運用起動経路にする。
+- 旧未使用imageを検証済archiveへ退避後削除、build cache9.247GB整理。root89%/17GiBfree、承認済volume75%/4.8GiBfree。DB/rollback保持、追加課金なし。
+- ACTIVE HANDOFF: 仕入先API未取得、倉庫未契約、Stripe未設定。実在庫/実注文0、販売開始・仕入れ〜発送・SNS全自動化は未完。通知再送/送信側終端失敗の復旧も未完。詳細 [運営切替と解約](docs/knowledge/sericia/medusa-cutover-cancellation-20261103.md)。
 
 # Paradigmjpcom Task
 
