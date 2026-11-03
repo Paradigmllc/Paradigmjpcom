@@ -11,10 +11,6 @@ on:
       - "src/lib/shopify-ops/shopify-admin.ts"
       - "src/lib/shopify-ops/types.ts"
       - "supabase/migrations/20260802214457_sericia_launch_control.sql"
-  schedule:
-    # Six-hourly commercial readiness audit. Unchanged blocks are persisted without notification spam.
-    - cron: "23 */6 * * *"
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -55,19 +51,3 @@ jobs:
           --max-warnings=0
       - name: Production build
         run: npm run build
-
-  run:
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Audit storefront commercial readiness
-        env:
-          WEBHOOK_SECRET: ${{ secrets.TRIGGER_WEBHOOK_SECRET }}
-        run: |
-          test -n "$WEBHOOK_SECRET"
-          curl --fail-with-body --silent --show-error \
-            --request POST \
-            --header "X-Webhook-Secret: $WEBHOOK_SECRET" \
-            --header "Content-Type: application/json" \
-            https://paradigmjp.com/api/shopify-ops/launch/audit
