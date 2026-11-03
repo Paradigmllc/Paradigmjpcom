@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 
 export const catalogQuery = z.object({
-  kind: z.enum(["products", "inventory"]).default("products"),
+  kind: z.enum(["products", "inventory", "orders"]).default("products"),
   offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
 }).strict();
 const text = z.string().max(1000);
@@ -16,6 +16,7 @@ const inventory = z.object({
     incoming_quantity: z.number().finite(),
   })).max(1000),
 });
+const order = z.object({ id: text, display_id: z.number().int(), status: text, payment_status: text, fulfillment_status: text, currency_code: text, total: z.number().finite(), created_at: date });
 const page = { count: z.number().int().nonnegative(), offset: z.number().int().nonnegative(), limit: z.number().int().positive() };
 export type CatalogQuery = z.infer<typeof catalogQuery>;
 export type MedusaCatalog =
@@ -23,6 +24,7 @@ export type MedusaCatalog =
   | { configured: true; fetchedAt: string; count: number; offset: number; nextOffset: number | null } & (
     | { kind: "products"; rows: z.infer<typeof product>[] }
     | { kind: "inventory"; rows: z.infer<typeof inventory>[] }
+    | { kind: "orders"; rows: z.infer<typeof order>[] }
   );
 
 export async function getMedusaCatalog(input: CatalogQuery): Promise<MedusaCatalog> {
@@ -35,13 +37,13 @@ export async function getMedusaCatalog(input: CatalogQuery): Promise<MedusaCatal
     throw new Error("Medusa接続URLの設定が不正です");
   }
   // URL comes only from server configuration; callers cannot select upstream hosts or paths.
-  url.pathname = input.kind === "products" ? "/admin/products" : "/admin/inventory-items";
+  url.pathname = input.kind === "products" ? "/admin/products" : input.kind === "orders" ? "/admin/orders" : "/admin/inventory-items";
   url.searchParams.set("offset", String(input.offset));
   url.searchParams.set("limit", "50");
   url.searchParams.set("order", "id");
   url.searchParams.set("fields", input.kind === "products"
     ? "id,title,handle,status,updated_at"
-    : "id,title,sku,updated_at,*location_levels");
+    : input.kind === "orders" ? "id,display_id,status,payment_status,fulfillment_status,currency_code,total,created_at" : "id,title,sku,updated_at,*location_levels");
   const response = await fetch(url, {
     headers: { Authorization: `Basic ${key}` }, cache: "no-store", redirect: "error",
     signal: AbortSignal.timeout(15_000),
@@ -50,8 +52,9 @@ export async function getMedusaCatalog(input: CatalogQuery): Promise<MedusaCatal
   const body: unknown = await response.json();
   const result = input.kind === "products"
     ? z.object({ ...page, products: z.array(product).max(50) }).parse(body)
+    : input.kind === "orders" ? z.object({ ...page, orders: z.array(order).max(50) }).parse(body)
     : z.object({ ...page, inventory_items: z.array(inventory).max(50) }).parse(body);
-  const rows = "products" in result ? result.products : result.inventory_items;
+  const rows = "products" in result ? result.products : "orders" in result ? result.orders : result.inventory_items;
   if (result.offset !== input.offset || result.limit !== 50 || (!rows.length && result.count > input.offset)) {
     throw new Error("Medusaのページ情報が不整合です");
   }
@@ -59,5 +62,6 @@ export async function getMedusaCatalog(input: CatalogQuery): Promise<MedusaCatal
     offset: input.offset, nextOffset: input.offset + rows.length < result.count ? input.offset + rows.length : null };
   return "products" in result
     ? { ...common, kind: "products", rows: result.products }
+    : "orders" in result ? { ...common, kind: "orders", rows: result.orders }
     : { ...common, kind: "inventory", rows: result.inventory_items };
 }

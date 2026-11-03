@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest"
-import { isShopifyAdminConfigured, missingShopifyAdminScopes } from "./shopify-admin"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { isShopifyAdminConfigured, missingShopifyAdminScopes, shopifyGraphql } from "./shopify-admin"
 
 const ORIGINAL_ENV = { ...process.env }
 
@@ -42,3 +42,12 @@ describe("Shopify Admin authentication readiness", () => {
     ])
   })
 })
+
+it("blocks even previously configured Shopify credentials after Medusa cutover", async () => {
+  process.env.SERICIA_MEDUSA_ADMIN_URL = "http://medusa:9000";
+  process.env.SHOPIFY_ADMIN_ACCESS_TOKEN = "old-private-token";
+  const network = vi.spyOn(globalThis, "fetch");
+  expect(isShopifyAdminConfigured()).toBe(false);
+  await expect(shopifyGraphql("mutation { shop { id } }")).rejects.toThrow("Medusaへ移行済み");
+  expect(network).not.toHaveBeenCalled(); network.mockRestore();
+});

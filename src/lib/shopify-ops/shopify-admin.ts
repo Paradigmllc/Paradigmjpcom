@@ -49,6 +49,7 @@ function requiredEnv(name: string): string {
 }
 
 export function isShopifyAdminConfigured(): boolean {
+  if (process.env.SERICIA_MEDUSA_ADMIN_URL?.trim()) return false
   const commonReady = ["SHOPIFY_STORE_DOMAIN", "SHOPIFY_API_VERSION"]
     .every((name) => Boolean(process.env[name]?.trim()))
   const legacyTokenReady = Boolean(process.env.SHOPIFY_ADMIN_ACCESS_TOKEN?.trim())
@@ -98,6 +99,7 @@ async function shopifyAccessToken(domain: string): Promise<string> {
 }
 
 export async function shopifyGraphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+  if (process.env.SERICIA_MEDUSA_ADMIN_URL?.trim()) throw new Error("ストアはMedusaへ移行済みです。Shopifyへの操作は停止しています")
   const domain = requiredEnv("SHOPIFY_STORE_DOMAIN").replace(/^https?:\/\//, "").replace(/\/$/, "")
   const version = requiredEnv("SHOPIFY_API_VERSION")
   const accessToken = await shopifyAccessToken(domain)

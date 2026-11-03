@@ -87,7 +87,7 @@ export function ShopifyDailyPanel() {
         <div>
           <h2 className="text-xl font-bold">日々の自動運用</h2>
           <p className="mt-2 text-sm text-zinc-600">
-            Shopify通知に加え、定期照合で取りこぼしを回復します。画面は15秒ごとに更新。
+            Medusaの商品・在庫・注文の取得結果をDBに記録します。外部在庫への書換えや発送指示は行いません。画面は15秒ごとに更新。
           </p>
         </div>
         <div
@@ -129,6 +129,7 @@ export function ShopifyDailyPanel() {
             <p className="mt-1 text-xs text-zinc-600">
               次回予定：{new Date(job.due_at).toLocaleString("ja-JP")}
             </p>
+            {job.summary?.platform === "medusa" && <p className="mt-2 text-xs text-zinc-600">Medusa取得件数: {typeof job.summary.processed === "number" ? job.summary.processed : "未確認"} ／ 外部への書込なし</p>}
             {jobNeedsAttention(job) && (
               <p className="mt-2 text-sm text-amber-900">
                 {job.error_message ??

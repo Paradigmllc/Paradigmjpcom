@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import type { MedusaCatalog } from "@/lib/medusa-ops/catalog";
 
 export function MedusaCatalogPanel() {
-  const [kind, setKind] = useState<"products" | "inventory">("products");
+  const [kind, setKind] = useState<"products" | "inventory" | "orders">("products");
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<MedusaCatalog | null>(null);
   const [busy, setBusy] = useState(true);
@@ -32,17 +32,17 @@ export function MedusaCatalogPanel() {
     return () => controller.abort();
   }, [load, revision]);
   const button = "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold disabled:opacity-50";
-  return <section aria-label="Medusaの商品・在庫" className="space-y-4">
+  return <section aria-label="Medusaの商品・在庫・注文" className="space-y-4">
     <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-      <div><h2 className="text-xl font-bold">Medusaの商品・在庫</h2>
-        <p className="mt-2 text-sm text-zinc-600">移行先DBの現在値を取得します。公開ストアの切替や在庫の書換えは行いません。</p></div>
+      <div><h2 className="text-xl font-bold">Medusaの商品・在庫・注文</h2>
+        <p className="mt-2 text-sm text-zinc-600">稼働中のMedusa DBから現在値を取得します。注文取得は発送指示や返金を実行しません。</p></div>
       <button aria-label="Medusaデータを再取得" className={button} disabled={busy} onClick={() => setRevision(v => v + 1)}>再取得</button>
     </div>
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
       倉庫・仕入先の実在庫との連携は未接続です。入庫予定数は販売在庫に含めません。予約を差し引いた数量も販売チャネルごとの販売可能数とは異なります。
     </div>
-    <div className="flex gap-2">{(["products", "inventory"] as const).map(value =>
-      <button key={value} className={button} aria-pressed={kind === value} onClick={() => { setKind(value); setOffset(0); }}>{value === "products" ? "商品" : "在庫品目"}</button>)}</div>
+    <div className="flex gap-2">{(["products", "inventory", "orders"] as const).map(value =>
+      <button key={value} className={button} aria-pressed={kind === value} onClick={() => { setKind(value); setOffset(0); }}>{value === "products" ? "商品" : value === "orders" ? "注文" : "在庫品目"}</button>)}</div>
     {busy && <p role="status">Medusaから取得しています…</p>}
     {error && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-4 text-red-900">{error}</p>}
     {data && !data.configured && <p className="rounded-xl border bg-white p-5">Medusa管理APIは未接続です。管理者がサーバーの接続URLと専用APIキーを設定すると取得できます。</p>}
@@ -54,6 +54,12 @@ export function MedusaCatalogPanel() {
           <h3 className="break-words font-semibold">{row.title}</h3>
           <p className="mt-2 text-sm">状態: {({draft:"下書き",published:"公開",proposed:"提案中",rejected:"却下"} as Record<string,string>)[row.status] ?? row.status}</p>
           <p className="mt-1 break-all text-xs text-zinc-600">{row.id}</p>
+        </article>) : data.kind === "orders" ? data.rows.map(row => <article className="min-w-0 rounded-xl border bg-white p-4" key={row.id}>
+          <h3 className="font-semibold">注文 #{row.display_id}</h3>
+          <p className="mt-2 text-sm">{new Intl.NumberFormat("ja-JP", { style: "currency", currency: row.currency_code }).format(row.total)}</p>
+          <p className="mt-2 text-sm">注文: {row.status} ／ 決済: {row.payment_status}</p>
+          <p className="text-sm">発送: {row.fulfillment_status}</p>
+          <time className="text-xs text-zinc-600">{new Date(row.created_at).toLocaleString("ja-JP")}</time>
         </article>) : data.rows.map(row => <article className="min-w-0 rounded-xl border bg-white p-4" key={row.id}>
           <h3 className="break-words font-semibold">{row.title || row.sku || row.id}</h3>
           <p className="mt-1 break-all text-xs text-zinc-600">SKU: {row.sku || "未設定"}</p>
